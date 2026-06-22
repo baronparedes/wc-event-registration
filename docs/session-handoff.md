@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Project Snapshot
 
-This repository is in Chunk 1 implemented locally status.
+This repository is in Chunk 2 implemented locally status.
 
 Implemented in Chunk 0:
 
@@ -24,6 +24,16 @@ Implemented in Chunk 1:
 - package scripts for local Supabase lifecycle and migration reset
 - private local member seed generator and ignored seed workflow
 
+Implemented in Chunk 2:
+
+- RLS enabled on all 8 public tables
+- `public.is_admin()` SECURITY DEFINER helper function
+- Explicit policies for every table/role combination
+- anon and authenticated (non-admin): read published events and their fields only
+- admin role: full CRUD on all tables via is_admin() check
+- No direct public write path on registrations/answers (reserved for Chunk 5 function)
+- RLS test matrix in supabase/snippets/rls_policy_tests.sql (run in Studio SQL editor)
+
 Core decisions locked:
 
 - Public flow must always be ID-first
@@ -36,12 +46,19 @@ Core decisions locked:
 
 ## Current Focus
 
-Next planned work is Chunk 2 only:
+Next planned work is Chunk 3 only:
 
-- enable and test RLS on all public tables
-- add admin role-check policies
-- define controlled public read/write paths
-- build a role policy test matrix before wiring frontend data access
+- build the public ID-first registration gate
+- load event by slug with open/active prechecks
+- enforce member_id lookup before the registration form renders
+- minimal profile reveal after successful lookup
+
+## Decisions Captured During Chunk 2
+
+- all public writes to registrations/answers go through a security-definer function (not direct INSERT policies)
+- admins table self-read policy uses `auth_user_id = auth.uid()` (not is_admin()) to avoid bootstrap circular dependency
+- is_admin() is SECURITY DEFINER so it can bypass admins table RLS during policy evaluation
+- no waitlist or invite-only paths in v1; registration_mode enum reserved for future use
 
 ## Decisions Captured During Chunk 1
 
