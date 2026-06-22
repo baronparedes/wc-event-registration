@@ -96,25 +96,43 @@ React Query:
 - Keep query functions pure and typed.
 - Handle loading, empty, and error states explicitly.
 
-**React Query Hooks Pattern (Chunk 5+):**
+**React Query Hooks Pattern:**
 
-- Abstract Supabase access behind React Query hooks.
-- Create one hook per logical query/mutation with a descriptive name.
-- Store hooks in `src/hooks/<domain>/` folder (e.g., `src/hooks/public-registration/`), one file per hook.
+Hooks own their data fetching logic directly—no separate query/command layer. This eliminates wrapper boilerplate and keeps concerns colocated.
+
+Supabase queries (direct table access):
+
+- Hook inlines Supabase query logic directly in the `queryFn`.
+- Example: `usePublicEventQuery` inlines event availability checks.
+- Types imported from `src/lib/event-registration/types.ts`.
+- No separate `queries.ts` module; logic lives in the hook.
+
+Edge Function mutations (privileged writes):
+
+- Hook uses `createEdgeFunctionCaller` factory from `src/lib/supabase.ts` to call Edge Functions.
+- Factory ensures consistent HTTP headers, error handling, and type safety.
+- Example: `useMemberLookupMutation` calls `member-lookup` Edge Function directly.
+- Example: `useSubmitRegistrationMutation` calls `submit-registration` Edge Function directly.
+- No separate `commands.ts` module; logic and error handling live in the hook.
+
+Hook patterns:
+
+- Store hooks in `src/hooks/<domain>/` folder, one file per hook (e.g., `src/hooks/event-registration/`).
 - Naming convention:
-  - Queries: `use<DomainEntity>Query` (e.g., `usePublicEventQuery`, `usePublicEventFieldsQuery`)
+  - Queries: `use<DomainEntity>Query` (e.g., `usePublicEventQuery`)
   - Mutations: `use<Action><DomainEntity>Mutation` (e.g., `useMemberLookupMutation`, `useSubmitRegistrationMutation`)
-- Each hook file should export exactly one hook function with clear JSDoc.
+- Each hook file exports exactly one hook function with clear JSDoc.
 - Create `src/hooks/<domain>/index.ts` barrel export for all hooks in the domain.
-- **Pages and components import hooks directly from `src/hooks/<domain>/`**, not from lib barrels.
-- Hooks handle error toasting and consistent retry logic; pages handle UI state and user feedback.
+- **Pages and components import hooks directly**, not from lib barrels.
+- Hooks handle error toasting and validation; pages handle UI state and user feedback.
 
 Benefits:
 
 - Single source of truth for query keys and retry logic
-- Consistent error handling across all server operations
+- Consistent error handling (toasts built into mutations, explicit in components)
 - Cacheable and mockable for testing
-- Easier refactoring: swap RPC for REST without touching components
+- Easier to refactor: business logic lives where it's used
+- No unnecessary abstraction layers
 
 Forms:
 
@@ -124,51 +142,70 @@ Forms:
 
 ## Data and API Layer
 
-- Keep Supabase access in lib/ modules, not inline in many components.
-- Return normalized domain shapes from lib functions.
-- Validate dynamic metadata from database before use.
-- Fail closed for malformed metadata and provide safe user messaging.
+**Direct Supabase queries** (in hooks for public data read):
 
-## Supabase Standards
+- Inline Supabase client calls directly in hook `queryFn` for simplicity.
+- Example: `usePublicEventQuery` queries events table with availability logic.
+- No separate lib/queries.ts module; logic lives in the hook where it's used.
 
-- Keep all Supabase queries and RPC calls in src/lib/ modules; avoid direct Supabase calls in page/component files.
-- Use typed query contracts and normalized return shapes at the lib boundary.
-- Validate all dynamic/JSONB payloads with Zod before rendering or processing.
-- Use SECURITY DEFINER functions or RPCs for privileged/public write paths; do not introduce direct public table writes.
-- Treat RLS as deny-by-default and keep policies explicit per role and action.
+**Edge Functions** (for privileged writes and complex business logic):
+
+- All public write paths use Edge Functions with service role credentials.
+- Edge Functions live in `supabase/functions/` and handle business logic server-side.
+- Hooks call Edge Functions using `createEdgeFunctionCaller` factory from `src/lib/supabase.ts`.
+- Example: `member-lookup` Edge Function queries users table with service role and returns profile.
+- Example: `submit-registration` Edge Function handles duplicate policy, idempotency, and answer persistence.
+- Prevent direct public table writes; all mutations go through Edge Functions.
+
+**No lib wrapper layers:**
+
+- No `src/lib/<domain>/queries.ts` or `src/lib/<domain>/commands.ts` modules.
+- Hooks own their data fetching logic; no intermediate abstraction layer.
+- Keep type contracts in `src/lib/<domain>/types.ts` for shared domain types.
+- Validation logic in `src/lib/<domain>/configValidation.ts` or `dynamicSchema.ts` as needed.
+
+**Type safety at boundaries:**
+
+- Validate database metadata before rendering with it.
+- Use Zod for runtime validation of Edge Function responses and form inputs.
+- Keep inferred types aligned with validation schemas using `z.infer` where practical.
+
+## Supabase & Edge Functions Standards
+
+**Edge Functions as write path:**
+
+- All privileged/public write operations use Edge Functions, not direct RPC or table writes.
+- Edge Functions live in `supabase/functions/` with TypeScript files.
+- Edge Functions query Postgres directly with service role credentials.
+- RLS still enforced at table level for defense-in-depth.
+- No service role credentials exposed in frontend code.
+
+**Supabase client usage:**
+
+- Keep Supabase client in `src/lib/supabase.ts` and export for hooks to use.
+- Export Edge Function caller factory `createEdgeFunctionCaller` from the same module.
+- Hooks call Supabase directly or via Edge Function factory as needed.
+- No intermediate query/command modules; logic lives in hooks.
+
+**RLS and grants:**
+
+- Treat RLS as deny-by-default; keep policies explicit per role and action.
 - Pair RLS policies with explicit grants; do not assume RLS alone provides API access.
-- Never expose service role credentials in frontend code.
-- Keep migrations additive and reversible where possible; avoid destructive schema changes without a rollout plan.
-- Keep seeds deterministic for local QA and aligned with current chunk behavior.
+- Grant anon/authenticated roles only needed table privileges (e.g., select on public events).
+- Grant service_role all necessary privileges for Edge Functions.
+
+**Migrations and seeds:**
+
+- Keep migrations additive and reversible where possible.
+- Avoid destructive schema changes without a rollout plan.
+- Keep seeds deterministic for local QA and aligned with current behavior.
 - Preserve core invariants in DB and API layers (for this repo: ID-first public flow and secure write boundary).
 
-Supabase object/module pattern (default for new or refactored objects):
+**Validation at boundaries:**
 
-- For complex domains, split lib code into a folder module under src/lib/<domain>/.
-- Use focused files with clear responsibilities:
-  - types.ts: exported domain and contract types
-  - queries.ts: Supabase table queries and RPC calls only
-  - commands.ts: Supabase write/mutation commands only
-  - configValidation.ts or validation.ts: metadata/JSON validation and guards
-  - dynamicSchema.ts or schemas.ts: zod schema builders for runtime form/input validation
-  - transforms.ts: normalization/mapping helpers
-  - index.ts: public module surface (named exports only)
-- Create React Query hooks separately in `src/hooks/<domain>/` (see React Query Hooks Pattern section).
-- Keep queries.ts side-effect free beyond database access; no UI formatting in query functions.
-- Keep commands.ts side-effect free; return typed result shapes only.
-- Keep page-level imports stable by exposing a compatibility barrel when refactoring legacy files (for example src/lib/publicRegistration.ts re-exporting from src/lib/event-registration/).
-- Prefer additive refactors: split internals first, preserve old import path, then migrate callers incrementally.
-- When introducing a new Supabase object, define its types and validation contracts before writing query logic.
-
-Readability conventions (light command/query split, not full CQRS):
-
-- Keep read operations and write operations separate in intent and naming, even if they live in the same domain folder.
-- Query naming: use fetch..., list..., get..., lookup... for read-only functions.
-- Command naming: use create..., update..., upsert..., submit..., close..., archive... for write/mutation functions.
-- Do not hide writes behind query-like names.
-- Keep command return shapes explicit and minimal (status/result/error context), and keep query return shapes optimized for rendering.
-- If a domain grows, split queries.ts and commands.ts; do not introduce full CQRS infrastructure unless complexity justifies it.
-- Prefer one exported function per use case over generic "doEverything" helpers.
+- Validate all dynamic/JSONB payloads with Zod before rendering or processing.
+- Return typed response shapes from Edge Functions with `success` discriminator.
+- Handle Edge Function errors explicitly in hooks with user-safe toast messages.
 
 ## Error Handling and Observability
 
@@ -241,8 +278,9 @@ Slice anatomy (all required):
 - **UI layer**: page folder with orchestration + colocated components
 - **Type contracts**: domain types exported from lib module
 - **Validation**: Zod schemas for form/input + metadata guards
-- **Data access**: query and command functions (separate intent, typed returns)
-- **Database change**: migration + SECURITY DEFINER RPC or policy update
+- **Data access**: hooks for queries and mutations (queries inline Supabase, mutations use Edge Functions)
+- **Edge Functions** (if needed): `supabase/functions/` with business logic and service-role DB access
+- **Database change**: migration + RLS policy update or new Edge Function
 - **RLS policy**: new or updated row-level security rules paired with the feature
 - **Test coverage**: happy path + key error conditions for business logic
 
@@ -251,11 +289,12 @@ Completeness checklist before marking slice done:
 - [ ] UI compiles and passes build
 - [ ] All types strict (no `any`, no unsafe casts)
 - [ ] Validation covers user inputs and database payloads
-- [ ] Queries and commands named and separated by intent
+- [ ] Hooks own their data fetching logic (no wrapper layers)
+- [ ] Edge Functions are used for all privileged writes
 - [ ] Schema migration applied locally
-- [ ] RPC or write path is SECURITY DEFINER or protected by RLS
+- [ ] Edge Function (if used) queries Postgres directly with service role
 - [ ] RLS policy is deny-by-default and paired with explicit grants
-- [ ] Page imports are stable (use lib barrel re-exports if needed)
+- [ ] Page imports are stable
 - [ ] Tests cover happy path and critical error flows
 - [ ] No mutations to shared types; new domain types added instead
 

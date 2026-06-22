@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
-  fetchPublicEventFields,
-  fetchPublicEventBySlug,
-  lookupMemberForRegistration,
   normalizeDynamicFieldAnswersForPreview,
   type DynamicFieldResponseValues,
-  type MemberLookupProfile,
   type PublicEventField,
 } from '../../lib/event-registration'
+import {
+  usePublicEventQuery,
+  usePublicEventFieldsQuery,
+  useMemberLookupMutation,
+  type MemberLookupProfile,
+} from '../../hooks/event-registration'
 import {
   EventHeaderCard,
   LockedGateCard,
@@ -51,17 +52,8 @@ export function EventRegistrationPage() {
   const [lookupErrorMessage, setLookupErrorMessage] = useState<string | null>(null)
   const [fieldConfigIssues, setFieldConfigIssues] = useState<string[]>([])
 
-  const eventQuery = useQuery({
-    queryKey: ['public-event-by-slug', slug],
-    queryFn: async () => {
-      if (!slug) {
-        throw new Error('Event slug is required')
-      }
-
-      return fetchPublicEventBySlug(slug)
-    },
-    enabled: Boolean(slug),
-  })
+  const eventQuery = usePublicEventQuery(slug)
+  const availability = eventQuery.data
 
   const lookupForm = useForm<MemberLookupFormValues>({
     resolver: zodResolver(memberLookupSchema),
@@ -70,26 +62,18 @@ export function EventRegistrationPage() {
     },
   })
 
-  const lookupMutation = useMutation({
-    mutationFn: async (values: MemberLookupFormValues) =>
-      lookupMemberForRegistration(values.memberId),
-    onSuccess: (result) => {
-      if (!result) {
-        setMatchedMember(null)
-        setLookupErrorMessage('We could not verify that ID. Check it and try again.')
-        return
-      }
+  const lookupMutation = useMemberLookupMutation()
 
-      setMatchedMember(result)
-      setLookupErrorMessage(null)
-    },
-    onError: () => {
+  const handleLookupSuccess = (result: MemberLookupProfile | null) => {
+    if (!result) {
       setMatchedMember(null)
-      setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
-    },
-  })
+      setLookupErrorMessage('We could not verify that ID. Check it and try again.')
+      return
+    }
 
-  const availability = eventQuery.data
+    setMatchedMember(result)
+    setLookupErrorMessage(null)
+  }
 
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     defaultValues: {},
@@ -109,20 +93,9 @@ export function EventRegistrationPage() {
   const isGateReady = availability?.status === 'available'
   const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember)
 
-  const eventFieldsQuery = useQuery({
-    queryKey: [
-      'public-event-fields',
-      availability?.status === 'available' ? availability.event.id : null,
-    ],
-    queryFn: async () => {
-      if (availability?.status !== 'available') {
-        return { validFields: EMPTY_PUBLIC_FIELDS, issues: EMPTY_FIELD_ISSUES }
-      }
-
-      return fetchPublicEventFields(availability.event.id)
-    },
-    enabled: isDynamicFieldGateReady,
-  })
+  const eventFieldsQuery = usePublicEventFieldsQuery(
+    isDynamicFieldGateReady && isGateReady ? availability.event.id : undefined,
+  )
 
   const activeFields = eventFieldsQuery.data?.validFields ?? EMPTY_PUBLIC_FIELDS
   const responseSchema = useMemo(() => {
@@ -154,7 +127,13 @@ export function EventRegistrationPage() {
     setLookupErrorMessage(null)
     setMatchedMember(null)
     setFieldConfigIssues([])
-    await lookupMutation.mutateAsync(values)
+    try {
+      const result = await lookupMutation.mutateAsync(values.memberId)
+      handleLookupSuccess(result)
+    } catch {
+      setMatchedMember(null)
+      setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
+    }
   }
 
   async function handlePreviewSubmit(values: DynamicFieldResponseValues) {

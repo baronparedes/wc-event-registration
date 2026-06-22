@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchPublicEventBySlug } from '../../lib/event-registration/queries'
+import { supabase } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
+import type { EventAvailability, PublicEvent } from '../../lib/event-registration'
 
 /**
  * Hook to fetch a public event by slug with availability checks.
@@ -16,8 +17,50 @@ export function usePublicEventQuery(slug: string | undefined) {
       if (!slug) {
         throw new Error('Event slug is required')
       }
+
       logger.debug('Fetching event by slug:', slug)
-      return fetchPublicEventBySlug(slug)
+
+      const { data, error } = await supabase
+        .from('events')
+        .select(
+          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, registration_mode',
+        )
+        .eq('slug', slug)
+        .maybeSingle<PublicEvent>()
+
+      if (error) {
+        throw error
+      }
+
+      if (!data) {
+        return { status: 'unavailable', reason: 'not_found_or_unpublished' } as EventAvailability
+      }
+
+      const now = Date.now()
+      const opensAt = data.registration_opens_at ? Date.parse(data.registration_opens_at) : null
+      const closesAt = data.registration_closes_at ? Date.parse(data.registration_closes_at) : null
+
+      if (data.registration_mode !== 'open') {
+        return {
+          status: 'unavailable',
+          reason: 'registration_closed',
+          event: data,
+        } as EventAvailability
+      }
+
+      if (opensAt !== null && now < opensAt) {
+        return { status: 'unavailable', reason: 'not_open_yet', event: data } as EventAvailability
+      }
+
+      if (closesAt !== null && now >= closesAt) {
+        return {
+          status: 'unavailable',
+          reason: 'registration_closed',
+          event: data,
+        } as EventAvailability
+      }
+
+      return { status: 'available', event: data } as EventAvailability
     },
     enabled: Boolean(slug),
   })
