@@ -144,14 +144,9 @@ export function EventRegistrationPage() {
       setIsUpdateMode(false)
       setFieldConfigIssues([])
       setSubmitErrorMessage(null)
+      setSubmitSuccessMessage(null)
     }
   }, [dynamicForm, isDynamicFieldGateReady])
-
-  useEffect(() => {
-    if (isGateReady) {
-      focusMemberIdInput()
-    }
-  }, [isGateReady])
 
   useEffect(() => {
     if (!autoClearLookupError || !lookupErrorMessage) {
@@ -192,6 +187,7 @@ export function EventRegistrationPage() {
     setMemberIdHighlight(false)
     setFieldConfigIssues([])
     setSubmitErrorMessage(null)
+    setSubmitSuccessMessage(null)
 
     try {
       logger.info('Member lookup attempt:', values.memberId)
@@ -355,6 +351,24 @@ export function EventRegistrationPage() {
     return 'This field is invalid.'
   }
 
+  function handleCancelUpdate() {
+    dynamicForm.reset(createDynamicFieldDefaultValues(activeFields))
+    setMatchedMember(null)
+    setVerifiedMemberId(null)
+    setPrefillResponses(null)
+    setIsRegistrationBlocked(false)
+    setIsUpdateMode(false)
+    setMemberIdHighlight(false)
+    setLockedStepMessage(null)
+    setLookupErrorMessage(null)
+    setLookupErrorFadeOut(false)
+    setAutoClearLookupError(false)
+    setSubmitErrorMessage(null)
+    setSubmitSuccessMessage(null)
+    lookupForm.reset()
+    focusMemberIdInput()
+  }
+
   return (
     <section className="mx-auto max-w-3xl space-y-6">
       <EventHeaderCard
@@ -387,6 +401,7 @@ export function EventRegistrationPage() {
             matchedMember={matchedMember}
             isLocked={isRegistrationBlocked}
             lockedMessage={lockedStepMessage}
+            onCancelUpdate={handleCancelUpdate}
             isLoadingFields={eventFieldsQuery.isLoading}
             isFieldsError={eventFieldsQuery.isError}
             fieldConfigIssues={fieldConfigIssues}
