@@ -8,5 +8,5 @@ export function AdminRegistrationsPage() {
         </p>
       </div>
     </section>
-  );
+  )
 }

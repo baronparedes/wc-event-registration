@@ -1,4 +1,4 @@
-import {Link} from "react-router-dom";
+import { Link } from 'react-router-dom'
 
 export function AdminEventsPage() {
   return (
@@ -20,10 +20,9 @@ export function AdminEventsPage() {
 
       <div className="rounded-2xl border border-border bg-surface p-6">
         <p className="text-sm text-muted">
-          Placeholder table: this will become a TanStack Table with filters and status
-          badges.
+          Placeholder table: this will become a TanStack Table with filters and status badges.
         </p>
       </div>
     </section>
-  );
+  )
 }

@@ -1,9 +1,9 @@
 type AdminEventFormPageProps = {
-  mode: "create" | "edit";
-};
+  mode: 'create' | 'edit'
+}
 
-export function AdminEventFormPage({mode}: AdminEventFormPageProps) {
-  const title = mode === "create" ? "Create Event" : "Edit Event";
+export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
+  const title = mode === 'create' ? 'Create Event' : 'Edit Event'
 
   return (
     <section className="mx-auto max-w-4xl space-y-4">
@@ -15,5 +15,5 @@ export function AdminEventFormPage({mode}: AdminEventFormPageProps) {
         </p>
       </div>
     </section>
-  );
+  )
 }

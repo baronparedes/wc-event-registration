@@ -1,7 +1,7 @@
-import {BrowserRouter} from "react-router-dom";
-import {Toaster} from "sonner";
-import {AppProviders} from "./app/providers/AppProviders";
-import {AppRouter} from "./app/router";
+import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from 'sonner'
+import { AppProviders } from './app/providers/AppProviders'
+import { AppRouter } from './app/router'
 
 function App() {
   return (
@@ -11,7 +11,7 @@ function App() {
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </AppProviders>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -1,22 +1,22 @@
-import {Navigate, Route, Routes} from "react-router-dom";
-import type {ReactElement} from "react";
-import {AppShell} from "../components/layout/AppShell";
-import {AdminLoginPage} from "../pages/admin/AdminLoginPage";
-import {AdminRegistrationsPage} from "../pages/admin/AdminRegistrationsPage";
-import {AdminEventFieldsPage} from "../pages/admin/AdminEventFieldsPage";
-import {AdminEventFormPage} from "../pages/admin/AdminEventFormPage";
-import {AdminEventsPage} from "../pages/admin/AdminEventsPage";
-import {HomePage} from "../pages/public/HomePage";
-import {EventRegistrationPage} from "../pages/public/EventRegistrationPage";
+import { Navigate, Route, Routes } from 'react-router-dom'
+import type { ReactElement } from 'react'
+import { AppShell } from '../components/layout/AppShell'
+import { AdminLoginPage } from '../pages/admin/AdminLoginPage'
+import { AdminRegistrationsPage } from '../pages/admin/AdminRegistrationsPage'
+import { AdminEventFieldsPage } from '../pages/admin/AdminEventFieldsPage'
+import { AdminEventFormPage } from '../pages/admin/AdminEventFormPage'
+import { AdminEventsPage } from '../pages/admin/AdminEventsPage'
+import { HomePage } from '../pages/public/HomePage'
+import { EventRegistrationPage } from '../pages/public/EventRegistrationPage'
 
-function RequireAdminAuth({children}: {children: ReactElement}) {
-  const isAuthenticated = false;
+function RequireAdminAuth({ children }: { children: ReactElement }) {
+  const isAuthenticated = false
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login" replace />
   }
 
-  return children;
+  return children
 }
 
 export function AppRouter() {
@@ -71,5 +71,5 @@ export function AppRouter() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  );
+  )
 }

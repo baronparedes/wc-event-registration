@@ -1,4 +1,4 @@
-import {Link} from "react-router-dom";
+import { Link } from 'react-router-dom'
 
 export function HomePage() {
   return (
@@ -11,8 +11,8 @@ export function HomePage() {
           ID-first event registration with scalable admin controls.
         </h1>
         <p className="max-w-xl text-base text-muted md:text-lg">
-          This app is scaffolded for a Supabase-powered, metadata-driven registration
-          platform. The next chunks will wire database schema, RLS, and dynamic event forms.
+          This app is scaffolded for a Supabase-powered, metadata-driven registration platform. The
+          next chunks will wire database schema, RLS, and dynamic event forms.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Link
@@ -40,5 +40,5 @@ export function HomePage() {
         </ul>
       </div>
     </section>
-  );
+  )
 }

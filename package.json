@@ -9,7 +9,13 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:db:reset": "supabase db reset",
+    "supabase:migration:new": "supabase migration new",
+    "seed:members:generate": "ruby scripts/generate-local-member-seed.rb"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

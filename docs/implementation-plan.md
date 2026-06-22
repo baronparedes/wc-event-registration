@@ -20,6 +20,8 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Duplicate policy: configurable per event (block or allow update)
 - Admin scope: global admin v1, future event-scoped support
 - Export format v1: CSV
+- Member import contract: RFID maps to member_id
+- Member profile shape: nickname is first-class; role and category remain in metadata
 
 ## Phase Plan
 

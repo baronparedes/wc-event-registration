@@ -6,9 +6,9 @@ export function AdminLoginPage() {
         Supabase auth wiring starts in a later chunk. This route is now reserved and styled.
       </p>
       <div className="mt-5 rounded-md border border-secondary/30 bg-secondary/10 p-3 text-sm text-secondary">
-        Learning note: admin routes are protected by authenticated session checks + RLS, not
-        just UI guards.
+        Learning note: admin routes are protected by authenticated session checks + RLS, not just UI
+        guards.
       </div>
     </section>
-  );
+  )
 }
