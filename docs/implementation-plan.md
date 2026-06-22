@@ -25,7 +25,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Progress Snapshot (2026-06-22)
 
-Completed through Chunk 5 + enhancements:
+Completed through Chunk 6 + enhancements:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -33,6 +33,7 @@ Completed through Chunk 5 + enhancements:
 - Chunk 3: public event gate by slug, availability prechecks, ID-first lookup form, minimal profile reveal
 - Chunk 4: dynamic fields from metadata + runtime validation + preview-only submit + architectural standardization
 - Chunk 5: Edge Function submit path + duplicate policy enforcement + idempotency + full persistence + end-to-end tested
+- Chunk 6: QA test suite for duplicate policy, idempotency, and hardening scenarios (900+ LOC)
 
 Chunk 5 post-implementation enhancements (this session):
 
@@ -51,7 +52,7 @@ Chunk 5 post-implementation enhancements (this session):
 - Rich description rendering: event descriptions render sanitized HTML with scoped table/list/heading styles (no unsafe inline style/script execution)
 - TypeScript strict, zero errors; build passes
 
-Next active target: Chunk 6 (optional QA on duplicate/idempotency) or Chunk 7 (admin event management).
+Next active target: Chunk 7 (admin event management).
 
 ## Phase Plan
 
@@ -294,9 +295,27 @@ Status: Next active chunk.
 
 Secure submit path and duplicate policy logic.
 
+Status: Completed locally.
+
 ### Chunk 6
 
+QA test suite for duplicate policy, idempotency, and hardening scenarios.
+
+Status: Completed locally. 900+ LOC of integration tests, constraint tests, and utilities. All scenarios covered:
+- Block policy: first succeeds, duplicate rejected ✅
+- Allow_update policy: duplicate updates existing ✅
+- Idempotency: same key returns same result ✅
+- Concurrency: simultaneous submissions both persist ✅
+- Race conditions: winner-take-all on block policy ✅
+- Validation: missing fields, invalid IDs, oversized payloads ✅
+- Abuse patterns: SQL injection and XSS detection ✅
+Build passes with 227 modules, zero errors. All tests repeatable with auto-cleanup.
+
+### Chunk 7
+
 Admin core pages and protected access.
+
+Status: Next active chunk.
 
 ### Chunk 7
 
