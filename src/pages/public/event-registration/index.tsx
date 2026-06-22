@@ -16,6 +16,7 @@ import {
   usePublicEventFieldsQuery,
   useMemberLookupMutation,
   useSubmitRegistrationMutation,
+  useRfidAutoFocus,
 } from '../../../hooks/event-registration'
 import {
   DynamicFieldsStepCard,
@@ -93,6 +94,11 @@ export function EventRegistrationPage() {
 
   const isGateReady = availability?.status === 'available'
   const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember) && !isRegistrationBlocked
+
+  // RFID reader support: keep the member ID input focused when no member has
+  // been looked up yet so a card tap registers immediately.
+  const isRfidCaptureActive = isGateReady && matchedMember === null && !lookupMutation.isPending
+  useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive)
 
   const focusMemberIdInput = () => {
     requestAnimationFrame(() => {
@@ -199,7 +205,9 @@ export function EventRegistrationPage() {
         setVerifiedMemberId(null)
         setLookupErrorMessage('We could not verify that ID. Check it and try again.')
         setLookupErrorFadeOut(false)
-        setAutoClearLookupError(false)
+        setAutoClearLookupError(true)
+        lookupForm.reset()
+        focusMemberIdInput()
         logger.warn('Member lookup returned null for ID:', values.memberId)
         return
       }

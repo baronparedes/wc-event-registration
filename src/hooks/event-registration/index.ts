@@ -1,4 +1,5 @@
 export { usePublicEventQuery } from './usePublicEventQuery'
+export { useRfidAutoFocus } from './useRfidAutoFocus'
 export { usePublicEventFieldsQuery } from './usePublicEventFieldsQuery'
 export { usePublicEventListingQuery } from './usePublicEventListingQuery'
 export {
