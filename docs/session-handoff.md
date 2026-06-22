@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Project Snapshot
 
-This repository is in Chunk 4 complete + architectural standardization status.
+This repository is in **Chunk 5 complete** (secure registration submission) status.
 
 Implemented in Chunk 0:
 
@@ -62,6 +62,27 @@ Architectural standardization (Chunk 4):
 - Copilot instructions enhanced: page-folder architecture rules, Supabase object pattern, vertical slice delivery pattern with completeness checklist
 - All imports updated and verified; npm run build passes with zero errors
 
+Implemented in Chunk 5:
+
+- Edge Function `supabase/functions/submit-registration/index.ts` created with full registration submission business logic
+- Duplicate policy enforcement: 'block' rejects second registration, 'allow_update' updates existing registration with new responses
+- Idempotency handling: `idempotency_key` prevents duplicate registrations on retry
+- React Query mutation hook `useSubmitRegistrationMutation` wired to Edge Function with error handling and logging
+- Form submission integrated with dynamic field responses: all field types (text, number, boolean, date, multi_select, etc.) persist correctly
+- Full end-to-end test passed: member lookup → form completion → Edge Function submission → success response with registration_id
+- Development logging added throughout hooks and page component for debugging
+- Folder renamed: `public-registration` → `event-registration` (both lib/ and hooks/) for semantic clarity
+- All imports updated across 8 consuming files
+- TypeScript strict, no errors; build passes with 226 modules, 627 KB gzipped
+
+Core decisions locked during Chunk 5:
+
+- Edge Functions used for all privileged public writes (not direct RPC)
+- Hooks own their data fetching logic; no wrapper query/command layer
+- Idempotency key generated client-side (crypto.randomUUID) for safe retries
+- Registration status: 'submitted' (new) or 'updated' (duplicate with allow_update policy)
+- All field responses stored with type-safe CASE statements in registration_answers table
+
 Core decisions locked:
 
 - Public flow must always be ID-first
@@ -74,30 +95,37 @@ Core decisions locked:
 
 ## Current Focus
 
-Architecture is now ready for vertical slice feature delivery. All future features should follow:
+Secure registration submission (Chunk 5) is now complete and tested. Public flow is fully functional:
+1. Member ID lookup ✓
+2. Profile display ✓  
+3. Dynamic field rendering ✓
+4. Form validation ✓
+5. Submission to Edge Function ✓
+6. Database persistence ✓
 
-- UI: page folder + colocated components + barrel exports
-- Lib: domain module (types → validation → queries → transforms → index)
-- DB: migration + RPC + RLS policy bundled as one atomic feature
-- Test: happy path + critical error conditions
+Tested end-to-end on 2026-06-22:
+- Member ID "1324250891" lookup succeeded
+- Form rendered 14 dynamic fields correctly
+- All required fields filled: Team Name, Guests, Email, Shirt Size, Session, Service Areas, Arrival Date, Code of Conduct
+- Submission executed successfully with registration_id: `17add7ad-715d-481d-8250-24cf3cece584`
+- Success message displayed to user
 
-Next planned work is Chunk 5 only:
+Next planned work:
 
-- wire secure submit path through controlled backend function
-- apply duplicate policy behavior (`block` or `allow_update`) in submit flow
-- persist registrations and registration_answers with idempotency handling
-- preserve Chunk 4 ID-first and dynamic validation guarantees
+- **Chunk 6** (optional QA): Duplicate policy testing (block + allow_update), idempotency verification, database record validation
+- **Chunk 7** (admin write path): Admin event management (create, edit, publish events), field configuration CRUD
+- **Chunk 8** (admin read path): Registration view, response filtering, CSV export
 
-## Decisions Captured During Chunk 4
+## Decisions Captured During Chunk 5
 
-- all `event_field_type` enum values are supported in runtime rendering and validation
-- malformed dynamic field metadata fails closed with user-facing safety messaging
-- dynamic field rendering remains fully blocked until ID lookup succeeds
-- Chunk 4 submit action is validation preview only; no registrations/answers writes are introduced
-- local QA seed strategy now includes full dynamic field coverage on `sample-event`
-- page components are colocalized under page folders to keep page-specific UI self-contained and composable
-- lib modules are split by responsibility (types, queries, validation, transforms) with barrel exports for stable import paths
-- Copilot instructions document expected patterns for vertical slice delivery (anatomy, completeness checklist, coupling avoidance)
+- Edge Functions serve as the exclusive secure write path for public registration submissions
+- Hooks own their data fetching and mutation logic directly (no separate query/command layer for simple flows)
+- Idempotency is managed client-side: `crypto.randomUUID()` generates unique key per submission attempt
+- Duplicate policy is atomic: enforced in Edge Function before any persistence (fail-fast)
+- All field type responses (text, number, boolean, date, arrays, etc.) use JSONB → typed column routing in registration_answers
+- Registration status field captures submission outcome: 'submitted' for new, 'updated' for allow_update duplicates
+- Development logging added to all data-fetching hooks and page orchestrator for local debugging
+- Vertical slice pattern validated: feature combines UI + hooks + Edge Function + DB migration + RLS seamlessly
 
 ## Decisions Captured During Chunk 3
 

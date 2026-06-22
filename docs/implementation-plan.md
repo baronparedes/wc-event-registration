@@ -25,24 +25,28 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Progress Snapshot (2026-06-22)
 
-Completed through Chunk 4:
+Completed through Chunk 5:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
 - Chunk 2: RLS policy matrix across all core tables
 - Chunk 3: public event gate by slug, availability prechecks, ID-first lookup form, minimal profile reveal
 - Chunk 4: dynamic fields from metadata + runtime validation + preview-only submit + architectural standardization
+- Chunk 5: Edge Function submit path + duplicate policy enforcement + idempotency + full persistence + end-to-end tested
 
-Chunk 4 implementation notes:
+Chunk 5 implementation notes:
 
-- 12 field types supported in rendering and validation (text, textarea, number, email, phone, date, datetime, select, radio, checkbox, multi_select, boolean)
-- dynamic field metadata validated and fails closed with user-facing messaging
-- all 5 step components split from monolithic file into separate, composable UI files
-- `publicRegistration` lib module refactored from 900+ LOC into 6 focused modules with clear responsibility boundaries
-- page-folder architecture applied: `src/pages/public/event-registration/` contains page orchestrator + `components/` subfolder for UI
-- Copilot instructions extended with vertical slice delivery pattern (anatomy, completeness checklist, coupling rules, sizing heuristics)
+- Edge Function `supabase/functions/submit-registration/index.ts` handles all registration submission logic server-side
+- Duplicate policy enforced atomically: 'block' rejects, 'allow_update' updates existing registration
+- Idempotency prevents retry duplicates via `idempotency_key` parameter
+- All 12 field types persist correctly with type-safe JSONB → column routing
+- React Query hook `useSubmitRegistrationMutation` provides typed interface to Edge Function
+- Full end-to-end test passed: member lookup → form completion → submission → registration created with ID `17add7ad-715d-481d-8250-24cf3cece584`
+- Folder restructure: `public-registration` → `event-registration` for semantic clarity
+- Development logging integrated for debugging in local dev environment
+- TypeScript strict, zero errors; build: 226 modules, 627 KB gzipped
 
-Next active target: Chunk 5 (secure submit path, duplicate policy, persistence).
+Next active target: Chunk 6 (optional QA on duplicate/idempotency) or Chunk 7 (admin event management).
 
 ## Phase Plan
 
@@ -96,13 +100,14 @@ Phase 3 done criteria:
 - direct public table writes are blocked and all public writes flow through approved backend functions
 - privileged function allowlist and service-role boundaries are documented and enforced
 
-### Phase 4: Public Registration UX (Chunk 4 complete)
+### Phase 4: Public Registration UX (Chunk 4-5 complete)
 
 - load event by slug with open/active prechecks ✅
 - enforce ID-first gate and minimal profile reveal ✅
 - render dynamic fields from metadata ✅
 - validate runtime schema ✅
 - architectural standardization: page-folders, colocalized components, split lib modules, vertical slice delivery pattern ✅
+- submit through secure Edge Function with duplicate policy + idempotency ✅
 
 Phase 4 done criteria:
 
@@ -110,21 +115,33 @@ Phase 4 done criteria:
 - metadata guards fail closed gracefully ✅
 - component architecture supports future feature expansion ✅
 - Copilot instructions enable vertical slice delivery ✅
-- submit through secure backend path with idempotency
+- secure backend submit path with idempotency implemented and tested ✅
+- end-to-end registration flow verified: ID lookup → form → submission → persistence ✅
 
-Phase 4 done criteria:
+Phase 4 completion verified on 2026-06-22:
+- Member lookup: ID "1324250891" → profile display ✅
+- Dynamic fields: 14 fields rendered with proper validation ✅
+- Form submission: All fields filled → Edge Function called → success response with registration_id ✅
+
+Phase 4 additional done criteria (pre-Phase 5):
 
 - Gate B is fully passed before public registration release
 - ID-first lookup includes anti-enumeration safeguards and normalized response behavior
 - lookup and submit endpoints enforce per-IP and per-identifier throttling
 - runtime schema validation and idempotent submit behavior are verified under concurrency tests
 
-### Phase 5: Admin Module
+### Phase 5: Admin Module (Next)
 
 - protected admin routes
 - event create/edit/archive
 - field builder for all supported field types
 - registrations list/detail and CSV export
+
+Readiness for Phase 5:
+- RLS matrix tested for anon, authenticated, and admin roles ✅
+- public write path secured through Edge Functions ✅
+- service-role usage documented in Supabase grant policies ✅
+- audit logging framework ready for admin actions
 
 Phase 5 done criteria:
 
