@@ -1,0 +1,57 @@
+import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
+import { SectionCard } from '../../../../components/ui/SectionCard'
+
+const baseInputClassName =
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary'
+
+type MemberLookupStepCardProps = {
+  lookupForm: UseFormReturn<{ memberId: string }>
+  onLookupSubmit: SubmitHandler<{ memberId: string }>
+  isLookupPending: boolean
+  lookupErrorMessage: string | null
+}
+
+export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
+  const { lookupForm, onLookupSubmit, isLookupPending, lookupErrorMessage } = props
+
+  return (
+    <SectionCard
+      title="Step 1: Verify Member ID"
+      subtitle="Enter your member ID to unlock the registration form."
+    >
+      <form className="space-y-3" onSubmit={lookupForm.handleSubmit(onLookupSubmit)} noValidate>
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-text" htmlFor="member-id-input">
+            Member ID
+          </label>
+          <input
+            id="member-id-input"
+            type="text"
+            autoComplete="off"
+            placeholder="Enter your member ID"
+            className={baseInputClassName}
+            disabled={isLookupPending}
+            {...lookupForm.register('memberId')}
+          />
+          {lookupForm.formState.errors.memberId ? (
+            <p className="text-sm text-danger">{lookupForm.formState.errors.memberId.message}</p>
+          ) : null}
+        </div>
+
+        <button
+          type="submit"
+          className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+          disabled={isLookupPending}
+        >
+          {isLookupPending ? 'Verifying...' : 'Verify ID'}
+        </button>
+      </form>
+
+      {lookupErrorMessage ? (
+        <p className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+          {lookupErrorMessage}
+        </p>
+      ) : null}
+    </SectionCard>
+  )
+}

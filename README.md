@@ -23,6 +23,17 @@ Chunk 1 is implemented locally:
 - Admin scope: global admins in v1 (future event-scoped extension planned)
 - Registration rule: mandatory ID lookup first, always
 
+## Coding Standards For Copilot
+
+Project-level AI coding standards live in [.github/copilot-instructions.md](.github/copilot-instructions.md).
+
+Use that file as the default source of truth for:
+
+- React and TypeScript scalability standards
+- Data boundary validation and form conventions
+- Query, state, and error-handling patterns
+- Chunk boundary discipline and verification expectations
+
 ## Route Skeleton
 
 Public:

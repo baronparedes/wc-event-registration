@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Project Snapshot
 
-This repository is in Chunk 3 implemented locally status.
+This repository is in Chunk 4 complete + architectural standardization status.
 
 Implemented in Chunk 0:
 
@@ -44,6 +44,24 @@ Implemented in Chunk 3:
 - SQL grants migration added so anon/authenticated roles can read events/event_fields under RLS filtering
 - Local seed events added for public flow testing (`sample-event`, `future-event`, `closed-event`)
 
+Implemented in Chunk 4:
+
+- Dynamic event fields now load from `event_fields` metadata after successful ID lookup
+- Runtime metadata guards added for dynamic field options and validation rules
+- Runtime Zod schema generation added for all supported event field types
+- Public registration page now renders dynamic field controls in display order
+- Dynamic response validation and preview-only payload normalization implemented (no write path yet)
+- `sample-event` local seed now includes representative dynamic fields across all field types
+
+Architectural standardization (Chunk 4):
+
+- Page-folder migration: all pages reorganized to `src/pages/<area>/<feature>/index.tsx` pattern
+- Component colocalization: page-specific UI components moved to `src/pages/<feature>/components/` with barrel exports
+- Library refactoring: `publicRegistration.ts` (900+ LOC) split into focused modules (types, queries, configValidation, dynamicSchema, transforms, index)
+- SectionCard unification: all page sections now use shared primitive for consistent spacing and styling
+- Copilot instructions enhanced: page-folder architecture rules, Supabase object pattern, vertical slice delivery pattern with completeness checklist
+- All imports updated and verified; npm run build passes with zero errors
+
 Core decisions locked:
 
 - Public flow must always be ID-first
@@ -56,12 +74,29 @@ Core decisions locked:
 
 ## Current Focus
 
-Next planned work is Chunk 4 only:
+Architecture is now ready for vertical slice feature delivery. All future features should follow:
+- UI: page folder + colocated components + barrel exports
+- Lib: domain module (types → validation → queries → transforms → index)
+- DB: migration + RPC + RLS policy bundled as one atomic feature
+- Test: happy path + critical error conditions
 
-- render dynamic event fields from metadata
-- runtime validation for dynamic field definitions and responses
-- preserve ID-first gate as a hard prerequisite before field rendering
-- prepare clean handoff into Chunk 5 secure submit path
+Next planned work is Chunk 5 only:
+
+- wire secure submit path through controlled backend function
+- apply duplicate policy behavior (`block` or `allow_update`) in submit flow
+- persist registrations and registration_answers with idempotency handling
+- preserve Chunk 4 ID-first and dynamic validation guarantees
+
+## Decisions Captured During Chunk 4
+
+- all `event_field_type` enum values are supported in runtime rendering and validation
+- malformed dynamic field metadata fails closed with user-facing safety messaging
+- dynamic field rendering remains fully blocked until ID lookup succeeds
+- Chunk 4 submit action is validation preview only; no registrations/answers writes are introduced
+- local QA seed strategy now includes full dynamic field coverage on `sample-event`
+- page components are colocalized under page folders to keep page-specific UI self-contained and composable
+- lib modules are split by responsibility (types, queries, validation, transforms) with barrel exports for stable import paths
+- Copilot instructions document expected patterns for vertical slice delivery (anatomy, completeness checklist, coupling avoidance)
 
 ## Decisions Captured During Chunk 3
 

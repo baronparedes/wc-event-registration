@@ -1,13 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { AppShell } from '../components/layout/AppShell'
-import { AdminLoginPage } from '../pages/admin/AdminLoginPage'
-import { AdminRegistrationsPage } from '../pages/admin/AdminRegistrationsPage'
-import { AdminEventFieldsPage } from '../pages/admin/AdminEventFieldsPage'
-import { AdminEventFormPage } from '../pages/admin/AdminEventFormPage'
-import { AdminEventsPage } from '../pages/admin/AdminEventsPage'
-import { HomePage } from '../pages/public/HomePage'
-import { EventRegistrationPage } from '../pages/public/EventRegistrationPage'
+import { AdminLoginPage } from '../pages/admin/login'
+import { AdminRegistrationsPage } from '../pages/admin/registrations'
+import { AdminEventFieldsPage } from '../pages/admin/event-fields'
+import { AdminEventFormPage } from '../pages/admin/event-form'
+import { AdminEventsPage } from '../pages/admin/events'
+import { HomePage } from '../pages/public/home'
+import { EventRegistrationPage } from '../pages/public/event-registration'
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const isAuthenticated = false

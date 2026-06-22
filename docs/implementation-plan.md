@@ -25,20 +25,24 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Progress Snapshot (2026-06-22)
 
-Completed through Chunk 3:
+Completed through Chunk 4:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
 - Chunk 2: RLS policy matrix across all core tables
 - Chunk 3: public event gate by slug, availability prechecks, ID-first lookup form, minimal profile reveal
+- Chunk 4: dynamic fields from metadata + runtime validation + preview-only submit + architectural standardization
 
-Chunk 3 implementation notes:
+Chunk 4 implementation notes:
 
-- public lookup RPC is in place: `public.lookup_member_for_registration(text)`
-- public table privileges are explicitly granted for anon/authenticated API access
-- seeded route scenarios are available for open/future/closed registration windows
+- 12 field types supported in rendering and validation (text, textarea, number, email, phone, date, datetime, select, radio, checkbox, multi_select, boolean)
+- dynamic field metadata validated and fails closed with user-facing messaging
+- all 5 step components split from monolithic file into separate, composable UI files
+- `publicRegistration` lib module refactored from 900+ LOC into 6 focused modules with clear responsibility boundaries
+- page-folder architecture applied: `src/pages/public/event-registration/` contains page orchestrator + `components/` subfolder for UI
+- Copilot instructions extended with vertical slice delivery pattern (anatomy, completeness checklist, coupling rules, sizing heuristics)
 
-Next active target: Chunk 4 (dynamic fields and validation).
+Next active target: Chunk 5 (secure submit path, duplicate policy, persistence).
 
 ## Phase Plan
 
@@ -92,12 +96,19 @@ Phase 3 done criteria:
 - direct public table writes are blocked and all public writes flow through approved backend functions
 - privileged function allowlist and service-role boundaries are documented and enforced
 
-### Phase 4: Public Registration UX
+### Phase 4: Public Registration UX (Chunk 4 complete)
 
-- load event by slug with open/active prechecks
-- enforce ID-first gate and minimal profile reveal
-- render dynamic fields from metadata
-- validate runtime schema
+- load event by slug with open/active prechecks ✅
+- enforce ID-first gate and minimal profile reveal ✅
+- render dynamic fields from metadata ✅
+- validate runtime schema ✅
+- architectural standardization: page-folders, colocalized components, split lib modules, vertical slice delivery pattern ✅
+
+Phase 4 done criteria:
+- all 12 field types render and validate dynamically ✅
+- metadata guards fail closed gracefully ✅
+- component architecture supports future feature expansion ✅
+- Copilot instructions enable vertical slice delivery ✅
 - submit through secure backend path with idempotency
 
 Phase 4 done criteria:
