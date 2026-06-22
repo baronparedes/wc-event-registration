@@ -296,3 +296,96 @@ from public.event_fields;
 -- Expected: 1 row — 'name' only (field for published event)
 -- 'secret' is hidden because its event is draft
 rollback;
+
+
+-- ============================================================
+-- F. MEMBER LOOKUP RPC TESTS (CHUNK 3)
+-- ============================================================
+
+-- F1. anon can execute lookup RPC and receive minimal profile fields
+begin;
+    insert into public.users
+        (id, member_id, full_name, first_name, last_name, nickname)
+    values
+        (
+            'bbbbbbbb-0000-0000-0000-000000000001',
+            'MEM-1001',
+            'Alex Rivera',
+            'Alex',
+            'Rivera',
+            'Lex'
+        );
+
+    set local role
+    anon;
+
+select
+    user_id,
+    full_name,
+    nickname,
+    first_name,
+    last_name
+from public.lookup_member_for_registration('MEM-1001');
+-- Expected: 1 row with the inserted values
+rollback;
+
+-- F2. anon still cannot read users directly
+begin;
+    set local role
+    anon;
+
+select count(*)
+from public.users;
+-- Expected: 0 rows (RLS still blocks direct reads)
+rollback;
+
+-- F3. authenticated non-admin can execute lookup RPC
+begin;
+    insert into public.users
+        (id, member_id, full_name, first_name, last_name, nickname)
+    values
+        (
+            'bbbbbbbb-0000-0000-0000-000000000002',
+            'MEM-1002',
+            'Jamie Santos',
+            'Jamie',
+            'Santos',
+            'Jay'
+        );
+
+    set local role
+    authenticated;
+set local "request.jwt.claims"
+to '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
+
+select
+    user_id,
+    full_name,
+    nickname,
+    first_name,
+    last_name
+from public.lookup_member_for_registration('MEM-1002');
+-- Expected: 1 row with the inserted values
+rollback;
+
+-- F4. authenticated non-admin still cannot read users directly
+begin;
+    set local role
+    authenticated;
+set local "request.jwt.claims"
+to '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
+
+select count(*)
+from public.users;
+-- Expected: 0 rows
+rollback;
+
+-- F5. blank member id returns no rows
+begin;
+    set local role
+    anon;
+
+select *
+from public.lookup_member_for_registration('   ');
+-- Expected: 0 rows
+rollback;

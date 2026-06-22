@@ -23,6 +23,23 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Member import contract: RFID maps to member_id
 - Member profile shape: nickname is first-class; role and category remain in metadata
 
+## Progress Snapshot (2026-06-22)
+
+Completed through Chunk 3:
+
+- Chunk 0: app scaffold + route shell + theme baseline
+- Chunk 1: core schema + import pipeline + local seed generator workflow
+- Chunk 2: RLS policy matrix across all core tables
+- Chunk 3: public event gate by slug, availability prechecks, ID-first lookup form, minimal profile reveal
+
+Chunk 3 implementation notes:
+
+- public lookup RPC is in place: `public.lookup_member_for_registration(text)`
+- public table privileges are explicitly granted for anon/authenticated API access
+- seeded route scenarios are available for open/future/closed registration windows
+
+Next active target: Chunk 4 (dynamic fields and validation).
+
 ## Phase Plan
 
 ### Phase 1: Foundation and Security Baseline
@@ -231,9 +248,13 @@ RLS policy lab with role test matrix.
 
 Public ID-first registration gate.
 
+Status: Completed locally.
+
 ### Chunk 4
 
 Dynamic fields and validation.
+
+Status: Next active chunk.
 
 ### Chunk 5
 

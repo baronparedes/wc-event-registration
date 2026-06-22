@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Project Snapshot
 
-This repository is in Chunk 2 implemented locally status.
+This repository is in Chunk 3 implemented locally status.
 
 Implemented in Chunk 0:
 
@@ -34,6 +34,16 @@ Implemented in Chunk 2:
 - No direct public write path on registrations/answers (reserved for Chunk 5 function)
 - RLS test matrix in supabase/snippets/rls_policy_tests.sql (run in Studio SQL editor)
 
+Implemented in Chunk 3:
+
+- Public registration route now loads events by slug with availability checks
+- Event gate states implemented: available, not open yet, closed, and generic unavailable
+- ID-first gate wired with React Hook Form + Zod validation
+- `public.lookup_member_for_registration(text)` SECURITY DEFINER RPC added
+- Minimal profile reveal implemented after successful lookup (full_name, nickname, first_name, last_name)
+- SQL grants migration added so anon/authenticated roles can read events/event_fields under RLS filtering
+- Local seed events added for public flow testing (`sample-event`, `future-event`, `closed-event`)
+
 Core decisions locked:
 
 - Public flow must always be ID-first
@@ -46,12 +56,20 @@ Core decisions locked:
 
 ## Current Focus
 
-Next planned work is Chunk 3 only:
+Next planned work is Chunk 4 only:
 
-- build the public ID-first registration gate
-- load event by slug with open/active prechecks
-- enforce member_id lookup before the registration form renders
-- minimal profile reveal after successful lookup
+- render dynamic event fields from metadata
+- runtime validation for dynamic field definitions and responses
+- preserve ID-first gate as a hard prerequisite before field rendering
+- prepare clean handoff into Chunk 5 secure submit path
+
+## Decisions Captured During Chunk 3
+
+- generic public unavailable copy is used for invalid slug and unpublished event (`Event is not available.`)
+- minimal profile reveal fields are locked to: full_name, nickname, first_name, last_name
+- member lookup uses a SECURITY DEFINER RPC and does not permit direct public reads from `users`
+- table privileges must be granted alongside RLS policies; RLS alone is not sufficient for API access
+- local QA scenarios are seeded with three published events: open, future-open, and closed windows
 
 ## Decisions Captured During Chunk 2
 
@@ -73,7 +91,7 @@ Next planned work is Chunk 3 only:
 
 ## Resume Prompt (Simple)
 
-I want to continue my project. Read docs/session-handoff.md and docs/implementation-plan.md, then continue with Chunk 2 only in learning mode (explain, implement, verify, pause).
+I want to continue my project. Read docs/session-handoff.md and docs/implementation-plan.md, then continue with Chunk 4 only in learning mode (explain, implement, verify, pause).
 
 ## Resume Prompt (Detailed)
 
@@ -81,10 +99,10 @@ I want to continue my React + Supabase event registration project.
 Read docs/session-handoff.md and docs/implementation-plan.md first.
 Continue with Chunk 2 only:
 
-1. enable RLS on Chunk 1 tables
-2. create admin and public access policies
-3. validate policy behavior with explicit SQL tests
-4. pause before frontend data wiring
+1. load and render dynamic event fields from metadata
+2. define runtime validation contract for dynamic fields
+3. block field rendering unless member lookup gate is successful
+4. pause before secure submit path wiring (Chunk 5)
    Work in beginner-friendly teaching mode:
 
 - explain each step and why
@@ -104,6 +122,12 @@ Run these before continuing in a new session:
 - npm run supabase:db:reset
 - npm run format:check
 - npm run build
+
+Quick manual route checks after dev server starts:
+
+- /events/sample-event/register (available)
+- /events/future-event/register (not open yet)
+- /events/closed-event/register (closed)
 
 ## Local Verification Notes
 
