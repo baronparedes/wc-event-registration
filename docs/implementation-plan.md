@@ -25,7 +25,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Progress Snapshot (2026-06-22)
 
-Completed through Chunk 5:
+Completed through Chunk 5 + enhancements:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -34,17 +34,17 @@ Completed through Chunk 5:
 - Chunk 4: dynamic fields from metadata + runtime validation + preview-only submit + architectural standardization
 - Chunk 5: Edge Function submit path + duplicate policy enforcement + idempotency + full persistence + end-to-end tested
 
-Chunk 5 implementation notes:
+Chunk 5 post-implementation enhancements (this session):
 
-- Edge Function `supabase/functions/submit-registration/index.ts` handles all registration submission logic server-side
-- Duplicate policy enforced atomically: 'block' rejects, 'allow_update' updates existing registration
-- Idempotency prevents retry duplicates via `idempotency_key` parameter
-- All 12 field types persist correctly with type-safe JSONB → column routing
-- React Query hook `useSubmitRegistrationMutation` provides typed interface to Edge Function
-- Full end-to-end test passed: member lookup → form completion → submission → registration created with ID `17add7ad-715d-481d-8250-24cf3cece584`
-- Folder restructure: `public-registration` → `event-registration` for semantic clarity
-- Development logging integrated for debugging in local dev environment
-- TypeScript strict, zero errors; build: 226 modules, 627 KB gzipped
+- Home page: event listing with open/upcoming status (filters by registration_mode='open' and registration_closes_at > now)
+- Member lookup: enhanced to detect existing registrations per event and return edit-allowed flag
+- Duplicate policy handling: 
+  - allow_update: form prefills with saved responses, button shows "Update", member ID input highlighted
+  - block: profile visible, Step 3 locked, error message auto-fades after 5 seconds with smooth transition, focus returns to member ID
+- UX copy: all labels and error messages rewritten for user-friendliness (less technical, clearer intent)
+- Focus management: member ID focused on page load via requestAnimationFrame + 120ms retry for robust timing
+- Form hooks: queries.ts deleted; all Supabase logic inline in usePublicEventQuery, usePublicEventFieldsQuery, usePublicEventListingQuery
+- TypeScript strict, zero errors; 225 modules, 631 KB gzipped
 
 Next active target: Chunk 6 (optional QA on duplicate/idempotency) or Chunk 7 (admin event management).
 

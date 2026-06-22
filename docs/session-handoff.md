@@ -75,6 +75,17 @@ Implemented in Chunk 5:
 - All imports updated across 8 consuming files
 - TypeScript strict, no errors; build passes with 226 modules, 627 KB gzipped
 
+Chunk 5 post-implementation enhancements (this session 2026-06-22):
+
+- Member lookup Edge Function enhanced to return existing registration state with edit-allowed flag and saved responses
+- Home page event listing added with open/upcoming event discovery via `usePublicEventListingQuery`
+- Duplicate handling split into two paths: editable (prefill+Update) and blocked (fade+reset)
+- All UI copy rewritten for user-friendliness and reduced technical jargon
+- Auto-fade timeout added for blocked duplicate messages (5 seconds with smooth opacity transition)
+- Focus management strengthened for reliable page load (requestAnimationFrame + 120ms retry)
+- Step 2 profile details now visible even for blocked duplicates (improved transparency and user context)
+- State management decoupled: `isRegistrationBlocked` separate from `matchedMember` for Step 2/3 independence
+
 Core decisions locked during Chunk 5:
 
 - Edge Functions used for all privileged public writes (not direct RPC)
@@ -93,11 +104,49 @@ Core decisions locked:
 - Admin scope in v1: global admin
 - Export in v1: CSV
 
+## Session Work (2026-06-22)
+
+Enhancements to Chunk 5 public registration flow:
+
+- **Home page event listing**: Added `usePublicEventListingQuery` hook that fetches open/upcoming events with 'open'/'upcoming' status badges. Events are fetched via new `fetchPublicEventListing` query that filters by registration_mode and close date.
+- **Duplicate detection at lookup time**: Enhanced `useMemberLookupMutation` to accept `eventSlug` and return `existing_registration` state with `edit_allowed` flag from Edge Function query.
+- **Editable duplicates (allow_update policy)**: When user has existing registration and event allows updates:
+  - Form fields prefill with saved responses
+  - Button label changes to "Update"
+  - Member ID input is highlighted (secondary ring)
+  - Focus returns to member ID input after successful update
+- **Blocked duplicates (block policy)**: When user has existing registration and event blocks duplicates:
+  - Step 2 profile details shown (user can see they're verified)
+  - Step 3 remains locked with "Already registered..." message
+  - Error message auto-fades after 5 seconds with smooth opacity transition
+  - Step 2 details fade and reset to default placeholder
+  - Focus returns to member ID input for re-entry
+- **UX copy improvements**: All labels and messages rewritten for clarity:
+  - "Step 1: Verify Member ID" → "Step 1: Enter Your Member ID"
+  - "Verify ID" button → "Continue"
+  - "Step 2: Confirm Profile" → "Step 2: Confirm Your Details"
+  - "ID Lookup Gate" → "Registration Is Not Open Yet"
+  - "Dynamic fields stay locked..." → "Please complete Step 1 to continue."
+- **Page load focus**: Member ID input focused on page load with resilient double-focus (requestAnimationFrame + 120ms retry) to handle late component mount.
+- **Hook pattern**: All lookup/query logic now inline in hooks; no separate queries.ts layer.
+
+State management additions:
+- `isRegistrationBlocked`: Tracks blocked duplicate path separately from edit mode
+- `lookupErrorFadeOut`: Controls opacity fade for 5-second auto-clear
+- `autoClearLookupError`: Flag to enable only for blocked duplicates
+- `shouldHighlightInput`: Visual highlight on member ID when edit-allowed
+- `shouldFadeDetails`: Syncs Step 2 fade with error fade
+
+Build status: TypeScript strict, zero errors; 225 modules, 631 KB gzipped.
+
 ## Current Focus
 
-Secure registration submission (Chunk 5) is now complete and tested. Public flow is fully functional:
-1. Member ID lookup ✓
-2. Profile display ✓  
+Public registration flow fully functional and UX-polished:
+1. Home page event discovery ✓
+2. Member ID lookup with duplicate detection ✓
+3. Profile display (always visible once verified) ✓
+4. Editable vs blocked duplicate handling ✓
+5. Dynamic field form submission ✓
 3. Dynamic field rendering ✓
 4. Form validation ✓
 5. Submission to Edge Function ✓
