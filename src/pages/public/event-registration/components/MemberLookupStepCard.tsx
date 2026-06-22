@@ -10,6 +10,7 @@ type MemberLookupStepCardProps = {
   onLookupSubmit: SubmitHandler<{ memberId: string }>
   isLookupPending: boolean
   lookupErrorMessage: string | null
+  shouldFadeLookupError?: boolean
   memberIdInputRef: RefObject<HTMLInputElement | null>
   shouldHighlightInput?: boolean
 }
@@ -20,6 +21,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     onLookupSubmit,
     isLookupPending,
     lookupErrorMessage,
+    shouldFadeLookupError = false,
     memberIdInputRef,
     shouldHighlightInput = false,
   } = props
@@ -27,10 +29,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
   const { ref: registerRef, ...registerRest } = lookupForm.register('memberId')
 
   return (
-    <SectionCard
-      title="Step 1: Verify Member ID"
-      subtitle="Enter your member ID to unlock the registration form."
-    >
+    <SectionCard title="Step 1: Enter Your Member ID" subtitle="Enter your member ID to continue.">
       <form className="space-y-3" onSubmit={lookupForm.handleSubmit(onLookupSubmit)} noValidate>
         <div className="space-y-1">
           <label className="text-sm font-medium text-text" htmlFor="member-id-input">
@@ -40,7 +39,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             id="member-id-input"
             type="text"
             autoComplete="off"
-            placeholder="Enter your member ID"
+            placeholder="Type your member ID"
             className={`${baseInputClassName} ${
               shouldHighlightInput
                 ? 'ring-2 ring-secondary/70 border-secondary focus:border-secondary'
@@ -63,12 +62,16 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
           className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
           disabled={isLookupPending}
         >
-          {isLookupPending ? 'Verifying...' : 'Verify ID'}
+          {isLookupPending ? 'Checking...' : 'Continue'}
         </button>
       </form>
 
       {lookupErrorMessage ? (
-        <p className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+        <p
+          className={`mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger transition-opacity duration-500 ${
+            shouldFadeLookupError ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
           {lookupErrorMessage}
         </p>
       ) : null}

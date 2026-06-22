@@ -50,10 +50,13 @@ export function EventRegistrationPage() {
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null)
   const [verifiedMemberId, setVerifiedMemberId] = useState<string | null>(null)
   const [memberIdHighlight, setMemberIdHighlight] = useState(false)
+  const [isRegistrationBlocked, setIsRegistrationBlocked] = useState(false)
   const [isUpdateMode, setIsUpdateMode] = useState(false)
   const [lockedStepMessage, setLockedStepMessage] = useState<string | null>(null)
   const [prefillResponses, setPrefillResponses] = useState<Record<string, unknown> | null>(null)
   const [lookupErrorMessage, setLookupErrorMessage] = useState<string | null>(null)
+  const [lookupErrorFadeOut, setLookupErrorFadeOut] = useState(false)
+  const [autoClearLookupError, setAutoClearLookupError] = useState(false)
   const [fieldConfigIssues, setFieldConfigIssues] = useState<string[]>([])
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
@@ -89,7 +92,7 @@ export function EventRegistrationPage() {
   }, [availability])
 
   const isGateReady = availability?.status === 'available'
-  const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember)
+  const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember) && !isRegistrationBlocked
 
   const focusMemberIdInput = () => {
     requestAnimationFrame(() => {
@@ -103,7 +106,7 @@ export function EventRegistrationPage() {
   }
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
-    availability?.status === 'available' ? availability.event.id : undefined,
+    isDynamicFieldGateReady ? availability?.event.id : undefined,
   )
 
   const activeFields = eventFieldsQuery.data?.validFields ?? []
@@ -144,12 +147,41 @@ export function EventRegistrationPage() {
     }
   }, [isGateReady])
 
+  useEffect(() => {
+    if (!autoClearLookupError || !lookupErrorMessage) {
+      return
+    }
+
+    const fadeTimeout = setTimeout(() => {
+      setLookupErrorFadeOut(true)
+    }, 4500)
+
+    const clearTimeoutId = setTimeout(() => {
+      setLookupErrorMessage(null)
+      setLookupErrorFadeOut(false)
+      setAutoClearLookupError(false)
+      setMatchedMember(null)
+      setIsRegistrationBlocked(false)
+      setLockedStepMessage(null)
+      setMemberIdHighlight(false)
+      focusMemberIdInput()
+    }, 5000)
+
+    return () => {
+      clearTimeout(fadeTimeout)
+      clearTimeout(clearTimeoutId)
+    }
+  }, [autoClearLookupError, lookupErrorMessage])
+
   async function handleLookupSubmit(values: MemberLookupFormValues) {
     setLookupErrorMessage(null)
+    setLookupErrorFadeOut(false)
+    setAutoClearLookupError(false)
     setLockedStepMessage(null)
     setMatchedMember(null)
     setVerifiedMemberId(null)
     setPrefillResponses(null)
+    setIsRegistrationBlocked(false)
     setIsUpdateMode(false)
     setMemberIdHighlight(false)
     setFieldConfigIssues([])
@@ -166,16 +198,21 @@ export function EventRegistrationPage() {
         setMatchedMember(null)
         setVerifiedMemberId(null)
         setLookupErrorMessage('We could not verify that ID. Check it and try again.')
+        setLookupErrorFadeOut(false)
+        setAutoClearLookupError(false)
         logger.warn('Member lookup returned null for ID:', values.memberId)
         return
       }
 
       if (result.existing_registration?.exists && !result.existing_registration.edit_allowed) {
-        setMatchedMember(null)
+        setMatchedMember(result.profile)
         setVerifiedMemberId(null)
+        setIsRegistrationBlocked(true)
         setIsUpdateMode(false)
         setPrefillResponses(null)
         setLookupErrorMessage('You are already registered for this event.')
+        setLookupErrorFadeOut(false)
+        setAutoClearLookupError(true)
         setLockedStepMessage('Already registered for this event. Verify another member ID.')
         setMemberIdHighlight(true)
         lookupForm.reset()
@@ -186,10 +223,13 @@ export function EventRegistrationPage() {
 
       setMatchedMember(result.profile)
       setVerifiedMemberId(values.memberId)
+      setIsRegistrationBlocked(false)
       setIsUpdateMode(Boolean(result.existing_registration?.edit_allowed))
       setPrefillResponses(result.existing_registration?.responses ?? null)
       setMemberIdHighlight(Boolean(result.existing_registration?.edit_allowed))
       setLookupErrorMessage(null)
+      setLookupErrorFadeOut(false)
+      setAutoClearLookupError(false)
 
       if (result.existing_registration?.edit_allowed) {
         focusMemberIdInput()
@@ -199,7 +239,10 @@ export function EventRegistrationPage() {
     } catch (error) {
       setMatchedMember(null)
       setVerifiedMemberId(null)
+      setIsRegistrationBlocked(false)
       setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
+      setLookupErrorFadeOut(false)
+      setAutoClearLookupError(false)
       logger.error('Member lookup failed:', error)
     }
   }
@@ -284,6 +327,7 @@ export function EventRegistrationPage() {
     setMatchedMember(null)
     setVerifiedMemberId(null)
     setPrefillResponses(null)
+    setIsRegistrationBlocked(false)
     setIsUpdateMode(false)
     setMemberIdHighlight(false)
     setLockedStepMessage(null)
@@ -321,14 +365,19 @@ export function EventRegistrationPage() {
             onLookupSubmit={handleLookupSubmit}
             isLookupPending={lookupMutation.isPending}
             lookupErrorMessage={lookupErrorMessage}
+            shouldFadeLookupError={lookupErrorFadeOut}
             memberIdInputRef={memberIdInputRef}
             shouldHighlightInput={memberIdHighlight}
           />
 
-          <ProfileStepCard matchedMember={matchedMember} />
+          <ProfileStepCard
+            matchedMember={matchedMember}
+            shouldFadeDetails={isRegistrationBlocked && lookupErrorFadeOut}
+          />
 
           <DynamicFieldsStepCard
             matchedMember={matchedMember}
+            isLocked={isRegistrationBlocked}
             lockedMessage={lockedStepMessage}
             isLoadingFields={eventFieldsQuery.isLoading}
             isFieldsError={eventFieldsQuery.isError}

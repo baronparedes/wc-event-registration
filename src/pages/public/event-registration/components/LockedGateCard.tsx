@@ -3,11 +3,11 @@ import { SectionCard } from '../../../../components/ui/SectionCard'
 export function LockedGateCard() {
   return (
     <SectionCard
-      title="ID Lookup Gate"
+      title="Registration Is Not Open Yet"
       wrapperClassName="rounded-2xl border border-dashed border-primary/35 bg-primary/5 p-6"
     >
       <p className="text-sm text-muted">
-        The ID gate will unlock only when this event is available for registration.
+        This event is not accepting registrations right now. Please check back later.
       </p>
     </SectionCard>
   )

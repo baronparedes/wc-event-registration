@@ -162,6 +162,7 @@ function DynamicFieldInput(props: {
 
 type DynamicFieldsStepCardProps = {
   matchedMember: MemberLookupProfile | null
+  isLocked?: boolean
   lockedMessage?: string | null
   isLoadingFields: boolean
   isFieldsError: boolean
@@ -179,6 +180,7 @@ type DynamicFieldsStepCardProps = {
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   const {
     matchedMember,
+    isLocked = false,
     lockedMessage,
     isLoadingFields,
     isFieldsError,
@@ -194,39 +196,39 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   } = props
 
   return (
-    <SectionCard title="Step 3: Complete Registration Fields">
-      {!matchedMember ? (
+    <SectionCard title="Step 3: Complete Your Registration">
+      {!matchedMember || isLocked ? (
         <p className="text-sm text-muted">
-          {lockedMessage ?? 'Dynamic fields stay locked until member verification succeeds.'}
+          {lockedMessage ?? 'Please complete Step 1 to continue.'}
         </p>
       ) : null}
 
-      {matchedMember && isLoadingFields ? (
-        <p className="mt-3 text-sm text-muted">Loading registration fields...</p>
+      {matchedMember && !isLocked && isLoadingFields ? (
+        <p className="mt-3 text-sm text-muted">Preparing your form...</p>
       ) : null}
 
-      {matchedMember && isFieldsError ? (
+      {matchedMember && !isLocked && isFieldsError ? (
         <p className="mt-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
-          Dynamic fields are unavailable right now. Please retry member verification.
+          We could not load your form right now. Please try Step 1 again.
         </p>
       ) : null}
 
-      {matchedMember && fieldConfigIssues.length > 0 ? (
+      {matchedMember && !isLocked && fieldConfigIssues.length > 0 ? (
         <div className="mt-3 space-y-2 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
-          <p>Some field configurations are invalid and were blocked for safety.</p>
+          <p>Some questions could not be shown right now.</p>
           {fieldConfigIssues.map((issue) => (
             <p key={issue}>{issue}</p>
           ))}
         </div>
       ) : null}
 
-      {matchedMember && !isLoadingFields && activeFields.length === 0 ? (
+      {matchedMember && !isLocked && !isLoadingFields && activeFields.length === 0 ? (
         <p className="mt-3 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
-          This event has no active dynamic fields configured yet.
+          There are no form questions for this event yet.
         </p>
       ) : null}
 
-      {matchedMember && activeFields.length > 0 ? (
+      {matchedMember && !isLocked && activeFields.length > 0 ? (
         <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
           {activeFields.map((field) => {
             const errorMessage = fieldErrorMessage(field.field_key)
@@ -259,14 +261,14 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
 
       {submitErrorMessage ? (
         <div className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
-          <p className="font-semibold">Registration failed</p>
+          <p className="font-semibold">We could not submit your registration</p>
           <p className="mt-1">{submitErrorMessage}</p>
         </div>
       ) : null}
 
       {submitSuccessMessage ? (
         <div className="mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
-          <p className="font-semibold">Registration successful!</p>
+          <p className="font-semibold">You are all set!</p>
           <p className="mt-1">{submitSuccessMessage}</p>
         </div>
       ) : null}
