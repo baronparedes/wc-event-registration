@@ -9,7 +9,7 @@ function getSupabaseConfig() {
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY || 'test-anon-key'
   // Service role key from environment (required for test admin client)
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
+
   if (!serviceRoleKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required for tests')
   }
