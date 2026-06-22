@@ -298,6 +298,7 @@ Quick manual route checks after dev server starts:
 - Local Supabase URL: http://127.0.0.1:54321
 - Local DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 - Set VITE_SUPABASE_URL to the local URL and VITE_SUPABASE_ANON_KEY to the local publishable key from npm run supabase:status when testing against local services.
+- Local seeded admin login (after npm run supabase:db:reset): local@admin.com / Supabase@123 from supabase/seeds/dev.local.sql
 
 ## Related Docs
 

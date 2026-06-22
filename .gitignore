@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 
 members_info.csv
+supabase/seeds/*.local.sql

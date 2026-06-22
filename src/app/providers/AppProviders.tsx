@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PropsWithChildren } from 'react'
+import { ADMIN_AUTH_QUERY_KEY } from '../../hooks/admin'
+import { supabase } from '../../lib/supabase'
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(
@@ -14,6 +16,18 @@ export function AppProviders({ children }: PropsWithChildren) {
         },
       }),
   )
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_AUTH_QUERY_KEY })
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [queryClient])
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }

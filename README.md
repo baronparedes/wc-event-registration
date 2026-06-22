@@ -130,6 +130,12 @@ The repository supports a repeatable local-only member seed without committing m
 
 This lets you reset local development data repeatedly while keeping member records out of source control.
 
+Local admin account seed (for admin route testing):
+
+- Email: local@admin.com
+- Password: Supabase@123
+- Seed source: supabase/seeds/dev.local.sql (local development only, git-ignored)
+
 ## Next Implementation Chunk
 
 Chunk 2: RLS and security controls

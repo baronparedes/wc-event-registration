@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { AppShell } from '../components/layout/AppShell'
+import { useAdminAuthQuery } from '../hooks/admin'
 import { AdminLoginPage } from '../pages/admin/login'
 import { AdminRegistrationsPage } from '../pages/admin/registrations'
 import { AdminEventFieldsPage } from '../pages/admin/event-fields'
@@ -10,7 +11,17 @@ import { HomePage } from '../pages/public/home'
 import { EventRegistrationPage } from '../pages/public/event-registration'
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
-  const isAuthenticated = false
+  const { data, isLoading } = useAdminAuthQuery()
+
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6 text-sm text-muted">
+        Checking admin access...
+      </section>
+    )
+  }
+
+  const isAuthenticated = data?.isAuthenticated ?? false
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />
