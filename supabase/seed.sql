@@ -1,26 +1,26 @@
 -- Local seed data for Chunk 3 public registration testing.
 insert into public.events
-    (
-    slug,
-    title,
-    description,
-    location,
-    starts_at,
-    ends_at,
-    registration_opens_at,
-    registration_closes_at,
-    status,
-    duplicate_policy,
-    registration_mode,
-    metadata
-    )
+	(
+	slug,
+	title,
+	description,
+	location,
+	starts_at,
+	ends_at,
+	registration_opens_at,
+	registration_closes_at,
+	status,
+	duplicate_policy,
+	registration_mode,
+	metadata
+	)
 values
-    (
-        'sample-event',
-        'Sample Event Registration',
-        'Primary local test event for the public ID-first gate.',
-        'West Campus Hall A',
-        now() + interval
+	(
+		'sample-event',
+		'Sample Event Registration',
+		'Primary local test event for the public ID-first gate.',
+		'West Campus Hall A',
+		now() + interval
 '14 days',
 		now
 () + interval '14 days 4 hours',
@@ -57,9 +57,9 @@ values
 		'Published event with closed registration window.',
 		'West Campus Hall C',
 		now
-() + interval '5 days',
+() - interval '5 days',
 		now
-() + interval '5 days 2 hours',
+() - interval '5 days' + interval '2 hours',
 		now
 () - interval '10 days',
 		now
@@ -94,32 +94,32 @@ where slug = 'sample-event'
 );
 
 insert into public.event_fields
-    (
-    event_id,
-    field_key,
-    label,
-    field_type,
-    is_required,
-    is_active,
-    placeholder,
-    help_text,
-    options,
-    validation_rules,
-    display_order
-    )
+	(
+	event_id,
+	field_key,
+	label,
+	field_type,
+	is_required,
+	is_active,
+	placeholder,
+	help_text,
+	options,
+	validation_rules,
+	display_order
+	)
 values
-    (
-        (select id
-        from public.events
-        where slug = 'sample-event'),
-        'team_name',
-        'Team Name',
-        'text',
-        true,
-        true,
-        'Enter your team name',
-        'Use your official small-group or service team name.',
-        '[]'
+	(
+		(select id
+		from public.events
+		where slug = 'sample-event'),
+		'team_name',
+		'Team Name',
+		'text',
+		true,
+		true,
+		'Enter your team name',
+		'Use your official small-group or service team name.',
+		'[]'
 ::jsonb,
 		'{"min_length": 3, "max_length": 60}'::jsonb,
 		10

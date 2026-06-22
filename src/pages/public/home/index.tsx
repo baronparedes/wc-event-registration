@@ -20,10 +20,16 @@ function EventCard({ event }: { event: PublicEventListingItem }) {
           className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
             event.listingStatus === 'open'
               ? 'bg-primary/10 text-primary'
-              : 'bg-secondary/10 text-secondary'
+              : event.listingStatus === 'upcoming'
+                ? 'bg-secondary/10 text-secondary'
+                  : 'bg-muted/30 text-muted'
           }`}
         >
-          {event.listingStatus === 'open' ? 'Open' : 'Upcoming'}
+          {event.listingStatus === 'open'
+            ? 'Open'
+            : event.listingStatus === 'upcoming'
+              ? 'Upcoming'
+              : 'Past'}
         </span>
       </div>
 
@@ -65,6 +71,7 @@ export function HomePage() {
 
   const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? []
   const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? []
+  const pastEvents = events?.filter((e) => e.listingStatus === 'past') ?? []
 
   return (
     <section className="space-y-10">
@@ -84,7 +91,7 @@ export function HomePage() {
       )}
 
       {!isLoading && !isError && events?.length === 0 && (
-        <p className="text-sm text-muted">No open or upcoming events at this time.</p>
+        <p className="text-sm text-muted">No open, upcoming, or recent past events at this time.</p>
       )}
 
       {openEvents.length > 0 && (
@@ -103,6 +110,17 @@ export function HomePage() {
           <h2 className="font-heading text-lg font-semibold text-text">Upcoming</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {upcomingEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pastEvents.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-text">Past 3 Months</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pastEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>

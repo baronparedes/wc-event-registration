@@ -91,7 +91,7 @@ export type PublicEventListingItem = {
   ends_at: string | null
   registration_opens_at: string | null
   registration_closes_at: string | null
-  listingStatus: 'open' | 'upcoming'
+  listingStatus: 'open' | 'upcoming' | 'past'
 }
 
 export type DynamicFieldResponseValues = Record<string, unknown>
