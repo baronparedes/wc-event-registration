@@ -75,6 +75,7 @@ Core decisions locked:
 ## Current Focus
 
 Architecture is now ready for vertical slice feature delivery. All future features should follow:
+
 - UI: page folder + colocated components + barrel exports
 - Lib: domain module (types → validation → queries → transforms → index)
 - DB: migration + RPC + RLS policy bundled as one atomic feature
@@ -126,7 +127,7 @@ Next planned work is Chunk 5 only:
 
 ## Resume Prompt (Simple)
 
-I want to continue my project. Read docs/session-handoff.md and docs/implementation-plan.md, then continue with Chunk 4 only in learning mode (explain, implement, verify, pause).
+I want to continue my project. Read docs/session-handoff.md and docs/implementation-plan.md, then continue with next Chunk only in learning mode (explain, implement, verify, pause).
 
 ## Resume Prompt (Detailed)
 

@@ -1,4 +1,4 @@
-import type { EventAvailability } from '../../../../lib/publicRegistration'
+import type { EventAvailability } from '../../../../lib/event-registration'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 
 type EventHeaderCardProps = {

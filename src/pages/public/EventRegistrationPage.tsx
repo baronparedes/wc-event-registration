@@ -1,33 +1,34 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
-import { toast } from 'sonner'
 import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
+  fetchPublicEventFields,
+  fetchPublicEventBySlug,
+  lookupMemberForRegistration,
+  normalizeDynamicFieldAnswersForPreview,
   type DynamicFieldResponseValues,
   type MemberLookupProfile,
-} from '../../../lib/event-registration'
-import { logger } from '../../../lib/logger'
+  type PublicEventField,
+} from '../../lib/event-registration'
 import {
-  usePublicEventQuery,
-  usePublicEventFieldsQuery,
-  useMemberLookupMutation,
-  useSubmitRegistrationMutation,
-} from '../../../hooks/event-registration'
-import {
-  DynamicFieldsStepCard,
   EventHeaderCard,
   LockedGateCard,
   MemberLookupStepCard,
   ProfileStepCard,
-} from './components'
+} from './event-registration/components'
+import { DynamicFieldsStepCard } from './event-registration/components'
 
 const memberLookupSchema = z.object({
   memberId: z.string().trim().min(1, 'Member ID is required').max(64, 'Member ID is too long'),
 })
+
+const EMPTY_PUBLIC_FIELDS: PublicEventField[] = []
+const EMPTY_FIELD_ISSUES: string[] = []
 
 type MemberLookupFormValues = z.infer<typeof memberLookupSchema>
 
@@ -47,15 +48,20 @@ function formatUtcDateTime(value: string | null): string {
 export function EventRegistrationPage() {
   const { slug } = useParams<{ slug: string }>()
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null)
-  const [verifiedMemberId, setVerifiedMemberId] = useState<string | null>(null)
   const [lookupErrorMessage, setLookupErrorMessage] = useState<string | null>(null)
   const [fieldConfigIssues, setFieldConfigIssues] = useState<string[]>([])
-  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
-  const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
-  const submitMutation = useSubmitRegistrationMutation()
+  const eventQuery = useQuery({
+    queryKey: ['public-event-by-slug', slug],
+    queryFn: async () => {
+      if (!slug) {
+        throw new Error('Event slug is required')
+      }
 
-  const eventQuery = usePublicEventQuery(slug)
+      return fetchPublicEventBySlug(slug)
+    },
+    enabled: Boolean(slug),
+  })
 
   const lookupForm = useForm<MemberLookupFormValues>({
     resolver: zodResolver(memberLookupSchema),
@@ -64,7 +70,24 @@ export function EventRegistrationPage() {
     },
   })
 
-  const lookupMutation = useMemberLookupMutation()
+  const lookupMutation = useMutation({
+    mutationFn: async (values: MemberLookupFormValues) =>
+      lookupMemberForRegistration(values.memberId),
+    onSuccess: (result) => {
+      if (!result) {
+        setMatchedMember(null)
+        setLookupErrorMessage('We could not verify that ID. Check it and try again.')
+        return
+      }
+
+      setMatchedMember(result)
+      setLookupErrorMessage(null)
+    },
+    onError: () => {
+      setMatchedMember(null)
+      setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
+    },
+  })
 
   const availability = eventQuery.data
 
@@ -86,11 +109,22 @@ export function EventRegistrationPage() {
   const isGateReady = availability?.status === 'available'
   const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember)
 
-  const eventFieldsQuery = usePublicEventFieldsQuery(
-    availability?.status === 'available' ? availability.event.id : undefined,
-  )
+  const eventFieldsQuery = useQuery({
+    queryKey: [
+      'public-event-fields',
+      availability?.status === 'available' ? availability.event.id : null,
+    ],
+    queryFn: async () => {
+      if (availability?.status !== 'available') {
+        return { validFields: EMPTY_PUBLIC_FIELDS, issues: EMPTY_FIELD_ISSUES }
+      }
 
-  const activeFields = eventFieldsQuery.data?.validFields ?? []
+      return fetchPublicEventFields(availability.event.id)
+    },
+    enabled: isDynamicFieldGateReady,
+  })
+
+  const activeFields = eventFieldsQuery.data?.validFields ?? EMPTY_PUBLIC_FIELDS
   const responseSchema = useMemo(() => {
     return buildDynamicFieldResponseSchema(activeFields)
   }, [activeFields])
@@ -99,64 +133,33 @@ export function EventRegistrationPage() {
     dynamicForm.reset(createDynamicFieldDefaultValues(activeFields), {
       keepDefaultValues: false,
     })
-  }, [activeFields])
+  }, [activeFields, dynamicForm])
 
   useEffect(() => {
     dynamicForm.clearErrors()
   }, [responseSchema, dynamicForm])
 
   useEffect(() => {
-    setFieldConfigIssues(eventFieldsQuery.data?.issues ?? [])
+    setFieldConfigIssues(eventFieldsQuery.data?.issues ?? EMPTY_FIELD_ISSUES)
   }, [eventFieldsQuery.data?.issues])
 
   useEffect(() => {
     if (!isDynamicFieldGateReady) {
       dynamicForm.reset({})
-      setVerifiedMemberId(null)
       setFieldConfigIssues([])
-      setSubmitErrorMessage(null)
     }
   }, [dynamicForm, isDynamicFieldGateReady])
 
   async function handleLookupSubmit(values: MemberLookupFormValues) {
     setLookupErrorMessage(null)
     setMatchedMember(null)
-    setVerifiedMemberId(null)
     setFieldConfigIssues([])
-    setSubmitErrorMessage(null)
-
-    try {
-      logger.info('Member lookup attempt:', values.memberId)
-      const result = await lookupMutation.mutateAsync(values.memberId)
-
-      if (!result) {
-        setMatchedMember(null)
-        setVerifiedMemberId(null)
-        setLookupErrorMessage('We could not verify that ID. Check it and try again.')
-        logger.warn('Member lookup returned null for ID:', values.memberId)
-        return
-      }
-
-      setMatchedMember(result)
-      setVerifiedMemberId(values.memberId)
-      setLookupErrorMessage(null)
-      logger.info('Member lookup successful:', result)
-    } catch (error) {
-      setMatchedMember(null)
-      setVerifiedMemberId(null)
-      setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
-      logger.error('Member lookup failed:', error)
-    }
+    await lookupMutation.mutateAsync(values)
   }
 
-  async function handleSubmitRegistration(values: DynamicFieldResponseValues) {
-    setSubmitErrorMessage(null)
-    setSubmitSuccessMessage(null)
-
-    // Validate form data
+  async function handlePreviewSubmit(values: DynamicFieldResponseValues) {
     const parsed = responseSchema.safeParse(values)
     if (!parsed.success) {
-      logger.warn('Form validation failed:', parsed.error.issues)
       parsed.error.issues.forEach((issue: z.ZodIssue) => {
         const key = issue.path[0]
         if (typeof key === 'string') {
@@ -169,59 +172,8 @@ export function EventRegistrationPage() {
       return
     }
 
-    // Check prerequisites
-    if (!slug) {
-      setSubmitErrorMessage('Event slug is missing')
-      logger.error('Event slug is missing')
-      return
-    }
-
-    if (!matchedMember || !verifiedMemberId) {
-      setSubmitErrorMessage('Member lookup is required')
-      logger.error('Member lookup missing at submission time')
-      return
-    }
-
-    if (!availability || availability.status !== 'available' || !availability.event) {
-      setSubmitErrorMessage('Event is not available')
-      logger.error('Event not available:', availability)
-      return
-    }
-
-    // Generate idempotency key for safe retries
-    const idempotencyKey = crypto.randomUUID()
-
-    logger.info('Submitting registration:', {
-      event_slug: slug,
-      member_id: verifiedMemberId,
-      idempotency_key: idempotencyKey,
-    })
-
-    // Submit registration through secure RPC
-    const result = await submitMutation.mutateAsync({
-      event_slug: slug,
-      member_id: verifiedMemberId,
-      responses: parsed.data,
-      idempotency_key: idempotencyKey,
-    })
-
-    if (!result.success) {
-      logger.error('Registration submission failed:', result)
-      // Handle specific error cases
-      if (result.error_code === 'duplicate_blocked') {
-        setSubmitErrorMessage('You have already registered for this event.')
-        toast.error('Already registered for this event')
-      } else {
-        setSubmitErrorMessage(result.error || 'Failed to submit registration')
-        toast.error(result.error || 'Failed to submit registration')
-      }
-      return
-    }
-
-    // Success
-    setSubmitSuccessMessage(`Registration submitted successfully. ID: ${result.registration_id}`)
-    toast.success('Registration submitted successfully!')
-    logger.info('Registration submission successful:', result)
+    const normalized = normalizeDynamicFieldAnswersForPreview(activeFields, parsed.data)
+    console.info('Dynamic answers preview (Chunk 4, no DB write):', normalized)
   }
 
   function fieldErrorMessage(fieldKey: string): string | undefined {
@@ -266,11 +218,11 @@ export function EventRegistrationPage() {
             fieldConfigIssues={fieldConfigIssues}
             activeFields={activeFields}
             dynamicForm={dynamicForm}
-            onSubmit={handleSubmitRegistration}
+            onSubmit={handlePreviewSubmit}
             fieldErrorMessage={fieldErrorMessage}
-            isSubmitPending={submitMutation.isPending}
-            submitErrorMessage={submitErrorMessage}
-            submitSuccessMessage={submitSuccessMessage}
+            isSubmitPending={false}
+            submitErrorMessage={null}
+            submitSuccessMessage={null}
           />
         </div>
       ) : (

@@ -105,6 +105,7 @@ Phase 3 done criteria:
 - architectural standardization: page-folders, colocalized components, split lib modules, vertical slice delivery pattern ✅
 
 Phase 4 done criteria:
+
 - all 12 field types render and validate dynamically ✅
 - metadata guards fail closed gracefully ✅
 - component architecture supports future feature expansion ✅
@@ -227,9 +228,9 @@ Use these gates as required pass criteria before moving between phases and befor
 ### Reliability and Operations
 
 - target SLOs tracked continuously:
-	- availability >= 99.9%
-	- p95 public submit latency <= 700ms under normal load
-	- server error rate < 1%
+  - availability >= 99.9%
+  - p95 public submit latency <= 700ms under normal load
+  - server error rate < 1%
 - release strategy uses staged rollouts with fast rollback trigger conditions
 - incident response includes severity classification, communication templates, and postmortems
 - dashboard minimums: request volume, error rates, latency percentiles, queue depth, job failures

@@ -96,6 +96,26 @@ React Query:
 - Keep query functions pure and typed.
 - Handle loading, empty, and error states explicitly.
 
+**React Query Hooks Pattern (Chunk 5+):**
+
+- Abstract Supabase access behind React Query hooks.
+- Create one hook per logical query/mutation with a descriptive name.
+- Store hooks in `src/hooks/<domain>/` folder (e.g., `src/hooks/public-registration/`), one file per hook.
+- Naming convention:
+  - Queries: `use<DomainEntity>Query` (e.g., `usePublicEventQuery`, `usePublicEventFieldsQuery`)
+  - Mutations: `use<Action><DomainEntity>Mutation` (e.g., `useMemberLookupMutation`, `useSubmitRegistrationMutation`)
+- Each hook file should export exactly one hook function with clear JSDoc.
+- Create `src/hooks/<domain>/index.ts` barrel export for all hooks in the domain.
+- **Pages and components import hooks directly from `src/hooks/<domain>/`**, not from lib barrels.
+- Hooks handle error toasting and consistent retry logic; pages handle UI state and user feedback.
+
+Benefits:
+
+- Single source of truth for query keys and retry logic
+- Consistent error handling across all server operations
+- Cacheable and mockable for testing
+- Easier refactoring: swap RPC for REST without touching components
+
 Forms:
 
 - Define schema first, then form type from schema.
@@ -128,12 +148,15 @@ Supabase object/module pattern (default for new or refactored objects):
 - Use focused files with clear responsibilities:
   - types.ts: exported domain and contract types
   - queries.ts: Supabase table queries and RPC calls only
+  - commands.ts: Supabase write/mutation commands only
   - configValidation.ts or validation.ts: metadata/JSON validation and guards
   - dynamicSchema.ts or schemas.ts: zod schema builders for runtime form/input validation
   - transforms.ts: normalization/mapping helpers
   - index.ts: public module surface (named exports only)
+- Create React Query hooks separately in `src/hooks/<domain>/` (see React Query Hooks Pattern section).
 - Keep queries.ts side-effect free beyond database access; no UI formatting in query functions.
-- Keep page-level imports stable by exposing a compatibility barrel when refactoring legacy files (for example src/lib/publicRegistration.ts re-exporting from src/lib/public-registration/).
+- Keep commands.ts side-effect free; return typed result shapes only.
+- Keep page-level imports stable by exposing a compatibility barrel when refactoring legacy files (for example src/lib/publicRegistration.ts re-exporting from src/lib/event-registration/).
 - Prefer additive refactors: split internals first, preserve old import path, then migrate callers incrementally.
 - When introducing a new Supabase object, define its types and validation contracts before writing query logic.
 

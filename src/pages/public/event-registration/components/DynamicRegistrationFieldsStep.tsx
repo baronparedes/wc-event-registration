@@ -3,7 +3,7 @@ import type {
   DynamicFieldResponseValues,
   MemberLookupProfile,
   PublicEventField,
-} from '../../../../lib/publicRegistration'
+} from '../../../../lib/event-registration'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 
 const baseInputClassName =
@@ -167,9 +167,11 @@ type DynamicFieldsStepCardProps = {
   fieldConfigIssues: string[]
   activeFields: PublicEventField[]
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>
-  onPreviewSubmit: SubmitHandler<DynamicFieldResponseValues>
+  onSubmit: SubmitHandler<DynamicFieldResponseValues>
   fieldErrorMessage: (fieldKey: string) => string | undefined
-  answerPreview: DynamicFieldResponseValues | null
+  isSubmitPending: boolean
+  submitErrorMessage: string | null
+  submitSuccessMessage: string | null
 }
 
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
@@ -180,9 +182,11 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     fieldConfigIssues,
     activeFields,
     dynamicForm,
-    onPreviewSubmit,
+    onSubmit,
     fieldErrorMessage,
-    answerPreview,
+    isSubmitPending,
+    submitErrorMessage,
+    submitSuccessMessage,
   } = props
 
   return (
@@ -219,11 +223,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
       ) : null}
 
       {matchedMember && activeFields.length > 0 ? (
-        <form
-          className="mt-4 space-y-4"
-          onSubmit={dynamicForm.handleSubmit(onPreviewSubmit)}
-          noValidate
-        >
+        <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
           {activeFields.map((field) => {
             const errorMessage = fieldErrorMessage(field.field_key)
 
@@ -245,23 +245,25 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
 
           <button
             type="submit"
-            className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90"
+            disabled={isSubmitPending}
+            className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Validate Responses (Preview Only)
+            {isSubmitPending ? 'Submitting...' : 'Submit Registration'}
           </button>
         </form>
       ) : null}
 
-      {answerPreview ? (
-        <div className="mt-4 rounded-md border border-secondary/30 bg-secondary/10 p-3 text-sm text-secondary">
-          <p className="font-semibold">Chunk 4 preview only</p>
-          <p className="mt-1">
-            Validation passed and payload was normalized for preview. Secure submit wiring starts in
-            Chunk 5.
-          </p>
-          <pre className="mt-3 overflow-x-auto rounded bg-background/70 p-3 text-xs text-text">
-            {JSON.stringify(answerPreview, null, 2)}
-          </pre>
+      {submitErrorMessage ? (
+        <div className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+          <p className="font-semibold">Registration failed</p>
+          <p className="mt-1">{submitErrorMessage}</p>
+        </div>
+      ) : null}
+
+      {submitSuccessMessage ? (
+        <div className="mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
+          <p className="font-semibold">Registration successful!</p>
+          <p className="mt-1">{submitSuccessMessage}</p>
         </div>
       ) : null}
     </SectionCard>

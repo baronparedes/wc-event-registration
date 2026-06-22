@@ -7,11 +7,11 @@ export function AppShell() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
           <div>
             <p className="font-heading text-lg font-semibold text-text">WC Event Registration</p>
-            <p className="text-xs text-muted">Theme A Civic Trust</p>
+            <p className="text-xs text-muted">{new Date().toDateString()}</p>
           </div>
           <nav className="flex items-center gap-2 text-sm">
             <a className="rounded-md px-3 py-1.5 hover:bg-primary/10" href="/">
-              Public
+              Public Events
             </a>
             <a className="rounded-md px-3 py-1.5 hover:bg-primary/10" href="/admin/events">
               Admin

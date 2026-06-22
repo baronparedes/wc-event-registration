@@ -10,6 +10,12 @@ export type {
   PublicEventFieldOption,
   PublicEventFieldValidationRules,
 } from './types'
+export type {
+  SubmitRegistrationRequest,
+  SubmitRegistrationSuccess,
+  SubmitRegistrationError,
+  SubmitRegistrationResult,
+} from './commands'
 
 export { validatePublicEventFieldConfig } from './configValidation'
 export { buildDynamicFieldResponseSchema, createDynamicFieldDefaultValues } from './dynamicSchema'
@@ -19,3 +25,4 @@ export {
   fetchPublicEventFields,
   lookupMemberForRegistration,
 } from './queries'
+export { submitRegistrationResponse } from './commands'
