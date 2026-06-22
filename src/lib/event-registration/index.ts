@@ -7,6 +7,7 @@ export type {
   MemberLookupProfile,
   PublicEvent,
   PublicEventField,
+  PublicEventListingItem,
   PublicEventFieldOption,
   PublicEventFieldRow,
   PublicEventFieldValidationRules,

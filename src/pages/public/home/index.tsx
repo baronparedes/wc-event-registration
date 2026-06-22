@@ -1,44 +1,113 @@
 import { Link } from 'react-router-dom'
+import { usePublicEventListingQuery } from '../../../hooks/event-registration'
+import type { PublicEventListingItem } from '../../../lib/event-registration'
+
+function formatDate(value: string | null): string {
+  if (!value) return '—'
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function EventCard({ event }: { event: PublicEventListingItem }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="font-heading text-base font-semibold text-text">{event.title}</h3>
+        <span
+          className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+            event.listingStatus === 'open'
+              ? 'bg-primary/10 text-primary'
+              : 'bg-secondary/10 text-secondary'
+          }`}
+        >
+          {event.listingStatus === 'open' ? 'Open' : 'Upcoming'}
+        </span>
+      </div>
+
+      {event.description && <p className="line-clamp-2 text-sm text-muted">{event.description}</p>}
+
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted">
+        {event.location && (
+          <>
+            <dt className="font-medium text-text">Location</dt>
+            <dd>{event.location}</dd>
+          </>
+        )}
+        {event.starts_at && (
+          <>
+            <dt className="font-medium text-text">Event date</dt>
+            <dd>{formatDate(event.starts_at)}</dd>
+          </>
+        )}
+        <dt className="font-medium text-text">Registration opens</dt>
+        <dd>{formatDate(event.registration_opens_at)}</dd>
+        <dt className="font-medium text-text">Registration closes</dt>
+        <dd>{formatDate(event.registration_closes_at)}</dd>
+      </dl>
+
+      {event.listingStatus === 'open' && (
+        <Link
+          to={`/events/${event.slug}/register`}
+          className="mt-auto inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+        >
+          Register Now
+        </Link>
+      )}
+    </div>
+  )
+}
 
 export function HomePage() {
+  const { data: events, isLoading, isError } = usePublicEventListingQuery()
+
+  const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? []
+  const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? []
+
   return (
-    <section className="grid gap-6 md:grid-cols-[1.3fr_1fr] md:items-center">
-      <div className="space-y-4">
+    <section className="space-y-10">
+      <div className="space-y-2">
         <p className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
           Public Registration
         </p>
-        <h1 className="font-heading text-4xl font-bold leading-tight text-text md:text-5xl">
-          ID-first event registration with scalable admin controls.
+        <h1 className="font-heading text-3xl font-bold leading-tight text-text md:text-4xl">
+          Events
         </h1>
-        <p className="max-w-xl text-base text-muted md:text-lg">
-          This app is scaffolded for a Supabase-powered, metadata-driven registration platform. The
-          next chunks will wire database schema, RLS, and dynamic event forms.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            to="/events/sample-event/register"
-            className="rounded-md bg-primary px-4 py-2.5 font-medium text-white transition hover:bg-primary/90"
-          >
-            Open Sample Event Route
-          </Link>
-          <Link
-            to="/admin/login"
-            className="rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-text transition hover:border-primary/40"
-          >
-            Go To Admin Login
-          </Link>
-        </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <h2 className="font-heading text-xl font-semibold text-text">Chunk 0 Progress</h2>
-        <ul className="mt-4 space-y-2 text-sm text-muted">
-          <li>React + TypeScript app scaffolded</li>
-          <li>Theme A design tokens wired</li>
-          <li>Public/admin route skeleton created</li>
-          <li>Supabase client scaffold added</li>
-        </ul>
-      </div>
+      {isLoading && <p className="text-sm text-muted">Loading events…</p>}
+
+      {isError && (
+        <p className="text-sm text-destructive">Unable to load events. Please try again.</p>
+      )}
+
+      {!isLoading && !isError && events?.length === 0 && (
+        <p className="text-sm text-muted">No open or upcoming events at this time.</p>
+      )}
+
+      {openEvents.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-text">Open for Registration</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {openEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {upcomingEvents.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-text">Upcoming</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {upcomingEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

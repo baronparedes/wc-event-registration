@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useParams } from 'react-router-dom'
@@ -48,6 +48,7 @@ function formatUtcDateTime(value: string | null): string {
 
 export function EventRegistrationPage() {
   const { slug } = useParams<{ slug: string }>()
+  const memberIdInputRef = useRef<HTMLInputElement | null>(null)
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null)
   const [lookupErrorMessage, setLookupErrorMessage] = useState<string | null>(null)
   const [fieldConfigIssues, setFieldConfigIssues] = useState<string[]>([])
@@ -93,6 +94,23 @@ export function EventRegistrationPage() {
   const isGateReady = availability?.status === 'available'
   const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember)
 
+  const focusMemberIdInput = () => {
+    requestAnimationFrame(() => {
+      memberIdInputRef.current?.focus()
+    })
+
+    // Retry once after paint to handle late mount/layout timing.
+    setTimeout(() => {
+      memberIdInputRef.current?.focus()
+    }, 120)
+  }
+
+  useEffect(() => {
+    if (isGateReady) {
+      focusMemberIdInput()
+    }
+  }, [isGateReady])
+
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady && isGateReady ? availability.event.id : undefined,
   )
@@ -128,8 +146,11 @@ export function EventRegistrationPage() {
     setMatchedMember(null)
     setFieldConfigIssues([])
     try {
-      const result = await lookupMutation.mutateAsync(values.memberId)
-      handleLookupSuccess(result)
+      const result = await lookupMutation.mutateAsync({
+        memberId: values.memberId,
+        eventSlug: slug,
+      })
+      handleLookupSuccess(result.profile)
     } catch {
       setMatchedMember(null)
       setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
@@ -186,6 +207,7 @@ export function EventRegistrationPage() {
             onLookupSubmit={handleLookupSubmit}
             isLookupPending={lookupMutation.isPending}
             lookupErrorMessage={lookupErrorMessage}
+            memberIdInputRef={memberIdInputRef}
           />
 
           <ProfileStepCard matchedMember={matchedMember} />

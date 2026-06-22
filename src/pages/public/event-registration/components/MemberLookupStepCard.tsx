@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 
@@ -9,10 +10,21 @@ type MemberLookupStepCardProps = {
   onLookupSubmit: SubmitHandler<{ memberId: string }>
   isLookupPending: boolean
   lookupErrorMessage: string | null
+  memberIdInputRef: RefObject<HTMLInputElement | null>
+  shouldHighlightInput?: boolean
 }
 
 export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
-  const { lookupForm, onLookupSubmit, isLookupPending, lookupErrorMessage } = props
+  const {
+    lookupForm,
+    onLookupSubmit,
+    isLookupPending,
+    lookupErrorMessage,
+    memberIdInputRef,
+    shouldHighlightInput = false,
+  } = props
+
+  const { ref: registerRef, ...registerRest } = lookupForm.register('memberId')
 
   return (
     <SectionCard
@@ -29,9 +41,17 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             type="text"
             autoComplete="off"
             placeholder="Enter your member ID"
-            className={baseInputClassName}
+            className={`${baseInputClassName} ${
+              shouldHighlightInput
+                ? 'ring-2 ring-secondary/70 border-secondary focus:border-secondary'
+                : ''
+            }`}
             disabled={isLookupPending}
-            {...lookupForm.register('memberId')}
+            ref={(el) => {
+              registerRef(el)
+              memberIdInputRef.current = el
+            }}
+            {...registerRest}
           />
           {lookupForm.formState.errors.memberId ? (
             <p className="text-sm text-danger">{lookupForm.formState.errors.memberId.message}</p>

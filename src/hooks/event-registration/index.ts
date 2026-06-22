@@ -1,6 +1,12 @@
 export { usePublicEventQuery } from './usePublicEventQuery'
 export { usePublicEventFieldsQuery } from './usePublicEventFieldsQuery'
-export { useMemberLookupMutation, type MemberLookupProfile } from './useMemberLookupMutation'
+export { usePublicEventListingQuery } from './usePublicEventListingQuery'
+export {
+  useMemberLookupMutation,
+  type MemberLookupProfile,
+  type MemberLookupResult,
+  type ExistingRegistrationState,
+} from './useMemberLookupMutation'
 export {
   useSubmitRegistrationMutation,
   type SubmitRegistrationResult,

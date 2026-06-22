@@ -10,14 +10,28 @@ export interface MemberLookupProfile {
   last_name: string | null
 }
 
+export interface ExistingRegistrationState {
+  exists: boolean
+  edit_allowed: boolean
+  status: 'submitted' | 'updated' | 'cancelled'
+  responses: Record<string, unknown>
+}
+
+export interface MemberLookupResult {
+  profile: MemberLookupProfile | null
+  existing_registration: ExistingRegistrationState | null
+}
+
 interface MemberLookupResponse {
   success: true
   profile: MemberLookupProfile | null
+  existing_registration: ExistingRegistrationState | null
 }
 
-const callMemberLookup = createEdgeFunctionCaller<{ memberId: string }, MemberLookupResponse>(
-  'member-lookup',
-)
+const callMemberLookup = createEdgeFunctionCaller<
+  { memberId: string; eventSlug?: string },
+  MemberLookupResponse
+>('member-lookup')
 
 /**
  * Hook for member ID-first lookup in public registration flow.
@@ -26,16 +40,19 @@ const callMemberLookup = createEdgeFunctionCaller<{ memberId: string }, MemberLo
  * @returns React Query mutation for looking up member by ID
  */
 export function useMemberLookupMutation() {
-  return useMutation<MemberLookupProfile | null, Error, string>({
-    mutationFn: async (memberId: string) => {
+  return useMutation<MemberLookupResult, Error, { memberId: string; eventSlug?: string }>({
+    mutationFn: async ({ memberId, eventSlug }) => {
       const normalized = memberId.trim()
       if (!normalized) {
-        return null
+        return { profile: null, existing_registration: null }
       }
 
       logger.debug('Looking up member:', normalized)
-      const response = await callMemberLookup({ memberId: normalized })
-      return response.profile
+      const response = await callMemberLookup({ memberId: normalized, eventSlug })
+      return {
+        profile: response.profile,
+        existing_registration: response.existing_registration,
+      }
     },
     onError: (error) => {
       logger.error('Member lookup mutation error:', error)

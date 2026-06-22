@@ -162,6 +162,7 @@ function DynamicFieldInput(props: {
 
 type DynamicFieldsStepCardProps = {
   matchedMember: MemberLookupProfile | null
+  lockedMessage?: string | null
   isLoadingFields: boolean
   isFieldsError: boolean
   fieldConfigIssues: string[]
@@ -170,6 +171,7 @@ type DynamicFieldsStepCardProps = {
   onSubmit: SubmitHandler<DynamicFieldResponseValues>
   fieldErrorMessage: (fieldKey: string) => string | undefined
   isSubmitPending: boolean
+  submitButtonLabel?: string
   submitErrorMessage: string | null
   submitSuccessMessage: string | null
 }
@@ -177,6 +179,7 @@ type DynamicFieldsStepCardProps = {
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   const {
     matchedMember,
+    lockedMessage,
     isLoadingFields,
     isFieldsError,
     fieldConfigIssues,
@@ -185,6 +188,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     onSubmit,
     fieldErrorMessage,
     isSubmitPending,
+    submitButtonLabel = 'Submit Registration',
     submitErrorMessage,
     submitSuccessMessage,
   } = props
@@ -193,7 +197,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     <SectionCard title="Step 3: Complete Registration Fields">
       {!matchedMember ? (
         <p className="text-sm text-muted">
-          Dynamic fields stay locked until member verification succeeds.
+          {lockedMessage ?? 'Dynamic fields stay locked until member verification succeeds.'}
         </p>
       ) : null}
 
@@ -248,7 +252,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
             disabled={isSubmitPending}
             className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitPending ? 'Submitting...' : 'Submit Registration'}
+            {isSubmitPending ? `${submitButtonLabel}...` : submitButtonLabel}
           </button>
         </form>
       ) : null}

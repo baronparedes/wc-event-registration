@@ -81,6 +81,19 @@ export type EventAvailability =
   | { status: 'unavailable'; reason: 'not_open_yet'; event: PublicEvent }
   | { status: 'unavailable'; reason: 'registration_closed'; event: PublicEvent }
 
+export type PublicEventListingItem = {
+  id: string
+  slug: string
+  title: string
+  description: string | null
+  location: string | null
+  starts_at: string | null
+  ends_at: string | null
+  registration_opens_at: string | null
+  registration_closes_at: string | null
+  listingStatus: 'open' | 'upcoming'
+}
+
 export type DynamicFieldResponseValues = Record<string, unknown>
 
 export type DynamicFieldAnswerPreview = {
