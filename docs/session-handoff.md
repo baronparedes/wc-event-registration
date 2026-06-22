@@ -85,6 +85,11 @@ Chunk 5 post-implementation enhancements (this session 2026-06-22):
 - Focus management strengthened for reliable page load (requestAnimationFrame + 120ms retry)
 - Step 2 profile details now visible even for blocked duplicates (improved transparency and user context)
 - State management decoupled: `isRegistrationBlocked` separate from `matchedMember` for Step 2/3 independence
+- RFID reader support: `useRfidAutoFocus` hook keeps member ID input capture-ready (blur recovery, keydown recovery, refresh fallback focus)
+- Not-found lookup path now clears member ID input, returns focus, and auto-fades error on timeout
+- Event header now shows richer metadata: title, description, location, starts/ends, and registered member count
+- Registered member count now refreshes immediately after successful submit via query invalidation
+- Event descriptions render sanitized HTML with safe scoped styles for headings/lists/tables (no unsafe style/script execution)
 
 Core decisions locked during Chunk 5:
 
@@ -129,6 +134,11 @@ Enhancements to Chunk 5 public registration flow:
   - "Dynamic fields stay locked..." → "Please complete Step 1 to continue."
 - **Page load focus**: Member ID input focused on page load with resilient double-focus (requestAnimationFrame + 120ms retry) to handle late component mount.
 - **Hook pattern**: All lookup/query logic now inline in hooks; no separate queries.ts layer.
+- **RFID flow hardening**: Added `useRfidAutoFocus` to keep scan capture reliable across blur and refresh timing edge cases.
+- **Not-found UX polish**: Unknown IDs now reset the input, refocus capture, and use timed fade-clear feedback.
+- **Event details expansion**: Header now includes title, description, location, starts/ends, and live registration count.
+- **Count source and refresh**: Added SQL function `public.get_event_registration_count(uuid)` and invalidate-on-success submit behavior.
+- **Rich HTML descriptions**: Description markup is sanitized with DOMPurify and rendered with app-owned scoped element styles.
 
 State management additions:
 - `isRegistrationBlocked`: Tracks blocked duplicate path separately from edit mode
@@ -175,6 +185,8 @@ Next planned work:
 - Registration status field captures submission outcome: 'submitted' for new, 'updated' for allow_update duplicates
 - Development logging added to all data-fetching hooks and page orchestrator for local debugging
 - Vertical slice pattern validated: feature combines UI + hooks + Edge Function + DB migration + RLS seamlessly
+- Stored event descriptions are treated as untrusted HTML; only sanitized markup is rendered
+- Styling for rich description content is controlled by app-owned scoped classes, not inline style/script tags
 
 ## Decisions Captured During Chunk 3
 

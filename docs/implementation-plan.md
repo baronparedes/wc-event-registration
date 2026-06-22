@@ -44,7 +44,12 @@ Chunk 5 post-implementation enhancements (this session):
 - UX copy: all labels and error messages rewritten for user-friendliness (less technical, clearer intent)
 - Focus management: member ID focused on page load via requestAnimationFrame + 120ms retry for robust timing
 - Form hooks: queries.ts deleted; all Supabase logic inline in usePublicEventQuery, usePublicEventFieldsQuery, usePublicEventListingQuery
-- TypeScript strict, zero errors; 225 modules, 631 KB gzipped
+- RFID-ready input flow: member ID input now auto-refocuses during capture mode, including refresh fallback timing and blur recovery
+- Not-found lookup UX: when ID is not found, member input is cleared, focus returns to input, and error auto-fades on timeout
+- Event header details: title, description, location, start/end timestamps, and registration count are shown for public event pages
+- Registration count consistency: successful submit invalidates public event query cache so count refreshes immediately
+- Rich description rendering: event descriptions render sanitized HTML with scoped table/list/heading styles (no unsafe inline style/script execution)
+- TypeScript strict, zero errors; build passes
 
 Next active target: Chunk 6 (optional QA on duplicate/idempotency) or Chunk 7 (admin event management).
 
