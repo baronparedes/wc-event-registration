@@ -76,7 +76,7 @@ export type EventFieldConfigValidationResult = {
 }
 
 export type EventAvailability =
-  | { status: 'available'; event: PublicEvent }
+  | { status: 'available'; event: PublicEvent; registration_count: number }
   | { status: 'unavailable'; reason: 'not_found_or_unpublished' }
   | { status: 'unavailable'; reason: 'not_open_yet'; event: PublicEvent }
   | { status: 'unavailable'; reason: 'registration_closed'; event: PublicEvent }

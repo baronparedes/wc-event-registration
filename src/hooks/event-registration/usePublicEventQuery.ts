@@ -60,7 +60,19 @@ export function usePublicEventQuery(slug: string | undefined) {
         } as EventAvailability
       }
 
-      return { status: 'available', event: data } as EventAvailability
+      const { data: countData, error: countError } = await supabase.rpc(
+        'get_event_registration_count',
+        { p_event_id: data.id },
+      )
+      if (countError) {
+        logger.warn('Could not fetch registration count:', countError)
+      }
+
+      return {
+        status: 'available',
+        event: data,
+        registration_count: (countData as number | null) ?? 0,
+      } as EventAvailability
     },
     enabled: Boolean(slug),
   })

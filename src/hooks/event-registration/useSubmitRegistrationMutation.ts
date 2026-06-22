@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { createEdgeFunctionCaller } from '../../lib/supabase'
 import { logger } from '../../lib/logger'
@@ -40,10 +40,17 @@ const callSubmitRegistration = createEdgeFunctionCaller<
  * @returns React Query mutation for submitting registration
  */
 export function useSubmitRegistrationMutation() {
+  const queryClient = useQueryClient()
+
   return useMutation<SubmitRegistrationResult, Error, SubmitRegistrationRequest>({
     mutationFn: async (data) => {
       logger.debug('Submitting registration via Edge Function:', data)
       return callSubmitRegistration(data)
+    },
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['public-event-by-slug', variables.event_slug],
+      })
     },
     onError: (error) => {
       logger.error('Registration mutation error:', error)
