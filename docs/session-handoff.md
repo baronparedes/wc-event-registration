@@ -1,10 +1,10 @@
 # Session Handoff
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Project Snapshot
 
-This repository is in **Chunk 6 complete** (QA testing for duplicate policy & idempotency) status.
+This repository is in **Chunk 7 complete** (admin authentication and protected routes) status.
 
 Implemented in Chunk 0:
 
@@ -138,6 +138,21 @@ Implemented in Chunk 6:
 - Known issue: Edge Functions return 404 in local Supabase dev (not a test code issue, local environment limitation)
 - Total test code delivered: 900+ LOC across integration tests, constraint tests, and utilities
 
+Implemented in Chunk 7:
+
+- Admin authentication hooks created: `useAdminAuthQuery`, `useAdminLoginMutation`, `useAdminLogoutMutation`
+- Admin auth state management: session verification + admins table membership check
+- Admin login page: email/password form with error/success toasts and redirect to /admin/events
+- Route protection: `RequireAdminAuth` guard checks real auth state, shows loading state, redirects unauthenticated
+- Auth state persistence: AppProviders wired with Supabase auth.onAuthStateChange() listener for tab sync and refresh handling
+- Shell navigation: logout button integrated, router links for SPA routing
+- Local admin seeding: dev.local.sql creates auth.users + auth.identities + public.admins for local@admin.com / Supabase@123
+- Seed fixture isolation: admin and event seeds moved to dev.local.sql (git-ignored), shared seed.sql neutralized
+- Documentation updated: README.md and session-handoff.md reflect local seeding workflow
+- Admin login UI polish: end-user friendly labels ("Email Address"), input placeholders, removed learning notes
+- Security: hardcoded Supabase secret removed from test-utils.ts, now requires SUPABASE_SERVICE_ROLE_KEY env var
+- Verification: build passes (229 modules, 665.26 KB gzipped), zero errors, all admin routes protected
+
 Core decisions locked:
 
 - Public flow must always be ID-first
@@ -147,6 +162,8 @@ Core decisions locked:
 - Duplicate policy is per-event: block or allow update
 - Admin scope in v1: global admin
 - Export in v1: CSV
+- Admin auth: via Supabase email/password with admins table role verification
+- Local dev: admin account pre-seeded in dev.local.sql, never committed
 
 ## Session Work (2026-06-22)
 

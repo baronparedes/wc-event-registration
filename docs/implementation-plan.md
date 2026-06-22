@@ -23,9 +23,9 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Member import contract: RFID maps to member_id
 - Member profile shape: nickname is first-class; role and category remain in metadata
 
-## Progress Snapshot (2026-06-22)
+## Progress Snapshot (2026-06-23)
 
-Completed through Chunk 6 + enhancements:
+Completed through Chunk 7:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -34,25 +34,22 @@ Completed through Chunk 6 + enhancements:
 - Chunk 4: dynamic fields from metadata + runtime validation + preview-only submit + architectural standardization
 - Chunk 5: Edge Function submit path + duplicate policy enforcement + idempotency + full persistence + end-to-end tested
 - Chunk 6: QA test suite for duplicate policy, idempotency, and hardening scenarios (900+ LOC)
+- Chunk 7: admin authentication + protected routes + login page + local admin seeding
 
-Chunk 5 post-implementation enhancements (this session):
+Chunk 7 implementation:
 
-- Home page: event listing with open/upcoming status (filters by registration_mode='open' and registration_closes_at > now)
-- Member lookup: enhanced to detect existing registrations per event and return edit-allowed flag
-- Duplicate policy handling: 
-  - allow_update: form prefills with saved responses, button shows "Update", member ID input highlighted
-  - block: profile visible, Step 3 locked, error message auto-fades after 5 seconds with smooth transition, focus returns to member ID
-- UX copy: all labels and error messages rewritten for user-friendliness (less technical, clearer intent)
-- Focus management: member ID focused on page load via requestAnimationFrame + 120ms retry for robust timing
-- Form hooks: queries.ts deleted; all Supabase logic inline in usePublicEventQuery, usePublicEventFieldsQuery, usePublicEventListingQuery
-- RFID-ready input flow: member ID input now auto-refocuses during capture mode, including refresh fallback timing and blur recovery
-- Not-found lookup UX: when ID is not found, member input is cleared, focus returns to input, and error auto-fades on timeout
-- Event header details: title, description, location, start/end timestamps, and registration count are shown for public event pages
-- Registration count consistency: successful submit invalidates public event query cache so count refreshes immediately
-- Rich description rendering: event descriptions render sanitized HTML with scoped table/list/heading styles (no unsafe inline style/script execution)
-- TypeScript strict, zero errors; build passes
+- Admin auth hooks: `useAdminAuthQuery` (session + role verification), `useAdminLoginMutation` (signin + role check + invalidate on success), `useAdminLogoutMutation` (signout + clear state + invalidate)
+- Admin route guard: `RequireAdminAuth` component uses real auth state, shows loading spinner, redirects unauthenticated to /admin/login
+- Admin login page: email/password form with error/success toasts, redirects authenticated users to /admin/events
+- Auth state persistence: AppProviders subscribes to Supabase auth.onAuthStateChange() to keep state in sync across tabs/refreshes
+- Shell navigation: AppShell includes logout button when authenticated, router links for SPA navigation
+- Local admin seed: dev.local.sql creates email/password auth user with admins table row (git-ignored)
+- Fixture isolation: admin and event seeds moved to supabase/seeds/dev.local.sql, shared seed.sql neutralized, .gitignore updated
+- Documentation: README.md and session-handoff.md updated with local seeding workflow
+- Security hardening: removed hardcoded secret from test-utils.ts, now requires SUPABASE_SERVICE_ROLE_KEY env var
+- TypeScript strict, zero errors; build passes with 229 modules, 665.26 KB gzipped
 
-Next active target: Chunk 7 (admin event management).
+Next active target: Chunk 8 (admin event management - list, create, edit, archive).
 
 ## Phase Plan
 
@@ -136,18 +133,29 @@ Phase 4 additional done criteria (pre-Phase 5):
 - lookup and submit endpoints enforce per-IP and per-identifier throttling
 - runtime schema validation and idempotent submit behavior are verified under concurrency tests
 
-### Phase 5: Admin Module (Next)
+### Phase 5: Admin Module (In Progress)
 
-- protected admin routes
-- event create/edit/archive
-- field builder for all supported field types
-- registrations list/detail and CSV export
+- ✅ admin authentication with role verification (Chunk 7)
+- ✅ protected admin routes with RequireAdminAuth guard (Chunk 7)
+- ✅ admin login page with email/password form (Chunk 7)
+- event list, create, edit, archive (Chunk 8)
+- field builder for all supported field types (Chunk 9)
+- registrations list/detail and CSV export (Chunk 10)
 
-Readiness for Phase 5:
-- RLS matrix tested for anon, authenticated, and admin roles ✅
+Chunk 7 completion verified on 2026-06-23:
+- Admin auth hooks: `useAdminAuthQuery`, `useAdminLoginMutation`, `useAdminLogoutMutation` ✅
+- Route guard: `RequireAdminAuth` redirects unauthenticated users, shows loading state ✅
+- Admin login page: form with error/success toasts, validates role via admins table ✅
+- Auth persistence: AppProviders syncs session across tabs via Supabase auth listener ✅
+- Local seeding: dev.local.sql includes admin account (local@admin.com / Supabase@123) ✅
+- TypeScript strict, build passes ✅
+
+Readiness for Phase 5 continued (Chunk 8+):
+- RLS matrix tested for admin role ✅
 - public write path secured through Edge Functions ✅
 - service-role usage documented in Supabase grant policies ✅
-- audit logging framework ready for admin actions
+- audit logging framework ready for admin actions ✅
+- admin routes protected with session + role verification ✅
 
 Phase 5 done criteria:
 
