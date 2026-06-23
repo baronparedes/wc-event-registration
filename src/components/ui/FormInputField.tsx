@@ -1,0 +1,82 @@
+import type { ChangeEventHandler, ReactNode } from 'react'
+import type { UseFormRegisterReturn } from 'react-hook-form'
+
+type FormInputFieldBaseProps = {
+  id: string
+  label: string
+  error?: string | null
+  required?: boolean
+  placeholder?: string
+  type?: 'text' | 'email' | 'password' | 'datetime-local'
+  autoComplete?: string
+  readOnly?: boolean
+  helperText?: string
+  labelAdornment?: ReactNode
+  inputClassName?: string
+}
+
+type RegisteredInputProps = {
+  registration: UseFormRegisterReturn
+  value?: never
+  onChange?: never
+}
+
+type ControlledInputProps = {
+  registration?: never
+  value: string
+  onChange: ChangeEventHandler<HTMLInputElement>
+}
+
+type FormInputFieldProps = FormInputFieldBaseProps & (RegisteredInputProps | ControlledInputProps)
+
+/** Shared labeled input field with consistent styling and error rendering. */
+export function FormInputField(props: FormInputFieldProps) {
+  const {
+    id,
+    label,
+    registration,
+    value,
+    onChange,
+    error,
+    required,
+    placeholder,
+    type = 'text',
+    autoComplete,
+    readOnly,
+    helperText,
+    labelAdornment,
+    inputClassName,
+  } = props
+
+  const controlledProps = registration
+    ? registration
+    : {
+        value,
+        onChange,
+      }
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-text" htmlFor={id}>
+        {label}
+        {required ? <span className="text-red-500"> *</span> : null}
+        {labelAdornment}
+      </label>
+      <input
+        {...controlledProps}
+        className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 ${
+          error
+            ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30'
+            : 'border-border focus:border-primary focus:ring-primary/30'
+        } ${inputClassName ?? ''}`}
+        autoComplete={autoComplete}
+        id={id}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        type={type}
+      />
+      {helperText ? <p className="text-xs text-muted">{helperText}</p> : null}
+      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+    </div>
+  )
+}

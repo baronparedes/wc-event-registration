@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Button } from '../ui/Button'
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/admin'
 
 export function AppShell() {
@@ -32,13 +33,15 @@ export function AppShell() {
               Admin
             </Link>
             {adminAuth?.isAuthenticated ? (
-              <button
-                className="rounded-md border border-border px-3 py-1.5 hover:bg-primary/10"
+              <Button
+                className="hover:bg-primary/10"
                 onClick={handleLogout}
+                size="sm"
                 type="button"
+                variant="outline"
               >
                 Sign Out
-              </button>
+              </Button>
             ) : null}
           </nav>
         </div>

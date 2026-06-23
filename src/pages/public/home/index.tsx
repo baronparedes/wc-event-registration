@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePublicEventListingQuery } from '../../../hooks/event-registration'
 import type { PublicEventListingItem } from '../../../lib/event-registration'
+import { Button } from '../../../components/ui/Button'
 
 function formatDate(value: string | null): string {
   if (!value) return '—'
@@ -22,7 +23,7 @@ function EventCard({ event }: { event: PublicEventListingItem }) {
               ? 'bg-primary/10 text-primary'
               : event.listingStatus === 'upcoming'
                 ? 'bg-secondary/10 text-secondary'
-                  : 'bg-muted/30 text-muted'
+                : 'bg-muted/30 text-muted'
           }`}
         >
           {event.listingStatus === 'open'
@@ -55,13 +56,27 @@ function EventCard({ event }: { event: PublicEventListingItem }) {
       </dl>
 
       {event.listingStatus === 'open' && (
-        <Link
-          to={`/events/${event.slug}/register`}
-          className="mt-auto inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
-        >
-          Register Now
-        </Link>
+        <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">
+          <Link to={`/events/${event.slug}/register`}>Register Now</Link>
+        </Button>
       )}
+    </div>
+  )
+}
+
+function EventSection({ title, events }: { title: string; events: PublicEventListingItem[] }) {
+  if (events.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-heading text-lg font-semibold text-text">{title}</h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {events.map((event) => (
+          <EventCard key={event.id} event={event} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -94,38 +109,9 @@ export function HomePage() {
         <p className="text-sm text-muted">No open, upcoming, or recent past events at this time.</p>
       )}
 
-      {openEvents.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="font-heading text-lg font-semibold text-text">Open for Registration</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {openEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {upcomingEvents.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="font-heading text-lg font-semibold text-text">Upcoming</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {upcomingEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {pastEvents.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="font-heading text-lg font-semibold text-text">Past 3 Months</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pastEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        </div>
-      )}
+      <EventSection events={openEvents} title="Open for Registration" />
+      <EventSection events={upcomingEvents} title="Upcoming" />
+      <EventSection events={pastEvents} title="Past 3 Months" />
     </section>
   )
 }

@@ -38,12 +38,25 @@ Current baseline structure (must preserve):
 - Keep shared primitives under src/components/ui/ and do not duplicate those primitives in page folders.
 - When refactoring, migrate imports to the new structure and remove obsolete duplicate files in the same change.
 
+HIGH PRIORITY (MANDATORY FOR ALL FUTURE PROMPTS):
+
+- Treat shared component placement as a MUST, not a suggestion.
+- Primary objective: keep styling changes centralized so visual updates can be made in one place.
+- If a UI pattern is reusable across sections/pages (for example labeled input fields, slug fields, common field renderers), it MUST live in `src/components/ui/`.
+- Page folders (`src/pages/.../components/`) are for page-specific composition only; do not keep reusable primitives there.
+- Before adding a new page-local primitive, check `src/components/ui/` first and reuse/extend existing components when possible.
+- If a reusable primitive is discovered in a page folder during implementation, move it to `src/components/ui/` in the same change and update imports.
+- Future generated code should default to composing with shared UI primitives first, then page-local wrappers second.
+- For common controls (buttons, inputs, textareas, selects, badges, cards), create or extend a shared primitive in `src/components/ui/` before introducing per-page utility class duplication.
+- Avoid repeating large utility `className` strings for common controls in page files; extract those styles into shared UI primitives.
+
 Composability rule:
 
 - Design components to be composable through explicit props and children where appropriate.
 - Keep components focused and single-purpose; compose small components instead of building monoliths.
 - Separate orchestration from presentation: pages coordinate data, components render UI.
 - Keep shared visual primitives and field renderers reusable across flows.
+- For forms specifically: page files orchestrate form state and submit flow; section components compose shared UI field primitives from `src/components/ui/`.
 
 Guidelines:
 

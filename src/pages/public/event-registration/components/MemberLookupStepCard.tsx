@@ -1,5 +1,6 @@
 import type { RefObject } from 'react'
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
+import { Button } from '../../../../components/ui/Button'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 
 const baseInputClassName =
@@ -57,13 +58,9 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
           ) : null}
         </div>
 
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isLookupPending}
-        >
+        <Button disabled={isLookupPending} size="md" type="submit" variant="default">
           {isLookupPending ? 'Checking...' : 'Continue'}
-        </button>
+        </Button>
       </form>
 
       {lookupErrorMessage ? (

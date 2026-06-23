@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Button } from '../../../components/ui/Button'
+import { FormInputField } from '../../../components/ui/FormInputField'
 import { useAdminAuthQuery, useAdminLoginMutation } from '../../../hooks/admin'
 
 export function AdminLoginPage() {
@@ -37,45 +39,31 @@ export function AdminLoginPage() {
       <p className="mt-2 text-sm text-muted">Sign in with your admin credentials.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-text" htmlFor="admin-email">
-            Email Address
-          </label>
-          <input
-            autoComplete="email"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            id="admin-email"
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="admin@example.com"
-            required
-            type="email"
-            value={email}
-          />
-        </div>
+        <FormInputField
+          autoComplete="email"
+          id="admin-email"
+          label="Email Address"
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="admin@example.com"
+          required
+          type="email"
+          value={email}
+        />
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-text" htmlFor="admin-password">
-            Password
-          </label>
-          <input
-            autoComplete="current-password"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            id="admin-password"
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Enter your password"
-            required
-            type="password"
-            value={password}
-          />
-        </div>
+        <FormInputField
+          autoComplete="current-password"
+          id="admin-password"
+          label="Password"
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Enter your password"
+          required
+          type="password"
+          value={password}
+        />
 
-        <button
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={loginMutation.isPending}
-          type="submit"
-        >
+        <Button disabled={loginMutation.isPending} fullWidth size="md" type="submit">
           {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
-        </button>
+        </Button>
       </form>
     </section>
   )

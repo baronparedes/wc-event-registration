@@ -1,4 +1,5 @@
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
+import { Button } from '../../../../components/ui/Button'
 import type {
   DynamicFieldResponseValues,
   MemberLookupProfile,
@@ -252,23 +253,21 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
           })}
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="submit"
-              disabled={isSubmitPending}
-              className="rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button disabled={isSubmitPending} size="md" type="submit" variant="default">
               {isSubmitPending ? `${submitButtonLabel}...` : submitButtonLabel}
-            </button>
+            </Button>
 
             {onCancelUpdate ? (
-              <button
-                type="button"
-                onClick={onCancelUpdate}
+              <Button
+                className="hover:bg-surface"
                 disabled={isSubmitPending}
-                className="rounded-md border border-border bg-background px-4 py-2 font-medium text-text transition hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={onCancelUpdate}
+                size="md"
+                type="button"
+                variant="outline"
               >
                 Cancel
-              </button>
+              </Button>
             ) : null}
           </div>
         </form>
