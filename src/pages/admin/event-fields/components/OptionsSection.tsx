@@ -1,4 +1,4 @@
-import type { FieldArrayWithId, UseFieldArrayReturn } from 'react-hook-form'
+import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form'
 import type { EventFieldFormValues } from '../../../../lib/admin/eventFieldSchema'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 import { FieldOptionsEditor } from './FieldOptionsEditor'
@@ -6,8 +6,8 @@ import { FieldOptionsEditor } from './FieldOptionsEditor'
 type OptionsSectionProps = {
   isStructurallyLocked: boolean
   optionFields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[]
-  register: any // UseFormRegister from the parent form
-  errors: any
+  register: UseFormRegister<EventFieldFormValues>
+  errors: Record<string, unknown>
   append: UseFieldArrayReturn<EventFieldFormValues>['append']
   remove: UseFieldArrayReturn<EventFieldFormValues>['remove']
 }

@@ -1,3 +1,5 @@
+import type { UseFormRegister } from 'react-hook-form'
+import type { EventFieldFormValues } from '../../../../lib/admin/eventFieldSchema'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 import { RuleInput } from './RuleInput'
 
@@ -7,7 +9,7 @@ type ValidationRulesSectionProps = {
   showNumberValidation: boolean
   showMultiSelectValidation: boolean
   showDateValidation: boolean
-  register: any // UseFormRegister from the parent form
+  register: UseFormRegister<EventFieldFormValues>
 }
 
 /** Section for all validation rule inputs (text, number, date, multi-select). */

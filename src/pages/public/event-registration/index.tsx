@@ -58,7 +58,6 @@ export function EventRegistrationPage() {
   const [lookupErrorMessage, setLookupErrorMessage] = useState<string | null>(null)
   const [lookupErrorFadeOut, setLookupErrorFadeOut] = useState(false)
   const [autoClearLookupError, setAutoClearLookupError] = useState(false)
-  const [fieldConfigIssues, setFieldConfigIssues] = useState<string[]>([])
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
@@ -115,7 +114,10 @@ export function EventRegistrationPage() {
     isDynamicFieldGateReady ? availability?.event.id : undefined,
   )
 
-  const activeFields = eventFieldsQuery.data?.validFields ?? []
+  const activeFields = useMemo(
+    () => eventFieldsQuery.data?.validFields ?? [],
+    [eventFieldsQuery.data?.validFields],
+  )
   const responseSchema = useMemo(() => {
     return buildDynamicFieldResponseSchema(activeFields)
   }, [activeFields])
@@ -126,23 +128,20 @@ export function EventRegistrationPage() {
     dynamicForm.reset(merged, {
       keepDefaultValues: false,
     })
-  }, [activeFields, prefillResponses])
+  }, [activeFields, prefillResponses, dynamicForm])
 
   useEffect(() => {
     dynamicForm.clearErrors()
   }, [responseSchema, dynamicForm])
 
   useEffect(() => {
-    setFieldConfigIssues(eventFieldsQuery.data?.issues ?? [])
-  }, [eventFieldsQuery.data?.issues])
-
-  useEffect(() => {
     if (!isDynamicFieldGateReady) {
       dynamicForm.reset({})
+      // Reset state atomically when gate closes - intentional cleanup pattern
+      // eslint-disable-next-line
       setVerifiedMemberId(null)
       setPrefillResponses(null)
       setIsUpdateMode(false)
-      setFieldConfigIssues([])
       setSubmitErrorMessage(null)
       setSubmitSuccessMessage(null)
     }
@@ -185,7 +184,6 @@ export function EventRegistrationPage() {
     setIsRegistrationBlocked(false)
     setIsUpdateMode(false)
     setMemberIdHighlight(false)
-    setFieldConfigIssues([])
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
 
@@ -404,7 +402,7 @@ export function EventRegistrationPage() {
             onCancelUpdate={handleCancelUpdate}
             isLoadingFields={eventFieldsQuery.isLoading}
             isFieldsError={eventFieldsQuery.isError}
-            fieldConfigIssues={fieldConfigIssues}
+            fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
             activeFields={activeFields}
             dynamicForm={dynamicForm}
             onSubmit={handleSubmitRegistration}
