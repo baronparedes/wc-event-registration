@@ -12,6 +12,12 @@ interface ExportRegistrationsRequest {
 
 const allowedOrigins = readAllowedOrigins()
 
+function maskValue(value: string | null, visible = 6): string {
+  if (!value) return 'null'
+  if (value.length <= visible * 2) return value
+  return `${value.slice(0, visible)}...${value.slice(-visible)}`
+}
+
 // Helper function to escape CSV fields
 function escapeCsvField(field: unknown): string {
   if (field === null || field === undefined) {
@@ -56,8 +62,16 @@ function formatAnswerValue(answer: unknown, fieldType: string): string {
 }
 
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID()
   const origin = req.headers.get('origin')
   const corsHeaders = buildCorsHeaders(origin, allowedOrigins)
+
+  console.log('[export-registrations-csv]', {
+    requestId,
+    method: req.method,
+    origin,
+    hasAuthorizationHeader: Boolean(req.headers.get('authorization')),
+  })
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -85,6 +99,15 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const authHeader = req.headers.get('authorization')
 
+    console.log('[export-registrations-csv] env/auth check', {
+      requestId,
+      hasSupabaseUrl: Boolean(supabaseUrl),
+      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasAuthHeader: Boolean(authHeader),
+      authHeaderPrefix: authHeader?.split(' ')[0] ?? null,
+      authHeaderLength: authHeader?.length ?? 0,
+    })
+
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({
@@ -101,6 +124,12 @@ Deno.serve(async (req) => {
     // Parse and validate request
     const body = (await req.json()) as ExportRegistrationsRequest
     const { event_id } = body
+
+    console.log('[export-registrations-csv] parsed body', {
+      requestId,
+      hasEventId: Boolean(event_id),
+      eventId: maskValue(event_id ?? null),
+    })
 
     if (!event_id) {
       return new Response(
@@ -141,16 +170,34 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '')
 
+    console.log('[export-registrations-csv] token extracted', {
+      requestId,
+      tokenLength: token.length,
+      tokenPrefix: maskValue(token),
+      hasBearerPrefix: authHeader.startsWith('Bearer '),
+    })
+
     // Decode JWT to get user_id without validation (just extract)
     let userId: string | null = null
     try {
       const parts = token.split('.')
+      console.log('[export-registrations-csv] jwt parts', {
+        requestId,
+        partsCount: parts.length,
+      })
       if (parts.length === 3) {
         const payload = JSON.parse(atob(parts[1]))
         userId = payload.sub
+        console.log('[export-registrations-csv] jwt decoded', {
+          requestId,
+          userId: maskValue(typeof userId === 'string' ? userId : null),
+        })
       }
     } catch (e) {
-      console.error('Failed to decode JWT:', e)
+      console.error('[export-registrations-csv] failed to decode JWT', {
+        requestId,
+        error: e instanceof Error ? e.message : String(e),
+      })
     }
 
     if (!userId) {
@@ -171,8 +218,16 @@ Deno.serve(async (req) => {
     const { data: adminRecord, error: adminCheckError } = await authClient
       .from('admins')
       .select('id')
-      .eq('user_id', userId)
+      .eq('auth_user_id', userId)
       .single()
+
+    console.log('[export-registrations-csv] admin check result', {
+      requestId,
+      userId: maskValue(userId),
+      hasAdminRecord: Boolean(adminRecord),
+      adminCheckErrorCode: adminCheckError?.code ?? null,
+      adminCheckErrorMessage: adminCheckError?.message ?? null,
+    })
 
     if (adminCheckError || !adminRecord) {
       return new Response(
@@ -202,6 +257,13 @@ Deno.serve(async (req) => {
       .select('id, user_id, status, submitted_at, updated_at')
       .eq('event_id', event_id)
       .order('submitted_at', { ascending: false })
+
+    console.log('[export-registrations-csv] registration query result', {
+      requestId,
+      eventId: maskValue(event_id),
+      registrationCount: registrations?.length ?? 0,
+      regErrorCode: regError?.code ?? null,
+    })
 
     if (regError) {
       console.error('Registration fetch error:', regError)
@@ -370,7 +432,10 @@ Deno.serve(async (req) => {
       },
     })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('[export-registrations-csv] unexpected error', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    })
     return new Response(
       JSON.stringify({
         success: false,

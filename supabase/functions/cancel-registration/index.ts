@@ -18,9 +18,23 @@ interface CancelRegistrationSuccess {
 
 const allowedOrigins = readAllowedOrigins()
 
+function maskValue(value: string | null, visible = 6): string {
+  if (!value) return 'null'
+  if (value.length <= visible * 2) return value
+  return `${value.slice(0, visible)}...${value.slice(-visible)}`
+}
+
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID()
   const origin = req.headers.get('origin')
   const corsHeaders = buildCorsHeaders(origin, allowedOrigins)
+
+  console.log('[cancel-registration]', {
+    requestId,
+    method: req.method,
+    origin,
+    hasAuthorizationHeader: Boolean(req.headers.get('authorization')),
+  })
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -48,6 +62,15 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const authHeader = req.headers.get('authorization')
 
+    console.log('[cancel-registration] env/auth check', {
+      requestId,
+      hasSupabaseUrl: Boolean(supabaseUrl),
+      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasAuthHeader: Boolean(authHeader),
+      authHeaderPrefix: authHeader?.split(' ')[0] ?? null,
+      authHeaderLength: authHeader?.length ?? 0,
+    })
+
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({
@@ -64,6 +87,12 @@ Deno.serve(async (req) => {
     // Parse and validate request
     const body = (await req.json()) as CancelRegistrationRequest
     const { registration_id } = body
+
+    console.log('[cancel-registration] parsed body', {
+      requestId,
+      hasRegistrationId: Boolean(registration_id),
+      registrationId: maskValue(registration_id ?? null),
+    })
 
     if (!registration_id) {
       return new Response(
@@ -104,16 +133,34 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '')
 
+    console.log('[cancel-registration] token extracted', {
+      requestId,
+      tokenLength: token.length,
+      tokenPrefix: maskValue(token),
+      hasBearerPrefix: authHeader.startsWith('Bearer '),
+    })
+
     // Decode JWT to get user_id without validation (just extract)
     let userId: string | null = null
     try {
       const parts = token.split('.')
+      console.log('[cancel-registration] jwt parts', {
+        requestId,
+        partsCount: parts.length,
+      })
       if (parts.length === 3) {
         const payload = JSON.parse(atob(parts[1]))
         userId = payload.sub
+        console.log('[cancel-registration] jwt decoded', {
+          requestId,
+          userId: maskValue(typeof userId === 'string' ? userId : null),
+        })
       }
     } catch (e) {
-      console.error('Failed to decode JWT:', e)
+      console.error('[cancel-registration] failed to decode JWT', {
+        requestId,
+        error: e instanceof Error ? e.message : String(e),
+      })
     }
 
     if (!userId) {
@@ -134,8 +181,16 @@ Deno.serve(async (req) => {
     const { data: adminRecord, error: adminCheckError } = await authClient
       .from('admins')
       .select('id')
-      .eq('user_id', userId)
+      .eq('auth_user_id', userId)
       .single()
+
+    console.log('[cancel-registration] admin check result', {
+      requestId,
+      userId: maskValue(userId),
+      hasAdminRecord: Boolean(adminRecord),
+      adminCheckErrorCode: adminCheckError?.code ?? null,
+      adminCheckErrorMessage: adminCheckError?.message ?? null,
+    })
 
     if (adminCheckError || !adminRecord) {
       return new Response(
@@ -165,6 +220,13 @@ Deno.serve(async (req) => {
       .select('id, status')
       .eq('id', registration_id)
       .single()
+
+    console.log('[cancel-registration] registration fetch result', {
+      requestId,
+      registrationId: maskValue(registration_id),
+      found: Boolean(registration),
+      regFetchErrorCode: regFetchError?.code ?? null,
+    })
 
     if (regFetchError || !registration) {
       return new Response(
@@ -230,7 +292,10 @@ Deno.serve(async (req) => {
       },
     )
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('[cancel-registration] unexpected error', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    })
     return new Response(
       JSON.stringify({
         success: false,
