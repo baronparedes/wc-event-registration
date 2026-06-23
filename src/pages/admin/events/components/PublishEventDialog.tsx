@@ -18,9 +18,11 @@ function PublishEventModal({ eventData, isPending, onConfirm, onClose }: Publish
   const [isOpen, setIsOpen] = useState(false)
 
   // Open dialog when eventData is set, close when cleared
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setIsOpen(!!eventData)
   }, [eventData])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!eventData) return null
 

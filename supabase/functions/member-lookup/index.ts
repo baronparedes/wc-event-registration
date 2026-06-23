@@ -32,14 +32,6 @@ interface MemberLookupResponse {
   existing_registration: ExistingRegistrationState | null
 }
 
-interface MemberLookupErrorResponse {
-  success: false
-  error: string
-  detail?: string
-}
-
-type Response = MemberLookupResponse | MemberLookupErrorResponse
-
 const allowedOrigins = readAllowedOrigins()
 
 Deno.serve(async (req) => {

@@ -45,10 +45,10 @@ export function generateTestMemberId(): string {
 /**
  * Seed a test member for registration tests
  */
-export async function seedTestMember(memberId: string, overrides?: Record<string, any>) {
+export async function seedTestMember(memberId: string, overrides?: Record<string, unknown>) {
   const client = createTestAdminClient()
 
-  const memberData: any = {
+  const memberData: Record<string, unknown> = {
     member_id: memberId,
     full_name: `Test Member ${memberId}`,
     nickname: `tm${memberId.slice(-4)}`,

@@ -28,8 +28,6 @@ interface SubmitRegistrationError {
   error_detail?: string
 }
 
-type SubmitRegistrationResult = SubmitRegistrationSuccess | SubmitRegistrationError
-
 const allowedOrigins = readAllowedOrigins()
 
 Deno.serve(async (req) => {

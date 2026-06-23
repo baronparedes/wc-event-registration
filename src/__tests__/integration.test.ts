@@ -14,7 +14,9 @@ import { randomUUID } from 'crypto'
 describe('Edge Function: submit-registration', () => {
   const BLOCK_POLICY_EVENT = 'sample-event'
   const ALLOW_UPDATE_POLICY_EVENT = 'future-event'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let sampleEventData: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let futureEventData: any
 
   beforeAll(async () => {
@@ -506,6 +508,7 @@ describe('Edge Function: submit-registration', () => {
     await seedTestMember(memberId)
 
     const attemptCount = 6 // Assuming 5 attempts per minute limit
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const results: any[] = []
 
     for (let i = 0; i < attemptCount; i++) {
