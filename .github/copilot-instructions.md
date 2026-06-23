@@ -48,18 +48,6 @@ URL-to-folder parity rule (mandatory):
   - /admin/events/:id -> src/pages/admin/events/[id]/index.tsx
 - Shared internals for sibling route entries may live in a route-local underscore folder (for example src/pages/admin/events/\_event-form/), but route entry files must stay URL-aligned.
 
-HIGH PRIORITY (MANDATORY FOR ALL FUTURE PROMPTS):
-
-- Treat shared component placement as a MUST, not a suggestion.
-- Primary objective: keep styling changes centralized so visual updates can be made in one place.
-- If a UI pattern is reusable across sections/pages (for example labeled input fields, slug fields, common field renderers), it MUST live in `src/components/ui/`.
-- Page folders (`src/pages/.../components/`) are for page-specific composition only; do not keep reusable primitives there.
-- Before adding a new page-local primitive, check `src/components/ui/` first and reuse/extend existing components when possible.
-- If a reusable primitive is discovered in a page folder during implementation, move it to `src/components/ui/` in the same change and update imports.
-- Future generated code should default to composing with shared UI primitives first, then page-local wrappers second.
-- For common controls (buttons, inputs, textareas, selects, badges, cards), create or extend a shared primitive in `src/components/ui/` before introducing per-page utility class duplication.
-- Avoid repeating large utility `className` strings for common controls in page files; extract those styles into shared UI primitives.
-
 Composability rule:
 
 - Design components to be composable through explicit props and children where appropriate.
@@ -128,14 +116,6 @@ Component design:
 - Pass `register()` output to shared form field primitives
 - Extract `formState` once at top level, not inside effects
 
-**Why RHF:**
-
-- Minimal re-renders: only watches needed fields
-- Built-in dirty tracking via `isDirty` and `dirtyFields`
-- Perfect TypeScript integration with Zod schemas
-- No need for manual validation or state duplication
-- Clean change detection for confirmation dialogs and unsaved warnings
-
 **React Query:**
 
 - Use stable query keys.
@@ -194,15 +174,6 @@ Hook patterns:
 - **Pages and components import hooks directly** from domain or subdomain barrels, not from lib.
 - Hooks handle error toasting and validation; pages handle UI state and user feedback.
 
-Benefits:
-
-- Clear operation semantics: queries separate from mutations; state hooks isolated from data fetching
-- Reduced import confusion: hooks grouped by operation type, not mixed at domain root
-- Query/mutation invalidation: easy to find and update cache invalidation patterns
-- Scalable for multi-domain features: admin, event-registration, future domains follow consistent pattern
-- Reusable utilities: shared UI utilities available to all domains without coupling
-- Easier refactoring: moving hooks between domains or operations maintains structure integrity
-
 Forms:
 
 **React Hook Form (RHF) is mandatory for all forms:**
@@ -240,14 +211,6 @@ Forms:
 - For cross-field validation (date ranges, interdependent fields), use `superRefine` in Zod schema
 - Surface errors immediately on field blur or after form submission attempt (handled by RHF)
 
-**Benefits of this approach:**
-
-- Single source of truth for form state via RHF
-- Validation logic colocated in Zod schema (not spread across component)
-- Change detection is automatic and reliable
-- Easier to add features (confirmation dialogs, unsaved changes warnings, etc.)
-- No manual state duplication or "dirty checking" code
-
 ## Data and API Layer
 
 **Direct Supabase queries** (in hooks for public data read):
@@ -271,6 +234,48 @@ Forms:
 - Hooks own their data fetching logic; no intermediate abstraction layer.
 - Keep type contracts in `src/lib/<domain>/types.ts` for shared domain types.
 - Validation logic in `src/lib/<domain>/configValidation.ts` or `dynamicSchema.ts` as needed.
+
+## Query Invalidation & Cache Management
+
+- **When to invalidate**: Mutations that change data should invalidate related queries (e.g., creating an event invalidates `useAdminEventsQuery`).
+- **Invalidation patterns**:
+  - Use `queryClient.invalidateQueries({ queryKey: ['events'] })` for broad invalidation.
+  - Use `setQueryData()` for optimistic updates when you know the result shape.
+  - Example: After `useCreateEventMutation`, immediately invalidate `['events', 'admin']` to refetch list.
+- **Stale time**: Default to 0 (always stale) for admin operations; 30-60s for public read-heavy flows.
+- **Background refetch**: Disable for forms and edit flows to avoid interrupting user input.
+- **Race condition safety**: Invalidate only after mutation succeeds (check response discriminator); never invalidate on error.
+
+## Loading, Empty, and Error States
+
+- **Load states**: Use `isLoading` or `isPending` from React Query to show skeleton loaders or spinners.
+- **Empty states**: When `data?.length === 0`, render explicit empty message, not a blank page.
+- **Error states**: Show user-safe error message; log detailed error for debugging. Use `useErrorWithFadeout` hook for transient errors.
+- **Page-level pattern**: Orchestrate states at the page level; pass loading/empty/error bools to dumb components.
+- **Boundary pattern**: If a component cannot render without data, show loading or error inline rather than crashing.
+
+## Route Parameter Validation
+
+- **Dynamic params** (`[slug]`, `[id]`) must be validated before rendering.
+- **Validation approach**: Use a query hook to fetch/validate the param (e.g., `usePublicEventQuery(slug)` returns 404 in `isError`).
+- **Fail fast**: If param is invalid, show error state immediately; do not render stale/wrong data.
+- **Zod guard optional**: If param format is strict (e.g., UUID), validate with Zod before querying; otherwise let query handle it.
+
+## Async Operations & Concurrency
+
+- **Race conditions**: When multiple queries/mutations may resolve out of order, use query keys or request IDs to ensure stale responses are ignored.
+- **Avoid duplicate submissions**: Disable submit button while mutation is in-flight (`isPending`).
+- **Concurrent mutations**: Do not fire multiple mutations to the same resource simultaneously; use optimistic updates or queue pattern if needed.
+- **Request cancellation**: Supabase cancels outstanding requests on new query key changes; verify this does not cause unexpected UI state.
+- **Stale data tolerance**: For edit forms, compare reset values against server data before allowing save; do not assume client is authoritative.
+
+## Development Workflow
+
+- **Local Edge Functions**: Run `supabase functions serve` in terminal; Edge Functions reload on file save.
+- **Testing RLS policies**: Use `supabase test db` to run SQL tests in `supabase/tests/`; policies must deny by default.
+- **Inspecting local DB**: Connect with `psql` or use Supabase Studio at `localhost:54323`.
+- **VSCode debugging**: Hooks run in browser; use browser DevTools for frontend debugging. Server-side: check Edge Function logs via `supabase functions serve` output.
+- **Build check**: Run `npm run build` and `npm run format:check` before commits.
 
 **Type safety at boundaries:**
 
@@ -315,58 +320,32 @@ Forms:
 - Return typed response shapes from Edge Functions with `success` discriminator.
 - Handle Edge Function errors explicitly in hooks with user-safe toast messages.
 
-## Error Handling and Observability
+## Testing Strategy
 
-- Never swallow errors silently.
-- Convert low-level errors into user-safe messages in UI.
-- Keep detailed diagnostics in logs for debugging.
-- Use consistent error message tone and structure.
+**Hook testing** (Vitest + React Query):
 
-## Styling and UI
+- Use `renderHook` from `@testing-library/react` with a wrapper that provides QueryClientProvider.
+- Mock Supabase client with deterministic responses for happy path and error cases.
+- Test queries return correct shapes; test mutations handle success + error discriminators.
+- Example: `useSubmitRegistrationMutation` should test success response, conflict error, and validation error.
 
-- Follow existing design tokens and utility patterns.
-- Reuse existing classes/patterns before introducing new variants.
-- Keep responsive behavior explicit for mobile and desktop.
-- Ensure keyboard and screen-reader accessibility.
+**Edge Function testing**:
 
-Accessibility:
+- Use `supabase test db` and SQL tests in `supabase/tests/` for RLS policies and database invariants.
+- For function logic: call Edge Function endpoint directly with test payloads; verify response shape and status.
+- Test privileged operations (service role queries) separately from public operations.
 
-- Inputs must have labels.
-- Use semantic HTML and proper button types.
-- Ensure focus states are visible.
+**Form testing**:
 
-## Performance and Scalability
+- Validate Zod schemas directly in unit tests; do not rely only on component tests.
+- Test dirty state transitions and validation error display in critical flows (edit form, confirmation dialogs).
 
-- Avoid unnecessary re-renders from unstable inline objects/functions.
-- Memoize expensive derived values.
-- Keep large pages split into focused subcomponents.
-- Use lazy loading/code splitting when route or bundle size grows.
+## Code Quality and Accessibility
 
-## Testing Expectations
-
-When adding or refactoring non-trivial behavior:
-
-- Add or update tests for logic-heavy helpers.
-- Cover critical user paths and validation behavior.
-- Protect invariants with regression tests where feasible.
-
-Minimum validation checks before finishing significant work:
-
-- npm run build
-- npm run format:check
-
-## Code Quality and Readability
-
-- Prefer clarity over cleverness.
-- Use meaningful names for functions, variables, and types.
-- Keep functions short and cohesive.
-- Add brief comments only where intent is not obvious.
-
-Avoid:
-
-- Deeply nested conditionals in UI components.
-- Large monolithic files with mixed concerns.
-- Hidden side effects in helper functions.
+- Prefer clarity over cleverness. Use meaningful names.
+- Inputs must have labels. Use semantic HTML and proper button types.
+- Ensure focus states are visible. Avoid deeply nested conditionals.
+- Never swallow errors silently; convert to user-safe messages in UI.
 
 ## Change Management
 
@@ -394,16 +373,16 @@ Slice anatomy (all required):
 
 Completeness checklist before marking slice done:
 
-- [ ] UI compiles and passes build
+- [ ] UI compiles and passes build; `npm run format:check` passes
 - [ ] All types strict (no `any`, no unsafe casts)
-- [ ] Validation covers user inputs and database payloads
+- [ ] Validation covers user inputs and database payloads (Zod schemas)
 - [ ] Hooks own their data fetching logic (no wrapper layers)
 - [ ] Edge Functions are used for all privileged writes
-- [ ] Schema migration applied locally
-- [ ] Edge Function (if used) queries Postgres directly with service role
-- [ ] RLS policy is deny-by-default and paired with explicit grants
-- [ ] Page imports are stable
-- [ ] Tests cover happy path and critical error flows
+- [ ] Schema migration applied locally; RLS policy is deny-by-default and paired with explicit grants
+- [ ] Query invalidation strategy is explicit (what invalidates after this mutation?)
+- [ ] Loading, empty, and error states are handled at page level
+- [ ] Dynamic route params are validated before rendering
+- [ ] Tests cover happy path + critical error flows
 - [ ] No mutations to shared types; new domain types added instead
 
 Cross-feature coupling avoidance:
