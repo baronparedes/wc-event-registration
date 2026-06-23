@@ -98,12 +98,35 @@ Component design:
 
 ## State Management
 
+- **Form state: React Hook Form (mandatory for all forms)**
 - Server state: React Query.
-- Form state: React Hook Form.
 - Validation: Zod.
 - Local UI state only for transient view concerns.
 
-React Query:
+**React Hook Form is the single source of truth for form state:**
+
+- All forms must use React Hook Form with Zod schema validation
+- Do not use useState for form field values; use RHF's `register()` and `watch()`
+- Extract `isDirty`, `dirtyFields`, `errors`, `isValid` from `formState` as needed
+- Never duplicate form state management logic; RHF handles it all
+
+**React Hook Form patterns:**
+
+- Use `zodResolver(schema)` to integrate Zod validation
+- Use `watch()` only when you need reactive updates (conditionals, dependent fields)
+- Use `reset(data)` to set default values and reset dirty state (useful for edit mode)
+- Pass `register()` output to shared form field primitives
+- Extract `formState` once at top level, not inside effects
+
+**Why RHF:**
+
+- Minimal re-renders: only watches needed fields
+- Built-in dirty tracking via `isDirty` and `dirtyFields`
+- Perfect TypeScript integration with Zod schemas
+- No need for manual validation or state duplication
+- Clean change detection for confirmation dialogs and unsaved warnings
+
+**React Query:**
 
 - Use stable query keys.
 - Keep query functions pure and typed.
@@ -149,9 +172,48 @@ Benefits:
 
 Forms:
 
-- Define schema first, then form type from schema.
-- Keep default values explicit.
-- Surface field-level and form-level errors clearly.
+**React Hook Form (RHF) is mandatory for all forms:**
+
+- Define Zod schema first, then infer form type: `type MyForm = z.infer<typeof mySchema>`
+- Use `useForm` with `zodResolver` for validation integration
+- Extract `formState` properties as needed: `errors`, `isDirty`, `dirtyFields`, `isValid`
+- Pass Zod schema directly to resolver; let RHF handle validation lifecycle
+
+**Form field props and composition:**
+
+- Keep default values explicit in `useForm({ defaultValues: {...} })`
+- Surface field-level errors and form-level errors clearly via UI primitives
+- Pass field registration from RHF to shared form field primitives (FormInputField, FormTextareaField, FormSelectField, etc.)
+- Shared primitives handle label + input + error display in one place; page files compose these primitives
+
+**Change detection and dirty state:**
+
+- Use `isDirty` from `formState` to detect if any field has changed from defaults
+- Use `dirtyFields` object to identify which specific fields changed (e.g., for confirmation dialogs)
+- Compare against reset values for edit mode: reset form with existing data, then `isDirty` tracks mutations
+- Disable save button when edit mode and `!isDirty` to prevent unnecessary saves
+- Never duplicate change detection logic; rely on RHF's `dirtyFields` as single source of truth
+
+**Field registration modes:**
+
+- Registered fields: pass `registration={register('fieldName')}` to shared primitives
+- Controlled fields: use `value={watch('fieldName')}` + `onChange` for dynamic field behavior
+- Prefer registered mode for simple fields; use controlled only when you need `watch()` for conditional rendering
+
+**Validation and error display:**
+
+- Zod schema defines all validation logic; do not add separate validation in component
+- Keep validation errors from `formState.errors` explicit in field-level error text
+- For cross-field validation (date ranges, interdependent fields), use `superRefine` in Zod schema
+- Surface errors immediately on field blur or after form submission attempt (handled by RHF)
+
+**Benefits of this approach:**
+
+- Single source of truth for form state via RHF
+- Validation logic colocated in Zod schema (not spread across component)
+- Change detection is automatic and reliable
+- Easier to add features (confirmation dialogs, unsaved changes warnings, etc.)
+- No manual state duplication or "dirty checking" code
 
 ## Data and API Layer
 

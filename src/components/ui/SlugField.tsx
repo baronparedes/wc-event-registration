@@ -6,17 +6,19 @@ type SlugFieldProps = {
   value: string
   onChange: (value: string) => void
   error?: string
+  disabled?: boolean
 }
 
 /** Renders the slug input. In create mode it is editable with an auto-generate note.
  *  In edit mode it is locked to preserve existing public event URLs. */
-export function SlugField({ isEditMode, value, onChange, error }: SlugFieldProps) {
+export function SlugField({ isEditMode, value, onChange, error, disabled }: SlugFieldProps) {
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
   }
 
   return (
     <FormInputField
+      disabled={disabled}
       error={error}
       helperText={
         isEditMode

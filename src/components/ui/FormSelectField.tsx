@@ -13,6 +13,7 @@ type FormSelectFieldProps = {
   options: SelectOption[]
   error?: string | null
   required?: boolean
+  disabled?: boolean
   helperText?: string
   labelAdornment?: ReactNode
   selectClassName?: string
@@ -27,6 +28,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
     options,
     error,
     required,
+    disabled,
     helperText,
     labelAdornment,
     selectClassName,
@@ -41,11 +43,12 @@ export function FormSelectField(props: FormSelectFieldProps) {
       </label>
       <select
         {...registration}
-        className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 ${
+        className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted ${
           error
             ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30'
             : 'border-border focus:border-primary focus:ring-primary/30'
         } ${selectClassName ?? ''}`}
+        disabled={disabled}
         id={id}
       >
         {options.map((option) => (

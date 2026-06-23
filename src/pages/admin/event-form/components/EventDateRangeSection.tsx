@@ -15,6 +15,7 @@ type EventDateRangeSectionProps = {
   endId: string
   errors: FieldErrors<CreateEventInput>
   register: UseFormRegister<CreateEventInput>
+  disabled?: boolean
 }
 
 function getErrorMessage(
@@ -26,8 +27,18 @@ function getErrorMessage(
 }
 
 export function EventDateRangeSection(props: EventDateRangeSectionProps) {
-  const { title, startName, startLabel, startId, endName, endLabel, endId, errors, register } =
-    props
+  const {
+    title,
+    startName,
+    startLabel,
+    startId,
+    endName,
+    endLabel,
+    endId,
+    errors,
+    register,
+    disabled,
+  } = props
 
   const startError = getErrorMessage(errors, startName)
   const endError = getErrorMessage(errors, endName)
@@ -36,6 +47,7 @@ export function EventDateRangeSection(props: EventDateRangeSectionProps) {
     <SectionCard title={title}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormInputField
+          disabled={disabled}
           error={startError}
           id={startId}
           label={startLabel}
@@ -44,6 +56,7 @@ export function EventDateRangeSection(props: EventDateRangeSectionProps) {
         />
 
         <FormInputField
+          disabled={disabled}
           error={endError}
           id={endId}
           label={endLabel}

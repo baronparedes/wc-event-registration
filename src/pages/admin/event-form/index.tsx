@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,6 +15,8 @@ import {
   EventDetailsSection,
   EventFormActions,
   EventRegistrationSettingsSection,
+  EventStatusWarning,
+  SaveConfirmationDialog,
 } from './components'
 
 type AdminEventFormPageProps = {
@@ -64,6 +66,8 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   const isPending = createMutation.isPending || updateMutation.isPending
 
   const slugManuallyEdited = useRef(false)
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<CreateEventInput | null>(null)
 
   const {
     register,
@@ -71,7 +75,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     setValue,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty, dirtyFields },
   } = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema),
     defaultValues: DEFAULT_VALUES,
@@ -105,6 +109,18 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   }, [isEditMode, titleValue, setValue])
 
   async function onSubmit(data: CreateEventInput) {
+    // If event is published and we're editing, show confirmation dialog
+    if (isEditMode && existingEvent?.status === 'published') {
+      setPendingFormData(data)
+      setShowSaveConfirmation(true)
+      return
+    }
+
+    // Otherwise, save directly
+    await performSave(data)
+  }
+
+  async function performSave(data: CreateEventInput) {
     try {
       if (isEditMode && id) {
         await updateMutation.mutateAsync({ id, ...data })
@@ -117,6 +133,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save event.'
       toast.error(message)
+    } finally {
+      setShowSaveConfirmation(false)
+      setPendingFormData(null)
     }
   }
 
@@ -138,6 +157,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
 
   const title = isEditMode ? 'Edit Event' : 'Create Event'
   const slugValue = watch('slug')
+  const isArchivedEvent = isEditMode && existingEvent?.status === 'archived'
 
   return (
     <section className="mx-auto max-w-4xl space-y-6">
@@ -147,6 +167,8 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           {isEditMode ? 'Update event details below.' : 'Fill in the details for your new event.'}
         </p>
       </div>
+
+      {existingEvent && <EventStatusWarning status={existingEvent.status} />}
 
       <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         <EventDetailsSection
@@ -158,6 +180,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           }}
           register={register}
           slugValue={slugValue}
+          disabled={isArchivedEvent}
         />
 
         <EventDateRangeSection
@@ -170,6 +193,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           startLabel="Event Start"
           startName="starts_at"
           title="Event Schedule"
+          disabled={isArchivedEvent}
         />
 
         <EventDateRangeSection
@@ -182,16 +206,32 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           startLabel="Registration Opens"
           startName="registration_opens_at"
           title="Registration Window"
+          disabled={isArchivedEvent}
         />
 
-        <EventRegistrationSettingsSection register={register} />
+        <EventRegistrationSettingsSection register={register} disabled={isArchivedEvent} />
 
         <EventFormActions
           isEditMode={isEditMode}
           isPending={isPending}
           onCancel={() => navigate('/admin/events')}
+          disabled={isArchivedEvent}
+          hasChanges={!isEditMode || isDirty}
         />
       </form>
+
+      {pendingFormData && existingEvent && (
+        <SaveConfirmationDialog
+          isOpen={showSaveConfirmation}
+          changedFieldNames={Object.keys(dirtyFields) as (keyof CreateEventInput)[]}
+          isPending={isPending}
+          onConfirm={() => performSave(pendingFormData)}
+          onCancel={() => {
+            setShowSaveConfirmation(false)
+            setPendingFormData(null)
+          }}
+        />
+      )}
     </section>
   )
 }

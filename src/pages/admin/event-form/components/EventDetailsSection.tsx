@@ -11,15 +11,17 @@ type EventDetailsSectionProps = {
   errors: FieldErrors<CreateEventInput>
   register: UseFormRegister<CreateEventInput>
   onSlugChange: (value: string) => void
+  disabled?: boolean
 }
 
 export function EventDetailsSection(props: EventDetailsSectionProps) {
-  const { isEditMode, slugValue, errors, register, onSlugChange } = props
+  const { isEditMode, slugValue, errors, register, onSlugChange, disabled } = props
 
   return (
     <SectionCard title="Event Details">
       <div className="space-y-4">
         <FormInputField
+          disabled={disabled}
           error={typeof errors.title?.message === 'string' ? errors.title.message : null}
           id="event-title"
           label="Title"
@@ -29,6 +31,7 @@ export function EventDetailsSection(props: EventDetailsSectionProps) {
         />
 
         <SlugField
+          disabled={disabled}
           error={errors.slug?.message}
           isEditMode={isEditMode}
           onChange={onSlugChange}
@@ -36,6 +39,7 @@ export function EventDetailsSection(props: EventDetailsSectionProps) {
         />
 
         <FormTextareaField
+          disabled={disabled}
           id="event-description"
           label="Description"
           placeholder="Describe the event for participants..."
@@ -44,6 +48,7 @@ export function EventDetailsSection(props: EventDetailsSectionProps) {
         />
 
         <FormInputField
+          disabled={disabled}
           id="event-location"
           label="Location"
           placeholder="e.g. Main Hall, Building A"

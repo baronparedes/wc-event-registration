@@ -10,6 +10,7 @@ type FormInputFieldBaseProps = {
   type?: 'text' | 'email' | 'password' | 'datetime-local'
   autoComplete?: string
   readOnly?: boolean
+  disabled?: boolean
   helperText?: string
   labelAdornment?: ReactNode
   inputClassName?: string
@@ -43,6 +44,7 @@ export function FormInputField(props: FormInputFieldProps) {
     type = 'text',
     autoComplete,
     readOnly,
+    disabled,
     helperText,
     labelAdornment,
     inputClassName,
@@ -64,12 +66,13 @@ export function FormInputField(props: FormInputFieldProps) {
       </label>
       <input
         {...controlledProps}
-        className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 ${
+        className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted ${
           error
             ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30'
             : 'border-border focus:border-primary focus:ring-primary/30'
         } ${inputClassName ?? ''}`}
         autoComplete={autoComplete}
+        disabled={disabled}
         id={id}
         placeholder={placeholder}
         readOnly={readOnly}

@@ -5,16 +5,19 @@ import { SectionCard } from '../../../../components/ui/SectionCard'
 
 type EventRegistrationSettingsSectionProps = {
   register: UseFormRegister<CreateEventInput>
+  disabled?: boolean
 }
 
 export function EventRegistrationSettingsSection({
   register,
+  disabled,
 }: EventRegistrationSettingsSectionProps) {
   return (
     <SectionCard title="Registration Settings">
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormSelectField
+            disabled={disabled}
             id="event-duplicate-policy"
             label="Duplicate Policy"
             options={[
@@ -26,6 +29,7 @@ export function EventRegistrationSettingsSection({
           />
 
           <FormSelectField
+            disabled={disabled}
             id="event-registration-mode"
             label="Registration Mode"
             options={[
