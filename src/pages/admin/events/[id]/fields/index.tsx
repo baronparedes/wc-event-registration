@@ -55,11 +55,21 @@ export function AdminEventFieldsPage() {
             </p>
           )}
         </div>
-        {isDraft && (
-          <Button type="button" variant="default" size="md" onClick={openCreate}>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            type="button"
+            variant="default"
+            size="md"
+            onClick={openCreate}
+            disabled={!isDraft}
+            title={!isDraft ? 'Only draft events can add new fields.' : undefined}
+          >
             Add Field
           </Button>
-        )}
+          {!isDraft && (
+            <p className="text-right text-xs text-amber-700">Only draft events can add fields.</p>
+          )}
+        </div>
       </div>
 
       {/* Status banners */}

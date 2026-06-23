@@ -87,18 +87,7 @@ export function EventRegistrationPage() {
   // been looked up yet so a card tap registers immediately.
   const isRfidCaptureActive =
     isGateReady && memberLookup.matchedMember === null && !memberLookup.isLookupPending
-  useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive)
-
-  const focusMemberIdInput = () => {
-    requestAnimationFrame(() => {
-      memberIdInputRef.current?.focus()
-    })
-
-    // Retry once after paint to handle late mount/layout timing.
-    setTimeout(() => {
-      memberIdInputRef.current?.focus()
-    }, 120)
-  }
+  const focusMemberIdInput = useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive)
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event.id : undefined,
@@ -139,6 +128,7 @@ export function EventRegistrationPage() {
   async function handleLookupSubmit(values: Parameters<typeof memberLookup.handleLookupSubmit>[0]) {
     clearLookupError()
     const result = await memberLookup.handleLookupSubmit(values)
+    focusMemberIdInput()
 
     if (!result.success) {
       showLookupError(result.error || 'Member lookup failed')

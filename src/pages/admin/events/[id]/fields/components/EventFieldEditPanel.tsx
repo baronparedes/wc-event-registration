@@ -13,10 +13,7 @@ import {
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
 } from '@/lib/admin/eventFieldSchema'
-import type {
-  EventFieldFormValues,
-  EventFieldTypeEnum,
-} from '@/lib/admin/eventFieldSchema'
+import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/admin/eventFieldSchema'
 import type { AdminEventField, EventStatus } from '@/lib/admin/types'
 import {
   useCreateEventFieldMutation,
@@ -64,6 +61,8 @@ export function EventFieldEditPanel({
     formState: { errors, isDirty, isValid },
   } = useForm<EventFieldFormValues>({
     resolver: zodResolver(eventFieldFormSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: field ? fieldToFormValues(field) : DEFAULT_FIELD_FORM_VALUES,
   })
 
@@ -148,6 +147,15 @@ export function EventFieldEditPanel({
   }
 
   const canSave = isDirty && isValid && !isFullyLocked && !isPending
+  const disabledHint = (() => {
+    if (isPending) return 'Save in progress.'
+    if (errors.field_key?.message) return `Field Name: ${errors.field_key.message}`
+    if (errors.label?.message) return `Field Label: ${errors.label.message}`
+    if (errors.field_type?.message) return `Field Type: ${errors.field_type.message}`
+    if (!isDirty) return 'Make at least one change to enable saving.'
+    if (!isValid) return 'Fix the validation errors above.'
+    return null
+  })()
 
   return (
     <div
@@ -220,6 +228,7 @@ export function EventFieldEditPanel({
             isEditing={isEditing}
             canSave={canSave}
             isPending={isPending}
+            disabledHint={disabledHint}
             onClose={onClose}
           />
         </form>

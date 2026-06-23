@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, type RefObject } from 'react'
 
 /**
  * Maintains focus on a member ID input for RFID kiosk scanning.
@@ -12,11 +12,55 @@ import { useEffect, useRef, type RefObject } from 'react'
  *    reader fires before the browser restores focus.
  */
 export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, isActive: boolean) {
+  const focusMemberIdInput = useCallback(() => {
+    const focusAndSelectInput = () => {
+      const input = inputRef.current
+      if (!input) {
+        return
+      }
+
+      input.focus()
+      input.select()
+      input.setSelectionRange(0, input.value.length)
+    }
+
+    requestAnimationFrame(() => {
+      focusAndSelectInput()
+    })
+
+    setTimeout(() => {
+      focusAndSelectInput()
+    }, 120)
+  }, [inputRef])
+
   // Keep a stable ref so blur/keydown closures never go stale.
   const isActiveRef = useRef(isActive)
   useEffect(() => {
     isActiveRef.current = isActive
   }, [isActive])
+
+  useEffect(() => {
+    const input = inputRef.current
+    if (!input) {
+      return
+    }
+
+    const handleFocus = () => {
+      input.select()
+      input.setSelectionRange(0, input.value.length)
+
+      requestAnimationFrame(() => {
+        input.select()
+        input.setSelectionRange(0, input.value.length)
+      })
+    }
+
+    input.addEventListener('focus', handleFocus)
+
+    return () => {
+      input.removeEventListener('focus', handleFocus)
+    }
+  }, [inputRef])
 
   useEffect(() => {
     if (!isActive) return
@@ -26,10 +70,10 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
     // is a fallback for browsers that restore their own focus after page refresh
     // and can fire after a single animation frame.
     requestAnimationFrame(() => {
-      inputRef.current?.focus()
+      focusMemberIdInput()
     })
     const focusFallback = setTimeout(() => {
-      inputRef.current?.focus()
+      focusMemberIdInput()
     }, 200)
 
     const input = inputRef.current
@@ -54,7 +98,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
 
       setTimeout(() => {
         if (isActiveRef.current) {
-          inputRef.current?.focus()
+          focusMemberIdInput()
         }
       }, 150)
     }
@@ -84,7 +128,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
       const tag = (document.activeElement as HTMLElement | null)?.tagName
       if (tag && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
 
-      inputRef.current?.focus()
+      focusMemberIdInput()
       // The browser will deliver the keystroke to the now-focused input naturally.
     }
 
@@ -95,5 +139,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
       input.removeEventListener('blur', handleBlur)
       document.removeEventListener('keydown', handleDocumentKeydown)
     }
-  }, [isActive, inputRef])
+  }, [focusMemberIdInput, isActive, inputRef])
+
+  return focusMemberIdInput
 }
