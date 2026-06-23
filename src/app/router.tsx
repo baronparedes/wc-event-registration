@@ -3,12 +3,13 @@ import type { ReactElement } from 'react'
 import { AppShell } from '../components/layout/AppShell'
 import { useAdminAuthQuery } from '../hooks/domain/auth'
 import { AdminLoginPage } from '../pages/admin/login'
-import { AdminRegistrationsPage } from '../pages/admin/registrations'
-import { AdminEventFieldsPage } from '../pages/admin/event-fields'
-import { AdminEventFormPage } from '../pages/admin/event-form'
+import { AdminRegistrationsPage } from '../pages/admin/events/[id]/registrations'
+import { AdminEventFieldsPage } from '../pages/admin/events/[id]/fields'
+import { AdminEditEventPage } from '../pages/admin/events/[id]'
+import { AdminNewEventPage } from '../pages/admin/events/new'
 import { AdminEventsPage } from '../pages/admin/events'
-import { HomePage } from '../pages/public/home'
-import { EventRegistrationPage } from '../pages/public/event-registration'
+import { HomePage } from '../pages/home'
+import { EventRegistrationPage } from '../pages/events/[slug]/register'
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const { data, isLoading } = useAdminAuthQuery()
@@ -50,7 +51,7 @@ export function AppRouter() {
           path="/admin/events/new"
           element={
             <RequireAdminAuth>
-              <AdminEventFormPage mode="create" />
+              <AdminNewEventPage />
             </RequireAdminAuth>
           }
         />
@@ -58,7 +59,7 @@ export function AppRouter() {
           path="/admin/events/:id"
           element={
             <RequireAdminAuth>
-              <AdminEventFormPage mode="edit" />
+              <AdminEditEventPage />
             </RequireAdminAuth>
           }
         />
