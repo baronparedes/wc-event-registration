@@ -110,6 +110,7 @@ Phase 4 done criteria:
 - end-to-end registration flow verified: ID lookup → form → submission → persistence ✅
 
 Phase 4 completion verified on 2026-06-22:
+
 - Member lookup: ID "1324250891" → profile display ✅
 - Dynamic fields: 14 fields rendered with proper validation ✅
 - Form submission: All fields filled → Edge Function called → success response with registration_id ✅
@@ -132,6 +133,7 @@ Phase 4 additional done criteria (pre-Phase 5):
 - registrations list/detail and CSV export (Chunk 10)
 
 Chunk 7 completion verified on 2026-06-23:
+
 - Admin auth hooks: `useAdminAuthQuery`, `useAdminLoginMutation`, `useAdminLogoutMutation` ✅
 - Route guard: `RequireAdminAuth` redirects unauthenticated users, shows loading state ✅
 - Admin login page: form with error/success toasts, validates role via admins table ✅
@@ -140,6 +142,7 @@ Chunk 7 completion verified on 2026-06-23:
 - TypeScript strict, build passes ✅
 
 Chunk 8 completion verified on 2026-06-23:
+
 - Event publishing workflow: Draft → Published → Archived with proper status restrictions ✅
 - Validation schemas: Two-schema approach (draft lenient, publish strict) ✅
 - PublishRequirementsChecker: Real-time checklist visible in edit form showing progress (X/6) ✅
@@ -153,6 +156,7 @@ Chunk 8 completion verified on 2026-06-23:
 - TypeScript strict, build passes with 256 modules, 688 KB gzipped ✅
 
 Readiness for Phase 5 continued (Chunk 8+):
+
 - RLS matrix tested for admin role ✅
 - public write path secured through Edge Functions ✅
 - service-role usage documented in Supabase grant policies ✅
@@ -312,6 +316,7 @@ Status: Completed.
 Secure submit path and duplicate policy logic.
 
 Status: Completed. 900+ LOC of integration tests, constraint tests, and utilities. All scenarios covered:
+
 - Block policy: first succeeds, duplicate rejected ✅
 - Allow_update policy: duplicate updates existing ✅
 - Idempotency: same key returns same result ✅
@@ -337,6 +342,7 @@ Status: Completed.
 Event publishing workflow with requirements enforcement.
 
 Status: Completed.
+
 - Two-schema validation (draft lenient, publish strict) ✅
 - PublishRequirementsChecker showing real-time progress ✅
 - PublishEventDialog at confirmation with requirement enforcement ✅

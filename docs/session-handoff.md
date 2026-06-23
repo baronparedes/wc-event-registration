@@ -103,12 +103,12 @@ Implemented in Chunk 6:
 
 - Vitest test framework installed and configured with happy-dom environment
 - Test infrastructure: vitest.config.ts, vitest.setup.ts, global setup with .env.local loading
-- Shared test utilities library: src/__tests__/test-utils.ts (188 LOC)
+- Shared test utilities library: src/**tests**/test-utils.ts (188 LOC)
   - Supabase admin and anon client factories
   - Test member seeding and cleanup helpers
   - Edge Function HTTP invocation utilities
   - Event fetching and data retrieval helpers
-- Integration test suite: src/__tests__/integration.test.ts (574 LOC)
+- Integration test suite: src/**tests**/integration.test.ts (574 LOC)
   - 16 comprehensive test scenarios covering:
     - Block policy: first registration accepted, duplicate rejected
     - Allow_update policy: first succeeds, duplicate updates existing
@@ -126,7 +126,7 @@ Implemented in Chunk 6:
     - Idempotency key uniqueness (per-event unique index)
     - Status enum validation (submitted, updated, cancelled)
     - Timestamp correctness (submitted_at, updated_at)
-- Hook unit test placeholders: src/hooks/event-registration/__tests__/useSubmitRegistrationMutation.test.ts
+- Hook unit test placeholders: src/hooks/event-registration/**tests**/useSubmitRegistrationMutation.test.ts
 - Updated TypeScript config: added node and vitest/globals to types
 - Added npm test scripts: test, test:ui, test:integration, test:unit
 - Verification results:
@@ -159,7 +159,7 @@ Implemented in Chunk 8:
   - `createEventSchema`: Draft save (lenient) - title + slug required, rest optional
   - `publishEventSchema`: Publish (strict) - requires 6 fields: description, location, starts_at, ends_at, registration_opens_at, registration_closes_at
   - Shared date range validation ensures start < end for both event and registration windows
-- **React Hook Form integration**: 
+- **React Hook Form integration**:
   - All event forms use `zodResolver(publishEventSchema)` for validation
   - `isDirty` tracks if any field changed from defaults (eliminates false positives from datetime format mismatches)
   - `dirtyFields` object identifies specific changed fields for SaveConfirmationDialog
@@ -202,7 +202,7 @@ Implemented in Chunk 8:
   - Allows reuse in dialog with AdminEvent type without type casting
 - **usePublishEventMutation enhanced**:
   - Fetches full event before publishing
-  - Validates against `publishEventSchema` 
+  - Validates against `publishEventSchema`
   - Returns user-friendly error listing missing fields if validation fails
   - Only updates status if all requirements met (fail-fast)
 - **Verification**:
@@ -270,6 +270,7 @@ Enhancements to Chunk 5 public registration flow:
 - **Rich HTML descriptions**: Description markup is sanitized with DOMPurify and rendered with app-owned scoped element styles.
 
 State management additions:
+
 - `isRegistrationBlocked`: Tracks blocked duplicate path separately from edit mode
 - `lookupErrorFadeOut`: Controls opacity fade for 5-second auto-clear
 - `autoClearLookupError`: Flag to enable only for blocked duplicates
@@ -281,6 +282,7 @@ Build status: TypeScript strict, zero errors; 225 modules, 631 KB gzipped.
 ## Current Status
 
 **Chunk 8 Complete: Event publishing workflow with requirements enforcement**
+
 - Event status workflow implemented (Draft → Published → Archived)
 - Publish requirements visible proactively in form and confirmation dialog
 - Two-schema validation ensures publish readiness before allowing publication
@@ -296,17 +298,19 @@ Build status: TypeScript strict, zero errors; 225 modules, 631 KB gzipped.
 ## Current Focus
 
 Public registration flow fully functional and UX-polished:
+
 1. Home page event discovery ✓
 2. Member ID lookup with duplicate detection ✓
 3. Profile display (always visible once verified) ✓
 4. Editable vs blocked duplicate handling ✓
 5. Dynamic field form submission ✓
-3. Dynamic field rendering ✓
-4. Form validation ✓
-5. Submission to Edge Function ✓
-6. Database persistence ✓
+6. Dynamic field rendering ✓
+7. Form validation ✓
+8. Submission to Edge Function ✓
+9. Database persistence ✓
 
 Tested end-to-end on 2026-06-22:
+
 - Member ID "1324250891" lookup succeeded
 - Form rendered 14 dynamic fields correctly
 - All required fields filled: Team Name, Guests, Email, Shirt Size, Session, Service Areas, Arrival Date, Code of Conduct
