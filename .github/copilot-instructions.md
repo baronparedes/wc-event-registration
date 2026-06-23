@@ -163,12 +163,12 @@ Edge Function mutations (privileged writes):
 
 Hook patterns:
 
-- Store hooks in `src/hooks/<domain>/` folder organized by operation type.
+- Store feature hooks under `src/hooks/domain/<feature>/` and shared UI helpers under `src/hooks/utils/`.
 - **Operation-scoped subfolder structure** (MANDATORY):
-  - `/queries/`: All read operations. Example: `src/hooks/admin/events/queries/useAdminEventsQuery.ts`
-  - `/mutations/`: All write operations. Example: `src/hooks/event-registration/mutations/useSubmitRegistrationMutation.ts`
-  - `/state/`: Local UI orchestration (form state, temporary views, step management). Example: `src/hooks/event-registration/state/useMemberLookupState.ts`
-  - Shared utilities at `/hooks/utils/`: Cross-domain UI/form state utilities (focus management, error lifecycle, dialog state). Example: `src/hooks/utils/useErrorWithFadeout.ts`
+  - `/queries/`: All read operations. Example: `src/hooks/domain/events/queries/usePublicEventQuery.ts`
+  - `/mutations/`: All write operations. Example: `src/hooks/domain/registrations/mutations/useSubmitRegistrationMutation.ts`
+  - `/state/`: Local UI orchestration (form state, temporary views, step management). Example: `src/hooks/domain/members/state/useMemberLookupState.ts`
+  - Shared utilities at `src/hooks/utils/`: Cross-domain UI/form state utilities (focus management, error lifecycle, dialog state). Example: `src/hooks/utils/useErrorWithFadeout.ts`
 
 - **Naming convention** (consistent across all domains):
   - Queries: `use<Entity>Query` (e.g., `usePublicEventQuery`, `useAdminEventsQuery`, `useMemberLookupQuery`)
@@ -179,15 +179,16 @@ Hook patterns:
 - One hook per file (strict). Export exactly one hook function with clear JSDoc.
 
 - **Barrel exports** at each operation level:
-  - `src/hooks/<domain>/queries/index.ts` exports all query hooks
-  - `src/hooks/<domain>/mutations/index.ts` exports all mutation hooks
-  - `src/hooks/<domain>/state/index.ts` exports all state hooks
-  - `src/hooks/<domain>/index.ts` re-exports from subfolders + utilities
+  - `src/hooks/domain/<feature>/queries/index.ts` exports all query hooks when that operation type exists
+  - `src/hooks/domain/<feature>/mutations/index.ts` exports all mutation hooks when that operation type exists
+  - `src/hooks/domain/<feature>/state/index.ts` exports all state hooks when that operation type exists
+  - `src/hooks/domain/<feature>/index.ts` re-exports each feature's hooks
+  - `src/hooks/domain/index.ts` re-exports feature domains
   - `src/hooks/utils/index.ts` exports all shared utility hooks
 
 - **Import pattern** (maintain backward compatibility):
-  - From domain: `import { useAdminEventsQuery } from '../../hooks/admin'` (barrel re-export)
-  - From subdomains: `import { useAdminEventsQuery } from '../../hooks/admin/events/queries'` (direct import for clarity)
+  - From feature domain: `import { useAdminEventsQuery } from '../../hooks/domain/events'` (preferred barrel import)
+  - From operation subfolder: `import { useAdminEventsQuery } from '../../hooks/domain/events/queries'` (direct import for clarity)
   - Utilities: `import { useErrorWithFadeout } from '../../hooks/utils'` (from shared barrel)
 
 - **Pages and components import hooks directly** from domain or subdomain barrels, not from lib.
