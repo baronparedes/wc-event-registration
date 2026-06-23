@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
@@ -13,7 +13,12 @@ import { usePublicEventQuery } from '@/hooks/domain/events'
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields'
 import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations'
 import { useMemberLookupState } from '@/hooks/domain/members'
-import { useRfidAutoFocus, useErrorWithFadeout } from '@/hooks/utils'
+import {
+  useRfidAutoFocus,
+  useErrorWithFadeout,
+  useScanBuffer,
+  useKioskInactivityReset,
+} from '@/hooks/utils'
 import {
   DynamicFieldsStepCard,
   EventHeaderCard,
@@ -88,6 +93,30 @@ export function EventRegistrationPage() {
   const isRfidCaptureActive =
     isGateReady && memberLookup.matchedMember === null && !memberLookup.isLookupPending
   const focusMemberIdInput = useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive)
+
+  // Global scan buffer for kiosk mode: any RFID scan on the page triggers lookup directly
+  // (unless user is actively typing in the Member ID input field)
+  const handleScan = useCallback(
+    (scannedMemberId: string) => {
+      // Trigger lookup immediately without form interaction
+      memberLookup.handleLookupSubmit({ memberId: scannedMemberId })
+    },
+    [memberLookup],
+  )
+  useScanBuffer(handleScan, isGateReady, memberIdInputRef)
+
+  // Kiosk inactivity timeout: clear all user data after 3 minutes of no activity
+  // Prevents data residue on shared public kiosk terminals
+  const handleKioskReset = useCallback(() => {
+    memberLookup.clearMember()
+    memberLookup.lookupForm.reset({ memberId: '' })
+    dynamicForm.reset({})
+    setSubmitErrorMessage(null)
+    setSubmitSuccessMessage(null)
+    clearLookupError()
+  }, [memberLookup, dynamicForm, clearLookupError])
+
+  useKioskInactivityReset(handleKioskReset, 3 * 60 * 1000, isGateReady)
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event.id : undefined,
