@@ -281,37 +281,37 @@ Use these gates as required pass criteria before moving between phases and befor
 
 Supabase foundations, app scaffold, route shell, theme baseline.
 
+Status: Completed.
+
 ### Chunk 1
 
 Database skeleton + users CSV import workflow.
+
+Status: Completed.
 
 ### Chunk 2
 
 RLS policy lab with role test matrix.
 
+Status: Completed.
+
 ### Chunk 3
 
 Public ID-first registration gate.
 
-Status: Completed locally.
+Status: Completed.
 
 ### Chunk 4
 
 Dynamic fields and validation.
 
-Status: Next active chunk.
+Status: Completed.
 
 ### Chunk 5
 
 Secure submit path and duplicate policy logic.
 
-Status: Completed locally.
-
-### Chunk 6
-
-QA test suite for duplicate policy, idempotency, and hardening scenarios.
-
-Status: Completed locally. 900+ LOC of integration tests, constraint tests, and utilities. All scenarios covered:
+Status: Completed. 900+ LOC of integration tests, constraint tests, and utilities. All scenarios covered:
 - Block policy: first succeeds, duplicate rejected ✅
 - Allow_update policy: duplicate updates existing ✅
 - Idempotency: same key returns same result ✅
@@ -319,18 +319,46 @@ Status: Completed locally. 900+ LOC of integration tests, constraint tests, and 
 - Race conditions: winner-take-all on block policy ✅
 - Validation: missing fields, invalid IDs, oversized payloads ✅
 - Abuse patterns: SQL injection and XSS detection ✅
-Build passes with 227 modules, zero errors. All tests repeatable with auto-cleanup.
+
+### Chunk 6
+
+QA test suite for duplicate policy, idempotency, and hardening scenarios.
+
+Status: Completed.
 
 ### Chunk 7
 
 Admin core pages and protected access.
 
-Status: Next active chunk.
-
-### Chunk 7
-
-Admin registrations and CSV export.
+Status: Completed.
 
 ### Chunk 8
 
-Hardening and future feature hooks.
+Event publishing workflow with requirements enforcement.
+
+Status: Completed.
+- Two-schema validation (draft lenient, publish strict) ✅
+- PublishRequirementsChecker showing real-time progress ✅
+- PublishEventDialog at confirmation with requirement enforcement ✅
+- Event status workflow (Draft → Published → Archived) with restrictions ✅
+- React Hook Form integration for accurate change detection ✅
+- Component self-managed state (PublishActionButton) ✅
+- Shared publishRequirements helper to prevent duplication ✅
+
+### Chunk 9
+
+Event field configuration (CRUD for all field types).
+
+Status: Next active chunk.
+
+### Chunk 10
+
+Registrations list/detail with CSV export.
+
+Status: Future.
+
+### Chunk 11
+
+Hardening, performance optimization, and future feature hooks.
+
+Status: Future.
