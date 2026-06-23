@@ -153,19 +153,92 @@ Implemented in Chunk 7:
 - Security: hardcoded Supabase secret removed from test-utils.ts, now requires SUPABASE_SERVICE_ROLE_KEY env var
 - Verification: build passes (229 modules, 665.26 KB gzipped), zero errors, all admin routes protected
 
-Core decisions locked:
+Implemented in Chunk 8:
 
-- Public flow must always be ID-first
-- UI stack: Shadcn UI + Tailwind + Radix
-- Form stack: React Hook Form + Zod
-- Theme: Theme A Civic Trust
-- Duplicate policy is per-event: block or allow update
-- Admin scope in v1: global admin
-- Export in v1: CSV
-- Admin auth: via Supabase email/password with admins table role verification
-- Local dev: admin account pre-seeded in dev.local.sql, never committed
+- **Event form validation split**: Two Zod schemas for different workflows:
+  - `createEventSchema`: Draft save (lenient) - title + slug required, rest optional
+  - `publishEventSchema`: Publish (strict) - requires 6 fields: description, location, starts_at, ends_at, registration_opens_at, registration_closes_at
+  - Shared date range validation ensures start < end for both event and registration windows
+- **React Hook Form integration**: 
+  - All event forms use `zodResolver(publishEventSchema)` for validation
+  - `isDirty` tracks if any field changed from defaults (eliminates false positives from datetime format mismatches)
+  - `dirtyFields` object identifies specific changed fields for SaveConfirmationDialog
+  - `reset(data)` sets initial values and resets dirty state (used for edit mode prefill)
+- **PublishRequirementsChecker component**: Real-time checklist visible in draft event edit form
+  - Shows 6 required fields with ○ (empty) / ✓ (filled) indicators
+  - Progress counter (X/6) updates as user fills fields
+  - Green "Event is ready to publish" message when complete
+  - Uses `useMemo` for efficient recalculation
+- **Shared publishRequirements helper** (`src/lib/admin/publishRequirements.ts`):
+  - `getPublishRequirements()` computes requirements array for any event data shape
+  - `areAllRequirementsMet()` validation function used by both form and dialog
+  - Eliminates duplicate requirements logic across components
+- **Event status restrictions**:
+  - Published events: Blue info banner shows "This event is published", all fields disabled (read-only mode)
+  - Archived events: Amber warning banner shows "This event is archived", all fields disabled, SaveConfirmationDialog hidden
+  - Draft events: Normal edit mode with PublishRequirementsChecker visible
+- **Save button behavior**:
+  - Disabled when `!isDirty` (no changes made in edit mode)
+  - Enabled when `isDirty` (at least one field changed)
+  - Prevents unnecessary saves and clarifies change detection
+- **SaveConfirmationDialog enhanced**:
+  - Uses `dirtyFields` from React Hook Form instead of manual comparison
+  - Shows friendly field labels (e.g., "Event Starts", "Registration Opens")
+  - No hydration errors (removed nested `<p>` tags)
+- **PublishEventDialog component**:
+  - Shows requirements checklist when user clicks Publish from events list
+  - Displays ✓ (green) for filled, ✗ (red) for missing fields
+  - Disables Publish button until all 6 requirements met
+  - Shows amber warning "Event is missing required fields" when incomplete
+  - Reuses PublishRequirementsChecker logic via shared helper
+- **PublishActionButton component** (encapsulates button + dialog):
+  - Renders ActionButton styling consistent with Edit/Fields/Archive actions
+  - Manages internal state for which event is being published
+  - Dialog opens on button click, closes on cancel or successful publish
+  - Passes `onPublish` callback to parent for mutation handling
+  - Eliminates parent state pollution (parent only tracks event mutations, not UI open/close)
+- **Type fixes**:
+  - PublishRequirementsChecker now accepts any object with partial event fields (not just CreateEventInput)
+  - Allows reuse in dialog with AdminEvent type without type casting
+- **usePublishEventMutation enhanced**:
+  - Fetches full event before publishing
+  - Validates against `publishEventSchema` 
+  - Returns user-friendly error listing missing fields if validation fails
+  - Only updates status if all requirements met (fail-fast)
+- **Verification**:
+  - Build passes: 256 modules, 688 KB gzipped, zero errors
+  - Draft event shows PublishRequirementsChecker with real-time updates
+  - Clicking Publish opens dialog with requirements checklist and disabled button
+  - Dialog closes on Cancel or successful publish
+  - Published event shows info banner + disabled fields + no requirement checker
+  - Archived event shows warning banner + disabled fields + no action buttons
+  - Save button disabled when no changes, enabled when fields modified
+  - SaveConfirmationDialog shows friendly field names for published events
 
-## Session Work (2026-06-22)
+Core decisions locked (Chunk 8):
+
+- Publish requires exactly 6 fields: description, location, event window (start/end), registration window (opens/closes)
+- Draft state is always user-created; published/archived are action-driven (no auto-draft from edit)
+- Requirements enforced at mutation time (fail-fast) and shown in dialog before confirm (proactive feedback)
+- Dialog and button state belong in component (no parent orchestration of isOpen state)
+- Shared helper functions prevent requirements duplication (single source of truth)
+- React Hook Form isDirty/dirtyFields are single source of truth for change detection (never duplicate logic)
+
+## Session Work (2026-06-23)
+
+**Chunk 8: Event publishing workflow**
+
+- Implemented two-schema validation approach: lenient draft saves vs strict publish requirements
+- Created PublishRequirementsChecker component showing real-time requirements progress in form
+- Fixed React Hook Form integration: isDirty detects changes accurately, eliminating false "changed" flags
+- Implemented proper datetime normalization (toDatetimeLocal) for accurate comparison
+- Event status workflow: Draft → Published → Archived with visual restrictions and disabled fields
+- Created PublishEventDialog showing requirements checklist at point of publish action
+- Implemented PublishActionButton encapsulating button + dialog state (component self-manages)
+- Extracted shared publishRequirements helper used by both form and dialog (no duplication)
+- Enhanced SaveConfirmationDialog to use React Hook Form dirtyFields for precise change tracking
+- All admin writes now follow vertical slice pattern: UI + hooks + validation + mutations
+- Build verified clean: 256 modules, 688 KB gzipped, zero TypeScript errors
 
 Enhancements to Chunk 5 public registration flow:
 
@@ -204,6 +277,21 @@ State management additions:
 - `shouldFadeDetails`: Syncs Step 2 fade with error fade
 
 Build status: TypeScript strict, zero errors; 225 modules, 631 KB gzipped.
+
+## Current Status
+
+**Chunk 8 Complete: Event publishing workflow with requirements enforcement**
+- Event status workflow implemented (Draft → Published → Archived)
+- Publish requirements visible proactively in form and confirmation dialog
+- Two-schema validation ensures publish readiness before allowing publication
+- React Hook Form change detection eliminates false positives
+- Dialog and button state fully encapsulated in component (no parent state pollution)
+
+**Next Planned Work:**
+
+- **Chunk 9** (admin registrations view): List registrations for each event, filter/search, response display
+- **Chunk 10** (CSV export): Export registrations with responses to CSV
+- **Chunk 11** (QA & polish): End-to-end admin workflow testing, edge cases, performance
 
 ## Current Focus
 
@@ -269,6 +357,24 @@ Next planned work:
 - nickname is stored in users.nickname
 - member role/category/schedule fields remain in users.metadata
 - local member seed file is generated into ignored supabase/seeds/members.local.sql
+
+## Core Principles (All Chunks)
+
+- Public flow must always be ID-first
+- UI stack: Shadcn UI + Tailwind + Radix
+- Form stack: React Hook Form + Zod
+- Theme: Theme A Civic Trust
+- Duplicate policy is per-event: block or allow update
+- Admin scope in v1: global admin
+- Export in v1: CSV
+- Admin auth: via Supabase email/password with admins table role verification
+- Local dev: admin account pre-seeded in dev.local.sql, never committed
+- Publish requires exactly 6 fields: description, location, event window (start/end), registration window (opens/closes)
+- Event status is action-driven: Draft (user-created) → Published (manual action) → Archived (manual action)
+- Requirements enforced at mutation time (fail-fast) AND shown proactively in dialog before confirm
+- Component state should be self-contained: dialog/button state lives in component, not parent
+- Shared helper functions prevent duplication: publishRequirements is single source of truth
+- React Hook Form isDirty/dirtyFields are single source of truth for change detection (never duplicate)
 
 ## Resume Prompt (Simple)
 

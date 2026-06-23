@@ -25,7 +25,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Progress Snapshot (2026-06-23)
 
-Completed through Chunk 7:
+Completed through Chunk 8:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -35,21 +35,9 @@ Completed through Chunk 7:
 - Chunk 5: Edge Function submit path + duplicate policy enforcement + idempotency + full persistence + end-to-end tested
 - Chunk 6: QA test suite for duplicate policy, idempotency, and hardening scenarios (900+ LOC)
 - Chunk 7: admin authentication + protected routes + login page + local admin seeding
+- Chunk 8: event publishing workflow + status transitions + requirement enforcement (NEW)
 
-Chunk 7 implementation:
-
-- Admin auth hooks: `useAdminAuthQuery` (session + role verification), `useAdminLoginMutation` (signin + role check + invalidate on success), `useAdminLogoutMutation` (signout + clear state + invalidate)
-- Admin route guard: `RequireAdminAuth` component uses real auth state, shows loading spinner, redirects unauthenticated to /admin/login
-- Admin login page: email/password form with error/success toasts, redirects authenticated users to /admin/events
-- Auth state persistence: AppProviders subscribes to Supabase auth.onAuthStateChange() to keep state in sync across tabs/refreshes
-- Shell navigation: AppShell includes logout button when authenticated, router links for SPA navigation
-- Local admin seed: dev.local.sql creates email/password auth user with admins table row (git-ignored)
-- Fixture isolation: admin and event seeds moved to supabase/seeds/dev.local.sql, shared seed.sql neutralized, .gitignore updated
-- Documentation: README.md and session-handoff.md updated with local seeding workflow
-- Security hardening: removed hardcoded secret from test-utils.ts, now requires SUPABASE_SERVICE_ROLE_KEY env var
-- TypeScript strict, zero errors; build passes with 229 modules, 665.26 KB gzipped
-
-Next active target: Chunk 8 (admin event management - list, create, edit, archive).
+Next active target: Chunk 9 (event field configuration CRUD).
 
 ## Phase Plan
 
@@ -138,7 +126,8 @@ Phase 4 additional done criteria (pre-Phase 5):
 - ✅ admin authentication with role verification (Chunk 7)
 - ✅ protected admin routes with RequireAdminAuth guard (Chunk 7)
 - ✅ admin login page with email/password form (Chunk 7)
-- event list, create, edit, archive (Chunk 8)
+- ✅ event publish workflow with requirements enforcement (Chunk 8)
+- event list, create, edit, archive (Chunk 8 - partial)
 - field builder for all supported field types (Chunk 9)
 - registrations list/detail and CSV export (Chunk 10)
 
@@ -149,6 +138,19 @@ Chunk 7 completion verified on 2026-06-23:
 - Auth persistence: AppProviders syncs session across tabs via Supabase auth listener ✅
 - Local seeding: dev.local.sql includes admin account (local@admin.com / Supabase@123) ✅
 - TypeScript strict, build passes ✅
+
+Chunk 8 completion verified on 2026-06-23:
+- Event publishing workflow: Draft → Published → Archived with proper status restrictions ✅
+- Validation schemas: Two-schema approach (draft lenient, publish strict) ✅
+- PublishRequirementsChecker: Real-time checklist visible in edit form showing progress (X/6) ✅
+- PublishEventDialog: Requirements displayed at confirmation with disabled button if incomplete ✅
+- React Hook Form integration: isDirty eliminates false "changed" flags, dirtyFields for precise tracking ✅
+- PublishActionButton: Encapsulates button + dialog state, component self-manages (no parent state pollution) ✅
+- Shared publishRequirements helper: Single source of truth for requirements (used by form and dialog) ✅
+- Event restrictions: Published events show info banner + disabled fields; Archived show warning + disabled ✅
+- SaveConfirmationDialog: Uses dirtyFields for accurate change tracking, shows friendly field names ✅
+- usePublishEventMutation: Validates requirements before publish, returns user-friendly error listing missing fields ✅
+- TypeScript strict, build passes with 256 modules, 688 KB gzipped ✅
 
 Readiness for Phase 5 continued (Chunk 8+):
 - RLS matrix tested for admin role ✅
