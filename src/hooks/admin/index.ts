@@ -8,4 +8,5 @@ export { ADMIN_EVENTS_QUERY_KEY, useAdminEventsQuery } from './useAdminEventsQue
 export { adminEventQueryKey, useAdminEventQuery } from './useAdminEventQuery'
 export { useCreateEventMutation } from './useCreateEventMutation'
 export { useUpdateEventMutation } from './useUpdateEventMutation'
+export { usePublishEventMutation } from './usePublishEventMutation'
 export { useArchiveEventMutation } from './useArchiveEventMutation'

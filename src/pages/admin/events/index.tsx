@@ -1,10 +1,15 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAdminEventsQuery } from '../../../hooks/admin'
+import { toast } from 'sonner'
+import {
+  useAdminEventsQuery,
+  usePublishEventMutation,
+  useArchiveEventMutation,
+} from '../../../hooks/admin'
 import type { AdminEvent } from '../../../lib/admin/types'
-import { ActionButton, ActionLink } from '../../../components/ui/ActionLink'
+import { ActionLink } from '../../../components/ui/ActionLink'
+import { ActionConfirmButton } from '../../../components/ui/ActionConfirmButton'
 import { Button } from '../../../components/ui/Button'
-import { ArchiveEventDialog, EventStatusBadge } from './components'
+import { EventStatusBadge } from './components'
 
 function formatDate(isoString: string | null): string {
   if (!isoString) return '—'
@@ -25,7 +30,26 @@ function DuplicatePolicyLabel({ policy }: { policy: AdminEvent['duplicate_policy
 
 export function AdminEventsPage() {
   const { data: events, isLoading, error } = useAdminEventsQuery()
-  const [archiveTarget, setArchiveTarget] = useState<{ id: string; title: string } | null>(null)
+  const publishMutation = usePublishEventMutation()
+  const archiveMutation = useArchiveEventMutation()
+
+  async function handlePublish(eventId: string, eventTitle: string) {
+    try {
+      await publishMutation.mutateAsync(eventId)
+      toast.success(`"${eventTitle}" has been published.`)
+    } catch {
+      toast.error('Failed to publish event. Please try again.')
+    }
+  }
+
+  async function handleArchive(eventId: string, eventTitle: string) {
+    try {
+      await archiveMutation.mutateAsync(eventId)
+      toast.success(`"${eventTitle}" has been archived.`)
+    } catch {
+      toast.error('Failed to archive event. Please try again.')
+    }
+  }
 
   return (
     <section className="space-y-5">
@@ -91,14 +115,45 @@ export function AdminEventsPage() {
                       <div className="flex items-center gap-3">
                         <ActionLink to={`/admin/events/${event.id}`}>Edit</ActionLink>
                         <ActionLink to={`/admin/events/${event.id}/fields`}>Fields</ActionLink>
+                        {event.status === 'draft' && (
+                          <ActionConfirmButton
+                            variant="default"
+                            title="Publish Event"
+                            description={
+                              <>
+                                Are you sure you want to publish{' '}
+                                <span className="font-medium text-text">"{event.title}"</span>?
+                                Published events will be visible to the public and ready for
+                                registration.
+                              </>
+                            }
+                            confirmLabel="Publish"
+                            confirmLoadingLabel="Publishing..."
+                            isPending={publishMutation.isPending}
+                            onConfirm={() => handlePublish(event.id, event.title)}
+                          >
+                            Publish
+                          </ActionConfirmButton>
+                        )}
                         {event.status !== 'archived' && (
-                          <ActionButton
-                            onClick={() => setArchiveTarget({ id: event.id, title: event.title })}
-                            type="button"
+                          <ActionConfirmButton
                             variant="destructive"
+                            title="Archive Event"
+                            description={
+                              <>
+                                Are you sure you want to archive{' '}
+                                <span className="font-medium text-text">"{event.title}"</span>?
+                                Archived events are no longer visible to the public. You can publish
+                                the event again to restore it.
+                              </>
+                            }
+                            confirmLabel="Archive"
+                            confirmLoadingLabel="Archiving..."
+                            isPending={archiveMutation.isPending}
+                            onConfirm={() => handleArchive(event.id, event.title)}
                           >
                             Archive
-                          </ActionButton>
+                          </ActionConfirmButton>
                         )}
                       </div>
                     </td>
@@ -109,14 +164,6 @@ export function AdminEventsPage() {
           </div>
         )}
       </div>
-
-      {archiveTarget && (
-        <ArchiveEventDialog
-          eventId={archiveTarget.id}
-          eventTitle={archiveTarget.title}
-          onClose={() => setArchiveTarget(null)}
-        />
-      )}
     </section>
   )
 }

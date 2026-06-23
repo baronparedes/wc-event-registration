@@ -12,40 +12,30 @@ export function EventRegistrationSettingsSection({
 }: EventRegistrationSettingsSectionProps) {
   return (
     <SectionCard title="Registration Settings">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <FormSelectField
-          id="event-status"
-          label="Status"
-          options={[
-            { value: 'draft', label: 'Draft' },
-            { value: 'published', label: 'Published' },
-            { value: 'archived', label: 'Archived' },
-          ]}
-          registration={register('status')}
-          required
-        />
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormSelectField
+            id="event-duplicate-policy"
+            label="Duplicate Policy"
+            options={[
+              { value: 'block', label: 'Block (prevent re-registration)' },
+              { value: 'allow_update', label: 'Allow Update (overwrite responses)' },
+            ]}
+            registration={register('duplicate_policy')}
+            required
+          />
 
-        <FormSelectField
-          id="event-duplicate-policy"
-          label="Duplicate Policy"
-          options={[
-            { value: 'block', label: 'Block (prevent re-registration)' },
-            { value: 'allow_update', label: 'Allow Update (overwrite responses)' },
-          ]}
-          registration={register('duplicate_policy')}
-          required
-        />
-
-        <FormSelectField
-          id="event-registration-mode"
-          label="Registration Mode"
-          options={[
-            { value: 'open', label: 'Open' },
-            { value: 'closed', label: 'Closed' },
-          ]}
-          registration={register('registration_mode')}
-          required
-        />
+          <FormSelectField
+            id="event-registration-mode"
+            label="Registration Mode"
+            options={[
+              { value: 'open', label: 'Open' },
+              { value: 'closed', label: 'Closed' },
+            ]}
+            registration={register('registration_mode')}
+            required
+          />
+        </div>
       </div>
     </SectionCard>
   )
