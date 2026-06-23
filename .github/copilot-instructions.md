@@ -25,18 +25,28 @@ Project invariants:
 Component placement rule:
 
 - Each page must live in its own folder under src/pages/... with an index.tsx entry file.
-- Page-specific components should be colocated under that page folder (for example src/pages/public/event-registration/components/).
+- Page-specific components should be colocated under that page folder (for example src/pages/events/[slug]/register/components/).
 - Use src/components/ only for truly shared, cross-page components.
 - Do not keep reusable component definitions inline inside page files once they are reused or exceed simple readability.
 
 Current baseline structure (must preserve):
 
-- Keep route pages folder-based (for example src/pages/public/home/index.tsx and src/pages/public/event-registration/index.tsx).
-- Keep admin routes folder-based (for example src/pages/admin/login/index.tsx, src/pages/admin/events/index.tsx).
+- Keep route pages folder-based and URL-aligned (for example src/pages/home/index.tsx and src/pages/events/[slug]/register/index.tsx).
+- Keep admin routes folder-based and URL-aligned (for example src/pages/admin/login/index.tsx, src/pages/admin/events/index.tsx, src/pages/admin/events/new/index.tsx, src/pages/admin/events/[id]/index.tsx).
 - For page-local UI, prefer one component per file under that page's components/ folder.
-- Use a local barrel file for page-local components when it improves import clarity (for example src/pages/public/event-registration/components/index.ts).
+- Use a local barrel file for page-local components when it improves import clarity (for example src/pages/events/[slug]/register/components/index.ts).
 - Keep shared primitives under src/components/ui/ and do not duplicate those primitives in page folders.
 - When refactoring, migrate imports to the new structure and remove obsolete duplicate files in the same change.
+
+URL-to-folder parity rule (mandatory):
+
+- The src/pages directory should mirror route segments for non-root routes.
+- Dynamic route segments use bracket folders (for example [id], [slug]).
+- Current root route exception: / maps to src/pages/home/index.tsx.
+- For create/edit admin event routes, keep dedicated route entries:
+  - /admin/events/new -> src/pages/admin/events/new/index.tsx
+  - /admin/events/:id -> src/pages/admin/events/[id]/index.tsx
+- Shared internals for sibling route entries may live in a route-local underscore folder (for example src/pages/admin/events/\_event-form/), but route entry files must stay URL-aligned.
 
 HIGH PRIORITY (MANDATORY FOR ALL FUTURE PROMPTS):
 
