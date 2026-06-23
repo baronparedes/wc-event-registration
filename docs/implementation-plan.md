@@ -26,7 +26,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Progress Snapshot (2026-06-23)
 
-Completed through Chunk 8:
+Completed through Chunk 9:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -36,9 +36,10 @@ Completed through Chunk 8:
 - Chunk 5: Edge Function submit path + duplicate policy enforcement + idempotency + full persistence + end-to-end tested
 - Chunk 6: QA test suite for duplicate policy, idempotency, and hardening scenarios (900+ LOC)
 - Chunk 7: admin authentication + protected routes + login page + local admin seeding
-- Chunk 8: event publishing workflow + status transitions + requirement enforcement (NEW)
+- Chunk 8: event publishing workflow + status transitions + requirement enforcement
+- Chunk 9: event field configuration CRUD + field builder + all 12 field types + status-based restrictions (NEW)
 
-Next active target: Chunk 9 (event field configuration CRUD).
+Next active target: Chunk 10 (registrations list/detail and CSV export).
 
 ## Phase Plan
 
@@ -129,9 +130,19 @@ Phase 4 additional done criteria (pre-Phase 5):
 - ✅ protected admin routes with RequireAdminAuth guard (Chunk 7)
 - ✅ admin login page with email/password form (Chunk 7)
 - ✅ event publish workflow with requirements enforcement (Chunk 8)
-- event list, create, edit, archive (Chunk 8 - partial)
-- field builder for all supported field types (Chunk 9)
+- ✅ event list, create, edit, archive (Chunk 8 - partial, completed in full context)
+- ✅ field builder for all supported field types (Chunk 9)
 - registrations list/detail and CSV export (Chunk 10)
+
+Chunk 9 completion verified on 2026-06-23 evening:
+
+- Fields page at `/admin/events/:id/fields` with full CRUD workflow ✅
+- All 12 field types supported with dynamic validation rule sections ✅
+- Event status restrictions: draft (all editable), published (label/help only), archived (locked) ✅
+- Query invalidation on create/update/delete/reorder mutations ✅
+- Components colocalized in page folder per architecture rules ✅
+- Hooks organized in domain/operation-scoped structure ✅
+- Build passes: 307 modules, 0 TypeScript errors, 208 KB gzipped ✅
 
 Chunk 7 completion verified on 2026-06-23:
 
