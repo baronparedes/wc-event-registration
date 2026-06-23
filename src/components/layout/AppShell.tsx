@@ -27,7 +27,7 @@ export function AppShell() {
           </div>
           <nav className="flex items-center gap-2 text-sm">
             <Link className="rounded-md px-3 py-1.5 hover:bg-primary/10" to="/">
-              Public Events
+              Events
             </Link>
             <Link className="rounded-md px-3 py-1.5 hover:bg-primary/10" to="/admin/events">
               Admin
