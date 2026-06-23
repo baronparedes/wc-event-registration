@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -8,15 +7,15 @@ import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
   type DynamicFieldResponseValues,
-  type MemberLookupProfile,
 } from '../../../lib/event-registration'
 import { logger } from '../../../lib/logger'
 import {
   usePublicEventQuery,
   usePublicEventFieldsQuery,
-  useMemberLookupMutation,
   useSubmitRegistrationMutation,
   useRfidAutoFocus,
+  useErrorWithFadeout,
+  useMemberLookup,
 } from '../../../hooks/event-registration'
 import {
   DynamicFieldsStepCard,
@@ -25,12 +24,6 @@ import {
   MemberLookupStepCard,
   ProfileStepCard,
 } from './components'
-
-const memberLookupSchema = z.object({
-  memberId: z.string().trim().min(1, 'Member ID is required').max(64, 'Member ID is too long'),
-})
-
-type MemberLookupFormValues = z.infer<typeof memberLookupSchema>
 
 function formatUtcDateTime(value: string | null): string {
   if (!value) {
@@ -48,31 +41,29 @@ function formatUtcDateTime(value: string | null): string {
 export function EventRegistrationPage() {
   const { slug } = useParams<{ slug: string }>()
   const memberIdInputRef = useRef<HTMLInputElement | null>(null)
-  const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null)
-  const [verifiedMemberId, setVerifiedMemberId] = useState<string | null>(null)
-  const [memberIdHighlight, setMemberIdHighlight] = useState(false)
-  const [isRegistrationBlocked, setIsRegistrationBlocked] = useState(false)
-  const [isUpdateMode, setIsUpdateMode] = useState(false)
-  const [lockedStepMessage, setLockedStepMessage] = useState<string | null>(null)
-  const [prefillResponses, setPrefillResponses] = useState<Record<string, unknown> | null>(null)
-  const [lookupErrorMessage, setLookupErrorMessage] = useState<string | null>(null)
-  const [lookupErrorFadeOut, setLookupErrorFadeOut] = useState(false)
-  const [autoClearLookupError, setAutoClearLookupError] = useState(false)
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
   const submitMutation = useSubmitRegistrationMutation()
-
   const eventQuery = usePublicEventQuery(slug)
 
-  const lookupForm = useForm<MemberLookupFormValues>({
-    resolver: zodResolver(memberLookupSchema),
-    defaultValues: {
-      memberId: '',
+  // Extract lookup error handling
+  const {
+    error: lookupErrorMessage,
+    isFadingOut: lookupErrorFadeOut,
+    showError: showLookupError,
+    clearError: clearLookupError,
+  } = useErrorWithFadeout({
+    fadeOutDelay: 4500,
+    clearDelay: 5000,
+    onClear: () => {
+      memberLookup.clearMember()
+      focusMemberIdInput()
     },
   })
 
-  const lookupMutation = useMemberLookupMutation()
+  // Extract member lookup state and logic
+  const memberLookup = useMemberLookup(slug)
 
   const availability = eventQuery.data
 
@@ -92,11 +83,13 @@ export function EventRegistrationPage() {
   }, [availability])
 
   const isGateReady = availability?.status === 'available'
-  const isDynamicFieldGateReady = isGateReady && Boolean(matchedMember) && !isRegistrationBlocked
+  const isDynamicFieldGateReady =
+    isGateReady && Boolean(memberLookup.matchedMember) && !memberLookup.isRegistrationBlocked
 
   // RFID reader support: keep the member ID input focused when no member has
   // been looked up yet so a card tap registers immediately.
-  const isRfidCaptureActive = isGateReady && matchedMember === null && !lookupMutation.isPending
+  const isRfidCaptureActive =
+    isGateReady && memberLookup.matchedMember === null && !memberLookup.isLookupPending
   useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive)
 
   const focusMemberIdInput = () => {
@@ -124,11 +117,13 @@ export function EventRegistrationPage() {
 
   useEffect(() => {
     const defaults = createDynamicFieldDefaultValues(activeFields)
-    const merged = prefillResponses ? { ...defaults, ...prefillResponses } : defaults
+    const merged = memberLookup.prefillResponses
+      ? { ...defaults, ...memberLookup.prefillResponses }
+      : defaults
     dynamicForm.reset(merged, {
       keepDefaultValues: false,
     })
-  }, [activeFields, prefillResponses, dynamicForm])
+  }, [activeFields, memberLookup.prefillResponses, dynamicForm])
 
   useEffect(() => {
     dynamicForm.clearErrors()
@@ -139,113 +134,18 @@ export function EventRegistrationPage() {
       dynamicForm.reset({})
       // Reset state atomically when gate closes - intentional cleanup pattern
       // eslint-disable-next-line
-      setVerifiedMemberId(null)
-      setPrefillResponses(null)
-      setIsUpdateMode(false)
       setSubmitErrorMessage(null)
       setSubmitSuccessMessage(null)
     }
   }, [dynamicForm, isDynamicFieldGateReady])
 
-  useEffect(() => {
-    if (!autoClearLookupError || !lookupErrorMessage) {
+  async function handleLookupSubmit(values: Parameters<typeof memberLookup.handleLookupSubmit>[0]) {
+    clearLookupError()
+    const result = await memberLookup.handleLookupSubmit(values)
+
+    if (!result.success) {
+      showLookupError(result.error || 'Member lookup failed')
       return
-    }
-
-    const fadeTimeout = setTimeout(() => {
-      setLookupErrorFadeOut(true)
-    }, 4500)
-
-    const clearTimeoutId = setTimeout(() => {
-      setLookupErrorMessage(null)
-      setLookupErrorFadeOut(false)
-      setAutoClearLookupError(false)
-      setMatchedMember(null)
-      setIsRegistrationBlocked(false)
-      setLockedStepMessage(null)
-      setMemberIdHighlight(false)
-      focusMemberIdInput()
-    }, 5000)
-
-    return () => {
-      clearTimeout(fadeTimeout)
-      clearTimeout(clearTimeoutId)
-    }
-  }, [autoClearLookupError, lookupErrorMessage])
-
-  async function handleLookupSubmit(values: MemberLookupFormValues) {
-    setLookupErrorMessage(null)
-    setLookupErrorFadeOut(false)
-    setAutoClearLookupError(false)
-    setLockedStepMessage(null)
-    setMatchedMember(null)
-    setVerifiedMemberId(null)
-    setPrefillResponses(null)
-    setIsRegistrationBlocked(false)
-    setIsUpdateMode(false)
-    setMemberIdHighlight(false)
-    setSubmitErrorMessage(null)
-    setSubmitSuccessMessage(null)
-
-    try {
-      logger.info('Member lookup attempt:', values.memberId)
-      const result = await lookupMutation.mutateAsync({
-        memberId: values.memberId,
-        eventSlug: slug,
-      })
-
-      if (!result.profile) {
-        setMatchedMember(null)
-        setVerifiedMemberId(null)
-        setLookupErrorMessage('We could not verify that ID. Check it and try again.')
-        setLookupErrorFadeOut(false)
-        setAutoClearLookupError(true)
-        lookupForm.reset()
-        focusMemberIdInput()
-        logger.warn('Member lookup returned null for ID:', values.memberId)
-        return
-      }
-
-      if (result.existing_registration?.exists && !result.existing_registration.edit_allowed) {
-        setMatchedMember(result.profile)
-        setVerifiedMemberId(null)
-        setIsRegistrationBlocked(true)
-        setIsUpdateMode(false)
-        setPrefillResponses(null)
-        setLookupErrorMessage('You are already registered for this event.')
-        setLookupErrorFadeOut(false)
-        setAutoClearLookupError(true)
-        setLockedStepMessage('Already registered for this event. Verify another member ID.')
-        setMemberIdHighlight(true)
-        lookupForm.reset()
-        focusMemberIdInput()
-        logger.info('Duplicate registration blocked during lookup:', values.memberId)
-        return
-      }
-
-      setMatchedMember(result.profile)
-      setVerifiedMemberId(values.memberId)
-      setIsRegistrationBlocked(false)
-      setIsUpdateMode(Boolean(result.existing_registration?.edit_allowed))
-      setPrefillResponses(result.existing_registration?.responses ?? null)
-      setMemberIdHighlight(Boolean(result.existing_registration?.edit_allowed))
-      setLookupErrorMessage(null)
-      setLookupErrorFadeOut(false)
-      setAutoClearLookupError(false)
-
-      if (result.existing_registration?.edit_allowed) {
-        focusMemberIdInput()
-      }
-
-      logger.info('Member lookup successful:', result.profile)
-    } catch (error) {
-      setMatchedMember(null)
-      setVerifiedMemberId(null)
-      setIsRegistrationBlocked(false)
-      setLookupErrorMessage('Lookup is unavailable right now. Please try again in a moment.')
-      setLookupErrorFadeOut(false)
-      setAutoClearLookupError(false)
-      logger.error('Member lookup failed:', error)
     }
   }
 
@@ -276,7 +176,7 @@ export function EventRegistrationPage() {
       return
     }
 
-    if (!matchedMember || !verifiedMemberId) {
+    if (!memberLookup.matchedMember || !memberLookup.verifiedMemberId) {
       setSubmitErrorMessage('Member lookup is required')
       logger.error('Member lookup missing at submission time')
       return
@@ -293,14 +193,14 @@ export function EventRegistrationPage() {
 
     logger.info('Submitting registration:', {
       event_slug: slug,
-      member_id: verifiedMemberId,
+      member_id: memberLookup.verifiedMemberId,
       idempotency_key: idempotencyKey,
     })
 
     // Submit registration through secure RPC
     const result = await submitMutation.mutateAsync({
       event_slug: slug,
-      member_id: verifiedMemberId,
+      member_id: memberLookup.verifiedMemberId,
       responses: parsed.data,
       idempotency_key: idempotencyKey,
     })
@@ -324,15 +224,8 @@ export function EventRegistrationPage() {
     logger.info('Registration submission successful:', result)
 
     // Reset the form and member state so the page is ready for another registration
-    lookupForm.reset()
+    memberLookup.reset()
     dynamicForm.reset(createDynamicFieldDefaultValues(activeFields))
-    setMatchedMember(null)
-    setVerifiedMemberId(null)
-    setPrefillResponses(null)
-    setIsRegistrationBlocked(false)
-    setIsUpdateMode(false)
-    setMemberIdHighlight(false)
-    setLockedStepMessage(null)
     focusMemberIdInput()
   }
 
@@ -351,19 +244,10 @@ export function EventRegistrationPage() {
 
   function handleCancelUpdate() {
     dynamicForm.reset(createDynamicFieldDefaultValues(activeFields))
-    setMatchedMember(null)
-    setVerifiedMemberId(null)
-    setPrefillResponses(null)
-    setIsRegistrationBlocked(false)
-    setIsUpdateMode(false)
-    setMemberIdHighlight(false)
-    setLockedStepMessage(null)
-    setLookupErrorMessage(null)
-    setLookupErrorFadeOut(false)
-    setAutoClearLookupError(false)
+    memberLookup.clearMember()
+    clearLookupError()
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
-    lookupForm.reset()
     focusMemberIdInput()
   }
 
@@ -381,24 +265,24 @@ export function EventRegistrationPage() {
       {isGateReady ? (
         <div className="space-y-6">
           <MemberLookupStepCard
-            lookupForm={lookupForm}
+            lookupForm={memberLookup.lookupForm}
             onLookupSubmit={handleLookupSubmit}
-            isLookupPending={lookupMutation.isPending}
+            isLookupPending={memberLookup.isLookupPending}
             lookupErrorMessage={lookupErrorMessage}
             shouldFadeLookupError={lookupErrorFadeOut}
             memberIdInputRef={memberIdInputRef}
-            shouldHighlightInput={memberIdHighlight}
+            shouldHighlightInput={memberLookup.memberIdHighlight}
           />
 
           <ProfileStepCard
-            matchedMember={matchedMember}
-            shouldFadeDetails={isRegistrationBlocked && lookupErrorFadeOut}
+            matchedMember={memberLookup.matchedMember}
+            shouldFadeDetails={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
           />
 
           <DynamicFieldsStepCard
-            matchedMember={matchedMember}
-            isLocked={isRegistrationBlocked}
-            lockedMessage={lockedStepMessage}
+            matchedMember={memberLookup.matchedMember}
+            isLocked={memberLookup.isRegistrationBlocked}
+            lockedMessage={memberLookup.lockedStepMessage}
             onCancelUpdate={handleCancelUpdate}
             isLoadingFields={eventFieldsQuery.isLoading}
             isFieldsError={eventFieldsQuery.isError}
@@ -408,7 +292,7 @@ export function EventRegistrationPage() {
             onSubmit={handleSubmitRegistration}
             fieldErrorMessage={fieldErrorMessage}
             isSubmitPending={submitMutation.isPending}
-            submitButtonLabel={isUpdateMode ? 'Update' : 'Submit Registration'}
+            submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
             submitErrorMessage={submitErrorMessage}
             submitSuccessMessage={submitSuccessMessage}
           />

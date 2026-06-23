@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,6 +7,8 @@ import {
   useAdminEventQuery,
   useCreateEventMutation,
   useUpdateEventMutation,
+  useSlugGeneration,
+  useSaveConfirmation,
 } from '../../../hooks/admin'
 import { createEventSchema } from '../../../lib/admin/eventSchema'
 import type { CreateEventInput } from '../../../lib/admin/eventSchema'
@@ -22,16 +24,6 @@ import {
 
 type AdminEventFormPageProps = {
   mode: 'create' | 'edit'
-}
-
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
 }
 
 /** Converts a UTC ISO timestamp to the datetime-local input format (YYYY-MM-DDTHH:mm). */
@@ -66,9 +58,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   const updateMutation = useUpdateEventMutation()
   const isPending = createMutation.isPending || updateMutation.isPending
 
-  const slugManuallyEdited = useRef(false)
-  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false)
-  const [pendingFormData, setPendingFormData] = useState<CreateEventInput | null>(null)
+  // Extract save confirmation logic
+  const { showDialog, pendingFormData, requestConfirmation, confirmSave, cancelSave } =
+    useSaveConfirmation()
 
   const {
     register,
@@ -81,6 +73,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     resolver: zodResolver(createEventSchema),
     defaultValues: DEFAULT_VALUES,
   })
+
+  // Extract slug generation logic (after useForm to ensure watch/setValue are available)
+  const { slugValue, onSlugChange } = useSlugGeneration(isEditMode, watch, setValue)
 
   // Prefill form when editing an existing event
   useEffect(() => {
@@ -101,20 +96,10 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     }
   }, [isEditMode, existingEvent, reset])
 
-  // Auto-generate slug from title in create mode
-  const titleValue = watch('title')
-  const formValues = watch()
-  useEffect(() => {
-    if (!isEditMode && !slugManuallyEdited.current) {
-      setValue('slug', generateSlug(titleValue), { shouldValidate: false })
-    }
-  }, [isEditMode, titleValue, setValue])
-
   async function onSubmit(data: CreateEventInput) {
     // If event is published and we're editing, show confirmation dialog
     if (isEditMode && existingEvent?.status === 'published') {
-      setPendingFormData(data)
-      setShowSaveConfirmation(true)
+      requestConfirmation(data)
       return
     }
 
@@ -136,8 +121,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
       const message = error instanceof Error ? error.message : 'Failed to save event.'
       toast.error(message)
     } finally {
-      setShowSaveConfirmation(false)
-      setPendingFormData(null)
+      cancelSave()
     }
   }
 
@@ -158,8 +142,8 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   }
 
   const title = isEditMode ? 'Edit Event' : 'Create Event'
-  const slugValue = watch('slug')
   const isArchivedEvent = isEditMode && existingEvent?.status === 'archived'
+  const formValues = watch()
 
   return (
     <section className="mx-auto max-w-4xl space-y-6">
@@ -176,10 +160,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         <EventDetailsSection
           errors={errors}
           isEditMode={isEditMode}
-          onSlugChange={(value) => {
-            slugManuallyEdited.current = true
-            setValue('slug', value, { shouldValidate: true })
-          }}
+          onSlugChange={onSlugChange}
           register={register}
           slugValue={slugValue}
           disabled={isArchivedEvent}
@@ -226,14 +207,14 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
 
       {pendingFormData && existingEvent && (
         <SaveConfirmationDialog
-          isOpen={showSaveConfirmation}
+          isOpen={showDialog}
           changedFieldNames={Object.keys(dirtyFields) as (keyof CreateEventInput)[]}
           isPending={isPending}
-          onConfirm={() => performSave(pendingFormData)}
-          onCancel={() => {
-            setShowSaveConfirmation(false)
-            setPendingFormData(null)
+          onConfirm={() => {
+            confirmSave()
+            performSave(pendingFormData)
           }}
+          onCancel={cancelSave}
         />
       )}
     </section>

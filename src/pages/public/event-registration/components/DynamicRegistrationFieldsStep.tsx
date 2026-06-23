@@ -6,9 +6,20 @@ import type {
   PublicEventField,
 } from '../../../../lib/event-registration'
 import { SectionCard } from '../../../../components/ui/SectionCard'
-
-const baseInputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary'
+import {
+  TextFieldRenderer,
+  EmailFieldRenderer,
+  PhoneFieldRenderer,
+  NumberFieldRenderer,
+  TextareaFieldRenderer,
+} from './field-renderers/TextFieldRenderer'
+import { DateFieldRenderer, DatetimeFieldRenderer } from './field-renderers/DateFieldRenderer'
+import {
+  SelectFieldRenderer,
+  RadioFieldRenderer,
+  MultiSelectFieldRenderer,
+} from './field-renderers/SelectFieldRenderer'
+import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer'
 
 function DynamicFieldInput(props: {
   field: PublicEventField
@@ -18,146 +29,29 @@ function DynamicFieldInput(props: {
 
   switch (field.field_type) {
     case 'textarea':
-      return (
-        <textarea
-          id={`field-${field.field_key}`}
-          placeholder={field.placeholder ?? undefined}
-          className={baseInputClassName}
-          rows={4}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
-
+      return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'number':
-      return (
-        <input
-          id={`field-${field.field_key}`}
-          type="number"
-          placeholder={field.placeholder ?? undefined}
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
-
+      return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'email':
-      return (
-        <input
-          id={`field-${field.field_key}`}
-          type="email"
-          placeholder={field.placeholder ?? undefined}
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
-
+      return <EmailFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'phone':
-      return (
-        <input
-          id={`field-${field.field_key}`}
-          type="tel"
-          placeholder={field.placeholder ?? undefined}
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
-
+      return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'date':
-      return (
-        <input
-          id={`field-${field.field_key}`}
-          type="date"
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
-
+      return <DateFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'datetime':
-      return (
-        <input
-          id={`field-${field.field_key}`}
-          type="datetime-local"
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
-
+      return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'select':
-      return (
-        <select
-          id={`field-${field.field_key}`}
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        >
-          <option value="">Select an option</option>
-          {field.options.map((option) => (
-            <option key={`${field.id}-${option.value}`} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      )
-
+      return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'radio':
-      return (
-        <div className="space-y-2">
-          {field.options.map((option) => (
-            <label
-              key={`${field.id}-${option.value}`}
-              className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
-            >
-              <input type="radio" value={option.value} {...dynamicForm.register(field.field_key)} />
-              <span>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      )
-
+      return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'multi_select':
-      return (
-        <div className="space-y-2">
-          {field.options.map((option) => (
-            <label
-              key={`${field.id}-${option.value}`}
-              className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
-            >
-              <input
-                type="checkbox"
-                value={option.value}
-                {...dynamicForm.register(field.field_key)}
-              />
-              <span>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      )
-
+      return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'checkbox':
     case 'boolean':
-      return (
-        <label
-          htmlFor={`field-${field.field_key}`}
-          className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
-        >
-          <input
-            id={`field-${field.field_key}`}
-            type="checkbox"
-            {...dynamicForm.register(field.field_key)}
-          />
-          <span>{field.placeholder ?? 'I confirm this statement.'}</span>
-        </label>
-      )
-
+      return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'text':
     default:
-      return (
-        <input
-          id={`field-${field.field_key}`}
-          type="text"
-          placeholder={field.placeholder ?? undefined}
-          className={baseInputClassName}
-          {...dynamicForm.register(field.field_key)}
-        />
-      )
+      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />
   }
 }
 

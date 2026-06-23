@@ -13,3 +13,9 @@ export {
   type SubmitRegistrationResult,
   type SubmitRegistrationRequest,
 } from './useSubmitRegistrationMutation'
+export { useErrorWithFadeout, type ErrorWithFadeoutOptions } from './useErrorWithFadeout'
+export {
+  useMemberLookup,
+  type MemberLookupState,
+  type MemberLookupActions,
+} from './useMemberLookup'
