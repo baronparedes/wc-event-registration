@@ -61,6 +61,31 @@ function formatAnswerValue(answer: unknown, fieldType: string): string {
   return String(answer)
 }
 
+function formatBaseHeader(field: string): string {
+  return field
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function sanitizeFilenamePart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function buildUtcTimestampForFilename(date: Date): string {
+  const yyyy = date.getUTCFullYear()
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(date.getUTCDate()).padStart(2, '0')
+  const hh = String(date.getUTCHours()).padStart(2, '0')
+  const min = String(date.getUTCMinutes()).padStart(2, '0')
+  const ss = String(date.getUTCSeconds()).padStart(2, '0')
+  return `${yyyy}${mm}${dd}-${hh}${min}${ss}`
+}
+
 Deno.serve(async (req) => {
   const requestId = crypto.randomUUID()
   const origin = req.headers.get('origin')
@@ -251,6 +276,13 @@ Deno.serve(async (req) => {
       },
     })
 
+    // Fetch event metadata for friendly export filename
+    const { data: eventData } = await adminClient
+      .from('events')
+      .select('title')
+      .eq('id', event_id)
+      .single()
+
     // Fetch all registrations for the event
     const { data: registrations, error: regError } = await adminClient
       .from('registrations')
@@ -388,16 +420,16 @@ Deno.serve(async (req) => {
 
     // Build CSV content
     const headers: string[] = [
-      'member_id',
-      'full_name',
-      'email',
-      'phone',
-      'status',
-      'submitted_at',
-      'updated_at',
+      formatBaseHeader('member_id'),
+      formatBaseHeader('full_name'),
+      formatBaseHeader('email'),
+      formatBaseHeader('phone'),
+      formatBaseHeader('status'),
+      formatBaseHeader('submitted_at'),
+      formatBaseHeader('updated_at'),
     ]
     fields?.forEach((f) => {
-      headers.push(`${f.label} (${f.field_key})`)
+      headers.push(f.label || formatBaseHeader(f.field_key))
     })
 
     const csvLines: string[] = [headers.map((h) => escapeCsvField(h)).join(',')]
@@ -424,13 +456,17 @@ Deno.serve(async (req) => {
     })
 
     const csvContent = csvLines.join('\n')
+    const eventName = sanitizeFilenamePart(eventData?.title ?? '')
+    const filenamePrefix = eventName || `event-${sanitizeFilenamePart(event_id)}`
+    const timestamp = buildUtcTimestampForFilename(new Date())
+    const filename = `${filenamePrefix}-registrations-${timestamp}.csv`
 
     return new Response(csvContent, {
       status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="registrations-${event_id}.csv"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
       },
     })
   } catch (error) {

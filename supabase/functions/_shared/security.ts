@@ -21,6 +21,7 @@ export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]
   return {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Expose-Headers': 'Content-Disposition',
     'Access-Control-Allow-Origin': isOriginAllowed(origin, allowedOrigins)
       ? origin
       : fallbackOrigin,

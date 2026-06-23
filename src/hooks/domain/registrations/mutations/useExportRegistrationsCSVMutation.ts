@@ -7,7 +7,7 @@ interface ExportRegistrationsCSVRequest {
 
 /**
  * Triggers a CSV export for all registrations of an event.
- * Calls the export-registrations-csv Edge Function and returns the raw CSV string.
+ * Calls the export-registrations-csv Edge Function and returns CSV plus optional filename.
  */
 export function useExportRegistrationsCSVMutation(eventId: string) {
   return useMutation({

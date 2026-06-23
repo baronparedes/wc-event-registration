@@ -12,12 +12,12 @@ export function ExportButton({ eventId }: ExportButtonProps) {
 
   const handleExport = async () => {
     try {
-      const csvContent = await exportMutation.mutateAsync()
-      const blob = new Blob([csvContent], { type: 'text/csv; charset=utf-8' })
+      const { text, filename } = await exportMutation.mutateAsync()
+      const blob = new Blob([text], { type: 'text/csv; charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `event-${eventId}-registrations.csv`
+      link.download = filename ?? `event-${eventId}-registrations.csv`
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()

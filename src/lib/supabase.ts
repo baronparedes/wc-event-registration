@@ -5,6 +5,11 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey)
 
 const EDGE_FUNCTION_BASE_URL = `${env.supabaseUrl}/functions/v1`
 
+export interface EdgeFunctionTextResponse {
+  text: string
+  filename?: string
+}
+
 /**
  * Factory for creating typed Edge Function callers.
  * Ensures consistent error handling and HTTP configuration across all Edge Functions.
@@ -55,7 +60,7 @@ export function createEdgeFunctionCaller<TRequest, TResponse extends { success: 
  * Errors are still parsed as JSON. Auth token is included automatically.
  */
 export function createEdgeFunctionTextCaller<TRequest>(functionName: string) {
-  return async (payload: TRequest): Promise<string> => {
+  return async (payload: TRequest): Promise<EdgeFunctionTextResponse> => {
     const { data: session } = await supabase.auth.getSession()
     const token = session?.session?.access_token
 
@@ -87,6 +92,11 @@ export function createEdgeFunctionTextCaller<TRequest>(functionName: string) {
       throw new Error(errorMessage)
     }
 
-    return response.text()
+    const contentDisposition = response.headers.get('content-disposition')
+    const filenameMatch = contentDisposition?.match(/filename="?([^";]+)"?/i)
+    const filename = filenameMatch?.[1]
+    const text = await response.text()
+
+    return { text, filename }
   }
 }
