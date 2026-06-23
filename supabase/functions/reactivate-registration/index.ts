@@ -3,6 +3,7 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
+  requireAdminAccess,
   readAllowedOrigins,
 } from '../_shared/security.ts'
 
@@ -95,76 +96,22 @@ Deno.serve(async (req) => {
       )
     }
 
-    const authClient = createClient(supabaseUrl, supabaseServiceKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
+    const adminAccess = await requireAdminAccess({
+      requestId,
+      logPrefix: 'reactivate-registration',
+      supabaseUrl,
+      supabaseServiceKey,
+      authHeader,
+      corsHeaders,
+      rateLimit: {
+        scope: 'reactivate-registration',
+        windowMs: 60_000,
+        maxHits: 30,
       },
     })
 
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-
-    let userId: string | null = null
-    try {
-      const parts = token.split('.')
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]))
-        userId = payload.sub
-      }
-    } catch (e) {
-      console.error('[reactivate-registration] failed to decode JWT', {
-        requestId,
-        error: e instanceof Error ? e.message : String(e),
-      })
-    }
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
-
-    const { data: adminRecord, error: adminCheckError } = await authClient
-      .from('admins')
-      .select('id')
-      .eq('auth_user_id', userId)
-      .single()
-
-    if (adminCheckError || !adminRecord) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+    if (!adminAccess.ok) {
+      return adminAccess.response
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {

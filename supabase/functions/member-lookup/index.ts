@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 import {
   buildCorsHeaders,
   createObscuredDenyResponse,
+  enforceInMemoryRateLimit,
   isOriginAllowed,
   readAllowedOrigins,
 } from '../_shared/security.ts'
@@ -34,6 +35,14 @@ interface MemberLookupResponse {
 
 const allowedOrigins = readAllowedOrigins()
 
+function getRateLimitIdentity(req: Request, origin: string | null): string {
+  const xForwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  const xRealIp = req.headers.get('x-real-ip')?.trim()
+  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim()
+
+  return xForwardedFor || xRealIp || cfConnectingIp || `origin:${origin ?? 'unknown'}`
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin')
   const corsHeaders = buildCorsHeaders(origin, allowedOrigins)
@@ -56,6 +65,32 @@ Deno.serve(async (req) => {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+  }
+
+  const sourceIdentity = getRateLimitIdentity(req, origin)
+  const rateLimit = enforceInMemoryRateLimit({
+    key: `member-lookup:${sourceIdentity}`,
+    windowMs: 60_000,
+    maxHits: 60,
+  })
+
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Too many requests',
+        error_code: 'RATE_LIMITED',
+        retry_after_seconds: rateLimit.retryAfterSeconds,
+      }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': String(rateLimit.retryAfterSeconds),
+        },
+      },
+    )
   }
 
   try {

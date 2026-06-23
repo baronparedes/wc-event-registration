@@ -3,6 +3,7 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
+  requireAdminAccess,
   readAllowedOrigins,
 } from '../_shared/security.ts'
 
@@ -107,103 +108,22 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create authenticated client with user's token via Authorization header
-    const authClient = createClient(supabaseUrl, supabaseServiceKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
+    const adminAccess = await requireAdminAccess({
+      requestId,
+      logPrefix: 'cancel-registration',
+      supabaseUrl,
+      supabaseServiceKey,
+      authHeader,
+      corsHeaders,
+      rateLimit: {
+        scope: 'cancel-registration',
+        windowMs: 60_000,
+        maxHits: 30,
       },
     })
 
-    // Verify admin status by querying admins table - RLS will enforce access control
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-
-    console.log('[cancel-registration] token extracted', {
-      requestId,
-      tokenLength: token.length,
-      tokenPrefix: maskValue(token),
-      hasBearerPrefix: authHeader.startsWith('Bearer '),
-    })
-
-    // Decode JWT to get user_id without validation (just extract)
-    let userId: string | null = null
-    try {
-      const parts = token.split('.')
-      console.log('[cancel-registration] jwt parts', {
-        requestId,
-        partsCount: parts.length,
-      })
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]))
-        userId = payload.sub
-        console.log('[cancel-registration] jwt decoded', {
-          requestId,
-          userId: maskValue(typeof userId === 'string' ? userId : null),
-        })
-      }
-    } catch (e) {
-      console.error('[cancel-registration] failed to decode JWT', {
-        requestId,
-        error: e instanceof Error ? e.message : String(e),
-      })
-    }
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
-
-    // Check if user is admin using the authenticated client
-    const { data: adminRecord, error: adminCheckError } = await authClient
-      .from('admins')
-      .select('id')
-      .eq('auth_user_id', userId)
-      .single()
-
-    console.log('[cancel-registration] admin check result', {
-      requestId,
-      userId: maskValue(userId),
-      hasAdminRecord: Boolean(adminRecord),
-      adminCheckErrorCode: adminCheckError?.code ?? null,
-      adminCheckErrorMessage: adminCheckError?.message ?? null,
-    })
-
-    if (adminCheckError || !adminRecord) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+    if (!adminAccess.ok) {
+      return adminAccess.response
     }
 
     // Create service role client for privileged operations after auth check
