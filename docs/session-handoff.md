@@ -4,6 +4,54 @@ Last updated: 2026-06-23 (evening)
 
 ## Current Session Work (2026-06-23 evening)
 
+**Chunk 10: Registrations List/Detail and CSV Export - Status: 80% Complete ✅**
+
+### Completed ✅
+
+- **Registrations list page** at `/admin/events/:id/registrations` - fully functional
+  - Table displays: Member ID, Name, Email, Status (color badge), Submitted date
+  - Shows "1 total registrations" counter
+  - Published event status banner
+- **Registrations detail page** at `/admin/events/:id/registrations/:registration_id` - fully functional
+  - Member Information card: ID, Name, Email, Phone, Nickname
+  - Registration Details: Status, Submitted, Last Updated dates
+  - Field Responses: All field labels and answers with correct type formatting
+  - Navigation works (back button, view link)
+- **Query hooks**:
+  - `useAdminRegistrationsQuery`: List with loading/error states
+  - `useRegistrationDetailQuery`: Detail with member + field data (FIXED schema issue)
+- **Schema fixes applied**:
+  - Fixed critical bug: `field_name` → `field_key` in queries
+  - Applied to both detail query and CSV export function
+- **Route protection**: Admin auth guard on both routes
+- **Build & format**:
+  - ✓ built in 562ms, 0 TypeScript errors ✅
+  - All files pass Prettier formatting ✅
+- **Manual testing**:
+  - List page loads and displays data correctly ✅
+  - Detail page loads with full member/field info ✅
+  - Navigation between list/detail works ✅
+
+### In Progress / Blocked 🟡
+
+- **Cancel Registration mutation** - Code complete but returns 401 Unauthorized
+  - Edge Function receives requests but JWT validation failing
+  - Root cause: Supabase Edge Function JWT handling not resolving
+  - Need: Debug JWT decoding or switch to different auth validation approach
+  - Impact: Users cannot cancel registrations through the UI currently
+- **CSV Export** - Code complete but returns 401 Unauthorized
+  - Same JWT validation issue as Cancel mutation
+  - Export button exists and calls Edge Function but fails with 401
+  - Impact: CSV export is non-functional currently
+
+### Known Issues
+
+- React hydration warnings in ConfirmDialog (`<p>` nesting) - cosmetic, doesn't affect functionality
+- Edge Function auth pattern needs investigation:
+  - Current: Attempting JWT decoding from Authorization header
+  - Previous attempts: Failed using `auth.getUser()` with service role key
+  - May need: Token validation via external library or different Supabase pattern
+
 **Chunk 9: Event Field Configuration CRUD - Verified Complete ✅**
 
 - **Fields page** at `/admin/events/:id/fields` with full CRUD workflow

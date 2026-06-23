@@ -100,6 +100,9 @@ export function AdminEventsPage() {
                       <div className="flex items-center gap-3">
                         <ActionLink to={`/admin/events/${event.id}`}>Edit</ActionLink>
                         <ActionLink to={`/admin/events/${event.id}/fields`}>Fields</ActionLink>
+                        <ActionLink to={`/admin/events/${event.id}/registrations`}>
+                          Registrations
+                        </ActionLink>
                         {event.status === 'draft' && (
                           <PublishActionButton
                             event={event}

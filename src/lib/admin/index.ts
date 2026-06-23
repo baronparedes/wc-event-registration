@@ -7,6 +7,13 @@ export type {
   DuplicatePolicy,
   RegistrationMode,
 } from './types'
+export type {
+  AdminRegistration,
+  AdminRegistrationWithMember,
+  RegistrationFieldResponse,
+  AdminRegistrationDetail,
+  RegistrationStatus,
+} from './registrationTypes'
 export type { CreateEventInput, UpdateEventInput } from './eventSchema'
 export { createEventSchema, updateEventSchema } from './eventSchema'
 export type {

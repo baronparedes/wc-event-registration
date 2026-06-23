@@ -4,6 +4,7 @@ import { AppShell } from '../components/layout/AppShell'
 import { useAdminAuthQuery } from '../hooks/domain/auth'
 import { AdminLoginPage } from '../pages/admin/login'
 import { AdminRegistrationsPage } from '../pages/admin/events/[id]/registrations'
+import { AdminRegistrationDetailPage } from '../pages/admin/events/[id]/registrations/[registration_id]'
 import { AdminEventFieldsPage } from '../pages/admin/events/[id]/fields'
 import { AdminEditEventPage } from '../pages/admin/events/[id]'
 import { AdminNewEventPage } from '../pages/admin/events/new'
@@ -76,6 +77,14 @@ export function AppRouter() {
           element={
             <RequireAdminAuth>
               <AdminRegistrationsPage />
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path="/admin/events/:id/registrations/:registration_id"
+          element={
+            <RequireAdminAuth>
+              <AdminRegistrationDetailPage />
             </RequireAdminAuth>
           }
         />
