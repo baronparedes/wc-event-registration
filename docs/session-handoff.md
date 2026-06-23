@@ -1,8 +1,48 @@
 # Session Handoff
 
-Last updated: 2026-06-23 (evening)
+Last updated: 2026-06-24
 
-## Current Session Work (2026-06-23 evening)
+## Current Session Work (2026-06-24)
+
+**Chunk 10: Registrations List/Detail and CSV Export - Status: Complete ✅**
+
+### Completed ✅
+
+- **Registrations list and detail pages are fully operational**
+  - Admin-protected list route at /admin/events/:id/registrations
+  - Admin-protected detail route at /admin/events/:id/registrations/:registration_id
+  - Field response rendering and formatting verified
+- **Registration actions complete**
+  - Cancel action implemented and verified
+  - Reactivate action implemented and verified (renamed from uncancel)
+- **CSV export complete**
+  - Export endpoint returns data and filename correctly
+  - Human-readable column headers applied
+  - Server-driven filename supported by frontend download handling
+- **Edge auth hardening complete**
+  - Replaced manual JWT payload decode with Supabase auth.getUser(token) validation
+  - Applied across cancel-registration, reactivate-registration, and export-registrations-csv
+- **Rate limiting hardening complete**
+  - Shared fixed-window in-memory limiter added in shared security helper
+  - Admin endpoints protected via centralized admin guard + per-user limits
+  - Public endpoints (member-lookup, submit-registration) protected via shared public guard
+- **Docs updated**
+  - README refocused to stack-oriented documentation
+  - Rate-limiting behavior documented in README
+  - Plan and handoff docs refreshed for chunk closeout
+
+### Verification ✅
+
+- Build passes successfully
+- Lint remains stable with pre-existing warnings only (no new lint errors)
+- Edited edge-function files report no diagnostics errors
+
+### Outstanding / Next Focus 🟡
+
+- Optional future enhancement: async CSV export generation for very large datasets
+- Optional future enhancement: distributed/shared rate-limit store for multi-instance enforcement
+
+## Historical Snapshot (2026-06-23 evening, superseded)
 
 **Chunk 10: Registrations List/Detail and CSV Export - Status: 80% Complete ✅**
 

@@ -24,9 +24,9 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Member profile shape: nickname is first-class; role and category remain in metadata
 - **Hook organization**: Domain-scoped folders with operation separation (queries/mutations/state); shared utilities in /hooks/utils/; one-hook-per-file pattern; naming: `use<Entity>Query`, `use<Action><Entity>Mutation`, `use<Entity>State`
 
-## Progress Snapshot (2026-06-23)
+## Progress Snapshot (2026-06-24)
 
-Completed through Chunk 9:
+Completed through Chunk 10:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -38,8 +38,9 @@ Completed through Chunk 9:
 - Chunk 7: admin authentication + protected routes + login page + local admin seeding
 - Chunk 8: event publishing workflow + status transitions + requirement enforcement
 - Chunk 9: event field configuration CRUD + field builder + all 12 field types + status-based restrictions (NEW)
+- Chunk 10: registrations list/detail, cancel/reactivate actions, CSV export, verified admin auth, and shared edge-function rate limiting
 
-Next active target: Chunk 10 (registrations list/detail and CSV export).
+Next active target: Chunk 11 (admin registrations hardening and operational polish backlog).
 
 ## Phase Plan
 
@@ -124,7 +125,7 @@ Phase 4 additional done criteria (pre-Phase 5):
 - lookup and submit endpoints enforce per-IP and per-identifier throttling
 - runtime schema validation and idempotent submit behavior are verified under concurrency tests
 
-### Phase 5: Admin Module (In Progress)
+### Phase 5: Admin Module (Complete)
 
 - ✅ admin authentication with role verification (Chunk 7)
 - ✅ protected admin routes with RequireAdminAuth guard (Chunk 7)
@@ -132,7 +133,20 @@ Phase 4 additional done criteria (pre-Phase 5):
 - ✅ event publish workflow with requirements enforcement (Chunk 8)
 - ✅ event list, create, edit, archive (Chunk 8 - partial, completed in full context)
 - ✅ field builder for all supported field types (Chunk 9)
-- registrations list/detail and CSV export (Chunk 10)
+- ✅ registrations list/detail and CSV export (Chunk 10)
+- ✅ registration status actions: cancel + reactivate (Chunk 10)
+- ✅ edge auth hardening: JWT verified through Supabase Auth (Chunk 10)
+- ✅ shared edge rate limiting across admin and public write/read paths (Chunk 10)
+
+Chunk 10 completion verified on 2026-06-24:
+
+- Registrations list page and detail page fully functional with admin protection ✅
+- Cancel and reactivate mutations functional end-to-end via Edge Functions ✅
+- CSV export functional with human-readable headers and server-driven filename ✅
+- Edge auth fixed by replacing manual JWT payload decode with validated auth.getUser(token) ✅
+- Shared security helper expanded for centralized admin guard and public rate-limit guard ✅
+- Rate limits active on member lookup, submit registration, cancel/reactivate, and export endpoints ✅
+- Build passes, lint stable (existing warnings only, no new errors) ✅
 
 Chunk 9 completion verified on 2026-06-23 evening:
 
@@ -209,6 +223,11 @@ Phase 5 done criteria:
 - admin actions (create, update, archive, registration edits) are captured in audit logs
 - admin listings are paginated using agreed query standards
 - large CSV exports are handled through asynchronous generation with status visibility
+
+Phase 5 closeout note:
+
+- Current CSV export remains synchronous and suitable for current dataset size.
+- Async export pipeline is tracked as a future scalability enhancement for larger volumes.
 
 ### Phase 6: Hardening and Extensibility
 
