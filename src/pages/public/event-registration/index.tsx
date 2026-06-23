@@ -244,7 +244,7 @@ export function EventRegistrationPage() {
 
   function handleCancelUpdate() {
     dynamicForm.reset(createDynamicFieldDefaultValues(activeFields))
-    memberLookup.clearMember()
+    memberLookup.reset()
     clearLookupError()
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)

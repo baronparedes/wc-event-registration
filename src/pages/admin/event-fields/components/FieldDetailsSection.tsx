@@ -49,9 +49,9 @@ export function FieldDetailsSection({
         ) : (
           <div className="space-y-1">
             <p className="text-xs font-medium text-text">Field Name</p>
-            <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted">
+            <p className="rounded-md border border-border bg-gray-100 px-3 py-2 text-sm text-gray-700">
               {field?.field_key}
-              <span className="ml-2 text-xs">(cannot be changed)</span>
+              <span className="ml-2 text-xs text-gray-600">(cannot be changed)</span>
             </p>
           </div>
         )}

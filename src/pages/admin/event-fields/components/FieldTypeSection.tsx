@@ -36,10 +36,10 @@ export function FieldTypeSection({
 
   return (
     <div className="rounded-lg border border-border bg-background px-4 py-3">
-      <p className="text-xs text-muted">Field Type</p>
+      <p className="text-xs text-gray-600">Field Type</p>
       <p className="mt-0.5 text-sm font-medium text-text">
         {FIELD_TYPE_LABELS[selectedFieldType] ?? selectedFieldType}
-        <span className="ml-2 text-xs text-muted">(cannot be changed after creation)</span>
+        <span className="ml-2 text-xs text-gray-600">(cannot be changed after creation)</span>
       </p>
     </div>
   )

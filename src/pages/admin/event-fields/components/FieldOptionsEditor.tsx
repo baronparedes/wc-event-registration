@@ -18,7 +18,7 @@ type FieldOptionsEditorProps = {
 }
 
 const inputClass =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600'
 
 /** Manages the options list for select, radio, and multi_select field types. */
 export function FieldOptionsEditor({
