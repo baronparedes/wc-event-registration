@@ -2,9 +2,9 @@ import { useState, useCallback } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { logger } from '../../lib/logger'
-import { useMemberLookupMutation } from './useMemberLookupMutation'
-import type { MemberLookupProfile } from '../../lib/event-registration'
+import { logger } from '../../../lib/logger'
+import { useMemberLookupQuery } from '../queries/useMemberLookupQuery'
+import type { MemberLookupProfile } from '../queries/useMemberLookupQuery'
 
 const memberLookupSchema = z.object({
   memberId: z.string().trim().min(1, 'Member ID is required').max(64, 'Member ID is too long'),
@@ -31,7 +31,7 @@ export type MemberLookupActions = {
  * Custom hook for managing member lookup state and logic.
  * Encapsulates all member verification, duplicate policy handling, and update mode logic.
  */
-export function useMemberLookup(eventSlug: string | undefined, onMemberCleared?: () => void) {
+export function useMemberLookupState(eventSlug: string | undefined, onMemberCleared?: () => void) {
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null)
   const [verifiedMemberId, setVerifiedMemberId] = useState<string | null>(null)
   const [memberIdHighlight, setMemberIdHighlight] = useState(false)
@@ -47,7 +47,7 @@ export function useMemberLookup(eventSlug: string | undefined, onMemberCleared?:
     },
   })
 
-  const lookupMutation = useMemberLookupMutation()
+  const lookupMutation = useMemberLookupQuery()
 
   const clearMember = useCallback(() => {
     setMatchedMember(null)

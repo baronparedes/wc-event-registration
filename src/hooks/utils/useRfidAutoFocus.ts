@@ -37,7 +37,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
       return () => clearTimeout(focusFallback)
     }
 
-    // ── blur restore ──────────────────────────────────────────────────────────
+    // ── blur restore ─────────────────────────────────────────────────────────
     // When focus leaves the input, restore it unless it moved to a button/link
     // (e.g. the Submit button) — that way form submissions still fire correctly.
     const handleBlur = (e: FocusEvent) => {
@@ -61,7 +61,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
 
     input.addEventListener('blur', handleBlur)
 
-    // ── global keydown capture ────────────────────────────────────────────────
+    // ── global keydown capture ───────────────────────────────────────────────
     // If the RFID reader fires while focus is on an unrelated element (e.g. the
     // page body or a non-input element), capture the keystroke and route it to
     // the member ID input so the scan still registers.

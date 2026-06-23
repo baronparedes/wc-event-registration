@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { createEdgeFunctionCaller } from '../../lib/supabase'
-import { logger } from '../../lib/logger'
-import type { DynamicFieldResponseValues } from '../../lib/event-registration'
+import { createEdgeFunctionCaller } from '../../../lib/supabase'
+import { logger } from '../../../lib/logger'
+import type { DynamicFieldResponseValues } from '../../../lib/event-registration'
 
 export interface SubmitRegistrationRequest {
   event_slug: string

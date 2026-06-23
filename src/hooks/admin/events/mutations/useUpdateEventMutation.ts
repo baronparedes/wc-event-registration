@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
-import type { UpdateEventInput } from '../../lib/admin/eventSchema'
-import { ADMIN_EVENTS_QUERY_KEY } from './useAdminEventsQuery'
-import { adminEventQueryKey } from './useAdminEventQuery'
+import { supabase } from '../../../../lib/supabase'
+import type { UpdateEventInput } from '../../../../lib/admin/eventSchema'
+import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
+import { adminEventQueryKey } from '../queries/useAdminEventQuery'
 
 function emptyToNull(value: string | undefined): string | null {
   return value && value.trim() !== '' ? value : null

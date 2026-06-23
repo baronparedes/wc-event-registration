@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '../../lib/supabase'
-import { logger } from '../../lib/logger'
+import { createEdgeFunctionCaller } from '../../../lib/supabase'
+import { logger } from '../../../lib/logger'
 
 export interface MemberLookupProfile {
   user_id: string
@@ -39,7 +39,7 @@ const callMemberLookup = createEdgeFunctionCaller<
  *
  * @returns React Query mutation for looking up member by ID
  */
-export function useMemberLookupMutation() {
+export function useMemberLookupQuery() {
   return useMutation<MemberLookupResult, Error, { memberId: string; eventSlug?: string }>({
     mutationFn: async ({ memberId, eventSlug }) => {
       const normalized = memberId.trim()
@@ -55,7 +55,7 @@ export function useMemberLookupMutation() {
       }
     },
     onError: (error) => {
-      logger.error('Member lookup mutation error:', error)
+      logger.error('Member lookup query error:', error)
     },
   })
 }

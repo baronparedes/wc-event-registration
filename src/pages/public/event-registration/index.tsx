@@ -15,7 +15,7 @@ import {
   useSubmitRegistrationMutation,
   useRfidAutoFocus,
   useErrorWithFadeout,
-  useMemberLookup,
+  useMemberLookupState,
 } from '../../../hooks/event-registration'
 import {
   DynamicFieldsStepCard,
@@ -63,7 +63,7 @@ export function EventRegistrationPage() {
   })
 
   // Extract member lookup state and logic
-  const memberLookup = useMemberLookup(slug)
+  const memberLookup = useMemberLookupState(slug)
 
   const availability = eventQuery.data
 

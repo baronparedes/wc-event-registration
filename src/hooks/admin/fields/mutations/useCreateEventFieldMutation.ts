@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
-import type { AdminEventField } from '../../lib/admin/types'
-import type { CreateEventFieldInput } from '../../lib/admin/eventFieldSchema'
-import { adminEventFieldsQueryKey } from './useAdminEventFieldsQuery'
+import { supabase } from '../../../../lib/supabase'
+import type { AdminEventField } from '../../../../lib/admin/types'
+import type { CreateEventFieldInput } from '../../../../lib/admin/eventFieldSchema'
+import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery'
 
 /**
  * Creates a new event field. Only permitted on draft events.
