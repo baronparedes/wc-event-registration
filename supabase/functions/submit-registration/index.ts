@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 import {
   buildCorsHeaders,
   createObscuredDenyResponse,
-  enforceInMemoryRateLimit,
+  enforcePublicRateLimit,
   isOriginAllowed,
   readAllowedOrigins,
 } from '../_shared/security.ts'
@@ -31,14 +31,6 @@ interface SubmitRegistrationError {
 
 const allowedOrigins = readAllowedOrigins()
 
-function getRateLimitIdentity(req: Request, origin: string | null): string {
-  const xForwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  const xRealIp = req.headers.get('x-real-ip')?.trim()
-  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim()
-
-  return xForwardedFor || xRealIp || cfConnectingIp || `origin:${origin ?? 'unknown'}`
-}
-
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin')
   const corsHeaders = buildCorsHeaders(origin, allowedOrigins)
@@ -63,30 +55,17 @@ Deno.serve(async (req) => {
     })
   }
 
-  const sourceIdentity = getRateLimitIdentity(req, origin)
-  const rateLimit = enforceInMemoryRateLimit({
-    key: `submit-registration:${sourceIdentity}`,
+  const rateLimitResponse = enforcePublicRateLimit({
+    req,
+    origin,
+    corsHeaders,
+    scope: 'submit-registration',
     windowMs: 60_000,
     maxHits: 20,
   })
 
-  if (!rateLimit.allowed) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Too many requests',
-        error_code: 'RATE_LIMITED',
-        retry_after_seconds: rateLimit.retryAfterSeconds,
-      } as SubmitRegistrationError),
-      {
-        status: 429,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Retry-After': String(rateLimit.retryAfterSeconds),
-        },
-      },
-    )
+  if (rateLimitResponse) {
+    return rateLimitResponse
   }
 
   try {

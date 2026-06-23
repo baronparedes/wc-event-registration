@@ -25,6 +25,16 @@ export interface RateLimitResult {
   retryAfterSeconds: number
 }
 
+export interface PublicRateLimitGuardOptions {
+  req: Request
+  origin: string | null
+  corsHeaders: Record<string, string>
+  scope: string
+  windowMs: number
+  maxHits: number
+  errorMessage?: string
+}
+
 export interface AdminGuardOptions {
   requestId: string
   logPrefix: string
@@ -108,6 +118,41 @@ export function enforceInMemoryRateLimit(options: RateLimitOptions): RateLimitRe
     remaining: Math.max(0, options.maxHits - existing.count),
     retryAfterSeconds: 0,
   }
+}
+
+export function getRequestIdentityForRateLimit(req: Request, origin: string | null): string {
+  const xForwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  const xRealIp = req.headers.get('x-real-ip')?.trim()
+  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim()
+
+  return xForwardedFor || xRealIp || cfConnectingIp || `origin:${origin ?? 'unknown'}`
+}
+
+export function enforcePublicRateLimit(options: PublicRateLimitGuardOptions): Response | null {
+  const sourceIdentity = getRequestIdentityForRateLimit(options.req, options.origin)
+  const rateLimit = enforceInMemoryRateLimit({
+    key: `${options.scope}:${sourceIdentity}`,
+    windowMs: options.windowMs,
+    maxHits: options.maxHits,
+  })
+
+  if (rateLimit.allowed) {
+    return null
+  }
+
+  return createJsonResponse(
+    {
+      success: false,
+      error: options.errorMessage ?? 'Too many requests',
+      error_code: 'RATE_LIMITED',
+      retry_after_seconds: rateLimit.retryAfterSeconds,
+    },
+    429,
+    options.corsHeaders,
+    {
+      'Retry-After': String(rateLimit.retryAfterSeconds),
+    },
+  )
 }
 
 export async function requireAdminAccess(options: AdminGuardOptions): Promise<AdminGuardResult> {
