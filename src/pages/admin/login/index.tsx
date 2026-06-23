@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '../../../components/ui/Button'
 import { FormInputField } from '../../../components/ui/FormInputField'
-import { useAdminAuthQuery, useAdminLoginMutation } from '../../../hooks/admin'
+import { useAdminAuthQuery, useAdminLoginMutation } from '../../../hooks/domain/auth'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()

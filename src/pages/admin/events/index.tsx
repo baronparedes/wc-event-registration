@@ -4,7 +4,7 @@ import {
   useAdminEventsQuery,
   usePublishEventMutation,
   useArchiveEventMutation,
-} from '../../../hooks/admin'
+} from '../../../hooks/domain/events'
 import { formatDateOnly } from '../../../lib/dateFormat'
 import { ActionLink } from '../../../components/ui/ActionLink'
 import { ActionConfirmButton } from '../../../components/ui/ActionConfirmButton'

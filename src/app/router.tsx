@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { AppShell } from '../components/layout/AppShell'
-import { useAdminAuthQuery } from '../hooks/admin'
+import { useAdminAuthQuery } from '../hooks/domain/auth'
 import { AdminLoginPage } from '../pages/admin/login'
 import { AdminRegistrationsPage } from '../pages/admin/registrations'
 import { AdminEventFieldsPage } from '../pages/admin/event-fields'

@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '../../../lib/supabase'
-import { logger } from '../../../lib/logger'
+import { createEdgeFunctionCaller } from '../../../../lib/supabase'
+import { logger } from '../../../../lib/logger'
 
 export interface MemberLookupProfile {
   user_id: string

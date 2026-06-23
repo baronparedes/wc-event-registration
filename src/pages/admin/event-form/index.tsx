@@ -7,9 +7,8 @@ import {
   useAdminEventQuery,
   useCreateEventMutation,
   useUpdateEventMutation,
-  useSlugGeneration,
-  useSaveConfirmation,
-} from '../../../hooks/admin'
+} from '../../../hooks/domain/events'
+import { useSlugGeneration, useSaveConfirmation } from '../../../hooks/utils'
 import { createEventSchema } from '../../../lib/admin/eventSchema'
 import type { CreateEventInput } from '../../../lib/admin/eventSchema'
 import {

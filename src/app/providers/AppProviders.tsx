@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import type { PropsWithChildren } from 'react'
-import { ADMIN_AUTH_QUERY_KEY } from '../../hooks/admin'
+import { ADMIN_AUTH_QUERY_KEY } from '../../hooks/domain/auth'
 import { supabase } from '../../lib/supabase'
 
 export function AppProviders({ children }: PropsWithChildren) {

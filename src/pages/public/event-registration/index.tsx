@@ -9,14 +9,11 @@ import {
   type DynamicFieldResponseValues,
 } from '../../../lib/event-registration'
 import { logger } from '../../../lib/logger'
-import {
-  usePublicEventQuery,
-  usePublicEventFieldsQuery,
-  useSubmitRegistrationMutation,
-  useRfidAutoFocus,
-  useErrorWithFadeout,
-  useMemberLookupState,
-} from '../../../hooks/event-registration'
+import { usePublicEventQuery } from '../../../hooks/domain/events'
+import { usePublicEventFieldsQuery } from '../../../hooks/domain/event-fields'
+import { useSubmitRegistrationMutation } from '../../../hooks/domain/registrations'
+import { useMemberLookupState } from '../../../hooks/domain/members'
+import { useRfidAutoFocus, useErrorWithFadeout } from '../../../hooks/utils'
 import {
   DynamicFieldsStepCard,
   EventHeaderCard,

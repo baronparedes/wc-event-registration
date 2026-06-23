@@ -1,4 +1,4 @@
-import { usePublicEventListingQuery } from '../../../hooks/event-registration'
+import { usePublicEventListingQuery } from '../../../hooks/domain/events'
 import { EventSection } from './components'
 
 export function HomePage() {

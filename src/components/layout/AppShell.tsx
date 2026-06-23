@@ -1,7 +1,7 @@
 import { Link, Outlet } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '../ui/Button'
-import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/admin'
+import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth'
 
 export function AppShell() {
   const { data: adminAuth } = useAdminAuthQuery()
