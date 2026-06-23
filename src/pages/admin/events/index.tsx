@@ -5,28 +5,11 @@ import {
   usePublishEventMutation,
   useArchiveEventMutation,
 } from '../../../hooks/admin'
-import type { AdminEvent } from '../../../lib/admin/types'
+import { formatDateOnly } from '../../../lib/dateFormat'
 import { ActionLink } from '../../../components/ui/ActionLink'
 import { ActionConfirmButton } from '../../../components/ui/ActionConfirmButton'
 import { Button } from '../../../components/ui/Button'
-import { EventStatusBadge, PublishActionButton } from './components'
-
-function formatDate(isoString: string | null): string {
-  if (!isoString) return '—'
-  return new Date(isoString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
-function DuplicatePolicyLabel({ policy }: { policy: AdminEvent['duplicate_policy'] }) {
-  return (
-    <span className="text-sm text-text">
-      {policy === 'allow_update' ? 'Allow Update' : 'Block'}
-    </span>
-  )
-}
+import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
 
 export function AdminEventsPage() {
   const { data: events, isLoading, error } = useAdminEventsQuery()
@@ -111,7 +94,7 @@ export function AdminEventsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-sm text-text">{formatDate(event.starts_at)}</span>
+                      <span className="text-sm text-text">{formatDateOnly(event.starts_at)}</span>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">

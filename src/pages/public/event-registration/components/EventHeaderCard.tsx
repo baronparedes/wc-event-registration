@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify'
 import type { EventAvailability } from '../../../../lib/event-registration'
+import { formatDateTime } from '../../../../lib/dateFormat'
 import { SectionCard } from '../../../../components/ui/SectionCard'
 
 type EventHeaderCardProps = {
@@ -9,13 +10,6 @@ type EventHeaderCardProps = {
   availability?: EventAvailability
   isGateReady: boolean
   eventWindowText: { opens: string; closes: string } | null
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return 'TBD'
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return 'TBD'
-  return parsed.toLocaleString()
 }
 
 export function EventHeaderCard(props: EventHeaderCardProps) {
@@ -68,10 +62,10 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
             </p>
           ) : null}
           <p>
-            Starts: <span className="font-medium text-text">{formatDate(event.starts_at)}</span>
+            Starts: <span className="font-medium text-text">{formatDateTime(event.starts_at)}</span>
           </p>
           <p>
-            Ends: <span className="font-medium text-text">{formatDate(event.ends_at)}</span>
+            Ends: <span className="font-medium text-text">{formatDateTime(event.ends_at)}</span>
           </p>
           {availability?.status === 'available' ? (
             <p className="sm:col-span-2">
