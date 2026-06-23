@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   useRegistrationDetailQuery,
   useCancelRegistrationMutation,
+  useReactivateRegistrationMutation,
 } from '@/hooks/domain/registrations'
 import { Button } from '@/components/ui/Button'
 import { SectionCard } from '@/components/ui/SectionCard'
@@ -82,9 +83,11 @@ export function AdminRegistrationDetailPage() {
   const navigate = useNavigate()
   const { showError } = useErrorWithFadeout()
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
 
   const detailQuery = useRegistrationDetailQuery(registrationId ?? '')
   const cancelMutation = useCancelRegistrationMutation(eventId ?? '')
+  const reactivateMutation = useReactivateRegistrationMutation(eventId ?? '')
 
   if (!eventId || !registrationId) {
     return <div>Invalid registration ID</div>
@@ -152,6 +155,18 @@ export function AdminRegistrationDetailPage() {
 
   const canCancel = registration.status !== 'cancelled'
 
+  const handleReactivate = async () => {
+    try {
+      await reactivateMutation.mutateAsync({
+        registration_id: registrationId,
+      })
+      setShowReactivateDialog(false)
+      navigate(`/admin/events/${eventId}/registrations`)
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Failed to reactivate registration')
+    }
+  }
+
   return (
     <>
       <section className="space-y-4">
@@ -159,12 +174,19 @@ export function AdminRegistrationDetailPage() {
           <Button variant="outline" onClick={() => navigate(-1)}>
             ← Back to Registrations
           </Button>
-          {canCancel && (
+          {canCancel ? (
             <button
               onClick={() => setShowCancelDialog(true)}
               className="text-sm font-medium text-red-600 hover:text-red-700"
             >
               Cancel Registration
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowReactivateDialog(true)}
+              className="text-sm font-medium text-green-700 hover:text-green-800"
+            >
+              Reactivate Registration
             </button>
           )}
         </div>
@@ -270,6 +292,26 @@ export function AdminRegistrationDetailPage() {
         confirmVariant="destructive"
         onConfirm={handleCancel}
         isPending={cancelMutation.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={showReactivateDialog}
+        onCancel={() => setShowReactivateDialog(false)}
+        title="Reactivate Registration"
+        description={
+          <div className="space-y-4">
+            <p className="text-gray-700">Restore this registration to active status?</p>
+            <div className="rounded-lg bg-gray-50 p-3">
+              <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
+              <p className="text-sm text-gray-600">{member.member_id}</p>
+              <p className="text-sm text-gray-600">{member.email}</p>
+            </div>
+          </div>
+        }
+        confirmLabel="Reactivate Registration"
+        confirmLoadingLabel="Reactivating..."
+        onConfirm={handleReactivate}
+        isPending={reactivateMutation.isPending}
       />
     </>
   )

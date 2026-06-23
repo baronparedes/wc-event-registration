@@ -358,26 +358,28 @@ Deno.serve(async (req) => {
       let answerValue: unknown = null
 
       if (field) {
-        if (
-          field.field_type === 'text' ||
-          field.field_type === 'textarea' ||
-          field.field_type === 'email' ||
-          field.field_type === 'phone'
-        ) {
-          answerValue = answer.answer_text
-        } else if (field.field_type === 'number') {
-          answerValue = answer.answer_number
-        } else if (field.field_type === 'boolean') {
-          answerValue = answer.answer_boolean
-        } else if (field.field_type === 'date' || field.field_type === 'datetime') {
-          answerValue = answer.answer_date
+        // submit-registration stores all answers in answer_text (JSON string for complex fields)
+        const rawAnswer = answer.answer_text
+        if (rawAnswer === null || rawAnswer === undefined || rawAnswer === '') {
+          answerValue = null
         } else if (
           field.field_type === 'select' ||
           field.field_type === 'radio' ||
           field.field_type === 'multi_select' ||
           field.field_type === 'checkbox'
         ) {
-          answerValue = answer.answer_json
+          try {
+            answerValue = JSON.parse(rawAnswer)
+          } catch {
+            answerValue = rawAnswer
+          }
+        } else if (field.field_type === 'number') {
+          const parsed = Number(rawAnswer)
+          answerValue = Number.isNaN(parsed) ? rawAnswer : parsed
+        } else if (field.field_type === 'boolean') {
+          answerValue = rawAnswer === 'true' || rawAnswer === '1'
+        } else {
+          answerValue = rawAnswer
         }
       }
 
