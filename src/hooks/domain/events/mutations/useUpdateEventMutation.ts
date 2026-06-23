@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../../../lib/supabase'
-import type { UpdateEventInput } from '../../../../lib/admin/eventSchema'
+import { supabase } from '@/lib/supabase'
+import type { UpdateEventInput } from '@/lib/admin/eventSchema'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
 import { adminEventQueryKey } from '../queries/useAdminEventQuery'
 

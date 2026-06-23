@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '../../../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 import type {
   AdminRegistrationDetail,
   RegistrationFieldResponse,
-} from '../../../../lib/admin/registrationTypes'
-import type { EventFieldType } from '../../../../lib/event-registration/types'
+} from '@/lib/admin/registrationTypes'
+import type { EventFieldType } from '@/lib/event-registration/types'
 
 export const REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
   ['registration-detail', registrationId] as const
@@ -70,7 +70,7 @@ export function useRegistrationDetailQuery(registrationId: string) {
           const fieldType = ef?.field_type
 
           // All answers are stored in answer_text (possibly as JSON for complex types)
-          let answerValue: string | number | boolean | string[] | null = null
+          let answerValue: string | number | boolean | string[] | null
           const rawAnswer = answer.answer_text
 
           if (!rawAnswer) {

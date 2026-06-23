@@ -1,7 +1,7 @@
 import type { UseFormRegisterReturn } from 'react-hook-form'
-import type { AdminEventField } from '../../../../../../lib/admin/types'
-import { SectionCard } from '../../../../../../components/ui/SectionCard'
-import { FormInputField } from '../../../../../../components/ui/FormInputField'
+import type { AdminEventField } from '@/lib/admin/types'
+import { SectionCard } from '@/components/ui/SectionCard'
+import { FormInputField } from '@/components/ui/FormInputField'
 import { CheckboxField } from './CheckboxField'
 
 type FieldDetailsSectionProps = {

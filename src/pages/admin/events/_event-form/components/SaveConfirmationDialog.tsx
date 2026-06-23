@@ -1,5 +1,5 @@
-import { ConfirmDialog } from '../../../../../components/ui/ConfirmDialog'
-import type { CreateEventInput } from '../../../../../lib/admin/eventSchema'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import type { CreateEventInput } from '@/lib/admin/eventSchema'
 
 type SaveConfirmationDialogProps = {
   isOpen: boolean

@@ -1,11 +1,11 @@
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
-import { Button } from '../../../../../components/ui/Button'
+import { Button } from '@/components/ui/Button'
 import type {
   DynamicFieldResponseValues,
   MemberLookupProfile,
   PublicEventField,
-} from '../../../../../lib/event-registration'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+} from '@/lib/event-registration'
+import { SectionCard } from '@/components/ui/SectionCard'
 import {
   TextFieldRenderer,
   EmailFieldRenderer,

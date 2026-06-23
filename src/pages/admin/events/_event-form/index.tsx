@@ -7,10 +7,10 @@ import {
   useAdminEventQuery,
   useCreateEventMutation,
   useUpdateEventMutation,
-} from '../../../../hooks/domain/events'
-import { useSlugGeneration, useSaveConfirmation } from '../../../../hooks/utils'
-import { createEventSchema } from '../../../../lib/admin/eventSchema'
-import type { CreateEventInput } from '../../../../lib/admin/eventSchema'
+} from '@/hooks/domain/events'
+import { useSlugGeneration, useSaveConfirmation } from '@/hooks/utils'
+import { createEventSchema } from '@/lib/admin/eventSchema'
+import type { CreateEventInput } from '@/lib/admin/eventSchema'
 import {
   EventDateRangeSection,
   EventDetailsSection,

@@ -1,4 +1,4 @@
-import type { PublicEventListingItem } from '../../../lib/event-registration'
+import type { PublicEventListingItem } from '@/lib/event-registration'
 import { EventCard } from './EventCard'
 
 type EventSectionProps = {

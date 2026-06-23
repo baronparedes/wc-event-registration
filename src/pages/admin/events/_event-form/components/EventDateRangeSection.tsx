@@ -1,7 +1,7 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
-import type { CreateEventInput } from '../../../../../lib/admin/eventSchema'
-import { FormInputField } from '../../../../../components/ui/FormInputField'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import type { CreateEventInput } from '@/lib/admin/eventSchema'
+import { FormInputField } from '@/components/ui/FormInputField'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 type DateFieldName = 'starts_at' | 'ends_at' | 'registration_opens_at' | 'registration_closes_at'
 

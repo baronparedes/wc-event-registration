@@ -1,7 +1,7 @@
 import type { UseFormRegisterReturn } from 'react-hook-form'
-import { SectionCard } from '../../../../../../components/ui/SectionCard'
-import { FormInputField } from '../../../../../../components/ui/FormInputField'
-import { FormTextareaField } from '../../../../../../components/ui/FormTextareaField'
+import { SectionCard } from '@/components/ui/SectionCard'
+import { FormInputField } from '@/components/ui/FormInputField'
+import { FormTextareaField } from '@/components/ui/FormTextareaField'
 
 type DisplayTextSectionProps = {
   isFullyLocked: boolean

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Button } from '../../../components/ui/Button'
-import { FormInputField } from '../../../components/ui/FormInputField'
-import { useAdminAuthQuery, useAdminLoginMutation } from '../../../hooks/domain/auth'
+import { Button } from '@/components/ui/Button'
+import { FormInputField } from '@/components/ui/FormInputField'
+import { useAdminAuthQuery, useAdminLoginMutation } from '@/hooks/domain/auth'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()

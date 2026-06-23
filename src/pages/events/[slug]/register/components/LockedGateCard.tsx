@@ -1,4 +1,4 @@
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 export function LockedGateCard() {
   return (

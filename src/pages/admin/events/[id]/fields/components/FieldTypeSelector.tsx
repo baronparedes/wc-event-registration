@@ -1,5 +1,5 @@
-import { FIELD_TYPE_LABELS } from '../../../../../../lib/admin/eventFieldSchema'
-import type { EventFieldTypeEnum } from '../../../../../../lib/admin/eventFieldSchema'
+import { FIELD_TYPE_LABELS } from '@/lib/admin/eventFieldSchema'
+import type { EventFieldTypeEnum } from '@/lib/admin/eventFieldSchema'
 
 type FieldTypeSelectorProps = {
   value: EventFieldTypeEnum

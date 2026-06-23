@@ -1,5 +1,5 @@
-import type { MemberLookupProfile } from '../../../../../lib/event-registration'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import type { MemberLookupProfile } from '@/lib/event-registration'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 type ProfileStepCardProps = {
   matchedMember: MemberLookupProfile | null

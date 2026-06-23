@@ -1,7 +1,7 @@
 import DOMPurify from 'dompurify'
-import type { EventAvailability } from '../../../../../lib/event-registration'
-import { formatDateTime } from '../../../../../lib/dateFormat'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import type { EventAvailability } from '@/lib/event-registration'
+import { formatDateTime } from '@/lib/dateFormat'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 type EventHeaderCardProps = {
   slug?: string

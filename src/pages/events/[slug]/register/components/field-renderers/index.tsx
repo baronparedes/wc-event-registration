@@ -4,7 +4,7 @@ import type {
   DynamicFieldResponseValues,
   PublicEventField,
   EventFieldType,
-} from '../../../../../../lib/event-registration'
+} from '@/lib/event-registration'
 import {
   TextFieldRenderer,
   EmailFieldRenderer,

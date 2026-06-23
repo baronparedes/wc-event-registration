@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { AdminRegistrationWithMember } from '../../../../../../lib/admin/registrationTypes'
-import { ActionLink } from '../../../../../../components/ui/ActionLink'
+import type { AdminRegistrationWithMember } from '@/lib/admin/registrationTypes'
+import { ActionLink } from '@/components/ui/ActionLink'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 
 interface RegistrationsListProps {

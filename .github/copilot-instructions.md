@@ -63,6 +63,19 @@ Guidelines:
 - lib/: API access, schema builders, and pure transforms.
 - Avoid circular imports and hidden cross-feature coupling.
 
+## Import Conventions
+
+**Always use `@/` alias imports** (never relative paths like `../../..`):
+
+- Import from src using the `@/` prefix configured in tsconfig and vite.config.
+- Examples:
+  - `import { useAdminEventsQuery } from '@/hooks/domain/events'`
+  - `import { Button } from '@/components/ui/Button'`
+  - `import { logger } from '@/lib/logger'`
+  - `import type { AdminEvent } from '@/lib/admin/types'`
+- Benefits: Cleaner code, easier refactoring, shorter import statements.
+- Avoid: deep relative paths like `import X from '../../../../hooks'`.
+
 ## TypeScript Standards
 
 - Use strict, explicit types at API and form boundaries.
@@ -166,10 +179,10 @@ Hook patterns:
   - `src/hooks/domain/index.ts` re-exports feature domains
   - `src/hooks/utils/index.ts` exports all shared utility hooks
 
-- **Import pattern** (maintain backward compatibility):
-  - From feature domain: `import { useAdminEventsQuery } from '../../hooks/domain/events'` (preferred barrel import)
-  - From operation subfolder: `import { useAdminEventsQuery } from '../../hooks/domain/events/queries'` (direct import for clarity)
-  - Utilities: `import { useErrorWithFadeout } from '../../hooks/utils'` (from shared barrel)
+- **Import pattern** (use `@/` alias):
+  - From feature domain: `import { useAdminEventsQuery } from '@/hooks/domain/events'` (preferred barrel import)
+  - From operation subfolder: `import { useAdminEventsQuery } from '@/hooks/domain/events/queries'` (direct import for clarity)
+  - Utilities: `import { useErrorWithFadeout } from '@/hooks/utils'` (from shared barrel)
 
 - **Pages and components import hooks directly** from domain or subdomain barrels, not from lib.
 - Hooks handle error toasting and validation; pages handle UI state and user feedback.

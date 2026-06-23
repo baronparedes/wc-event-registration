@@ -1,4 +1,4 @@
-import type { AdminEvent } from '../../../../lib/admin/types'
+import type { AdminEvent } from '@/lib/admin/types'
 
 type DuplicatePolicyLabelProps = {
   policy: AdminEvent['duplicate_policy']

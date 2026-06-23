@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { AdminEventField, EventStatus } from '../../../../../../lib/admin/types'
-import { FIELD_TYPE_LABELS } from '../../../../../../lib/admin/eventFieldSchema'
-import type { EventFieldTypeEnum } from '../../../../../../lib/admin/eventFieldSchema'
+import type { AdminEventField, EventStatus } from '@/lib/admin/types'
+import { FIELD_TYPE_LABELS } from '@/lib/admin/eventFieldSchema'
+import type { EventFieldTypeEnum } from '@/lib/admin/eventFieldSchema'
 import {
   useDeleteEventFieldMutation,
   useReorderEventFieldsMutation,
-} from '../../../../../../hooks/domain/event-fields'
-import { ActionButton } from '../../../../../../components/ui/ActionLink'
-import { ConfirmDialog } from '../../../../../../components/ui/ConfirmDialog'
+} from '@/hooks/domain/event-fields'
+import { ActionButton } from '@/components/ui/ActionLink'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type EventFieldsListProps = {
   fields: AdminEventField[]

@@ -1,6 +1,6 @@
-import { Button } from '../../../../../../components/ui/Button'
-import { useExportRegistrationsCSVMutation } from '../../../../../../hooks/domain/registrations'
-import { useErrorWithFadeout } from '../../../../../../hooks/utils'
+import { Button } from '@/components/ui/Button'
+import { useExportRegistrationsCSVMutation } from '@/hooks/domain/registrations'
+import { useErrorWithFadeout } from '@/hooks/utils'
 
 interface ExportButtonProps {
   eventId: string

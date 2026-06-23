@@ -7,13 +7,13 @@ import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
   type DynamicFieldResponseValues,
-} from '../../../../lib/event-registration'
-import { logger } from '../../../../lib/logger'
-import { usePublicEventQuery } from '../../../../hooks/domain/events'
-import { usePublicEventFieldsQuery } from '../../../../hooks/domain/event-fields'
-import { useSubmitRegistrationMutation } from '../../../../hooks/domain/registrations'
-import { useMemberLookupState } from '../../../../hooks/domain/members'
-import { useRfidAutoFocus, useErrorWithFadeout } from '../../../../hooks/utils'
+} from '@/lib/event-registration'
+import { logger } from '@/lib/logger'
+import { usePublicEventQuery } from '@/hooks/domain/events'
+import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields'
+import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations'
+import { useMemberLookupState } from '@/hooks/domain/members'
+import { useRfidAutoFocus, useErrorWithFadeout } from '@/hooks/utils'
 import {
   DynamicFieldsStepCard,
   EventHeaderCard,

@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { createEdgeFunctionTextCaller } from '../../../../lib/supabase'
+import { createEdgeFunctionTextCaller } from '@/lib/supabase'
 
 interface ExportRegistrationsCSVRequest {
   event_id: string

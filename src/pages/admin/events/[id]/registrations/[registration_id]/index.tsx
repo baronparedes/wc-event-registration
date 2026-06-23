@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useRegistrationDetailQuery } from '../../../../../../hooks/domain/registrations'
-import { useCancelRegistrationMutation } from '../../../../../../hooks/domain/registrations'
-import { Button } from '../../../../../../components/ui/Button'
-import { SectionCard } from '../../../../../../components/ui/SectionCard'
-import { ConfirmDialog } from '../../../../../../components/ui/ConfirmDialog'
+import {
+  useRegistrationDetailQuery,
+  useCancelRegistrationMutation,
+} from '@/hooks/domain/registrations'
+import { Button } from '@/components/ui/Button'
+import { SectionCard } from '@/components/ui/SectionCard'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState } from 'react'
-import { useErrorWithFadeout } from '../../../../../../hooks/utils'
+import { useErrorWithFadeout } from '@/hooks/utils'
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)

@@ -1,7 +1,7 @@
 import type { UseFormRegister } from 'react-hook-form'
-import type { CreateEventInput } from '../../../../../lib/admin/eventSchema'
-import { FormSelectField } from '../../../../../components/ui/FormSelectField'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import type { CreateEventInput } from '@/lib/admin/eventSchema'
+import { FormSelectField } from '@/components/ui/FormSelectField'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 type EventRegistrationSettingsSectionProps = {
   register: UseFormRegister<CreateEventInput>

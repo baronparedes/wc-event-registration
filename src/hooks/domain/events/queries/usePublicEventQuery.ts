@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '../../../../lib/supabase'
-import { logger } from '../../../../lib/logger'
-import type { EventAvailability, PublicEvent } from '../../../../lib/event-registration'
+import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
+import type { EventAvailability, PublicEvent } from '@/lib/event-registration'
 
 /**
  * Hook to fetch a public event by slug with availability checks.

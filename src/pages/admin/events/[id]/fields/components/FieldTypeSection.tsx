@@ -1,7 +1,7 @@
 import type { UseFormRegisterReturn } from 'react-hook-form'
-import { FIELD_TYPE_LABELS } from '../../../../../../lib/admin/eventFieldSchema'
-import type { EventFieldTypeEnum } from '../../../../../../lib/admin/eventFieldSchema'
-import { SectionCard } from '../../../../../../components/ui/SectionCard'
+import { FIELD_TYPE_LABELS } from '@/lib/admin/eventFieldSchema'
+import type { EventFieldTypeEnum } from '@/lib/admin/eventFieldSchema'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { FieldTypeSelector } from './FieldTypeSelector'
 
 type FieldTypeSectionProps = {

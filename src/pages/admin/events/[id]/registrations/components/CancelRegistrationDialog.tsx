@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import type { AdminRegistrationWithMember } from '../../../../../../lib/admin/registrationTypes'
-import { useCancelRegistrationMutation } from '../../../../../../hooks/domain/registrations'
-import { ConfirmDialog } from '../../../../../../components/ui/ConfirmDialog'
-import { useErrorWithFadeout } from '../../../../../../hooks/utils'
+import type { AdminRegistrationWithMember } from '@/lib/admin/registrationTypes'
+import { useCancelRegistrationMutation } from '@/hooks/domain/registrations'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useErrorWithFadeout } from '@/hooks/utils'
 
 interface CancelRegistrationDialogProps {
   registration: AdminRegistrationWithMember

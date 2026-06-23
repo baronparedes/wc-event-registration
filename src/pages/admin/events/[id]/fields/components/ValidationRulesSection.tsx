@@ -1,6 +1,6 @@
 import type { UseFormRegister } from 'react-hook-form'
-import type { EventFieldFormValues } from '../../../../../../lib/admin/eventFieldSchema'
-import { SectionCard } from '../../../../../../components/ui/SectionCard'
+import type { EventFieldFormValues } from '@/lib/admin/eventFieldSchema'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { RuleInput } from './RuleInput'
 
 type ValidationRulesSectionProps = {

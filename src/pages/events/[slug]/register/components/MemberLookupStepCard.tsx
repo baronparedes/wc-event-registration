@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
-import { Button } from '../../../../../components/ui/Button'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import { Button } from '@/components/ui/Button'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 const baseInputClassName =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary'

@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom'
-import { useAdminEventQuery } from '../../../../../hooks/domain/events'
-import { useAdminRegistrationsQuery } from '../../../../../hooks/domain/registrations'
+import { useAdminEventQuery } from '@/hooks/domain/events'
+import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
 import { RegistrationsList, ExportButton } from './components'
-import { SectionCard } from '../../../../../components/ui/SectionCard'
+import { SectionCard } from '@/components/ui/SectionCard'
 
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>()

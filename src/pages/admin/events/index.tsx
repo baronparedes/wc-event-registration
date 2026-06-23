@@ -4,11 +4,11 @@ import {
   useAdminEventsQuery,
   usePublishEventMutation,
   useArchiveEventMutation,
-} from '../../../hooks/domain/events'
-import { formatDateOnly } from '../../../lib/dateFormat'
-import { ActionLink } from '../../../components/ui/ActionLink'
-import { ActionConfirmButton } from '../../../components/ui/ActionConfirmButton'
-import { Button } from '../../../components/ui/Button'
+} from '@/hooks/domain/events'
+import { formatDateOnly } from '@/lib/dateFormat'
+import { ActionLink } from '@/components/ui/ActionLink'
+import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton'
+import { Button } from '@/components/ui/Button'
 import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
 
 export function AdminEventsPage() {

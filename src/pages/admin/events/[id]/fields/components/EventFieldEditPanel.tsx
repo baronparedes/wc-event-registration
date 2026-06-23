@@ -12,16 +12,16 @@ import {
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
-} from '../../../../../../lib/admin/eventFieldSchema'
+} from '@/lib/admin/eventFieldSchema'
 import type {
   EventFieldFormValues,
   EventFieldTypeEnum,
-} from '../../../../../../lib/admin/eventFieldSchema'
-import type { AdminEventField, EventStatus } from '../../../../../../lib/admin/types'
+} from '@/lib/admin/eventFieldSchema'
+import type { AdminEventField, EventStatus } from '@/lib/admin/types'
 import {
   useCreateEventFieldMutation,
   useUpdateEventFieldMutation,
-} from '../../../../../../hooks/domain/event-fields'
+} from '@/hooks/domain/event-fields'
 import { PanelHeader } from './PanelHeader'
 import { StatusBanners } from './StatusBanners'
 import { FieldTypeSection } from './FieldTypeSection'

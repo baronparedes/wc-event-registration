@@ -1,4 +1,4 @@
-import type { EventStatus } from '../../../../../../lib/admin/types'
+import type { EventStatus } from '@/lib/admin/types'
 
 type StatusBannersProps = {
   eventStatus: EventStatus

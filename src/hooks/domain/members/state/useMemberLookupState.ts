@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { logger } from '../../../../lib/logger'
+import { logger } from '@/lib/logger'
 import { useMemberLookupQuery } from '../queries/useMemberLookupQuery'
 import type { MemberLookupProfile } from '../queries/useMemberLookupQuery'
 
