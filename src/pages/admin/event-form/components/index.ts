@@ -4,3 +4,4 @@ export { EventRegistrationSettingsSection } from './EventRegistrationSettingsSec
 export { EventFormActions } from './EventFormActions'
 export { EventStatusWarning } from './EventStatusWarning'
 export { SaveConfirmationDialog } from './SaveConfirmationDialog'
+export { PublishRequirementsChecker } from './PublishRequirementsChecker'

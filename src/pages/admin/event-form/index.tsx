@@ -17,6 +17,7 @@ import {
   EventRegistrationSettingsSection,
   EventStatusWarning,
   SaveConfirmationDialog,
+  PublishRequirementsChecker,
 } from './components'
 
 type AdminEventFormPageProps = {
@@ -102,6 +103,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
 
   // Auto-generate slug from title in create mode
   const titleValue = watch('title')
+  const formValues = watch()
   useEffect(() => {
     if (!isEditMode && !slugManuallyEdited.current) {
       setValue('slug', generateSlug(titleValue), { shouldValidate: false })
@@ -210,6 +212,8 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         />
 
         <EventRegistrationSettingsSection register={register} disabled={isArchivedEvent} />
+
+        {formValues.status === 'draft' && <PublishRequirementsChecker formValues={formValues} />}
 
         <EventFormActions
           isEditMode={isEditMode}

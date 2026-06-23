@@ -8,8 +8,9 @@ type ConfirmDialogProps = {
   confirmLabel: string
   confirmLoadingLabel: string
   cancelLabel?: string
-  confirmVariant?: 'default' | 'destructive'
+  confirmVariant?: 'default' | 'destructive' | 'outline'
   isPending: boolean
+  disabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -23,10 +24,13 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   confirmVariant = 'default',
   isPending,
+  disabled,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   if (!isOpen) return null
+
+  const confirmDisabled = isPending || disabled
 
   return (
     <div
@@ -44,7 +48,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </Button>
           <Button
-            disabled={isPending}
+            disabled={confirmDisabled}
             onClick={onConfirm}
             size="md"
             type="button"

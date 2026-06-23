@@ -69,3 +69,33 @@ export const updateEventSchema = z
   .superRefine(applyDateRangeChecks)
 
 export type UpdateEventInput = z.infer<typeof updateEventSchema>
+
+/**
+ * Validation schema for publishing an event.
+ * Requires all fields needed for a complete, registrant-facing event.
+ */
+export const publishEventSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or less'),
+    slug: z
+      .string()
+      .min(1, 'Slug is required')
+      .max(100, 'Slug must be 100 characters or less')
+      .regex(slugRegex, 'Slug must use only lowercase letters, numbers, and hyphens'),
+    description: z.string().min(1, 'Description is required to publish'),
+    location: z.string().min(1, 'Location is required to publish'),
+    starts_at: z.string().min(1, 'Event start date and time are required to publish'),
+    ends_at: z.string().min(1, 'Event end date and time are required to publish'),
+    registration_opens_at: z
+      .string()
+      .min(1, 'Registration open date and time are required to publish'),
+    registration_closes_at: z
+      .string()
+      .min(1, 'Registration close date and time are required to publish'),
+    status: z.enum(['draft', 'published', 'archived']),
+    duplicate_policy: z.enum(['block', 'allow_update']),
+    registration_mode: z.enum(['open', 'closed']),
+  })
+  .superRefine(applyDateRangeChecks)
+
+export type PublishEventInput = z.infer<typeof publishEventSchema>

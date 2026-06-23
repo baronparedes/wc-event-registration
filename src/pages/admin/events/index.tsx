@@ -9,7 +9,7 @@ import type { AdminEvent } from '../../../lib/admin/types'
 import { ActionLink } from '../../../components/ui/ActionLink'
 import { ActionConfirmButton } from '../../../components/ui/ActionConfirmButton'
 import { Button } from '../../../components/ui/Button'
-import { EventStatusBadge } from './components'
+import { EventStatusBadge, PublishActionButton } from './components'
 
 function formatDate(isoString: string | null): string {
   if (!isoString) return '—'
@@ -37,8 +37,10 @@ export function AdminEventsPage() {
     try {
       await publishMutation.mutateAsync(eventId)
       toast.success(`"${eventTitle}" has been published.`)
-    } catch {
-      toast.error('Failed to publish event. Please try again.')
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to publish event. Please try again.'
+      toast.error(message)
     }
   }
 
@@ -116,24 +118,11 @@ export function AdminEventsPage() {
                         <ActionLink to={`/admin/events/${event.id}`}>Edit</ActionLink>
                         <ActionLink to={`/admin/events/${event.id}/fields`}>Fields</ActionLink>
                         {event.status === 'draft' && (
-                          <ActionConfirmButton
-                            variant="default"
-                            title="Publish Event"
-                            description={
-                              <>
-                                Are you sure you want to publish{' '}
-                                <span className="font-medium text-text">"{event.title}"</span>?
-                                Published events will be visible to the public and ready for
-                                registration.
-                              </>
-                            }
-                            confirmLabel="Publish"
-                            confirmLoadingLabel="Publishing..."
+                          <PublishActionButton
+                            event={event}
                             isPending={publishMutation.isPending}
-                            onConfirm={() => handlePublish(event.id, event.title)}
-                          >
-                            Publish
-                          </ActionConfirmButton>
+                            onPublish={handlePublish}
+                          />
                         )}
                         {event.status !== 'archived' && (
                           <ActionConfirmButton
