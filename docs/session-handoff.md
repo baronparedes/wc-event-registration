@@ -2,7 +2,66 @@
 
 Last updated: 2026-06-23
 
-## Project Snapshot
+## Current Session Work (2026-06-23 afternoon)
+
+**Hook Organization Refactor: Complete ✅**
+
+- **Admin hooks reorganized** into feature-scoped folders:
+  - `/admin/auth/`: `useAdminAuthQuery`, `useAdminLoginMutation`, `useAdminLogoutMutation` (3 separate files, one hook per file)
+  - `/admin/events/`: Queries and mutations split into `/queries/` and `/mutations/` subfolders (6 hooks total)
+  - `/admin/fields/`: Queries and mutations split into `/queries/` and `/mutations/` subfolders (5 hooks total)
+  - Auth business logic moved to `/src/lib/admin/authUtils.ts` (ADMIN_AUTH_QUERY_KEY, AdminAuthState, fetchAdminAuthState)
+
+- **Event-registration hooks reorganized** into operation-scoped folders:
+  - `/queries/`: 4 hooks including new `useMemberLookupQuery` (moved from mutations, refactored as read operation)
+  - `/mutations/`: 1 hook - `useSubmitRegistrationMutation` (write-only)
+  - `/state/`: 1 hook - `useMemberLookupState` (local UI orchestration with form state)
+
+- **Shared utilities layer** created at `/hooks/utils/`:
+  - `useErrorWithFadeout.ts` (generic error lifecycle)
+  - `useRfidAutoFocus.ts` (generic focus management)
+  - `useSlugGeneration.ts` (generic slug generation)
+  - `useSaveConfirmation.ts` (generic dialog state)
+  - Shared across both admin and event-registration domains
+
+- **Hook naming pattern** standardized:
+  - Queries: `use<Domain><Entity>Query` (e.g., `usePublicEventQuery`, `useMemberLookupQuery`)
+  - Mutations: `use<Action><Domain><Entity>Mutation` (e.g., `useSubmitRegistrationMutation`)
+  - State: `use<Entity>State` (e.g., `useMemberLookupState`)
+  - Utilities: `use<Concern>` (e.g., `useErrorWithFadeout`)
+
+- **Backward compatibility maintained**:
+  - All barrel exports at domain level (`/admin/index.ts`, `/event-registration/index.ts`) re-export from nested folders
+  - Existing imports like `import { useAdminEventsQuery } from '../../hooks/admin'` continue to work
+  - Type exports aligned with moved hooks
+
+- **Key decision: useMemberLookupQuery** reclassified from mutation to query:
+  - Realized it performs a read operation (queries users table via Edge Function)
+  - Returns data, not modification results
+  - Triggered on-demand by user action (form submission) rather than auto-fetch
+  - On-demand behavior is a UX pattern, not a structural distinction
+  - Moved to `/queries/` folder, renamed to `useMemberLookupQuery`
+  - Semantically correct: queries for reads, mutations for writes
+
+- **Verification**:
+  - Build: 305 modules, 0 TypeScript errors
+  - ESLint: 0 errors, 4 pre-existing warnings (React Compiler + RHF watch)
+  - All 13 old duplicate files from admin/ root removed
+  - All import paths updated in consuming files
+  - No breaking changes to consuming code
+
+**Architecture Benefits:**
+
+1. **Clear operation semantics**: Queries clearly separate from mutations; state hooks isolated
+2. **Reduced import confusion**: Hooks grouped by operation type, not mixed at root
+3. **Query/mutation invalidation**: Easy to find and update cache invalidation patterns
+4. **Scalable for admin CRUD**: Admin events, fields, registrations can follow consistent pattern
+5. **Reusable utilities**: Shared UI utilities available to all domains without coupling
+6. **Future extensibility**: New features can follow proven folder structure immediately
+
+## Previous Session Work (2026-06-23 morning)
+
+**Chunk 8: Event publishing workflow**
 
 This repository is in **Chunk 7 complete** (admin authentication and protected routes) status.
 
@@ -281,13 +340,20 @@ Build status: TypeScript strict, zero errors; 225 modules, 631 KB gzipped.
 
 ## Current Status
 
-**Chunk 8 Complete: Event publishing workflow with requirements enforcement**
+**Chunk 8 Complete: Event publishing workflow with requirements enforcement + Infrastructure refactor: Hook reorganization**
 
 - Event status workflow implemented (Draft → Published → Archived)
 - Publish requirements visible proactively in form and confirmation dialog
 - Two-schema validation ensures publish readiness before allowing publication
 - React Hook Form change detection eliminates false positives
 - Dialog and button state fully encapsulated in component (no parent state pollution)
+- **NEW: Hook architecture refactored for clarity and scalability**
+  - Admin hooks split into auth/events/fields with query/mutation separation
+  - Event-registration hooks reorganized into queries/mutations/state folders
+  - Shared utilities centralized in /hooks/utils/
+  - useMemberLookupQuery correctly classified as read operation
+  - All barrel exports updated; backward compatibility maintained
+  - Build clean: 305 modules, 0 TS errors
 
 **Next Planned Work:**
 

@@ -22,6 +22,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Export format v1: CSV
 - Member import contract: RFID maps to member_id
 - Member profile shape: nickname is first-class; role and category remain in metadata
+- **Hook organization**: Domain-scoped folders with operation separation (queries/mutations/state); shared utilities in /hooks/utils/; one-hook-per-file pattern; naming: `use<Entity>Query`, `use<Action><Entity>Mutation`, `use<Entity>State`
 
 ## Progress Snapshot (2026-06-23)
 
@@ -155,7 +156,35 @@ Chunk 8 completion verified on 2026-06-23:
 - usePublishEventMutation: Validates requirements before publish, returns user-friendly error listing missing fields ✅
 - TypeScript strict, build passes with 256 modules, 688 KB gzipped ✅
 
-Readiness for Phase 5 continued (Chunk 8+):
+### Infrastructure Refactor: Hook Organization (2026-06-23 afternoon)
+
+Hook architecture reorganized for clarity and maintainability without feature changes:
+
+- **Admin domain split into feature-scoped folders**:
+  - `/admin/auth/`: One-hook-per-file pattern for auth lifecycle (useAdminAuthQuery, useAdminLoginMutation, useAdminLogoutMutation)
+  - `/admin/events/`: Queries and mutations separated into subfolders (useAdminEventsQuery, useAdminEventQuery + 4 mutation hooks)
+  - `/admin/fields/`: Queries and mutations separated into subfolders (useAdminEventFieldsQuery + 4 mutation hooks)
+  - Auth business logic moved to `/src/lib/admin/authUtils.ts` (shared logic no longer in hooks)
+
+- **Event-registration domain split into operation-scoped folders**:
+  - `/queries/`: All read operations including new `useMemberLookupQuery` (correctly reclassified from mutations)
+  - `/mutations/`: Write operations (useSubmitRegistrationMutation only)
+  - `/state/`: Local UI orchestration (useMemberLookupState - renamed from useMemberLookup with suffix pattern)
+
+- **Shared utilities layer** created at `/hooks/utils/`:
+  - Cross-domain UI/form state utilities (useErrorWithFadeout, useRfidAutoFocus, useSlugGeneration, useSaveConfirmation)
+  - Eliminates domain-specific duplication
+  - Keeps utilities reusable and portable
+
+- **Naming conventions standardized**:
+  - Queries: `use<Entity>Query` (e.g., `useMemberLookupQuery`)
+  - Mutations: `use<Action><Entity>Mutation` (e.g., `useSubmitRegistrationMutation`)
+  - State: `use<Entity>State` (e.g., `useMemberLookupState`)
+  - Utilities: `use<Concern>` (e.g., `useErrorWithFadeout`)
+
+- **Backward compatibility maintained**: All barrel exports re-export from nested structure; existing imports unchanged
+
+- **Build verified**: 305 modules, 0 TypeScript errors, all old duplicate files removed
 
 - RLS matrix tested for admin role ✅
 - public write path secured through Edge Functions ✅
