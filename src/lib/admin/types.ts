@@ -1,3 +1,5 @@
+import type { EventFieldType } from '../event-registration/types'
+
 export type EventStatus = 'draft' | 'published' | 'archived'
 export type DuplicatePolicy = 'block' | 'allow_update'
 export type RegistrationMode = 'open' | 'closed'
@@ -18,6 +20,40 @@ export type AdminEvent = {
   registration_mode: RegistrationMode
   metadata: Record<string, unknown>
   created_by_admin_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type AdminEventFieldOption = {
+  label: string
+  value: string
+}
+
+export type AdminEventFieldValidationRules = {
+  min_length?: number
+  max_length?: number
+  pattern?: string
+  min?: number
+  max?: number
+  min_selections?: number
+  max_selections?: number
+  min_date?: string
+  max_date?: string
+}
+
+export type AdminEventField = {
+  id: string
+  event_id: string
+  field_key: string
+  label: string
+  field_type: EventFieldType
+  is_required: boolean
+  is_active: boolean
+  placeholder: string | null
+  help_text: string | null
+  options: AdminEventFieldOption[]
+  validation_rules: AdminEventFieldValidationRules
+  display_order: number
   created_at: string
   updated_at: string
 }
