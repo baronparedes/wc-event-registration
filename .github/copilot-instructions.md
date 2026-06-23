@@ -147,28 +147,50 @@ Edge Function mutations (privileged writes):
 
 - Hook uses `createEdgeFunctionCaller` factory from `src/lib/supabase.ts` to call Edge Functions.
 - Factory ensures consistent HTTP headers, error handling, and type safety.
-- Example: `useMemberLookupMutation` calls `member-lookup` Edge Function directly.
-- Example: `useSubmitRegistrationMutation` calls `submit-registration` Edge Function directly.
+- Example query (read): `useMemberLookupQuery` calls `member-lookup` Edge Function and returns profile data directly.
+- Example mutation (write): `useSubmitRegistrationMutation` calls `submit-registration` Edge Function to persist responses.
 - No separate `commands.ts` module; logic and error handling live in the hook.
 
 Hook patterns:
 
-- Store hooks in `src/hooks/<domain>/` folder, one file per hook (e.g., `src/hooks/event-registration/`).
-- Naming convention:
-  - Queries: `use<DomainEntity>Query` (e.g., `usePublicEventQuery`)
-  - Mutations: `use<Action><DomainEntity>Mutation` (e.g., `useMemberLookupMutation`, `useSubmitRegistrationMutation`)
-- Each hook file exports exactly one hook function with clear JSDoc.
-- Create `src/hooks/<domain>/index.ts` barrel export for all hooks in the domain.
-- **Pages and components import hooks directly**, not from lib barrels.
+- Store hooks in `src/hooks/<domain>/` folder organized by operation type.
+- **Operation-scoped subfolder structure** (MANDATORY):
+  - `/queries/`: All read operations. Example: `src/hooks/admin/events/queries/useAdminEventsQuery.ts`
+  - `/mutations/`: All write operations. Example: `src/hooks/event-registration/mutations/useSubmitRegistrationMutation.ts`
+  - `/state/`: Local UI orchestration (form state, temporary views, step management). Example: `src/hooks/event-registration/state/useMemberLookupState.ts`
+  - Shared utilities at `/hooks/utils/`: Cross-domain UI/form state utilities (focus management, error lifecycle, dialog state). Example: `src/hooks/utils/useErrorWithFadeout.ts`
+
+- **Naming convention** (consistent across all domains):
+  - Queries: `use<Entity>Query` (e.g., `usePublicEventQuery`, `useAdminEventsQuery`, `useMemberLookupQuery`)
+  - Mutations: `use<Action><Entity>Mutation` (e.g., `useSubmitRegistrationMutation`, `useCreateEventMutation`)
+  - State: `use<Entity>State` (e.g., `useMemberLookupState`)
+  - Utilities: `use<Concern>` (e.g., `useErrorWithFadeout`, `useRfidAutoFocus`)
+
+- One hook per file (strict). Export exactly one hook function with clear JSDoc.
+
+- **Barrel exports** at each operation level:
+  - `src/hooks/<domain>/queries/index.ts` exports all query hooks
+  - `src/hooks/<domain>/mutations/index.ts` exports all mutation hooks
+  - `src/hooks/<domain>/state/index.ts` exports all state hooks
+  - `src/hooks/<domain>/index.ts` re-exports from subfolders + utilities
+  - `src/hooks/utils/index.ts` exports all shared utility hooks
+
+- **Import pattern** (maintain backward compatibility):
+  - From domain: `import { useAdminEventsQuery } from '../../hooks/admin'` (barrel re-export)
+  - From subdomains: `import { useAdminEventsQuery } from '../../hooks/admin/events/queries'` (direct import for clarity)
+  - Utilities: `import { useErrorWithFadeout } from '../../hooks/utils'` (from shared barrel)
+
+- **Pages and components import hooks directly** from domain or subdomain barrels, not from lib.
 - Hooks handle error toasting and validation; pages handle UI state and user feedback.
 
 Benefits:
 
-- Single source of truth for query keys and retry logic
-- Consistent error handling (toasts built into mutations, explicit in components)
-- Cacheable and mockable for testing
-- Easier to refactor: business logic lives where it's used
-- No unnecessary abstraction layers
+- Clear operation semantics: queries separate from mutations; state hooks isolated from data fetching
+- Reduced import confusion: hooks grouped by operation type, not mixed at domain root
+- Query/mutation invalidation: easy to find and update cache invalidation patterns
+- Scalable for multi-domain features: admin, event-registration, future domains follow consistent pattern
+- Reusable utilities: shared UI utilities available to all domains without coupling
+- Easier refactoring: moving hooks between domains or operations maintains structure integrity
 
 Forms:
 
