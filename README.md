@@ -2,26 +2,42 @@
 
 Scalable event registration platform using React + Supabase.
 
-## Current Status
+## Stack Overview
 
-Chunk 1 is implemented locally:
+Frontend:
 
-- React + TypeScript + Vite app scaffolded
-- Route architecture scaffolded for public and admin modules
-- Theme A Civic Trust design tokens and typography applied
-- Core library stack installed (Supabase client, forms, validation, routing, query layer)
-- Supabase client scaffolding and environment contract added
-- Supabase local project scaffold and migration workflow added
-- Core schema and member import pipeline implemented
-- Private local member seed workflow added
+- React 19 + TypeScript + Vite
+- React Router for route composition
+- React Query for server state
+- React Hook Form + Zod for form and runtime validation
+- Tailwind CSS + Radix primitives + shadcn-style UI composition
 
-## Locked Decisions
+Backend and API:
 
-- UI stack: Shadcn UI + Tailwind + Radix primitives
-- Form stack: React Hook Form + Zod
-- Theme: Theme A Civic Trust
-- Admin scope: global admins in v1 (future event-scoped extension planned)
-- Registration rule: mandatory ID lookup first, always
+- Supabase Postgres
+- Supabase Edge Functions (Deno + TypeScript)
+- Supabase Auth for admin identity verification
+- Function-level CORS allowlist and request hardening in shared security helpers
+
+Database and Security:
+
+- SQL migrations managed under supabase/migrations
+- RLS-oriented schema posture with explicit grants
+- Public registration write path through Edge Functions
+- Shared fixed-window in-memory rate limiting for edge endpoints
+
+Tooling and Quality:
+
+- ESLint for linting
+- Vitest for tests
+- Vite production build checks
+- Local Supabase CLI workflow for reproducible local development
+
+## Product Rules
+
+- Registration flow is ID-first (member lookup before submission)
+- Admin operations require authenticated admin identity
+- Public registration writes go through approved backend paths
 
 ## Coding Standards For Copilot
 
@@ -32,7 +48,7 @@ Use that file as the default source of truth for:
 - React and TypeScript scalability standards
 - Data boundary validation and form conventions
 - Query, state, and error-handling patterns
-- Chunk boundary discipline and verification expectations
+- Repository architecture and verification expectations
 
 ## Route Skeleton
 
@@ -81,7 +97,7 @@ Required values:
 
 ## Local Supabase Workflow
 
-Chunk 1 is designed to run fully locally before any deployment.
+Run the platform fully locally before any deployment.
 
 1. Start Docker Desktop.
 2. Start the local Supabase stack.
@@ -136,18 +152,60 @@ Local admin account seed (for admin route testing):
 - Password: Supabase@123
 - Seed source: supabase/seeds/dev.local.sql (local development only, git-ignored)
 
-## Next Implementation Chunk
+## Edge Function Rate Limiting
 
-Chunk 2: RLS and security controls
+Edge functions use a shared in-memory fixed-window limiter in supabase/functions/_shared/security.ts.
 
-- enable RLS across public tables
-- add admin role-check policies
-- define controlled public read and write paths
-- validate policy behavior with SQL test cases
+How it works:
 
-## Chunk 1 Database Scope
+- Requests are grouped by a limiter key with this shape: scope:identity.
+- A bucket stores count and window start time.
+- If no active bucket exists, a new bucket starts with count = 1.
+- If a bucket exists, count increments.
+- When count exceeds maxHits in the current window, the request is denied.
+- Denied requests return HTTP 429 with Retry-After and retry_after_seconds.
 
-Implemented locally in Supabase migrations:
+Identity source:
+
+- Public endpoints use request identity from headers in this order:
+   - x-forwarded-for (first IP)
+   - x-real-ip
+   - cf-connecting-ip
+   - fallback: origin
+- Admin endpoints use verified authenticated user id from Supabase Auth.
+
+Current limits:
+
+- member-lookup: 60 requests per 60 seconds per source identity
+- submit-registration: 20 requests per 60 seconds per source identity
+- export-registrations-csv: 5 requests per 60 seconds per admin user id
+- cancel-registration: 30 requests per 60 seconds per admin user id
+- reactivate-registration: 30 requests per 60 seconds per admin user id
+
+Flow overview:
+
+```mermaid
+flowchart TD
+   A[Request arrives] --> B[Build limiter key scope:identity]
+   B --> C{Existing active bucket?}
+   C -- No --> D[Create bucket count=1]
+   C -- Yes --> E[Increment count]
+   D --> F[Allow request]
+   E --> G{count <= maxHits?}
+   G -- Yes --> F
+   G -- No --> H[Return 429]
+   H --> I[Set Retry-After and retry_after_seconds]
+```
+
+Important caveat:
+
+- This limiter is in-memory per function instance, so it is not a globally shared distributed limit.
+- Counters reset on cold start, restart, or deploy.
+- For strict global enforcement, use a shared backing store (for example Redis/Upstash or a database-backed limiter).
+
+## Database Scope
+
+Implemented through Supabase migrations:
 
 - core tables: users, admins, events, event_fields, registrations, registration_answers
 - event invariants and indexes for duplicate registration control
