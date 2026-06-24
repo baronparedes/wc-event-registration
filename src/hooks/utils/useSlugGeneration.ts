@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import type { UseFormWatch, UseFormSetValue } from 'react-hook-form'
-import type { CreateEventInput } from '../../lib/admin/eventSchema'
+import type { CreateEventInput } from '@/lib/domain/events'
 
 /**
  * Encapsulates slug auto-generation logic for event forms.

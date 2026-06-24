@@ -12,9 +12,10 @@ import {
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
-} from '@/lib/admin/eventFieldSchema'
-import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/admin/eventFieldSchema'
-import type { AdminEventField, EventStatus } from '@/lib/admin/types'
+} from '@/lib/domain/event-fields'
+import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields'
+import type { AdminEventField } from '@/lib/domain/event-fields'
+import type { EventStatus } from '@/lib/domain/events'
 import {
   useCreateEventFieldMutation,
   useUpdateEventFieldMutation,

@@ -1,5 +1,5 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
-import type { CreateEventInput } from '@/lib/admin/eventSchema'
+import type { CreateEventInput } from '@/lib/domain/events'
 import { FormInputField } from '@/components/ui/FormInputField'
 import { FormTextareaField } from '@/components/ui/FormTextareaField'
 import { SectionCard } from '@/components/ui/SectionCard'

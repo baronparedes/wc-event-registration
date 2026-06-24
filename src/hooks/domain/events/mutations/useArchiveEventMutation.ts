@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import { writeAdminAuditLogSafely } from '@/lib/admin'
+import { supabase } from '@/lib/infrastructure'
+import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
 
 /** Archives an event (soft-delete) by setting its status to 'archived'. */

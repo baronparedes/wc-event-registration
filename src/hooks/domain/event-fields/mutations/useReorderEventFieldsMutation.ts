@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { ReorderEventFieldsInput } from '@/lib/admin/eventFieldSchema'
+import { supabase } from '@/lib/infrastructure'
+import type { ReorderEventFieldsInput } from '@/lib/domain/event-fields'
 import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery'
 
 /**

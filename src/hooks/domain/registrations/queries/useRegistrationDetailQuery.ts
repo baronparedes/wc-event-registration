@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/infrastructure'
 import type {
   AdminRegistrationDetail,
   RegistrationFieldResponse,
-} from '@/lib/admin/registrationTypes'
-import type { EventFieldType } from '@/lib/event-registration/types'
+} from '@/lib/domain/registrations'
+import type { EventFieldType } from '@/lib/domain/event-fields'
 
 type UserMetadata = {
   role?: unknown

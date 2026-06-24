@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '@/lib/supabase'
+import { createEdgeFunctionCaller } from '@/lib/infrastructure'
 import { ADMIN_REGISTRATIONS_QUERY_KEY } from '../queries/useAdminRegistrationsQuery'
 
 interface CancelRegistrationRequest {

@@ -1,4 +1,4 @@
-import type { EventFieldType } from '../event-registration/types'
+import type { EventFieldType } from '@/lib/domain/event-fields'
 
 export type RegistrationStatus = 'submitted' | 'updated' | 'cancelled'
 

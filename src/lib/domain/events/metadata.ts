@@ -1,5 +1,5 @@
 /**
- * Shared publish requirements validation for events.
+ * Shared publish requirements metadata for events.
  * Used in both form feedback and dialog confirmation.
  */
 

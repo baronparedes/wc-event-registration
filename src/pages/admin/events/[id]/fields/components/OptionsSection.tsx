@@ -1,5 +1,5 @@
 import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form'
-import type { EventFieldFormValues } from '@/lib/admin/eventFieldSchema'
+import type { EventFieldFormValues } from '@/lib/domain/event-fields'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { FieldOptionsEditor } from './FieldOptionsEditor'
 

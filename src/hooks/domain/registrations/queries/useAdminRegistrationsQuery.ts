@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { AdminRegistrationWithMember } from '@/lib/admin/registrationTypes'
+import { supabase } from '@/lib/infrastructure'
+import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 
 const DEFAULT_PAGE_SIZE = 25
 

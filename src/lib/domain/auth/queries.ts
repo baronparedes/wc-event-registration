@@ -1,13 +1,7 @@
-import type { Session } from '@supabase/supabase-js'
-import { supabase } from '../supabase'
+import { supabase } from '@/lib/infrastructure'
+import type { AdminAuthState } from './types'
 
 export const ADMIN_AUTH_QUERY_KEY = ['admin-auth-state'] as const
-
-export type AdminAuthState = {
-  isAuthenticated: boolean
-  session: Session | null
-  adminRole: 'admin' | 'super_admin' | null
-}
 
 type AdminRow = {
   role: 'admin' | 'super_admin'

@@ -60,7 +60,8 @@ Guidelines:
 
 - Page components: route-level composition and query coordination only.
 - UI components: rendering and interaction only.
-- lib/: API access, schema builders, and pure transforms.
+- lib/infrastructure/: shared technical clients and utilities.
+- lib/domain/: domain contracts, schemas, validation helpers, and pure transforms.
 - Avoid circular imports and hidden cross-feature coupling.
 
 ## Import Conventions
@@ -71,10 +72,19 @@ Guidelines:
 - Examples:
   - `import { useAdminEventsQuery } from '@/hooks/domain/events'`
   - `import { Button } from '@/components/ui/Button'`
-  - `import { logger } from '@/lib/logger'`
-  - `import type { AdminEvent } from '@/lib/admin/types'`
+  - `import { logger } from '@/lib/infrastructure'`
+  - `import type { AdminEvent } from '@/lib/domain/events'`
 - Benefits: Cleaner code, easier refactoring, shorter import statements.
 - Avoid: deep relative paths like `import X from '../../../../hooks'`.
+
+## Lib Structure
+
+- Keep shared technical infrastructure under `src/lib/infrastructure/`.
+- Keep business-domain contracts and helpers under `src/lib/domain/<feature>/`.
+- Current domain folders include `auth`, `admin-audit`, `events`, `event-fields`, `registrations`, and `members`.
+- Prefer domain barrel imports by default (for example `@/lib/domain/events` or `@/lib/domain/event-fields`).
+- Within a lib domain, keep pure Zod definitions and schema builders in `schemas.ts`, keep display/capability constants in `metadata.ts`, and keep transforms/default-mapping helpers in `transforms.ts` when those concerns are present.
+- Do not recreate legacy root wrappers such as `src/lib/supabase.ts`, `src/lib/logger.ts`, `src/lib/dateFormat.ts`, or removed legacy folders such as `src/lib/admin/` and `src/lib/event-registration/`.
 
 ## TypeScript Standards
 
@@ -143,12 +153,12 @@ Supabase queries (direct table access):
 
 - Hook inlines Supabase query logic directly in the `queryFn`.
 - Example: `usePublicEventQuery` inlines event availability checks.
-- Types imported from `src/lib/event-registration/types.ts`.
+- Types imported from the relevant domain module, for example `src/lib/domain/events/` or `src/lib/domain/event-fields/`.
 - No separate `queries.ts` module; logic lives in the hook.
 
 Edge Function mutations (privileged writes):
 
-- Hook uses `createEdgeFunctionCaller` factory from `src/lib/supabase.ts` to call Edge Functions.
+- Hook uses `createEdgeFunctionCaller` factory from `src/lib/infrastructure/supabase.ts` to call Edge Functions.
 - Factory ensures consistent HTTP headers, error handling, and type safety.
 - Example query (read): `useMemberLookupQuery` calls `member-lookup` Edge Function and returns profile data directly.
 - Example mutation (write): `useSubmitRegistrationMutation` calls `submit-registration` Edge Function to persist responses.
@@ -236,7 +246,7 @@ Forms:
 
 - All public write paths use Edge Functions with service role credentials.
 - Edge Functions live in `supabase/functions/` and handle business logic server-side.
-- Hooks call Edge Functions using `createEdgeFunctionCaller` factory from `src/lib/supabase.ts`.
+- Hooks call Edge Functions using `createEdgeFunctionCaller` factory from `src/lib/infrastructure/supabase.ts`.
 - Example: `member-lookup` Edge Function queries users table with service role and returns profile.
 - Example: `submit-registration` Edge Function handles duplicate policy, idempotency, and answer persistence.
 - Prevent direct public table writes; all mutations go through Edge Functions.
@@ -245,8 +255,8 @@ Forms:
 
 - No `src/lib/<domain>/queries.ts` or `src/lib/<domain>/commands.ts` modules.
 - Hooks own their data fetching logic; no intermediate abstraction layer.
-- Keep type contracts in `src/lib/<domain>/types.ts` for shared domain types.
-- Validation logic in `src/lib/<domain>/configValidation.ts` or `dynamicSchema.ts` as needed.
+- Keep type contracts, schemas, and pure transforms under `src/lib/domain/<feature>/`.
+- Use domain-local files such as `types.ts`, `schemas.ts`, `metadata.ts`, `validation.ts`, and `transforms.ts` when they match the owning domain concern.
 
 ## Query Invalidation & Cache Management
 
@@ -308,7 +318,7 @@ Forms:
 
 **Supabase client usage:**
 
-- Keep Supabase client in `src/lib/supabase.ts` and export for hooks to use.
+- Keep Supabase client in `src/lib/infrastructure/supabase.ts` and export it through `@/lib/infrastructure`.
 - Export Edge Function caller factory `createEdgeFunctionCaller` from the same module.
 - Hooks call Supabase directly or via Edge Function factory as needed.
 - No intermediate query/command modules; logic lives in hooks.

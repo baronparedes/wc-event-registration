@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify'
-import type { EventAvailability } from '@/lib/event-registration'
-import { formatDateTime } from '@/lib/dateFormat'
+import type { EventAvailability } from '@/lib/domain/events'
+import { formatDateTime } from '@/lib/infrastructure'
 import { SectionCard } from '@/components/ui/SectionCard'
 
 type EventHeaderCardProps = {

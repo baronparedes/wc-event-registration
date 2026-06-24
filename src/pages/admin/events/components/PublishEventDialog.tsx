@@ -4,8 +4,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   getPublishRequirements,
   areAllRequirementsMet,
-} from '@/lib/admin/publishRequirements'
-import type { AdminEvent } from '@/lib/admin/types'
+} from '@/lib/domain/events'
+import type { AdminEvent } from '@/lib/domain/events'
 
 type PublishEventModalProps = {
   eventData: AdminEvent | null

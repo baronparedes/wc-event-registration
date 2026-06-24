@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AdminRegistrationWithMember } from '@/lib/admin/registrationTypes'
+import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'

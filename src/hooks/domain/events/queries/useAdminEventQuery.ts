@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { AdminEvent } from '@/lib/admin/types'
+import { supabase } from '@/lib/infrastructure'
+import type { AdminEvent } from '@/lib/domain/events'
 
 export const adminEventQueryKey = (id: string) => ['admin-event', id] as const
 

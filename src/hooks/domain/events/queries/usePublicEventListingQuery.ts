@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { PublicEventListingItem } from '@/lib/event-registration'
+import { supabase } from '@/lib/infrastructure'
+import type { PublicEventListingItem } from '@/lib/domain/events'
 
 export function usePublicEventListingQuery() {
   return useQuery({

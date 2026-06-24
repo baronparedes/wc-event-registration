@@ -1,5 +1,120 @@
 import { z } from 'zod'
-import type { DynamicFieldResponseValues, PublicEventField } from './types'
+import type { PublicEventField } from './types'
+
+export const FIELD_TYPES = [
+  'text',
+  'textarea',
+  'number',
+  'email',
+  'phone',
+  'select',
+  'radio',
+  'checkbox',
+  'multi_select',
+  'date',
+  'datetime',
+  'boolean',
+] as const
+
+export type EventFieldTypeEnum = (typeof FIELD_TYPES)[number]
+
+const fieldOptionSchema = z.object({
+  label: z.string().min(1, 'Option label is required'),
+  value: z.string().min(1, 'Option value is required'),
+})
+
+export type FieldOption = z.infer<typeof fieldOptionSchema>
+
+export const createEventFieldSchema = z.object({
+  event_id: z.string().uuid('Invalid event ID'),
+  field_key: z
+    .string()
+    .min(1, 'Field name is required')
+    .max(100, 'Field name must be 100 characters or less')
+    .regex(
+      /^[a-z0-9_]+$/,
+      'Field name must use only lowercase letters, numbers, and underscores (e.g., team_name)',
+    ),
+  label: z
+    .string()
+    .min(1, 'Field label is required')
+    .max(200, 'Field label must be 200 characters or less'),
+  field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
+  is_required: z.boolean().default(false),
+  is_active: z.boolean().default(true),
+  placeholder: z
+    .string()
+    .max(200, 'Placeholder must be 200 characters or less')
+    .nullable()
+    .optional(),
+  help_text: z.string().max(500, 'Help text must be 500 characters or less').nullable().optional(),
+  options: z.array(fieldOptionSchema).default([]),
+  validation_rules: z.record(z.string(), z.unknown()).default({}),
+  display_order: z.number().int().min(0).default(0),
+})
+
+export type CreateEventFieldInput = z.infer<typeof createEventFieldSchema>
+
+export const updateEventFieldSchema = z.object({
+  id: z.string().uuid('Invalid field ID'),
+  event_id: z.string().uuid('Invalid event ID'),
+  label: z
+    .string()
+    .min(1, 'Field label is required')
+    .max(200, 'Field label must be 200 characters or less')
+    .optional(),
+  field_type: z.enum(FIELD_TYPES).optional(),
+  is_required: z.boolean().optional(),
+  is_active: z.boolean().optional(),
+  placeholder: z.string().max(200).nullable().optional(),
+  help_text: z.string().max(500).nullable().optional(),
+  options: z.array(fieldOptionSchema).optional(),
+  validation_rules: z.record(z.string(), z.unknown()).optional(),
+  display_order: z.number().int().min(0).optional(),
+})
+
+export type UpdateEventFieldInput = z.infer<typeof updateEventFieldSchema>
+
+export const reorderEventFieldsSchema = z.object({
+  event_id: z.string().uuid(),
+  orderedIds: z.array(z.string().uuid()).min(1, 'At least one field ID is required'),
+})
+
+export type ReorderEventFieldsInput = z.infer<typeof reorderEventFieldsSchema>
+
+export const eventFieldFormSchema = z.object({
+  field_key: z
+    .string()
+    .min(1, 'Field name is required')
+    .max(100, 'Maximum 100 characters')
+    .regex(
+      /^[a-z0-9_]+$/,
+      'Use only lowercase letters, numbers, and underscores (e.g., team_name)',
+    ),
+  label: z.string().min(1, 'Field label is required').max(200, 'Maximum 200 characters'),
+  field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
+  is_required: z.boolean(),
+  is_active: z.boolean(),
+  placeholder: z.string().max(200, 'Maximum 200 characters'),
+  help_text: z.string().max(500, 'Maximum 500 characters'),
+  options: z.array(
+    z.object({
+      label: z.string().min(1, 'Option label is required'),
+      value: z.string().min(1, 'Option value is required'),
+    }),
+  ),
+  val_min_length: z.string(),
+  val_max_length: z.string(),
+  val_pattern: z.string(),
+  val_min: z.string(),
+  val_max: z.string(),
+  val_min_selections: z.string(),
+  val_max_selections: z.string(),
+  val_min_date: z.string(),
+  val_max_date: z.string(),
+})
+
+export type EventFieldFormValues = z.infer<typeof eventFieldFormSchema>
 
 function coerceOptionalString(value: unknown): unknown {
   if (typeof value !== 'string') {
@@ -272,23 +387,4 @@ export function buildDynamicFieldResponseSchema(
   })
 
   return z.object(shape)
-}
-
-export function createDynamicFieldDefaultValues(
-  fields: PublicEventField[],
-): DynamicFieldResponseValues {
-  return fields.reduce<DynamicFieldResponseValues>((defaults, field) => {
-    if (field.field_type === 'checkbox' || field.field_type === 'boolean') {
-      defaults[field.field_key] = false
-      return defaults
-    }
-
-    if (field.field_type === 'multi_select') {
-      defaults[field.field_key] = []
-      return defaults
-    }
-
-    defaults[field.field_key] = ''
-    return defaults
-  }, {})
 }

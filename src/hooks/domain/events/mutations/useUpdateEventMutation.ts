@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import { writeAdminAuditLogSafely } from '@/lib/admin'
-import type { UpdateEventInput } from '@/lib/admin/eventSchema'
+import { supabase } from '@/lib/infrastructure'
+import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit'
+import type { UpdateEventInput } from '@/lib/domain/events'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
 import { adminEventQueryKey } from '../queries/useAdminEventQuery'
 

@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import { logger } from '@/lib/logger'
-import { validatePublicEventFieldConfig } from '@/lib/event-registration/configValidation'
+import { supabase } from '@/lib/infrastructure'
+import { logger } from '@/lib/infrastructure'
+import { validatePublicEventFieldConfig } from '@/lib/domain/event-fields'
 import type {
   EventFieldConfigValidationResult,
   PublicEventFieldRow,
-} from '@/lib/event-registration'
+} from '@/lib/domain/event-fields'
 
 /**
  * Hook to fetch dynamic event fields for a specific event.

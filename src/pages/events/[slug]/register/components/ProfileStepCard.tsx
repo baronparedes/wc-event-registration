@@ -1,4 +1,4 @@
-import type { MemberLookupProfile } from '@/lib/event-registration'
+import type { MemberLookupProfile } from '@/lib/domain/members'
 import { SectionCard } from '@/components/ui/SectionCard'
 
 type ProfileStepCardProps = {

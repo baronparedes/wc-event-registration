@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getPublishRequirements } from '@/lib/admin/publishRequirements'
+import { getPublishRequirements } from '@/lib/domain/events'
 
 type PublishRequirementsCheckerProps = {
   formValues: {

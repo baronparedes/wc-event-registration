@@ -1,8 +1,5 @@
 import { type UseFormReturn } from 'react-hook-form'
-import type {
-  DynamicFieldResponseValues,
-  PublicEventField,
-} from '@/lib/event-registration'
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
 
 type CheckboxFieldRendererProps = {
   field: PublicEventField

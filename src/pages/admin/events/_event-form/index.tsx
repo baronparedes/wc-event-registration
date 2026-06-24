@@ -9,8 +9,8 @@ import {
   useUpdateEventMutation,
 } from '@/hooks/domain/events'
 import { useSlugGeneration, useSaveConfirmation } from '@/hooks/utils'
-import { createEventSchema } from '@/lib/admin/eventSchema'
-import type { CreateEventInput } from '@/lib/admin/eventSchema'
+import { createEventSchema } from '@/lib/domain/events'
+import type { CreateEventInput } from '@/lib/domain/events'
 import {
   EventDateRangeSection,
   EventDetailsSection,

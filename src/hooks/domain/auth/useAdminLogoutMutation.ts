@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import { ADMIN_AUTH_QUERY_KEY, type AdminAuthState } from '@/lib/admin/authUtils'
+import { supabase } from '@/lib/infrastructure'
+import { ADMIN_AUTH_QUERY_KEY, type AdminAuthState } from '@/lib/domain/auth'
 
 export function useAdminLogoutMutation() {
   const queryClient = useQueryClient()

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { AdminEventField, EventStatus } from '@/lib/admin/types'
-import { FIELD_TYPE_LABELS } from '@/lib/admin/eventFieldSchema'
-import type { EventFieldTypeEnum } from '@/lib/admin/eventFieldSchema'
+import type { AdminEventField } from '@/lib/domain/event-fields'
+import type { EventStatus } from '@/lib/domain/events'
+import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields'
+import type { EventFieldTypeEnum } from '@/lib/domain/event-fields'
 import {
   useDeleteEventFieldMutation,
   useReorderEventFieldsMutation,

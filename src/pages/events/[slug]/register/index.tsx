@@ -7,8 +7,8 @@ import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
   type DynamicFieldResponseValues,
-} from '@/lib/event-registration'
-import { logger } from '@/lib/logger'
+} from '@/lib/domain/event-fields'
+import { logger } from '@/lib/infrastructure'
 import { usePublicEventQuery } from '@/hooks/domain/events'
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields'
 import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations'

@@ -5,7 +5,7 @@ import type {
   UseFieldArrayAppend,
   FieldArrayWithId,
 } from 'react-hook-form'
-import type { EventFieldFormValues } from '@/lib/admin/eventFieldSchema'
+import type { EventFieldFormValues } from '@/lib/domain/event-fields'
 import { Button } from '@/components/ui/Button'
 
 type FieldOptionsEditorProps = {

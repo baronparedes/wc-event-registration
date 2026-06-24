@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import type { PublicEventListingItem } from '@/lib/event-registration'
+import type { PublicEventListingItem } from '@/lib/domain/events'
 import { Button } from '@/components/ui/Button'
-import { formatDateOnly } from '@/lib/dateFormat'
+import { formatDateOnly } from '@/lib/infrastructure'
 
 type EventCardProps = {
   event: PublicEventListingItem

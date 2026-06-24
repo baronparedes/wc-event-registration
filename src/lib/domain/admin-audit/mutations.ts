@@ -1,12 +1,5 @@
-import { supabase } from '@/lib/supabase'
-import type { AdminAuditAction, AdminAuditResourceType } from './types'
-
-export interface AdminAuditPayload {
-  action: AdminAuditAction
-  resourceType: AdminAuditResourceType
-  resourceId?: string
-  metadata?: Record<string, unknown>
-}
+import { supabase } from '@/lib/infrastructure'
+import type { AdminAuditPayload } from './types'
 
 async function getCurrentAdminId(): Promise<string | null> {
   const {

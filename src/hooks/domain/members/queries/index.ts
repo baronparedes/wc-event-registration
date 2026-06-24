@@ -1,6 +1,7 @@
-export {
-  useMemberLookupQuery,
-  type MemberLookupProfile,
-  type MemberLookupResult,
-  type ExistingRegistrationState,
-} from './useMemberLookupQuery'
+export { useMemberLookupQuery } from './useMemberLookupQuery'
+
+export type {
+  MemberLookupProfile,
+  MemberLookupResult,
+  ExistingRegistrationState,
+} from '@/lib/domain/members'

@@ -2,9 +2,9 @@ import { useState, useCallback } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { logger } from '@/lib/logger'
+import { logger } from '@/lib/infrastructure'
+import type { MemberLookupProfile } from '@/lib/domain/members'
 import { useMemberLookupQuery } from '../queries/useMemberLookupQuery'
-import type { MemberLookupProfile } from '../queries/useMemberLookupQuery'
 
 const memberLookupSchema = z.object({
   memberId: z.string().trim().min(1, 'Member ID is required').max(64, 'Member ID is too long'),

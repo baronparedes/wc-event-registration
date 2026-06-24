@@ -1,26 +1,13 @@
 import { useMutation } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '@/lib/supabase'
-import { logger } from '@/lib/logger'
+import { createEdgeFunctionCaller } from '@/lib/infrastructure'
+import { logger } from '@/lib/infrastructure'
+import type {
+  ExistingRegistrationState,
+  MemberLookupProfile,
+  MemberLookupResult,
+} from '@/lib/domain/members'
 
-export interface MemberLookupProfile {
-  user_id: string
-  full_name: string
-  nickname: string | null
-  first_name: string | null
-  last_name: string | null
-}
-
-export interface ExistingRegistrationState {
-  exists: boolean
-  edit_allowed: boolean
-  status: 'submitted' | 'updated' | 'cancelled'
-  responses: Record<string, unknown>
-}
-
-export interface MemberLookupResult {
-  profile: MemberLookupProfile | null
-  existing_registration: ExistingRegistrationState | null
-}
+export type { MemberLookupProfile, ExistingRegistrationState, MemberLookupResult }
 
 interface MemberLookupResponse {
   success: true

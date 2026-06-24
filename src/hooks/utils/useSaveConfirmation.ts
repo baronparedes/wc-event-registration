@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { CreateEventInput } from '../../lib/admin/eventSchema'
+import type { CreateEventInput } from '@/lib/domain/events'
 
 export type SaveConfirmationState = {
   showDialog: boolean

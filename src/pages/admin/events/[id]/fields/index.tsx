@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields'
-import type { AdminEventField } from '@/lib/admin/types'
+import type { AdminEventField } from '@/lib/domain/event-fields'
 import { Button } from '@/components/ui/Button'
 import { EventFieldsList, EventFieldEditPanel } from './components'
 
