@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { writeAdminAuditLogSafely } from '@/lib/admin'
 import type { CreateEventInput } from '@/lib/admin/eventSchema'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
 
@@ -52,6 +53,18 @@ export function useCreateEventMutation() {
         .single()
 
       if (error) throw error
+
+      await writeAdminAuditLogSafely({
+        action: 'create_event',
+        resourceType: 'event',
+        resourceId: data.id,
+        metadata: {
+          slug: input.slug,
+          title: input.title,
+          status: input.status,
+        },
+      })
+
       return data.id as string
     },
     onSuccess: () => {

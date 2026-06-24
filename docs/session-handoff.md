@@ -4,6 +4,50 @@ Last updated: 2026-06-24
 
 ## Current Session Work (2026-06-24)
 
+**Chunk 11: Admin Hardening and Operational Polish (Gate C Slice) - Status: In Progress 🟡**
+
+Learning-mode execution for this chunk:
+
+- Explain each step and why
+- Implement the smallest safe vertical slice
+- Verify with commands and manual checks
+- Pause at chunk boundary for review
+
+Scope for this slice only:
+
+- Admin audit trail for create/update/publish/archive/cancel/reactivate/export actions
+- Cursor pagination for admin events and registrations listings
+
+Deferred (out of scope for this slice):
+
+- Async CSV export pipeline for very large datasets
+- Distributed/shared rate-limit backend for multi-instance enforcement
+
+### Chunk 11 Progress ✅
+
+- Added DB migration: `admin_audit_logs` table with constraints, indexes, RLS, and grants
+- Added DB migration: pagination indexes for admin events and registrations list ordering
+- Added frontend admin audit helper (`writeAdminAuditLogBestEffort`) and exported it in admin barrel
+- Wired audit writes into event mutations: create, update, publish, archive
+- Added shared Edge Function helper (`logAdminAction`) for audit writes
+- Wired audit writes into edge-admin actions: cancel registration, reactivate registration, CSV export
+- Implemented paginated query contracts:
+  - `useAdminEventsQuery({ pageSize, cursor })` returns `items`, `hasMore`, `nextCursor`
+  - `useAdminRegistrationsQuery(eventId, { pageSize, cursor })` returns `items`, `hasMore`, `nextCursor`
+- Added pagination UI controls:
+  - Admin events page: previous/next controls with page indicator
+  - Admin registrations page: previous/next controls + rows-per-page selector (10/25/50)
+- Corrected docs plan status mismatch in `docs/implementation-plan.md`:
+  - Chunk 9 = completed
+  - Chunk 10 = completed
+  - Chunk 11 = in progress
+
+### Chunk 11 Verification ✅
+
+- `npm run supabase:db:reset` passes and applies both new migrations
+- `npm run build` passes (TypeScript + Vite)
+- `npm run lint` passes with warnings only (no errors)
+
 **Chunk 10: Registrations List/Detail and CSV Export - Status: Complete ✅**
 
 ### Completed ✅
@@ -477,9 +521,8 @@ Build status: TypeScript strict, zero errors; 225 modules, 631 KB gzipped.
 
 **Next Planned Work:**
 
-- **Chunk 9** (admin registrations view): List registrations for each event, filter/search, response display
-- **Chunk 10** (CSV export): Export registrations with responses to CSV
-- **Chunk 11** (QA & polish): End-to-end admin workflow testing, edge cases, performance
+- **Chunk 11 (current)**: Gate C slice - admin audit trail + cursor pagination for admin listings
+- **Chunk 11 (follow-up)**: QA and performance hardening for edge cases and operational readiness
 
 ## Current Focus
 

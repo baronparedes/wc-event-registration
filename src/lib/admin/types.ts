@@ -57,3 +57,14 @@ export type AdminEventField = {
   created_at: string
   updated_at: string
 }
+
+export type AdminAuditAction =
+  | 'create_event'
+  | 'update_event'
+  | 'publish_event'
+  | 'archive_event'
+  | 'cancel_registration'
+  | 'reactivate_registration'
+  | 'export_registrations_csv'
+
+export type AdminAuditResourceType = 'event' | 'registration' | 'export'

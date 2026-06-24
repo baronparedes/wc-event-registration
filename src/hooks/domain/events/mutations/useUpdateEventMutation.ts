@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { writeAdminAuditLogSafely } from '@/lib/admin'
 import type { UpdateEventInput } from '@/lib/admin/eventSchema'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
 import { adminEventQueryKey } from '../queries/useAdminEventQuery'
@@ -14,23 +15,46 @@ export function useUpdateEventMutation() {
 
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string } & UpdateEventInput): Promise<void> => {
-      const { error } = await supabase
+      const { data: previousEvent } = await supabase
         .from('events')
-        .update({
-          title: input.title,
-          description: emptyToNull(input.description),
-          location: emptyToNull(input.location),
-          starts_at: emptyToNull(input.starts_at),
-          ends_at: emptyToNull(input.ends_at),
-          registration_opens_at: emptyToNull(input.registration_opens_at),
-          registration_closes_at: emptyToNull(input.registration_closes_at),
-          status: input.status,
-          duplicate_policy: input.duplicate_policy,
-          registration_mode: input.registration_mode,
-        })
+        .select(
+          'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode',
+        )
         .eq('id', id)
+        .maybeSingle()
+
+      const nextValues = {
+        title: input.title,
+        description: emptyToNull(input.description),
+        location: emptyToNull(input.location),
+        starts_at: emptyToNull(input.starts_at),
+        ends_at: emptyToNull(input.ends_at),
+        registration_opens_at: emptyToNull(input.registration_opens_at),
+        registration_closes_at: emptyToNull(input.registration_closes_at),
+        status: input.status,
+        duplicate_policy: input.duplicate_policy,
+        registration_mode: input.registration_mode,
+      }
+
+      const { error } = await supabase.from('events').update(nextValues).eq('id', id)
 
       if (error) throw error
+
+      const changedFields = Object.entries(nextValues).reduce<string[]>((acc, [key, value]) => {
+        if ((previousEvent as Record<string, unknown> | null)?.[key] !== value) {
+          acc.push(key)
+        }
+        return acc
+      }, [])
+
+      await writeAdminAuditLogSafely({
+        action: 'update_event',
+        resourceType: 'event',
+        resourceId: id,
+        metadata: {
+          changed_fields: changedFields,
+        },
+      })
     },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY })

@@ -49,6 +49,22 @@ export interface AdminGuardOptions {
   }
 }
 
+export interface AdminAuditLogOptions {
+  adminClient: ReturnType<typeof createClient>
+  adminUserId: string
+  action:
+    | 'create_event'
+    | 'update_event'
+    | 'publish_event'
+    | 'archive_event'
+    | 'cancel_registration'
+    | 'reactivate_registration'
+    | 'export_registrations_csv'
+  resourceType: 'event' | 'registration' | 'export'
+  resourceId?: string | null
+  metadata?: Record<string, unknown>
+}
+
 export type AdminGuardResult = { ok: true; userId: string } | { ok: false; response: Response }
 
 function maskValue(value: string | null, visible = 6): string {
@@ -317,6 +333,45 @@ export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]
       ? origin
       : fallbackOrigin,
     Vary: 'Origin',
+  }
+}
+
+export async function logAdminAction(options: AdminAuditLogOptions): Promise<void> {
+  const { adminClient, adminUserId, action, resourceType, resourceId, metadata } = options
+
+  const { data: adminRow, error: adminRowError } = await adminClient
+    .from('admins')
+    .select('id')
+    .eq('auth_user_id', adminUserId)
+    .maybeSingle()
+
+  if (adminRowError || !adminRow?.id) {
+    console.error('[audit-log] unable to resolve admin id', {
+      adminUserId,
+      action,
+      adminRowErrorCode: adminRowError?.code ?? null,
+      adminRowErrorMessage: adminRowError?.message ?? null,
+    })
+    return
+  }
+
+  const { error: auditError } = await adminClient.from('admin_audit_logs').insert({
+    admin_id: adminRow.id,
+    action,
+    resource_type: resourceType,
+    resource_id: resourceId ?? null,
+    metadata: metadata ?? {},
+  })
+
+  if (auditError) {
+    console.error('[audit-log] insert failed', {
+      adminUserId,
+      action,
+      resourceType,
+      resourceId,
+      auditErrorCode: auditError.code ?? null,
+      auditErrorMessage: auditError.message ?? null,
+    })
   }
 }
 

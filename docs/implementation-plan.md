@@ -414,16 +414,16 @@ Status: Completed.
 
 Event field configuration (CRUD for all field types).
 
-Status: Next active chunk.
+Status: Completed.
 
 ### Chunk 10
 
 Registrations list/detail with CSV export.
 
-Status: Future.
+Status: Completed.
 
 ### Chunk 11
 
-Hardening, performance optimization, and future feature hooks.
+Admin registrations hardening and operational polish (Gate C focus).
 
-Status: Future.
+Status: In progress.

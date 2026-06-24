@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { writeAdminAuditLogSafely } from '@/lib/admin'
 import { publishEventSchema } from '@/lib/admin/eventSchema'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
 
@@ -59,6 +60,16 @@ export function usePublishEventMutation() {
       const { error } = await supabase.from('events').update({ status: 'published' }).eq('id', id)
 
       if (error) throw error
+
+      await writeAdminAuditLogSafely({
+        action: 'publish_event',
+        resourceType: 'event',
+        resourceId: id,
+        metadata: {
+          previous_status: event.status,
+          next_status: 'published',
+        },
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY })

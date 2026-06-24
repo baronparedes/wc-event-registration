@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { AdminRegistrationWithMember } from '@/lib/admin/registrationTypes'
 
+const DEFAULT_PAGE_SIZE = 25
+
 type UserMetadata = {
   role?: unknown
   category?: unknown
@@ -14,22 +16,58 @@ function readMetadataString(value: unknown): string {
 export const ADMIN_REGISTRATIONS_QUERY_KEY = (eventId: string) =>
   ['admin-registrations', eventId] as const
 
+export const adminRegistrationsPageQueryKey = (
+  eventId: string,
+  pageSize: number,
+  cursor: string | null,
+) => [...ADMIN_REGISTRATIONS_QUERY_KEY(eventId), pageSize, cursor] as const
+
+export interface AdminRegistrationsPageParams {
+  pageSize?: number
+  cursor?: string | null
+}
+
+export interface AdminRegistrationsPage {
+  items: AdminRegistrationWithMember[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+function decodeOffsetCursor(cursor: string | null | undefined): number {
+  if (!cursor) return 0
+
+  const parsed = Number.parseInt(cursor, 10)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+}
+
 /**
  * Fetches all registrations for an event with member details.
  * Joins registrations + users + counts answers for display in list view.
  */
-export function useAdminRegistrationsQuery(eventId: string) {
+export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegistrationsPageParams) {
+  const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
+  const cursor = params?.cursor ?? null
+  const offset = decodeOffsetCursor(cursor)
+
   return useQuery({
-    queryKey: ADMIN_REGISTRATIONS_QUERY_KEY(eventId),
-    queryFn: async (): Promise<AdminRegistrationWithMember[]> => {
+    queryKey: adminRegistrationsPageQueryKey(eventId, pageSize, cursor),
+    queryFn: async (): Promise<AdminRegistrationsPage> => {
       const { data: registrations, error: registrationError } = await supabase
         .from('registrations')
         .select('id, event_id, user_id, status, submitted_at, updated_at')
         .eq('event_id', eventId)
         .order('submitted_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + pageSize - 1)
 
       if (registrationError) throw registrationError
-      if (!registrations?.length) return []
+      if (!registrations?.length) {
+        return {
+          items: [],
+          nextCursor: null,
+          hasMore: false,
+        }
+      }
 
       // Fetch user details for all registrations
       const userIds = registrations.map((r) => r.user_id)
@@ -62,7 +100,7 @@ export function useAdminRegistrationsQuery(eventId: string) {
       const userMap = new Map(users?.map((u) => [u.id, u]) ?? [])
 
       // Combine data
-      return registrations.map((r) => {
+      const items = registrations.map((r) => {
         const user = userMap.get(r.user_id)
         const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null
 
@@ -77,6 +115,14 @@ export function useAdminRegistrationsQuery(eventId: string) {
           answer_count: answerCountMap.get(r.id) ?? 0,
         }
       })
+
+      const hasMore = items.length === pageSize
+
+      return {
+        items,
+        hasMore,
+        nextCursor: hasMore ? String(offset + pageSize) : null,
+      }
     },
     staleTime: 0,
   })

@@ -3,6 +3,7 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
+  logAdminAction,
   requireAdminAccess,
   readAllowedOrigins,
 } from '../_shared/security.ts'
@@ -87,7 +88,7 @@ Deno.serve(async (req) => {
 
     // Parse and validate request
     const body = (await req.json()) as CancelRegistrationRequest
-    const { registration_id } = body
+    const { registration_id, reason } = body
 
     console.log('[cancel-registration] parsed body', {
       requestId,
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
     // Fetch registration to verify it exists
     const { data: registration, error: regFetchError } = await adminClient
       .from('registrations')
-      .select('id, status')
+      .select('id, status, event_id')
       .eq('id', registration_id)
       .single()
 
@@ -200,6 +201,20 @@ Deno.serve(async (req) => {
         },
       )
     }
+
+    await logAdminAction({
+      adminClient,
+      adminUserId: adminAccess.userId,
+      action: 'cancel_registration',
+      resourceType: 'registration',
+      resourceId: registration_id,
+      metadata: {
+        event_id: registration.event_id,
+        previous_status: registration.status,
+        next_status: 'cancelled',
+        reason: reason ?? null,
+      },
+    })
 
     return new Response(
       JSON.stringify({

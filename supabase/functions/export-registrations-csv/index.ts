@@ -3,6 +3,7 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
+  logAdminAction,
   requireAdminAccess,
   readAllowedOrigins,
 } from '../_shared/security.ts'
@@ -394,6 +395,19 @@ Deno.serve(async (req) => {
     const filenamePrefix = eventName || `event-${sanitizeFilenamePart(event_id)}`
     const timestamp = buildUtcTimestampForFilename(new Date())
     const filename = `${filenamePrefix}-registrations-${timestamp}.csv`
+
+    await logAdminAction({
+      adminClient,
+      adminUserId: adminAccess.userId,
+      action: 'export_registrations_csv',
+      resourceType: 'export',
+      resourceId: event_id,
+      metadata: {
+        event_id,
+        row_count: registrations?.length ?? 0,
+        filename,
+      },
+    })
 
     return new Response(csvContent, {
       status: 200,

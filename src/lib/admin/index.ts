@@ -3,6 +3,8 @@ export type {
   AdminEventField,
   AdminEventFieldOption,
   AdminEventFieldValidationRules,
+  AdminAuditAction,
+  AdminAuditResourceType,
   EventStatus,
   DuplicatePolicy,
   RegistrationMode,
@@ -43,3 +45,4 @@ export {
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
 } from './eventFieldSchema'
+export { writeAdminAuditLog, writeAdminAuditLogSafely } from './auditLog'

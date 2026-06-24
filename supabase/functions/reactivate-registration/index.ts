@@ -3,6 +3,7 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
+  logAdminAction,
   requireAdminAccess,
   readAllowedOrigins,
 } from '../_shared/security.ts'
@@ -123,7 +124,7 @@ Deno.serve(async (req) => {
 
     const { data: registration, error: regFetchError } = await adminClient
       .from('registrations')
-      .select('id, status')
+      .select('id, status, event_id')
       .eq('id', registration_id)
       .single()
 
@@ -189,6 +190,19 @@ Deno.serve(async (req) => {
         },
       )
     }
+
+    await logAdminAction({
+      adminClient,
+      adminUserId: adminAccess.userId,
+      action: 'reactivate_registration',
+      resourceType: 'registration',
+      resourceId: registration_id,
+      metadata: {
+        event_id: registration.event_id,
+        previous_status: registration.status,
+        next_status: 'updated',
+      },
+    })
 
     return new Response(
       JSON.stringify({
