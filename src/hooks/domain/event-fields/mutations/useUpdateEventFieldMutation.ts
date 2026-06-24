@@ -27,7 +27,7 @@ export function useUpdateEventFieldMutation() {
         throw new Error('Cannot edit fields on archived events.')
       }
 
-      const { id, ...updates } = input
+      const { id, event_id: _eventId, ...updates } = input
 
       if (event.status === 'published') {
         const lockedKeys = Object.keys(updates).filter(
@@ -35,7 +35,7 @@ export function useUpdateEventFieldMutation() {
         )
         if (lockedKeys.length > 0) {
           throw new Error(
-            'Published events can only have field labels and help text edited. To change field types or validation rules, archive this event and create a new one.',
+            'Published events can only have field labels, placeholders, and help text edited. To change field types or validation rules, archive this event and create a new one.',
           )
         }
       }

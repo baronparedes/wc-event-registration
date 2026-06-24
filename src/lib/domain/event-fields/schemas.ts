@@ -95,8 +95,8 @@ export const eventFieldFormSchema = z.object({
   field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
   is_required: z.boolean(),
   is_active: z.boolean(),
-  placeholder: z.string().max(200, 'Maximum 200 characters'),
-  help_text: z.string().max(500, 'Maximum 500 characters'),
+  placeholder: z.string().max(200, 'Maximum 200 characters').nullable(),
+  help_text: z.string().max(500, 'Maximum 500 characters').nullable(),
   options: z.array(
     z.object({
       label: z.string().min(1, 'Option label is required'),
