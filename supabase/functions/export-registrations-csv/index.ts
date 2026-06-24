@@ -11,12 +11,21 @@ interface ExportRegistrationsRequest {
   event_id: string
 }
 
+type UserMetadata = {
+  role?: unknown
+  category?: unknown
+}
+
 const allowedOrigins = readAllowedOrigins()
 
 function maskValue(value: string | null, visible = 6): string {
   if (!value) return 'null'
   if (value.length <= visible * 2) return value
   return `${value.slice(0, visible)}...${value.slice(-visible)}`
+}
+
+function readMetadataString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
 }
 
 // Helper function to escape CSV fields
@@ -235,7 +244,7 @@ Deno.serve(async (req) => {
     const userIds = registrations?.map((r) => r.user_id) ?? []
     const { data: users, error: userError } = await adminClient
       .from('users')
-      .select('id, member_id, full_name, email, phone')
+      .select('id, member_id, full_name, email, phone, metadata')
       .in('id', userIds)
 
     if (userError) {
@@ -344,6 +353,8 @@ Deno.serve(async (req) => {
       formatBaseHeader('full_name'),
       formatBaseHeader('email'),
       formatBaseHeader('phone'),
+      formatBaseHeader('role'),
+      formatBaseHeader('category'),
       formatBaseHeader('status'),
       formatBaseHeader('submitted_at'),
       formatBaseHeader('updated_at'),
@@ -356,11 +367,14 @@ Deno.serve(async (req) => {
 
     registrations?.forEach((reg) => {
       const user = userMap.get(reg.user_id)
+      const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null
       const row: string[] = [
         escapeCsvField(user?.member_id ?? ''),
         escapeCsvField(user?.full_name ?? ''),
         escapeCsvField(user?.email ?? ''),
         escapeCsvField(user?.phone ?? ''),
+        escapeCsvField(readMetadataString(metadata?.role)),
+        escapeCsvField(readMetadataString(metadata?.category)),
         escapeCsvField(reg.status),
         escapeCsvField(reg.submitted_at),
         escapeCsvField(reg.updated_at),

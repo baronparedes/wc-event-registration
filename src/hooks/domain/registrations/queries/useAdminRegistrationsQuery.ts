@@ -2,6 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { AdminRegistrationWithMember } from '@/lib/admin/registrationTypes'
 
+type UserMetadata = {
+  role?: unknown
+  category?: unknown
+}
+
+function readMetadataString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
 export const ADMIN_REGISTRATIONS_QUERY_KEY = (eventId: string) =>
   ['admin-registrations', eventId] as const
 
@@ -26,7 +35,7 @@ export function useAdminRegistrationsQuery(eventId: string) {
       const userIds = registrations.map((r) => r.user_id)
       const { data: users, error: userError } = await supabase
         .from('users')
-        .select('id, member_id, full_name, email, phone')
+        .select('id, member_id, full_name, email, phone, metadata')
         .in('id', userIds)
 
       if (userError) throw userError
@@ -55,12 +64,16 @@ export function useAdminRegistrationsQuery(eventId: string) {
       // Combine data
       return registrations.map((r) => {
         const user = userMap.get(r.user_id)
+        const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null
+
         return {
           ...r,
           member_id: user?.member_id ?? '',
           full_name: user?.full_name ?? '',
           email: user?.email ?? '',
           phone: user?.phone ?? null,
+          role: readMetadataString(metadata?.role),
+          category: readMetadataString(metadata?.category),
           answer_count: answerCountMap.get(r.id) ?? 0,
         }
       })

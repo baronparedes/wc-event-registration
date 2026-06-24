@@ -16,6 +16,8 @@ export type AdminRegistrationWithMember = AdminRegistration & {
   full_name: string
   email: string
   phone: string | null
+  role: string
+  category: string
   answer_count: number
 }
 
@@ -36,6 +38,8 @@ export type AdminRegistrationDetail = {
     email: string
     phone: string | null
     nickname: string | null
+    role: string
+    category: string
   }
   fieldResponses: RegistrationFieldResponse[]
 }

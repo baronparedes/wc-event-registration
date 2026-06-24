@@ -117,6 +117,8 @@ export function RegistrationsList({
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Member ID</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Category</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Submitted</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
@@ -128,6 +130,8 @@ export function RegistrationsList({
                 <td className="px-4 py-3 text-sm text-gray-900">{registration.member_id}</td>
                 <td className="px-4 py-3 text-sm text-gray-900">{registration.full_name}</td>
                 <td className="px-4 py-3 text-sm text-gray-600">{registration.email}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{registration.role}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{registration.category}</td>
                 <td className="px-4 py-3 text-sm">{getStatusBadge(registration.status)}</td>
                 <td className="px-4 py-3 text-sm text-gray-600">
                   {formatDate(registration.submitted_at)}

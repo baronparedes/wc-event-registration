@@ -211,6 +211,14 @@ export function AdminRegistrationDetailPage() {
                 <p className="text-sm font-medium text-muted">Phone</p>
                 <p className="mt-1 text-base text-text">{member.phone ?? '—'}</p>
               </div>
+              <div>
+                <p className="text-sm font-medium text-muted">Role</p>
+                <p className="mt-1 text-base text-text">{member.role}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted">Category</p>
+                <p className="mt-1 text-base text-text">{member.category}</p>
+              </div>
               {member.nickname && (
                 <div>
                   <p className="text-sm font-medium text-muted">Nickname</p>

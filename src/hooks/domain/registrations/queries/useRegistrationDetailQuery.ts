@@ -6,6 +6,15 @@ import type {
 } from '@/lib/admin/registrationTypes'
 import type { EventFieldType } from '@/lib/event-registration/types'
 
+type UserMetadata = {
+  role?: unknown
+  category?: unknown
+}
+
+function readMetadataString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
 export const REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
   ['registration-detail', registrationId] as const
 
@@ -30,12 +39,14 @@ export function useRegistrationDetailQuery(registrationId: string) {
       // Fetch user details
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, member_id, full_name, email, phone, nickname')
+        .select('id, member_id, full_name, email, phone, nickname, metadata')
         .eq('id', registration.user_id)
         .single()
 
       if (userError) throw new Error('Member not found')
       if (!user) throw new Error('Member not found')
+
+      const metadata = (user.metadata as UserMetadata | null | undefined) ?? null
 
       // Fetch field responses with field metadata
       const { data: answers, error: answerError } = await supabase
@@ -128,6 +139,8 @@ export function useRegistrationDetailQuery(registrationId: string) {
           email: user.email,
           phone: user.phone,
           nickname: user.nickname,
+          role: readMetadataString(metadata?.role),
+          category: readMetadataString(metadata?.category),
         },
         fieldResponses,
       }
