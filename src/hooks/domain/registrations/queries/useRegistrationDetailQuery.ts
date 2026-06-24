@@ -1,9 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/infrastructure'
-import type {
-  AdminRegistrationDetail,
-  RegistrationFieldResponse,
-} from '@/lib/domain/registrations'
+import type { AdminRegistrationDetail, RegistrationFieldResponse } from '@/lib/domain/registrations'
 import type { EventFieldType } from '@/lib/domain/event-fields'
 
 type UserMetadata = {

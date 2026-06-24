@@ -427,3 +427,217 @@ Status: Completed.
 Admin registrations hardening and operational polish (Gate C focus).
 
 Status: In progress.
+
+## Production Readiness Audit (2026-06-24)
+
+**Snapshot Baseline: 6.5/10 product quality, 4.5/10 operations readiness**
+
+This section captures critical launch findings and required mitigations before production release. Review this alongside Gate D/E criteria before go-live decision.
+
+### Critical Launch Risks (Must Fix Before Week 1 Release)
+
+#### 1. No Global Error Boundary (CRITICAL - App Crash Risk)
+
+- **Location**: [src/App.tsx](src/App.tsx)
+- **Issue**: Any rendering exception in EventRegistrationPage, dynamic forms, or nested components crashes entire app to blank screen.
+- **Impact**: At scale, one render bug in any page component breaks service for all users.
+- **Fix**: Add ErrorBoundary component wrapping AppRouter; log errors to Sentry with request ID.
+- **Effort**: 30 min
+
+#### 2. Race Condition in Event Registration Form (HIGH - UX Data Loss)
+
+- **Location**: [src/pages/events/[slug]/register/index.tsx](src/pages/events/[slug]/register/index.tsx#L133)
+- **Issue**: Three overlapping useEffect hooks can fire in unpredictable order during gate transitions/member lookup:
+  - Line 133: `clearErrors()` when `responseSchema` changes
+  - Line 143: Prefill form when `activeFields` or `prefillResponses` change
+  - Line 147: Reset form when `isDynamicFieldGateReady` closes
+- **Impact**: Users report "validation errors disappeared," "form won't submit," or stale field values under concurrent actions.
+- **Fix**: Consolidate into 1-2 synchronized effects with explicit dependency tracking and state guards.
+- **Effort**: 2 hours
+
+#### 3. Missing Route Parameter Validation (HIGH - Bad UX, Silent Failures)
+
+- **Locations**:
+  - [src/pages/events/[slug]/register/index.tsx](src/pages/events/[slug]/register/index.tsx#L43)
+  - [src/pages/admin/events/[id]/registrations/[registration_id]/index.tsx](src/pages/admin/events/[id]/registrations/[registration_id]/index.tsx)
+- **Issue**: Dynamic route params (`slug`, `id`, `registration_id`) not validated before use; catch-all redirect to `/` masks bad bookmarks instead of showing 404.
+- **Impact**: Bad links show undefined states; pages attempt to render with missing params causing downstream errors.
+- **Fix**: Add validation in queries (e.g., return 404 when slug not found); show explicit error UI for invalid params.
+- **Effort**: 1 hour
+
+#### 4. Backend Validation Depth Too Shallow (CRITICAL - Data Corruption Risk)
+
+- **Location**: [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L94)
+- **Issue**: Only validates required fields exist; does NOT enforce per-field constraints (min_length, max_length, pattern, date range, required status, type coercion).
+- **Impact**: Invalid data stored in database; CSV export breaks; admin reports unreliable.
+- **Fix**: Validate against Zod schema for each field type before insert; return field-level errors to user.
+- **Effort**: 3 hours (build validation schema library for use in Edge Function)
+
+#### 5. Error Detail Leakage to Clients (HIGH - Information Disclosure)
+
+- **Locations**:
+  - [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L138)
+  - [supabase/functions/cancel-registration/index.ts](supabase/functions/cancel-registration/index.ts) (also present)
+  - [supabase/functions/export-registrations-csv/index.ts](supabase/functions/export-registrations-csv/index.ts) (also present)
+- **Issue**: Edge Functions return `error_detail: errorMessage` containing raw database errors to clients (e.g., "column 'users.member_id' does not exist").
+- **Impact**: Attacker can enumerate schema and identify injection vectors.
+- **Fix**: Scrub error responses; return generic "internal error" to client; log full details server-side with request ID for support correlation.
+- **Effort**: 1 hour (all functions)
+
+#### 6. Answer Persistence Type Strategy Inconsistent (MEDIUM - Data Integrity Risk)
+
+- **Location**: [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L350) vs schema definition
+- **Issue**: Schema supports typed columns (answer_text, answer_number, answer_boolean, answer_date, answer_json) but submit-registration writes mostly answer_text with JSON stringification. CSV export must infer/decode types.
+- **Impact**: Inconsistent round-trip; export formatting logic is fragile; future features (reporting, filtering) will struggle with type ambiguity.
+- **Fix**: Choose explicit typed storage strategy: either (a) always use answer_text with runtime type hints in metadata, OR (b) write to correct typed column by field_type. Update CSV export reader accordingly.
+- **Effort**: 2-3 hours (includes migration if needed)
+
+#### 7. Idempotency Race Condition (HIGH - Duplicate Registration Risk)
+
+- **Location**: [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L272)
+- **Issue**: Unique constraint on (event_id, idempotency_key) is not transaction-wrapped. Two simultaneous requests with same idempotency_key can both create registrations before uniqueness check fires.
+- **Impact**: Duplicate registrations for same user on same event; cancel/reactivate affect wrong record; audit trail corrupted.
+- **Fix**: Wrap idempotency check + insert in explicit transaction (BEGIN SERIALIZABLE or move logic to Edge Function with polling retry).
+- **Effort**: 2 hours
+
+#### 8. ALLOWED_ORIGINS Localhost Default in Production (HIGH - CORS Bypass Risk)
+
+- **Location**: [supabase/functions/\_shared/security.ts](supabase/functions/_shared/security.ts#L3)
+- **Issue**: DEFAULT_ALLOWED_ORIGIN hardcoded to `http://localhost:5173`; production deployment may inherit this if environment config incomplete.
+- **Impact**: Cross-origin registration manipulation if staging domain cached in DNS or if misconfigured.
+- **Fix**: Explicitly set production ALLOWED_ORIGINS via environment variable; fail loudly if localhost is present in production Supabase config.
+- **Effort**: 30 min
+
+#### 9. Rate Limiting In-Memory Per-Instance (MEDIUM - Multi-Instance Enforcement Gap)
+
+- **Location**: [supabase/functions/\_shared/security.ts](supabase/functions/_shared/security.ts#L60) (enforceInMemoryRateLimit)
+- **Issue**: Fixed-window limiter is per-instance, not globally distributed. Does not enforce limits across multiple Vercel instances/cold starts.
+- **Impact**: Rate limits will not work correctly in multi-instance deployments; concurrent scaling bypasses throttling.
+- **Scope limitation documented**: OK for week-1 launch if documented and understood; mark as post-launch optimization.
+- **Fix**: Defer to Redis-backed limiter post-launch OR accept single-instance assumption for week 1 with clear abuse-response runbook.
+- **Effort**: Deferred; document risk acceptance in launch notes.
+
+### Architectural Drift from Standards
+
+#### 1. AdminLoginPage Violates RHF Mandate
+
+- **Location**: [src/pages/admin/login/index.tsx](src/pages/admin/login/index.tsx#L14)
+- **Issue**: Uses `useState(email)` / `useState(password)` instead of React Hook Form + Zod.
+- **Expected**: All forms use `useForm` + `zodResolver` per Copilot instructions.
+- **Fix**: Refactor to RHF pattern; apply zodResolver with admin email/password schema.
+- **Effort**: 1 hour
+
+#### 2. Auth Guard Post-Mount Validation (MEDIUM - Security/UX Issue)
+
+- **Location**: [src/app/router.tsx](src/app/router.tsx#L15)
+- **Issue**: RequireAdminAuth only checks `isAuthenticated` after component mounts; if session expires mid-page, protected content renders briefly before redirect.
+- **Impact**: Sensitive pages (event edit, registrations) briefly visible before access denied; security event.
+- **Fix**: Add pre-flight auth check or use loading skeleton before render.
+- **Effort**: 1 hour
+
+#### 3. Admin Login Toast Pattern Inconsistency
+
+- **Location**: [src/pages/admin/login/index.tsx](src/pages/admin/login/index.tsx#L27)
+- **Issue**: Manual catch + re-toast vs automatic mutation error handling in other mutations.
+- **Fix**: Standardize error message handling across all mutations using single toast pattern.
+- **Effort**: 30 min
+
+### Test Coverage Gaps
+
+- **Unit test placeholders**: [src/hooks/domain/registrations/**tests**/useSubmitRegistrationMutation.test.ts](src/hooks/domain/registrations/__tests__/useSubmitRegistrationMutation.test.ts#L42) mostly .todo() assertions.
+- **Missing error scenario tests**: No tests for duplicate-policy conflict, validation failures, rate limit 429, or field schema mismatches.
+- **No component render tests**: Form components, error boundaries, and field renderers not isolated.
+- **Integration coverage**: Only 2 test files; happy-path focused.
+- **Recommendation**: Target 60%+ coverage for critical hooks and Edge Functions before launch.
+- **Effort**: 3-4 hours for core error paths.
+
+### Operations Gaps
+
+#### No CI/CD Pipeline
+
+- **Issue**: Manual deployments only; no automated lint/build/test gate on PR/merge.
+- **Fix**: Add GitHub Actions: lint + build + test on PR, automated deploy to staging on merge, tag-based production deploy.
+- **Effort**: 2 hours
+
+#### No Production Error Monitoring
+
+- **Issue**: Zero structured logging or error tracking; exceptions go unseen.
+- **Fix**: Wire Sentry for frontend + Edge Function errors; add correlation IDs for request tracing.
+- **Effort**: 1-2 hours
+
+#### No Backup/Restore Rehearsal
+
+- **Issue**: No documented RTO/RPO or tested restore process.
+- **Fix**: Enable Supabase automated backups; test restore in staging; document runbook.
+- **Effort**: 2 hours
+
+#### No Incident Runbook
+
+- **Issue**: No escalation paths, on-call rotation, or rollback procedures.
+- **Fix**: Document: auth failure response, rate-limit spike response, 500 spike response, rollback procedure, and escalation contacts.
+- **Effort**: 2 hours
+
+### Recommended 7-Day Execution Plan (Phase 6 + Launch)
+
+**Days 1-2: Runtime Safety & Frontend Fixes**
+
+1. Error boundary + route param validation
+2. Form effect refactoring and race condition stabilization
+3. AdminLoginPage RHF migration
+4. Auth guard pre-flight check
+
+**Days 2-4: Backend Hardening**
+
+1. Add Zod validation schema to submit-registration
+2. Scrub error_detail from all Edge Functions
+3. Normalize typed answer storage + update CSV reader
+4. Fix idempotency race with transaction or polling
+
+**Days 4-5: Operational Readiness**
+
+1. Set ALLOWED_ORIGINS production env var; add validation
+2. CI/CD pipeline setup (GitHub Actions)
+3. Sentry setup + structured logging
+4. Backup/restore rehearsal + runbook
+
+**Day 6-7: Verification & Release Gate**
+
+1. Full smoke test: public registration + admin CRUD + CSV export
+2. Run integration + new unit tests; check coverage
+3. Load sanity test (50 reg/min for 10 min)
+4. All stop-ship gates pass → soft launch to limited cohort
+
+### Stop-Ship Criteria (Do Not Launch If Any Are True)
+
+- [ ] Error boundary not in place
+- [ ] Backend validation still allows invalid field values
+- [ ] Any Edge Function returns error_detail to clients
+- [ ] AdminLoginPage not using RHF
+- [ ] No CI gate for lint/build/tests
+- [ ] ALLOWED_ORIGINS still defaults to localhost in production config
+- [ ] No rollback rehearsal completed
+- [ ] Test suite < 50% coverage for critical paths
+- [ ] No error monitoring configured
+
+### Risk Acceptance & Deferrals
+
+**Acceptable for Week 1:**
+
+- In-memory rate limiting per-instance (document and monitor for abuse)
+- Synchronous CSV export (current dataset size supports it)
+- Basic monitoring only (SLO dashboards deferred)
+
+**Deferred Post-Launch Backlog:**
+
+- Distributed rate limiting (Redis-backed)
+- Async CSV export pipeline
+- Event-scoped admin roles (currently global only)
+- CAPTCHA/abuse controls beyond rate limiting
+- Waitlist and approval workflows
+- Attendance tracking
+
+### Launch Recommendation
+
+**Verdict**: Go to staging next week **with condition** that all critical fixes (items 1-8 above) are completed and verified. Recommend soft launch to 10% cohort first, then 100% public if 24-hour telemetry is stable.
+
+**Go-Live Confidence**: 7.5/10 after hardening; 6/10 as-is.

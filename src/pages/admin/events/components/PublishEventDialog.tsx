@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ActionButton } from '@/components/ui/ActionLink'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import {
-  getPublishRequirements,
-  areAllRequirementsMet,
-} from '@/lib/domain/events'
+import { getPublishRequirements, areAllRequirementsMet } from '@/lib/domain/events'
 import type { AdminEvent } from '@/lib/domain/events'
 
 type PublishEventModalProps = {

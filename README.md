@@ -154,7 +154,7 @@ Local admin account seed (for admin route testing):
 
 ## Edge Function Rate Limiting
 
-Edge functions use a shared in-memory fixed-window limiter in supabase/functions/_shared/security.ts.
+Edge functions use a shared in-memory fixed-window limiter in supabase/functions/\_shared/security.ts.
 
 How it works:
 
@@ -168,10 +168,10 @@ How it works:
 Identity source:
 
 - Public endpoints use request identity from headers in this order:
-   - x-forwarded-for (first IP)
-   - x-real-ip
-   - cf-connecting-ip
-   - fallback: origin
+  - x-forwarded-for (first IP)
+  - x-real-ip
+  - cf-connecting-ip
+  - fallback: origin
 - Admin endpoints use verified authenticated user id from Supabase Auth.
 
 Current limits:

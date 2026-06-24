@@ -11,6 +11,7 @@ import { AdminNewEventPage } from '../pages/admin/events/new'
 import { AdminEventsPage } from '../pages/admin/events'
 import { HomePage } from '../pages/home'
 import { EventRegistrationPage } from '../pages/events/[slug]/register'
+import { NotFoundPage } from '../pages/not-found'
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const { data, isLoading } = useAdminAuthQuery()
@@ -18,7 +19,10 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
   if (isLoading) {
     return (
       <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6 text-sm text-muted">
-        Checking admin access...
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent" />
+          Verifying admin access...
+        </div>
       </section>
     )
   }
@@ -90,7 +94,7 @@ export function AppRouter() {
         />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

@@ -26,7 +26,254 @@ interface SubmitRegistrationError {
   success: false
   error: string
   error_code?: string
-  error_detail?: string
+  errors?: FieldValidationError[]
+}
+
+interface FieldValidationError {
+  fieldKey: string
+  message: string
+}
+
+interface EventFieldWithValidation {
+  id: string
+  field_key: string
+  label: string
+  field_type: string
+  is_required: boolean
+  options: { label: string; value: string }[]
+  validation_rules: Record<string, unknown>
+}
+
+/**
+ * Validates a single field value against its schema and validation rules.
+ * Returns validation error if invalid, null if valid.
+ */
+function validateFieldValue(
+  fieldKey: string,
+  value: unknown,
+  field: EventFieldWithValidation,
+): FieldValidationError | null {
+  const label = field.label || fieldKey
+  const rules = field.validation_rules || {}
+
+  // Check required field
+  if (field.is_required && (value === null || value === undefined || value === '')) {
+    return { fieldKey, message: `${label} is required.` }
+  }
+
+  // Optional empty values are valid (don't validate further)
+  if (!field.is_required && (value === null || value === undefined || value === '')) {
+    return null
+  }
+
+  const type = field.field_type
+
+  // Text-like fields (text, textarea, email, phone)
+  if (type === 'text' || type === 'textarea' || type === 'email' || type === 'phone') {
+    if (typeof value !== 'string') {
+      return { fieldKey, message: `${label} must be text.` }
+    }
+
+    const text = value.trim()
+
+    // Check length constraints
+    const minLength = rules.min_length
+    if (minLength !== undefined && typeof minLength === 'number') {
+      if (text.length < minLength) {
+        return {
+          fieldKey,
+          message: `${label} must be at least ${minLength} characters.`,
+        }
+      }
+    }
+
+    const maxLength = rules.max_length
+    if (maxLength !== undefined && typeof maxLength === 'number') {
+      if (text.length > maxLength) {
+        return {
+          fieldKey,
+          message: `${label} must be at most ${maxLength} characters.`,
+        }
+      }
+    }
+
+    // Check pattern constraint
+    if (rules.pattern && typeof rules.pattern === 'string') {
+      try {
+        const regex = new RegExp(rules.pattern)
+        if (!regex.test(text)) {
+          return { fieldKey, message: `${label} format is invalid.` }
+        }
+      } catch {
+        // Ignore invalid regex patterns
+      }
+    }
+
+    // Type-specific format checks
+    if (type === 'email' && !isValidEmail(text)) {
+      return { fieldKey, message: `${label} must be a valid email address.` }
+    }
+
+    if (type === 'phone' && !isValidPhone(text)) {
+      return { fieldKey, message: `${label} must be a valid phone number.` }
+    }
+
+    return null
+  }
+
+  // Number field
+  if (type === 'number') {
+    let num: number | null = null
+
+    if (typeof value === 'number') {
+      num = value
+    } else if (typeof value === 'string') {
+      const parsed = Number(value)
+      if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
+        num = parsed
+      } else {
+        return { fieldKey, message: `${label} must be a valid number.` }
+      }
+    } else {
+      return { fieldKey, message: `${label} must be a number.` }
+    }
+
+    const min = rules.min
+    if (min !== undefined && typeof min === 'number') {
+      if (num < min) {
+        return { fieldKey, message: `${label} must be at least ${min}.` }
+      }
+    }
+
+    const max = rules.max
+    if (max !== undefined && typeof max === 'number') {
+      if (num > max) {
+        return { fieldKey, message: `${label} must be at most ${max}.` }
+      }
+    }
+
+    return null
+  }
+
+  // Single choice fields (select, radio)
+  if (type === 'select' || type === 'radio') {
+    if (typeof value !== 'string') {
+      return { fieldKey, message: `${label} must be text.` }
+    }
+
+    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    if (!allowedValues.has(value)) {
+      return { fieldKey, message: `${label} contains an unsupported option.` }
+    }
+
+    return null
+  }
+
+  // Boolean field (checkbox single)
+  if (type === 'boolean') {
+    if (
+      typeof value !== 'boolean' &&
+      value !== 'true' &&
+      value !== 'false' &&
+      value !== 0 &&
+      value !== 1
+    ) {
+      return { fieldKey, message: `${label} must be true or false.` }
+    }
+
+    return null
+  }
+
+  // Multi-select field
+  if (type === 'multi_select') {
+    let arr: string[] = []
+
+    if (Array.isArray(value)) {
+      arr = value.map(String)
+    } else if (typeof value === 'string') {
+      arr = [value]
+    } else {
+      return { fieldKey, message: `${label} must be an array of values.` }
+    }
+
+    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    for (const item of arr) {
+      if (!allowedValues.has(item)) {
+        return { fieldKey, message: `${label} contains an unsupported option.` }
+      }
+    }
+
+    const minSelections = rules.min_selections
+    if (minSelections !== undefined && typeof minSelections === 'number') {
+      if (arr.length < minSelections) {
+        return {
+          fieldKey,
+          message: `${label} requires at least ${minSelections} selection(s).`,
+        }
+      }
+    }
+
+    const maxSelections = rules.max_selections
+    if (maxSelections !== undefined && typeof maxSelections === 'number') {
+      if (arr.length > maxSelections) {
+        return {
+          fieldKey,
+          message: `${label} allows at most ${maxSelections} selection(s).`,
+        }
+      }
+    }
+
+    return null
+  }
+
+  // Date field
+  if (type === 'date' || type === 'datetime') {
+    if (typeof value !== 'string') {
+      return { fieldKey, message: `${label} must be a date string.` }
+    }
+
+    const isDateOnly = type === 'date'
+    const dateRegex = isDateOnly ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
+
+    if (!dateRegex.test(value)) {
+      return {
+        fieldKey,
+        message: `${label} must use a valid ${isDateOnly ? 'date' : 'date and time'} format.`,
+      }
+    }
+
+    const minDate = rules.min_date
+    if (minDate && typeof minDate === 'string') {
+      if (value < minDate) {
+        return { fieldKey, message: `${label} must be on or after ${minDate}.` }
+      }
+    }
+
+    const maxDate = rules.max_date
+    if (maxDate && typeof maxDate === 'string') {
+      if (value > maxDate) {
+        return { fieldKey, message: `${label} must be on or before ${maxDate}.` }
+      }
+    }
+
+    return null
+  }
+
+  return null
+}
+
+/**
+ * Simple email validation using basic regex.
+ */
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+/**
+ * Simple phone validation - must contain digits.
+ */
+function isValidPhone(phone: string): boolean {
+  return /\d/.test(phone)
 }
 
 const allowedOrigins = readAllowedOrigins()
@@ -134,8 +381,8 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Failed to lookup event',
-          error_detail: eventError.message,
+          error: 'Failed to process registration',
+          error_code: 'EVENT_LOOKUP_FAILED',
         } as SubmitRegistrationError),
         {
           status: 500,
@@ -170,8 +417,8 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Failed to lookup user',
-          error_detail: userError.message,
+          error: 'Failed to process registration',
+          error_code: 'USER_LOOKUP_FAILED',
         } as SubmitRegistrationError),
         {
           status: 500,
@@ -211,8 +458,8 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Failed to check existing registration',
-          error_detail: regCheckError.message,
+          error: 'Failed to process registration',
+          error_code: 'REGISTRATION_CHECK_FAILED',
         } as SubmitRegistrationError),
         {
           status: 500,
@@ -257,8 +504,8 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Failed to update registration',
-            error_detail: updateError.message,
+            error: 'Failed to process registration',
+            error_code: 'REGISTRATION_UPDATE_FAILED',
           } as SubmitRegistrationError),
           {
             status: 500,
@@ -285,8 +532,8 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Failed to create registration',
-            error_detail: createError.message,
+            error: 'Failed to process registration',
+            error_code: 'REGISTRATION_CREATE_FAILED',
           } as SubmitRegistrationError),
           {
             status: 500,
@@ -298,10 +545,10 @@ Deno.serve(async (req) => {
       registrationId = newReg.id
     }
 
-    // Step 4: Get event fields to map responses
+    // Step 4: Get event fields with validation rules
     const { data: eventFields, error: fieldsError } = await supabase
       .from('event_fields')
-      .select('id, field_key')
+      .select('id, field_key, label, field_type, is_required, options, validation_rules')
       .eq('event_id', eventId)
       .eq('is_active', true)
 
@@ -310,8 +557,8 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Failed to lookup event fields',
-          error_detail: fieldsError.message,
+          error: 'Failed to process registration',
+          error_code: 'FIELDS_LOOKUP_FAILED',
         } as SubmitRegistrationError),
         {
           status: 500,
@@ -320,7 +567,52 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Step 5: Delete existing answers if updating (clean slate)
+    // Step 5: Validate all response values against field schemas
+    const fieldMap = new Map(
+      (eventFields || []).map((f) => [f.field_key, f as EventFieldWithValidation]),
+    )
+    const validationErrors: FieldValidationError[] = []
+
+    for (const [fieldKey, value] of Object.entries(responses)) {
+      const field = fieldMap.get(fieldKey)
+      if (!field) {
+        // Unknown field in responses - skip (could be old data)
+        continue
+      }
+
+      const error = validateFieldValue(fieldKey, value, field)
+      if (error) {
+        validationErrors.push(error)
+      }
+    }
+
+    // Check for missing required fields
+    for (const [fieldKey, field] of fieldMap) {
+      if (field.is_required && !(fieldKey in responses)) {
+        validationErrors.push({
+          fieldKey,
+          message: `${field.label} is required.`,
+        })
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      console.warn('Registration validation failed:', validationErrors)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          error_code: 'VALIDATION_FAILED',
+          errors: validationErrors,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Step 6: Delete existing answers if updating (clean slate)
     if (!isNew) {
       const { error: deleteAnswersError } = await supabase
         .from('registration_answers')
@@ -333,7 +625,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 6: Insert registration answers
+    // Step 7: Insert registration answers
     const fieldIdMap = new Map((eventFields || []).map((f) => [f.field_key, f.id]))
     const answersToInsert = Object.entries(responses)
       .map(([fieldKey, answer]) => {
@@ -362,8 +654,8 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Failed to save registration answers',
-            error_detail: answersError.message,
+            error: 'Failed to process registration',
+            error_code: 'ANSWERS_INSERT_FAILED',
           } as SubmitRegistrationError),
           {
             status: 500,
@@ -390,13 +682,12 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Unexpected error:', error)
-    const message = error instanceof Error ? error.message : 'An unexpected error occurred'
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Internal server error',
-        error_detail: message,
+        error: 'Failed to process registration',
+        error_code: 'INTERNAL_ERROR',
       } as SubmitRegistrationError),
       {
         status: 500,

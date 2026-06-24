@@ -130,6 +130,8 @@ export function EventRegistrationPage() {
     return buildDynamicFieldResponseSchema(activeFields)
   }, [activeFields])
 
+  // Consolidated effect: Handle form refill when fields or member prefill data changes.
+  // Clears errors in the same cycle to avoid race conditions during form updates.
   useEffect(() => {
     const defaults = createDynamicFieldDefaultValues(activeFields)
     const merged = memberLookup.prefillResponses
@@ -138,17 +140,15 @@ export function EventRegistrationPage() {
     dynamicForm.reset(merged, {
       keepDefaultValues: false,
     })
+    // Clear errors in the same effect cycle to prevent race conditions
+    dynamicForm.clearErrors()
   }, [activeFields, memberLookup.prefillResponses, dynamicForm])
 
-  useEffect(() => {
-    dynamicForm.clearErrors()
-  }, [responseSchema, dynamicForm])
-
+  // Consolidated effect: Handle gate closure cleanup.
+  // When gate closes, reset all form and submission state atomically.
   useEffect(() => {
     if (!isDynamicFieldGateReady) {
       dynamicForm.reset({})
-      // Reset state atomically when gate closes - intentional cleanup pattern
-      // eslint-disable-next-line
       setSubmitErrorMessage(null)
       setSubmitSuccessMessage(null)
     }
