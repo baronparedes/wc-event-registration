@@ -1,8 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 
-const DEFAULT_ALLOWED_ORIGIN = 'http://localhost:5173'
-
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000
+const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1'])
+const PRODUCTION_ENVIRONMENT = 'production'
 
 type RateLimitBucket = {
   count: number
@@ -101,6 +101,31 @@ function createJsonResponse(
       ...(extraHeaders ?? {}),
     },
   })
+}
+
+function isSupportedOriginProtocol(protocol: string): boolean {
+  return protocol === 'http:' || protocol === 'https:'
+}
+
+function isLocalhostOrigin(origin: string): boolean {
+  try {
+    return LOCALHOST_HOSTNAMES.has(new URL(origin).hostname)
+  } catch {
+    return false
+  }
+}
+
+function normalizeAllowedOrigin(origin: string): string | null {
+  try {
+    const url = new URL(origin)
+    if (!isSupportedOriginProtocol(url.protocol)) {
+      return null
+    }
+
+    return url.origin
+  } catch {
+    return null
+  }
 }
 
 export function enforceInMemoryRateLimit(options: RateLimitOptions): RateLimitResult {
@@ -308,10 +333,58 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
 }
 
 export function readAllowedOrigins(): string[] {
-  return (Deno.env.get('ALLOWED_ORIGINS') ?? DEFAULT_ALLOWED_ORIGIN)
+  const rawAllowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.trim() ?? ''
+  const runtimeEnvironment = Deno.env.get('SUPABASE_ENV')?.trim().toLowerCase() ?? 'local'
+
+  if (!rawAllowedOrigins) {
+    console.error(
+      '[security] ALLOWED_ORIGINS is not configured; denying all cross-origin requests',
+      {
+        runtimeEnvironment,
+      },
+    )
+    return []
+  }
+
+  const normalizedOrigins = rawAllowedOrigins
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean)
+    .map((origin) => ({ raw: origin, normalized: normalizeAllowedOrigin(origin) }))
+
+  const invalidOrigins = normalizedOrigins
+    .filter((origin) => !origin.normalized)
+    .map((origin) => origin.raw)
+
+  if (invalidOrigins.length > 0) {
+    console.error('[security] Ignoring invalid ALLOWED_ORIGINS entries', {
+      invalidOrigins,
+      runtimeEnvironment,
+    })
+  }
+
+  const allowedOrigins = Array.from(
+    new Set(normalizedOrigins.flatMap((origin) => (origin.normalized ? [origin.normalized] : []))),
+  )
+
+  if (runtimeEnvironment === PRODUCTION_ENVIRONMENT) {
+    const localhostOrigins = allowedOrigins.filter((origin) => isLocalhostOrigin(origin))
+
+    if (localhostOrigins.length > 0) {
+      console.error('[security] Refusing localhost origins in production ALLOWED_ORIGINS', {
+        localhostOrigins,
+      })
+      return []
+    }
+  }
+
+  if (allowedOrigins.length === 0) {
+    console.error('[security] ALLOWED_ORIGINS resolved to an empty valid allowlist', {
+      runtimeEnvironment,
+    })
+  }
+
+  return allowedOrigins
 }
 
 export function isOriginAllowed(origin: string | null, allowedOrigins: string[]): origin is string {
@@ -323,15 +396,11 @@ export function isOriginAllowed(origin: string | null, allowedOrigins: string[])
 }
 
 export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]) {
-  const fallbackOrigin = allowedOrigins[0] ?? DEFAULT_ALLOWED_ORIGIN
-
   return {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Expose-Headers': 'Content-Disposition',
-    'Access-Control-Allow-Origin': isOriginAllowed(origin, allowedOrigins)
-      ? origin
-      : fallbackOrigin,
+    'Access-Control-Allow-Origin': isOriginAllowed(origin, allowedOrigins) ? origin : 'null',
     Vary: 'Origin',
   }
 }

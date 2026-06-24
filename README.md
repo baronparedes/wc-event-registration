@@ -95,6 +95,46 @@ Required values:
 - VITE_SUPABASE_URL
 - VITE_SUPABASE_ANON_KEY
 
+Edge Function required values:
+
+- ALLOWED_ORIGINS
+- SUPABASE_ENV
+
+ALLOWED_ORIGINS rules:
+
+- Must be an explicit comma-separated allowlist of full origins.
+- Only http and https origins are accepted.
+- Invalid entries are ignored and logged.
+- If the resolved allowlist is empty, Edge Functions fail closed and deny cross-origin requests.
+
+SUPABASE_ENV rules:
+
+- Use local, staging, or production.
+- In production, localhost, 127.0.0.1, and ::1 are rejected from ALLOWED_ORIGINS.
+
+Examples:
+
+- Local:
+
+  ```text
+  ALLOWED_ORIGINS=http://localhost:5173
+  SUPABASE_ENV=local
+  ```
+
+- Staging:
+
+  ```text
+  ALLOWED_ORIGINS=https://staging.example.com
+  SUPABASE_ENV=staging
+  ```
+
+- Production:
+
+  ```text
+  ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
+  SUPABASE_ENV=production
+  ```
+
 ## Local Supabase Workflow
 
 Run the platform fully locally before any deployment.
@@ -110,8 +150,17 @@ Run the platform fully locally before any deployment.
 
 4. Copy the local Project URL and Publishable key into .env.local.
 
+   ```text
    VITE_SUPABASE_URL=http://127.0.0.1:54321
-   VITE_SUPABASE_ANON_KEY=<local publishable key from supabase status>
+   VITE_SUPABASE_ANON_KEY=your-local-publishable-key-from-supabase-status
+   ```
+
+   Configure local Edge Function origin settings in your function environment.
+
+   ```text
+   ALLOWED_ORIGINS=http://localhost:5173
+   SUPABASE_ENV=local
+   ```
 
 5. Apply all migrations from scratch.
 
@@ -148,8 +197,8 @@ This lets you reset local development data repeatedly while keeping member recor
 
 Local admin account seed (for admin route testing):
 
-- Email: local@admin.com
-- Password: Supabase@123
+- Email: `local@admin.com`
+- Password: `Supabase@123`
 - Seed source: supabase/seeds/dev.local.sql (local development only, git-ignored)
 
 ## Edge Function Rate Limiting
@@ -202,6 +251,21 @@ Important caveat:
 - This limiter is in-memory per function instance, so it is not a globally shared distributed limit.
 - Counters reset on cold start, restart, or deploy.
 - For strict global enforcement, use a shared backing store (for example Redis/Upstash or a database-backed limiter).
+
+## Edge Function CORS Allowlist
+
+Edge Functions use an explicit CORS allowlist from ALLOWED_ORIGINS in the shared helper at supabase/functions/\_shared/security.ts.
+
+Behavior:
+
+- Requests from listed origins receive their own origin in Access-Control-Allow-Origin.
+- Requests from unlisted origins receive an obscured deny response.
+- If ALLOWED_ORIGINS is unset or resolves to no valid origins, functions fail closed instead of falling back to localhost.
+- If SUPABASE_ENV=production and ALLOWED_ORIGINS contains localhost-style origins, functions treat the configuration as invalid and deny requests.
+
+Operational rule:
+
+- Never include localhost, 127.0.0.1, or ::1 in production ALLOWED_ORIGINS.
 
 ## Database Scope
 

@@ -93,8 +93,8 @@ All tasks implemented, tested, and passing:
 - [x] Backend validation allows invalid values → ✅ FIXED
 - [x] Edge Functions leak error_detail → ✅ FIXED
 - [x] AdminLoginPage not using RHF → ✅ FIXED
+- [x] ALLOWED_ORIGINS defaults to localhost → ✅ FIXED
 - [ ] No CI gate for lint/build/tests (TODO)
-- [ ] ALLOWED_ORIGINS defaults to localhost (TODO)
 - [ ] No rollback rehearsal (TODO)
 - [ ] Test coverage < 50% (TODO)
 - [ ] No error monitoring (TODO)
@@ -132,11 +132,12 @@ All tasks implemented, tested, and passing:
 
 ### Days 4-5: Operational Readiness
 
-**Priority 1: ALLOWED_ORIGINS Configuration** (30 min)
+**Priority 1: ALLOWED_ORIGINS Configuration** ✅ COMPLETE
 - File: supabase/functions/_shared/security.ts
-- Remove hardcoded localhost default
-- Add validation: fail loudly if localhost present in production
-- Document environment variable setup for staging + production
+- Removed hardcoded localhost default
+- Added fail-closed behavior for empty or invalid allowlists
+- Added production guard rejecting localhost-style origins when SUPABASE_ENV=production
+- Documented environment variable setup for local, staging, and production
 
 **Priority 2: CI/CD Pipeline** (4-6 hours)
 - Create .github/workflows/test.yml: lint + build + test on PR

@@ -594,10 +594,8 @@ This section captures critical launch findings and required mitigations before p
 #### 8. ALLOWED_ORIGINS Localhost Default in Production (HIGH - CORS Bypass Risk)
 
 - **Location**: [supabase/functions/\_shared/security.ts](supabase/functions/_shared/security.ts#L3)
-- **Issue**: DEFAULT_ALLOWED_ORIGIN hardcoded to `http://localhost:5173`; production deployment may inherit this if environment config incomplete.
-- **Impact**: Cross-origin registration manipulation if staging domain cached in DNS or if misconfigured.
-- **Fix**: Explicitly set production ALLOWED_ORIGINS via environment variable; fail loudly if localhost is present in production Supabase config.
-- **Effort**: 30 min
+- **Status**: Fixed on 2026-06-24.
+- **Resolution**: Removed localhost fallback, require explicit ALLOWED_ORIGINS, fail closed on empty or invalid allowlists, and reject localhost-style origins when `SUPABASE_ENV=production`.
 
 #### 9. Rate Limiting In-Memory Per-Instance (MEDIUM - Multi-Instance Enforcement Gap)
 
@@ -685,9 +683,9 @@ This section captures critical launch findings and required mitigations before p
 2. ❌ Normalize typed answer storage + update CSV reader
 3. ❌ Integration test coverage for validation failures + error scenarios (target 60%+ coverage)
 
-**Days 4-5: Operational Readiness** ⏳ TODO
+**Days 4-5: Operational Readiness** 🟡 IN PROGRESS
 
-1. ❌ Set ALLOWED_ORIGINS production env var; add validation
+1. ✅ Set ALLOWED_ORIGINS production env var contract; added fail-closed validation and localhost production guard
 2. ❌ CI/CD pipeline setup (GitHub Actions: lint/build/test gates)
 3. ❌ Sentry setup + structured logging correlation IDs
 4. ❌ Backup/restore rehearsal + runbook documentation
@@ -705,8 +703,8 @@ This section captures critical launch findings and required mitigations before p
 - [x] Backend validation still allows invalid field values ✅ DONE
 - [x] Any Edge Function returns error_detail to clients ✅ DONE
 - [x] AdminLoginPage not using RHF ✅ DONE
+- [x] ALLOWED_ORIGINS still defaults to localhost in production config ✅ DONE
 - [ ] No CI gate for lint/build/tests (TODO)
-- [ ] ALLOWED_ORIGINS still defaults to localhost in production config (TODO)
 - [ ] No rollback rehearsal completed (TODO)
 - [ ] Test suite < 50% coverage for critical paths (TODO)
 - [ ] No error monitoring configured (TODO)
