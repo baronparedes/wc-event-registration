@@ -11,7 +11,10 @@ import {
 } from './test-utils'
 import { randomUUID } from 'crypto'
 
-describe('Edge Function: submit-registration', () => {
+const hasIntegrationEnv = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+const describeIntegration = hasIntegrationEnv ? describe : describe.skip
+
+describeIntegration('Edge Function: submit-registration', () => {
   const BLOCK_POLICY_EVENT = 'sample-event'
   const ALLOW_UPDATE_POLICY_EVENT = 'future-event'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

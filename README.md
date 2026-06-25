@@ -17,6 +17,21 @@ Backend and API:
 - Supabase Postgres
 - Supabase Edge Functions (Deno + TypeScript)
 - Supabase Auth for admin identity verification
+
+## Test Lanes
+
+- CI-safe lane (no Supabase service role secret required):
+
+  npm run test:ci
+
+- Unit lane (all non-integration tests):
+
+  npm run test:unit
+
+- Integration lane (requires SUPABASE_SERVICE_ROLE_KEY):
+
+  npm run test:integration
+
 - Function-level CORS allowlist and request hardening in shared security helpers
 
 Database and Security:
