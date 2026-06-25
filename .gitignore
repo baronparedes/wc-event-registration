@@ -25,3 +25,8 @@ dist-ssr
 
 members_info.csv
 supabase/seeds/*.local.sql
+
+# Environment files
+.env
+.env.*
+*.env

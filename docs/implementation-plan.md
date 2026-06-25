@@ -679,7 +679,7 @@ This section captures critical launch findings and required mitigations before p
 
 **Days 2-4: Backend Hardening** 🟡 IN PROGRESS
 
-1. ❌ Idempotency race condition fix (transaction wrap or polling)
+1. ✅ Idempotency race condition fixed: insert-first with unique-conflict recovery; idempotent replay returns same registration_id without re-writing answers
 2. ❌ Normalize typed answer storage + update CSV reader
 3. ❌ Integration test coverage for validation failures + error scenarios (target 60%+ coverage)
 

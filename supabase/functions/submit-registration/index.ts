@@ -44,6 +44,17 @@ interface EventFieldWithValidation {
   validation_rules: Record<string, unknown>
 }
 
+interface PostgrestErrorLike {
+  code?: string | null
+  message?: string | null
+  details?: string | null
+  hint?: string | null
+}
+
+const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx'
+const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
+  'registrations_event_idempotency_unique_idx'
+
 /**
  * Validates a single field value against its schema and validation rules.
  * Returns validation error if invalid, null if valid.
@@ -276,6 +287,22 @@ function isValidPhone(phone: string): boolean {
   return /\d/.test(phone)
 }
 
+function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
+  if (!error || error.code !== '23505') {
+    return false
+  }
+
+  const combinedMessage = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`
+  return combinedMessage.includes(constraint)
+}
+
+function isRegistrationUniqueConflict(error: PostgrestErrorLike | null): boolean {
+  return (
+    isUniqueConstraintError(error, REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT) ||
+    isUniqueConstraintError(error, REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT)
+  )
+}
+
 const allowedOrigins = readAllowedOrigins()
 
 Deno.serve(async (req) => {
@@ -445,21 +472,153 @@ Deno.serve(async (req) => {
     const eventId = eventData.id
     const duplicatePolicy = eventData.duplicate_policy
 
-    // Step 3: Check for existing registration
-    const { data: existingReg, error: regCheckError } = await supabase
-      .from('registrations')
-      .select('id, status')
-      .eq('event_id', eventId)
-      .eq('user_id', userId)
-      .maybeSingle()
+    // Step 3: Insert registration first, then recover from unique conflicts.
+    let registrationId: string | null = null
+    let status: 'submitted' | 'updated' = 'submitted'
+    let isNew = true
+    let shouldWriteAnswers = true
 
-    if (regCheckError) {
-      console.error('Registration check error:', regCheckError)
+    const { data: newReg, error: createError } = await supabase
+      .from('registrations')
+      .insert({
+        event_id: eventId,
+        user_id: userId,
+        idempotency_key: idempotency_key,
+        status: 'submitted',
+        source: 'public',
+      })
+      .select('id')
+      .single()
+
+    if (!createError && newReg) {
+      registrationId = newReg.id
+    } else if (createError && isRegistrationUniqueConflict(createError as PostgrestErrorLike)) {
+      const isIdempotencyConflict = isUniqueConstraintError(
+        createError as PostgrestErrorLike,
+        REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT,
+      )
+
+      if (isIdempotencyConflict) {
+        const { data: existingByIdempotency, error: idempotencyLookupError } = await supabase
+          .from('registrations')
+          .select('id, user_id, status')
+          .eq('event_id', eventId)
+          .eq('idempotency_key', idempotency_key)
+          .maybeSingle()
+
+        if (idempotencyLookupError) {
+          console.error('Idempotency recovery lookup error:', idempotencyLookupError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_IDEMPOTENCY_RECOVERY_FAILED',
+            } as SubmitRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        if (existingByIdempotency?.id && existingByIdempotency.user_id === userId) {
+          registrationId = existingByIdempotency.id
+          status = existingByIdempotency.status === 'updated' ? 'updated' : 'submitted'
+          isNew = false
+          shouldWriteAnswers = false
+        }
+      }
+
+      if (!registrationId) {
+        const { data: existingReg, error: regCheckError } = await supabase
+          .from('registrations')
+          .select('id, status')
+          .eq('event_id', eventId)
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (regCheckError) {
+          console.error('Registration conflict recovery check error:', regCheckError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_CHECK_FAILED',
+            } as SubmitRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        if (!existingReg) {
+          console.error(
+            'Registration conflict recovery failed: row missing after unique conflict',
+            {
+              eventId,
+              userId,
+              idempotencyKey: idempotency_key,
+            },
+          )
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_CONFLICT_RECOVERY_FAILED',
+            } as SubmitRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        if (duplicatePolicy === 'block') {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Already registered for this event',
+              error_code: 'duplicate_blocked',
+            } as SubmitRegistrationError),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        registrationId = existingReg.id
+        status = 'updated'
+        isNew = false
+
+        const { error: updateError } = await supabase
+          .from('registrations')
+          .update({ status: 'updated', submitted_at: new Date().toISOString() })
+          .eq('id', registrationId)
+
+        if (updateError) {
+          console.error('Registration update error:', updateError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_UPDATE_FAILED',
+            } as SubmitRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+      }
+    } else {
+      console.error('Registration create error:', createError)
       return new Response(
         JSON.stringify({
           success: false,
           error: 'Failed to process registration',
-          error_code: 'REGISTRATION_CHECK_FAILED',
+          error_code: 'REGISTRATION_CREATE_FAILED',
         } as SubmitRegistrationError),
         {
           status: 500,
@@ -468,81 +627,37 @@ Deno.serve(async (req) => {
       )
     }
 
-    let registrationId: string
-    let status: 'submitted' | 'updated' = 'submitted'
-    let isNew = true
+    if (!registrationId) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to process registration',
+          error_code: 'REGISTRATION_RESOLUTION_FAILED',
+        } as SubmitRegistrationError),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
 
-    if (existingReg) {
-      // Duplicate registration found
-      if (duplicatePolicy === 'block') {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Already registered for this event',
-            error_code: 'duplicate_blocked',
-          } as SubmitRegistrationError),
-          {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
-        )
-      }
-
-      // duplicate_policy === 'allow_update'
-      registrationId = existingReg.id
-      status = 'updated'
-      isNew = false
-
-      // Update registration
-      const { error: updateError } = await supabase
-        .from('registrations')
-        .update({ status: 'updated', submitted_at: new Date().toISOString() })
-        .eq('id', registrationId)
-
-      if (updateError) {
-        console.error('Registration update error:', updateError)
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Failed to process registration',
-            error_code: 'REGISTRATION_UPDATE_FAILED',
-          } as SubmitRegistrationError),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
-        )
-      }
-    } else {
-      // Create new registration
-      const { data: newReg, error: createError } = await supabase
-        .from('registrations')
-        .insert({
-          event_id: eventId,
-          user_id: userId,
-          idempotency_key: idempotency_key,
-          status: 'submitted',
-          source: 'public',
-        })
-        .select('id')
-        .single()
-
-      if (createError) {
-        console.error('Registration create error:', createError)
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Failed to process registration',
-            error_code: 'REGISTRATION_CREATE_FAILED',
-          } as SubmitRegistrationError),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
-        )
-      }
-
-      registrationId = newReg.id
+    if (!shouldWriteAnswers) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          registration_id: registrationId,
+          status,
+          is_new: isNew,
+          message:
+            status === 'updated'
+              ? 'Registration updated successfully'
+              : 'Registration submitted successfully',
+        } as SubmitRegistrationSuccess),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     // Step 4: Get event fields with validation rules

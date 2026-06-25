@@ -242,6 +242,52 @@ describe('Edge Function: submit-registration', () => {
     await cleanupTestRegistrations(BLOCK_POLICY_EVENT, memberId)
   })
 
+  it('should converge concurrent retries with same idempotency key', async () => {
+    const memberId = generateTestMemberId()
+    await seedTestMember(memberId)
+    const idempotencyKey = randomUUID()
+
+    const [result1, result2] = await Promise.all([
+      callSubmitRegistrationFunction({
+        event_slug: BLOCK_POLICY_EVENT,
+        member_id: memberId,
+        responses: {
+          team_name: 'Concurrent Idempotent Team',
+          guests_count: 1,
+        },
+        idempotency_key: idempotencyKey,
+      }),
+      callSubmitRegistrationFunction({
+        event_slug: BLOCK_POLICY_EVENT,
+        member_id: memberId,
+        responses: {
+          team_name: 'Concurrent Idempotent Team',
+          guests_count: 1,
+        },
+        idempotency_key: idempotencyKey,
+      }),
+    ])
+
+    expect(result1.success).toBe(true)
+    expect(result2.success).toBe(true)
+    expect(result1.registration_id).toBe(result2.registration_id)
+
+    const details = await getRegistrationDetails(BLOCK_POLICY_EVENT, memberId)
+    expect(details).not.toBeNull()
+    expect(details?.answers).toHaveLength(2)
+
+    const client = createTestAdminClient()
+    const { count } = await client
+      .from('registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', details?.registration.event_id ?? '')
+      .eq('user_id', details?.registration.user_id ?? '')
+
+    expect(count).toBe(1)
+
+    await cleanupTestRegistrations(BLOCK_POLICY_EVENT, memberId)
+  })
+
   it('should treat different idempotency keys as separate submissions', async () => {
     const memberId = generateTestMemberId()
     await seedTestMember(memberId)
@@ -322,6 +368,16 @@ describe('Edge Function: submit-registration', () => {
     const details = await getRegistrationDetails(ALLOW_UPDATE_POLICY_EVENT, memberId)
     expect(details?.registration.status).toMatch(/submitted|updated/)
     expect(details?.answers).toHaveLength(2)
+
+    const teamNameAnswer = details?.answers.find(
+      (a) => a.event_field_id === futureEventData?.event_fields?.[0]?.id,
+    )
+    const guestsCountAnswer = details?.answers.find(
+      (a) => a.event_field_id === futureEventData?.event_fields?.[1]?.id,
+    )
+
+    expect(['Concurrent Team 1', 'Concurrent Team 2']).toContain(teamNameAnswer?.answer_text)
+    expect(['1', '2']).toContain(guestsCountAnswer?.answer_text)
 
     await cleanupTestRegistrations(ALLOW_UPDATE_POLICY_EVENT, memberId)
   })

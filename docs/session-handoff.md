@@ -94,6 +94,7 @@ All tasks implemented, tested, and passing:
 - [x] Edge Functions leak error_detail → ✅ FIXED
 - [x] AdminLoginPage not using RHF → ✅ FIXED
 - [x] ALLOWED_ORIGINS defaults to localhost → ✅ FIXED
+- [x] Idempotency race condition → ✅ FIXED
 - [ ] No CI gate for lint/build/tests (TODO)
 - [ ] No rollback rehearsal (TODO)
 - [ ] Test coverage < 50% (TODO)

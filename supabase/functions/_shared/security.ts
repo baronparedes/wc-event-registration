@@ -338,10 +338,8 @@ export function readAllowedOrigins(): string[] {
 
   if (!rawAllowedOrigins) {
     console.error(
-      '[security] ALLOWED_ORIGINS is not configured; denying all cross-origin requests',
-      {
-        runtimeEnvironment,
-      },
+      '[security] ALLOWED_ORIGINS is not configured; denying all cross-origin requests. Set it in supabase/functions/.env for local development.',
+      { runtimeEnvironment },
     )
     return []
   }
