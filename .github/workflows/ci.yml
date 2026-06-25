@@ -23,14 +23,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Format check
-        run: npm run format:check
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-      - name: CI test lane
-        run: npm run test:ci
+      - name: CI gate
+        run: npm run ci:gate

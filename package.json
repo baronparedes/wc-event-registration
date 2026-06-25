@@ -15,13 +15,15 @@
     "test:integration": "node scripts/ensure-integration-env.mjs && vitest run src/__tests__/integration.test.ts",
     "test:unit": "vitest run --exclude \"src/__tests__/integration.test.ts\"",
     "test:ci": "npm run test:unit",
+    "ci:gate": "npm run format:check && npm run lint && npm run build && npm run test:ci",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "supabase:db:reset": "supabase db reset",
     "supabase:migration:new": "supabase migration new",
     "seed:members:generate": "ruby scripts/generate-local-member-seed.rb",
-    "env:validate:production": "node scripts/validate-production-env.mjs"
+    "env:validate:production": "node scripts/validate-production-env.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -57,6 +59,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "happy-dom": "^20.10.6",
+    "husky": "^9.1.7",
     "postcss": "^8.5.15",
     "prettier": "^3.8.4",
     "tailwindcss": "^3.4.13",
