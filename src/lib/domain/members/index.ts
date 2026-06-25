@@ -1,1 +1,6 @@
-export type { MemberLookupProfile, ExistingRegistrationState, MemberLookupResult } from './types'
+export type {
+  MemberLookupProfile,
+  ExistingRegistrationState,
+  MemberLookupResult,
+  AdminMember,
+} from './types'

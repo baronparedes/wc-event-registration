@@ -1,11 +1,15 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../ui/Button'
+import { DropdownMenu, DropdownMenuItem } from '../ui/DropdownMenu'
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth'
 
 export function AppShell() {
   const { data: adminAuth } = useAdminAuthQuery()
   const logoutMutation = useAdminLogoutMutation()
+  const location = useLocation()
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false)
 
   async function handleLogout() {
     try {
@@ -16,6 +20,8 @@ export function AppShell() {
       toast.error(message)
     }
   }
+
+  const isAdminPath = location.pathname.startsWith('/admin/')
 
   return (
     <div className="min-h-screen bg-background text-text">
@@ -29,9 +35,33 @@ export function AppShell() {
             <Link className="rounded-md px-3 py-1.5 hover:bg-primary/10" to="/">
               Events
             </Link>
-            <Link className="rounded-md px-3 py-1.5 hover:bg-primary/10" to="/admin/events">
-              Admin
-            </Link>
+            <DropdownMenu
+              open={adminDropdownOpen}
+              onOpenChange={setAdminDropdownOpen}
+              trigger={
+                <button
+                  onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
+                  className={`rounded-md px-3 py-1.5 hover:bg-primary/10 ${isAdminPath ? 'bg-primary/10' : ''}`}
+                >
+                  Admin
+                </button>
+              }
+            >
+              {adminAuth?.isAuthenticated ? (
+                <>
+                  <DropdownMenuItem to="/admin/events" onClick={() => setAdminDropdownOpen(false)}>
+                    Events
+                  </DropdownMenuItem>
+                  <DropdownMenuItem to="/admin/members" onClick={() => setAdminDropdownOpen(false)}>
+                    Members
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem to="/admin/login" onClick={() => setAdminDropdownOpen(false)}>
+                  Sign In
+                </DropdownMenuItem>
+              )}
+            </DropdownMenu>
             {adminAuth?.isAuthenticated ? (
               <Button
                 className="hover:bg-primary/10"

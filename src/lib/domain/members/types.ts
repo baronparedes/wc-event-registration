@@ -17,3 +17,19 @@ export type MemberLookupResult = {
   profile: MemberLookupProfile | null
   existing_registration: ExistingRegistrationState | null
 }
+
+export type AdminMember = {
+  id: string
+  member_id: string
+  full_name: string
+  first_name: string | null
+  last_name: string | null
+  nickname: string | null
+  email: string | null
+  phone: string | null
+  date_of_birth: string | null
+  role: string
+  category: string
+  created_at: string
+  updated_at: string
+}
