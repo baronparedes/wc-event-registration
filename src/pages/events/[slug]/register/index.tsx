@@ -46,32 +46,22 @@ export function EventRegistrationPage() {
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
+  // Core domain hooks
   const submitMutation = useSubmitRegistrationMutation()
   const eventQuery = usePublicEventQuery(slug)
-
-  // Extract lookup error handling
-  const {
-    error: lookupErrorMessage,
-    isFadingOut: lookupErrorFadeOut,
-    showError: showLookupError,
-    clearError: clearLookupError,
-  } = useErrorWithFadeout({
-    fadeOutDelay: 4500,
-    clearDelay: 5000,
-    onClear: () => {
-      memberLookup.clearMember()
-      focusMemberIdInput()
-    },
-  })
-
-  // Extract member lookup state and logic
   const memberLookup = useMemberLookupState(slug)
-
-  const availability = eventQuery.data
-
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     defaultValues: {},
   })
+
+  // Member lookup state helpers
+  const { clearMember, lookupForm, handleLookupSubmit: runMemberLookupSubmit } = memberLookup
+
+  // Derived event/member gate state
+  const availability = eventQuery.data
+  const isGateReady = availability?.status === 'available'
+  const isDynamicFieldGateReady =
+    isGateReady && Boolean(memberLookup.matchedMember) && !memberLookup.isRegistrationBlocked
 
   const eventWindowText = useMemo(() => {
     if (!availability || availability.status !== 'available') {
@@ -84,38 +74,51 @@ export function EventRegistrationPage() {
     }
   }, [availability])
 
-  const isGateReady = availability?.status === 'available'
-  const isDynamicFieldGateReady =
-    isGateReady && Boolean(memberLookup.matchedMember) && !memberLookup.isRegistrationBlocked
-
-  // RFID reader support: keep the member ID input focused when no member has
-  // been looked up yet so a card tap registers immediately.
+  // Input-focus ergonomics for RFID kiosks
   const isRfidCaptureActive =
     isGateReady && memberLookup.matchedMember === null && !memberLookup.isLookupPending
   const focusMemberIdInput = useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive)
+
+  // Lookup error state with fadeout behavior
+  const {
+    error: lookupErrorMessage,
+    isFadingOut: lookupErrorFadeOut,
+    showError: showLookupError,
+    clearError: clearLookupError,
+  } = useErrorWithFadeout({
+    fadeOutDelay: 4500,
+    clearDelay: 5000,
+    onClear: () => {
+      clearMember()
+      focusMemberIdInput()
+    },
+  })
 
   // Global scan buffer for kiosk mode: any RFID scan on the page triggers lookup directly
   // (unless user is actively typing in the Member ID input field)
   const handleScan = useCallback(
     (scannedMemberId: string) => {
       // Trigger lookup immediately without form interaction
-      memberLookup.handleLookupSubmit({ memberId: scannedMemberId })
+      setSubmitErrorMessage(null)
+      setSubmitSuccessMessage(null)
+      clearLookupError()
+      void runMemberLookupSubmit({ memberId: scannedMemberId })
+      focusMemberIdInput()
     },
-    [memberLookup],
+    [clearLookupError, runMemberLookupSubmit, focusMemberIdInput],
   )
-  useScanBuffer(handleScan, isGateReady, memberIdInputRef)
+  useScanBuffer(handleScan, isRfidCaptureActive, memberIdInputRef)
 
   // Kiosk inactivity timeout: clear all user data after 3 minutes of no activity
   // Prevents data residue on shared public kiosk terminals
   const handleKioskReset = useCallback(() => {
-    memberLookup.clearMember()
-    memberLookup.lookupForm.reset({ memberId: '' })
+    clearMember()
+    lookupForm.reset({ memberId: '' })
     dynamicForm.reset({})
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
     clearLookupError()
-  }, [memberLookup, dynamicForm, clearLookupError])
-
+  }, [clearMember, lookupForm, dynamicForm, clearLookupError])
   useKioskInactivityReset(handleKioskReset, 3 * 60 * 1000, isGateReady)
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
@@ -149,21 +152,24 @@ export function EventRegistrationPage() {
   useEffect(() => {
     if (!isDynamicFieldGateReady) {
       dynamicForm.reset({})
-      setSubmitErrorMessage(null)
-      setSubmitSuccessMessage(null)
     }
   }, [dynamicForm, isDynamicFieldGateReady])
 
-  async function handleLookupSubmit(values: Parameters<typeof memberLookup.handleLookupSubmit>[0]) {
-    clearLookupError()
-    const result = await memberLookup.handleLookupSubmit(values)
-    focusMemberIdInput()
+  const handleLookupSubmit = useCallback(
+    async (values: Parameters<typeof runMemberLookupSubmit>[0]) => {
+      setSubmitErrorMessage(null)
+      setSubmitSuccessMessage(null)
+      clearLookupError()
+      const result = await runMemberLookupSubmit(values)
+      focusMemberIdInput()
 
-    if (!result.success) {
-      showLookupError(result.error || 'Member lookup failed')
-      return
-    }
-  }
+      if (!result.success) {
+        showLookupError(result.error || 'Member lookup failed')
+        return
+      }
+    },
+    [clearLookupError, runMemberLookupSubmit, focusMemberIdInput, showLookupError],
+  )
 
   async function handleSubmitRegistration(values: DynamicFieldResponseValues) {
     setSubmitErrorMessage(null)

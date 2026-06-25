@@ -37,8 +37,14 @@ export function useScanBuffer(
       const activeElement = document.activeElement as HTMLElement | null
       const activeTag = activeElement?.tagName
 
-      // Ignore if user is actively typing in textarea
-      if (activeTag === 'TEXTAREA') {
+      const isEditableTarget =
+        activeTag === 'INPUT' ||
+        activeTag === 'TEXTAREA' ||
+        activeTag === 'SELECT' ||
+        Boolean(activeElement?.isContentEditable)
+
+      // Never treat normal typing in editable controls as scan input
+      if (isEditableTarget) {
         return
       }
 

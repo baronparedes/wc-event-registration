@@ -171,7 +171,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </div>
       ) : null}
 
-      {submitSuccessMessage ? (
+      {matchedMember && submitSuccessMessage ? (
         <div className="mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
           <p className="font-semibold">You are all set!</p>
           <p className="mt-1">{submitSuccessMessage}</p>
