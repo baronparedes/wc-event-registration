@@ -27,7 +27,7 @@ export function useUpdateEventFieldMutation() {
         throw new Error('Cannot edit fields on archived events.')
       }
 
-      const { id, event_id: _eventId, ...updates } = input
+      const { id, ...updates } = input
 
       if (event.status === 'published') {
         const lockedKeys = Object.keys(updates).filter(

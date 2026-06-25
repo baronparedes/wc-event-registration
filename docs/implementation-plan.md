@@ -494,6 +494,7 @@ All 8 critical Day 1 tasks completed:
    - Effort: 30 min
 
 **Day 1 Summary**:
+
 - **Product Quality**: 6.5 → 8.0 (+1.5 points)
 - **Security**: 6.0 → 8.0 (+2 points)
 - **Go-Live Confidence**: 6/10 → 7.5/10
@@ -501,17 +502,20 @@ All 8 critical Day 1 tasks completed:
 **Remaining Work (Days 2-7)**:
 
 Days 2-4: Backend Hardening
+
 - Idempotency race condition fix (transaction wrap or polling)
 - Normalize typed answer storage strategy + update CSV reader
 - Integration test coverage for validation + error scenarios
 
 Days 4-5: Operational Readiness
+
 - ALLOWED_ORIGINS production env var validation
 - CI/CD pipeline setup (GitHub Actions: lint/build/test)
 - Sentry integration + structured logging
 - Backup/restore rehearsal + runbook
 
 Day 6-7: Verification & Release Gate
+
 - Full smoke test: public registration + admin CRUD + CSV export
 - Integration + unit test execution
 - Load sanity test (50 reg/min for 10 min)

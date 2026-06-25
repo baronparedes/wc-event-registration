@@ -134,7 +134,7 @@ function validateFieldValue(
 
   // Number field
   if (type === 'number') {
-    let num: number | null = null
+    let num: number
 
     if (typeof value === 'number') {
       num = value
@@ -197,7 +197,7 @@ function validateFieldValue(
 
   // Multi-select field
   if (type === 'multi_select') {
-    let arr: string[] = []
+    let arr: string[]
 
     if (Array.isArray(value)) {
       arr = value.map(String)

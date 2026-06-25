@@ -7,6 +7,7 @@ Last updated: 2026-06-24
 **Phase 6: Production Hardening - Day 1 Complete ✅**
 
 ### Session Focus
+
 Week-1 SaaS launch hardening. Completed all 8 critical runtime safety and backend validation tasks from Day 1.
 
 ### Day 1 Completion Summary ✅
@@ -114,19 +115,22 @@ All tasks implemented, tested, and passing:
 ### Days 2-4: Backend Hardening & Idempotency
 
 **Priority 1: Idempotency Race Condition** (2 hours)
+
 - File: supabase/functions/submit-registration/index.ts
 - Wrap idempotency check + insert in explicit transaction (BEGIN SERIALIZABLE)
 - OR move logic to Edge Function with polling retry pattern
 - Prevents duplicate registrations for same idempotency_key
 
 **Priority 2: Typed Answer Storage** (2-3 hours)
+
 - File: supabase/functions/submit-registration/index.ts + export-registrations-csv/index.ts
 - Choose explicit storage strategy: typed columns OR answer_text with metadata hints
 - Normalize CSV export reader
 - Improves fragile round-trip and enables future reporting/filtering
 
 **Priority 3: Integration Test Coverage** (3-4 hours)
-- Expand src/__tests__/integration.test.ts
+
+- Expand src/**tests**/integration.test.ts
 - Add error scenario tests: validation failures, rate limit 429, field schema mismatches
 - Add unit tests for useSubmitRegistrationMutation error handling + cache invalidation
 - Target 60%+ coverage for critical paths before launch
@@ -134,25 +138,29 @@ All tasks implemented, tested, and passing:
 ### Days 4-5: Operational Readiness
 
 **Priority 1: ALLOWED_ORIGINS Configuration** ✅ COMPLETE
-- File: supabase/functions/_shared/security.ts
+
+- File: supabase/functions/\_shared/security.ts
 - Removed hardcoded localhost default
 - Added fail-closed behavior for empty or invalid allowlists
 - Added production guard rejecting localhost-style origins when SUPABASE_ENV=production
 - Documented environment variable setup for local, staging, and production
 
 **Priority 2: CI/CD Pipeline** (4-6 hours)
+
 - Create .github/workflows/test.yml: lint + build + test on PR
 - Create .github/workflows/deploy.yml: tagged releases to production
 - Add branch protection rules for PR gates
 - Document deployment runbook
 
 **Priority 3: Error Monitoring Setup** (2-3 hours)
+
 - Integrate Sentry for frontend + Edge Functions
 - Add request correlation IDs to all error logs
 - Document error classification and escalation paths
 - Wire up health check endpoint
 
 **Priority 4: Backup & Incident Response** (2 hours)
+
 - Enable Supabase automated backups
 - Test restore in staging environment
 - Document RTO/RPO expectations
@@ -161,12 +169,14 @@ All tasks implemented, tested, and passing:
 ### Day 6-7: Verification & Release
 
 **Day 6: Full Smoke Test**
+
 1. Public registration: ID lookup → dynamic fields → submit → success response ✅
 2. Admin CRUD: Create event → Add fields → Publish → View registrations ✅
 3. CSV export: Download from registrations page, verify headers + data ✅
 4. Error scenarios: Bad ID, missing required field, validation error display ✅
 
 **Day 7: Test Coverage & Load Test**
+
 1. Run full test suite: integration + unit tests
 2. Check coverage: target 60%+ for critical paths
 3. Load sanity test: 50 registrations/min for 10 min under normal load
