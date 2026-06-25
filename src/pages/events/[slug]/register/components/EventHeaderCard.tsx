@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify'
 import type { EventAvailability } from '@/lib/domain/events'
 import { formatDateTime } from '@/lib/infrastructure'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { SectionCard } from '@/components/ui/SectionCard'
 
 type EventHeaderCardProps = {
@@ -33,6 +34,19 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       }
       wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
     >
+      {isLoading ? (
+        <div className="mt-4 space-y-3" aria-hidden="true">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-11/12" />
+          <Skeleton className="h-4 w-4/5" />
+          <div className="mt-3 grid gap-2 rounded-lg border border-border bg-background/70 p-3 sm:grid-cols-2">
+            <Skeleton className="h-4 w-3/4 sm:col-span-2" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      ) : null}
+
       {event?.description ? (
         <div
           className="
@@ -81,8 +95,6 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
           Event code: <span className="font-mono text-text">{slug}</span>
         </p>
       ) : null}
-
-      {isLoading ? <p className="mt-4 text-sm text-muted">Loading event details...</p> : null}
 
       {isError ? (
         <p className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">

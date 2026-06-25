@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { AppShell } from '../components/layout/AppShell'
 import { useAdminAuthQuery } from '../hooks/domain/auth'
 import { AdminLoginPage } from '../pages/admin/login'
@@ -18,10 +19,11 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
 
   if (isLoading) {
     return (
-      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6 text-sm text-muted">
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent" />
-          Verifying admin access...
+      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6">
+        <div className="space-y-3" aria-hidden="true">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-4/5" />
         </div>
       </section>
     )

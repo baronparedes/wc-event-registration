@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button'
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
 import type { MemberLookupProfile } from '@/lib/domain/members'
 import { SectionCard } from '@/components/ui/SectionCard'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   TextFieldRenderer,
   EmailFieldRenderer,
@@ -98,7 +99,15 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
       ) : null}
 
       {matchedMember && !isLocked && isLoadingFields ? (
-        <p className="mt-3 text-sm text-muted">Preparing your form...</p>
+        <div className="mt-4 space-y-4" aria-hidden="true">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={`field-skeleton-${index}`} className="space-y-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
+          <Skeleton className="h-10 w-44" />
+        </div>
       ) : null}
 
       {matchedMember && !isLocked && isFieldsError ? (
@@ -122,7 +131,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </p>
       ) : null}
 
-      {matchedMember && !isLocked && activeFields.length > 0 ? (
+      {matchedMember && !isLocked && !isLoadingFields && activeFields.length > 0 ? (
         <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
           {activeFields.map((field) => {
             const errorMessage = fieldErrorMessage(field.field_key)

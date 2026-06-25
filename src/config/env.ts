@@ -1,14 +1,15 @@
-function required(name: string): string {
-  const value = import.meta.env[name]
-
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`)
+function requiredAny(names: string[]): string {
+  for (const name of names) {
+    const value = import.meta.env[name]
+    if (value) {
+      return value
+    }
   }
 
-  return value
+  throw new Error(`Missing environment variable: one of ${names.join(', ')}`)
 }
 
 export const env = {
-  supabaseUrl: required('VITE_SUPABASE_URL'),
-  supabaseAnonKey: required('VITE_SUPABASE_ANON_KEY'),
+  supabaseUrl: requiredAny(['VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL']),
+  supabaseAnonKey: requiredAny(['VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY']),
 }
