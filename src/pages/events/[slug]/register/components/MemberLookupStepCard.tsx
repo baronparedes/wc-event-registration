@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
 import { Button } from '@/components/ui/Button'
 import { SectionCard } from '@/components/ui/SectionCard'
@@ -15,6 +15,7 @@ type MemberLookupStepCardProps = {
   suppressLookupWarning?: boolean
   memberIdInputRef: RefObject<HTMLInputElement | null>
   shouldHighlightInput?: boolean
+  onDismissLookupError?: () => void
 }
 
 export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
@@ -27,9 +28,26 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     suppressLookupWarning = false,
     memberIdInputRef,
     shouldHighlightInput = false,
+    onDismissLookupError,
   } = props
 
   const { ref: registerRef, ...registerRest } = lookupForm.register('memberId')
+  const lookupErrorRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!lookupErrorMessage || suppressLookupWarning) {
+      return
+    }
+
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+
+    lookupErrorRef.current?.scrollIntoView({
+      behavior,
+      block: 'center',
+    })
+  }, [lookupErrorMessage, suppressLookupWarning])
 
   return (
     <SectionCard title="Step 1: Enter Your Member ID" subtitle="Enter your member ID to continue.">
@@ -67,6 +85,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
 
       {lookupErrorMessage && !suppressLookupWarning ? (
         <div
+          ref={lookupErrorRef}
           className={`overflow-hidden transition-all duration-500 ${
             shouldFadeLookupError
               ? 'mt-0 max-h-0 opacity-0 -translate-y-1'
@@ -84,9 +103,22 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             >
               !
             </span>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-orange-950">Please check your Member ID</p>
-              <p className="text-sm text-orange-900">{lookupErrorMessage}</p>
+            <div className="flex w-full items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-orange-950">Please check your Member ID</p>
+                <p className="text-sm text-orange-900">{lookupErrorMessage}</p>
+              </div>
+
+              {onDismissLookupError ? (
+                <button
+                  type="button"
+                  onClick={onDismissLookupError}
+                  className="shrink-0 rounded-md border border-orange-700/40 px-2 py-1 text-xs font-medium text-orange-950 transition hover:bg-orange-300/60 focus:outline-none focus:ring-2 focus:ring-orange-700/60"
+                  aria-label="Dismiss member lookup warning"
+                >
+                  Dismiss
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

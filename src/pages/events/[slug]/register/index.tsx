@@ -43,6 +43,7 @@ function formatUtcDateTime(value: string | null): string {
 export function EventRegistrationPage() {
   const { slug } = useParams<{ slug: string }>()
   const memberIdInputRef = useRef<HTMLInputElement | null>(null)
+  const dynamicFieldsStepRef = useRef<HTMLDivElement | null>(null)
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
@@ -88,24 +89,74 @@ export function EventRegistrationPage() {
   } = useErrorWithFadeout({
     fadeOutDelay: 3000,
     clearDelay: 3600,
+    autoFadeOut: false,
+    onFadeStart: () => {
+      const scrollBehavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)')
+        .matches
+        ? 'auto'
+        : 'auto'
+      document.getElementById('app-shell-title-anchor')?.scrollIntoView({
+        behavior: scrollBehavior,
+        block: 'start',
+      })
+    },
     onClear: () => {
       clearMember()
-      focusMemberIdInput()
     },
   })
+
+  const scrollToTitleAnchor = useCallback(() => {
+    const scrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+    document.getElementById('app-shell-title-anchor')?.scrollIntoView({
+      behavior: scrollBehavior,
+      block: 'start',
+    })
+  }, [])
+
+  const scrollToDynamicFieldsStep = useCallback(() => {
+    const scrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+    dynamicFieldsStepRef.current?.scrollIntoView({
+      behavior: scrollBehavior,
+      block: 'start',
+    })
+  }, [])
 
   // Global scan buffer for kiosk mode: any RFID scan on the page triggers lookup directly
   // (unless user is actively typing in the Member ID input field)
   const handleScan = useCallback(
-    (scannedMemberId: string) => {
+    async (scannedMemberId: string) => {
       // Trigger lookup immediately without form interaction
       setSubmitErrorMessage(null)
       setSubmitSuccessMessage(null)
       clearLookupError()
-      void runMemberLookupSubmit({ memberId: scannedMemberId })
+      const result = await runMemberLookupSubmit({ memberId: scannedMemberId })
+
+      if (!result.success) {
+        focusMemberIdInput()
+        showLookupError(result.error || 'Member lookup failed', {
+          autoFadeOut: result.reason === 'already_registered',
+        })
+        return
+      }
+
+      if (result.mode === 'update_registration') {
+        scrollToDynamicFieldsStep()
+        return
+      }
+
       focusMemberIdInput()
     },
-    [clearLookupError, runMemberLookupSubmit, focusMemberIdInput],
+    [
+      clearLookupError,
+      runMemberLookupSubmit,
+      focusMemberIdInput,
+      showLookupError,
+      scrollToDynamicFieldsStep,
+    ],
   )
   useScanBuffer(handleScan, isRfidCaptureActive, memberIdInputRef)
 
@@ -161,14 +212,29 @@ export function EventRegistrationPage() {
       setSubmitSuccessMessage(null)
       clearLookupError()
       const result = await runMemberLookupSubmit(values)
-      focusMemberIdInput()
 
       if (!result.success) {
-        showLookupError(result.error || 'Member lookup failed')
+        focusMemberIdInput()
+        showLookupError(result.error || 'Member lookup failed', {
+          autoFadeOut: result.reason === 'already_registered',
+        })
         return
       }
+
+      if (result.mode === 'update_registration') {
+        scrollToDynamicFieldsStep()
+        return
+      }
+
+      focusMemberIdInput()
     },
-    [clearLookupError, runMemberLookupSubmit, focusMemberIdInput, showLookupError],
+    [
+      clearLookupError,
+      runMemberLookupSubmit,
+      focusMemberIdInput,
+      showLookupError,
+      scrollToDynamicFieldsStep,
+    ],
   )
 
   async function handleSubmitRegistration(values: DynamicFieldResponseValues) {
@@ -245,9 +311,17 @@ export function EventRegistrationPage() {
     toast.success('Registration submitted successfully!')
     logger.info('Registration submission successful:', result)
 
+    const wasUpdateMode = memberLookup.isUpdateMode
+
     // Reset the form and member state so the page is ready for another registration
     memberLookup.reset()
     dynamicForm.reset(createDynamicFieldDefaultValues(activeFields))
+
+    if (wasUpdateMode) {
+      scrollToTitleAnchor()
+      return
+    }
+
     focusMemberIdInput()
   }
 
@@ -270,7 +344,7 @@ export function EventRegistrationPage() {
     clearLookupError()
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
-    focusMemberIdInput()
+    scrollToTitleAnchor()
   }
 
   return (
@@ -295,6 +369,7 @@ export function EventRegistrationPage() {
             suppressLookupWarning={memberLookup.isRegistrationBlocked}
             memberIdInputRef={memberIdInputRef}
             shouldHighlightInput={memberLookup.memberIdHighlight}
+            onDismissLookupError={clearLookupError}
           />
 
           <ProfileStepCard
@@ -304,24 +379,26 @@ export function EventRegistrationPage() {
             shouldFadeDetails={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
           />
 
-          <DynamicFieldsStepCard
-            matchedMember={memberLookup.matchedMember}
-            isLocked={memberLookup.isRegistrationBlocked}
-            shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
-            lockedMessage={memberLookup.lockedStepMessage}
-            onCancelUpdate={handleCancelUpdate}
-            isLoadingFields={eventFieldsQuery.isLoading}
-            isFieldsError={eventFieldsQuery.isError}
-            fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
-            activeFields={activeFields}
-            dynamicForm={dynamicForm}
-            onSubmit={handleSubmitRegistration}
-            fieldErrorMessage={fieldErrorMessage}
-            isSubmitPending={submitMutation.isPending}
-            submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
-            submitErrorMessage={submitErrorMessage}
-            submitSuccessMessage={submitSuccessMessage}
-          />
+          <div ref={dynamicFieldsStepRef}>
+            <DynamicFieldsStepCard
+              matchedMember={memberLookup.matchedMember}
+              isLocked={memberLookup.isRegistrationBlocked}
+              shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+              lockedMessage={memberLookup.lockedStepMessage}
+              onCancelUpdate={handleCancelUpdate}
+              isLoadingFields={eventFieldsQuery.isLoading}
+              isFieldsError={eventFieldsQuery.isError}
+              fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
+              activeFields={activeFields}
+              dynamicForm={dynamicForm}
+              onSubmit={handleSubmitRegistration}
+              fieldErrorMessage={fieldErrorMessage}
+              isSubmitPending={submitMutation.isPending}
+              submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
+              submitErrorMessage={submitErrorMessage}
+              submitSuccessMessage={submitSuccessMessage}
+            />
+          </div>
         </div>
       ) : (
         <LockedGateCard />

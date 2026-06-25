@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { MemberLookupProfile } from '@/lib/domain/members'
 import { SectionCard } from '@/components/ui/SectionCard'
 
@@ -16,6 +17,22 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
     shouldFadeDetails = false,
   } = props
   const shouldShowPlaceholder = !matchedMember || shouldFadeDetails
+  const registrationStatusRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!matchedMember || !isRegistrationBlocked || shouldFadeDetails) {
+      return
+    }
+
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+
+    registrationStatusRef.current?.scrollIntoView({
+      behavior,
+      block: 'center',
+    })
+  }, [matchedMember, isRegistrationBlocked, shouldFadeDetails])
 
   return (
     <SectionCard title="Step 2: Confirm Your Details">
@@ -50,6 +67,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
               </span>
             </p>
             <div
+              ref={registrationStatusRef}
               aria-live="polite"
               className={`mt-2 flex items-start gap-3 rounded-lg border-2 px-4 py-3 shadow-md ${
                 isRegistrationBlocked

@@ -28,7 +28,9 @@ export function AppShell() {
       <header className="border-b border-border bg-surface/90 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3.5">
           <div>
-            <p className="font-heading text-lg font-semibold text-text">WC Event Registration</p>
+            <p id="app-shell-title-anchor" className="font-heading text-lg font-semibold text-text">
+              WC Event Registration
+            </p>
             <p className="text-xs text-muted">{new Date().toDateString()}</p>
           </div>
           <nav className="flex items-center gap-2.5 text-sm">

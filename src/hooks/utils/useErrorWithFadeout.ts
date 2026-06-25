@@ -3,7 +3,13 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 export type ErrorWithFadeoutOptions = {
   fadeOutDelay?: number // time before fade animation starts (default: 4500ms)
   clearDelay?: number // time before error is completely cleared (default: 5000ms)
+  autoFadeOut?: boolean // when false, keep the error visible until manually cleared
+  onFadeStart?: () => void // callback when fade animation starts
   onClear?: () => void // callback when error is cleared
+}
+
+type ShowErrorOptions = {
+  autoFadeOut?: boolean
 }
 
 /**
@@ -11,7 +17,13 @@ export type ErrorWithFadeoutOptions = {
  * Handles the full lifecycle: set → fade → clear.
  */
 export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
-  const { fadeOutDelay = 4500, clearDelay = 5000, onClear } = options
+  const {
+    fadeOutDelay = 4500,
+    clearDelay = 5000,
+    autoFadeOut = true,
+    onFadeStart,
+    onClear,
+  } = options
 
   const [error, setError] = useState<string | null>(null)
   const [isFadingOut, setIsFadingOut] = useState(false)
@@ -35,6 +47,7 @@ export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
     // Schedule fade animation
     timeoutsRef.current.fade = setTimeout(() => {
       setIsFadingOut(true)
+      onFadeStart?.()
     }, fadeOutDelay)
 
     // Schedule complete clear
@@ -49,13 +62,16 @@ export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
       if (timeoutsRef.current.fade) clearTimeout(timeoutsRef.current.fade)
       if (timeoutsRef.current.clear) clearTimeout(timeoutsRef.current.clear)
     }
-  }, [shouldAutoFadeOut, error, fadeOutDelay, clearDelay, onClear])
+  }, [shouldAutoFadeOut, error, fadeOutDelay, clearDelay, onFadeStart, onClear])
 
-  const showError = useCallback((message: string) => {
-    setError(message)
-    setIsFadingOut(false)
-    setShouldAutoFadeOut(true)
-  }, [])
+  const showError = useCallback(
+    (message: string, options?: ShowErrorOptions) => {
+      setError(message)
+      setIsFadingOut(false)
+      setShouldAutoFadeOut(options?.autoFadeOut ?? autoFadeOut)
+    },
+    [autoFadeOut],
+  )
 
   const clearError = useCallback(() => {
     setError(null)

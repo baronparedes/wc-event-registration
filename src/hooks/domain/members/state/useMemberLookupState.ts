@@ -12,6 +12,14 @@ const memberLookupSchema = z.object({
 
 type MemberLookupFormValues = z.infer<typeof memberLookupSchema>
 
+type MemberLookupResult =
+  | { success: true; mode: 'new_registration' | 'update_registration' }
+  | {
+      success: false
+      error: string
+      reason: 'not_found' | 'already_registered' | 'lookup_unavailable'
+    }
+
 export type MemberLookupState = {
   matchedMember: MemberLookupProfile | null
   verifiedMemberId: string | null
@@ -66,7 +74,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
   }, [clearMember, lookupForm])
 
   const handleLookupSubmit = useCallback(
-    async (values: MemberLookupFormValues) => {
+    async (values: MemberLookupFormValues): Promise<MemberLookupResult> => {
       // Clear previous state
       clearMember()
 
@@ -87,6 +95,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
             success: false,
             error:
               'We could not verify that Member ID. Please contact your administrator for support.',
+            reason: 'not_found',
           }
         }
 
@@ -100,7 +109,11 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           setMemberIdHighlight(true)
           lookupForm.reset()
           logger.info('Duplicate registration blocked during lookup:', values.memberId)
-          return { success: false, error: 'You are already registered for this event.' }
+          return {
+            success: false,
+            error: 'You are already registered for this event.',
+            reason: 'already_registered',
+          }
         }
 
         // Successful lookup - member found and eligible
@@ -112,7 +125,12 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         setMemberIdHighlight(Boolean(result.existing_registration?.edit_allowed))
 
         logger.info('Member lookup successful:', result.profile)
-        return { success: true }
+        return {
+          success: true,
+          mode: result.existing_registration?.edit_allowed
+            ? 'update_registration'
+            : 'new_registration',
+        }
       } catch (error) {
         setMatchedMember(null)
         setVerifiedMemberId(null)
@@ -121,6 +139,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         return {
           success: false,
           error: 'Lookup is unavailable right now. Please try again in a moment.',
+          reason: 'lookup_unavailable',
         }
       }
     },
