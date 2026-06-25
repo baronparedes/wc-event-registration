@@ -47,7 +47,7 @@ export function DropdownMenuItem({ to, children, onClick }: DropdownMenuItemProp
     <Link
       to={to}
       onClick={onClick}
-      className="block px-4 py-2 text-sm text-text transition hover:bg-background/50"
+      className="block px-4 py-2.5 text-sm text-text transition hover:bg-background/50"
     >
       {children}
     </Link>

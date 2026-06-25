@@ -86,8 +86,8 @@ export function EventRegistrationPage() {
     showError: showLookupError,
     clearError: clearLookupError,
   } = useErrorWithFadeout({
-    fadeOutDelay: 4500,
-    clearDelay: 5000,
+    fadeOutDelay: 3000,
+    clearDelay: 3600,
     onClear: () => {
       clearMember()
       focusMemberIdInput()
@@ -292,18 +292,22 @@ export function EventRegistrationPage() {
             isLookupPending={memberLookup.isLookupPending}
             lookupErrorMessage={lookupErrorMessage}
             shouldFadeLookupError={lookupErrorFadeOut}
+            suppressLookupWarning={memberLookup.isRegistrationBlocked}
             memberIdInputRef={memberIdInputRef}
             shouldHighlightInput={memberLookup.memberIdHighlight}
           />
 
           <ProfileStepCard
             matchedMember={memberLookup.matchedMember}
+            isUpdateMode={memberLookup.isUpdateMode}
+            isRegistrationBlocked={memberLookup.isRegistrationBlocked}
             shouldFadeDetails={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
           />
 
           <DynamicFieldsStepCard
             matchedMember={memberLookup.matchedMember}
             isLocked={memberLookup.isRegistrationBlocked}
+            shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
             lockedMessage={memberLookup.lockedStepMessage}
             onCancelUpdate={handleCancelUpdate}
             isLoadingFields={eventFieldsQuery.isLoading}

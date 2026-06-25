@@ -12,6 +12,7 @@ type MemberLookupStepCardProps = {
   isLookupPending: boolean
   lookupErrorMessage: string | null
   shouldFadeLookupError?: boolean
+  suppressLookupWarning?: boolean
   memberIdInputRef: RefObject<HTMLInputElement | null>
   shouldHighlightInput?: boolean
 }
@@ -23,6 +24,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     isLookupPending,
     lookupErrorMessage,
     shouldFadeLookupError = false,
+    suppressLookupWarning = false,
     memberIdInputRef,
     shouldHighlightInput = false,
   } = props
@@ -63,14 +65,31 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
         </Button>
       </form>
 
-      {lookupErrorMessage ? (
-        <p
-          className={`mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger transition-opacity duration-500 ${
-            shouldFadeLookupError ? 'opacity-0' : 'opacity-100'
+      {lookupErrorMessage && !suppressLookupWarning ? (
+        <div
+          className={`overflow-hidden transition-all duration-500 ${
+            shouldFadeLookupError
+              ? 'mt-0 max-h-0 opacity-0 -translate-y-1'
+              : 'mt-4 max-h-40 opacity-100 translate-y-0'
           }`}
         >
-          {lookupErrorMessage}
-        </p>
+          <div
+            role="alert"
+            aria-live="polite"
+            className="flex items-start gap-3 rounded-lg border-2 border-orange-700 bg-orange-200 px-4 py-3 text-orange-950 shadow-sm"
+          >
+            <span
+              aria-hidden="true"
+              className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-700 text-sm font-bold text-white ring-1 ring-orange-900/30"
+            >
+              !
+            </span>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-orange-950">Please check your Member ID</p>
+              <p className="text-sm text-orange-900">{lookupErrorMessage}</p>
+            </div>
+          </div>
+        </div>
       ) : null}
     </SectionCard>
   )

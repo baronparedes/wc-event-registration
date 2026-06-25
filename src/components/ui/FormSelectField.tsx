@@ -35,15 +35,15 @@ export function FormSelectField(props: FormSelectFieldProps) {
   } = props
 
   return (
-    <div className="space-y-1">
-      <label className="block text-sm font-medium text-text" htmlFor={id}>
+    <div className="space-y-1.5">
+      <label className="block text-sm font-semibold text-text" htmlFor={id}>
         {label}
         {required ? <span className="text-red-500"> *</span> : null}
         {labelAdornment}
       </label>
       <select
         {...registration}
-        className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-600 ${
+        className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
           error
             ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30'
             : 'border-border focus:border-primary focus:ring-primary/30'

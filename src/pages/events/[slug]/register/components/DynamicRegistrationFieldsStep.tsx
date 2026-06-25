@@ -56,6 +56,7 @@ function DynamicFieldInput(props: {
 type DynamicFieldsStepCardProps = {
   matchedMember: MemberLookupProfile | null
   isLocked?: boolean
+  shouldFadeLockedState?: boolean
   lockedMessage?: string | null
   onCancelUpdate?: () => void
   isLoadingFields: boolean
@@ -75,6 +76,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   const {
     matchedMember,
     isLocked = false,
+    shouldFadeLockedState = false,
     lockedMessage,
     onCancelUpdate,
     isLoadingFields,
@@ -90,13 +92,34 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     submitSuccessMessage,
   } = props
 
+  const shouldShowDefaultLockedMessage = !matchedMember || shouldFadeLockedState
+  const shouldShowBlockedLockedMessage = matchedMember && isLocked && !shouldFadeLockedState
+
   return (
     <SectionCard title="Step 3: Complete Your Registration">
-      {!matchedMember || isLocked ? (
-        <p className="text-sm text-muted">
-          {lockedMessage ?? 'Please complete Step 1 to continue.'}
-        </p>
-      ) : null}
+      <div className="space-y-2">
+        <div
+          className={`overflow-hidden transition-all duration-500 ${
+            shouldShowBlockedLockedMessage
+              ? 'max-h-16 opacity-100 translate-y-0'
+              : 'max-h-0 opacity-0 -translate-y-1'
+          }`}
+        >
+          <p className="text-sm text-muted">
+            {lockedMessage ?? 'Please complete Step 1 to continue.'}
+          </p>
+        </div>
+
+        <div
+          className={`overflow-hidden transition-all duration-500 ${
+            shouldShowDefaultLockedMessage
+              ? 'max-h-16 opacity-100 translate-y-0'
+              : 'max-h-0 opacity-0 -translate-y-1'
+          }`}
+        >
+          <p className="text-sm text-muted">Please complete Step 1 to continue.</p>
+        </div>
+      </div>
 
       {matchedMember && !isLocked && isLoadingFields ? (
         <div className="mt-4 space-y-4" aria-hidden="true">

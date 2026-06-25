@@ -31,9 +31,9 @@ const variantClassName: Record<ButtonVariant, string> = {
 }
 
 const sizeClassName: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-5 py-2 text-sm',
+  sm: 'min-h-10 px-3.5 py-2 text-sm',
+  md: 'min-h-11 px-4 py-2.5 text-sm',
+  lg: 'min-h-12 px-5 py-3 text-base',
 }
 
 /** Shared button primitive for consistent variants, sizes, and disabled behavior. */
@@ -50,7 +50,7 @@ export function Button(props: ButtonProps) {
   } = props
 
   const classes = cx(
-    'rounded-md font-medium transition focus:outline-none focus:ring-2 focus:ring-primary/30',
+    'rounded-md font-medium leading-snug transition focus:outline-none focus:ring-2 focus:ring-primary/30',
     variantClassName[variant],
     sizeClassName[size],
     fullWidth && 'w-full',

@@ -83,7 +83,11 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           lookupForm.reset()
           logger.warn('Member lookup returned null for ID:', values.memberId)
           // Return error state to caller via hook state
-          return { success: false, error: 'We could not verify that ID. Check it and try again.' }
+          return {
+            success: false,
+            error:
+              'We could not verify that Member ID. Please contact your administrator for support.',
+          }
         }
 
         if (result.existing_registration?.exists && !result.existing_registration.edit_allowed) {

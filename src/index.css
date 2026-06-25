@@ -20,9 +20,15 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: clamp(16px, 0.2vw + 15.75px, 17.5px);
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Source Sans 3', sans-serif;
+  line-height: 1.6;
   background:
     radial-gradient(circle at 12% -5%, rgba(11, 95, 255, 0.15), transparent 35%),
     radial-gradient(circle at 96% 22%, rgba(15, 118, 110, 0.12), transparent 42%),
@@ -33,6 +39,19 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+button,
+input,
+select {
+  min-height: 2.5rem;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 @keyframes skeleton-shimmer {
