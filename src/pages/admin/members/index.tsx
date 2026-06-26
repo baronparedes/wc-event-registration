@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAdminMembersQuery } from '@/hooks/domain/members'
 import { formatDateOnly } from '@/lib/infrastructure'
 import { Button } from '@/components/ui/Button'
@@ -7,8 +7,25 @@ import { ActionLink } from '@/components/ui/ActionLink'
 export function AdminMembersPage() {
   const [cursor, setCursor] = useState<string | null>(null)
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
 
-  const membersQuery = useAdminMembersQuery({ pageSize: 20, cursor })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [searchTerm])
+
+  const membersQuery = useAdminMembersQuery({
+    pageSize: 20,
+    cursor,
+    searchTerm: normalizedSearchTerm,
+  })
   const members = membersQuery.data?.items ?? []
   const hasMore = membersQuery.data?.hasMore ?? false
   const nextCursor = membersQuery.data?.nextCursor ?? null
@@ -16,6 +33,12 @@ export function AdminMembersPage() {
 
   const isLoading = membersQuery.isLoading
   const error = membersQuery.error
+
+  function handleSearchTermChange(nextSearchTerm: string) {
+    setSearchTerm(nextSearchTerm)
+    setCursor(null)
+    setCursorHistory([])
+  }
 
   function handleNextPage() {
     if (!nextCursor) return
@@ -43,13 +66,42 @@ export function AdminMembersPage() {
         </div>
       </div>
 
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
+            Search members
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => handleSearchTermChange(event.target.value)}
+              placeholder="Search by first name, last name, nickname, or member ID"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleSearchTermChange('')}
+            disabled={normalizedSearchTerm.length === 0}
+          >
+            Clear
+          </Button>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-border bg-surface">
         {isLoading ? (
           <p className="p-6 text-sm text-muted">Loading members...</p>
         ) : error ? (
           <p className="p-6 text-sm text-red-600">Failed to load members. Please refresh.</p>
         ) : members.length === 0 ? (
-          <p className="p-6 text-sm text-muted">No members found.</p>
+          <p className="p-6 text-sm text-muted">
+            {normalizedSearchTerm.length > 0
+              ? 'No members matched your search.'
+              : 'No members found.'}
+          </p>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -103,7 +155,11 @@ export function AdminMembersPage() {
             </div>
 
             <div className="flex items-center justify-between border-t border-border px-6 py-3">
-              <p className="text-xs text-muted">Showing up to 20 members per page</p>
+              <p className="text-xs text-muted">
+                {normalizedSearchTerm.length > 0
+                  ? 'Showing up to 20 matching members per page'
+                  : 'Showing up to 20 members per page'}
+              </p>
               <div className="flex items-center gap-2">
                 <Button
                   type="button"

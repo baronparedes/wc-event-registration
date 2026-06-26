@@ -15,12 +15,16 @@ function readMetadataString(value: unknown): string {
 
 export const ADMIN_MEMBERS_QUERY_KEY = () => ['admin-members'] as const
 
-export const adminMembersPageQueryKey = (pageSize: number, cursor: string | null) =>
-  [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor] as const
+export const adminMembersPageQueryKey = (
+  pageSize: number,
+  cursor: string | null,
+  searchTerm: string,
+) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm] as const
 
 export interface AdminMembersPageParams {
   pageSize?: number
   cursor?: string | null
+  searchTerm?: string
 }
 
 export interface AdminMembersPage {
@@ -43,12 +47,13 @@ function decodeOffsetCursor(cursor: string | null | undefined): number {
 export function useAdminMembersQuery(params?: AdminMembersPageParams) {
   const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
   const cursor = params?.cursor ?? null
+  const searchTerm = params?.searchTerm?.trim() ?? ''
   const offset = decodeOffsetCursor(cursor)
 
   return useQuery({
-    queryKey: adminMembersPageQueryKey(pageSize, cursor),
+    queryKey: adminMembersPageQueryKey(pageSize, cursor, searchTerm),
     queryFn: async (): Promise<AdminMembersPage> => {
-      const { data: members, error: membersError } = await supabase
+      let query = supabase
         .from('users')
         .select(
           'id, member_id, full_name, first_name, last_name, nickname, email, phone, date_of_birth, metadata, created_at, updated_at',
@@ -56,6 +61,16 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         .order('full_name', { ascending: true })
         .order('member_id', { ascending: true })
         .range(offset, offset + pageSize - 1)
+
+      if (searchTerm.length > 0) {
+        const escapedSearchTerm = searchTerm.replace(/[,%]/g, (char) => `\\${char}`)
+
+        query = query.or(
+          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%`,
+        )
+      }
+
+      const { data: members, error: membersError } = await query
 
       if (membersError) throw membersError
       if (!members?.length) {
