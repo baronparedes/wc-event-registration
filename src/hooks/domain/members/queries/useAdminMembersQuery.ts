@@ -13,6 +13,10 @@ function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
+function escapeOrFilterValue(value: string): string {
+  return value.replace(/[,%_]/g, (char) => `\\${char}`)
+}
+
 export const ADMIN_MEMBERS_QUERY_KEY = () => ['admin-members'] as const
 
 export const adminMembersPageQueryKey = (
@@ -48,6 +52,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
   const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
   const cursor = params?.cursor ?? null
   const searchTerm = params?.searchTerm?.trim() ?? ''
+  const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0)
   const offset = decodeOffsetCursor(cursor)
 
   return useQuery({
@@ -62,11 +67,14 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         .order('member_id', { ascending: true })
         .range(offset, offset + pageSize - 1)
 
-      if (searchTerm.length > 0) {
-        const escapedSearchTerm = searchTerm.replace(/[,%]/g, (char) => `\\${char}`)
+      if (searchTokens.length > 0) {
+        const escapedSearchTerm = escapeOrFilterValue(searchTerm)
+        const escapedTokenPattern = `%${searchTokens
+          .map((token) => escapeOrFilterValue(token))
+          .join('%')}%`
 
         query = query.or(
-          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%`,
+          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.${escapedTokenPattern}`,
         )
       }
 
