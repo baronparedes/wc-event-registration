@@ -1,5 +1,6 @@
 export { useMemberLookupQuery } from './useMemberLookupQuery'
 export { useAdminMembersQuery } from './useAdminMembersQuery'
+export { useAdminMemberQuery } from './useAdminMemberQuery'
 
 export type {
   MemberLookupProfile,

@@ -7,7 +7,7 @@ type FormInputFieldBaseProps = {
   error?: string | null
   required?: boolean
   placeholder?: string
-  type?: 'text' | 'email' | 'password' | 'datetime-local'
+  type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local'
   autoComplete?: string
   readOnly?: boolean
   disabled?: boolean

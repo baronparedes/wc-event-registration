@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useAdminMembersQuery } from '@/hooks/domain/members'
 import { formatDateOnly } from '@/lib/infrastructure'
 import { Button } from '@/components/ui/Button'
+import { ActionLink } from '@/components/ui/ActionLink'
 
 export function AdminMembersPage() {
   const [cursor, setCursor] = useState<string | null>(null)
@@ -62,6 +63,7 @@ export function AdminMembersPage() {
                     <th className="px-4 py-3">Role</th>
                     <th className="px-4 py-3">Category</th>
                     <th className="px-4 py-3">Joined</th>
+                    <th className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -90,6 +92,9 @@ export function AdminMembersPage() {
                       </td>
                       <td className="px-4 py-4">
                         <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <ActionLink to={`/admin/members/${member.id}`}>Edit</ActionLink>
                       </td>
                     </tr>
                   ))}
