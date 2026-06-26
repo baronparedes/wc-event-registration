@@ -1,1 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+scripts/check-lockfile-sync.sh
+
 npm run ci:gate
