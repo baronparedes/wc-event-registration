@@ -3,6 +3,7 @@ import { useAdminMembersQuery } from '@/hooks/domain/members'
 import { formatDateOnly } from '@/lib/infrastructure'
 import { Button } from '@/components/ui/Button'
 import { ActionLink } from '@/components/ui/ActionLink'
+import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog'
 
 export function AdminMembersPage() {
   const [cursor, setCursor] = useState<string | null>(null)
@@ -146,7 +147,14 @@ export function AdminMembersPage() {
                         <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
                       </td>
                       <td className="px-4 py-4">
-                        <ActionLink to={`/admin/members/${member.id}`}>Edit</ActionLink>
+                        <div className="flex items-center gap-3">
+                          <ActionLink to={`/admin/members/${member.id}`}>Edit</ActionLink>
+                          <UpdateMemberIdDialog
+                            memberId={member.id}
+                            memberName={member.full_name}
+                            currentMemberId={member.member_id}
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}

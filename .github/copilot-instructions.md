@@ -53,6 +53,7 @@ Composability rule:
 - Design components to be composable through explicit props and children where appropriate.
 - Keep components focused and single-purpose; compose small components instead of building monoliths.
 - Separate orchestration from presentation: pages coordinate data, components render UI.
+- For row-level actions (for example action links that open dialogs), prefer self-managed components that own trigger/open-close state internally; page files should pass only the row data needed by that action.
 - Keep shared visual primitives and field renderers reusable across flows.
 - For forms specifically: page files orchestrate form state and submit flow; section components compose shared UI field primitives from `src/components/ui/`.
 
@@ -60,6 +61,7 @@ Guidelines:
 
 - Page components: route-level composition and query coordination only.
 - UI components: rendering and interaction only.
+- Action-dialog components: own local open/close UI state and trigger wiring; expose a small data-only prop API.
 - lib/infrastructure/: shared technical clients and utilities.
 - lib/domain/: domain contracts, schemas, validation helpers, and pure transforms.
 - Avoid circular imports and hidden cross-feature coupling.
