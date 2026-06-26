@@ -5,7 +5,7 @@ import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls
 import { Button } from '@/components/ui/Button'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog'
-
+import { AddMemberDialog } from './components/AddMemberDialog'
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 export function AdminMembersPage() {
@@ -80,6 +80,7 @@ export function AdminMembersPage() {
             Page {currentPage} of {totalPages}
           </p>
         </div>
+        <AddMemberDialog />
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-4">

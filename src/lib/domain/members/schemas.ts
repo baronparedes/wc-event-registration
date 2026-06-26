@@ -43,3 +43,37 @@ export const updateMemberSchema = z.object({
 })
 
 export type UpdateMemberInput = z.infer<typeof updateMemberSchema>
+
+export const createMemberSchema = z.object({
+  member_id: z
+    .string()
+    .trim()
+    .min(1, 'Member ID is required')
+    .max(100, 'Member ID must be 100 characters or less'),
+  first_name: z
+    .string()
+    .trim()
+    .min(1, 'First name is required')
+    .max(100, 'First name must be 100 characters or less'),
+  last_name: z
+    .string()
+    .trim()
+    .min(1, 'Last name is required')
+    .max(100, 'Last name must be 100 characters or less'),
+  nickname: optionalText(100, 'Nickname must be 100 characters or less'),
+  email: optionalEmail(),
+  phone: optionalText(50, 'Phone must be 50 characters or less'),
+  date_of_birth: optionalDate(),
+  role: z
+    .string()
+    .trim()
+    .min(1, 'Role is required')
+    .max(100, 'Role must be 100 characters or less'),
+  category: z
+    .string()
+    .trim()
+    .min(1, 'Category is required')
+    .max(100, 'Category must be 100 characters or less'),
+})
+
+export type CreateMemberInput = z.infer<typeof createMemberSchema>

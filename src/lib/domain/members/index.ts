@@ -4,4 +4,9 @@ export type {
   MemberLookupResult,
   AdminMember,
 } from './types'
-export { updateMemberSchema, type UpdateMemberInput } from './schemas'
+export {
+  updateMemberSchema,
+  createMemberSchema,
+  type UpdateMemberInput,
+  type CreateMemberInput,
+} from './schemas'
