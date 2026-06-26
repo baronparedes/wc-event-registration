@@ -18,7 +18,7 @@ describe('AdminEditEventPage', () => {
   it('renders event form in edit mode', () => {
     render(<AdminEditEventPage />)
 
-    expect(screen.getByText('Event Form edit')).toBeInTheDocument()
+    expect(screen.getByText('Event Form edit')).toBeTruthy()
     expect(mockAdminEventFormPage).toHaveBeenCalledWith({ mode: 'edit' })
   })
 })

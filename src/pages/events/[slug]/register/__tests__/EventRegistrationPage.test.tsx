@@ -212,7 +212,9 @@ describe('EventRegistrationPage', () => {
       writable: true,
       value: vi.fn().mockReturnValue({ matches: false }),
     })
-    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('uuid-123')
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue(
+      '11111111-1111-1111-1111-111111111111',
+    )
   })
 
   it('renders locked gate when event is unavailable', () => {
@@ -273,7 +275,7 @@ describe('EventRegistrationPage', () => {
         event_slug: 'sample-event',
         member_id: 'WC-001',
         responses: { team_name: 'A-Team' },
-        idempotency_key: 'uuid-123',
+        idempotency_key: '11111111-1111-1111-1111-111111111111',
       })
     })
 

@@ -84,14 +84,14 @@ describe('AdminEventFormPage', () => {
     render(<AdminEventFormPage mode="edit" />)
 
     const saveButton = await screen.findByRole('button', { name: 'Save Changes' })
-    expect(saveButton).toBeDisabled()
+    expect(saveButton.hasAttribute('disabled')).toBe(true)
 
     fireEvent.change(screen.getByLabelText('Title *'), {
       target: { value: 'Updated Event Title' },
     })
 
     await waitFor(() => {
-      expect(saveButton).toBeEnabled()
+      expect(saveButton.hasAttribute('disabled')).toBe(false)
     })
 
     fireEvent.click(saveButton)
