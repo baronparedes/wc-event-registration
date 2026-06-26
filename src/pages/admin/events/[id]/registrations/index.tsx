@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
+import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
+import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
 import { RegistrationsList, ExportButton } from './components'
 import { SectionCard } from '@/components/ui/SectionCard'
-import { Button } from '@/components/ui/Button'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
 
@@ -13,7 +14,6 @@ export function AdminRegistrationsPage() {
 
   const [pageSize, setPageSize] = useState<number>(25)
   const [cursor, setCursor] = useState<string | null>(null)
-  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([])
 
   const eventQuery = useAdminEventQuery(eventId ?? '')
   const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', { pageSize, cursor })
@@ -26,7 +26,8 @@ export function AdminRegistrationsPage() {
   const registrations = pagedResult?.items ?? []
   const hasMore = pagedResult?.hasMore ?? false
   const nextCursor = pagedResult?.nextCursor ?? null
-  const currentPage = cursorHistory.length + 1
+  const totalPages = pagedResult?.totalPages ?? 1
+  const currentPage = getCurrentPageFromCursor(cursor, pageSize)
 
   const isLoading = eventQuery.isLoading || registrationsQuery.isLoading
   const error = eventQuery.error || registrationsQuery.error
@@ -47,24 +48,28 @@ export function AdminRegistrationsPage() {
 
   function handleNextPage() {
     if (!nextCursor) return
-    setCursorHistory((prev) => [...prev, cursor])
     setCursor(nextCursor)
   }
 
   function handlePreviousPage() {
-    setCursorHistory((prev) => {
-      if (prev.length === 0) return prev
-      const nextHistory = [...prev]
-      const previousCursor = nextHistory.pop() ?? null
-      setCursor(previousCursor)
-      return nextHistory
-    })
+    setCursor(getPageCursor(currentPage - 1, pageSize))
+  }
+
+  function handleFirstPage() {
+    setCursor(null)
+  }
+
+  function handleGoToPage(page: number) {
+    setCursor(getPageCursor(page, pageSize))
+  }
+
+  function handleLastPage() {
+    setCursor(getPageCursor(totalPages, pageSize))
   }
 
   function handlePageSizeChange(nextPageSize: number) {
     setPageSize(nextPageSize)
     setCursor(null)
-    setCursorHistory([])
   }
 
   return (
@@ -75,7 +80,7 @@ export function AdminRegistrationsPage() {
             Registrations for {event?.title ?? 'Event'}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Page {currentPage} • {registrations.length} registrations on this page
+            Page {currentPage} of {totalPages} • {registrations.length} registrations on this page
           </p>
         </div>
         <ExportButton eventId={eventId} />
@@ -102,44 +107,22 @@ export function AdminRegistrationsPage() {
       )}
 
       <SectionCard title="Registrations">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <span>Rows per page</span>
-            <div className="flex items-center gap-1">
-              {PAGE_SIZE_OPTIONS.map((option) => (
-                <Button
-                  key={option}
-                  type="button"
-                  size="sm"
-                  variant={pageSize === option ? 'default' : 'outline'}
-                  onClick={() => handlePageSizeChange(option)}
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handlePreviousPage}
-              disabled={cursorHistory.length === 0 || isLoading}
-            >
-              Previous
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleNextPage}
-              disabled={!hasMore || !nextCursor || isLoading}
-            >
-              Next
-            </Button>
-          </div>
+        <div className="mb-4">
+          <AdminPaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            isLoading={isLoading}
+            canGoPrevious={currentPage > 1}
+            canGoNext={hasMore && Boolean(nextCursor)}
+            pageSize={pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageSizeChange={handlePageSizeChange}
+            onFirstPage={handleFirstPage}
+            onPreviousPage={handlePreviousPage}
+            onNextPage={handleNextPage}
+            onLastPage={handleLastPage}
+            onGoToPage={handleGoToPage}
+          />
         </div>
 
         <RegistrationsList

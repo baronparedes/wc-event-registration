@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure'
 import type { AdminEvent } from '@/lib/domain/events'
 
 export const ADMIN_EVENTS_QUERY_KEY = ['admin-events'] as const
@@ -15,13 +15,8 @@ export interface AdminEventsPage {
   items: AdminEvent[]
   nextCursor: string | null
   hasMore: boolean
-}
-
-function decodeOffsetCursor(cursor: string | null | undefined): number {
-  if (!cursor) return 0
-
-  const parsed = Number.parseInt(cursor, 10)
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+  totalCount: number
+  totalPages: number
 }
 
 /** Fetches all events ordered by created_at descending for admin management. */
@@ -32,10 +27,11 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
 
   return useQuery({
     queryKey: [...ADMIN_EVENTS_QUERY_KEY, pageSize, cursor] as const,
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<AdminEventsPage> => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('events')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + pageSize - 1)
@@ -43,12 +39,15 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
       if (error) throw error
 
       const items = (data ?? []) as AdminEvent[]
-      const hasMore = items.length === pageSize
+      const totalCount = count ?? 0
+      const hasMore = offset + items.length < totalCount
 
       return {
         items,
         hasMore,
         nextCursor: hasMore ? String(offset + pageSize) : null,
+        totalCount,
+        totalPages: getTotalPages(totalCount, pageSize),
       }
     },
   })

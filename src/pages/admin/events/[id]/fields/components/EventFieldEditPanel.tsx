@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
@@ -56,7 +56,6 @@ export function EventFieldEditPanel({
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     control,
     formState: { errors, isDirty, isValid },
@@ -69,7 +68,7 @@ export function EventFieldEditPanel({
 
   const { fields: optionFields, append, remove } = useFieldArray({ control, name: 'options' })
 
-  const selectedFieldType = watch('field_type') as EventFieldTypeEnum
+  const selectedFieldType = useWatch({ control, name: 'field_type' }) as EventFieldTypeEnum
   const showOptions = fieldTypeHasOptions(selectedFieldType)
   const showTextValidation = fieldTypeHasTextValidation(selectedFieldType)
   const showNumberValidation = fieldTypeHasNumberValidation(selectedFieldType)

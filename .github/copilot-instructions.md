@@ -110,6 +110,14 @@ Rules:
 - Keep useEffect minimal and focused on side effects only.
 - Avoid effect chains that replicate computed state.
 
+Lint-sensitive React patterns:
+
+- Do not mirror props or derived values into local state with `useEffect` just to keep them in sync. Prefer deriving the display value directly during render, or model explicit editing/transient state separately.
+- Do not call `setState` synchronously inside effects unless the effect is synchronizing with an external system and there is no render-time alternative.
+- Hooks must remain unconditional and top-level. If a hook is needed for render output, declare it before any early return branches.
+- When effect cleanup depends on timers, subscriptions, or mutable refs, capture the specific handle in a local variable inside the effect and clean up that local handle instead of re-reading mutable ref state in cleanup.
+- If a component or hook triggers a React lint rule, prefer restructuring state flow or hook placement over suppressing the rule.
+
 Component design:
 
 - One component should solve one UI concern.
@@ -136,10 +144,12 @@ Component design:
 **React Hook Form patterns:**
 
 - Use `zodResolver(schema)` to integrate Zod validation
-- Use `watch()` only when you need reactive updates (conditionals, dependent fields)
+- Use `watch()` sparingly and only for narrow, local reactive reads
+- Prefer `useWatch()` over `watch()` when subscribing to field values for rendering, conditional sections, or derived UI state; this avoids React Compiler / lint compatibility issues and makes subscriptions explicit
 - Use `reset(data)` to set default values and reset dirty state (useful for edit mode)
 - Pass `register()` output to shared form field primitives
 - Extract `formState` once at top level, not inside effects
+- Do not call `watch()` for whole-form subscriptions in render when `useWatch()` can scope the subscription to the needed field or form slice
 
 **React Query:**
 

@@ -32,9 +32,11 @@ export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
 
   // Clean up timeouts on unmount
   useEffect(() => {
+    const timeouts = timeoutsRef.current
+
     return () => {
-      if (timeoutsRef.current.fade) clearTimeout(timeoutsRef.current.fade)
-      if (timeoutsRef.current.clear) clearTimeout(timeoutsRef.current.clear)
+      if (timeouts.fade) clearTimeout(timeouts.fade)
+      if (timeouts.clear) clearTimeout(timeouts.clear)
     }
   }, [])
 
@@ -45,22 +47,25 @@ export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
     }
 
     // Schedule fade animation
-    timeoutsRef.current.fade = setTimeout(() => {
+    const fadeTimeout = setTimeout(() => {
       setIsFadingOut(true)
       onFadeStart?.()
     }, fadeOutDelay)
 
     // Schedule complete clear
-    timeoutsRef.current.clear = setTimeout(() => {
+    const clearTimeoutId = setTimeout(() => {
       setError(null)
       setIsFadingOut(false)
       setShouldAutoFadeOut(false)
       onClear?.()
     }, clearDelay)
 
+    timeoutsRef.current.fade = fadeTimeout
+    timeoutsRef.current.clear = clearTimeoutId
+
     return () => {
-      if (timeoutsRef.current.fade) clearTimeout(timeoutsRef.current.fade)
-      if (timeoutsRef.current.clear) clearTimeout(timeoutsRef.current.clear)
+      clearTimeout(fadeTimeout)
+      clearTimeout(clearTimeoutId)
     }
   }, [shouldAutoFadeOut, error, fadeOutDelay, clearDelay, onFadeStart, onClear])
 

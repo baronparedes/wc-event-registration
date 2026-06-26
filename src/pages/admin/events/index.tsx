@@ -1,26 +1,30 @@
 import { Link } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import {
   useAdminEventsQuery,
   usePublishEventMutation,
   useArchiveEventMutation,
 } from '@/hooks/domain/events'
-import { formatDateOnly } from '@/lib/infrastructure'
+import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton'
+import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
 import { Button } from '@/components/ui/Button'
 import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
 
-export function AdminEventsPage() {
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([])
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
-  const eventsQuery = useAdminEventsQuery({ pageSize: 20, cursor })
+export function AdminEventsPage() {
+  const [pageSize, setPageSize] = useState<number>(20)
+  const [cursor, setCursor] = useState<string | null>(null)
+
+  const eventsQuery = useAdminEventsQuery({ pageSize, cursor })
   const events = eventsQuery.data?.items ?? []
   const hasMore = eventsQuery.data?.hasMore ?? false
   const nextCursor = eventsQuery.data?.nextCursor ?? null
-  const currentPage = useMemo(() => cursorHistory.length + 1, [cursorHistory.length])
+  const totalPages = eventsQuery.data?.totalPages ?? 1
+  const currentPage = getCurrentPageFromCursor(cursor, pageSize)
 
   const isLoading = eventsQuery.isLoading
   const error = eventsQuery.error
@@ -49,18 +53,28 @@ export function AdminEventsPage() {
 
   function handleNextPage() {
     if (!nextCursor) return
-    setCursorHistory((prev) => [...prev, cursor])
     setCursor(nextCursor)
   }
 
   function handlePreviousPage() {
-    setCursorHistory((prev) => {
-      if (prev.length === 0) return prev
-      const nextHistory = [...prev]
-      const previousCursor = nextHistory.pop() ?? null
-      setCursor(previousCursor)
-      return nextHistory
-    })
+    setCursor(getPageCursor(currentPage - 1, pageSize))
+  }
+
+  function handleFirstPage() {
+    setCursor(null)
+  }
+
+  function handleGoToPage(page: number) {
+    setCursor(getPageCursor(page, pageSize))
+  }
+
+  function handleLastPage() {
+    setCursor(getPageCursor(totalPages, pageSize))
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    setCursor(null)
   }
 
   return (
@@ -71,7 +85,9 @@ export function AdminEventsPage() {
           <p className="text-sm text-muted">
             Create, edit, archive, and manage registration behavior.
           </p>
-          <p className="mt-1 text-xs text-muted">Page {currentPage}</p>
+          <p className="mt-1 text-xs text-muted">
+            Page {currentPage} of {totalPages}
+          </p>
         </div>
         <Button asChild size="md" variant="default">
           <Link to="/admin/events/new">New Event</Link>
@@ -167,28 +183,25 @@ export function AdminEventsPage() {
               </table>
             </div>
 
-            <div className="flex items-center justify-between border-t border-border px-6 py-3">
-              <p className="text-xs text-muted">Showing up to 20 events per page</p>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePreviousPage}
-                  disabled={cursorHistory.length === 0 || isLoading}
-                >
-                  Previous
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleNextPage}
-                  disabled={!hasMore || !nextCursor || isLoading}
-                >
-                  Next
-                </Button>
-              </div>
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p className="hidden text-xs text-muted sm:block">
+                Showing up to {pageSize} events per page
+              </p>
+              <AdminPaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                isLoading={isLoading}
+                canGoPrevious={currentPage > 1}
+                canGoNext={hasMore && Boolean(nextCursor)}
+                pageSize={pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageSizeChange={handlePageSizeChange}
+                onFirstPage={handleFirstPage}
+                onPreviousPage={handlePreviousPage}
+                onNextPage={handleNextPage}
+                onLastPage={handleLastPage}
+                onGoToPage={handleGoToPage}
+              />
             </div>
           </>
         )}

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure'
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 
 const DEFAULT_PAGE_SIZE = 25
@@ -31,13 +31,8 @@ export interface AdminRegistrationsPage {
   items: AdminRegistrationWithMember[]
   nextCursor: string | null
   hasMore: boolean
-}
-
-function decodeOffsetCursor(cursor: string | null | undefined): number {
-  if (!cursor) return 0
-
-  const parsed = Number.parseInt(cursor, 10)
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+  totalCount: number
+  totalPages: number
 }
 
 /**
@@ -51,21 +46,29 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
 
   return useQuery({
     queryKey: adminRegistrationsPageQueryKey(eventId, pageSize, cursor),
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<AdminRegistrationsPage> => {
-      const { data: registrations, error: registrationError } = await supabase
+      const {
+        data: registrations,
+        error: registrationError,
+        count,
+      } = await supabase
         .from('registrations')
-        .select('id, event_id, user_id, status, submitted_at, updated_at')
+        .select('id, event_id, user_id, status, submitted_at, updated_at', { count: 'exact' })
         .eq('event_id', eventId)
         .order('submitted_at', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + pageSize - 1)
 
       if (registrationError) throw registrationError
+      const totalCount = count ?? 0
       if (!registrations?.length) {
         return {
           items: [],
           nextCursor: null,
           hasMore: false,
+          totalCount,
+          totalPages: getTotalPages(totalCount, pageSize),
         }
       }
 
@@ -116,12 +119,14 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
         }
       })
 
-      const hasMore = items.length === pageSize
+      const hasMore = offset + items.length < totalCount
 
       return {
         items,
         hasMore,
         nextCursor: hasMore ? String(offset + pageSize) : null,
+        totalCount,
+        totalPages: getTotalPages(totalCount, pageSize),
       }
     },
     staleTime: 0,

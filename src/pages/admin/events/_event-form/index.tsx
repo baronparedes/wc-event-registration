@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
@@ -67,6 +67,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     setValue,
     watch,
     reset,
+    control,
     formState: { errors, isDirty, dirtyFields },
   } = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema),
@@ -124,6 +125,8 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     }
   }
 
+  const formValues = useWatch({ control }) as CreateEventInput
+
   if (isEditMode && isLoadingEvent) {
     return (
       <section className="mx-auto max-w-4xl">
@@ -142,7 +145,6 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
 
   const title = isEditMode ? 'Edit Event' : 'Create Event'
   const isArchivedEvent = isEditMode && existingEvent?.status === 'archived'
-  const formValues = watch()
 
   return (
     <section className="mx-auto max-w-4xl space-y-6">
