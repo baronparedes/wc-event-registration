@@ -60,9 +60,11 @@ describe('useMemberLookupState', () => {
   it('handles a successful lookup for a new registration', async () => {
     mockMutateAsync.mockResolvedValue({
       profile: {
-        member_id: 'WC-001',
-        display_name: 'Ada Lovelace',
-        metadata: { role: 'member' },
+        user_id: '5f83f4cd-4370-4c4a-bd02-9730ec9bc8dc',
+        full_name: 'Ada Lovelace',
+        nickname: null,
+        first_name: 'Ada',
+        last_name: 'Lovelace',
       },
       existing_registration: null,
     })
@@ -76,7 +78,7 @@ describe('useMemberLookupState', () => {
     })
 
     expect(outcome).toEqual({ success: true, mode: 'new_registration' })
-    expect(result.current.matchedMember?.member_id).toBe('WC-001')
+    expect(result.current.matchedMember?.full_name).toBe('Ada Lovelace')
     expect(result.current.verifiedMemberId).toBe(' WC-001 ')
     expect(result.current.isUpdateMode).toBe(false)
     expect(result.current.prefillResponses).toBeNull()
@@ -85,14 +87,17 @@ describe('useMemberLookupState', () => {
   it('blocks duplicate registrations and exposes the locked step message', async () => {
     mockMutateAsync.mockResolvedValue({
       profile: {
-        member_id: 'WC-002',
-        display_name: 'Grace Hopper',
-        metadata: { role: 'member' },
+        user_id: '81c4946d-edeb-4f88-97fc-c7632d94f8f5',
+        full_name: 'Grace Hopper',
+        nickname: null,
+        first_name: 'Grace',
+        last_name: 'Hopper',
       },
       existing_registration: {
         exists: true,
         edit_allowed: false,
-        responses: null,
+        status: 'submitted',
+        responses: {},
       },
     })
 
@@ -161,9 +166,11 @@ describe('useMemberLookupState', () => {
   it('clears state via reset and clearMember actions', async () => {
     mockMutateAsync.mockResolvedValue({
       profile: {
-        member_id: 'WC-003',
-        display_name: 'Alan Turing',
-        metadata: { role: 'member' },
+        user_id: '84446979-2e14-4812-a076-9360c4f92fc0',
+        full_name: 'Alan Turing',
+        nickname: null,
+        first_name: 'Alan',
+        last_name: 'Turing',
       },
       existing_registration: null,
     })

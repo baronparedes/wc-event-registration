@@ -24,11 +24,16 @@ describe('EventHeaderCard', () => {
         availability={{
           status: 'available',
           event: {
+            id: '3bfc2d8f-067f-4f6f-9403-f420f819eca7',
+            slug: 'summer-sprint',
             title: 'Summer Sprint',
             description: null,
             location: 'Main Hall',
             starts_at: '2026-06-23T10:00:00.000Z',
             ends_at: '2026-06-23T12:00:00.000Z',
+            registration_opens_at: '2026-06-01T10:00:00.000Z',
+            registration_closes_at: '2026-06-30T23:59:00.000Z',
+            registration_mode: 'open',
           },
           registration_count: 12,
         }}

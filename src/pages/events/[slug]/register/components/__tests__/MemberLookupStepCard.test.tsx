@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { useForm } from 'react-hook-form'
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemberLookupStepCard } from '../MemberLookupStepCard'
 
@@ -12,25 +13,11 @@ function Harness(props: {
   onLookupSubmit: (values: { memberId: string }) => void
   onDismissLookupError?: () => void
 }) {
-  let memberId = props.initialMemberId ?? ''
-
-  const form = {
-    register: () => ({
-      name: 'memberId',
-      ref: vi.fn(),
-      onBlur: vi.fn(),
-      onChange: (event: { target: { value: string } }) => {
-        memberId = event.target.value
-      },
-    }),
-    handleSubmit:
-      (callback: (values: { memberId: string }) => void) =>
-      (event?: { preventDefault: () => void }) => {
-        event?.preventDefault()
-        callback({ memberId })
-      },
-    formState: { errors: {} },
-  }
+  const form = useForm<{ memberId: string }>({
+    defaultValues: {
+      memberId: props.initialMemberId ?? '',
+    },
+  })
 
   return (
     <MemberLookupStepCard
@@ -59,18 +46,26 @@ describe('MemberLookupStepCard', () => {
     vi.restoreAllMocks()
   })
 
-  it('submits the member id when the form is active', () => {
+  it('submits the member id when the form is active', async () => {
     const onLookupSubmit = vi.fn()
 
     render(<Harness onLookupSubmit={onLookupSubmit} />)
 
-    fireEvent.change(screen.getByLabelText('Member ID'), {
-      target: { value: 'WC-001' },
+    await act(async () => {
+      fireEvent.input(screen.getByLabelText('Member ID'), {
+        target: { value: 'WC-001' },
+      })
     })
 
-    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!)
+    await act(async () => {
+      fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!)
+    })
 
-    expect(onLookupSubmit).toHaveBeenCalledWith({ memberId: 'WC-001' })
+    await waitFor(() => {
+      expect(onLookupSubmit).toHaveBeenCalled()
+    })
+
+    expect(onLookupSubmit.mock.calls[0]?.[0]).toEqual({ memberId: 'WC-001' })
   })
 
   it('renders the pending state as disabled', () => {

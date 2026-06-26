@@ -9,19 +9,23 @@ describe('useSlugGeneration', () => {
     const values: CreateEventInput = {
       title: 'My New Event',
       slug: '',
+      description: '',
+      location: '',
       starts_at: '2026-08-01T10:00',
       ends_at: '2026-08-01T18:00',
-      is_published: false,
-      registration_open: true,
-      max_registrations: null,
+      registration_opens_at: '2026-07-01T10:00',
+      registration_closes_at: '2026-07-31T18:00',
+      status: 'draft',
+      duplicate_policy: 'block',
+      registration_mode: 'open',
     }
 
     const watch = ((key: keyof CreateEventInput) => values[key]) as UseFormWatch<CreateEventInput>
-    const setValue = vi.fn(
-      (key: keyof CreateEventInput, value: CreateEventInput[keyof CreateEventInput]) => {
-        values[key] = value
-      },
-    ) as unknown as UseFormSetValue<CreateEventInput>
+    const setValue = vi.fn((key: keyof CreateEventInput, value: unknown) => {
+      if (key === 'slug') {
+        values.slug = String(value)
+      }
+    }) as unknown as UseFormSetValue<CreateEventInput>
     const onManualEdit = vi.fn()
 
     const { result, rerender } = renderHook(
@@ -48,11 +52,15 @@ describe('useSlugGeneration', () => {
     const values: CreateEventInput = {
       title: 'Existing Event',
       slug: 'existing-event',
+      description: '',
+      location: '',
       starts_at: '2026-08-01T10:00',
       ends_at: '2026-08-01T18:00',
-      is_published: true,
-      registration_open: true,
-      max_registrations: null,
+      registration_opens_at: '2026-07-01T10:00',
+      registration_closes_at: '2026-07-31T18:00',
+      status: 'published',
+      duplicate_policy: 'block',
+      registration_mode: 'open',
     }
 
     const watch = ((key: keyof CreateEventInput) => values[key]) as UseFormWatch<CreateEventInput>
