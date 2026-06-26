@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
 import { describe, expect, it, vi } from 'vitest'
-import { DynamicFieldsStepCard } from '@/pages/events/[slug]/register/components'
+import { DynamicFieldsStepCard } from '../index'
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
 import type { MemberLookupProfile } from '@/lib/domain/members'
 
@@ -13,7 +13,7 @@ const matchedMember: MemberLookupProfile = {
   last_name: 'Doe',
 }
 
-const activeFields: PublicEventField[] = [
+const baseFields: PublicEventField[] = [
   {
     id: 'field-1',
     event_id: 'event-1',
@@ -28,12 +28,188 @@ const activeFields: PublicEventField[] = [
     validation_rules: {},
     display_order: 0,
   },
+  {
+    id: 'field-2',
+    event_id: 'event-1',
+    field_key: 'notes',
+    label: 'Notes',
+    field_type: 'textarea',
+    is_required: false,
+    is_active: true,
+    placeholder: 'Add notes',
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 1,
+  },
+  {
+    id: 'field-3',
+    event_id: 'event-1',
+    field_key: 'age',
+    label: 'Age',
+    field_type: 'number',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 2,
+  },
+  {
+    id: 'field-4',
+    event_id: 'event-1',
+    field_key: 'email',
+    label: 'Email',
+    field_type: 'email',
+    is_required: false,
+    is_active: true,
+    placeholder: 'name@example.com',
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 3,
+  },
+  {
+    id: 'field-5',
+    event_id: 'event-1',
+    field_key: 'phone',
+    label: 'Phone',
+    field_type: 'phone',
+    is_required: false,
+    is_active: true,
+    placeholder: '555-0100',
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 4,
+  },
+  {
+    id: 'field-6',
+    event_id: 'event-1',
+    field_key: 'start_date',
+    label: 'Start Date',
+    field_type: 'date',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 5,
+  },
+  {
+    id: 'field-7',
+    event_id: 'event-1',
+    field_key: 'start_time',
+    label: 'Start Time',
+    field_type: 'datetime',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 6,
+  },
+  {
+    id: 'field-8',
+    event_id: 'event-1',
+    field_key: 'meal_choice',
+    label: 'Meal Choice',
+    field_type: 'select',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [
+      { label: 'Vegan', value: 'vegan' },
+      { label: 'Vegetarian', value: 'vegetarian' },
+    ],
+    validation_rules: {},
+    display_order: 7,
+  },
+  {
+    id: 'field-9',
+    event_id: 'event-1',
+    field_key: 'shirt_size',
+    label: 'Shirt Size',
+    field_type: 'radio',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [
+      { label: 'Small', value: 's' },
+      { label: 'Large', value: 'l' },
+    ],
+    validation_rules: {},
+    display_order: 8,
+  },
+  {
+    id: 'field-10',
+    event_id: 'event-1',
+    field_key: 'activities',
+    label: 'Activities',
+    field_type: 'multi_select',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [
+      { label: 'Run', value: 'run' },
+      { label: 'Swim', value: 'swim' },
+    ],
+    validation_rules: {},
+    display_order: 9,
+  },
+  {
+    id: 'field-11',
+    event_id: 'event-1',
+    field_key: 'terms',
+    label: 'Terms',
+    field_type: 'checkbox',
+    is_required: true,
+    is_active: true,
+    placeholder: 'I agree to the event terms.',
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 10,
+  },
+  {
+    id: 'field-12',
+    event_id: 'event-1',
+    field_key: 'terms_duplicate',
+    label: 'Terms Duplicate',
+    field_type: 'boolean',
+    is_required: false,
+    is_active: true,
+    placeholder: 'I agree again.',
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 11,
+  },
 ]
 
 function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsStepCard>>) {
   function Harness() {
     const dynamicForm = useForm<DynamicFieldResponseValues>({
-      defaultValues: { team_name: '' },
+      defaultValues: {
+        team_name: '',
+        notes: '',
+        age: '',
+        email: '',
+        phone: '',
+        start_date: '',
+        start_time: '',
+        meal_choice: '',
+        shirt_size: '',
+        activities: [],
+        terms: false,
+        terms_duplicate: false,
+      },
     })
 
     return (
@@ -42,7 +218,7 @@ function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsSte
         isLoadingFields={false}
         isFieldsError={false}
         fieldConfigIssues={[]}
-        activeFields={activeFields}
+        activeFields={props?.activeFields ?? baseFields}
         dynamicForm={dynamicForm}
         onSubmit={props?.onSubmit ?? vi.fn()}
         fieldErrorMessage={(fieldKey) => {
@@ -61,7 +237,41 @@ function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsSte
 }
 
 describe('DynamicFieldsStepCard', () => {
-  it('submits entered dynamic field values for a matched member', () => {
+  it('renders the loading, error, empty, and locked branches', () => {
+    const loading = renderCard({ isLoadingFields: true })
+
+    expect(loading.container.querySelector('[aria-hidden="true"]')).toBeTruthy()
+    loading.unmount()
+
+    const issues = renderCard({
+      isLoadingFields: false,
+      isFieldsError: true,
+      fieldConfigIssues: ['Bad field config'],
+      activeFields: [],
+    })
+
+    expect(
+      screen.getByText('We could not load your form right now. Please try Step 1 again.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Some questions could not be shown right now.')).toBeInTheDocument()
+    expect(screen.getByText('Bad field config')).toBeInTheDocument()
+    issues.unmount()
+
+    const empty = renderCard({ activeFields: [], isLoadingFields: false })
+    expect(screen.getByText('There are no form questions for this event yet.')).toBeInTheDocument()
+    empty.unmount()
+
+    renderCard({
+      isLocked: true,
+      lockedMessage: 'Already registered',
+      activeFields: [],
+    })
+
+    expect(screen.getByText('Already registered')).toBeInTheDocument()
+    expect(screen.getByText('Please complete Step 1 to continue.')).toBeInTheDocument()
+  })
+
+  it('submits entered dynamic field values for a matched member', async () => {
     const onSubmit = vi.fn()
 
     renderCard({ onSubmit })
@@ -70,15 +280,49 @@ describe('DynamicFieldsStepCard', () => {
       fireEvent.change(screen.getByLabelText('Team Name *'), {
         target: { value: 'A-Team' },
       })
+      fireEvent.change(screen.getByLabelText('Notes'), {
+        target: { value: 'Bring snacks' },
+      })
+      fireEvent.change(screen.getByLabelText('Age'), {
+        target: { value: '42' },
+      })
+      fireEvent.change(screen.getByLabelText('Email'), {
+        target: { value: 'team@example.com' },
+      })
+      fireEvent.change(screen.getByLabelText('Phone'), {
+        target: { value: '555-0100' },
+      })
+      fireEvent.change(screen.getByLabelText('Start Date'), {
+        target: { value: '2026-06-23' },
+      })
+      fireEvent.change(screen.getByLabelText('Start Time'), {
+        target: { value: '2026-06-23T10:00' },
+      })
+      fireEvent.change(screen.getByLabelText('Meal Choice'), {
+        target: { value: 'vegetarian' },
+      })
+      fireEvent.click(screen.getByLabelText('Small'))
+      fireEvent.click(screen.getByLabelText('Run'))
+      fireEvent.click(screen.getByLabelText('I agree to the event terms.'))
+      fireEvent.click(screen.getByLabelText('I agree again.'))
     })
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Submit Registration' }))
     })
 
-    return waitFor(() => {
+    await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled()
     })
+    expect(screen.getByLabelText('Notes')).toHaveValue('Bring snacks')
+    expect(screen.getByLabelText('Age')).toHaveValue(42)
+    expect(screen.getByLabelText('Email')).toHaveValue('team@example.com')
+    expect(screen.getByLabelText('Phone')).toHaveValue('555-0100')
+    expect(screen.getByLabelText('Meal Choice')).toHaveValue('vegetarian')
+    expect(screen.getByLabelText('Small')).toBeChecked()
+    expect(screen.getByLabelText('Run')).toBeChecked()
+    expect(screen.getByLabelText('I agree to the event terms.')).toBeChecked()
+    expect(screen.getByLabelText('I agree again.')).toBeChecked()
   })
 
   it('renders pending state and surfaced submit messages', () => {

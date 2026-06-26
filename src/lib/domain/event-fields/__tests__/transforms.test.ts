@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createDynamicFieldDefaultValues,
   fieldToFormValues,
+  normalizeDynamicFieldAnswersForPreview,
   toValidationRules,
   type AdminEventField,
   type EventFieldFormValues,
@@ -90,6 +91,92 @@ describe('event-fields transforms', () => {
       min: 1,
       max: 10,
     })
+  })
+
+  it('builds all supported validation rule types when values are provided', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'positions',
+      label: 'Positions',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '1',
+      val_max_length: '5',
+      val_pattern: '^x+$',
+      val_min: '0.5',
+      val_max: '9.5',
+      val_min_selections: '2',
+      val_max_selections: '4',
+      val_min_date: '2026-01-01',
+      val_max_date: '2026-12-31',
+    }
+
+    const rules = toValidationRules(values)
+
+    expect(rules).toEqual({
+      min_length: 1,
+      max_length: 5,
+      pattern: '^x+$',
+      min: 0.5,
+      max: 9.5,
+      min_selections: 2,
+      max_selections: 4,
+      min_date: '2026-01-01',
+      max_date: '2026-12-31',
+    })
+  })
+
+  it('normalizes nullable admin field metadata into safe form defaults', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        placeholder: null,
+        help_text: null,
+        options: null as unknown as Array<{ label: string; value: string }>,
+        validation_rules: {
+          pattern: 123 as unknown as string,
+          min_date: 42 as unknown as string,
+          max_date: false as unknown as string,
+        },
+      }),
+    )
+
+    expect(values.placeholder).toBe('')
+    expect(values.help_text).toBe('')
+    expect(values.options).toEqual([])
+    expect(values.val_pattern).toBe('')
+    expect(values.val_min_date).toBe('')
+    expect(values.val_max_date).toBe('')
+  })
+
+  it('normalizes dynamic answer payloads into preview records', () => {
+    const fields = [
+      makePublicField({ id: 'f1', field_key: 'team_name', field_type: 'text' }),
+      makePublicField({ id: 'f2', field_key: 'accept_terms', field_type: 'checkbox' }),
+    ]
+
+    const preview = normalizeDynamicFieldAnswersForPreview(fields, {
+      team_name: 'Falcons',
+      accept_terms: true,
+      unrelated: 'ignored',
+    })
+
+    expect(preview).toEqual([
+      {
+        event_field_id: 'f1',
+        field_key: 'team_name',
+        field_type: 'text',
+        value: 'Falcons',
+      },
+      {
+        event_field_id: 'f2',
+        field_key: 'accept_terms',
+        field_type: 'checkbox',
+        value: true,
+      },
+    ])
   })
 
   it('creates dynamic defaults by field type', () => {

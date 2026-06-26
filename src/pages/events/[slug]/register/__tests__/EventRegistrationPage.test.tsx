@@ -14,6 +14,8 @@ const {
   mockUseErrorWithFadeout,
   mockUseScanBuffer,
   mockUseKioskInactivityReset,
+  mockFocusMemberIdInput,
+  mockScanBufferHandler,
   mockDynamicFieldsStepCard,
   mockLockedGateCard,
   memberLookupState,
@@ -61,6 +63,8 @@ const {
     mockUseErrorWithFadeout: vi.fn(),
     mockUseScanBuffer: vi.fn(),
     mockUseKioskInactivityReset: vi.fn(),
+    mockFocusMemberIdInput: vi.fn(),
+    mockScanBufferHandler: { current: null as null | ((scanValue: string) => void) },
     mockDynamicFieldsStepCard: vi.fn(),
     mockLockedGateCard: vi.fn(),
     memberLookupState: lookupState,
@@ -130,9 +134,17 @@ vi.mock('@/hooks/utils', async () => {
 
   return {
     ...actual,
-    useRfidAutoFocus: (...args: unknown[]) => mockUseRfidAutoFocus(...args),
+    useRfidAutoFocus: (...args: unknown[]) => {
+      mockUseRfidAutoFocus(...args)
+      return mockFocusMemberIdInput
+    },
     useErrorWithFadeout: (...args: unknown[]) => mockUseErrorWithFadeout(...args),
-    useScanBuffer: (...args: unknown[]) => mockUseScanBuffer(...args),
+    useScanBuffer: (...args: unknown[]) => {
+      mockUseScanBuffer(...args)
+
+      const [handler] = args as [(scanValue: string) => void]
+      mockScanBufferHandler.current = handler
+    },
     useKioskInactivityReset: (...args: unknown[]) => mockUseKioskInactivityReset(...args),
   }
 })
@@ -172,7 +184,7 @@ describe('EventRegistrationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUseParams.mockReturnValue({ slug: 'sample-event' })
-    mockUseRfidAutoFocus.mockReturnValue(vi.fn())
+    mockUseRfidAutoFocus.mockReturnValue(mockFocusMemberIdInput)
     mockUseErrorWithFadeout.mockReturnValue({
       error: null,
       isFadingOut: false,
@@ -184,6 +196,7 @@ describe('EventRegistrationPage', () => {
       isPending: false,
     })
     mockUseMemberLookupState.mockReturnValue(memberLookupState)
+    mockScanBufferHandler.current = null
     mockUsePublicEventFieldsQuery.mockReturnValue({
       data: {
         validFields: [
@@ -322,5 +335,97 @@ describe('EventRegistrationPage', () => {
     })
 
     expect(mockToastError).toHaveBeenCalledWith('Already registered for this event')
+  })
+
+  it('shows validation error when event slug is missing at submit time', async () => {
+    mockUseParams.mockReturnValue({ slug: undefined })
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Submit' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Event slug is missing')).toBeInTheDocument()
+    })
+
+    expect(mockSubmitMutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('shows unavailable-event error when submission is attempted while event is not available', async () => {
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'unavailable',
+        reason: 'registration_closed',
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    expect(screen.getByText('Locked Gate')).toBeInTheDocument()
+    expect(mockDynamicFieldsStepCard).not.toHaveBeenCalled()
+  })
+
+  it('runs scan-buffer success path and update-mode scroll branch', async () => {
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: true,
+      mode: 'update_registration',
+    })
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+      handleLookupSubmit: runMemberLookupSubmit,
+    })
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    expect(mockScanBufferHandler.current).toBeTypeOf('function')
+
+    await mockScanBufferHandler.current?.('WC-100')
+
+    expect(runMemberLookupSubmit).toHaveBeenCalledWith({ memberId: 'WC-100' })
   })
 })
