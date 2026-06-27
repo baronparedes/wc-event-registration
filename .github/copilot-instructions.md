@@ -79,6 +79,61 @@ Guidelines:
 - Benefits: Cleaner code, easier refactoring, shorter import statements.
 - Avoid: deep relative paths like `import X from '../../../../hooks'`.
 
+## Constants Architecture
+
+Use centralized constants from `src/config/constants/` for reusable app-wide values. Prefer importing from the barrel `@/config/constants`.
+
+Current structure:
+
+- `routes.ts`: route paths, prefixes, and route-builder helpers.
+- `queryKeys.ts`: shared React Query key factories.
+- `pagination.ts`: shared page-size defaults, options, and pagination stale-time values.
+- `timing.ts`: shared timing constants (for example debounce and transition delays).
+- `messages.ts`: shared UI copy for repeated toasts, loading, empty, error, and status labels.
+- `validation.ts`: shared regex patterns used across domains (slug, field key, date/datetime, email, phone).
+- `index.ts`: constants barrel export.
+
+Rules:
+
+- Reuse existing constants before adding new literals in pages, hooks, or schemas.
+- Keep constants grouped by concern; do not create a catch-all constants file.
+- For repeated user-facing copy, add/update `messages.ts` and consume from there.
+- For shared regex patterns, add/update `validation.ts` and consume from domain schemas.
+- Keep schema-specific numeric constraints (for example many max-length boundaries) in domain schemas unless explicitly requested to centralize.
+- Do not reintroduce `src/config/constants/api.ts`; API request details in `src/lib/infrastructure/supabase.ts` are intentionally inlined.
+- If a value is feature-local and used once, keep it local instead of forcing centralization.
+
+Decision checklist (use in order):
+
+1. Is the value reused across multiple files/features?
+
+- Yes: move to `src/config/constants/<concern>.ts`.
+- No: keep local.
+
+2. Is it repeated user-facing copy (toast/loading/empty/error/status)?
+
+- Yes: use `messages.ts`.
+
+3. Is it a shared regex used by schemas/validation?
+
+- Yes: use `validation.ts`.
+
+4. Is it route, navigation, or URL-construction logic?
+
+- Yes: use `routes.ts`.
+
+5. Is it query-key composition for React Query?
+
+- Yes: use `queryKeys.ts`.
+
+6. Is it pagination or timing behavior reused in UI/hooks?
+
+- Yes: use `pagination.ts` or `timing.ts`.
+
+7. Is it a domain-specific rule unlikely to be shared (for example field-level limits)?
+
+- Yes: keep it in the owning domain schema/module.
+
 ## Lib Structure
 
 - Keep shared technical infrastructure under `src/lib/infrastructure/`.
