@@ -18,7 +18,7 @@ interface ReactivateRegistrationErrorResponse {
 }
 
 /**
- * Reactivates a registration by restoring its status from 'cancelled' to 'updated'.
+ * Reactivates a registration by restoring its status from 'cancelled' to 'submitted'.
  * Invalidates the registrations list query on success.
  */
 export function useReactivateRegistrationMutation(eventId: string) {

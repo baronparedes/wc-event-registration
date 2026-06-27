@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
+import { Button } from '@/components/ui/Button'
 import { RegistrationsList, ExportButton } from './components'
-import { SectionCard } from '@/components/ui/SectionCard'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
 
@@ -14,9 +14,25 @@ export function AdminRegistrationsPage() {
 
   const [pageSize, setPageSize] = useState<number>(25)
   const [cursor, setCursor] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [searchTerm])
 
   const eventQuery = useAdminEventQuery(eventId ?? '')
-  const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', { pageSize, cursor })
+  const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', {
+    pageSize,
+    cursor,
+    searchTerm: normalizedSearchTerm,
+  })
 
   if (!eventId) {
     return <div>Invalid event ID</div>
@@ -36,15 +52,20 @@ export function AdminRegistrationsPage() {
     return (
       <section className="space-y-4">
         <h1 className="font-heading text-3xl font-bold text-text">Event Registrations</h1>
-        <SectionCard title="Error">
+        <div className="rounded-2xl border border-border bg-surface p-4">
           <p className="text-sm text-red-600">Error loading registrations: {String(error)}</p>
-        </SectionCard>
+        </div>
       </section>
     )
   }
 
   const event = eventQuery.data
   const isEventArchived = event?.status === 'archived'
+
+  function handleSearchTermChange(nextSearchTerm: string) {
+    setSearchTerm(nextSearchTerm)
+    setCursor(null)
+  }
 
   function handleNextPage() {
     if (!nextCursor) return
@@ -106,8 +127,45 @@ export function AdminRegistrationsPage() {
         </div>
       )}
 
-      <SectionCard title="Registrations">
-        <div className="mb-4">
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
+            Search registrations
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => handleSearchTermChange(event.target.value)}
+              placeholder="Search by name, member ID, or email"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleSearchTermChange('')}
+            disabled={normalizedSearchTerm.length === 0}
+          >
+            Clear
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface">
+        <RegistrationsList
+          registrations={registrations}
+          isLoading={isLoading}
+          eventId={eventId}
+          isEventArchived={isEventArchived}
+          searchTerm={normalizedSearchTerm}
+        />
+
+        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="hidden text-xs text-muted sm:block">
+            {normalizedSearchTerm.length > 0
+              ? `Showing up to ${pageSize} matching registrations per page`
+              : `Showing up to ${pageSize} registrations per page`}
+          </p>
           <AdminPaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -124,14 +182,7 @@ export function AdminRegistrationsPage() {
             onGoToPage={handleGoToPage}
           />
         </div>
-
-        <RegistrationsList
-          registrations={registrations}
-          isLoading={isLoading}
-          eventId={eventId}
-          isEventArchived={isEventArchived}
-        />
-      </SectionCard>
+      </div>
     </section>
   )
 }

@@ -11,6 +11,7 @@ interface RegistrationsListProps {
   isLoading?: boolean
   eventId: string
   isEventArchived?: boolean
+  searchTerm?: string
 }
 
 function getStatusBadge(status: string) {
@@ -58,6 +59,7 @@ export function RegistrationsList({
   isLoading,
   eventId,
   isEventArchived,
+  searchTerm,
 }: RegistrationsListProps) {
   const [selectedRegistration, setSelectedRegistration] =
     useState<AdminRegistrationWithMember | null>(null)
@@ -78,7 +80,11 @@ export function RegistrationsList({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center text-gray-500">
-          <p className="text-base">No registrations yet</p>
+          <p className="text-base">
+            {searchTerm && searchTerm.length > 0
+              ? 'No registrations matched your search.'
+              : 'No registrations yet'}
+          </p>
         </div>
       </div>
     )

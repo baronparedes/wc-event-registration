@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
     const { error: updateError } = await adminClient
       .from('registrations')
       .update({
-        status: 'updated',
+        status: 'submitted',
         updated_at: new Date().toISOString(),
       })
       .eq('id', registration_id)

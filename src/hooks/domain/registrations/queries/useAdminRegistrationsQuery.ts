@@ -4,6 +4,10 @@ import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 
 const DEFAULT_PAGE_SIZE = 25
 
+function escapeOrFilterValue(value: string): string {
+  return value.replace(/[,%_]/g, (char) => `\\${char}`)
+}
+
 type UserMetadata = {
   role?: unknown
   category?: unknown
@@ -20,11 +24,13 @@ export const adminRegistrationsPageQueryKey = (
   eventId: string,
   pageSize: number,
   cursor: string | null,
-) => [...ADMIN_REGISTRATIONS_QUERY_KEY(eventId), pageSize, cursor] as const
+  searchTerm: string,
+) => [...ADMIN_REGISTRATIONS_QUERY_KEY(eventId), pageSize, cursor, searchTerm] as const
 
 export interface AdminRegistrationsPageParams {
   pageSize?: number
   cursor?: string | null
+  searchTerm?: string
 }
 
 export interface AdminRegistrationsPage {
@@ -42,23 +48,44 @@ export interface AdminRegistrationsPage {
 export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegistrationsPageParams) {
   const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
   const cursor = params?.cursor ?? null
+  const searchTerm = params?.searchTerm?.trim() ?? ''
   const offset = decodeOffsetCursor(cursor)
 
   return useQuery({
-    queryKey: adminRegistrationsPageQueryKey(eventId, pageSize, cursor),
+    queryKey: adminRegistrationsPageQueryKey(eventId, pageSize, cursor, searchTerm),
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<AdminRegistrationsPage> => {
-      const {
-        data: registrations,
-        error: registrationError,
-        count,
-      } = await supabase
+      let registrationsQuery = supabase
         .from('registrations')
         .select('id, event_id, user_id, status, submitted_at, updated_at', { count: 'exact' })
         .eq('event_id', eventId)
         .order('submitted_at', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + pageSize - 1)
+
+      if (searchTerm.length > 0) {
+        const escapedSearchTerm = escapeOrFilterValue(searchTerm)
+        const { data: matchingUsers, error: userSearchError } = await supabase
+          .from('users')
+          .select('id')
+          .or(
+            `full_name.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%`,
+          )
+        if (userSearchError) throw userSearchError
+        const matchingUserIds = matchingUsers?.map((u) => u.id) ?? []
+        if (matchingUserIds.length === 0) {
+          return {
+            items: [],
+            nextCursor: null,
+            hasMore: false,
+            totalCount: 0,
+            totalPages: getTotalPages(0, pageSize),
+          }
+        }
+        registrationsQuery = registrationsQuery.in('user_id', matchingUserIds)
+      }
+
+      const { data: registrations, error: registrationError, count } = await registrationsQuery
 
       if (registrationError) throw registrationError
       const totalCount = count ?? 0
