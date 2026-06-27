@@ -14,7 +14,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 
 ## Confirmed Decisions
 
-- UI stack: Shadcn UI + Tailwind + Radix primitives
+- UI stack: Shadcn UI + Tailwind + Base UI primitives
 - Form stack: React Hook Form + Zod
 - Theme: Theme A Civic Trust
 - Duplicate policy: configurable per event (block or allow update)
@@ -24,9 +24,9 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Member profile shape: nickname is first-class; role and category remain in metadata
 - **Hook organization**: Domain-scoped folders with operation separation (queries/mutations/state); shared utilities in /hooks/utils/; one-hook-per-file pattern; naming: `use<Entity>Query`, `use<Action><Entity>Mutation`, `use<Entity>State`
 
-## Progress Snapshot (2026-06-24)
+## Progress Snapshot (2026-06-27)
 
-Completed through Chunk 10:
+Completed through Chunk 11 and Phase 6 Day 1 hardening:
 
 - Chunk 0: app scaffold + route shell + theme baseline
 - Chunk 1: core schema + import pipeline + local seed generator workflow
@@ -39,8 +39,12 @@ Completed through Chunk 10:
 - Chunk 8: event publishing workflow + status transitions + requirement enforcement
 - Chunk 9: event field configuration CRUD + field builder + all 12 field types + status-based restrictions (NEW)
 - Chunk 10: registrations list/detail, cancel/reactivate actions, CSV export, verified admin auth, and shared edge-function rate limiting
+- Chunk 11: admin registrations hardening and operational polish (Gate C focus)
+- Phase 6 Day 1: runtime safety + backend validation hardening (error boundary, route validation, login RHF migration, backend field validation)
+- CI quality gate workflow added at `.github/workflows/ci.yml` (runs `npm run ci:gate` on PR and main)
+- Test coverage baseline currently above stop-ship threshold (`coverage/coverage-summary.json`: statements 81.86%, branches 70.38%)
 
-Next active target: Chunk 11 (admin registrations hardening and operational polish backlog).
+Next active target: Phase 6 Day 2-7 operational readiness and launch verification, followed by the tech debt backlog.
 
 ## Phase Plan
 
@@ -181,35 +185,18 @@ Chunk 8 completion verified on 2026-06-23:
 - usePublishEventMutation: Validates requirements before publish, returns user-friendly error listing missing fields ✅
 - TypeScript strict, build passes with 256 modules, 688 KB gzipped ✅
 
-### Infrastructure Refactor: Hook Organization (2026-06-23 afternoon)
+### Infrastructure Snapshot: Hook Organization (Current)
 
-Hook architecture reorganized for clarity and maintainability without feature changes:
+Current hook architecture is domain-scoped with operation folders broadly adopted:
 
-- **Admin domain split into feature-scoped folders**:
-  - `/admin/auth/`: One-hook-per-file pattern for auth lifecycle (useAdminAuthQuery, useAdminLoginMutation, useAdminLogoutMutation)
-  - `/admin/events/`: Queries and mutations separated into subfolders (useAdminEventsQuery, useAdminEventQuery + 4 mutation hooks)
-  - `/admin/fields/`: Queries and mutations separated into subfolders (useAdminEventFieldsQuery + 4 mutation hooks)
-  - Auth business logic moved to `/src/lib/admin/authUtils.ts` (shared logic no longer in hooks)
+- `src/hooks/domain/events/`, `src/hooks/domain/event-fields/`, `src/hooks/domain/members/`, and `src/hooks/domain/registrations/` use `queries/` + `mutations/` (and `state/` where needed) with operation-level barrels.
+- Shared cross-domain UI/form hooks are under `src/hooks/utils/`.
+- Auth hooks are currently still flat under `src/hooks/domain/auth/` and are tracked in the tech debt backlog for operation-folder alignment.
 
-- **Event-registration domain split into operation-scoped folders**:
-  - `/queries/`: All read operations including new `useMemberLookupQuery` (correctly reclassified from mutations)
-  - `/mutations/`: Write operations (useSubmitRegistrationMutation only)
-  - `/state/`: Local UI orchestration (useMemberLookupState - renamed from useMemberLookup with suffix pattern)
+Verification snapshot:
 
-- **Shared utilities layer** created at `/hooks/utils/`:
-  - Cross-domain UI/form state utilities (useErrorWithFadeout, useRfidAutoFocus, useSlugGeneration, useSaveConfirmation)
-  - Eliminates domain-specific duplication
-  - Keeps utilities reusable and portable
-
-- **Naming conventions standardized**:
-  - Queries: `use<Entity>Query` (e.g., `useMemberLookupQuery`)
-  - Mutations: `use<Action><Entity>Mutation` (e.g., `useSubmitRegistrationMutation`)
-  - State: `use<Entity>State` (e.g., `useMemberLookupState`)
-  - Utilities: `use<Concern>` (e.g., `useErrorWithFadeout`)
-
-- **Backward compatibility maintained**: All barrel exports re-export from nested structure; existing imports unchanged
-
-- **Build verified**: 305 modules, 0 TypeScript errors, all old duplicate files removed
+- Build and lint pass in current workspace.
+- Test coverage artifact present and above baseline gate thresholds.
 
 - RLS matrix tested for admin role ✅
 - public write path secured through Edge Functions ✅
@@ -283,6 +270,49 @@ Use these gates as required pass criteria before moving between phases and befor
 - top 5 slow queries reviewed and optimized
 - abuse and failed lookup patterns reviewed with tuning actions captured
 - operational metrics reviewed against SLOs with follow-up backlog created
+
+## Next Target: Tech Debt Backlog (After Production-Ready Checklist)
+
+Planned immediately after the Production Readiness Gates are complete:
+
+1. Hook architecture consistency (high)
+  - move auth hooks into operation-scoped folders to match project standard:
+    - `src/hooks/domain/auth/queries/useAdminAuthQuery.ts`
+    - `src/hooks/domain/auth/mutations/useAdminLoginMutation.ts`
+    - `src/hooks/domain/auth/mutations/useAdminLogoutMutation.ts`
+  - add/update operation barrels for auth domain (`queries/index.ts`, `mutations/index.ts`, and root `index.ts` re-exports)
+
+2. Import standardization (high)
+  - replace remaining relative imports with `@/` aliases in layout and shared components
+  - first known target: `src/components/layout/AppShell.tsx`
+
+3. Runtime validation hardening for dynamic payloads (medium)
+  - add Zod validation for parsed answer payloads in registration detail query
+  - first known target: `src/hooks/domain/registrations/queries/useRegistrationDetailQuery.ts`
+
+4. Remove unsafe casts at data boundaries (medium)
+  - replace unsafe `as` casts in production code with refined guards/Zod parsing
+  - first known targets:
+    - `src/lib/domain/event-fields/transforms.ts`
+    - `src/hooks/domain/members/mutations/useUpdateMemberMutation.ts`
+    - `src/hooks/domain/registrations/queries/useRegistrationDetailQuery.ts`
+
+5. Edge Function contract hardening (medium)
+  - add runtime response validation (Zod) for Edge Function success/error discriminators
+  - apply to registration and admin mutation/query hooks that consume function responses
+
+6. React subscription cleanup (low)
+  - replace `watch()` subscriptions with `useWatch()` where render subscriptions are intended
+  - first known target: `src/hooks/utils/useSlugGeneration.ts`
+
+7. Minor UX/logic cleanup (low)
+  - fix redundant scroll behavior ternary in registration page
+  - first known target: `src/pages/events/[slug]/register/index.tsx`
+
+8. Optional barrel completeness for admin page-local components (low)
+  - add `index.ts` barrels where missing if imports expand/reuse increases:
+    - `src/pages/admin/events/[id]/fields/components/`
+    - `src/pages/admin/events/[id]/registrations/components/`
 
 ## Scalability and Security Architecture Addendum
 
@@ -503,14 +533,14 @@ All 8 critical Day 1 tasks completed:
 
 Days 2-4: Backend Hardening
 
-- Idempotency race condition fix (transaction wrap or polling)
+- ✅ Idempotency race condition hardening implemented via insert-first + unique-conflict recovery path
 - Normalize typed answer storage strategy + update CSV reader
-- Integration test coverage for validation + error scenarios
+- Expand integration tests for additional failure-path scenarios (coverage baseline already above threshold)
 
 Days 4-5: Operational Readiness
 
-- ALLOWED_ORIGINS production env var validation
-- CI/CD pipeline setup (GitHub Actions: lint/build/test)
+- ✅ ALLOWED_ORIGINS production env var validation
+- ✅ CI quality gate workflow (lint/build/test/format via `npm run ci:gate`)
 - Sentry integration + structured logging
 - Backup/restore rehearsal + runbook
 
@@ -521,7 +551,7 @@ Day 6-7: Verification & Release Gate
 - Load sanity test (50 reg/min for 10 min)
 - Stop-ship gate verification
 
-Status: In progress.
+Status: In progress (critical runtime hardening done; operational readiness and launch rehearsal remain).
 
 ## Production Readiness Audit (2026-06-24)
 
@@ -529,9 +559,31 @@ Status: In progress.
 
 This section captures critical launch findings and required mitigations before production release. Review this alongside Gate D/E criteria before go-live decision.
 
-### Critical Launch Risks (Must Fix Before Week 1 Release)
+### Current Status Update (2026-06-27)
+
+Implemented since the original audit snapshot:
+
+- Global error boundary is active in app shell.
+- Registration form race-condition effect cleanup shipped.
+- Route parameter validation and explicit not-found route handling shipped.
+- Admin login migrated to React Hook Form + Zod.
+- Submit-registration field-level backend validation shipped for all supported field types.
+- Edge Function client error detail scrubbing shipped.
+- Idempotency conflict recovery hardened in submit-registration.
+- CI quality gate workflow is active in GitHub Actions.
+- Coverage artifact indicates critical-path baseline is above threshold.
+
+Still open before production launch decision:
+
+- Sentry/error monitoring integration.
+- Backup restore rehearsal + documented rollback drill.
+- Final smoke/load rehearsal and Gate D checklist sign-off.
+
+### Critical Launch Risks (Historical Audit Baseline; resolved items marked)
 
 #### 1. No Global Error Boundary (CRITICAL - App Crash Risk)
+
+- **Status**: Fixed on 2026-06-24.
 
 - **Location**: [src/App.tsx](src/App.tsx)
 - **Issue**: Any rendering exception in EventRegistrationPage, dynamic forms, or nested components crashes entire app to blank screen.
@@ -540,6 +592,8 @@ This section captures critical launch findings and required mitigations before p
 - **Effort**: 30 min
 
 #### 2. Race Condition in Event Registration Form (HIGH - UX Data Loss)
+
+- **Status**: Fixed on 2026-06-24.
 
 - **Location**: [src/pages/events/[slug]/register/index.tsx](src/pages/events/[slug]/register/index.tsx#L133)
 - **Issue**: Three overlapping useEffect hooks can fire in unpredictable order during gate transitions/member lookup:
@@ -552,6 +606,8 @@ This section captures critical launch findings and required mitigations before p
 
 #### 3. Missing Route Parameter Validation (HIGH - Bad UX, Silent Failures)
 
+- **Status**: Fixed on 2026-06-24.
+
 - **Locations**:
   - [src/pages/events/[slug]/register/index.tsx](src/pages/events/[slug]/register/index.tsx#L43)
   - [src/pages/admin/events/[id]/registrations/[registration_id]/index.tsx](src/pages/admin/events/[id]/registrations/[registration_id]/index.tsx)
@@ -562,6 +618,8 @@ This section captures critical launch findings and required mitigations before p
 
 #### 4. Backend Validation Depth Too Shallow (CRITICAL - Data Corruption Risk)
 
+- **Status**: Fixed on 2026-06-24.
+
 - **Location**: [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L94)
 - **Issue**: Only validates required fields exist; does NOT enforce per-field constraints (min_length, max_length, pattern, date range, required status, type coercion).
 - **Impact**: Invalid data stored in database; CSV export breaks; admin reports unreliable.
@@ -569,6 +627,8 @@ This section captures critical launch findings and required mitigations before p
 - **Effort**: 3 hours (build validation schema library for use in Edge Function)
 
 #### 5. Error Detail Leakage to Clients (HIGH - Information Disclosure)
+
+- **Status**: Fixed on 2026-06-24.
 
 - **Locations**:
   - [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L138)
@@ -581,6 +641,8 @@ This section captures critical launch findings and required mitigations before p
 
 #### 6. Answer Persistence Type Strategy Inconsistent (MEDIUM - Data Integrity Risk)
 
+- **Status**: Open.
+
 - **Location**: [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L350) vs schema definition
 - **Issue**: Schema supports typed columns (answer_text, answer_number, answer_boolean, answer_date, answer_json) but submit-registration writes mostly answer_text with JSON stringification. CSV export must infer/decode types.
 - **Impact**: Inconsistent round-trip; export formatting logic is fragile; future features (reporting, filtering) will struggle with type ambiguity.
@@ -588,6 +650,8 @@ This section captures critical launch findings and required mitigations before p
 - **Effort**: 2-3 hours (includes migration if needed)
 
 #### 7. Idempotency Race Condition (HIGH - Duplicate Registration Risk)
+
+- **Status**: Fixed on 2026-06-24 via insert-first + unique-conflict recovery.
 
 - **Location**: [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts#L272)
 - **Issue**: Unique constraint on (event_id, idempotency_key) is not transaction-wrapped. Two simultaneous requests with same idempotency_key can both create registrations before uniqueness check fires.
@@ -603,6 +667,8 @@ This section captures critical launch findings and required mitigations before p
 
 #### 9. Rate Limiting In-Memory Per-Instance (MEDIUM - Multi-Instance Enforcement Gap)
 
+- **Status**: Open (accepted for week-1 scope).
+
 - **Location**: [supabase/functions/\_shared/security.ts](supabase/functions/_shared/security.ts#L60) (enforceInMemoryRateLimit)
 - **Issue**: Fixed-window limiter is per-instance, not globally distributed. Does not enforce limits across multiple Vercel instances/cold starts.
 - **Impact**: Rate limits will not work correctly in multi-instance deployments; concurrent scaling bypasses throttling.
@@ -610,9 +676,11 @@ This section captures critical launch findings and required mitigations before p
 - **Fix**: Defer to Redis-backed limiter post-launch OR accept single-instance assumption for week 1 with clear abuse-response runbook.
 - **Effort**: Deferred; document risk acceptance in launch notes.
 
-### Architectural Drift from Standards
+### Architectural Drift from Standards (Historical; current status below)
 
 #### 1. AdminLoginPage Violates RHF Mandate
+
+- **Status**: Fixed.
 
 - **Location**: [src/pages/admin/login/index.tsx](src/pages/admin/login/index.tsx#L14)
 - **Issue**: Uses `useState(email)` / `useState(password)` instead of React Hook Form + Zod.
@@ -622,6 +690,8 @@ This section captures critical launch findings and required mitigations before p
 
 #### 2. Auth Guard Post-Mount Validation (MEDIUM - Security/UX Issue)
 
+- **Status**: Fixed.
+
 - **Location**: [src/app/router.tsx](src/app/router.tsx#L15)
 - **Issue**: RequireAdminAuth only checks `isAuthenticated` after component mounts; if session expires mid-page, protected content renders briefly before redirect.
 - **Impact**: Sensitive pages (event edit, registrations) briefly visible before access denied; security event.
@@ -630,6 +700,8 @@ This section captures critical launch findings and required mitigations before p
 
 #### 3. Admin Login Toast Pattern Inconsistency
 
+- **Status**: Partially open (RHF migration completed; toast handling can still be normalized).
+
 - **Location**: [src/pages/admin/login/index.tsx](src/pages/admin/login/index.tsx#L27)
 - **Issue**: Manual catch + re-toast vs automatic mutation error handling in other mutations.
 - **Fix**: Standardize error message handling across all mutations using single toast pattern.
@@ -637,20 +709,19 @@ This section captures critical launch findings and required mitigations before p
 
 ### Test Coverage Gaps
 
-- **Unit test placeholders**: [src/hooks/domain/registrations/**tests**/useSubmitRegistrationMutation.test.ts](src/hooks/domain/registrations/__tests__/useSubmitRegistrationMutation.test.ts#L42) mostly .todo() assertions.
-- **Missing error scenario tests**: No tests for duplicate-policy conflict, validation failures, rate limit 429, or field schema mismatches.
-- **No component render tests**: Form components, error boundaries, and field renderers not isolated.
-- **Integration coverage**: Only 2 test files; happy-path focused.
-- **Recommendation**: Target 60%+ coverage for critical hooks and Edge Functions before launch.
-- **Effort**: 3-4 hours for core error paths.
+- **Current baseline**: Coverage artifact is above threshold (statements 81.86%, branches 70.38%).
+- **Current test inventory**: 60+ test files across pages, hooks, lib, and integration flows.
+- **Remaining gap**: Expand integration and failure-path scenarios (rate-limit 429, schema mismatch, and edge-case mutation failures).
+- **Integration execution blocker**: `npm run test:integration` currently requires `SUPABASE_SERVICE_ROLE_KEY` in the environment.
+- **Recommendation**: Keep raising failure-path depth and ensure integration env secrets are configured in CI/staging.
 
 ### Operations Gaps
 
-#### No CI/CD Pipeline
+#### CI Quality Gate In Place; Deployment Automation Pending
 
-- **Issue**: Manual deployments only; no automated lint/build/test gate on PR/merge.
-- **Fix**: Add GitHub Actions: lint + build + test on PR, automated deploy to staging on merge, tag-based production deploy.
-- **Effort**: 2 hours
+- **Status**: Partially complete.
+- **Current**: GitHub Actions quality workflow runs `npm run ci:gate` on PR and main.
+- **Remaining**: Add release/deploy workflow (staging + production promotion strategy) and branch protection rollout.
 
 #### No Production Error Monitoring
 
@@ -685,19 +756,19 @@ This section captures critical launch findings and required mitigations before p
 
 1. ✅ Idempotency race condition fixed: insert-first with unique-conflict recovery; idempotent replay returns same registration_id without re-writing answers
 2. ❌ Normalize typed answer storage + update CSV reader
-3. ❌ Integration test coverage for validation failures + error scenarios (target 60%+ coverage)
+3. 🟡 Coverage threshold verified (statements 81.86%, branches 70.38%); additional error-scenario expansion still pending
 
 **Days 4-5: Operational Readiness** 🟡 IN PROGRESS
 
 1. ✅ Set ALLOWED_ORIGINS production env var contract; added fail-closed validation and localhost production guard
-2. ❌ CI/CD pipeline setup (GitHub Actions: lint/build/test gates)
+2. ✅ CI quality gate workflow added (GitHub Actions runs `npm run ci:gate` on PR and main)
 3. ❌ Sentry setup + structured logging correlation IDs
 4. ❌ Backup/restore rehearsal + runbook documentation
 
-**Day 6-7: Verification & Release Gate** ⏳ TODO
+**Day 6-7: Verification & Release Gate** 🟡 IN PROGRESS
 
 1. ❌ Full smoke test: public registration + admin CRUD + CSV export
-2. ❌ Run integration + new unit tests; verify 60%+ coverage
+2. 🟡 Unit tests passed (63 files / 164 tests) and coverage threshold verified; integration tests currently blocked by missing `SUPABASE_SERVICE_ROLE_KEY`
 3. ❌ Load sanity test (50 reg/min for 10 min)
 4. ❌ All stop-ship gates pass → soft launch to 10% cohort first
 
@@ -708,9 +779,9 @@ This section captures critical launch findings and required mitigations before p
 - [x] Any Edge Function returns error_detail to clients ✅ DONE
 - [x] AdminLoginPage not using RHF ✅ DONE
 - [x] ALLOWED_ORIGINS still defaults to localhost in production config ✅ DONE
-- [ ] No CI gate for lint/build/tests (TODO)
+- [x] No CI gate for lint/build/tests ✅ DONE (`.github/workflows/ci.yml`)
 - [ ] No rollback rehearsal completed (TODO)
-- [ ] Test suite < 50% coverage for critical paths (TODO)
+- [x] Test suite < 50% coverage for critical paths ✅ DONE (current statements 81.86%, branches 70.38%)
 - [ ] No error monitoring configured (TODO)
 
 ### Risk Acceptance & Deferrals
