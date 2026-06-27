@@ -1,6 +1,11 @@
 {
+  "imports": {
+    "@/shared/": "./_shared/"
+  },
   "compilerOptions": {
     "strict": true,
-    "lib": ["deno.window"]
+    "lib": [
+      "deno.window"
+    ]
   }
 }
