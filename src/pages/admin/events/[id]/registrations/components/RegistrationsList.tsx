@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toAdminRegistrationDetail } from '@/config/constants'
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
@@ -152,7 +153,7 @@ export function RegistrationsList({
               </ListTableCell>
               <ListTableCell>
                 <div className="flex items-center gap-2">
-                  <ActionLink to={`/admin/events/${eventId}/registrations/${registration.id}`}>
+                  <ActionLink to={toAdminRegistrationDetail(eventId, registration.id)}>
                     View
                   </ActionLink>
                   {registration.status === 'cancelled' ? (

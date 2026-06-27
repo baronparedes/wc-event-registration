@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { ROUTE_PATHS } from '@/config/constants'
 import {
   useAdminEventQuery,
   useCreateEventMutation,
@@ -116,7 +117,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         await createMutation.mutateAsync(data)
         toast.success('Event created successfully.')
       }
-      navigate('/admin/events')
+      navigate(ROUTE_PATHS.adminEvents)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save event.'
       toast.error(message)
@@ -200,7 +201,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         <EventFormActions
           isEditMode={isEditMode}
           isPending={isPending}
-          onCancel={() => navigate('/admin/events')}
+          onCancel={() => navigate(ROUTE_PATHS.adminEvents)}
           disabled={isArchivedEvent}
           hasChanges={!isEditMode || isDirty}
         />

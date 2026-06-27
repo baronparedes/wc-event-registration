@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { QUERY_KEYS } from '@/config/constants'
 import { createEdgeFunctionCaller } from '@/lib/infrastructure'
 import { logger } from '@/lib/infrastructure'
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields'
@@ -49,7 +50,7 @@ export function useSubmitRegistrationMutation() {
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['public-event-by-slug', variables.event_slug],
+        queryKey: QUERY_KEYS.publicEventBySlug(variables.event_slug),
       })
     },
     onError: (error) => {

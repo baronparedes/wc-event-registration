@@ -1,8 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants'
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure'
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
-
-const DEFAULT_PAGE_SIZE = 25
 
 function escapeOrFilterValue(value: string): string {
   return value.replace(/[,%_]/g, (char) => `\\${char}`)
@@ -46,7 +45,7 @@ export interface AdminRegistrationsPage {
  * Joins registrations + users + counts answers for display in list view.
  */
 export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegistrationsPageParams) {
-  const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
+  const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminRegistrationsPageSize
   const cursor = params?.cursor ?? null
   const searchTerm = params?.searchTerm?.trim() ?? ''
   const offset = decodeOffsetCursor(cursor)
@@ -156,6 +155,6 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
         totalPages: getTotalPages(totalCount, pageSize),
       }
     },
-    staleTime: 0,
+    staleTime: QUERY_STALE_TIME_MS.immediate,
   })
 }

@@ -1,8 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants'
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure'
 import type { AdminMember } from '@/lib/domain/members'
-
-const DEFAULT_PAGE_SIZE = 20
 
 type UserMetadata = {
   role?: unknown
@@ -44,7 +43,7 @@ export interface AdminMembersPage {
  * Returns members with role and category from metadata.
  */
 export function useAdminMembersQuery(params?: AdminMembersPageParams) {
-  const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
+  const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize
   const cursor = params?.cursor ?? null
   const searchTerm = params?.searchTerm?.trim() ?? ''
   const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0)
@@ -121,6 +120,6 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         totalPages: getTotalPages(totalCount, pageSize),
       }
     },
-    staleTime: 0,
+    staleTime: QUERY_STALE_TIME_MS.immediate,
   })
 }

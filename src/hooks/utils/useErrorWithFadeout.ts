@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { TIMING } from '@/config/constants'
 
 export type ErrorWithFadeoutOptions = {
   fadeOutDelay?: number // time before fade animation starts (default: 4500ms)
@@ -18,8 +19,8 @@ type ShowErrorOptions = {
  */
 export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
   const {
-    fadeOutDelay = 4500,
-    clearDelay = 5000,
+    fadeOutDelay = TIMING.errorFadeOutDelayMs,
+    clearDelay = TIMING.errorClearDelayMs,
     autoFadeOut = true,
     onFadeStart,
     onClear,

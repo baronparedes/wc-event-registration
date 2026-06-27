@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { QUERY_KEYS } from '@/config/constants'
 import { supabase } from '@/lib/infrastructure'
 import { logger } from '@/lib/infrastructure'
 import type { EventAvailability, PublicEvent } from '@/lib/domain/events'
@@ -12,7 +13,7 @@ import type { EventAvailability, PublicEvent } from '@/lib/domain/events'
  */
 export function usePublicEventQuery(slug: string | undefined) {
   return useQuery({
-    queryKey: ['public-event-by-slug', slug],
+    queryKey: QUERY_KEYS.publicEventBySlug(slug),
     queryFn: async () => {
       if (!slug) {
         throw new Error('Event slug is required')

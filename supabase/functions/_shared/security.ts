@@ -1,8 +1,17 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
+import {
+  AUTH,
+  CORS,
+  ENVIRONMENT,
+  ERROR_CODES,
+  HTTP_HEADERS,
+  HTTP_STATUS,
+  LOCALHOST_HOSTNAMES,
+  MIME_TYPES,
+  RATE_LIMIT,
+} from './constants.ts'
 
-const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000
-const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1'])
-const PRODUCTION_ENVIRONMENT = 'production'
+const LOCALHOST_HOSTNAMES_SET = new Set(LOCALHOST_HOSTNAMES)
 
 type RateLimitBucket = {
   count: number
@@ -74,12 +83,12 @@ function maskValue(value: string | null, visible = 6): string {
 }
 
 function cleanupRateLimitBuckets(nowMs: number): void {
-  if (nowMs - lastRateLimitCleanupMs < RATE_LIMIT_CLEANUP_INTERVAL_MS) {
+  if (nowMs - lastRateLimitCleanupMs < RATE_LIMIT.cleanupIntervalMs) {
     return
   }
 
   for (const [key, bucket] of rateLimitBuckets.entries()) {
-    if (nowMs - bucket.windowStartMs > RATE_LIMIT_CLEANUP_INTERVAL_MS * 2) {
+    if (nowMs - bucket.windowStartMs > RATE_LIMIT.cleanupIntervalMs * 2) {
       rateLimitBuckets.delete(key)
     }
   }
@@ -97,7 +106,7 @@ function createJsonResponse(
     status,
     headers: {
       ...corsHeaders,
-      'Content-Type': 'application/json',
+      [HTTP_HEADERS.contentType]: MIME_TYPES.json,
       ...(extraHeaders ?? {}),
     },
   })
@@ -109,7 +118,7 @@ function isSupportedOriginProtocol(protocol: string): boolean {
 
 function isLocalhostOrigin(origin: string): boolean {
   try {
-    return LOCALHOST_HOSTNAMES.has(new URL(origin).hostname)
+    return LOCALHOST_HOSTNAMES_SET.has(new URL(origin).hostname)
   } catch {
     return false
   }
@@ -185,13 +194,13 @@ export function enforcePublicRateLimit(options: PublicRateLimitGuardOptions): Re
     {
       success: false,
       error: options.errorMessage ?? 'Too many requests',
-      error_code: 'RATE_LIMITED',
+      error_code: ERROR_CODES.rateLimited,
       retry_after_seconds: rateLimit.retryAfterSeconds,
     },
-    429,
+    HTTP_STATUS.tooManyRequests,
     options.corsHeaders,
     {
-      'Retry-After': String(rateLimit.retryAfterSeconds),
+      [HTTP_HEADERS.retryAfter]: String(rateLimit.retryAfterSeconds),
     },
   )
 }
@@ -207,22 +216,22 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     rateLimit,
   } = options
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith(AUTH.bearerPrefix)) {
     return {
       ok: false,
       response: createJsonResponse(
         {
           success: false,
           error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
+          error_code: ERROR_CODES.unauthorized,
         },
-        401,
+        HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
     }
   }
 
-  const token = authHeader.replace('Bearer ', '').trim()
+  const token = authHeader.replace(AUTH.bearerPrefix, '').trim()
   if (!token) {
     return {
       ok: false,
@@ -230,9 +239,9 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         {
           success: false,
           error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
+          error_code: ERROR_CODES.unauthorized,
         },
-        401,
+        HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
     }
@@ -241,7 +250,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
   const authClient = createClient(supabaseUrl, supabaseServiceKey, {
     global: {
       headers: {
-        Authorization: authHeader,
+        [HTTP_HEADERS.authorization]: authHeader,
       },
     },
   })
@@ -264,9 +273,9 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         {
           success: false,
           error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
+          error_code: ERROR_CODES.unauthorized,
         },
-        401,
+        HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
     }
@@ -287,13 +296,13 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
           {
             success: false,
             error: 'Too many requests',
-            error_code: 'RATE_LIMITED',
+            error_code: ERROR_CODES.rateLimited,
             retry_after_seconds: limitResult.retryAfterSeconds,
           },
-          429,
+          HTTP_STATUS.tooManyRequests,
           corsHeaders,
           {
-            'Retry-After': String(limitResult.retryAfterSeconds),
+            [HTTP_HEADERS.retryAfter]: String(limitResult.retryAfterSeconds),
           },
         ),
       }
@@ -321,9 +330,9 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         {
           success: false,
           error: 'Unauthorized',
-          error_code: 'UNAUTHORIZED',
+          error_code: ERROR_CODES.unauthorized,
         },
-        401,
+        HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
     }
@@ -334,7 +343,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
 
 export function readAllowedOrigins(): string[] {
   const rawAllowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.trim() ?? ''
-  const runtimeEnvironment = Deno.env.get('SUPABASE_ENV')?.trim().toLowerCase() ?? 'local'
+  const runtimeEnvironment = Deno.env.get('SUPABASE_ENV')?.trim().toLowerCase() ?? ENVIRONMENT.local
 
   if (!rawAllowedOrigins) {
     console.error(
@@ -365,7 +374,7 @@ export function readAllowedOrigins(): string[] {
     new Set(normalizedOrigins.flatMap((origin) => (origin.normalized ? [origin.normalized] : []))),
   )
 
-  if (runtimeEnvironment === PRODUCTION_ENVIRONMENT) {
+  if (runtimeEnvironment === ENVIRONMENT.production) {
     const localhostOrigins = allowedOrigins.filter((origin) => isLocalhostOrigin(origin))
 
     if (localhostOrigins.length > 0) {
@@ -395,11 +404,13 @@ export function isOriginAllowed(origin: string | null, allowedOrigins: string[])
 
 export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]) {
   return {
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Expose-Headers': 'Content-Disposition',
-    'Access-Control-Allow-Origin': isOriginAllowed(origin, allowedOrigins) ? origin : 'null',
-    Vary: 'Origin',
+    'Access-Control-Allow-Methods': CORS.allowMethods,
+    'Access-Control-Allow-Headers': CORS.allowHeaders,
+    'Access-Control-Expose-Headers': CORS.exposeHeaders,
+    'Access-Control-Allow-Origin': isOriginAllowed(origin, allowedOrigins)
+      ? origin
+      : CORS.nullOrigin,
+    [HTTP_HEADERS.vary]: HTTP_HEADERS.origin,
   }
 }
 
@@ -445,7 +456,7 @@ export async function logAdminAction(options: AdminAuditLogOptions): Promise<voi
 // Keep deny responses intentionally generic to avoid exposing allowlist behavior.
 export function createObscuredDenyResponse(corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify({ success: false, error: 'Not found' }), {
-    status: 404,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: HTTP_STATUS.notFound,
+    headers: { ...corsHeaders, [HTTP_HEADERS.contentType]: MIME_TYPES.json },
   })
 }

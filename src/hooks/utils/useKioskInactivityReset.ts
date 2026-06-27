@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { TIMING } from '@/config/constants'
 
 /**
  * Kiosk inactivity timeout hook.
@@ -13,7 +14,7 @@ import { useEffect, useRef, useCallback } from 'react'
  */
 export function useKioskInactivityReset(
   onReset: () => void,
-  timeoutMs: number = 3 * 60 * 1000, // 3 minutes default
+  timeoutMs: number = TIMING.kioskInactivityResetMs,
   isActive: boolean = true,
 ) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)

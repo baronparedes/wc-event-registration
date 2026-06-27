@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { FORM_MESSAGES, TIMING, TOAST_MESSAGES } from '@/config/constants'
 import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
@@ -87,8 +88,8 @@ export function EventRegistrationPage() {
     showError: showLookupError,
     clearError: clearLookupError,
   } = useErrorWithFadeout({
-    fadeOutDelay: 3000,
-    clearDelay: 3600,
+    fadeOutDelay: TIMING.registrationLookupFadeOutDelayMs,
+    clearDelay: TIMING.registrationLookupClearDelayMs,
     autoFadeOut: false,
     onFadeStart: () => {
       const scrollBehavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -137,7 +138,7 @@ export function EventRegistrationPage() {
 
       if (!result.success) {
         focusMemberIdInput()
-        showLookupError(result.error || 'Member lookup failed', {
+        showLookupError(result.error || FORM_MESSAGES.memberLookupFailed, {
           autoFadeOut: result.reason === 'already_registered',
         })
         return
@@ -170,7 +171,7 @@ export function EventRegistrationPage() {
     setSubmitSuccessMessage(null)
     clearLookupError()
   }, [clearMember, lookupForm, dynamicForm, clearLookupError])
-  useKioskInactivityReset(handleKioskReset, 3 * 60 * 1000, isGateReady)
+  useKioskInactivityReset(handleKioskReset, TIMING.kioskInactivityResetMs, isGateReady)
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event.id : undefined,
@@ -215,7 +216,7 @@ export function EventRegistrationPage() {
 
       if (!result.success) {
         focusMemberIdInput()
-        showLookupError(result.error || 'Member lookup failed', {
+        showLookupError(result.error || FORM_MESSAGES.memberLookupFailed, {
           autoFadeOut: result.reason === 'already_registered',
         })
         return
@@ -259,19 +260,19 @@ export function EventRegistrationPage() {
 
     // Check prerequisites
     if (!slug) {
-      setSubmitErrorMessage('Event slug is missing')
+      setSubmitErrorMessage(FORM_MESSAGES.eventSlugMissing)
       logger.error('Event slug is missing')
       return
     }
 
     if (!memberLookup.matchedMember || !memberLookup.verifiedMemberId) {
-      setSubmitErrorMessage('Member lookup is required')
+      setSubmitErrorMessage(FORM_MESSAGES.memberLookupRequired)
       logger.error('Member lookup missing at submission time')
       return
     }
 
     if (!availability || availability.status !== 'available' || !availability.event) {
-      setSubmitErrorMessage('Event is not available')
+      setSubmitErrorMessage(FORM_MESSAGES.eventNotAvailable)
       logger.error('Event not available:', availability)
       return
     }
@@ -298,17 +299,17 @@ export function EventRegistrationPage() {
       // Handle specific error cases
       if (result.error_code === 'duplicate_blocked') {
         setSubmitErrorMessage('You have already registered for this event.')
-        toast.error('Already registered for this event')
+        toast.error(TOAST_MESSAGES.registration.alreadyRegistered)
       } else {
-        setSubmitErrorMessage(result.error || 'Failed to submit registration')
-        toast.error(result.error || 'Failed to submit registration')
+        setSubmitErrorMessage(result.error || TOAST_MESSAGES.registration.submitFailed)
+        toast.error(result.error || TOAST_MESSAGES.registration.submitFailed)
       }
       return
     }
 
     // Success
     setSubmitSuccessMessage(`Registration submitted successfully. ID: ${result.registration_id}`)
-    toast.success('Registration submitted successfully!')
+    toast.success(TOAST_MESSAGES.registration.submitted)
     logger.info('Registration submission successful:', result)
 
     const wasUpdateMode = memberLookup.isUpdateMode

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '@/config/constants'
 import { Button } from '@/components/ui/Button'
 
 export function NotFoundPage() {
@@ -12,7 +13,7 @@ export function NotFoundPage() {
         The page you're looking for doesn't exist or has been moved.
       </p>
       <div className="flex gap-3 pt-2">
-        <Button onClick={() => navigate('/')} variant="default">
+        <Button onClick={() => navigate(ROUTE_PATHS.home)} variant="default">
           Go Home
         </Button>
         <Button onClick={() => navigate(-1)} variant="outline">

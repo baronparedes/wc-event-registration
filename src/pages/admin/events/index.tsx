@@ -2,6 +2,14 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
+  PAGINATION_DEFAULTS,
+  PAGINATION_OPTIONS,
+  ROUTE_PATHS,
+  toAdminEventDetail,
+  toAdminEventFields,
+  toAdminEventRegistrations,
+} from '@/config/constants'
+import {
   useAdminEventsQuery,
   usePublishEventMutation,
   useArchiveEventMutation,
@@ -22,10 +30,8 @@ import {
 } from '@/components/ui/ListTable'
 import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50]
-
 export function AdminEventsPage() {
-  const [pageSize, setPageSize] = useState<number>(20)
+  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize)
   const [cursor, setCursor] = useState<string | null>(null)
 
   const eventsQuery = useAdminEventsQuery({ pageSize, cursor })
@@ -99,7 +105,7 @@ export function AdminEventsPage() {
           </p>
         </div>
         <Button asChild size="md" variant="default">
-          <Link to="/admin/events/new">New Event</Link>
+          <Link to={ROUTE_PATHS.adminEventNew}>New Event</Link>
         </Button>
       </div>
 
@@ -111,7 +117,10 @@ export function AdminEventsPage() {
         ) : events.length === 0 ? (
           <p className="p-6 text-sm text-muted">
             No events yet.{' '}
-            <Link className="text-primary underline underline-offset-2" to="/admin/events/new">
+            <Link
+              className="text-primary underline underline-offset-2"
+              to={ROUTE_PATHS.adminEventNew}
+            >
               Create your first event.
             </Link>
           </p>
@@ -151,9 +160,9 @@ export function AdminEventsPage() {
                     </ListTableCell>
                     <ListTableCell>
                       <div className="flex items-center gap-3">
-                        <ActionLink to={`/admin/events/${event.id}`}>Edit</ActionLink>
-                        <ActionLink to={`/admin/events/${event.id}/fields`}>Fields</ActionLink>
-                        <ActionLink to={`/admin/events/${event.id}/registrations`}>
+                        <ActionLink to={toAdminEventDetail(event.id)}>Edit</ActionLink>
+                        <ActionLink to={toAdminEventFields(event.id)}>Fields</ActionLink>
+                        <ActionLink to={toAdminEventRegistrations(event.id)}>
                           Registrations
                         </ActionLink>
                         {event.status === 'draft' && (
@@ -201,7 +210,7 @@ export function AdminEventsPage() {
                 canGoPrevious={currentPage > 1}
                 canGoNext={hasMore && Boolean(nextCursor)}
                 pageSize={pageSize}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                pageSizeOptions={PAGINATION_OPTIONS.adminEvents}
                 onPageSizeChange={handlePageSizeChange}
                 onFirstPage={handleFirstPage}
                 onPreviousPage={handlePreviousPage}

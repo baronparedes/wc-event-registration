@@ -1,10 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants'
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure'
 import type { AdminEvent } from '@/lib/domain/events'
 
 export const ADMIN_EVENTS_QUERY_KEY = ['admin-events'] as const
-
-const DEFAULT_PAGE_SIZE = 20
 
 export interface AdminEventsPageParams {
   pageSize?: number
@@ -21,7 +20,7 @@ export interface AdminEventsPage {
 
 /** Fetches all events ordered by created_at descending for admin management. */
 export function useAdminEventsQuery(params?: AdminEventsPageParams) {
-  const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
+  const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminEventsPageSize
   const cursor = params?.cursor ?? null
   const offset = decodeOffsetCursor(cursor)
 
@@ -50,5 +49,6 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
         totalPages: getTotalPages(totalCount, pageSize),
       }
     },
+    staleTime: QUERY_STALE_TIME_MS.immediate,
   })
 }

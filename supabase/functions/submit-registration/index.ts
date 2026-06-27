@@ -6,6 +6,7 @@ import {
   isOriginAllowed,
   readAllowedOrigins,
 } from '../_shared/security.ts'
+import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '../_shared/constants.ts'
 
 interface SubmitRegistrationRequest {
   event_slug: string
@@ -288,7 +289,7 @@ function isValidPhone(phone: string): boolean {
 }
 
 function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
-  if (!error || error.code !== '23505') {
+  if (!error || error.code !== POSTGRES_ERROR_CODES.uniqueViolation) {
     return false
   }
 
@@ -334,8 +335,8 @@ Deno.serve(async (req) => {
     origin,
     corsHeaders,
     scope: 'submit-registration',
-    windowMs: 60_000,
-    maxHits: 20,
+    windowMs: RATE_LIMIT_PRESETS.submitRegistration.windowMs,
+    maxHits: RATE_LIMIT_PRESETS.submitRegistration.maxHits,
   })
 
   if (rateLimitResponse) {

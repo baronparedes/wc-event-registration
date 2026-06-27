@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { ROUTE_PATHS } from '@/config/constants'
 import { Button } from '@/components/ui/Button'
 import { FormInputField } from '@/components/ui/FormInputField'
 import { SectionCard } from '@/components/ui/SectionCard'
@@ -65,7 +66,7 @@ export function AdminMemberDetailPage() {
     try {
       await updateMemberMutation.mutateAsync({ id, ...values })
       toast.success('Member updated successfully.')
-      navigate('/admin/members')
+      navigate(ROUTE_PATHS.adminMembers)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update member.')
     }
@@ -92,7 +93,7 @@ export function AdminMemberDetailPage() {
             Update the member profile, contact details, and admin metadata.
           </p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/admin/members')}>
+        <Button variant="outline" onClick={() => navigate(ROUTE_PATHS.adminMembers)}>
           Back to Members
         </Button>
       </div>
@@ -171,7 +172,11 @@ export function AdminMemberDetailPage() {
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
-            <Button type="button" variant="outline" onClick={() => navigate('/admin/members')}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(ROUTE_PATHS.adminMembers)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={!isDirty || updateMemberMutation.isPending}>

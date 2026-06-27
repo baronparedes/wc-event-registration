@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { PAGINATION_DEFAULTS, PAGINATION_OPTIONS, TIMING } from '@/config/constants'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
@@ -7,12 +8,10 @@ import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls
 import { Button } from '@/components/ui/Button'
 import { RegistrationsList, ExportButton } from './components'
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50]
-
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>()
 
-  const [pageSize, setPageSize] = useState<number>(25)
+  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminRegistrationsPageSize)
   const [cursor, setCursor] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -21,7 +20,7 @@ export function AdminRegistrationsPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
-    }, 300)
+    }, TIMING.searchDebounceMs)
     return () => {
       window.clearTimeout(timer)
     }
@@ -173,7 +172,7 @@ export function AdminRegistrationsPage() {
             canGoPrevious={currentPage > 1}
             canGoNext={hasMore && Boolean(nextCursor)}
             pageSize={pageSize}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            pageSizeOptions={PAGINATION_OPTIONS.adminRegistrations}
             onPageSizeChange={handlePageSizeChange}
             onFirstPage={handleFirstPage}
             onPreviousPage={handlePreviousPage}

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants'
 import { Button } from '@/components/ui/Button'
 import { FormInputField } from '@/components/ui/FormInputField'
 import { useAdminAuthQuery, useAdminLoginMutation } from '@/hooks/domain/auth'
@@ -30,17 +31,17 @@ export function AdminLoginPage() {
 
   useEffect(() => {
     if (!isLoading && adminAuth?.isAuthenticated) {
-      navigate('/admin/events', { replace: true })
+      navigate(ROUTE_PATHS.adminEvents, { replace: true })
     }
   }, [adminAuth?.isAuthenticated, isLoading, navigate])
 
   async function handleSubmit(values: AdminLoginForm) {
     try {
       await loginMutation.mutateAsync(values)
-      toast.success('Welcome back. Admin access granted.')
-      navigate('/admin/events', { replace: true })
+      toast.success(TOAST_MESSAGES.adminSignInSuccess)
+      navigate(ROUTE_PATHS.adminEvents, { replace: true })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to sign in as admin.'
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure
       toast.error(message)
     }
   }

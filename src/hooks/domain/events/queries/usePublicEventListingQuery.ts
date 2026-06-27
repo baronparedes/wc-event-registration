@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import { QUERY_KEYS } from '@/config/constants'
 import { supabase } from '@/lib/infrastructure'
 import type { PublicEventListingItem } from '@/lib/domain/events'
 
 export function usePublicEventListingQuery() {
   return useQuery({
-    queryKey: ['public-event-listing'],
+    queryKey: QUERY_KEYS.publicEventListing(),
     queryFn: async (): Promise<PublicEventListingItem[]> => {
       const nowMs = Date.now()
       const threeMonthsAgo = new Date()

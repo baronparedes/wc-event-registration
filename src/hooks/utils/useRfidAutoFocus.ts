@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
+import { TIMING } from '@/config/constants'
 
 /**
  * Maintains focus on a member ID input for RFID kiosk scanning.
@@ -30,7 +31,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
 
     setTimeout(() => {
       focusAndSelectInput()
-    }, 120)
+    }, TIMING.rfidFocusRestoreDelayMs)
   }, [inputRef])
 
   // Keep a stable ref so blur/keydown closures never go stale.
@@ -74,7 +75,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
     })
     const focusFallback = setTimeout(() => {
       focusMemberIdInput()
-    }, 200)
+    }, TIMING.rfidFocusFallbackDelayMs)
 
     const input = inputRef.current
     if (!input) {
@@ -100,7 +101,7 @@ export function useRfidAutoFocus(inputRef: RefObject<HTMLInputElement | null>, i
         if (isActiveRef.current) {
           focusMemberIdInput()
         }
-      }, 150)
+      }, TIMING.rfidBlurRefocusDelayMs)
     }
 
     input.addEventListener('blur', handleBlur)

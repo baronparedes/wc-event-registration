@@ -7,6 +7,7 @@ import {
   requireAdminAccess,
   readAllowedOrigins,
 } from '../_shared/security.ts'
+import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '../_shared/constants.ts'
 
 interface CreateMemberRequest {
   member_id: string
@@ -212,8 +213,8 @@ Deno.serve(async (req) => {
       corsHeaders,
       rateLimit: {
         scope: 'create-member',
-        windowMs: 60_000,
-        maxHits: 60,
+        windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,
+        maxHits: RATE_LIMIT_PRESETS.createMember.maxHits,
       },
     })
 
@@ -270,7 +271,7 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       // Check for specific error types
-      if (insertError.code === '23505') {
+      if (insertError.code === POSTGRES_ERROR_CODES.uniqueViolation) {
         // Unique constraint violation for member_id
         return new Response(
           JSON.stringify({

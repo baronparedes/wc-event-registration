@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import {
+  PAGINATION_DEFAULTS,
+  PAGINATION_OPTIONS,
+  TIMING,
+  toAdminMemberDetail,
+} from '@/config/constants'
 import { useAdminMembersQuery } from '@/hooks/domain/members'
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
@@ -15,10 +21,9 @@ import {
 } from '@/components/ui/ListTable'
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog'
 import { AddMemberDialog } from './components/AddMemberDialog'
-const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 export function AdminMembersPage() {
-  const [pageSize, setPageSize] = useState<number>(20)
+  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize)
   const [cursor, setCursor] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -27,7 +32,7 @@ export function AdminMembersPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
-    }, 300)
+    }, TIMING.searchDebounceMs)
 
     return () => {
       window.clearTimeout(timer)
@@ -172,7 +177,7 @@ export function AdminMembersPage() {
                     </ListTableCell>
                     <ListTableCell>
                       <div className="flex items-center gap-3">
-                        <ActionLink to={`/admin/members/${member.id}`}>Edit</ActionLink>
+                        <ActionLink to={toAdminMemberDetail(member.id)}>Edit</ActionLink>
                         <UpdateMemberIdDialog
                           memberId={member.id}
                           memberName={member.full_name}
@@ -198,7 +203,7 @@ export function AdminMembersPage() {
                 canGoPrevious={currentPage > 1}
                 canGoNext={hasMore && Boolean(nextCursor)}
                 pageSize={pageSize}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                pageSizeOptions={PAGINATION_OPTIONS.adminMembers}
                 onPageSizeChange={handlePageSizeChange}
                 onFirstPage={handleFirstPage}
                 onPreviousPage={handlePreviousPage}

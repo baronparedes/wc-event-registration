@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields'
 import type { AdminEventField } from '@/lib/domain/event-fields'
@@ -37,11 +38,14 @@ export function AdminEventFieldsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2 text-sm text-muted">
-            <Link to="/admin/events" className="hover:underline">
+            <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
               Events
             </Link>
             <span>›</span>
-            <Link to={`/admin/events/${id}`} className="hover:underline">
+            <Link
+              to={id ? toAdminEventDetail(id) : ROUTE_PATHS.adminEvents}
+              className="hover:underline"
+            >
               {event?.title ?? 'Event'}
             </Link>
             <span>›</span>
@@ -99,7 +103,7 @@ export function AdminEventFieldsPage() {
       ) : !event ? (
         <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
           Event not found.{' '}
-          <Link className="underline" to="/admin/events">
+          <Link className="underline" to={ROUTE_PATHS.adminEvents}>
             Back to events
           </Link>
         </div>

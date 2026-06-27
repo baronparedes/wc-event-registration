@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { toEventRegistration } from '@/config/constants'
 import type { PublicEventListingItem } from '@/lib/domain/events'
 import { Button } from '@/components/ui/Button'
 import { formatDateOnly } from '@/lib/infrastructure'
@@ -56,7 +57,7 @@ export function EventCard({ event }: EventCardProps) {
 
       {event.listingStatus === 'open' && (
         <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">
-          <Link to={`/events/${event.slug}/register`}>Register Now</Link>
+          <Link to={toEventRegistration(event.slug)}>Register Now</Link>
         </Button>
       )}
     </div>

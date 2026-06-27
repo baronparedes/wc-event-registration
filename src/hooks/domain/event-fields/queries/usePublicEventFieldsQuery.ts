@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { QUERY_KEYS } from '@/config/constants'
 import { supabase } from '@/lib/infrastructure'
 import { logger } from '@/lib/infrastructure'
 import { validatePublicEventFieldConfig } from '@/lib/domain/event-fields'
@@ -16,7 +17,7 @@ import type {
  */
 export function usePublicEventFieldsQuery(eventId: string | undefined) {
   return useQuery({
-    queryKey: ['public-event-fields', eventId],
+    queryKey: QUERY_KEYS.publicEventFields(eventId),
     queryFn: async () => {
       if (!eventId) {
         return { validFields: [], issues: [] } as EventFieldConfigValidationResult

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { ROUTE_PATHS } from '@/config/constants'
 import { AppShell } from '../components/layout/AppShell'
 import { useAdminAuthQuery } from '../hooks/domain/auth'
 import { AdminLoginPage } from '../pages/admin/login'
@@ -34,7 +35,7 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
   const isAuthenticated = data?.isAuthenticated ?? false
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />
+    return <Navigate to={ROUTE_PATHS.adminLogin} replace />
   }
 
   return children
@@ -44,12 +45,12 @@ export function AppRouter() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/events/:slug/register" element={<EventRegistrationPage />} />
+        <Route path={ROUTE_PATHS.home} element={<HomePage />} />
+        <Route path={ROUTE_PATHS.eventRegisterPattern} element={<EventRegistrationPage />} />
 
-        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path={ROUTE_PATHS.adminLogin} element={<AdminLoginPage />} />
         <Route
-          path="/admin/members"
+          path={ROUTE_PATHS.adminMembers}
           element={
             <RequireAdminAuth>
               <AdminMembersPage />
@@ -57,7 +58,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/members/:id"
+          path={ROUTE_PATHS.adminMemberDetailPattern}
           element={
             <RequireAdminAuth>
               <AdminMemberDetailPage />
@@ -65,7 +66,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/events"
+          path={ROUTE_PATHS.adminEvents}
           element={
             <RequireAdminAuth>
               <AdminEventsPage />
@@ -73,7 +74,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/events/new"
+          path={ROUTE_PATHS.adminEventNew}
           element={
             <RequireAdminAuth>
               <AdminNewEventPage />
@@ -81,7 +82,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/events/:id"
+          path={ROUTE_PATHS.adminEventDetailPattern}
           element={
             <RequireAdminAuth>
               <AdminEditEventPage />
@@ -89,7 +90,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/events/:id/fields"
+          path={ROUTE_PATHS.adminEventFieldsPattern}
           element={
             <RequireAdminAuth>
               <AdminEventFieldsPage />
@@ -97,7 +98,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/events/:id/registrations"
+          path={ROUTE_PATHS.adminEventRegistrationsPattern}
           element={
             <RequireAdminAuth>
               <AdminRegistrationsPage />
@@ -105,7 +106,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/events/:id/registrations/:registration_id"
+          path={ROUTE_PATHS.adminRegistrationDetailPattern}
           element={
             <RequireAdminAuth>
               <AdminRegistrationDetailPage />
@@ -114,7 +115,7 @@ export function AppRouter() {
         />
       </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path={ROUTE_PATHS.notFound} element={<NotFoundPage />} />
     </Routes>
   )
 }

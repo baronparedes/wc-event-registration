@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ROUTE_PATHS, ROUTE_PREFIXES, TOAST_MESSAGES } from '@/config/constants'
 import { Button } from '../ui/Button'
 import { DropdownMenu, DropdownMenuItem } from '../ui/DropdownMenu'
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth'
@@ -14,14 +15,14 @@ export function AppShell() {
   async function handleLogout() {
     try {
       await logoutMutation.mutateAsync()
-      toast.success('Signed out of admin session.')
+      toast.success(TOAST_MESSAGES.adminSignOutSuccess)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to sign out.'
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignOutFailure
       toast.error(message)
     }
   }
 
-  const isAdminPath = location.pathname.startsWith('/admin/')
+  const isAdminPath = location.pathname.startsWith(ROUTE_PREFIXES.admin)
 
   return (
     <div className="min-h-screen bg-background text-text">
@@ -34,7 +35,7 @@ export function AppShell() {
             <p className="text-xs text-muted">{new Date().toDateString()}</p>
           </div>
           <nav className="flex items-center gap-2.5 text-sm">
-            <Link className="rounded-md px-3.5 py-2 hover:bg-primary/10" to="/">
+            <Link className="rounded-md px-3.5 py-2 hover:bg-primary/10" to={ROUTE_PATHS.home}>
               Events
             </Link>
             <DropdownMenu
@@ -51,15 +52,24 @@ export function AppShell() {
             >
               {adminAuth?.isAuthenticated ? (
                 <>
-                  <DropdownMenuItem to="/admin/events" onClick={() => setAdminDropdownOpen(false)}>
+                  <DropdownMenuItem
+                    to={ROUTE_PATHS.adminEvents}
+                    onClick={() => setAdminDropdownOpen(false)}
+                  >
                     Events
                   </DropdownMenuItem>
-                  <DropdownMenuItem to="/admin/members" onClick={() => setAdminDropdownOpen(false)}>
+                  <DropdownMenuItem
+                    to={ROUTE_PATHS.adminMembers}
+                    onClick={() => setAdminDropdownOpen(false)}
+                  >
                     Members
                   </DropdownMenuItem>
                 </>
               ) : (
-                <DropdownMenuItem to="/admin/login" onClick={() => setAdminDropdownOpen(false)}>
+                <DropdownMenuItem
+                  to={ROUTE_PATHS.adminLogin}
+                  onClick={() => setAdminDropdownOpen(false)}
+                >
                   Sign In
                 </DropdownMenuItem>
               )}

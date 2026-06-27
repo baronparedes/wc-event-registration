@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { toAdminEventRegistrations } from '@/config/constants'
 import {
   useRegistrationDetailQuery,
   useCancelRegistrationMutation,
@@ -147,7 +148,7 @@ export function AdminRegistrationDetailPage() {
       })
       setShowCancelDialog(false)
       // Navigate back to registrations list after successful cancel
-      navigate(`/admin/events/${eventId}/registrations`)
+      navigate(toAdminEventRegistrations(eventId))
     } catch (error) {
       showError(error instanceof Error ? error.message : 'Failed to cancel registration')
     }
@@ -161,7 +162,7 @@ export function AdminRegistrationDetailPage() {
         registration_id: registrationId,
       })
       setShowReactivateDialog(false)
-      navigate(`/admin/events/${eventId}/registrations`)
+      navigate(toAdminEventRegistrations(eventId))
     } catch (error) {
       showError(error instanceof Error ? error.message : 'Failed to reactivate registration')
     }

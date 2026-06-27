@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react'
+import { TIMING } from '@/config/constants'
 
 /**
  * Global RFID scan buffer for kiosk mode.
@@ -78,7 +79,7 @@ export function useScanBuffer(
               completeScan(buffer)
             }
             scanTimeoutId = null
-          }, 800)
+          }, TIMING.scanDeleteBufferAutoCompleteMs)
         }
         return
       }
@@ -100,7 +101,7 @@ export function useScanBuffer(
             completeScan(buffer)
           }
           scanTimeoutId = null
-        }, 300)
+        }, TIMING.scanAutoCompleteMs)
       }
     }
 
