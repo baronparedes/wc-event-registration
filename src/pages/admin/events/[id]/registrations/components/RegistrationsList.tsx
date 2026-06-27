@@ -3,6 +3,15 @@ import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable'
 import { useReactivateRegistrationMutation } from '@/hooks/domain/registrations'
 import { useErrorWithFadeout } from '@/hooks/utils'
 
@@ -116,77 +125,73 @@ export function RegistrationsList({
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Member ID</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Category</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Submitted</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {registrations.map((registration) => (
-              <tr key={registration.id} className="border-b border-gray-100 hover:bg-background/50">
-                <td className="px-4 py-3 text-sm text-gray-900">{registration.member_id}</td>
-                <td className="px-4 py-3 text-sm text-gray-900">{registration.full_name}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{registration.email}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{registration.role}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{registration.category}</td>
-                <td className="px-4 py-3 text-sm">{getStatusBadge(registration.status)}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {formatDate(registration.submitted_at)}
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <ActionLink to={`/admin/events/${eventId}/registrations/${registration.id}`}>
-                      View
-                    </ActionLink>
-                    {registration.status === 'cancelled' ? (
-                      <button
-                        onClick={() => handleReactivateClick(registration)}
-                        disabled={isEventArchived}
-                        className={`text-sm font-medium ${
-                          isEventArchived
-                            ? 'cursor-not-allowed text-gray-400'
-                            : 'text-green-700 hover:text-green-800'
-                        }`}
-                        title={
-                          isEventArchived
-                            ? 'Cannot reactivate registrations for archived events'
-                            : ''
-                        }
-                      >
-                        Reactivate
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleCancelClick(registration)}
-                        disabled={isEventArchived}
-                        className={`text-sm font-medium ${
-                          isEventArchived
-                            ? 'cursor-not-allowed text-gray-400'
-                            : 'text-red-600 hover:text-red-700'
-                        }`}
-                        title={
-                          isEventArchived ? 'Cannot cancel registrations for archived events' : ''
-                        }
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ListTable density="dense">
+        <ListTableHead>
+          <ListTableHeaderRow variant="plain">
+            <ListTableHeaderCell>Member ID</ListTableHeaderCell>
+            <ListTableHeaderCell>Name</ListTableHeaderCell>
+            <ListTableHeaderCell>Email</ListTableHeaderCell>
+            <ListTableHeaderCell>Role</ListTableHeaderCell>
+            <ListTableHeaderCell>Category</ListTableHeaderCell>
+            <ListTableHeaderCell>Status</ListTableHeaderCell>
+            <ListTableHeaderCell>Submitted</ListTableHeaderCell>
+            <ListTableHeaderCell>Actions</ListTableHeaderCell>
+          </ListTableHeaderRow>
+        </ListTableHead>
+        <ListTableBody divider="none">
+          {registrations.map((registration) => (
+            <ListTableRow key={registration.id} className="border-b border-gray-100">
+              <ListTableCell className="text-gray-900">{registration.member_id}</ListTableCell>
+              <ListTableCell className="text-gray-900">{registration.full_name}</ListTableCell>
+              <ListTableCell className="text-gray-600">{registration.email}</ListTableCell>
+              <ListTableCell className="text-gray-600">{registration.role}</ListTableCell>
+              <ListTableCell className="text-gray-600">{registration.category}</ListTableCell>
+              <ListTableCell>{getStatusBadge(registration.status)}</ListTableCell>
+              <ListTableCell className="text-gray-600">
+                {formatDate(registration.submitted_at)}
+              </ListTableCell>
+              <ListTableCell>
+                <div className="flex items-center gap-2">
+                  <ActionLink to={`/admin/events/${eventId}/registrations/${registration.id}`}>
+                    View
+                  </ActionLink>
+                  {registration.status === 'cancelled' ? (
+                    <button
+                      onClick={() => handleReactivateClick(registration)}
+                      disabled={isEventArchived}
+                      className={`text-sm font-medium ${
+                        isEventArchived
+                          ? 'cursor-not-allowed text-gray-400'
+                          : 'text-green-700 hover:text-green-800'
+                      }`}
+                      title={
+                        isEventArchived ? 'Cannot reactivate registrations for archived events' : ''
+                      }
+                    >
+                      Reactivate
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleCancelClick(registration)}
+                      disabled={isEventArchived}
+                      className={`text-sm font-medium ${
+                        isEventArchived
+                          ? 'cursor-not-allowed text-gray-400'
+                          : 'text-red-600 hover:text-red-700'
+                      }`}
+                      title={
+                        isEventArchived ? 'Cannot cancel registrations for archived events' : ''
+                      }
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </ListTableCell>
+            </ListTableRow>
+          ))}
+        </ListTableBody>
+      </ListTable>
 
       {selectedRegistration && (
         <CancelRegistrationDialog

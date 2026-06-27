@@ -10,6 +10,15 @@ import {
 } from '@/hooks/domain/event-fields'
 import { ActionButton } from '@/components/ui/ActionLink'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable'
 
 type EventFieldsListProps = {
   fields: AdminEventField[]
@@ -92,21 +101,21 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
   return (
     <>
       <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border bg-muted/30">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-muted">Order</th>
-              <th className="px-4 py-3 text-left font-medium text-muted">Field Label</th>
-              <th className="px-4 py-3 text-left font-medium text-muted">Type</th>
-              <th className="px-4 py-3 text-left font-medium text-muted">Required</th>
-              <th className="px-4 py-3 text-left font-medium text-muted">Active</th>
-              <th className="px-4 py-3 text-right font-medium text-muted">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
+        <ListTable density="dense">
+          <ListTableHead>
+            <ListTableHeaderRow variant="muted">
+              <ListTableHeaderCell>Order</ListTableHeaderCell>
+              <ListTableHeaderCell>Field Label</ListTableHeaderCell>
+              <ListTableHeaderCell>Type</ListTableHeaderCell>
+              <ListTableHeaderCell>Required</ListTableHeaderCell>
+              <ListTableHeaderCell>Active</ListTableHeaderCell>
+              <ListTableHeaderCell className="text-right">Actions</ListTableHeaderCell>
+            </ListTableHeaderRow>
+          </ListTableHead>
+          <ListTableBody>
             {fields.map((field, index) => (
-              <tr key={field.id} className="hover:bg-muted/10">
-                <td className="px-4 py-3">
+              <ListTableRow key={field.id} hover="muted">
+                <ListTableCell>
                   <div className="flex items-center gap-1">
                     {isDraft ? (
                       <>
@@ -141,33 +150,33 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
                     )}
                     <span className="ml-1 text-xs text-muted">{index + 1}</span>
                   </div>
-                </td>
-                <td className="px-4 py-3">
+                </ListTableCell>
+                <ListTableCell>
                   <p className="font-medium text-text">{field.label}</p>
                   <p className="text-xs text-muted">{field.field_key}</p>
-                </td>
-                <td className="px-4 py-3">
+                </ListTableCell>
+                <ListTableCell>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[field.field_type] ?? 'bg-muted text-text'}`}
                   >
                     {FIELD_TYPE_LABELS[field.field_type as EventFieldTypeEnum] ?? field.field_type}
                   </span>
-                </td>
-                <td className="px-4 py-3">
+                </ListTableCell>
+                <ListTableCell>
                   <span
                     className={`text-xs font-medium ${field.is_required ? 'text-text' : 'text-muted'}`}
                   >
                     {field.is_required ? 'Yes' : 'No'}
                   </span>
-                </td>
-                <td className="px-4 py-3">
+                </ListTableCell>
+                <ListTableCell>
                   <span
                     className={`text-xs font-medium ${field.is_active ? 'text-green-700' : 'text-muted'}`}
                   >
                     {field.is_active ? 'Active' : 'Hidden'}
                   </span>
-                </td>
-                <td className="px-4 py-3 text-right">
+                </ListTableCell>
+                <ListTableCell className="text-right">
                   <div className="flex items-center justify-end gap-3">
                     <ActionButton type="button" onClick={() => onEdit(field)}>
                       Edit
@@ -194,11 +203,11 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
                       </span>
                     )}
                   </div>
-                </td>
-              </tr>
+                </ListTableCell>
+              </ListTableRow>
             ))}
-          </tbody>
-        </table>
+          </ListTableBody>
+        </ListTable>
       </div>
 
       <ConfirmDialog

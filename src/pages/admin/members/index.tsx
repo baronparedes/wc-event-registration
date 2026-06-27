@@ -4,6 +4,15 @@ import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/i
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
 import { Button } from '@/components/ui/Button'
 import { ActionLink } from '@/components/ui/ActionLink'
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable'
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog'
 import { AddMemberDialog } from './components/AddMemberDialog'
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -121,62 +130,60 @@ export function AdminMembersPage() {
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs font-semibold uppercase tracking-wide text-muted">
-                    <th className="px-6 py-3">Member ID</th>
-                    <th className="px-4 py-3">Full Name</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Phone</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Joined</th>
-                    <th className="px-4 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {members.map((member) => (
-                    <tr key={member.id} className="transition hover:bg-background/50">
-                      <td className="px-6 py-4">
-                        <p className="font-mono text-sm text-text">{member.member_id}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-text">{member.full_name}</p>
-                        {member.nickname && (
-                          <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-text">{member.email || '—'}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-text">{member.phone || '—'}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-text">{member.role || '—'}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-text">{member.category || '—'}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <ActionLink to={`/admin/members/${member.id}`}>Edit</ActionLink>
-                          <UpdateMemberIdDialog
-                            memberId={member.id}
-                            memberName={member.full_name}
-                            currentMemberId={member.member_id}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ListTable>
+              <ListTableHead>
+                <ListTableHeaderRow>
+                  <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
+                  <ListTableHeaderCell>Full Name</ListTableHeaderCell>
+                  <ListTableHeaderCell>Email</ListTableHeaderCell>
+                  <ListTableHeaderCell>Phone</ListTableHeaderCell>
+                  <ListTableHeaderCell>Role</ListTableHeaderCell>
+                  <ListTableHeaderCell>Category</ListTableHeaderCell>
+                  <ListTableHeaderCell>Joined</ListTableHeaderCell>
+                  <ListTableHeaderCell>Actions</ListTableHeaderCell>
+                </ListTableHeaderRow>
+              </ListTableHead>
+              <ListTableBody>
+                {members.map((member) => (
+                  <ListTableRow key={member.id}>
+                    <ListTableCell className="px-6">
+                      <p className="font-mono text-sm text-text">{member.member_id}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <p className="font-medium text-text">{member.full_name}</p>
+                      {member.nickname && (
+                        <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
+                      )}
+                    </ListTableCell>
+                    <ListTableCell>
+                      <p className="text-sm text-text">{member.email || '—'}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <p className="text-sm text-text">{member.phone || '—'}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <p className="text-sm text-text">{member.role || '—'}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <p className="text-sm text-text">{member.category || '—'}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <div className="flex items-center gap-3">
+                        <ActionLink to={`/admin/members/${member.id}`}>Edit</ActionLink>
+                        <UpdateMemberIdDialog
+                          memberId={member.id}
+                          memberName={member.full_name}
+                          currentMemberId={member.member_id}
+                        />
+                      </div>
+                    </ListTableCell>
+                  </ListTableRow>
+                ))}
+              </ListTableBody>
+            </ListTable>
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="hidden text-xs text-muted sm:block">

@@ -11,6 +11,15 @@ import { ActionLink } from '@/components/ui/ActionLink'
 import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
 import { Button } from '@/components/ui/Button'
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable'
 import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -108,80 +117,78 @@ export function AdminEventsPage() {
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs font-semibold uppercase tracking-wide text-muted">
-                    <th className="px-6 py-3">Event</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Duplicate Policy</th>
-                    <th className="px-4 py-3">Reg. Mode</th>
-                    <th className="px-4 py-3">Starts</th>
-                    <th className="px-4 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {events.map((event) => (
-                    <tr key={event.id} className="transition hover:bg-background/50">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-text">{event.title}</p>
-                        <p className="mt-0.5 text-xs text-muted">{event.slug}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <EventStatusBadge status={event.status} />
-                      </td>
-                      <td className="px-4 py-4">
-                        <DuplicatePolicyLabel policy={event.duplicate_policy} />
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="text-sm capitalize text-text">
-                          {event.registration_mode}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="text-sm text-text">{formatDateOnly(event.starts_at)}</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <ActionLink to={`/admin/events/${event.id}`}>Edit</ActionLink>
-                          <ActionLink to={`/admin/events/${event.id}/fields`}>Fields</ActionLink>
-                          <ActionLink to={`/admin/events/${event.id}/registrations`}>
-                            Registrations
-                          </ActionLink>
-                          {event.status === 'draft' && (
-                            <PublishActionButton
-                              event={event}
-                              isPending={publishMutation.isPending}
-                              onPublish={handlePublish}
-                            />
-                          )}
-                          {event.status !== 'archived' && (
-                            <ActionConfirmButton
-                              variant="destructive"
-                              title="Archive Event"
-                              description={
-                                <>
-                                  Are you sure you want to archive{' '}
-                                  <span className="font-medium text-text">"{event.title}"</span>?
-                                  Archived events are no longer visible to the public. You can
-                                  publish the event again to restore it.
-                                </>
-                              }
-                              confirmLabel="Archive"
-                              confirmLoadingLabel="Archiving..."
-                              isPending={archiveMutation.isPending}
-                              onConfirm={() => handleArchive(event.id, event.title)}
-                            >
-                              Archive
-                            </ActionConfirmButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ListTable>
+              <ListTableHead>
+                <ListTableHeaderRow>
+                  <ListTableHeaderCell className="px-6">Event</ListTableHeaderCell>
+                  <ListTableHeaderCell>Status</ListTableHeaderCell>
+                  <ListTableHeaderCell>Duplicate Policy</ListTableHeaderCell>
+                  <ListTableHeaderCell>Reg. Mode</ListTableHeaderCell>
+                  <ListTableHeaderCell>Starts</ListTableHeaderCell>
+                  <ListTableHeaderCell>Actions</ListTableHeaderCell>
+                </ListTableHeaderRow>
+              </ListTableHead>
+              <ListTableBody>
+                {events.map((event) => (
+                  <ListTableRow key={event.id}>
+                    <ListTableCell className="px-6">
+                      <p className="font-medium text-text">{event.title}</p>
+                      <p className="mt-0.5 text-xs text-muted">{event.slug}</p>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <EventStatusBadge status={event.status} />
+                    </ListTableCell>
+                    <ListTableCell>
+                      <DuplicatePolicyLabel policy={event.duplicate_policy} />
+                    </ListTableCell>
+                    <ListTableCell>
+                      <span className="text-sm capitalize text-text">
+                        {event.registration_mode}
+                      </span>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <span className="text-sm text-text">{formatDateOnly(event.starts_at)}</span>
+                    </ListTableCell>
+                    <ListTableCell>
+                      <div className="flex items-center gap-3">
+                        <ActionLink to={`/admin/events/${event.id}`}>Edit</ActionLink>
+                        <ActionLink to={`/admin/events/${event.id}/fields`}>Fields</ActionLink>
+                        <ActionLink to={`/admin/events/${event.id}/registrations`}>
+                          Registrations
+                        </ActionLink>
+                        {event.status === 'draft' && (
+                          <PublishActionButton
+                            event={event}
+                            isPending={publishMutation.isPending}
+                            onPublish={handlePublish}
+                          />
+                        )}
+                        {event.status !== 'archived' && (
+                          <ActionConfirmButton
+                            variant="destructive"
+                            title="Archive Event"
+                            description={
+                              <>
+                                Are you sure you want to archive{' '}
+                                <span className="font-medium text-text">"{event.title}"</span>?
+                                Archived events are no longer visible to the public. You can publish
+                                the event again to restore it.
+                              </>
+                            }
+                            confirmLabel="Archive"
+                            confirmLoadingLabel="Archiving..."
+                            isPending={archiveMutation.isPending}
+                            onConfirm={() => handleArchive(event.id, event.title)}
+                          >
+                            Archive
+                          </ActionConfirmButton>
+                        )}
+                      </div>
+                    </ListTableCell>
+                  </ListTableRow>
+                ))}
+              </ListTableBody>
+            </ListTable>
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="hidden text-xs text-muted sm:block">
