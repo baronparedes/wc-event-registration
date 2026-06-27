@@ -1,6 +1,9 @@
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui'
 import { usePublicEventListingQuery } from '@/hooks/domain/events'
 import { EventSection } from './components'
+import { Calendar } from 'lucide-react'
+import heroImage from '@/assets/hero.png'
 
 export function HomePage() {
   const { data: events, isLoading, isError } = usePublicEventListingQuery()
@@ -10,7 +13,10 @@ export function HomePage() {
   const pastEvents = events?.filter((e) => e.listingStatus === 'past') ?? []
 
   return (
-    <section className="space-y-10">
+    <section className="relative space-y-10">
+      <div className="absolute inset-0 -z-10 overflow-hidden opacity-10">
+        <img src={heroImage} alt="" className="h-full w-full object-cover" aria-hidden="true" />
+      </div>
       <div className="space-y-2">
         <p className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
           Public Registration
@@ -54,7 +60,11 @@ export function HomePage() {
       )}
 
       {!isLoading && !isError && events?.length === 0 && (
-        <p className="text-sm text-muted">No open, upcoming, or recent past events at this time.</p>
+        <EmptyState
+          icon={<Calendar className="h-6 w-6" />}
+          title="No events available"
+          description="There are currently no open, upcoming, or recent events. Check back soon!"
+        />
       )}
 
       <EventSection events={openEvents} title="Open for Registration" />

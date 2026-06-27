@@ -82,7 +82,7 @@ export function ListTableBody({ children, className, divider = 'default' }: List
 
 export function ListTableRow({ className, hover = 'default', ...props }: ListTableRowProps) {
   const hoverStyles: Record<ListTableRowHover, string> = {
-    default: 'transition hover:bg-background/50',
+    default: 'transition-all hover:bg-slate-50 hover:shadow-xs',
     muted: 'transition hover:bg-muted/10',
     none: '',
   }

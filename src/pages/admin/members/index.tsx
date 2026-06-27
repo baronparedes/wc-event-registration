@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Users } from 'lucide-react'
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
@@ -9,7 +10,7 @@ import {
 import { useAdminMembersQuery } from '@/hooks/domain/members'
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
-import { Button } from '@/components/ui/Button'
+import { Button, EmptyState } from '@/components/ui'
 import { ActionLink } from '@/components/ui/ActionLink'
 import {
   ListTable,
@@ -129,11 +130,17 @@ export function AdminMembersPage() {
         ) : error ? (
           <p className="p-6 text-sm text-red-600">{UI_MESSAGES.errors.membersLoadFailed}</p>
         ) : members.length === 0 ? (
-          <p className="p-6 text-sm text-muted">
-            {normalizedSearchTerm.length > 0
-              ? UI_MESSAGES.empty.noMembersMatchedSearch
-              : UI_MESSAGES.empty.noMembersFound}
-          </p>
+          <div className="px-6 py-12">
+            <EmptyState
+              icon={<Users className="h-6 w-6" />}
+              title={normalizedSearchTerm.length > 0 ? 'No members found' : 'No members yet'}
+              description={
+                normalizedSearchTerm.length > 0
+                  ? 'Try adjusting your search filters'
+                  : 'Members will appear here once they are added to the system'
+              }
+            />
+          </div>
         ) : (
           <>
             <ListTable>

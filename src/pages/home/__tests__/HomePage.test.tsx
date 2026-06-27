@@ -56,8 +56,9 @@ describe('HomePage', () => {
 
     render(<HomePage />)
 
+    expect(screen.getByText('No events available')).toBeInTheDocument()
     expect(
-      screen.getByText('No open, upcoming, or recent past events at this time.'),
+      screen.getByText('There are currently no open, upcoming, or recent events. Check back soon!'),
     ).toBeInTheDocument()
   })
 })

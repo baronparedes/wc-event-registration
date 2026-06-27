@@ -95,6 +95,9 @@ describe('AdminMembersPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('No members found.')).toBeInTheDocument()
+    expect(screen.getByText('No members yet')).toBeInTheDocument()
+    expect(
+      screen.getByText('Members will appear here once they are added to the system'),
+    ).toBeInTheDocument()
   })
 })

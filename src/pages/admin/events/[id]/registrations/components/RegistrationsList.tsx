@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { ClipboardList } from 'lucide-react'
 import { TOAST_MESSAGES, UI_MESSAGES, toAdminRegistrationDetail } from '@/config/constants'
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 import { ActionLink } from '@/components/ui/ActionLink'
+import { EmptyState } from '@/components/ui'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
@@ -88,14 +90,16 @@ export function RegistrationsList({
 
   if (registrations.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center text-gray-500">
-          <p className="text-base">
-            {searchTerm && searchTerm.length > 0
-              ? UI_MESSAGES.empty.noRegistrationsMatchedSearch
-              : UI_MESSAGES.empty.noRegistrationsYet}
-          </p>
-        </div>
+      <div className="px-6 py-12">
+        <EmptyState
+          icon={<ClipboardList className="h-6 w-6" />}
+          title={searchTerm && searchTerm.length > 0 ? 'No matches found' : 'No registrations yet'}
+          description={
+            searchTerm && searchTerm.length > 0
+              ? 'Try adjusting your search filters'
+              : 'Registrations will appear here once members start registering for this event'
+          }
+        />
       </div>
     )
   }

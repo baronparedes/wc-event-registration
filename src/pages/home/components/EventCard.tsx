@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { toEventRegistration } from '@/config/constants'
 import type { PublicEventListingItem } from '@/lib/domain/events'
-import { Button } from '@/components/ui/Button'
+import { Button, Badge } from '@/components/ui'
 import { formatDateOnly } from '@/lib/infrastructure'
 
 type EventCardProps = {
@@ -14,29 +14,29 @@ type EventCardProps = {
  */
 export function EventCard({ event }: EventCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm">
+    <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-md hover:scale-[1.02]">
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-heading text-base font-semibold text-text">{event.title}</h3>
-        <span
-          className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+        <Badge
+          variant={
             event.listingStatus === 'open'
-              ? 'bg-primary/10 text-primary'
+              ? 'open'
               : event.listingStatus === 'upcoming'
-                ? 'bg-secondary/10 text-secondary'
-                : 'bg-muted/30 text-muted'
-          }`}
+                ? 'upcoming'
+                : 'closed'
+          }
         >
           {event.listingStatus === 'open'
             ? 'Open'
             : event.listingStatus === 'upcoming'
               ? 'Upcoming'
               : 'Past'}
-        </span>
+        </Badge>
       </div>
 
       {event.description && <p className="line-clamp-2 text-sm text-muted">{event.description}</p>}
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted">
         {event.location && (
           <>
             <dt className="font-medium text-text">Location</dt>

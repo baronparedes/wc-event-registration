@@ -1,17 +1,25 @@
 import type { EventStatus } from '@/lib/domain/events'
+import { Badge } from '@/components/ui'
+import { CheckCircle2, Trash2, FileText } from 'lucide-react'
 
-const statusConfig: Record<EventStatus, { label: string; className: string }> = {
+const statusConfig: Record<
+  EventStatus,
+  { label: string; variant: 'open' | 'upcoming' | 'closed' | 'error'; icon: React.ReactNode }
+> = {
   draft: {
     label: 'Draft',
-    className: 'bg-surface text-muted border border-border',
+    variant: 'closed',
+    icon: <FileText className="h-3 w-3" />,
   },
   published: {
     label: 'Published',
-    className: 'bg-green-100 text-green-700 border border-green-200',
+    variant: 'open',
+    icon: <CheckCircle2 className="h-3 w-3" />,
   },
   archived: {
     label: 'Archived',
-    className: 'bg-red-50 text-red-600 border border-red-200',
+    variant: 'error',
+    icon: <Trash2 className="h-3 w-3" />,
   },
 }
 
@@ -22,10 +30,8 @@ type EventStatusBadgeProps = {
 export function EventStatusBadge({ status }: EventStatusBadgeProps) {
   const config = statusConfig[status] ?? statusConfig.draft
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}
-    >
+    <Badge variant={config.variant} icon={config.icon}>
       {config.label}
-    </span>
+    </Badge>
   )
 }

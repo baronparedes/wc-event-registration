@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Plus } from 'lucide-react'
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
@@ -20,7 +21,7 @@ import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/i
 import { ActionLink } from '@/components/ui/ActionLink'
 import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
-import { Button } from '@/components/ui/Button'
+import { Button, EmptyState } from '@/components/ui'
 import {
   ListTable,
   ListTableBody,
@@ -117,15 +118,18 @@ export function AdminEventsPage() {
         ) : error ? (
           <p className="p-6 text-sm text-red-600">{UI_MESSAGES.errors.eventsLoadFailed}</p>
         ) : events.length === 0 ? (
-          <p className="p-6 text-sm text-muted">
-            {UI_MESSAGES.empty.noEventsYet}{' '}
-            <Link
-              className="text-primary underline underline-offset-2"
-              to={ROUTE_PATHS.adminEventNew}
-            >
-              Create your first event.
-            </Link>
-          </p>
+          <div className="px-6 py-12">
+            <EmptyState
+              icon={<Plus className="h-6 w-6" />}
+              title="No events yet"
+              description="Create your first event to get started with registrations."
+              action={
+                <Button asChild size="md" variant="default">
+                  <Link to={ROUTE_PATHS.adminEventNew}>Create Event</Link>
+                </Button>
+              }
+            />
+          </div>
         ) : (
           <>
             <ListTable>

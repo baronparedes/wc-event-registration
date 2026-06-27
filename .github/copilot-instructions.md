@@ -437,6 +437,190 @@ Forms:
 - Ensure focus states are visible. Avoid deeply nested conditionals.
 - Never swallow errors silently; convert to user-safe messages in UI.
 
+## Design System & Styling
+
+### Color Palette (CSS Custom Properties)
+
+All colors are defined as CSS variables in `src/index.css` and consumed via Tailwind config:
+
+- **Primary** (`--color-primary`): `#0b5fff` (Vibrant blue) — CTAs, active states, focus indicators
+- **Secondary** (`--color-secondary`): `#0f766e` (Teal) — Accents, "upcoming" status badges
+- **Accent** (`--color-accent`): `#f59e0b` (Amber/Orange) — Highlights, warnings
+- **Background** (`--color-background`): `#f8fafc` (Off-white) — Page background, neutral surfaces
+- **Surface** (`--color-surface`): `#ffffff` (White) — Cards, modals, elevated containers
+- **Text** (`--color-text`): `#0f172a` (Near-black) — Primary text
+- **Muted** (`--color-muted`): `#475569` (Slate gray) — Secondary text, disabled states
+- **Border** (`--color-border`): `#d7e0eb` (Light slate) — Dividers, outlines
+- **Danger** (`--color-danger`): `#dc2626` (Red) — Destructive actions, errors
+
+### Typography
+
+Three font stacks defined in Tailwind config; use `font-heading`, `font-body`, `font-mono` classes:
+
+- **`font-heading`** (Manrope, 500–800): Modern geometric serif for headings and badges; pairs well with slight letter-spacing
+- **`font-body`** (Source Sans 3, 400–700): Clean, readable sans-serif for body copy and form labels
+- **`font-mono`** (JetBrains Mono): Code, timestamps, machine-readable content in tables
+
+### Shadows & Depth
+
+Layered shadow scale in `tailwind.config.js` creates visual hierarchy; all shadows use color-appropriate opacity:
+
+- **`shadow-xs`** (0 2px 4px rgba(0, 0, 0, 0.08)): Micro elevations, subtle separations
+- **`shadow-sm`** (0 4px 6px rgba(0, 0, 0, 0.1)): Default card/component shadow
+- **`shadow-md`** (0 10px 15px rgba(0, 0, 0, 0.1)): Hover states, elevated containers
+- **`shadow-lg`** (0 15px 30px rgba(0, 0, 0, 0.12)): Focus states, secondary modals
+- **`shadow-xl`** (0 20px 50px rgba(11, 95, 255, 0.15)): Primary modals, max depth (blue-tinted for brand)
+
+**Usage**: Apply shadows to increase depth and signal interactivity. Example:
+
+- Cards at rest: `shadow-sm`
+- Cards on hover: `shadow-md transition-all`
+- Form inputs on focus: `focus:shadow-lg focus:shadow-primary/20` (blue glow for brand cohesion)
+- Modals: `shadow-xl` for prominence
+
+### Animation Utilities
+
+Four animation utilities defined in Tailwind config for smooth, modern interactions:
+
+- **`animate-fadeIn`** (300ms ease-out): Opacity 0 → 1; used for page transitions and component entry
+- **`animate-slideUp`** (400ms ease-out): TranslateY(20px) → 0 with fade; entering elements from below
+- **`animate-scaleIn`** (250ms ease-out): Scale 0.95 → 1 with fade; modal/card open, icon zoom
+- **`animate-pulse-soft`** (2s continuous): Gentle opacity pulse (1 → 0.8 → 1); loading states without distraction
+
+**Usage**: Apply to enhance perceived interactivity and guide user attention. Examples:
+
+- Page content: `animate-fadeIn` on `<Outlet />` in AppShell
+- Card enter: `hover:scale-[1.02] hover:shadow-md transition-all` (lift + depth)
+- Button click: `active:scale-95` (press feedback)
+
+### UI Component Library
+
+Shared UI primitives in `src/components/ui/` — all components use Tailwind classes and follow consistent patterns:
+
+**Core Primitives:**
+
+- **`Button`**: Variants (default, outline, destructive), sizes (sm, md, lg). Includes hover lift (`scale-[1.02]`, `shadow-md`) and click press (`active:scale-95`). Always use for interactive actions.
+- **`Badge`**: Status tags with variants (open, upcoming, closed, error) and optional icon slots. Used for event status, admin event status, member roles.
+- **`EmptyState`**: Branded "no data" placeholder with icon, title, description, optional action. Use instead of plain "no results" text.
+- **Form fields** (`FormInputField`, `FormSelectField`, `FormTextareaField`): Labeled inputs with error display. Include blue shadow glow on focus (`focus:shadow-primary/20`) for brand consistency.
+
+**Composite Components:**
+
+- **`ListTable`** + row/cell primitives: Admin table styling with density variants. Row hover shows subtle background + shadow (`hover:bg-slate-50 hover:shadow-xs`) for interactive feedback.
+- **`SectionCard`**: Wrapper with rounded-2xl, border, shadow-sm; use for grouped content sections.
+- **`ConfirmDialog`**: Modal for destructive/important actions. Always confirm before delete/archive.
+- **`ActionLink`** / **`ActionConfirmButton`**: Inline action links with proper semantics.
+
+**Import pattern** (use `@/` alias):
+
+```tsx
+import { Button, Badge, EmptyState, FormInputField } from '@/components/ui'
+// Or for specific needs:
+import { Button } from '@/components/ui/Button'
+```
+
+### Component Usage Rules
+
+**Buttons:**
+
+- Always use size `md` as default; use `sm` only in compact tables or dense UIs, `lg` for primary CTAs.
+- Default variant is solid primary; use `outline` for secondary actions, `destructive` for delete/cancel.
+- Disabled buttons show `opacity-60` (not clickable, but visible). Set `disabled` prop rather than removing from DOM.
+- Example: `<Button variant="default" size="md" onClick={handleSave}>Save</Button>`
+
+**Badges:**
+
+- Use for status indicators, tags, labels (never for interactive buttons).
+- Variants: `open` (primary blue), `upcoming` (secondary teal), `closed` (gray), `error` (red).
+- Can include icon: `<Badge variant="open" icon={<CheckCircle2 className="h-3 w-3" />}>Published</Badge>`
+
+**EmptyState:**
+
+- Always use when `data?.length === 0` (don't render empty list or blank space).
+- Pass icon (lucide-react), title (1–2 words), description (1 sentence), optional action (e.g., CTA button).
+- Example: `<EmptyState icon={<Calendar />} title="No events" description="No events found." />`
+
+**Form fields:**
+
+- Always pair with `<label>` via FormInputField (label is built in).
+- Use `registration={register('fieldName')}` for registered fields (preferred).
+- Validation errors display inline below input in red; handled by RHF.
+- Apply `focus:shadow-primary/20` automatically; no need to add custom focus classes.
+
+**ListTable:**
+
+- Use for admin data tables; provides consistent density, hover, divider handling.
+- Set density context at table level: `<ListTable density="default">` (default) or `dense` for compact view.
+- Row hover automatically shows `hover:bg-slate-50 hover:shadow-xs`; don't override unless necessary.
+
+### Tailwind Class Organization
+
+Organize inline Tailwind classes logically in this order:
+
+1. **Layout** (flexbox, grid, positioning): `flex items-center gap-4`
+2. **Sizing**: `min-h-10 px-4 py-2`
+3. **Styling** (colors, borders, radius): `rounded-md border border-border bg-primary text-white`
+4. **Interactive** (hover, focus, active): `hover:bg-primary/90 focus:outline-none focus:ring-2`
+5. **Responsive**: `sm:grid-cols-2 lg:grid-cols-3`
+6. **Animation**: `transition-all animate-fadeIn`
+
+**Example (Button component):**
+
+```tsx
+className={cx(
+  'rounded-md font-medium leading-snug transition-all',
+  'hover:shadow-md hover:scale-[1.02] active:scale-95',
+  'focus:outline-none focus:ring-2 focus:ring-primary/30',
+  variantClasses,
+  sizeClasses,
+)}
+```
+
+### Spacing & Rhythm
+
+Consistent spacing using Tailwind scale (4px base):
+
+- **Compact**: `px-2 py-1` (forms in dense tables)
+- **Default**: `px-4 py-2.5` (form inputs, buttons)
+- **Comfortable**: `p-6` (card padding)
+- **Spacious**: `gap-8 space-y-10` (section spacing in pages)
+
+Use `space-y-*` and `gap-*` for consistent rhythm:
+
+- `space-y-2`: Small gaps (labels + help text)
+- `space-y-4`: Default section gaps
+- `space-y-6` or `gap-6`: Card grid gaps
+- `space-y-10`: Page section separation
+
+### Hero Asset & Brand
+
+- Hero asset (`src/assets/hero.png`): 3D purple/blue box. Used subtly on home page as low-opacity background (`opacity-10`) to reinforce brand without distraction.
+- Favicon (`public/favicon.svg`): Primary blue checkmark badge; visible in browser tabs.
+- Never remove or heavily modify the hero asset; it's part of brand identity.
+
+### Accessibility & Contrast
+
+- **Color contrast**: Primary text on white passes WCAG AA (>4.5:1). Test custom color combinations with WebAIM.
+- **Focus rings**: All interactive elements (buttons, links, inputs) show 2px primary-colored focus ring. Never remove.
+- **Icon usage**: Always pair icons with text labels for clarity; never icon-only (exception: obvious symbols like X for close).
+- **Motion**: Animations use reasonable timing (300–400ms); avoid distracting or excessive motion.
+
+### When to Add New Styling
+
+Before adding custom CSS or new Tailwind classes:
+
+1. **Check existing utilities**: Does Tailwind already provide it? (e.g., `rounded-md`, `shadow-lg`)
+2. **Use design tokens**: Does a CSS variable exist? (e.g., `text-primary` vs. inline hex)
+3. **Reuse component**: Can you use an existing component (Button, Badge, EmptyState)?
+4. **Consider animation**: Does it need `transition-all` or an animation utility?
+
+If you must add custom CSS:
+
+- Keep it in component scope (scoped to the component file, not global)
+- Document why it's needed (e.g., "custom gradient for hero section")
+- Do not duplicate existing Tailwind utilities
+- Update this guide if adding a reusable pattern
+
 ## Change Management
 
 For each change:
