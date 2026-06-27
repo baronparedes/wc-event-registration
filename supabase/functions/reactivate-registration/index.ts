@@ -6,7 +6,7 @@ import {
   logAdminAction,
   requireAdminAccess,
   readAllowedOrigins,
-} from '../_shared/security.ts'
+} from '@/shared/security.ts'
 
 interface ReactivateRegistrationRequest {
   registration_id: string

@@ -6,8 +6,8 @@ import {
   logAdminAction,
   requireAdminAccess,
   readAllowedOrigins,
-} from '../_shared/security.ts'
-import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '../_shared/constants.ts'
+} from '@/shared/security.ts'
+import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
 
 interface CreateMemberRequest {
   member_id: string

@@ -5,7 +5,7 @@ import {
   enforcePublicRateLimit,
   isOriginAllowed,
   readAllowedOrigins,
-} from '../_shared/security.ts'
+} from '@/shared/security.ts'
 
 interface MemberLookupRequest {
   memberId: string
