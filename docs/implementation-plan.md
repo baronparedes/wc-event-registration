@@ -276,43 +276,51 @@ Use these gates as required pass criteria before moving between phases and befor
 Planned immediately after the Production Readiness Gates are complete:
 
 1. Hook architecture consistency (high)
-  - move auth hooks into operation-scoped folders to match project standard:
-    - `src/hooks/domain/auth/queries/useAdminAuthQuery.ts`
-    - `src/hooks/domain/auth/mutations/useAdminLoginMutation.ts`
-    - `src/hooks/domain/auth/mutations/useAdminLogoutMutation.ts`
-  - add/update operation barrels for auth domain (`queries/index.ts`, `mutations/index.ts`, and root `index.ts` re-exports)
+
+- move auth hooks into operation-scoped folders to match project standard:
+  - `src/hooks/domain/auth/queries/useAdminAuthQuery.ts`
+  - `src/hooks/domain/auth/mutations/useAdminLoginMutation.ts`
+  - `src/hooks/domain/auth/mutations/useAdminLogoutMutation.ts`
+- add/update operation barrels for auth domain (`queries/index.ts`, `mutations/index.ts`, and root `index.ts` re-exports)
 
 2. Import standardization (high)
-  - replace remaining relative imports with `@/` aliases in layout and shared components
-  - first known target: `src/components/layout/AppShell.tsx`
+
+- replace remaining relative imports with `@/` aliases in layout and shared components
+- first known target: `src/components/layout/AppShell.tsx`
 
 3. Runtime validation hardening for dynamic payloads (medium)
-  - add Zod validation for parsed answer payloads in registration detail query
-  - first known target: `src/hooks/domain/registrations/queries/useRegistrationDetailQuery.ts`
+
+- add Zod validation for parsed answer payloads in registration detail query
+- first known target: `src/hooks/domain/registrations/queries/useRegistrationDetailQuery.ts`
 
 4. Remove unsafe casts at data boundaries (medium)
-  - replace unsafe `as` casts in production code with refined guards/Zod parsing
-  - first known targets:
-    - `src/lib/domain/event-fields/transforms.ts`
-    - `src/hooks/domain/members/mutations/useUpdateMemberMutation.ts`
-    - `src/hooks/domain/registrations/queries/useRegistrationDetailQuery.ts`
+
+- replace unsafe `as` casts in production code with refined guards/Zod parsing
+- first known targets:
+  - `src/lib/domain/event-fields/transforms.ts`
+  - `src/hooks/domain/members/mutations/useUpdateMemberMutation.ts`
+  - `src/hooks/domain/registrations/queries/useRegistrationDetailQuery.ts`
 
 5. Edge Function contract hardening (medium)
-  - add runtime response validation (Zod) for Edge Function success/error discriminators
-  - apply to registration and admin mutation/query hooks that consume function responses
+
+- add runtime response validation (Zod) for Edge Function success/error discriminators
+- apply to registration and admin mutation/query hooks that consume function responses
 
 6. React subscription cleanup (low)
-  - replace `watch()` subscriptions with `useWatch()` where render subscriptions are intended
-  - first known target: `src/hooks/utils/useSlugGeneration.ts`
+
+- replace `watch()` subscriptions with `useWatch()` where render subscriptions are intended
+- first known target: `src/hooks/utils/useSlugGeneration.ts`
 
 7. Minor UX/logic cleanup (low)
-  - fix redundant scroll behavior ternary in registration page
-  - first known target: `src/pages/events/[slug]/register/index.tsx`
+
+- fix redundant scroll behavior ternary in registration page
+- first known target: `src/pages/events/[slug]/register/index.tsx`
 
 8. Optional barrel completeness for admin page-local components (low)
-  - add `index.ts` barrels where missing if imports expand/reuse increases:
-    - `src/pages/admin/events/[id]/fields/components/`
-    - `src/pages/admin/events/[id]/registrations/components/`
+
+- add `index.ts` barrels where missing if imports expand/reuse increases:
+  - `src/pages/admin/events/[id]/fields/components/`
+  - `src/pages/admin/events/[id]/registrations/components/`
 
 ## Scalability and Security Architecture Addendum
 
