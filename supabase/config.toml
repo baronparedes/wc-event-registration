@@ -106,6 +106,18 @@ verify_jwt = false
 [functions.submit-registration]
 verify_jwt = false
 
+[functions.export-registrations-csv]
+verify_jwt = true
+
+[functions.cancel-registration]
+verify_jwt = true
+
+[functions.reactivate-registration]
+verify_jwt = true
+
+[functions.create-member]
+verify_jwt = true
+
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
 [inbucket]
