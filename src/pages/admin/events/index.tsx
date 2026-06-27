@@ -5,6 +5,8 @@ import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
+  TOAST_MESSAGES,
+  UI_MESSAGES,
   toAdminEventDetail,
   toAdminEventFields,
   toAdminEventRegistrations,
@@ -49,10 +51,10 @@ export function AdminEventsPage() {
   async function handlePublish(eventId: string, eventTitle: string) {
     try {
       await publishMutation.mutateAsync(eventId)
-      toast.success(`"${eventTitle}" has been published.`)
+      toast.success(TOAST_MESSAGES.eventSaved.published(eventTitle))
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to publish event. Please try again.'
+        error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.publishFailed
       toast.error(message)
     }
   }
@@ -60,9 +62,9 @@ export function AdminEventsPage() {
   async function handleArchive(eventId: string, eventTitle: string) {
     try {
       await archiveMutation.mutateAsync(eventId)
-      toast.success(`"${eventTitle}" has been archived.`)
+      toast.success(TOAST_MESSAGES.eventSaved.archived(eventTitle))
     } catch {
-      toast.error('Failed to archive event. Please try again.')
+      toast.error(TOAST_MESSAGES.eventSaved.archiveFailed)
     }
   }
 
@@ -111,12 +113,12 @@ export function AdminEventsPage() {
 
       <div className="rounded-2xl border border-border bg-surface">
         {isLoading ? (
-          <p className="p-6 text-sm text-muted">Loading events...</p>
+          <p className="p-6 text-sm text-muted">{UI_MESSAGES.loading.events}</p>
         ) : error ? (
-          <p className="p-6 text-sm text-red-600">Failed to load events. Please refresh.</p>
+          <p className="p-6 text-sm text-red-600">{UI_MESSAGES.errors.eventsLoadFailed}</p>
         ) : events.length === 0 ? (
           <p className="p-6 text-sm text-muted">
-            No events yet.{' '}
+            {UI_MESSAGES.empty.noEventsYet}{' '}
             <Link
               className="text-primary underline underline-offset-2"
               to={ROUTE_PATHS.adminEventNew}

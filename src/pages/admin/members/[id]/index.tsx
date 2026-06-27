@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { ROUTE_PATHS } from '@/config/constants'
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants'
 import { Button } from '@/components/ui/Button'
 import { FormInputField } from '@/components/ui/FormInputField'
 import { SectionCard } from '@/components/ui/SectionCard'
@@ -65,10 +65,10 @@ export function AdminMemberDetailPage() {
 
     try {
       await updateMemberMutation.mutateAsync({ id, ...values })
-      toast.success('Member updated successfully.')
+      toast.success(TOAST_MESSAGES.member.updated)
       navigate(ROUTE_PATHS.adminMembers)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update member.')
+      toast.error(error instanceof Error ? error.message : TOAST_MESSAGES.member.updateFailed)
     }
   }
 
@@ -77,11 +77,11 @@ export function AdminMemberDetailPage() {
   }
 
   if (memberQuery.isLoading) {
-    return <p className="text-sm text-muted">Loading member...</p>
+    return <p className="text-sm text-muted">{UI_MESSAGES.loading.member}</p>
   }
 
   if (memberQuery.isError || !memberQuery.data) {
-    return <p className="text-sm text-red-600">Member not found. Return to the members list.</p>
+    return <p className="text-sm text-red-600">{UI_MESSAGES.errors.memberNotFound}</p>
   }
 
   return (

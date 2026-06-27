@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { toAdminEventRegistrations } from '@/config/constants'
+import { TOAST_MESSAGES, UI_MESSAGES, toAdminEventRegistrations } from '@/config/constants'
 import {
   useRegistrationDetailQuery,
   useCancelRegistrationMutation,
@@ -52,19 +52,19 @@ function getStatusBadge(status: string) {
     case 'submitted':
       return (
         <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-          Submitted
+          {UI_MESSAGES.registrationStatus.submitted}
         </span>
       )
     case 'updated':
       return (
         <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-          Updated
+          {UI_MESSAGES.registrationStatus.updated}
         </span>
       )
     case 'cancelled':
       return (
         <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
-          Cancelled
+          {UI_MESSAGES.registrationStatus.cancelled}
         </span>
       )
     default:
@@ -105,7 +105,8 @@ export function AdminRegistrationDetailPage() {
         </Button>
         <SectionCard title="Error">
           <p className="text-sm text-red-600">
-            Error loading registration: {error instanceof Error ? error.message : 'Unknown error'}
+            Error loading registration:{' '}
+            {error instanceof Error ? error.message : UI_MESSAGES.errors.unknownError}
           </p>
         </SectionCard>
       </section>
@@ -119,7 +120,7 @@ export function AdminRegistrationDetailPage() {
           ← Back
         </Button>
         <SectionCard title="Loading">
-          <p className="text-sm text-muted">Loading registration details...</p>
+          <p className="text-sm text-muted">{UI_MESSAGES.loading.registrationDetails}</p>
         </SectionCard>
       </section>
     )
@@ -133,7 +134,7 @@ export function AdminRegistrationDetailPage() {
           ← Back
         </Button>
         <SectionCard title="Not Found">
-          <p className="text-sm text-muted">Registration not found</p>
+          <p className="text-sm text-muted">{UI_MESSAGES.errors.registrationNotFound}</p>
         </SectionCard>
       </section>
     )
@@ -150,7 +151,7 @@ export function AdminRegistrationDetailPage() {
       // Navigate back to registrations list after successful cancel
       navigate(toAdminEventRegistrations(eventId))
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to cancel registration')
+      showError(error instanceof Error ? error.message : TOAST_MESSAGES.registration.cancelFailed)
     }
   }
 
@@ -164,7 +165,9 @@ export function AdminRegistrationDetailPage() {
       setShowReactivateDialog(false)
       navigate(toAdminEventRegistrations(eventId))
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to reactivate registration')
+      showError(
+        error instanceof Error ? error.message : TOAST_MESSAGES.registration.reactivateFailed,
+      )
     }
   }
 

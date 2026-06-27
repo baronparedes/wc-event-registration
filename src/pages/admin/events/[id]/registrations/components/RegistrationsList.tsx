@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { toAdminRegistrationDetail } from '@/config/constants'
+import { TOAST_MESSAGES, UI_MESSAGES, toAdminRegistrationDetail } from '@/config/constants'
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
@@ -29,19 +29,19 @@ function getStatusBadge(status: string) {
     case 'submitted':
       return (
         <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-          Submitted
+          {UI_MESSAGES.registrationStatus.submitted}
         </span>
       )
     case 'updated':
       return (
         <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-          Updated
+          {UI_MESSAGES.registrationStatus.updated}
         </span>
       )
     case 'cancelled':
       return (
         <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
-          Cancelled
+          {UI_MESSAGES.registrationStatus.cancelled}
         </span>
       )
     default:
@@ -81,7 +81,7 @@ export function RegistrationsList({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-center text-gray-500">Loading registrations...</div>
+        <div className="text-center text-gray-500">{UI_MESSAGES.loading.registrations}</div>
       </div>
     )
   }
@@ -92,8 +92,8 @@ export function RegistrationsList({
         <div className="text-center text-gray-500">
           <p className="text-base">
             {searchTerm && searchTerm.length > 0
-              ? 'No registrations matched your search.'
-              : 'No registrations yet'}
+              ? UI_MESSAGES.empty.noRegistrationsMatchedSearch
+              : UI_MESSAGES.empty.noRegistrationsYet}
           </p>
         </div>
       </div>
@@ -120,7 +120,9 @@ export function RegistrationsList({
       setShowReactivateDialog(false)
       setSelectedRegistration(null)
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to reactivate registration')
+      showError(
+        error instanceof Error ? error.message : TOAST_MESSAGES.registration.reactivateFailed,
+      )
     }
   }
 

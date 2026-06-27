@@ -1,7 +1,8 @@
 import { z } from 'zod'
+import { VALIDATION_PATTERNS } from '@/config/constants'
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const datePattern = /^\d{4}-\d{2}-\d{2}$/
+const emailPattern = VALIDATION_PATTERNS.email
+const datePattern = VALIDATION_PATTERNS.dateYyyyMmDd
 
 function optionalText(maxLength: number, message: string) {
   return z.string().trim().max(maxLength, message)

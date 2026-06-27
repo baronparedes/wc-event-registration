@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VALIDATION_PATTERNS } from '@/config/constants'
 import type { PublicEventField } from './types'
 
 export const FIELD_TYPES = [
@@ -32,7 +33,7 @@ export const createEventFieldSchema = z.object({
     .min(1, 'Field name is required')
     .max(100, 'Field name must be 100 characters or less')
     .regex(
-      /^[a-z0-9_]+$/,
+      VALIDATION_PATTERNS.fieldKey,
       'Field name must use only lowercase letters, numbers, and underscores (e.g., team_name)',
     ),
   label: z
@@ -88,7 +89,7 @@ export const eventFieldFormSchema = z.object({
     .min(1, 'Field name is required')
     .max(100, 'Maximum 100 characters')
     .regex(
-      /^[a-z0-9_]+$/,
+      VALIDATION_PATTERNS.fieldKey,
       'Use only lowercase letters, numbers, and underscores (e.g., team_name)',
     ),
   label: z.string().min(1, 'Field label is required').max(200, 'Maximum 200 characters'),
@@ -288,10 +289,10 @@ function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefi
     .refine(
       (value) => {
         if (isDateOnly) {
-          return /^\d{4}-\d{2}-\d{2}$/.test(value)
+          return VALIDATION_PATTERNS.dateYyyyMmDd.test(value)
         }
 
-        return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)
+        return VALIDATION_PATTERNS.datetimeYyyyMmDdThhMm.test(value)
       },
       `${field.label} must use a valid ${isDateOnly ? 'date' : 'date and time'} format.`,
     )
@@ -349,7 +350,7 @@ function buildSchemaForField(field: PublicEventField): z.ZodType<unknown> {
   if (field.field_type === 'phone') {
     let schema = buildStringSchema(field)
 
-    const phonePattern = /^[+0-9()\s-]{7,20}$/
+    const phonePattern = VALIDATION_PATTERNS.phone
     schema = schema.refine(
       (value) => value === undefined || phonePattern.test(value),
       `${field.label} must be a valid phone number.`,

@@ -3,6 +3,7 @@ import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
   TIMING,
+  UI_MESSAGES,
   toAdminMemberDetail,
 } from '@/config/constants'
 import { useAdminMembersQuery } from '@/hooks/domain/members'
@@ -124,14 +125,14 @@ export function AdminMembersPage() {
 
       <div className="rounded-2xl border border-border bg-surface">
         {isLoading ? (
-          <p className="p-6 text-sm text-muted">Loading members...</p>
+          <p className="p-6 text-sm text-muted">{UI_MESSAGES.loading.members}</p>
         ) : error ? (
-          <p className="p-6 text-sm text-red-600">Failed to load members. Please refresh.</p>
+          <p className="p-6 text-sm text-red-600">{UI_MESSAGES.errors.membersLoadFailed}</p>
         ) : members.length === 0 ? (
           <p className="p-6 text-sm text-muted">
             {normalizedSearchTerm.length > 0
-              ? 'No members matched your search.'
-              : 'No members found.'}
+              ? UI_MESSAGES.empty.noMembersMatchedSearch
+              : UI_MESSAGES.empty.noMembersFound}
           </p>
         ) : (
           <>

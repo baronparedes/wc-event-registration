@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import { VALIDATION_PATTERNS } from '@/config/constants'
 
-const slugRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const slugRegex = VALIDATION_PATTERNS.eventSlug
 
 function applyDateRangeChecks(
   data: {

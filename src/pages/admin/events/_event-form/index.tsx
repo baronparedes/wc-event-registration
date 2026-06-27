@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { ROUTE_PATHS } from '@/config/constants'
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants'
 import {
   useAdminEventQuery,
   useCreateEventMutation,
@@ -112,14 +112,14 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     try {
       if (isEditMode && id) {
         await updateMutation.mutateAsync({ id, ...data })
-        toast.success('Event updated successfully.')
+        toast.success(TOAST_MESSAGES.eventSaved.updated)
       } else {
         await createMutation.mutateAsync(data)
-        toast.success('Event created successfully.')
+        toast.success(TOAST_MESSAGES.eventSaved.created)
       }
       navigate(ROUTE_PATHS.adminEvents)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save event.'
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.saveFailed
       toast.error(message)
     } finally {
       cancelSave()
@@ -131,7 +131,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   if (isEditMode && isLoadingEvent) {
     return (
       <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-muted">Loading event...</p>
+        <p className="text-sm text-muted">{UI_MESSAGES.loading.event}</p>
       </section>
     )
   }
@@ -139,7 +139,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   if (isEditMode && !existingEvent && !isLoadingEvent) {
     return (
       <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-red-600">Event not found.</p>
+        <p className="text-sm text-red-600">{UI_MESSAGES.errors.eventNotFound}</p>
       </section>
     )
   }
