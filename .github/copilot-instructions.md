@@ -404,6 +404,30 @@ Forms:
 - Keep seeds deterministic for local QA and aligned with current behavior.
 - Preserve core invariants in DB and API layers (for this repo: ID-first public flow and secure write boundary).
 
+**Edge Functions registration in config.toml:**
+
+- **Every new Edge Function must be explicitly registered** in `supabase/config.toml` under a `[functions.<function-name>]` section.
+- Set `verify_jwt = false` for public functions (e.g., `member-lookup`, `submit-registration`).
+- Set `verify_jwt = true` for admin/authenticated functions (e.g., `create-member`, `cancel-registration`).
+- Example:
+
+  ```toml
+  [functions.submit-registration]
+  verify_jwt = false
+
+  [functions.create-member]
+  verify_jwt = true
+  ```
+
+- Without registration in config.toml, Supabase's auto-deployer will not detect or deploy the function, even if the code is correct and pushed to main.
+- This is intentional: explicit registration ensures security settings (JWT verification) are deliberate, not accidental.
+
+**Shared imports in Edge Functions:**
+
+- Use a root `supabase/functions/deno.json` with import mappings to resolve shared code: `{ "imports": { "@/shared/": "./_shared/" } }`.
+- All function files then use `import { util } from '@/shared/file.ts'`.
+- Supabase's auto-deployer honors root-level deno.json import mappings for all functions.
+
 **Validation at boundaries:**
 
 - Validate all dynamic/JSONB payloads with Zod before rendering or processing.

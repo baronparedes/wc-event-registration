@@ -343,7 +343,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
 
 export function readAllowedOrigins(): string[] {
   const rawAllowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.trim() ?? ''
-  const runtimeEnvironment = Deno.env.get('SUPABASE_ENV')?.trim().toLowerCase() ?? ENVIRONMENT.local
+  const runtimeEnvironment = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase() ?? ENVIRONMENT.local
 
   if (!rawAllowedOrigins) {
     console.error(
