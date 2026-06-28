@@ -1,21 +1,77 @@
+import { lazy, Suspense, type ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import type { ReactElement } from 'react'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ROUTE_PATHS } from '@/config/constants'
 import { AppShell } from '../components/layout/AppShell'
 import { useAdminAuthQuery } from '../hooks/domain/auth'
-import { AdminLoginPage } from '../pages/admin/login'
-import { AdminMembersPage } from '../pages/admin/members'
-import { AdminMemberDetailPage } from '../pages/admin/members/[id]'
-import { AdminRegistrationsPage } from '../pages/admin/events/[id]/registrations'
-import { AdminRegistrationDetailPage } from '../pages/admin/events/[id]/registrations/[registration_id]'
-import { AdminEventFieldsPage } from '../pages/admin/events/[id]/fields'
-import { AdminEditEventPage } from '../pages/admin/events/[id]'
-import { AdminNewEventPage } from '../pages/admin/events/new'
-import { AdminEventsPage } from '../pages/admin/events'
-import { HomePage } from '../pages/home'
-import { EventRegistrationPage } from '../pages/events/[slug]/register'
-import { NotFoundPage } from '../pages/not-found'
+
+const HomePage = lazy(() =>
+  import('../pages/home').then((module) => ({ default: module.HomePage })),
+)
+const EventRegistrationPage = lazy(() =>
+  import('../pages/events/[slug]/register').then((module) => ({
+    default: module.EventRegistrationPage,
+  })),
+)
+const AdminLoginPage = lazy(() =>
+  import('../pages/admin/login').then((module) => ({ default: module.AdminLoginPage })),
+)
+const AdminMembersPage = lazy(() =>
+  import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
+)
+const AdminMemberDetailPage = lazy(() =>
+  import('../pages/admin/members/[id]').then((module) => ({
+    default: module.AdminMemberDetailPage,
+  })),
+)
+const AdminEventsPage = lazy(() =>
+  import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
+)
+const AdminNewEventPage = lazy(() =>
+  import('../pages/admin/events/new').then((module) => ({ default: module.AdminNewEventPage })),
+)
+const AdminEditEventPage = lazy(() =>
+  import('../pages/admin/events/[id]').then((module) => ({ default: module.AdminEditEventPage })),
+)
+const AdminEventFieldsPage = lazy(() =>
+  import('../pages/admin/events/[id]/fields').then((module) => ({
+    default: module.AdminEventFieldsPage,
+  })),
+)
+const AdminRegistrationsPage = lazy(() =>
+  import('../pages/admin/events/[id]/registrations').then((module) => ({
+    default: module.AdminRegistrationsPage,
+  })),
+)
+const AdminRegistrationDetailPage = lazy(() =>
+  import('../pages/admin/events/[id]/registrations/[registration_id]').then((module) => ({
+    default: module.AdminRegistrationDetailPage,
+  })),
+)
+const NotFoundPage = lazy(() =>
+  import('../pages/not-found').then((module) => ({ default: module.NotFoundPage })),
+)
+
+function RouteLoadingFallback() {
+  return (
+    <section className="mx-auto max-w-4xl space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+      <div className="space-y-3" aria-hidden="true">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-10 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+      </div>
+    </section>
+  )
+}
+
+function LazyRoute({ children }: { children: ReactElement }) {
+  return <Suspense fallback={<RouteLoadingFallback />}>{children}</Suspense>
+}
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const { data, isLoading } = useAdminAuthQuery()
@@ -45,15 +101,38 @@ export function AppRouter() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path={ROUTE_PATHS.home} element={<HomePage />} />
-        <Route path={ROUTE_PATHS.eventRegisterPattern} element={<EventRegistrationPage />} />
+        <Route
+          path={ROUTE_PATHS.home}
+          element={
+            <LazyRoute>
+              <HomePage />
+            </LazyRoute>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.eventRegisterPattern}
+          element={
+            <LazyRoute>
+              <EventRegistrationPage />
+            </LazyRoute>
+          }
+        />
 
-        <Route path={ROUTE_PATHS.adminLogin} element={<AdminLoginPage />} />
+        <Route
+          path={ROUTE_PATHS.adminLogin}
+          element={
+            <LazyRoute>
+              <AdminLoginPage />
+            </LazyRoute>
+          }
+        />
         <Route
           path={ROUTE_PATHS.adminMembers}
           element={
             <RequireAdminAuth>
-              <AdminMembersPage />
+              <LazyRoute>
+                <AdminMembersPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -61,7 +140,9 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminMemberDetailPattern}
           element={
             <RequireAdminAuth>
-              <AdminMemberDetailPage />
+              <LazyRoute>
+                <AdminMemberDetailPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -69,7 +150,9 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminEvents}
           element={
             <RequireAdminAuth>
-              <AdminEventsPage />
+              <LazyRoute>
+                <AdminEventsPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -77,7 +160,9 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminEventNew}
           element={
             <RequireAdminAuth>
-              <AdminNewEventPage />
+              <LazyRoute>
+                <AdminNewEventPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -85,7 +170,9 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminEventDetailPattern}
           element={
             <RequireAdminAuth>
-              <AdminEditEventPage />
+              <LazyRoute>
+                <AdminEditEventPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -93,7 +180,9 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminEventFieldsPattern}
           element={
             <RequireAdminAuth>
-              <AdminEventFieldsPage />
+              <LazyRoute>
+                <AdminEventFieldsPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -101,7 +190,9 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminEventRegistrationsPattern}
           element={
             <RequireAdminAuth>
-              <AdminRegistrationsPage />
+              <LazyRoute>
+                <AdminRegistrationsPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
@@ -109,13 +200,22 @@ export function AppRouter() {
           path={ROUTE_PATHS.adminRegistrationDetailPattern}
           element={
             <RequireAdminAuth>
-              <AdminRegistrationDetailPage />
+              <LazyRoute>
+                <AdminRegistrationDetailPage />
+              </LazyRoute>
             </RequireAdminAuth>
           }
         />
       </Route>
 
-      <Route path={ROUTE_PATHS.notFound} element={<NotFoundPage />} />
+      <Route
+        path={ROUTE_PATHS.notFound}
+        element={
+          <LazyRoute>
+            <NotFoundPage />
+          </LazyRoute>
+        }
+      />
     </Routes>
   )
 }
