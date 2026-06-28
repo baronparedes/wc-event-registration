@@ -78,6 +78,134 @@ describe('AdminEventFormPage', () => {
       isLoading: false,
     })
     mockUpdateMutateAsync.mockResolvedValue(undefined)
+    mockCreateMutateAsync.mockResolvedValue(undefined)
+  })
+
+  it('renders loading and not-found states for edit mode', () => {
+    mockUseAdminEventQuery.mockReturnValue({
+      data: null,
+      isLoading: true,
+    })
+
+    const { rerender } = render(<AdminEventFormPage mode="edit" />)
+    expect(screen.getByText('Loading event...')).toBeInTheDocument()
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: null,
+      isLoading: false,
+    })
+
+    rerender(<AdminEventFormPage mode="edit" />)
+    expect(screen.getByText('Event not found.')).toBeInTheDocument()
+  })
+
+  it('submits create mode successfully', async () => {
+    render(<AdminEventFormPage mode="create" />)
+
+    fireEvent.change(screen.getByLabelText('Title *'), {
+      target: { value: 'Brand New Event' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }))
+
+    await waitFor(() => {
+      expect(mockCreateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Brand New Event',
+          slug: 'brand-new-event',
+          status: 'draft',
+          duplicate_policy: 'block',
+          registration_mode: 'open',
+        }),
+      )
+    })
+
+    expect(mockToastSuccess).toHaveBeenCalledWith('Event created successfully.')
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/events')
+  })
+
+  it('shows save confirmation for published events before mutating', async () => {
+    mockUseAdminEventQuery.mockReturnValue({
+      data: {
+        id: 'event-1',
+        title: 'Published Event',
+        slug: 'published-event',
+        description: 'Existing description',
+        location: 'Main Hall',
+        starts_at: '2026-07-01T10:00:00.000Z',
+        ends_at: '2026-07-01T12:00:00.000Z',
+        registration_opens_at: '2026-06-01T10:00:00.000Z',
+        registration_closes_at: '2026-06-30T10:00:00.000Z',
+        status: 'published',
+        duplicate_policy: 'block',
+        registration_mode: 'open',
+      },
+      isLoading: false,
+    })
+
+    render(<AdminEventFormPage mode="edit" />)
+
+    fireEvent.change(screen.getByLabelText('Title *'), {
+      target: { value: 'Published Event Updated' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    expect(mockUpdateMutateAsync).not.toHaveBeenCalled()
+    expect(await screen.findByText('Review Changes')).toBeInTheDocument()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save Changes' })[1])
+
+    await waitFor(() => {
+      expect(mockUpdateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'event-1',
+          title: 'Published Event Updated',
+        }),
+      )
+    })
+  })
+
+  it('renders archived edit mode as read-only with Back to Events action', () => {
+    mockUseAdminEventQuery.mockReturnValue({
+      data: {
+        id: 'event-1',
+        title: 'Archived Event',
+        slug: 'archived-event',
+        description: 'Existing description',
+        location: 'Main Hall',
+        starts_at: '2026-07-01T10:00:00.000Z',
+        ends_at: '2026-07-01T12:00:00.000Z',
+        registration_opens_at: '2026-06-01T10:00:00.000Z',
+        registration_closes_at: '2026-06-30T10:00:00.000Z',
+        status: 'archived',
+        duplicate_policy: 'block',
+        registration_mode: 'open',
+      },
+      isLoading: false,
+    })
+
+    render(<AdminEventFormPage mode="edit" />)
+
+    expect(screen.getByText(/This event is archived and cannot be edited/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back to Events' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument()
+  })
+
+  it('shows error toast when save fails', async () => {
+    mockUpdateMutateAsync.mockRejectedValueOnce(new Error('save failed'))
+
+    render(<AdminEventFormPage mode="edit" />)
+
+    fireEvent.change(screen.getByLabelText('Title *'), {
+      target: { value: 'Updated Event Title' },
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('save failed')
+    })
   })
 
   it('keeps Save Changes disabled until the edit form becomes dirty, then submits', async () => {

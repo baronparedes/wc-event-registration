@@ -357,4 +357,100 @@ describe('AdminRegistrationDetailPage', () => {
       expect(mockShowError).toHaveBeenCalledWith('Failed to reactivate registration')
     })
   })
+
+  it('navigates back when using the back button', () => {
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'submitted',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+
+    render(<AdminRegistrationDetailPage />)
+    fireEvent.click(screen.getByRole('button', { name: /Back to Registrations/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith(-1)
+  })
+
+  it('surfaces error.message for Error objects from cancel/reactivate', async () => {
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'submitted',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+    mockCancelMutateAsync.mockRejectedValueOnce(new Error('cancel message'))
+
+    const { rerender } = render(<AdminRegistrationDetailPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cancel Registration' })[1])
+
+    await waitFor(() => {
+      expect(mockShowError).toHaveBeenCalledWith('cancel message')
+    })
+
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'cancelled',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+    mockReactivateMutateAsync.mockRejectedValueOnce(new Error('reactivate message'))
+
+    rerender(<AdminRegistrationDetailPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reactivate Registration' })[1])
+
+    await waitFor(() => {
+      expect(mockShowError).toHaveBeenCalledWith('reactivate message')
+    })
+  })
 })

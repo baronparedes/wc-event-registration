@@ -1,6 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FORM_MESSAGES, TIMING } from '@/config/constants'
+import { FORM_MESSAGES, TIMING, TOAST_MESSAGES } from '@/config/constants'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import {
   stepBadgeClassName,
@@ -397,6 +397,63 @@ describe('useEventRegistrationPageState', () => {
     })
     expect(memberLookupState.reset).toHaveBeenCalled()
     expect(mockClearLookupError).toHaveBeenCalled()
+
+    titleAnchor.remove()
+  })
+
+  it('maps duplicate blocked submission errors to the dedicated user message', async () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    }
+    memberLookupState.verifiedMemberId = 'WC-001'
+    mockSubmitMutateAsync.mockResolvedValueOnce({
+      success: false,
+      error_code: 'duplicate_blocked',
+      error: 'ignored',
+    })
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'))
+
+    await act(async () => {
+      await result.current.handleSubmitRegistration({})
+    })
+
+    expect(result.current.submitErrorMessage).toBe('You have already registered for this event.')
+    expect(mockToastError).toHaveBeenCalledWith(TOAST_MESSAGES.registration.alreadyRegistered)
+  })
+
+  it('scrolls to title after successful update-mode submission', async () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    }
+    memberLookupState.verifiedMemberId = 'WC-001'
+    memberLookupState.isUpdateMode = true
+    mockSubmitMutateAsync.mockResolvedValueOnce({
+      success: true,
+      registration_id: 'reg-2',
+    })
+
+    const titleAnchor = document.createElement('div')
+    titleAnchor.id = 'app-shell-title-anchor'
+    titleAnchor.scrollIntoView = vi.fn()
+    document.body.appendChild(titleAnchor)
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'))
+
+    await act(async () => {
+      await result.current.handleSubmitRegistration({})
+    })
+
+    expect(titleAnchor.scrollIntoView).toHaveBeenCalled()
+    expect(mockFocusMemberIdInput).not.toHaveBeenCalled()
 
     titleAnchor.remove()
   })

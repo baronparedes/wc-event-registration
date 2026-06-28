@@ -139,4 +139,71 @@ describe('supabase edge function callers', () => {
       error: 'bad request',
     })
   })
+
+  it('falls back to status-based message when JSON error parsing fails for text caller', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    mockGetSession.mockResolvedValue({ data: { session: null } })
+
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => {
+        throw new Error('bad json')
+      },
+    } as unknown as Response)
+
+    const callFunction = createEdgeFunctionTextCaller<{ eventId: string }>('export-csv')
+
+    await expect(callFunction({ eventId: 'event-1' })).rejects.toThrow('Edge function failed: 503')
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[Edge Function export-csv] Failed to parse error response',
+      expect.any(Error),
+    )
+  })
+
+  it('falls back to status-based message when text error body is empty', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'token-123',
+        },
+      },
+    })
+
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: async () => '',
+    } as Response)
+
+    const callFunction = createEdgeFunctionCaller<{ value: string }, { success: boolean }>(
+      'sample-function',
+    )
+
+    await expect(callFunction({ value: 'hello' })).rejects.toThrow('Edge function failed: 502')
+  })
+
+  it('returns plain text without filename when content-disposition is missing', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockGetSession.mockResolvedValue({ data: { session: null } })
+
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValue({
+      ok: true,
+      headers: new Headers(),
+      text: async () => 'csv,data',
+    } as Response)
+
+    const callFunction = createEdgeFunctionTextCaller<{ eventId: string }>('export-csv')
+
+    await expect(callFunction({ eventId: 'event-1' })).resolves.toEqual({
+      text: 'csv,data',
+      filename: undefined,
+    })
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[export-csv] No auth token available for Edge Function call',
+    )
+  })
 })

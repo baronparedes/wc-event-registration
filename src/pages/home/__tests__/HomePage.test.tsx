@@ -61,4 +61,28 @@ describe('HomePage', () => {
       screen.getByText('There are currently no open, upcoming, or recent events. Check back soon!'),
     ).toBeInTheDocument()
   })
+
+  it('renders loading skeleton state', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    })
+
+    const { container } = render(<HomePage />)
+
+    expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy()
+  })
+
+  it('renders error state when listing query fails', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    })
+
+    render(<HomePage />)
+
+    expect(screen.getByText('Unable to load events. Please try again.')).toBeInTheDocument()
+  })
 })

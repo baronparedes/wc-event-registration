@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const {
   mockNavigate,
   mockUseAdminAuthQuery,
+  mockUseAdminLoginMutation,
   mockLoginMutateAsync,
   mockToastSuccess,
   mockToastError,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockUseAdminAuthQuery: vi.fn(),
+  mockUseAdminLoginMutation: vi.fn(),
   mockLoginMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
@@ -35,10 +37,7 @@ vi.mock('@/hooks/domain/auth', async () => {
   return {
     ...actual,
     useAdminAuthQuery: () => mockUseAdminAuthQuery(),
-    useAdminLoginMutation: () => ({
-      mutateAsync: mockLoginMutateAsync,
-      isPending: false,
-    }),
+    useAdminLoginMutation: () => mockUseAdminLoginMutation(),
   }
 })
 
@@ -52,6 +51,10 @@ describe('AdminLoginPage', () => {
       isLoading: false,
     })
     mockLoginMutateAsync.mockResolvedValue({ isAuthenticated: true })
+    mockUseAdminLoginMutation.mockReturnValue({
+      mutateAsync: mockLoginMutateAsync,
+      isPending: false,
+    })
   })
 
   it('submits admin credentials and navigates on success', async () => {
@@ -85,5 +88,52 @@ describe('AdminLoginPage', () => {
     render(<AdminLoginPage />)
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true })
+  })
+
+  it('shows API error message when login fails with an Error instance', async () => {
+    mockLoginMutateAsync.mockRejectedValueOnce(new Error('Invalid credentials'))
+
+    render(<AdminLoginPage />)
+
+    fireEvent.change(screen.getByLabelText('Email Address *'), {
+      target: { value: 'admin@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText('Password *'), {
+      target: { value: 'wrong' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Invalid credentials')
+    })
+  })
+
+  it('falls back to default error toast for non-Error rejections', async () => {
+    mockLoginMutateAsync.mockRejectedValueOnce('bad response')
+
+    render(<AdminLoginPage />)
+
+    fireEvent.change(screen.getByLabelText('Email Address *'), {
+      target: { value: 'admin@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText('Password *'), {
+      target: { value: 'wrong' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Failed to sign in as admin.')
+    })
+  })
+
+  it('renders pending submit state while login mutation is in-flight', () => {
+    mockUseAdminLoginMutation.mockReturnValue({
+      mutateAsync: mockLoginMutateAsync,
+      isPending: true,
+    })
+
+    render(<AdminLoginPage />)
+
+    expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled()
   })
 })
