@@ -3,6 +3,7 @@ export { FormInputField } from './FormInputField'
 export { FormSelectField } from './FormSelectField'
 export { FormTextareaField } from './FormTextareaField'
 export { SectionCard } from './SectionCard'
+export { CollapsibleSectionCard } from './CollapsibleSectionCard'
 export { ConfirmDialog } from './ConfirmDialog'
 export {
   ListTable,
