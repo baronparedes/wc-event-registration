@@ -53,11 +53,7 @@ describe('ProfileStepCard', () => {
   it('shows the regular verified state', () => {
     render(<ProfileStepCard matchedMember={matchedMember} />)
 
-    expect(
-      screen.getByText('You are verified. You can now complete your registration form.'),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('Proceed to Step 3 below to fill out the remaining registration fields.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Review your details below.')).toBeInTheDocument()
+    expect(screen.getByText('Tap "Yes, I confirm" to continue to Step 3.')).toBeInTheDocument()
   })
 })
