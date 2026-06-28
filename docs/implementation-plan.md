@@ -24,7 +24,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Member profile shape: nickname is first-class; role and category remain in metadata
 - **Hook organization**: Domain-scoped folders with operation separation (queries/mutations/state); shared utilities in /hooks/utils/; one-hook-per-file pattern; naming: `use<Entity>Query`, `use<Action><Entity>Mutation`, `use<Entity>State`
 
-## Progress Snapshot (2026-06-27)
+## Progress Snapshot (2026-06-28)
 
 Completed through Chunk 11 and Phase 6 Day 1 hardening:
 
@@ -44,7 +44,7 @@ Completed through Chunk 11 and Phase 6 Day 1 hardening:
 - CI quality gate workflow added at `.github/workflows/ci.yml` (runs `npm run ci:gate` on PR and main)
 - Test coverage baseline currently above stop-ship threshold (`coverage/coverage-summary.json`: statements 81.86%, branches 70.38%)
 
-Next active target: Phase 6 Day 2-7 operational readiness and launch verification, followed by the tech debt backlog.
+Next active target: close remaining Phase 6 Day 2-7 operational-readiness items and complete Gate D sign-off, then move to the tech debt backlog.
 
 ## Phase Plan
 
@@ -749,36 +749,135 @@ Still open before production launch decision:
 - **Fix**: Document: auth failure response, rate-limit spike response, 500 spike response, rollback procedure, and escalation contacts.
 - **Effort**: 2 hours
 
-### Recommended 7-Day Execution Plan (Phase 6 + Launch)
+### Phase 6 Check Status (Quick View)
 
-**Days 1-2: Runtime Safety & Frontend Fixes** ✅ COMPLETE
+- Days 1-2 Runtime Safety and Frontend Fixes: Complete
+- Days 2-4 Backend Hardening: In progress
+  - Completed: idempotency race-condition hardening
+  - Open: typed answer storage plus CSV alignment
+  - Open: additional failure-path expansion
+- Days 4-5 Operational Readiness: In progress
+  - Completed: ALLOWED_ORIGINS production guard
+  - Completed: CI quality gate workflow
+  - Open: Sentry and correlation IDs
+  - Open: backup restore rehearsal and rollback runbook
+- Days 6-7 Verification and Release Gate: In progress
+  - Open: full smoke test
+  - Open: load sanity test
+  - Open: final Gate D sign-off
 
-1. ✅ Error boundary + route param validation
-2. ✅ Form effect refactoring and race condition stabilization
-3. ✅ AdminLoginPage RHF migration
-4. ✅ Auth guard pre-flight check
-5. ✅ Error detail scrubbing from Edge Functions
-6. ✅ Backend field validation schema
+#### Completed So Far (Phase 6)
 
-**Days 2-4: Backend Hardening** 🟡 IN PROGRESS
+Days 1-2 completed:
 
-1. ✅ Idempotency race condition fixed: insert-first with unique-conflict recovery; idempotent replay returns same registration_id without re-writing answers
-2. ❌ Normalize typed answer storage + update CSV reader
-3. 🟡 Coverage threshold verified (statements 81.86%, branches 70.38%); additional error-scenario expansion still pending
+1. Global error boundary implemented and wired in app shell.
+2. Registration form race-condition effect cleanup completed.
+3. Route parameter validation and explicit not-found handling added.
+4. Admin login migrated to React Hook Form plus Zod.
+5. Auth guard pre-flight behavior hardened to avoid protected-content flash.
+6. Edge Function error-detail scrubbing completed.
+7. Backend field-level validation completed for all supported field types.
+8. Build and format checks passing.
 
-**Days 4-5: Operational Readiness** 🟡 IN PROGRESS
+Days 2-4 completed:
 
-1. ✅ Set ALLOWED_ORIGINS production env var contract; added fail-closed validation and localhost production guard
-2. ✅ CI quality gate workflow added (GitHub Actions runs `npm run ci:gate` on PR and main)
-3. ❌ Sentry setup + structured logging correlation IDs
-4. ❌ Backup/restore rehearsal + runbook documentation
+1. Idempotency race-condition hardening implemented via insert-first and unique-conflict recovery.
+2. Coverage baseline verified above threshold (statements 81.86%, branches 70.38%).
 
-**Day 6-7: Verification & Release Gate** 🟡 IN PROGRESS
+Days 4-5 completed:
 
-1. ❌ Full smoke test: public registration + admin CRUD + CSV export
-2. 🟡 Unit tests passed (63 files / 164 tests) and coverage threshold verified; integration tests currently blocked by missing `SUPABASE_SERVICE_ROLE_KEY`
-3. ❌ Load sanity test (50 reg/min for 10 min)
-4. ❌ All stop-ship gates pass → soft launch to 10% cohort first
+1. ALLOWED_ORIGINS production validation and fail-closed behavior implemented.
+2. CI quality gate workflow active (`npm run ci:gate` on PR and main).
+
+### Strict 7-Day Critical Path (2026-06-28 to 2026-07-04)
+
+Objective: close remaining production-readiness blockers and complete Gate D launch decision with explicit ownership and hard exits.
+
+Owners used below:
+
+- FE: Frontend owner
+- BE: Edge Function and DB owner
+- OPS: environment, runbook, and release owner
+- QA: verification owner
+
+#### Day 1 (2026-06-28): Typed Answer Storage Decision + Contract Lock
+
+1. Decide and document canonical answer storage shape for submissions and exports.
+  - Owner: BE
+  - Dependencies: none
+  - Exit: documented contract added in this plan and mirrored in export expectations
+2. Implement submit/export alignment to the chosen contract.
+  - Owner: BE
+  - Dependencies: task 1
+  - Exit: build passes and CSV output matches expected typed values
+
+#### Day 2 (2026-06-29): Failure-Path Test Expansion
+
+1. Add/expand integration and unit failure-path tests (429, schema mismatch, edge mutation errors).
+  - Owner: QA (with FE/BE support)
+  - Dependencies: Day 1 contract lock
+  - Exit: new failure-path tests committed; no regression to current coverage baseline
+2. Resolve integration env secret setup for test execution.
+  - Owner: OPS
+  - Dependencies: none
+  - Exit: integration tests runnable with required environment variables in agreed execution target
+
+#### Day 3 (2026-06-30): Monitoring and Correlation
+
+1. Integrate Sentry for frontend and Edge Function error capture.
+  - Owner: FE + BE
+  - Dependencies: none
+  - Exit: verified test event visible in monitoring for both surfaces
+2. Standardize correlation IDs in user-safe error logs and runbook examples.
+  - Owner: BE + OPS
+  - Dependencies: task 1
+  - Exit: documented trace path from client incident to backend log entry
+
+#### Day 4 (2026-07-01): Backup + Rollback Readiness
+
+1. Complete backup restore rehearsal in staging.
+  - Owner: OPS
+  - Dependencies: staging backup availability
+  - Exit: restore evidence captured with elapsed time and outcome
+2. Publish rollback drill steps for app + migrations.
+  - Owner: OPS
+  - Dependencies: task 1
+  - Exit: runbook updated and reviewed
+
+#### Day 5 (2026-07-02): End-to-End Smoke Gate
+
+1. Run full smoke suite: public registration, admin CRUD, cancel/reactivate, CSV export.
+  - Owner: QA
+  - Dependencies: Days 1-4 complete
+  - Exit: pass/fail checklist attached to session handoff with defects triaged
+
+#### Day 6 (2026-07-03): Load Sanity + SLO Check
+
+1. Execute load sanity test (50 registrations/min for 10 min).
+  - Owner: QA + OPS
+  - Dependencies: Day 5 pass
+  - Exit: latency/error snapshot recorded; no stop-ship threshold breach
+2. Compare results against Gate D criteria.
+  - Owner: OPS
+  - Dependencies: task 1
+  - Exit: explicit Gate D readiness recommendation drafted
+
+#### Day 7 (2026-07-04): Launch Decision
+
+1. Gate D sign-off review.
+  - Owner: FE + BE + OPS + QA
+  - Dependencies: Days 1-6 evidence complete
+  - Exit: one of two outcomes only
+    - Launch approved: soft-launch 10% cohort
+    - Launch blocked: blocker list with owner/date commitments
+
+### Current Blockers (as of 2026-06-28)
+
+1. Typed answer storage and CSV reader alignment not yet completed.
+2. Sentry + correlation-ID monitoring not yet integrated.
+3. Backup restore rehearsal and rollback drill not yet evidenced.
+4. Full smoke + load rehearsal still pending.
+5. Integration environment key availability still required in target execution context.
 
 ### Stop-Ship Criteria (Do Not Launch If Any Are True)
 
@@ -811,6 +910,6 @@ Still open before production launch decision:
 
 ### Launch Recommendation
 
-**Verdict**: Go to staging next week **with condition** that all critical fixes (items 1-8 above) are completed and verified. Recommend soft launch to 10% cohort first, then 100% public if 24-hour telemetry is stable.
+Verdict: staging progression remains valid only if the strict 7-day critical path exits are met in sequence.
 
-**Go-Live Confidence**: 7.5/10 after hardening; 6/10 as-is.
+Go-live policy: soft launch 10% cohort first, expand to 100% only after 24-hour stable telemetry and no stop-ship events.
