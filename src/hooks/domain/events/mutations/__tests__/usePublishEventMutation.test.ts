@@ -133,4 +133,46 @@ describe('usePublishEventMutation', () => {
       missingFields: expect.arrayContaining(['Description', 'Location']),
     })
   })
+
+  it('throws when fetching event data fails', async () => {
+    mockSelectBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('fetch failed') })
+
+    const { result } = renderHookWithClient(() => usePublishEventMutation())
+
+    await expect(result.current.mutateAsync('event-3')).rejects.toThrow('fetch failed')
+  })
+
+  it('throws when event cannot be found', async () => {
+    mockSelectBuilder.single.mockResolvedValueOnce({ data: null, error: null })
+
+    const { result } = renderHookWithClient(() => usePublishEventMutation())
+
+    await expect(result.current.mutateAsync('event-4')).rejects.toThrow('Event not found')
+  })
+
+  it('throws when publish update fails', async () => {
+    mockSelectBuilder.single.mockResolvedValueOnce({
+      data: {
+        id: 'event-5',
+        title: 'Event',
+        slug: 'event',
+        description: 'Desc',
+        location: 'Gym',
+        starts_at: '2026-07-01T10:00:00.000Z',
+        ends_at: '2026-07-01T12:00:00.000Z',
+        registration_opens_at: '2026-06-01T10:00:00.000Z',
+        registration_closes_at: '2026-06-30T10:00:00.000Z',
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'open',
+      },
+      error: null,
+    })
+    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('publish failed') })
+
+    const { result } = renderHookWithClient(() => usePublishEventMutation())
+
+    await expect(result.current.mutateAsync('event-5')).rejects.toThrow('publish failed')
+    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
+  })
 })

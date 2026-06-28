@@ -81,4 +81,17 @@ describe('useAdminLoginMutation', () => {
 
     expect(mockSignOut).toHaveBeenCalled()
   })
+
+  it('throws immediately when signInWithPassword returns an auth error', async () => {
+    mockSignInWithPassword.mockResolvedValueOnce({ error: new Error('invalid login') })
+
+    const { result } = renderHookWithClient(() => useAdminLoginMutation())
+
+    await expect(
+      result.current.mutateAsync({ email: 'bad@example.com', password: 'wrong' }),
+    ).rejects.toThrow('invalid login')
+
+    expect(mockFetchAdminAuthState).not.toHaveBeenCalled()
+    expect(mockSignOut).not.toHaveBeenCalled()
+  })
 })

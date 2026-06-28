@@ -71,4 +71,25 @@ describe('useDeleteEventFieldMutation', () => {
       result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' }),
     ).rejects.toThrow('Cannot delete fields from a published or archived event')
   })
+
+  it('throws when loading event status fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') })
+
+    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' }),
+    ).rejects.toThrow('read failed')
+  })
+
+  it('throws when delete operation fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
+    mockDeleteBuilder.eq.mockResolvedValueOnce({ error: new Error('delete failed') })
+
+    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' }),
+    ).rejects.toThrow('delete failed')
+  })
 })

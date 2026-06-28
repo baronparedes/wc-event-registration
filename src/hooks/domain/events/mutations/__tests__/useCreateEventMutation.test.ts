@@ -134,4 +134,75 @@ describe('useCreateEventMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY })
     })
   })
+
+  it('creates an event without admin lookup when no session exists', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: {
+        session: null,
+      },
+    })
+    mockEventsInsertBuilder.single.mockResolvedValueOnce({
+      data: { id: 'event-2' },
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() => useCreateEventMutation())
+
+    const createdId = await act(async () =>
+      result.current.mutateAsync({
+        title: 'League Finals',
+        slug: 'league-finals',
+        description: 'desc',
+        location: 'Arena',
+        starts_at: '2026-07-01T10:00',
+        ends_at: '2026-07-01T12:00',
+        registration_opens_at: '2026-06-20T10:00',
+        registration_closes_at: '2026-06-30T10:00',
+        status: 'published',
+        duplicate_policy: 'allow_update',
+        registration_mode: 'open',
+      }),
+    )
+
+    expect(createdId).toBe('event-2')
+    expect(mockAdminsBuilder.select).not.toHaveBeenCalled()
+    expect(mockEventsInsertBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        created_by_admin_id: null,
+        description: 'desc',
+        location: 'Arena',
+        starts_at: '2026-07-01T10:00',
+      }),
+    )
+  })
+
+  it('throws when event insert returns an error', async () => {
+    mockAdminsBuilder.maybeSingle.mockResolvedValueOnce({ data: { id: 'admin-1' } })
+    mockEventsInsertBuilder.single.mockResolvedValueOnce({
+      data: { id: 'event-3' },
+      error: new Error('insert failed'),
+    })
+
+    const { result, queryClient } = renderHookWithClient(() => useCreateEventMutation())
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await expect(
+      result.current.mutateAsync({
+        title: 'Broken Event',
+        slug: 'broken-event',
+        description: '',
+        location: '',
+        starts_at: '',
+        ends_at: '',
+        registration_opens_at: '',
+        registration_closes_at: '',
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+      }),
+    ).rejects.toThrow('insert failed')
+
+    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
+    expect(invalidateSpy).not.toHaveBeenCalled()
+  })
 })

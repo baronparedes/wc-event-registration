@@ -89,4 +89,36 @@ describe('useAdminEventsQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('returns no next cursor when the current page exhausts total results', async () => {
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'evt-2',
+          title: 'Event Two',
+        },
+      ],
+      error: null,
+      count: 1,
+    })
+
+    const { result } = renderHookWithClient(() =>
+      useAdminEventsQuery({
+        pageSize: 10,
+        cursor: null,
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual({
+      items: [{ id: 'evt-2', title: 'Event Two' }],
+      hasMore: false,
+      nextCursor: null,
+      totalCount: 1,
+      totalPages: 1,
+    })
+  })
 })

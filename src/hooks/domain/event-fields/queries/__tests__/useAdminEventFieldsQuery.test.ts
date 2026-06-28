@@ -65,4 +65,24 @@ describe('useAdminEventFieldsQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('returns empty array when database returns null data without error', async () => {
+    mockQueryBuilder.order.mockResolvedValueOnce({ data: null, error: null })
+
+    const { result } = renderHookWithClient(() => useAdminEventFieldsQuery('event-1'))
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual([])
+  })
+
+  it('stays idle when event ID is missing', () => {
+    const { result } = renderHookWithClient(() => useAdminEventFieldsQuery(undefined))
+
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(result.current.isSuccess).toBe(false)
+    expect(mockFrom).not.toHaveBeenCalled()
+  })
 })

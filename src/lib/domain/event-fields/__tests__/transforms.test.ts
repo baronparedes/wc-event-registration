@@ -151,6 +151,40 @@ describe('event-fields transforms', () => {
     expect(values.val_max_date).toBe('')
   })
 
+  it('maps option toggle fields with explicit and default toggle values', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        options: [
+          {
+            label: 'Meal A',
+            value: 'meal_a',
+            toggle_label: 'Enable Meal A',
+            toggle_default: true,
+          },
+          {
+            label: 'Meal B',
+            value: 'meal_b',
+          },
+        ],
+      }),
+    )
+
+    expect(values.options).toEqual([
+      {
+        label: 'Meal A',
+        value: 'meal_a',
+        toggle_label: 'Enable Meal A',
+        toggle_default: true,
+      },
+      {
+        label: 'Meal B',
+        value: 'meal_b',
+        toggle_label: '',
+        toggle_default: false,
+      },
+    ])
+  })
+
   it('normalizes dynamic answer payloads into preview records', () => {
     const fields = [
       makePublicField({ id: 'f1', field_key: 'team_name', field_type: 'text' }),

@@ -115,4 +115,65 @@ describe('useAdminMembersQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('returns empty page when no members are returned', async () => {
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [],
+      error: null,
+      count: 0,
+    })
+
+    const { result } = renderHookWithClient(() => useAdminMembersQuery({ pageSize: 10 }))
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual({
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+      totalCount: 0,
+      totalPages: 0,
+    })
+    expect(mockQueryBuilder.or).not.toHaveBeenCalled()
+  })
+
+  it('escapes search input and returns next cursor when more rows exist', async () => {
+    mockQueryBuilder.or.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'user-9',
+          member_id: 'WC-009',
+          full_name: 'A_B,Name%Here',
+          first_name: 'A_B',
+          last_name: 'Name',
+          nickname: null,
+          email: null,
+          phone: null,
+          date_of_birth: null,
+          metadata: { role: 123, category: false },
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 3,
+    })
+
+    const { result } = renderHookWithClient(() =>
+      useAdminMembersQuery({ pageSize: 1, cursor: null, searchTerm: 'A_B,Name%Here' }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(mockQueryBuilder.or).toHaveBeenCalledWith(expect.stringContaining('A\\_B\\,Name\\%Here'))
+    expect(result.current.data?.items[0]?.role).toBe('')
+    expect(result.current.data?.items[0]?.category).toBe('')
+    expect(result.current.data?.hasMore).toBe(true)
+    expect(result.current.data?.nextCursor).toBe('1')
+    expect(result.current.data?.totalPages).toBe(3)
+  })
 })

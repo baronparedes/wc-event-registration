@@ -58,4 +58,14 @@ describe('useUpdateMemberIdMutation', () => {
       'Member ID cannot be empty',
     )
   })
+
+  it('throws when updating member id fails', async () => {
+    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
+
+    const { result } = renderHookWithClient(() => useUpdateMemberIdMutation())
+
+    await expect(
+      result.current.mutateAsync({ id: 'user-1', newMemberId: 'WC-009' }),
+    ).rejects.toThrow('update failed')
+  })
 })

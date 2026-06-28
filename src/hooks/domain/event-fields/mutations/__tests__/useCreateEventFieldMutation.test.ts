@@ -129,4 +129,80 @@ describe('useCreateEventFieldMutation', () => {
       }),
     ).rejects.toThrow('Cannot add fields to a published or archived event')
   })
+
+  it('throws when loading event status fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') })
+
+    const { result } = renderHookWithClient(() => useCreateEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        event_id: 'event-1',
+        field_key: 'team_name',
+        label: 'Team Name',
+        field_type: 'text',
+        is_required: true,
+        is_active: true,
+        options: [],
+        validation_rules: {},
+        display_order: 0,
+      }),
+    ).rejects.toThrow('read failed')
+  })
+
+  it('starts display order at zero when no existing fields are present', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
+    mockOrderBuilder.limit.mockResolvedValueOnce({ data: [] })
+    mockInsertBuilder.single.mockResolvedValueOnce({
+      data: { id: 'field-2', event_id: 'event-1', field_key: 'captain_name' },
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() => useCreateEventFieldMutation())
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        event_id: 'event-1',
+        field_key: 'captain_name',
+        label: 'Captain Name',
+        field_type: 'text',
+        is_required: true,
+        is_active: true,
+        options: [],
+        validation_rules: {},
+        display_order: 0,
+      })
+    })
+
+    expect(mockInsertBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        display_order: 0,
+      }),
+    )
+  })
+
+  it('throws when insert fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
+    mockOrderBuilder.limit.mockResolvedValueOnce({ data: [{ display_order: 0 }] })
+    mockInsertBuilder.single.mockResolvedValueOnce({
+      data: null,
+      error: new Error('insert failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useCreateEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        event_id: 'event-1',
+        field_key: 'team_name',
+        label: 'Team Name',
+        field_type: 'text',
+        is_required: true,
+        is_active: true,
+        options: [],
+        validation_rules: {},
+        display_order: 0,
+      }),
+    ).rejects.toThrow('insert failed')
+  })
 })

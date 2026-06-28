@@ -161,6 +161,34 @@ describe('AdminMemberDetailPage', () => {
     })
   })
 
+  it('shows default error toast when update fails with non-Error value', async () => {
+    mockUpdateMutateAsync.mockRejectedValueOnce('unknown failure')
+
+    render(<AdminMemberDetailPage />)
+
+    fireEvent.change(screen.getByLabelText('Full Name *'), {
+      target: { value: 'Jane Updated' },
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Failed to update member.')
+    })
+  })
+
+  it('shows not found state when query returns no member data without query error', () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<AdminMemberDetailPage />)
+
+    expect(screen.getByText(/Member not found/i)).toBeInTheDocument()
+  })
+
   it('renders pending save state as disabled Saving button', () => {
     mockUseUpdateMemberMutation.mockReturnValue({
       mutateAsync: mockUpdateMutateAsync,
@@ -171,5 +199,53 @@ describe('AdminMemberDetailPage', () => {
 
     const savingButton = screen.getByRole('button', { name: 'Saving...' })
     expect(savingButton).toBeDisabled()
+  })
+
+  it('keeps save disabled when form is dirty but mutation is pending', async () => {
+    mockUseUpdateMemberMutation.mockReturnValue({
+      mutateAsync: mockUpdateMutateAsync,
+      isPending: true,
+    })
+
+    render(<AdminMemberDetailPage />)
+
+    fireEvent.change(screen.getByLabelText('Full Name *'), {
+      target: { value: 'Jane Dirty' },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    })
+  })
+
+  it('normalizes nullable member fields into empty form values', async () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: {
+        id: 'user-1',
+        member_id: 'WC-001',
+        full_name: 'Jane Doe',
+        first_name: null,
+        last_name: null,
+        nickname: null,
+        email: null,
+        phone: null,
+        date_of_birth: null,
+        role: 'player',
+        category: 'adult',
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<AdminMemberDetailPage />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('First Name')).toHaveValue('')
+      expect(screen.getByLabelText('Last Name')).toHaveValue('')
+      expect(screen.getByLabelText('Nickname')).toHaveValue('')
+      expect(screen.getByLabelText('Email')).toHaveValue('')
+      expect(screen.getByLabelText('Phone')).toHaveValue('')
+      expect(screen.getByLabelText('Date of Birth')).toHaveValue('')
+    })
   })
 })

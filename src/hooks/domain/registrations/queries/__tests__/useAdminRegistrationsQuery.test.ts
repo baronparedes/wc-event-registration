@@ -177,6 +177,84 @@ describe('useAdminRegistrationsQuery', () => {
     expect(result.current.error).toBeInstanceOf(Error)
   })
 
+  it('returns hasMore with next cursor when count exceeds current page size', async () => {
+    mockRegistrationsBuilder.range.mockResolvedValueOnce({
+      data: [REG_ROW],
+      error: null,
+      count: 3,
+    })
+
+    mockUsersBuilder.in.mockResolvedValueOnce({
+      data: [{ ...USER_ROW, metadata: { role: 123, category: null } }],
+      error: null,
+    })
+
+    mockAnswersBuilder.in.mockResolvedValueOnce({
+      data: [{ registration_id: 'reg-1' }],
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() =>
+      useAdminRegistrationsQuery('evt-1', { pageSize: 1, cursor: null }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data?.hasMore).toBe(true)
+    expect(result.current.data?.nextCursor).toBe('1')
+    expect(result.current.data?.totalPages).toBe(3)
+    expect(result.current.data?.items[0]).toMatchObject({ role: '', category: '' })
+  })
+
+  it('returns error state when user detail query fails', async () => {
+    mockRegistrationsBuilder.range.mockResolvedValueOnce({
+      data: [REG_ROW],
+      error: null,
+      count: 1,
+    })
+
+    mockUsersBuilder.in.mockResolvedValueOnce({
+      data: null,
+      error: new Error('users failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useAdminRegistrationsQuery('evt-1'))
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true)
+    })
+
+    expect(result.current.error).toBeInstanceOf(Error)
+  })
+
+  it('returns error state when answer count query fails', async () => {
+    mockRegistrationsBuilder.range.mockResolvedValueOnce({
+      data: [REG_ROW],
+      error: null,
+      count: 1,
+    })
+
+    mockUsersBuilder.in.mockResolvedValueOnce({
+      data: [USER_ROW],
+      error: null,
+    })
+
+    mockAnswersBuilder.in.mockResolvedValueOnce({
+      data: null,
+      error: new Error('answers failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useAdminRegistrationsQuery('evt-1'))
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true)
+    })
+
+    expect(result.current.error).toBeInstanceOf(Error)
+  })
+
   describe('with searchTerm', () => {
     it('filters registrations by matching user IDs when searchTerm is provided', async () => {
       mockUsersBuilder.or.mockResolvedValueOnce({

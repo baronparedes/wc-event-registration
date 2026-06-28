@@ -72,4 +72,19 @@ describe('useReorderEventFieldsMutation', () => {
       result.current.mutateAsync({ event_id: 'event-1', orderedIds: ['field-1'] }),
     ).rejects.toThrow('Cannot reorder fields on a published or archived event')
   })
+
+  it('throws when event status lookup fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({
+      data: null,
+      error: new Error('lookup failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useReorderEventFieldsMutation())
+
+    await expect(
+      result.current.mutateAsync({ event_id: 'event-1', orderedIds: ['field-1'] }),
+    ).rejects.toThrow('lookup failed')
+
+    expect(mockUpdateBuilder.update).not.toHaveBeenCalled()
+  })
 })

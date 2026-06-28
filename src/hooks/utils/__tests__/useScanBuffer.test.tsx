@@ -87,4 +87,65 @@ describe('useScanBuffer', () => {
 
     expect(onScanComplete).not.toHaveBeenCalled()
   })
+
+  it('does nothing when inactive', () => {
+    const onScanComplete = vi.fn()
+
+    renderHook(() => useScanBuffer(onScanComplete, false))
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'A', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      vi.runOnlyPendingTimers()
+    })
+
+    expect(onScanComplete).not.toHaveBeenCalled()
+  })
+
+  it('ignores modifier and short auto-complete sequences', () => {
+    const onScanComplete = vi.fn()
+
+    renderHook(() => useScanBuffer(onScanComplete, true))
+
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'A', ctrlKey: true, bubbles: true }),
+      )
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'B', metaKey: true, bubbles: true }),
+      )
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'C', altKey: true, bubbles: true }),
+      )
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'A', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'B', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'C', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'D', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'E', bubbles: true }))
+      vi.advanceTimersByTime(300)
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+
+    expect(onScanComplete).toHaveBeenCalledTimes(1)
+    expect(onScanComplete).toHaveBeenCalledWith('ABCDE')
+  })
+
+  it('auto-completes delete/backspace branch when remaining buffer stays above threshold', () => {
+    const onScanComplete = vi.fn()
+
+    renderHook(() => useScanBuffer(onScanComplete, true))
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'A', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'B', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'C', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'D', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'E', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }))
+      vi.advanceTimersByTime(800)
+    })
+
+    expect(onScanComplete).toHaveBeenCalledWith('ABCDE')
+  })
 })

@@ -136,4 +136,70 @@ describe('useUpdateEventMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventQueryKey('event-1') })
     })
   })
+
+  it('throws when event update fails', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null })
+    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
+
+    const { result } = renderHookWithClient(() => useUpdateEventMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        id: 'event-2',
+        title: 'Title',
+        description: 'desc',
+        location: 'location',
+        starts_at: undefined,
+        ends_at: undefined,
+        registration_opens_at: undefined,
+        registration_closes_at: undefined,
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+      }),
+    ).rejects.toThrow('update failed')
+
+    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
+  })
+
+  it('records every field as changed when previous event is missing', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null })
+
+    const { result } = renderHookWithClient(() => useUpdateEventMutation())
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: 'event-3',
+        title: 'Brand New',
+        description: 'desc',
+        location: 'hall',
+        starts_at: '2026-07-01T09:00:00.000Z',
+        ends_at: '2026-07-01T10:00:00.000Z',
+        registration_opens_at: '2026-06-01T00:00:00.000Z',
+        registration_closes_at: '2026-06-30T23:59:00.000Z',
+        status: 'published',
+        duplicate_policy: 'allow_update',
+        registration_mode: 'open',
+      })
+    })
+
+    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: {
+          changed_fields: [
+            'title',
+            'description',
+            'location',
+            'starts_at',
+            'ends_at',
+            'registration_opens_at',
+            'registration_closes_at',
+            'status',
+            'duplicate_policy',
+            'registration_mode',
+          ],
+        },
+      }),
+    )
+  })
 })

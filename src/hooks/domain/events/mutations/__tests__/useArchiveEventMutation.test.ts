@@ -87,4 +87,35 @@ describe('useArchiveEventMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY })
     })
   })
+
+  it('uses null previous status when event lookup returns no row', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null })
+
+    const { result } = renderHookWithClient(() => useArchiveEventMutation())
+
+    await act(async () => {
+      await result.current.mutateAsync('event-2')
+    })
+
+    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: {
+          previous_status: null,
+          next_status: 'archived',
+        },
+      }),
+    )
+  })
+
+  it('throws when archive update fails', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'open' } })
+    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
+
+    const { result, queryClient } = renderHookWithClient(() => useArchiveEventMutation())
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await expect(result.current.mutateAsync('event-3')).rejects.toThrow('update failed')
+    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
+    expect(invalidateSpy).not.toHaveBeenCalled()
+  })
 })

@@ -51,4 +51,15 @@ describe('useAdminLogoutMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_AUTH_QUERY_KEY })
     })
   })
+
+  it('throws when signOut returns an error', async () => {
+    const signOutError = new Error('network issue')
+    mockSignOut.mockResolvedValueOnce({ error: signOutError })
+
+    const { result, queryClient } = renderHookWithClient(() => useAdminLogoutMutation())
+
+    await expect(result.current.mutateAsync()).rejects.toThrow('network issue')
+
+    expect(queryClient.getQueryData(ADMIN_AUTH_QUERY_KEY)).toBeUndefined()
+  })
 })

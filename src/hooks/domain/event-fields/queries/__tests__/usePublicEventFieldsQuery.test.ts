@@ -91,4 +91,15 @@ describe('usePublicEventFieldsQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('returns empty validated result when refetched without an event id', async () => {
+    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery(undefined))
+
+    const response = await result.current.refetch()
+
+    expect(response.data).toEqual({ validFields: [], issues: [] })
+    expect(mockFrom).not.toHaveBeenCalled()
+    expect(mockLogger.debug).not.toHaveBeenCalled()
+    expect(mockValidatePublicEventFieldConfig).not.toHaveBeenCalled()
+  })
 })

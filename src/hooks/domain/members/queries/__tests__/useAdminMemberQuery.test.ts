@@ -93,4 +93,57 @@ describe('useAdminMemberQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('returns empty role/category when metadata values are not strings', async () => {
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'user-2',
+        member_id: 'WC-002',
+        full_name: 'John Doe',
+        first_name: 'John',
+        last_name: 'Doe',
+        nickname: null,
+        email: null,
+        phone: null,
+        date_of_birth: null,
+        metadata: { role: 123, category: false },
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+      },
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() => useAdminMemberQuery('user-2'))
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data?.role).toBe('')
+    expect(result.current.data?.category).toBe('')
+  })
+
+  it('returns query error state when the users query fails', async () => {
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: new Error('query failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useAdminMemberQuery('user-3'))
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true)
+    })
+
+    expect(result.current.error).toBeInstanceOf(Error)
+  })
+
+  it('stays idle when member ID is missing', () => {
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(undefined))
+
+    expect(result.current.isPending).toBe(true)
+    expect(result.current.isSuccess).toBe(false)
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(mockFrom).not.toHaveBeenCalled()
+  })
 })

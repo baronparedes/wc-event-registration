@@ -47,6 +47,11 @@ import { useUpdateEventFieldMutation } from '@/hooks/domain/event-fields/mutatio
 describe('useUpdateEventFieldMutation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockEventsBuilder.select.mockReturnValue(mockEventsBuilder)
+    mockEventsBuilder.eq.mockReturnValue(mockEventsBuilder)
+    mockUpdateBuilder.update.mockReturnValue(mockUpdateBuilder)
+    mockUpdateBuilder.eq.mockReturnValue(mockUpdateBuilder)
+    mockUpdateBuilder.select.mockReturnValue(mockUpdateBuilder)
   })
 
   it('updates a field on a draft event and invalidates field list', async () => {
@@ -93,5 +98,51 @@ describe('useUpdateEventFieldMutation', () => {
     ).rejects.toThrow(
       'Published events can only have field labels, placeholders, and help text edited',
     )
+  })
+
+  it('rejects all edits for archived events', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'archived' }, error: null })
+
+    const { result } = renderHookWithClient(() => useUpdateEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        id: 'field-1',
+        event_id: 'event-1',
+        label: 'New Label',
+      }),
+    ).rejects.toThrow('Cannot edit fields on archived events.')
+  })
+
+  it('throws when loading event status fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') })
+
+    const { result } = renderHookWithClient(() => useUpdateEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        id: 'field-1',
+        event_id: 'event-1',
+        label: 'New Label',
+      }),
+    ).rejects.toThrow('read failed')
+  })
+
+  it('throws when update operation fails', async () => {
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
+    mockUpdateBuilder.single.mockResolvedValueOnce({
+      data: null,
+      error: new Error('update failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useUpdateEventFieldMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        id: 'field-1',
+        event_id: 'event-1',
+        label: 'New Label',
+      }),
+    ).rejects.toThrow('update failed')
   })
 })

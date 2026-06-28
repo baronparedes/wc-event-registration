@@ -112,4 +112,83 @@ describe('useUpdateMemberMutation', () => {
       }),
     ).rejects.toThrow('Member not found')
   })
+
+  it('throws when member metadata lookup fails', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: new Error('read failed'),
+    })
+
+    const { result } = renderHookWithClient(() => useUpdateMemberMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        id: 'user-2',
+        full_name: 'Jane Doe',
+        first_name: '',
+        last_name: '',
+        nickname: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        role: '',
+        category: '',
+      }),
+    ).rejects.toThrow('read failed')
+  })
+
+  it('throws when member update fails', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: { metadata: { role: 'player' } },
+      error: null,
+    })
+    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
+
+    const { result } = renderHookWithClient(() => useUpdateMemberMutation())
+
+    await expect(
+      result.current.mutateAsync({
+        id: 'user-3',
+        full_name: 'Jane Doe',
+        first_name: '',
+        last_name: '',
+        nickname: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        role: 'captain',
+        category: '',
+      }),
+    ).rejects.toThrow('update failed')
+  })
+
+  it('removes role and category metadata when values are blank', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: { metadata: { role: 'player', category: 'adult', keep: 'yes' } },
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() => useUpdateMemberMutation())
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: 'user-4',
+        full_name: 'Jane Doe',
+        first_name: '',
+        last_name: '',
+        nickname: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        role: '   ',
+        category: '   ',
+      })
+    })
+
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { keep: 'yes' },
+      }),
+    )
+  })
 })

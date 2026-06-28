@@ -54,6 +54,7 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
     isOpen: boolean
     title: string
     onConfirm: () => void
+    onCancel: () => void
     confirmLabel: string
   }) =>
     props.isOpen ? (
@@ -61,6 +62,9 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
         <div>{props.title}</div>
         <button type="button" onClick={props.onConfirm}>
           {props.confirmLabel}
+        </button>
+        <button type="button" onClick={props.onCancel}>
+          Cancel Dialog
         </button>
       </div>
     ) : null,
@@ -452,5 +456,66 @@ describe('AdminRegistrationDetailPage', () => {
     await waitFor(() => {
       expect(mockShowError).toHaveBeenCalledWith('reactivate message')
     })
+  })
+
+  it('closes opened dialogs when cancel is clicked', () => {
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'submitted',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+
+    const { rerender } = render(<AdminRegistrationDetailPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }))
+    expect(screen.getByRole('button', { name: 'Cancel Dialog' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Dialog' }))
+    expect(screen.queryByRole('button', { name: 'Cancel Dialog' })).not.toBeInTheDocument()
+
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'cancelled',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+
+    rerender(<AdminRegistrationDetailPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Dialog' }))
+    expect(screen.queryByRole('button', { name: 'Cancel Dialog' })).not.toBeInTheDocument()
   })
 })

@@ -67,4 +67,13 @@ describe('useAdminEventQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('returns null when refetched without an id', async () => {
+    const { result } = renderHookWithClient(() => useAdminEventQuery(undefined))
+
+    const response = await result.current.refetch()
+
+    expect(response.data).toBeNull()
+    expect(mockFrom).not.toHaveBeenCalled()
+  })
 })

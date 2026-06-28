@@ -116,4 +116,67 @@ describe('useRfidAutoFocus', () => {
 
     expect(focusSpy.mock.calls.length).toBeGreaterThanOrEqual(1)
   })
+
+  it('does not refocus when blur moves to anchor/input/select/textarea', () => {
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+
+    const anchor = document.createElement('a')
+    const otherInput = document.createElement('input')
+    const select = document.createElement('select')
+    const textarea = document.createElement('textarea')
+    document.body.appendChild(anchor)
+    document.body.appendChild(otherInput)
+    document.body.appendChild(select)
+    document.body.appendChild(textarea)
+
+    const focusSpy = vi.spyOn(input, 'focus')
+    const ref = { current: input }
+
+    renderHook(() => useRfidAutoFocus(ref, true))
+
+    act(() => {
+      vi.runOnlyPendingTimers()
+    })
+
+    const afterSetupCalls = focusSpy.mock.calls.length
+
+    act(() => {
+      input.dispatchEvent(new FocusEvent('blur', { relatedTarget: anchor, bubbles: true }))
+      input.dispatchEvent(new FocusEvent('blur', { relatedTarget: otherInput, bubbles: true }))
+      input.dispatchEvent(new FocusEvent('blur', { relatedTarget: select, bubbles: true }))
+      input.dispatchEvent(new FocusEvent('blur', { relatedTarget: textarea, bubbles: true }))
+      vi.advanceTimersByTime(250)
+    })
+
+    expect(focusSpy.mock.calls.length).toBeLessThanOrEqual(afterSetupCalls + 1)
+  })
+
+  it('ignores non-text and in-control keydown events', () => {
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    const textarea = document.createElement('textarea')
+    document.body.appendChild(textarea)
+
+    const focusSpy = vi.spyOn(input, 'focus')
+    const ref = { current: input }
+
+    renderHook(() => useRfidAutoFocus(ref, true))
+
+    act(() => {
+      vi.runOnlyPendingTimers()
+    })
+
+    const afterSetupCalls = focusSpy.mock.calls.length
+
+    act(() => {
+      textarea.focus()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'A', bubbles: true }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+      input.focus()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'B', bubbles: true }))
+    })
+
+    expect(focusSpy.mock.calls.length).toBeLessThanOrEqual(afterSetupCalls + 1)
+  })
 })
