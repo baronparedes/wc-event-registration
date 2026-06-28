@@ -9,7 +9,7 @@ type ProfileStepCardProps = {
   isRegistrationBlocked?: boolean
   shouldFadeDetails?: boolean
   onContinueToStepThree?: () => void
-  confirmTimeoutSecondsRemaining?: number | null
+  stepTimeoutSecondsRemaining?: number | null
 }
 
 export function ProfileStepCard(props: ProfileStepCardProps) {
@@ -19,7 +19,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
     isRegistrationBlocked = false,
     shouldFadeDetails = false,
     onContinueToStepThree,
-    confirmTimeoutSecondsRemaining = null,
+    stepTimeoutSecondsRemaining = null,
   } = props
   const shouldShowPlaceholder = !matchedMember || shouldFadeDetails
   const registrationStatusRef = useRef<HTMLDivElement | null>(null)
@@ -128,15 +128,28 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
                 <Button onClick={onContinueToStepThree} size="md" type="button" variant="default">
                   Yes, Continue to Step 3
                 </Button>
-                {confirmTimeoutSecondsRemaining ? (
+                {stepTimeoutSecondsRemaining ? (
                   <p
                     className="registration-timeout-copy mt-2 text-sm text-muted"
                     aria-live="polite"
                   >
-                    Returning to Step 1 in {confirmTimeoutSecondsRemaining}s if no one continues.
+                    Returning to Step 1 in {stepTimeoutSecondsRemaining}s if no one continues.
                   </p>
                 ) : null}
               </div>
+            ) : null}
+
+            {!isRegistrationBlocked && !onContinueToStepThree && stepTimeoutSecondsRemaining ? (
+              <p className="registration-timeout-copy mt-3 text-sm text-muted" aria-live="polite">
+                Returning to Step 1 in {stepTimeoutSecondsRemaining}s if this registration is not
+                completed.
+              </p>
+            ) : null}
+
+            {isRegistrationBlocked && stepTimeoutSecondsRemaining ? (
+              <p className="registration-timeout-copy mt-3 text-sm text-muted" aria-live="polite">
+                Returning to Step 1 in {stepTimeoutSecondsRemaining}s.
+              </p>
             ) : null}
           </div>
         </div>

@@ -23,7 +23,7 @@ export function WizardEventRegistrationFlow() {
     lookupErrorFadeOut,
     memberIdInputRef,
     clearLookupError,
-    wizardConfirmSecondsRemaining,
+    wizardStepSecondsRemaining,
     enterWizardCompleteStep,
     resetToStepOne,
     dynamicFieldsStepRef,
@@ -37,6 +37,7 @@ export function WizardEventRegistrationFlow() {
     submitSuccessMessage,
     handleCancelUpdate,
     enterWizardConfirmStep,
+    isEffectiveRegistrationBlocked,
   } = useEventRegistrationPageState('wizard')
 
   return (
@@ -105,11 +106,11 @@ export function WizardEventRegistrationFlow() {
               <ProfileStepCard
                 matchedMember={memberLookup.matchedMember}
                 isUpdateMode={memberLookup.isUpdateMode}
-                isRegistrationBlocked={memberLookup.isRegistrationBlocked}
-                shouldFadeDetails={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
-                confirmTimeoutSecondsRemaining={wizardConfirmSecondsRemaining}
+                isRegistrationBlocked={isEffectiveRegistrationBlocked}
+                shouldFadeDetails={false}
+                stepTimeoutSecondsRemaining={wizardStepSecondsRemaining}
                 onContinueToStepThree={
-                  memberLookup.isRegistrationBlocked ? undefined : enterWizardCompleteStep
+                  isEffectiveRegistrationBlocked ? undefined : enterWizardCompleteStep
                 }
               />
 
@@ -140,6 +141,7 @@ export function WizardEventRegistrationFlow() {
                 submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
                 submitErrorMessage={submitErrorMessage}
                 submitSuccessMessage={submitSuccessMessage}
+                stepTimeoutSecondsRemaining={wizardStepSecondsRemaining}
               />
 
               <Button

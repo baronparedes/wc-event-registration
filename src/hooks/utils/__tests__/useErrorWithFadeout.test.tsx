@@ -64,4 +64,31 @@ describe('useErrorWithFadeout', () => {
     expect(result.current.error).toBeNull()
     expect(result.current.isFadingOut).toBe(false)
   })
+
+  it('cancels stale auto-fade timers when a new persistent error is shown', () => {
+    const onClear = vi.fn()
+    const { result } = renderHook(() =>
+      useErrorWithFadeout({ fadeOutDelay: 50, clearDelay: 100, onClear }),
+    )
+
+    act(() => {
+      result.current.showError('First error')
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(25)
+    })
+
+    act(() => {
+      result.current.showError('Persistent error', { autoFadeOut: false })
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(500)
+    })
+
+    expect(result.current.error).toBe('Persistent error')
+    expect(result.current.isFadingOut).toBe(false)
+    expect(onClear).not.toHaveBeenCalled()
+  })
 })

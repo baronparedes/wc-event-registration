@@ -17,9 +17,10 @@ describe('useKioskInactivityReset', () => {
     const addEventListenerSpy = vi.spyOn(document, 'addEventListener')
     const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener')
 
-    renderHook(() => useKioskInactivityReset(onReset, 1000, true))
+    const { result } = renderHook(() => useKioskInactivityReset(onReset, 1000, true))
 
     expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
+    expect(result.current.secondsRemaining).toBe(1)
     expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function))
     expect(addEventListenerSpy).toHaveBeenCalledWith('input', expect.any(Function))
     expect(addEventListenerSpy).toHaveBeenCalledWith('change', expect.any(Function))
@@ -34,6 +35,7 @@ describe('useKioskInactivityReset', () => {
 
     expect(onReset).not.toHaveBeenCalled()
 
+    expect(result.current.secondsRemaining).toBe(1)
     act(() => {
       vi.advanceTimersByTime(1)
     })
@@ -51,13 +53,13 @@ describe('useKioskInactivityReset', () => {
 
   it('does not schedule a timeout when inactive', () => {
     const onReset = vi.fn()
-
-    renderHook(() => useKioskInactivityReset(onReset, 1000, false))
+    const { result } = renderHook(() => useKioskInactivityReset(onReset, 1000, false))
 
     act(() => {
       vi.advanceTimersByTime(5000)
     })
 
     expect(onReset).not.toHaveBeenCalled()
+    expect(result.current.secondsRemaining).toBeNull()
   })
 })

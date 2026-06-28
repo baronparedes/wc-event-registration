@@ -72,6 +72,9 @@ export function useErrorWithFadeout(options: ErrorWithFadeoutOptions = {}) {
 
   const showError = useCallback(
     (message: string, options?: ShowErrorOptions) => {
+      if (timeoutsRef.current.fade) clearTimeout(timeoutsRef.current.fade)
+      if (timeoutsRef.current.clear) clearTimeout(timeoutsRef.current.clear)
+
       setError(message)
       setIsFadingOut(false)
       setShouldAutoFadeOut(options?.autoFadeOut ?? autoFadeOut)

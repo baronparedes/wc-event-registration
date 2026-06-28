@@ -70,6 +70,7 @@ type DynamicFieldsStepCardProps = {
   submitButtonLabel?: string
   submitErrorMessage: string | null
   submitSuccessMessage: string | null
+  stepTimeoutSecondsRemaining?: number | null
 }
 
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
@@ -90,6 +91,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     submitButtonLabel = 'Submit Registration',
     submitErrorMessage,
     submitSuccessMessage,
+    stepTimeoutSecondsRemaining = null,
   } = props
 
   const shouldShowDefaultLockedMessage = !matchedMember || shouldFadeLockedState
@@ -204,6 +206,12 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               </Button>
             ) : null}
           </div>
+
+          {stepTimeoutSecondsRemaining ? (
+            <p className="registration-timeout-copy text-sm text-muted" aria-live="polite">
+              Returning to Step 1 in {stepTimeoutSecondsRemaining}s if this step is not completed.
+            </p>
+          ) : null}
         </form>
       ) : null}
 

@@ -49,6 +49,18 @@ export function stepBadgeClassName(currentStep: WizardStep, badgeStep: WizardSte
   return 'bg-surface text-muted border border-border'
 }
 
+function getWizardStepTimeoutMs(step: WizardStep): number | null {
+  switch (step) {
+    case 2:
+      return TIMING.registrationWizardConfirmTimeoutMs
+    case 3:
+      return TIMING.kioskInactivityResetMs
+    case 1:
+    default:
+      return null
+  }
+}
+
 export function useEventRegistrationPageState(variant: RegistrationLayoutVariant) {
   const { slug } = useParams<{ slug: string }>()
   const memberIdInputRef = useRef<HTMLInputElement | null>(null)
@@ -56,9 +68,8 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
   const [wizardStep, setWizardStep] = useState<WizardStep>(1)
-  const [wizardConfirmSecondsRemaining, setWizardConfirmSecondsRemaining] = useState<number | null>(
-    null,
-  )
+  const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false)
+  const [wizardStepSecondsRemaining, setWizardStepSecondsRemaining] = useState<number | null>(null)
 
   const submitMutation = useSubmitRegistrationMutation()
   const eventQuery = usePublicEventQuery(slug)
@@ -80,6 +91,27 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
 
     return wizardStep
   }, [variant, wizardStep, memberLookup.matchedMember, memberLookup.isRegistrationBlocked])
+
+  const isEffectiveRegistrationBlocked = useMemo(
+    () => memberLookup.isRegistrationBlocked || isWizardBlockedResult,
+    [memberLookup.isRegistrationBlocked, isWizardBlockedResult],
+  )
+  const isRegistrationBlockedForCurrentFlow = useMemo(
+    () =>
+      variant === 'wizard' ? isEffectiveRegistrationBlocked : memberLookup.isRegistrationBlocked,
+    [variant, isEffectiveRegistrationBlocked, memberLookup.isRegistrationBlocked],
+  )
+  const activeWizardStepTimeoutMs = useMemo(
+    () => (variant === 'wizard' ? getWizardStepTimeoutMs(activeWizardStep) : null),
+    [variant, activeWizardStep],
+  )
+  const displayedWizardStepSecondsRemaining = useMemo(() => {
+    if (variant !== 'wizard' || activeWizardStepTimeoutMs === null) {
+      return wizardStepSecondsRemaining
+    }
+
+    return wizardStepSecondsRemaining ?? Math.ceil(activeWizardStepTimeoutMs / 1000)
+  }, [variant, activeWizardStepTimeoutMs, wizardStepSecondsRemaining])
 
   const availability = eventQuery.data
   const isGateReady = availability?.status === 'available'
@@ -127,6 +159,10 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
       clearMember()
     },
   })
+  const shouldFadeBlockedRegistrationState = useMemo(
+    () => variant === 'classic' && isRegistrationBlockedForCurrentFlow && lookupErrorFadeOut,
+    [variant, isRegistrationBlockedForCurrentFlow, lookupErrorFadeOut],
+  )
 
   const scrollToTitleAnchor = useCallback(() => {
     const scrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -149,12 +185,12 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   }, [])
 
   const enterWizardConfirmStep = useCallback(() => {
-    setWizardConfirmSecondsRemaining(TIMING.registrationWizardConfirmTimeoutMs / 1000)
+    setIsWizardBlockedResult(false)
     setWizardStep(2)
   }, [])
 
   const enterWizardCompleteStep = useCallback(() => {
-    setWizardConfirmSecondsRemaining(null)
+    setIsWizardBlockedResult(false)
     setWizardStep(3)
     scrollToDynamicFieldsStep()
   }, [scrollToDynamicFieldsStep])
@@ -164,7 +200,8 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     lookupForm.reset({ memberId: '' })
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
-    setWizardConfirmSecondsRemaining(null)
+    setIsWizardBlockedResult(false)
+    setWizardStepSecondsRemaining(null)
     clearLookupError()
     setWizardStep(1)
     focusMemberIdInput()
@@ -188,12 +225,25 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   )
 
   const handleLookupFailure = useCallback(
-    (error: string, autoFadeOut: boolean) => {
-      setWizardStep(1)
+    (
+      error: string,
+      autoFadeOut: boolean,
+      reason?: 'not_found' | 'already_registered' | 'lookup_unavailable',
+    ) => {
+      const shouldUseWizardBlockedStep = variant === 'wizard' && reason === 'already_registered'
+
+      if (shouldUseWizardBlockedStep) {
+        setIsWizardBlockedResult(true)
+        setWizardStep(2)
+      } else {
+        setIsWizardBlockedResult(false)
+        setWizardStep(1)
+      }
+
       focusMemberIdInput()
-      showLookupError(error, { autoFadeOut })
+      showLookupError(error, { autoFadeOut: shouldUseWizardBlockedStep ? false : autoFadeOut })
     },
-    [focusMemberIdInput, showLookupError],
+    [variant, focusMemberIdInput, showLookupError],
   )
 
   const handleScan = useCallback(
@@ -207,6 +257,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
         handleLookupFailure(
           result.error || FORM_MESSAGES.memberLookupFailed,
           result.reason === 'already_registered',
+          result.reason,
         )
         return
       }
@@ -223,11 +274,16 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     dynamicForm.reset({})
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
-    setWizardConfirmSecondsRemaining(null)
+    setIsWizardBlockedResult(false)
+    setWizardStepSecondsRemaining(null)
     clearLookupError()
     setWizardStep(1)
   }, [clearMember, lookupForm, dynamicForm, clearLookupError])
-  useKioskInactivityReset(handleKioskReset, TIMING.kioskInactivityResetMs, isGateReady)
+  const { secondsRemaining: kioskIdleSecondsRemaining } = useKioskInactivityReset(
+    handleKioskReset,
+    TIMING.kioskInactivityResetMs,
+    variant === 'classic' && isGateReady,
+  )
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event.id : undefined,
@@ -260,26 +316,35 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   }, [dynamicForm, isDynamicFieldGateReady])
 
   useEffect(() => {
-    if (variant !== 'wizard' || activeWizardStep !== 2) {
+    if (variant !== 'wizard' || activeWizardStepTimeoutMs === null) {
       return
     }
 
+    const initializeCountdownId = window.setTimeout(() => {
+      setWizardStepSecondsRemaining(Math.ceil(activeWizardStepTimeoutMs / 1000))
+    }, 0)
+
     const timeoutId = window.setTimeout(() => {
       resetToStepOne()
-    }, TIMING.registrationWizardConfirmTimeoutMs)
+    }, activeWizardStepTimeoutMs)
 
     return () => {
+      window.clearTimeout(initializeCountdownId)
       window.clearTimeout(timeoutId)
     }
-  }, [variant, activeWizardStep, resetToStepOne])
+  }, [variant, activeWizardStepTimeoutMs, resetToStepOne])
 
   useEffect(() => {
-    if (variant !== 'wizard' || activeWizardStep !== 2 || wizardConfirmSecondsRemaining === null) {
+    if (
+      variant !== 'wizard' ||
+      activeWizardStepTimeoutMs === null ||
+      wizardStepSecondsRemaining === null
+    ) {
       return
     }
 
     const intervalId = window.setInterval(() => {
-      setWizardConfirmSecondsRemaining((value) => {
+      setWizardStepSecondsRemaining((value) => {
         if (value === null) {
           return null
         }
@@ -291,7 +356,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [variant, activeWizardStep, wizardConfirmSecondsRemaining])
+  }, [variant, activeWizardStepTimeoutMs, wizardStepSecondsRemaining])
 
   const handleLookupSubmit = useCallback(
     async (values: Parameters<typeof runMemberLookupSubmit>[0]) => {
@@ -304,6 +369,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
         handleLookupFailure(
           result.error || FORM_MESSAGES.memberLookupFailed,
           result.reason === 'already_registered',
+          result.reason,
         )
         return
       }
@@ -386,7 +452,8 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
 
       memberLookup.reset()
       dynamicForm.reset(createDynamicFieldDefaultValues(activeFields))
-      setWizardConfirmSecondsRemaining(null)
+      setIsWizardBlockedResult(false)
+      setWizardStepSecondsRemaining(null)
       setWizardStep(1)
 
       if (wasUpdateMode) {
@@ -431,7 +498,8 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     clearLookupError()
     setSubmitErrorMessage(null)
     setSubmitSuccessMessage(null)
-    setWizardConfirmSecondsRemaining(null)
+    setIsWizardBlockedResult(false)
+    setWizardStepSecondsRemaining(null)
     setWizardStep(1)
     scrollToTitleAnchor()
   }, [dynamicForm, activeFields, memberLookup, clearLookupError, scrollToTitleAnchor])
@@ -450,6 +518,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     clearLookupError,
     activeFields,
     eventFieldsQuery,
+    kioskIdleSecondsRemaining,
     dynamicForm,
     submitMutation,
     submitErrorMessage,
@@ -460,7 +529,10 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     handleCancelUpdate,
     resetToStepOne,
     activeWizardStep,
-    wizardConfirmSecondsRemaining,
+    isEffectiveRegistrationBlocked,
+    isRegistrationBlockedForCurrentFlow,
+    shouldFadeBlockedRegistrationState,
+    wizardStepSecondsRemaining: displayedWizardStepSecondsRemaining,
     enterWizardConfirmStep,
     enterWizardCompleteStep,
     setWizardStep,

@@ -89,6 +89,16 @@ vi.mock('sonner', () => ({
   },
 }))
 
+vi.mock('@/config/env', () => ({
+  env: {
+    supabaseUrl: 'http://127.0.0.1:54321',
+    supabaseAnonKey: 'anon-key',
+    registrationWizardEnabled: true,
+  },
+}))
+
+const envMock = vi.mocked(await import('@/config/env')).env
+
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
     await vi.importActual<typeof import('@/hooks/domain/events')>('@/hooks/domain/events')
@@ -155,15 +165,15 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
   EventHeaderCard: () => <div>Event Header</div>,
   MemberLookupStepCard: () => <div>Member Lookup</div>,
   ProfileStepCard: (props: {
-    confirmTimeoutSecondsRemaining?: number | null
+    stepTimeoutSecondsRemaining?: number | null
     onContinueToStepThree?: () => void
   }) => {
     mockProfileStepCard(props)
     return (
       <div>
         <div>Profile Step</div>
-        {props.confirmTimeoutSecondsRemaining ? (
-          <div>Returns to scan in {props.confirmTimeoutSecondsRemaining}s</div>
+        {props.stepTimeoutSecondsRemaining ? (
+          <div>Step 2 reset in {props.stepTimeoutSecondsRemaining}s</div>
         ) : null}
         {props.onContinueToStepThree ? (
           <button onClick={props.onContinueToStepThree} type="button">
@@ -182,12 +192,16 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
     submitErrorMessage: string | null
     submitSuccessMessage: string | null
     onSubmit: (values: Record<string, unknown>) => void | Promise<void>
+    stepTimeoutSecondsRemaining?: number | null
   }) => {
     mockDynamicFieldsStepCard(props)
 
     return (
       <div>
         <div>{props.submitButtonLabel}</div>
+        {props.stepTimeoutSecondsRemaining ? (
+          <div>Step 3 reset in {props.stepTimeoutSecondsRemaining}s</div>
+        ) : null}
         {props.submitErrorMessage ? <div>{props.submitErrorMessage}</div> : null}
         {props.submitSuccessMessage ? <div>{props.submitSuccessMessage}</div> : null}
         <button onClick={() => void props.onSubmit({ team_name: 'A-Team' })} type="button">
@@ -212,6 +226,7 @@ describe('EventRegistrationPage', () => {
       showError: vi.fn(),
       clearError: vi.fn(),
     })
+    mockUseKioskInactivityReset.mockReturnValue({ secondsRemaining: 180 })
     mockUseSubmitRegistrationMutation.mockReturnValue({
       mutateAsync: mockSubmitMutateAsync,
       isPending: false,
@@ -249,6 +264,7 @@ describe('EventRegistrationPage', () => {
     vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue(
       '11111111-1111-1111-1111-111111111111',
     )
+    envMock.registrationWizardEnabled = true
   })
 
   it('renders locked gate when event is unavailable', () => {
@@ -494,6 +510,60 @@ describe('EventRegistrationPage', () => {
     expect(screen.getByRole('button', { name: 'Continue to Step 3' })).toBeInTheDocument()
   })
 
+  it('keeps blocked lookup results on wizard step 2 with the shared 15 second reset', async () => {
+    vi.useFakeTimers()
+
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: false,
+      error: 'You are already registered for this event.',
+      reason: 'already_registered',
+    })
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+      isRegistrationBlocked: false,
+      handleLookupSubmit: runMemberLookupSubmit,
+    })
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    await act(async () => {
+      await mockScanBufferHandler.current?.('WC-102')
+    })
+
+    expect(screen.getByText('Profile Step')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 reset in 15s')).toBeInTheDocument()
+    expect(screen.queryByText('Member Lookup')).toBeNull()
+
+    await act(async () => {
+      vi.advanceTimersByTime(15_000)
+    })
+
+    expect(screen.getByText('Member Lookup')).toBeInTheDocument()
+  })
+
   it('keeps completed step badges styled when wizard reaches step 3', async () => {
     const runMemberLookupSubmit = vi.fn().mockResolvedValue({
       success: true,
@@ -583,12 +653,96 @@ describe('EventRegistrationPage', () => {
     })
 
     expect(screen.getByText('Profile Step')).toBeInTheDocument()
-    expect(screen.getByText('Returns to scan in 15s')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 reset in 15s')).toBeInTheDocument()
 
     await act(async () => {
       vi.advanceTimersByTime(15_000)
     })
 
     expect(screen.getByText('Member Lookup')).toBeInTheDocument()
+  })
+
+  it('returns wizard users to step 1 if they stop on step 3 for three minutes', async () => {
+    vi.useFakeTimers()
+
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: true,
+      mode: 'new_registration',
+    })
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+      handleLookupSubmit: runMemberLookupSubmit,
+    })
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    await act(async () => {
+      await mockScanBufferHandler.current?.('WC-101')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }))
+
+    expect(screen.getByText('Submit Registration')).toBeInTheDocument()
+    expect(screen.getByText('Step 3 reset in 180s')).toBeInTheDocument()
+
+    await act(async () => {
+      vi.advanceTimersByTime(180_000)
+    })
+
+    expect(screen.getByText('Member Lookup')).toBeInTheDocument()
+  })
+
+  it('shows the classic kiosk timer on the profile and registration cards', async () => {
+    envMock.registrationWizardEnabled = false
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    expect(screen.getByText('Profile Step')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 reset in 180s')).toBeInTheDocument()
+    expect(screen.getByText('Step 3 reset in 180s')).toBeInTheDocument()
   })
 })

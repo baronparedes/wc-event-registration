@@ -23,6 +23,7 @@ export function ClassicEventRegistrationFlow() {
     dynamicFieldsStepRef,
     eventFieldsQuery,
     activeFields,
+    kioskIdleSecondsRemaining,
     dynamicForm,
     handleSubmitRegistration,
     fieldErrorMessage,
@@ -30,6 +31,8 @@ export function ClassicEventRegistrationFlow() {
     submitErrorMessage,
     submitSuccessMessage,
     handleCancelUpdate,
+    isRegistrationBlockedForCurrentFlow,
+    shouldFadeBlockedRegistrationState,
   } = useEventRegistrationPageState('classic')
 
   return (
@@ -60,15 +63,16 @@ export function ClassicEventRegistrationFlow() {
           <ProfileStepCard
             matchedMember={memberLookup.matchedMember}
             isUpdateMode={memberLookup.isUpdateMode}
-            isRegistrationBlocked={memberLookup.isRegistrationBlocked}
-            shouldFadeDetails={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+            isRegistrationBlocked={isRegistrationBlockedForCurrentFlow}
+            shouldFadeDetails={shouldFadeBlockedRegistrationState}
+            stepTimeoutSecondsRemaining={kioskIdleSecondsRemaining}
           />
 
           <div ref={dynamicFieldsStepRef}>
             <DynamicFieldsStepCard
               matchedMember={memberLookup.matchedMember}
-              isLocked={memberLookup.isRegistrationBlocked}
-              shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+              isLocked={isRegistrationBlockedForCurrentFlow}
+              shouldFadeLockedState={shouldFadeBlockedRegistrationState}
               lockedMessage={memberLookup.lockedStepMessage}
               onCancelUpdate={handleCancelUpdate}
               isLoadingFields={eventFieldsQuery.isLoading}
@@ -82,6 +86,7 @@ export function ClassicEventRegistrationFlow() {
               submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
               submitErrorMessage={submitErrorMessage}
               submitSuccessMessage={submitSuccessMessage}
+              stepTimeoutSecondsRemaining={kioskIdleSecondsRemaining}
             />
           </div>
         </div>
