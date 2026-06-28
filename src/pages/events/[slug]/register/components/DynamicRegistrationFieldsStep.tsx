@@ -133,7 +133,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </div>
       </div>
 
-      {matchedMember && !isLocked && isLoadingFields ? (
+      {matchedMember && !isLocked && isLoadingFields && (
         <div className="mt-4 space-y-4" aria-hidden="true">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={`field-skeleton-${index}`} className="space-y-2">
@@ -143,30 +143,30 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
           ))}
           <Skeleton className="h-10 w-44" />
         </div>
-      ) : null}
+      )}
 
-      {matchedMember && !isLocked && isFieldsError ? (
+      {matchedMember && !isLocked && isFieldsError && (
         <p className="registration-status-panel mt-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           We could not load your form right now. Please try Step 1 again.
         </p>
-      ) : null}
+      )}
 
-      {matchedMember && !isLocked && fieldConfigIssues.length > 0 ? (
+      {matchedMember && !isLocked && fieldConfigIssues.length > 0 && (
         <div className="registration-status-panel mt-3 space-y-2 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           <p>Some questions could not be shown right now.</p>
           {fieldConfigIssues.map((issue) => (
             <p key={issue}>{issue}</p>
           ))}
         </div>
-      ) : null}
+      )}
 
-      {matchedMember && !isLocked && !isLoadingFields && activeFields.length === 0 ? (
+      {matchedMember && !isLocked && !isLoadingFields && activeFields.length === 0 && (
         <p className="registration-status-panel mt-3 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
           There are no form questions for this event yet.
         </p>
-      ) : null}
+      )}
 
-      {matchedMember && !isLocked && !isLoadingFields && activeFields.length > 0 ? (
+      {matchedMember && !isLocked && !isLoadingFields && activeFields.length > 0 && (
         <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
           {activeFields.map((field) => {
             const errorMessage = fieldErrorMessage(field.field_key)
@@ -178,15 +178,15 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
                   htmlFor={`field-${field.field_key}`}
                 >
                   {field.label}
-                  {field.is_required ? <span className="text-danger"> *</span> : null}
+                  {field.is_required && <span className="text-danger"> *</span>}
                 </label>
-                {field.help_text ? (
+                {field.help_text && (
                   <p className="registration-field-help text-xs text-muted">{field.help_text}</p>
-                ) : null}
+                )}
                 <DynamicFieldInput field={field} dynamicForm={dynamicForm} />
-                {errorMessage ? (
+                {errorMessage && (
                   <p className="registration-field-error text-sm text-danger">{errorMessage}</p>
-                ) : null}
+                )}
               </div>
             )
           })}
@@ -196,7 +196,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               {isSubmitPending ? `${submitButtonLabel}...` : submitButtonLabel}
             </Button>
 
-            {onCancelUpdate ? (
+            {onCancelUpdate && (
               <Button
                 className="hover:bg-surface"
                 disabled={isSubmitPending}
@@ -207,30 +207,30 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               >
                 Cancel
               </Button>
-            ) : null}
+            )}
           </div>
 
-          {stepTimeoutSecondsRemaining ? (
+          {stepTimeoutSecondsRemaining && (
             <p className="registration-timeout-copy text-sm text-muted" aria-live="polite">
               Returning to Step 1 in {stepTimeoutSecondsRemaining}s if this step is not completed.
             </p>
-          ) : null}
+          )}
         </form>
-      ) : null}
+      )}
 
-      {submitErrorMessage ? (
+      {submitErrorMessage && (
         <div className="registration-status-panel mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           <p className="font-semibold">We could not submit your registration</p>
           <p className="mt-1">{submitErrorMessage}</p>
         </div>
-      ) : null}
+      )}
 
-      {matchedMember && submitSuccessMessage ? (
+      {matchedMember && submitSuccessMessage && (
         <div className="registration-status-panel mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
           <p className="font-semibold">You are all set!</p>
           <p className="mt-1">{submitSuccessMessage}</p>
         </div>
-      ) : null}
+      )}
     </SectionCard>
   )
 }

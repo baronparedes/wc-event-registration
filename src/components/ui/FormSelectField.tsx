@@ -38,7 +38,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
     <div className="space-y-1.5">
       <label className="block text-sm font-semibold text-text" htmlFor={id}>
         {label}
-        {required ? <span className="text-red-500"> *</span> : null}
+        {required && <span className="text-red-500"> *</span>}
         {labelAdornment}
       </label>
       <select
@@ -57,8 +57,8 @@ export function FormSelectField(props: FormSelectFieldProps) {
           </option>
         ))}
       </select>
-      {helperText ? <p className="text-xs text-muted">{helperText}</p> : null}
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {helperText && <p className="text-xs text-muted">{helperText}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }

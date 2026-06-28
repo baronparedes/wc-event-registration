@@ -18,5 +18,22 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "JSXExpressionContainer > ConditionalExpression[alternate.type='Literal'][alternate.value=null]",
+          message:
+            'Use && for one-sided JSX conditional rendering instead of condition ? <Element /> : null.',
+        },
+        {
+          selector:
+            "JSXExpressionContainer > ConditionalExpression[consequent.type='Literal'][consequent.value=null]",
+          message:
+            'Use && for one-sided JSX conditional rendering instead of condition ? null : <Element />.',
+        },
+      ],
+    },
   },
 ])

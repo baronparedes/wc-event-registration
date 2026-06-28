@@ -26,9 +26,7 @@ export function SectionCard(props: SectionCardProps) {
       className={wrapperClassName ?? 'rounded-2xl border border-border bg-surface p-6 shadow-sm'}
     >
       <h2 className={titleClassName ?? 'font-heading text-xl font-semibold text-text'}>{title}</h2>
-      {subtitle ? (
-        <div className={subtitleClassName ?? 'mt-2 text-sm text-muted'}>{subtitle}</div>
-      ) : null}
+      {subtitle && <div className={subtitleClassName ?? 'mt-2 text-sm text-muted'}>{subtitle}</div>}
       <div className={contentClassName ?? (subtitle ? 'mt-3' : 'mt-2')}>{children}</div>
     </div>
   )

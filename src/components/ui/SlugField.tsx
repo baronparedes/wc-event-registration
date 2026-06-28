@@ -31,11 +31,11 @@ export function SlugField({ isEditMode, value, onChange, error, disabled }: Slug
       }`}
       label="Slug"
       labelAdornment={
-        isEditMode ? (
+        isEditMode && (
           <span className="ml-2 rounded bg-surface px-1.5 py-0.5 text-xs font-normal text-muted ring-1 ring-border">
             locked
           </span>
-        ) : null
+        )
       }
       onChange={handleChange}
       placeholder="e.g. summer-event-2025"

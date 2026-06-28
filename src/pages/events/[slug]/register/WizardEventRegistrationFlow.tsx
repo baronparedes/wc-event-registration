@@ -87,7 +87,7 @@ export function WizardEventRegistrationFlow() {
             </div>
           </div>
 
-          {activeWizardStep === 1 ? (
+          {activeWizardStep === 1 && (
             <MemberLookupStepCard
               lookupForm={memberLookup.lookupForm}
               onLookupSubmit={handleLookupSubmit}
@@ -99,9 +99,9 @@ export function WizardEventRegistrationFlow() {
               shouldHighlightInput={memberLookup.memberIdHighlight}
               onDismissLookupError={clearLookupError}
             />
-          ) : null}
+          )}
 
-          {activeWizardStep === 2 ? (
+          {activeWizardStep === 2 && (
             <div className="space-y-4">
               <ProfileStepCard
                 matchedMember={memberLookup.matchedMember}
@@ -120,9 +120,9 @@ export function WizardEventRegistrationFlow() {
                 </Button>
               </div>
             </div>
-          ) : null}
+          )}
 
-          {activeWizardStep === 3 ? (
+          {activeWizardStep === 3 && (
             <div ref={dynamicFieldsStepRef} className="space-y-4">
               <DynamicFieldsStepCard
                 matchedMember={memberLookup.matchedMember}
@@ -154,7 +154,7 @@ export function WizardEventRegistrationFlow() {
                 Back to Step 2
               </Button>
             </div>
-          ) : null}
+          )}
         </div>
       ) : (
         <LockedGateCard />

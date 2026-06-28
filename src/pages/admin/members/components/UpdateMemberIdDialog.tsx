@@ -57,7 +57,7 @@ export function UpdateMemberIdDialog({
         Update Member ID
       </ActionButton>
 
-      {!isOpen ? null : (
+      {isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={handleClose}

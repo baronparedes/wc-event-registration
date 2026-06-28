@@ -38,7 +38,7 @@ export function RuleInput({
         placeholder={placeholder}
         className={inputClass}
       />
-      {helperText ? <p className="text-xs text-muted">{helperText}</p> : null}
+      {helperText && <p className="text-xs text-muted">{helperText}</p>}
     </div>
   )
 }

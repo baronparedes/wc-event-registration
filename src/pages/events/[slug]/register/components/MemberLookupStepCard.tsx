@@ -83,11 +83,11 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             }}
             {...registerRest}
           />
-          {lookupForm.formState.errors.memberId ? (
+          {lookupForm.formState.errors.memberId && (
             <p className="registration-field-error text-sm text-danger">
               {lookupForm.formState.errors.memberId.message}
             </p>
-          ) : null}
+          )}
         </div>
 
         <Button disabled={isLookupPending} size="md" type="submit" variant="default">
@@ -95,7 +95,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
         </Button>
       </form>
 
-      {lookupErrorMessage && !suppressLookupWarning ? (
+      {lookupErrorMessage && !suppressLookupWarning && (
         <div
           ref={lookupErrorRef}
           className={`overflow-hidden transition-all duration-500 ${
@@ -125,7 +125,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
                 </p>
               </div>
 
-              {onDismissLookupError ? (
+              {onDismissLookupError && (
                 <button
                   type="button"
                   onClick={onDismissLookupError}
@@ -134,11 +134,11 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
                 >
                   Dismiss
                 </button>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </SectionCard>
   )
 }

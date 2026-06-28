@@ -22,7 +22,7 @@ export function EventDetailsSection(props: EventDetailsSectionProps) {
       <div className="space-y-4">
         <FormInputField
           disabled={disabled}
-          error={typeof errors.title?.message === 'string' ? errors.title.message : null}
+          error={typeof errors.title?.message === 'string' ? errors.title.message : undefined}
           id="event-title"
           label="Title"
           placeholder="e.g. Summer Camp 2025"

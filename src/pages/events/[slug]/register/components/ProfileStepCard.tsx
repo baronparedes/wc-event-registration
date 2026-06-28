@@ -55,7 +55,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
       titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
       contentClassName="registration-step-card__content mt-2"
     >
-      {matchedMember ? (
+      {matchedMember && (
         <div
           className={`overflow-hidden transition-all duration-500 ${detailsTransitionClassName}`}
         >
@@ -75,7 +75,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
             />
           </div>
         </div>
-      ) : null}
+      )}
 
       <div
         className={`overflow-hidden transition-all duration-500 ${placeholderTransitionClassName}`}

@@ -45,7 +45,7 @@ export function FieldTypeSelector({ value, onChange, disabled, error }: FieldTyp
           </button>
         ))}
       </div>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }

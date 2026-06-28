@@ -172,14 +172,14 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
     return (
       <div>
         <div>Profile Step</div>
-        {props.stepTimeoutSecondsRemaining ? (
+        {props.stepTimeoutSecondsRemaining && (
           <div>Step 2 reset in {props.stepTimeoutSecondsRemaining}s</div>
-        ) : null}
-        {props.onContinueToStepThree ? (
+        )}
+        {props.onContinueToStepThree && (
           <button onClick={props.onContinueToStepThree} type="button">
             Continue to Step 3
           </button>
-        ) : null}
+        )}
       </div>
     )
   },
@@ -199,11 +199,11 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
     return (
       <div>
         <div>{props.submitButtonLabel}</div>
-        {props.stepTimeoutSecondsRemaining ? (
+        {props.stepTimeoutSecondsRemaining && (
           <div>Step 3 reset in {props.stepTimeoutSecondsRemaining}s</div>
-        ) : null}
-        {props.submitErrorMessage ? <div>{props.submitErrorMessage}</div> : null}
-        {props.submitSuccessMessage ? <div>{props.submitSuccessMessage}</div> : null}
+        )}
+        {props.submitErrorMessage && <div>{props.submitErrorMessage}</div>}
+        {props.submitSuccessMessage && <div>{props.submitSuccessMessage}</div>}
         <button onClick={() => void props.onSubmit({ team_name: 'A-Team' })} type="button">
           Trigger Submit
         </button>

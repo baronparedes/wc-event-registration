@@ -50,7 +50,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
         <span className="sr-only">{actionLabel}</span>
       </button>
 
-      {isExpanded ? <div id={contentId}>{children}</div> : null}
+      {isExpanded && <div id={contentId}>{children}</div>}
     </SectionCard>
   )
 }

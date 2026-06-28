@@ -19,6 +19,7 @@ export function AdminEventFieldsPage() {
   const isDraft = event?.status === 'draft'
   const isPublished = event?.status === 'published'
   const isArchived = event?.status === 'archived'
+  const panelField: AdminEventField | null = panelState.mode === 'edit' ? panelState.field : null
 
   function openCreate() {
     setPanelState({ mode: 'create' })
@@ -121,7 +122,7 @@ export function AdminEventFieldsPage() {
         <EventFieldEditPanel
           eventId={id}
           eventStatus={event.status}
-          field={panelState.mode === 'edit' ? panelState.field : null}
+          field={panelField}
           onClose={closePanel}
         />
       )}

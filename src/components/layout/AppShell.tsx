@@ -74,7 +74,7 @@ export function AppShell() {
                 </DropdownMenuItem>
               )}
             </DropdownMenu>
-            {adminAuth?.isAuthenticated ? (
+            {adminAuth?.isAuthenticated && (
               <Button
                 className="hover:bg-primary/10"
                 onClick={handleLogout}
@@ -84,7 +84,7 @@ export function AppShell() {
               >
                 Sign Out
               </Button>
-            ) : null}
+            )}
           </nav>
         </div>
       </header>

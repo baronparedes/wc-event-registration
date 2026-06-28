@@ -83,7 +83,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      {pageSizeOptions && pageSizeOptions.length > 0 && pageSize && onPageSizeChange ? (
+      {pageSizeOptions && pageSizeOptions.length > 0 && pageSize && onPageSizeChange && (
         <div className="flex w-full items-center justify-center gap-2 text-sm text-muted sm:w-auto sm:justify-start">
           <span className="shrink-0 whitespace-nowrap">Rows per page</span>
           <label className="sr-only" htmlFor="admin-pagination-page-size">
@@ -103,7 +103,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
             ))}
           </select>
         </div>
-      ) : null}
+      )}
 
       <div className="flex w-full flex-nowrap items-center justify-center gap-1.5 sm:w-auto sm:justify-end sm:gap-2">
         <Button

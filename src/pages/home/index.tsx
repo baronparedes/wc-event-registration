@@ -22,7 +22,7 @@ export function HomePage() {
         </h1>
       </div>
 
-      {isLoading ? (
+      {isLoading && (
         <div className="space-y-6" aria-hidden="true">
           <div className="space-y-3">
             <Skeleton className="h-5 w-44" />
@@ -49,7 +49,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
       {isError && (
         <p className="text-sm text-destructive">Unable to load events. Please try again.</p>

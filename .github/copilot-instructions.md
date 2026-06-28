@@ -172,6 +172,7 @@ Lint-sensitive React patterns:
 - Hooks must remain unconditional and top-level. If a hook is needed for render output, declare it before any early return branches.
 - When effect cleanup depends on timers, subscriptions, or mutable refs, capture the specific handle in a local variable inside the effect and clean up that local handle instead of re-reading mutable ref state in cleanup.
 - If a component or hook triggers a React lint rule, prefer restructuring state flow or hook placement over suppressing the rule.
+- For render-only conditionals where the alternate branch is `null`, prefer `condition && <Component />` over `condition ? <Component /> : null`; reserve ternaries for true two-branch rendering.
 
 Component design:
 

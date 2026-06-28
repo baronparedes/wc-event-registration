@@ -69,7 +69,7 @@ export function AddMemberDialog() {
         <span className="hidden sm:inline">Add Member</span>
       </Button>
 
-      {!isOpen ? null : (
+      {isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 lg:px-8"
           onClick={(e) => {

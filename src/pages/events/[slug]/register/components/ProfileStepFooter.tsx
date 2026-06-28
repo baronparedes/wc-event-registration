@@ -47,11 +47,11 @@ export function ProfileStepFooter(props: ProfileStepFooterProps) {
         <Button onClick={onContinueToStepThree} size="md" type="button" variant="default">
           Yes, I confirm
         </Button>
-        {timeoutMessage ? (
+        {timeoutMessage && (
           <p className="registration-timeout-copy mt-2 text-sm text-muted" aria-live="polite">
             {timeoutMessage}
           </p>
-        ) : null}
+        )}
       </div>
     )
   }

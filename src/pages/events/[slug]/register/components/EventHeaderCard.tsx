@@ -36,7 +36,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       }
       wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
     >
-      {isLoading ? (
+      {isLoading && (
         <div className="mt-4 space-y-3" aria-hidden="true">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-11/12" />
@@ -47,9 +47,9 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
             <Skeleton className="h-4 w-2/3" />
           </div>
         </div>
-      ) : null}
+      )}
 
-      {event?.description ? (
+      {event?.description && (
         <div
           className="
               mt-3 text-sm text-muted leading-relaxed
@@ -68,37 +68,37 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
             "
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
         />
-      ) : null}
+      )}
 
-      {event ? (
+      {event && (
         <div className="mt-4 grid gap-2 rounded-lg border border-border bg-background/70 p-3 text-sm text-muted sm:grid-cols-2">
-          {event.location ? (
+          {event.location && (
             <p className="sm:col-span-2">
               Location: <span className="font-medium text-text">{event.location}</span>
             </p>
-          ) : null}
+          )}
           <p>
             Starts: <span className="font-medium text-text">{formatDateTime(event.starts_at)}</span>
           </p>
           <p>
             Ends: <span className="font-medium text-text">{formatDateTime(event.ends_at)}</span>
           </p>
-          {availability?.status === 'available' ? (
+          {availability?.status === 'available' && (
             <p className="sm:col-span-2">
               Registered:{' '}
               <span className="font-medium text-text">{availability.registration_count}</span>
             </p>
-          ) : null}
+          )}
         </div>
-      ) : null}
+      )}
 
-      {slug && !event ? (
+      {slug && !event && (
         <p className="mt-2 text-sm text-muted">
           Event code: <span className="font-mono text-text">{slug}</span>
         </p>
-      ) : null}
+      )}
 
-      {isGateReady && eventWindowText ? (
+      {isGateReady && eventWindowText && (
         <div className="mt-4 grid gap-2 rounded-lg border border-border bg-background/70 p-3 text-sm text-muted sm:grid-cols-2">
           <p>
             Registration opens:{' '}
@@ -109,32 +109,32 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
             <span className="font-medium text-text">{eventWindowText.closes}</span>
           </p>
         </div>
-      ) : null}
+      )}
 
-      {isError ? (
+      {isError && (
         <p className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           This event is unavailable right now.
         </p>
-      ) : null}
+      )}
 
       {availability?.status === 'unavailable' &&
-      availability.reason === 'not_found_or_unpublished' ? (
-        <p className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
-          This event is unavailable right now.
-        </p>
-      ) : null}
+        availability.reason === 'not_found_or_unpublished' && (
+          <p className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+            This event is unavailable right now.
+          </p>
+        )}
 
-      {availability?.status === 'unavailable' && availability.reason === 'not_open_yet' ? (
+      {availability?.status === 'unavailable' && availability.reason === 'not_open_yet' && (
         <p className="mt-4 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
           Registration opens soon.
         </p>
-      ) : null}
+      )}
 
-      {availability?.status === 'unavailable' && availability.reason === 'registration_closed' ? (
+      {availability?.status === 'unavailable' && availability.reason === 'registration_closed' && (
         <p className="mt-4 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
           Registration has already closed.
         </p>
-      ) : null}
+      )}
     </CollapsibleSectionCard>
   )
 }

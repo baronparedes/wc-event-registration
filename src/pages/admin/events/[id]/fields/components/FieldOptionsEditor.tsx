@@ -57,7 +57,7 @@ export function FieldOptionsEditor({
                     : 'Configure the display text and stored value.'}
                 </p>
               </div>
-              {!isLocked ? (
+              {!isLocked && (
                 <button
                   type="button"
                   onClick={() => remove(index)}
@@ -66,7 +66,7 @@ export function FieldOptionsEditor({
                 >
                   Remove
                 </button>
-              ) : null}
+              )}
             </div>
 
             <div className="mt-4 space-y-4">
@@ -80,7 +80,7 @@ export function FieldOptionsEditor({
                     aria-label={`Option ${index + 1} label`}
                     className={`${inputClass} ${labelError ? 'border-red-400' : ''}`}
                   />
-                  {labelError ? <p className="text-xs text-red-600">{labelError}</p> : null}
+                  {labelError && <p className="text-xs text-red-600">{labelError}</p>}
                 </label>
 
                 <label className="space-y-1 text-sm text-text">
@@ -92,11 +92,11 @@ export function FieldOptionsEditor({
                     aria-label={`Option ${index + 1} value`}
                     className={`${inputClass} ${valueError ? 'border-red-400' : ''}`}
                   />
-                  {valueError ? <p className="text-xs text-red-600">{valueError}</p> : null}
+                  {valueError && <p className="text-xs text-red-600">{valueError}</p>}
                 </label>
               </div>
 
-              {showToggleLabel ? (
+              {showToggleLabel && (
                 <div className="rounded-lg border border-border/70 bg-surface p-3">
                   <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
                     Toggle Settings
@@ -111,9 +111,9 @@ export function FieldOptionsEditor({
                         aria-label={`Option ${index + 1} toggle label`}
                         className={`${inputClass} ${toggleLabelError ? 'border-red-400' : ''}`}
                       />
-                      {toggleLabelError ? (
+                      {toggleLabelError && (
                         <p className="text-xs text-red-600">{toggleLabelError}</p>
-                      ) : null}
+                      )}
                     </label>
 
                     <label className="space-y-1 text-sm text-text">
@@ -132,7 +132,7 @@ export function FieldOptionsEditor({
                     </label>
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
         )
