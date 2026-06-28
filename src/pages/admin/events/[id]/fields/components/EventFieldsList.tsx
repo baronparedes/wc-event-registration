@@ -37,6 +37,7 @@ const STATUS_COLORS: Record<string, string> = {
   radio: 'bg-green-100 text-green-800',
   checkbox: 'bg-amber-100 text-amber-800',
   multi_select: 'bg-green-100 text-green-800',
+  multi_select_toggle: 'bg-green-100 text-green-800',
   date: 'bg-rose-100 text-rose-800',
   datetime: 'bg-rose-100 text-rose-800',
   boolean: 'bg-amber-100 text-amber-800',

@@ -69,6 +69,18 @@ function formatAnswerValue(answer: unknown, fieldType: string): string {
     return String(answer)
   }
 
+  if (fieldType === 'multi_select_toggle') {
+    if (typeof answer === 'object' && answer !== null && !Array.isArray(answer)) {
+      return Object.entries(answer as Record<string, unknown>)
+        .map(
+          ([key, value]) =>
+            `${key}: ${value === true ? 'Yes' : value === false ? 'No' : String(value)}`,
+        )
+        .join('; ')
+    }
+    return String(answer)
+  }
+
   return String(answer)
 }
 
@@ -328,6 +340,7 @@ Deno.serve(async (req) => {
           field.field_type === 'select' ||
           field.field_type === 'radio' ||
           field.field_type === 'multi_select' ||
+          field.field_type === 'multi_select_toggle' ||
           field.field_type === 'checkbox'
         ) {
           try {

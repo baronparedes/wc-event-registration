@@ -12,6 +12,7 @@ export const FIELD_TYPES = [
   'radio',
   'checkbox',
   'multi_select',
+  'multi_select_toggle',
   'date',
   'datetime',
   'boolean',
@@ -22,6 +23,8 @@ export type EventFieldTypeEnum = (typeof FIELD_TYPES)[number]
 const fieldOptionSchema = z.object({
   label: z.string().min(1, 'Option label is required'),
   value: z.string().min(1, 'Option value is required'),
+  toggle_label: z.string().optional(),
+  toggle_default: z.boolean().optional(),
 })
 
 export type FieldOption = z.infer<typeof fieldOptionSchema>
@@ -83,37 +86,55 @@ export const reorderEventFieldsSchema = z.object({
 
 export type ReorderEventFieldsInput = z.infer<typeof reorderEventFieldsSchema>
 
-export const eventFieldFormSchema = z.object({
-  field_key: z
-    .string()
-    .min(1, 'Field name is required')
-    .max(100, 'Maximum 100 characters')
-    .regex(
-      VALIDATION_PATTERNS.fieldKey,
-      'Use only lowercase letters, numbers, and underscores (e.g., team_name)',
+export const eventFieldFormSchema = z
+  .object({
+    field_key: z
+      .string()
+      .min(1, 'Field name is required')
+      .max(100, 'Maximum 100 characters')
+      .regex(
+        VALIDATION_PATTERNS.fieldKey,
+        'Use only lowercase letters, numbers, and underscores (e.g., team_name)',
+      ),
+    label: z.string().min(1, 'Field label is required').max(200, 'Maximum 200 characters'),
+    field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
+    is_required: z.boolean(),
+    is_active: z.boolean(),
+    placeholder: z.string().max(200, 'Maximum 200 characters').nullable(),
+    help_text: z.string().max(500, 'Maximum 500 characters').nullable(),
+    options: z.array(
+      z.object({
+        label: z.string().min(1, 'Option label is required'),
+        value: z.string().min(1, 'Option value is required'),
+        toggle_label: z.string(),
+        toggle_default: z.boolean(),
+      }),
     ),
-  label: z.string().min(1, 'Field label is required').max(200, 'Maximum 200 characters'),
-  field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
-  is_required: z.boolean(),
-  is_active: z.boolean(),
-  placeholder: z.string().max(200, 'Maximum 200 characters').nullable(),
-  help_text: z.string().max(500, 'Maximum 500 characters').nullable(),
-  options: z.array(
-    z.object({
-      label: z.string().min(1, 'Option label is required'),
-      value: z.string().min(1, 'Option value is required'),
-    }),
-  ),
-  val_min_length: z.string(),
-  val_max_length: z.string(),
-  val_pattern: z.string(),
-  val_min: z.string(),
-  val_max: z.string(),
-  val_min_selections: z.string(),
-  val_max_selections: z.string(),
-  val_min_date: z.string(),
-  val_max_date: z.string(),
-})
+    val_min_length: z.string(),
+    val_max_length: z.string(),
+    val_pattern: z.string(),
+    val_min: z.string(),
+    val_max: z.string(),
+    val_min_selections: z.string(),
+    val_max_selections: z.string(),
+    val_min_date: z.string(),
+    val_max_date: z.string(),
+  })
+  .superRefine((values, context) => {
+    if (values.field_type !== 'multi_select_toggle') {
+      return
+    }
+
+    values.options.forEach((option, index) => {
+      if (option.toggle_label.trim().length === 0) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Toggle label is required',
+          path: ['options', index, 'toggle_label'],
+        })
+      }
+    })
+  })
 
 export type EventFieldFormValues = z.infer<typeof eventFieldFormSchema>
 
@@ -279,6 +300,53 @@ function buildMultiSelectSchema(field: PublicEventField): z.ZodType<string[] | u
       ) as z.ZodType<string[] | undefined>)
 }
 
+function buildMultiSelectToggleSchema(
+  field: PublicEventField,
+): z.ZodType<Record<string, boolean> | undefined> {
+  const rules = field.validation_rules
+  const allowedValues = new Set(field.options.map((option) => option.value))
+
+  let schema = z
+    .record(z.string(), z.boolean())
+    .refine(
+      (values) => Object.keys(values).every((key) => allowedValues.has(key)),
+      `${field.label} contains an unsupported option.`,
+    )
+
+  if (field.is_required) {
+    schema = schema.refine(
+      (values) => Object.keys(values).length > 0,
+      `${field.label} is required.`,
+    )
+  }
+
+  if (rules.min_selections !== undefined) {
+    schema = schema.refine(
+      (values) => Object.keys(values).length >= rules.min_selections!,
+      `${field.label} requires at least ${rules.min_selections} selection(s).`,
+    )
+  }
+
+  if (rules.max_selections !== undefined) {
+    schema = schema.refine(
+      (values) => Object.keys(values).length <= rules.max_selections!,
+      `${field.label} allows at most ${rules.max_selections} selection(s).`,
+    )
+  }
+
+  return z.preprocess((value) => {
+    if (value === null || value === undefined || value === '') {
+      return {}
+    }
+
+    if (typeof value !== 'object' || Array.isArray(value)) {
+      return value
+    }
+
+    return value
+  }, schema) as z.ZodType<Record<string, boolean> | undefined>
+}
+
 function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefined> {
   const rules = field.validation_rules
   const isDateOnly = field.field_type === 'date'
@@ -365,6 +433,10 @@ function buildSchemaForField(field: PublicEventField): z.ZodType<unknown> {
 
   if (field.field_type === 'multi_select') {
     return buildMultiSelectSchema(field)
+  }
+
+  if (field.field_type === 'multi_select_toggle') {
+    return buildMultiSelectToggleSchema(field)
   }
 
   if (field.field_type === 'date' || field.field_type === 'datetime') {

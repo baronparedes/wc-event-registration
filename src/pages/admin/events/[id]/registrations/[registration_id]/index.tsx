@@ -27,6 +27,20 @@ function formatAnswer(answer: unknown, fieldType: string): string {
     return '—'
   }
 
+  if (fieldType === 'multi_select_toggle') {
+    if (typeof answer === 'object' && answer !== null && !Array.isArray(answer)) {
+      const entries = Object.entries(answer as Record<string, unknown>)
+      return entries
+        .map(
+          ([key, value]) =>
+            `${key}: ${value === true ? 'Yes' : value === false ? 'No' : String(value)}`,
+        )
+        .join(', ')
+    }
+
+    return String(answer)
+  }
+
   if (fieldType === 'boolean') {
     return answer === true ? 'Yes' : answer === false ? 'No' : String(answer)
   }

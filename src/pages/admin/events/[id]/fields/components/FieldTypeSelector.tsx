@@ -18,6 +18,7 @@ const FIELD_TYPES_ORDERED: EventFieldTypeEnum[] = [
   'radio',
   'checkbox',
   'multi_select',
+  'multi_select_toggle',
   'date',
   'datetime',
   'boolean',

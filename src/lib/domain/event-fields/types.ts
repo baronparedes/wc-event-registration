@@ -8,6 +8,7 @@ export type EventFieldType =
   | 'radio'
   | 'checkbox'
   | 'multi_select'
+  | 'multi_select_toggle'
   | 'date'
   | 'datetime'
   | 'boolean'
@@ -15,11 +16,15 @@ export type EventFieldType =
 export type PublicEventFieldOption = {
   label: string
   value: string
+  toggle_label?: string
+  toggle_default?: boolean
 }
 
 export type AdminEventFieldOption = {
   label: string
   value: string
+  toggle_label?: string
+  toggle_default?: boolean
 }
 
 export type PublicEventFieldValidationRules = {

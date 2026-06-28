@@ -17,6 +17,7 @@ const eventFieldTypeSchema = z.enum([
   'radio',
   'checkbox',
   'multi_select',
+  'multi_select_toggle',
   'date',
   'datetime',
   'boolean',
@@ -33,7 +34,8 @@ function parseFieldOptions(field: PublicEventFieldRow): {
   const requiresOptions =
     field.field_type === 'select' ||
     field.field_type === 'radio' ||
-    field.field_type === 'multi_select'
+    field.field_type === 'multi_select' ||
+    field.field_type === 'multi_select_toggle'
 
   if (!Array.isArray(field.options)) {
     return {
@@ -58,6 +60,9 @@ function parseFieldOptions(field: PublicEventFieldRow): {
 
       const rawLabel = typeof entry.label === 'string' ? entry.label.trim() : ''
       const rawValue = typeof entry.value === 'string' ? entry.value.trim() : ''
+      const rawToggleLabel = typeof entry.toggle_label === 'string' ? entry.toggle_label.trim() : ''
+      const rawToggleDefault =
+        typeof entry.toggle_default === 'boolean' ? entry.toggle_default : undefined
 
       const value = rawValue || rawLabel
       const label = rawLabel || rawValue
@@ -66,7 +71,12 @@ function parseFieldOptions(field: PublicEventFieldRow): {
         return null
       }
 
-      return { label, value }
+      return {
+        label,
+        value,
+        ...(rawToggleLabel ? { toggle_label: rawToggleLabel } : {}),
+        ...(rawToggleDefault !== undefined ? { toggle_default: rawToggleDefault } : {}),
+      }
     })
     .filter((entry): entry is PublicEventFieldOption => Boolean(entry))
 
@@ -74,6 +84,19 @@ function parseFieldOptions(field: PublicEventFieldRow): {
     (option, index) =>
       normalized.findIndex((candidate) => candidate.value === option.value) === index,
   )
+
+  if (field.field_type === 'multi_select_toggle') {
+    const missingToggleLabel = deduped.find(
+      (option) => !option.toggle_label || option.toggle_label.trim().length === 0,
+    )
+
+    if (missingToggleLabel) {
+      return {
+        options: [],
+        issue: `Field "${field.field_key}" requires a toggle label for each option.`,
+      }
+    }
+  }
 
   if (requiresOptions && deduped.length === 0) {
     return {

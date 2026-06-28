@@ -13,6 +13,7 @@ describe('event-fields metadata helpers', () => {
     expect(fieldTypeHasOptions('select')).toBe(true)
     expect(fieldTypeHasOptions('radio')).toBe(true)
     expect(fieldTypeHasOptions('multi_select')).toBe(true)
+    expect(fieldTypeHasOptions('multi_select_toggle')).toBe(true)
     expect(fieldTypeHasOptions('text')).toBe(false)
   })
 
@@ -29,6 +30,7 @@ describe('event-fields metadata helpers', () => {
     expect(fieldTypeHasNumberValidation('text')).toBe(false)
 
     expect(fieldTypeHasMultiSelectValidation('multi_select')).toBe(true)
+    expect(fieldTypeHasMultiSelectValidation('multi_select_toggle')).toBe(true)
     expect(fieldTypeHasMultiSelectValidation('radio')).toBe(false)
   })
 
@@ -42,6 +44,7 @@ describe('event-fields metadata helpers', () => {
     expect(fieldTypeHasValidation('text')).toBe(true)
     expect(fieldTypeHasValidation('number')).toBe(true)
     expect(fieldTypeHasValidation('multi_select')).toBe(true)
+    expect(fieldTypeHasValidation('multi_select_toggle')).toBe(true)
     expect(fieldTypeHasValidation('date')).toBe(true)
     expect(fieldTypeHasValidation('datetime')).toBe(true)
     expect(fieldTypeHasValidation('checkbox')).toBe(false)

@@ -238,6 +238,49 @@ function validateFieldValue(
     return null
   }
 
+  // Multi-select + Yes/No toggle field
+  if (type === 'multi_select_toggle') {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return { fieldKey, message: `${label} must be an object of option values.` }
+    }
+
+    const mapped = value as Record<string, unknown>
+    const selectedKeys = Object.keys(mapped)
+    const allowedValues = new Set(field.options.map((opt) => opt.value))
+
+    for (const key of selectedKeys) {
+      if (!allowedValues.has(key)) {
+        return { fieldKey, message: `${label} contains an unsupported option.` }
+      }
+
+      if (typeof mapped[key] !== 'boolean') {
+        return { fieldKey, message: `${label} selections must be Yes/No values.` }
+      }
+    }
+
+    const minSelections = rules.min_selections
+    if (minSelections !== undefined && typeof minSelections === 'number') {
+      if (selectedKeys.length < minSelections) {
+        return {
+          fieldKey,
+          message: `${label} requires at least ${minSelections} selection(s).`,
+        }
+      }
+    }
+
+    const maxSelections = rules.max_selections
+    if (maxSelections !== undefined && typeof maxSelections === 'number') {
+      if (selectedKeys.length > maxSelections) {
+        return {
+          fieldKey,
+          message: `${label} allows at most ${maxSelections} selection(s).`,
+        }
+      }
+    }
+
+    return null
+  }
+
   // Date field
   if (type === 'date' || type === 'datetime') {
     if (typeof value !== 'string') {

@@ -11,6 +11,7 @@ export const FIELD_TYPE_LABELS: Record<EventFieldTypeEnum, string> = {
   radio: 'Radio Buttons',
   checkbox: 'Checkbox',
   multi_select: 'Checkboxes (Multiple)',
+  multi_select_toggle: 'Checkboxes + Yes/No',
   date: 'Date',
   datetime: 'Date & Time',
   boolean: 'Yes / No Toggle',
@@ -25,7 +26,7 @@ export type PublishedEditableField = (typeof PUBLISHED_EDITABLE_FIELDS)[number]
 
 /** Whether a field type uses an options list (select/radio/multi_select). */
 export function fieldTypeHasOptions(ft: EventFieldTypeEnum): boolean {
-  return ft === 'select' || ft === 'radio' || ft === 'multi_select'
+  return ft === 'select' || ft === 'radio' || ft === 'multi_select' || ft === 'multi_select_toggle'
 }
 
 /** Whether a field type supports text-based validation rules. */
@@ -40,7 +41,7 @@ export function fieldTypeHasNumberValidation(ft: EventFieldTypeEnum): boolean {
 
 /** Whether a field type supports selection count validation. */
 export function fieldTypeHasMultiSelectValidation(ft: EventFieldTypeEnum): boolean {
-  return ft === 'multi_select'
+  return ft === 'multi_select' || ft === 'multi_select_toggle'
 }
 
 /** Whether a field type supports date range validation. */

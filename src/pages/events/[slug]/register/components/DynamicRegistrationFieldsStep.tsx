@@ -16,6 +16,7 @@ import {
   SelectFieldRenderer,
   RadioFieldRenderer,
   MultiSelectFieldRenderer,
+  MultiSelectToggleFieldRenderer,
 } from './field-renderers/SelectFieldRenderer'
 import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer'
 
@@ -44,6 +45,8 @@ function DynamicFieldInput(props: {
       return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'multi_select':
       return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />
+    case 'multi_select_toggle':
+      return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />
     case 'checkbox':
     case 'boolean':
       return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />

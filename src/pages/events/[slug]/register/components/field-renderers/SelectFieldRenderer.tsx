@@ -1,4 +1,4 @@
-import { type UseFormReturn } from 'react-hook-form'
+import { type UseFormReturn, useWatch } from 'react-hook-form'
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
 
 const baseInputClassName =
@@ -54,6 +54,126 @@ export function MultiSelectFieldRenderer({ field, dynamicForm }: SelectFieldRend
           <span>{option.label}</span>
         </label>
       ))}
+    </div>
+  )
+}
+
+function isBooleanRecord(value: unknown): value is Record<string, boolean> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+
+  return Object.values(value).every((entry) => typeof entry === 'boolean')
+}
+
+export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
+  const rawValue = useWatch({ control: dynamicForm.control, name: field.field_key })
+  const selectedValues = isBooleanRecord(rawValue) ? rawValue : {}
+
+  function handleSelectionChange(optionValue: string, checked: boolean, defaultValue = false) {
+    const nextValues = { ...selectedValues }
+
+    if (checked) {
+      nextValues[optionValue] = defaultValue
+    } else {
+      delete nextValues[optionValue]
+    }
+
+    dynamicForm.setValue(field.field_key, nextValues, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
+
+  function handleToggleChange(optionValue: string, value: boolean) {
+    if (!(optionValue in selectedValues)) {
+      return
+    }
+
+    dynamicForm.setValue(
+      field.field_key,
+      {
+        ...selectedValues,
+        [optionValue]: value,
+      },
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {field.options.map(
+        (option: {
+          value: string
+          label: string
+          toggle_label?: string
+          toggle_default?: boolean
+        }) => {
+          const isSelected = option.value in selectedValues
+          const configuredDefault = option.toggle_default ?? false
+          const toggleValue = selectedValues[option.value] ?? configuredDefault
+
+          return (
+            <div
+              key={`${field.id}-${option.value}`}
+              className="rounded-md border border-border/70 px-3 py-2 text-sm text-text"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex min-w-0 flex-1 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(event) =>
+                      handleSelectionChange(option.value, event.target.checked, configuredDefault)
+                    }
+                  />
+                  <span>{option.label}</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={`${option.label} - Yes`}
+                    disabled={!isSelected}
+                    onClick={() => handleToggleChange(option.value, true)}
+                    className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
+                      toggleValue
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-text'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`${option.label} - No`}
+                    disabled={!isSelected}
+                    onClick={() => handleToggleChange(option.value, false)}
+                    className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
+                      !toggleValue
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-text'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-1 pl-6 text-xs text-muted">
+                {option.toggle_label && option.toggle_label.length > 0
+                  ? option.toggle_label
+                  : isSelected
+                    ? 'Choose Yes or No'
+                    : 'Select the checkbox to enable Yes / No'}
+              </div>
+            </div>
+          )
+        },
+      )}
     </div>
   )
 }

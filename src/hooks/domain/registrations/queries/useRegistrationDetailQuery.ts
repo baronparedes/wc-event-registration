@@ -87,6 +87,7 @@ export function useRegistrationDetailQuery(registrationId: string) {
             fieldType === 'select' ||
             fieldType === 'radio' ||
             fieldType === 'multi_select' ||
+            fieldType === 'multi_select_toggle' ||
             fieldType === 'checkbox'
           ) {
             // These are stored as JSON strings in answer_text

@@ -184,6 +184,7 @@ describe('event-fields transforms', () => {
       makePublicField({ field_key: 'accept_terms', field_type: 'checkbox' }),
       makePublicField({ field_key: 'is_active', field_type: 'boolean' }),
       makePublicField({ field_key: 'positions', field_type: 'multi_select' }),
+      makePublicField({ field_key: 'meal_slots', field_type: 'multi_select_toggle' }),
       makePublicField({ field_key: 'nickname', field_type: 'text' }),
     ])
 
@@ -191,6 +192,7 @@ describe('event-fields transforms', () => {
       accept_terms: false,
       is_active: false,
       positions: [],
+      meal_slots: {},
       nickname: '',
     })
   })

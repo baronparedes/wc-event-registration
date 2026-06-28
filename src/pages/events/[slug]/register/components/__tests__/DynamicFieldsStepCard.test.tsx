@@ -178,6 +178,23 @@ const baseFields: PublicEventField[] = [
     display_order: 10,
   },
   {
+    id: 'field-13',
+    event_id: 'event-1',
+    field_key: 'meal_slots',
+    label: 'Meal Slots',
+    field_type: 'multi_select_toggle',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [
+      { label: '9AM, with Breakfast', value: '9am' },
+      { label: '12NN, with Lunch', value: '12nn' },
+    ],
+    validation_rules: {},
+    display_order: 11,
+  },
+  {
     id: 'field-12',
     event_id: 'event-1',
     field_key: 'terms_duplicate',
@@ -189,7 +206,7 @@ const baseFields: PublicEventField[] = [
     help_text: null,
     options: [],
     validation_rules: {},
-    display_order: 11,
+    display_order: 12,
   },
 ]
 
@@ -207,6 +224,7 @@ function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsSte
         meal_choice: '',
         shirt_size: '',
         activities: [],
+        meal_slots: {},
         terms: false,
         terms_duplicate: false,
       },
@@ -303,6 +321,8 @@ describe('DynamicFieldsStepCard', () => {
       })
       fireEvent.click(screen.getByLabelText('Small'))
       fireEvent.click(screen.getByLabelText('Run'))
+      fireEvent.click(screen.getByLabelText('9AM, with Breakfast'))
+      fireEvent.click(screen.getByRole('button', { name: '9AM, with Breakfast - Yes' }))
       fireEvent.click(screen.getByLabelText('I agree to the event terms.'))
       fireEvent.click(screen.getByLabelText('I agree again.'))
     })
@@ -321,6 +341,7 @@ describe('DynamicFieldsStepCard', () => {
     expect(screen.getByLabelText('Meal Choice')).toHaveValue('vegetarian')
     expect(screen.getByLabelText('Small')).toBeChecked()
     expect(screen.getByLabelText('Run')).toBeChecked()
+    expect(screen.getByLabelText('9AM, with Breakfast')).toBeChecked()
     expect(screen.getByLabelText('I agree to the event terms.')).toBeChecked()
     expect(screen.getByLabelText('I agree again.')).toBeChecked()
   })

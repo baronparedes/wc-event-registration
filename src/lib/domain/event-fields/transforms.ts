@@ -35,7 +35,12 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
     is_active: field.is_active,
     placeholder: field.placeholder ?? '',
     help_text: field.help_text ?? '',
-    options: (field.options ?? []) as Array<{ label: string; value: string }>,
+    options: (field.options ?? []).map((option) => ({
+      label: option.label,
+      value: option.value,
+      toggle_label: option.toggle_label ?? '',
+      toggle_default: option.toggle_default ?? false,
+    })),
     val_min_length: rules.min_length != null ? String(rules.min_length) : '',
     val_max_length: rules.max_length != null ? String(rules.max_length) : '',
     val_pattern: typeof rules.pattern === 'string' ? rules.pattern : '',
@@ -90,6 +95,11 @@ export function createDynamicFieldDefaultValues(
 
     if (field.field_type === 'multi_select') {
       defaults[field.field_key] = []
+      return defaults
+    }
+
+    if (field.field_type === 'multi_select_toggle') {
+      defaults[field.field_key] = {}
       return defaults
     }
 

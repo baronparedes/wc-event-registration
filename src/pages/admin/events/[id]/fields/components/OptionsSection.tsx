@@ -1,5 +1,5 @@
 import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form'
-import type { EventFieldFormValues } from '@/lib/domain/event-fields'
+import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { FieldOptionsEditor } from './FieldOptionsEditor'
 
@@ -10,6 +10,7 @@ type OptionsSectionProps = {
   errors: Record<string, unknown>
   append: UseFieldArrayReturn<EventFieldFormValues>['append']
   remove: UseFieldArrayReturn<EventFieldFormValues>['remove']
+  selectedFieldType: EventFieldTypeEnum
 }
 
 /** Section for choice field options (select, radio, multi-select). */
@@ -20,6 +21,7 @@ export function OptionsSection({
   errors,
   append,
   remove,
+  selectedFieldType,
 }: OptionsSectionProps) {
   return (
     <SectionCard
@@ -37,6 +39,7 @@ export function OptionsSection({
         remove={remove}
         append={append}
         isLocked={isStructurallyLocked}
+        selectedFieldType={selectedFieldType}
       />
     </SectionCard>
   )

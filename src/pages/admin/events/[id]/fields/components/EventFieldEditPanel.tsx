@@ -209,6 +209,7 @@ export function EventFieldEditPanel({
               errors={errors}
               append={append}
               remove={remove}
+              selectedFieldType={selectedFieldType}
             />
           )}
 

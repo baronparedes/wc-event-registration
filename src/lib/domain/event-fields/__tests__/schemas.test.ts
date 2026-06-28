@@ -118,6 +118,40 @@ describe('event-fields schemas', () => {
     expect(parsed.success).toBe(false)
   })
 
+  it('requires a toggle label for each multi_select_toggle option', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'meal_windows',
+      label: 'Meal Windows',
+      field_type: 'multi_select_toggle',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: '9AM',
+          value: '9am',
+          toggle_label: '',
+          toggle_default: false,
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    })
+
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.path).toEqual(['options', 0, 'toggle_label'])
+    }
+  })
+
   it('accepts valid update event field input', () => {
     const parsed = updateEventFieldSchema.parse({
       id: 'c9707ebf-a95d-4f42-ba04-bde679f92ed8',
@@ -332,6 +366,31 @@ describe('event-fields schemas', () => {
     expect(optionalMultiSelectSchema.parse({ extra_roles: ['staff'] }).extra_roles).toEqual([
       'staff',
     ])
+  })
+
+  it('validates multi-select toggle fields with option-keyed boolean values', () => {
+    const schema = buildDynamicFieldResponseSchema([
+      createField({
+        field_key: 'meal_windows',
+        label: 'Meal Windows',
+        field_type: 'multi_select_toggle',
+        is_required: true,
+        options: [
+          { label: '9AM', value: '9am' },
+          { label: '12NN', value: '12nn' },
+          { label: '3PM', value: '3pm' },
+        ],
+        validation_rules: { min_selections: 1, max_selections: 2 },
+      }),
+    ])
+
+    expect(schema.safeParse({ meal_windows: { '9am': true, '12nn': false } }).success).toBe(true)
+    expect(schema.safeParse({ meal_windows: {} }).success).toBe(false)
+    expect(schema.safeParse({ meal_windows: { unknown: true } }).success).toBe(false)
+    expect(schema.safeParse({ meal_windows: { '9am': 'yes' } }).success).toBe(false)
+    expect(
+      schema.safeParse({ meal_windows: { '9am': true, '12nn': false, '3pm': true } }).success,
+    ).toBe(false)
   })
 
   it('validates date and datetime formats with min/max boundary checks', () => {

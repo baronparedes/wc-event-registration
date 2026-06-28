@@ -81,6 +81,44 @@ describe('validatePublicEventFieldConfig', () => {
     })
   })
 
+  it('treats multi_select_toggle as an options-backed field', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'session_meals',
+        field_type: 'multi_select_toggle',
+        options: [
+          { label: '9AM', value: '9am', toggle_label: 'with Breakfast' },
+          { label: '12NN', value: '12nn', toggle_label: 'with Lunch' },
+        ],
+      }),
+    ])
+
+    expect(result.issues).toEqual([])
+    expect(result.validFields[0]).toMatchObject({
+      field_key: 'session_meals',
+      field_type: 'multi_select_toggle',
+      options: [
+        { label: '9AM', value: '9am', toggle_label: 'with Breakfast' },
+        { label: '12NN', value: '12nn', toggle_label: 'with Lunch' },
+      ],
+    })
+  })
+
+  it('requires toggle labels for multi_select_toggle options', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'session_meals',
+        field_type: 'multi_select_toggle',
+        options: [{ label: '9AM', value: '9am' }],
+      }),
+    ])
+
+    expect(result.validFields).toEqual([])
+    expect(result.issues).toEqual([
+      'Field "session_meals" requires a toggle label for each option.',
+    ])
+  })
+
   it('requires at least one valid option for selectable fields', () => {
     const result = validatePublicEventFieldConfig([
       buildRow({
