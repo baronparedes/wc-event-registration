@@ -322,6 +322,181 @@ Planned immediately after the Production Readiness Gates are complete:
   - `src/pages/admin/events/[id]/fields/components/`
   - `src/pages/admin/events/[id]/registrations/components/`
 
+## Testing Infrastructure: Cucumber + Playwright Integration
+
+Planned as a post-launch testing initiative to automate end-to-end acceptance tests using business-readable Gherkin feature files.
+
+**Status**: Foundation ready (feature files complete in `docs/features/`). Implementation deferred until after Gate D + production stabilization.
+
+**Rationale**: Current unit/integration tests cover critical paths. Cucumber + Playwright adds browser-level acceptance testing to:
+
+- Validate features match business requirements (requirements → scenarios → test automation)
+- Enable QA teams to write/execute tests without code knowledge
+- Provide regression protection for future releases
+- Document system behavior in business language (already done in `docs/features/`)
+
+### Integration Plan
+
+**Phase 1: Setup and Foundation** (1-2 weeks, post-launch stabilization)
+
+1. **Install and configure**
+   - `npm install --save-dev @cucumber/cucumber @playwright/test`
+   - Create `features/` directory mapping to `docs/features/` (or reference directly)
+   - Create `cucumber.js` config with Playwright step definitions
+   - Add VS Code Gherkin extension for IDE support
+
+2. **Framework structure**
+   - Step definitions file: `features/step-definitions/common.steps.ts`
+   - Hooks for setup/teardown (browser context, auth, cleanup)
+   - Page Object Model (POM) for maintainability:
+     - `features/pages/HomePage.ts`
+     - `features/pages/LoginPage.ts`
+     - `features/pages/EventRegistrationPage.ts`
+     - `features/pages/AdminDashboard.ts`
+   - Test utilities: login helper, element waits, assertion helpers
+
+3. **First suite: Public Registration Happy Path**
+   - Map `docs/features/1-public-registration/1.1-browse-events.feature` → test scenarios
+   - Map `docs/features/1-public-registration/1.2-member-lookup.feature` → test scenarios
+   - Map `docs/features/1-public-registration/1.3-register-with-fields.feature` → test scenarios
+   - Execute against local/staging environment
+   - Verify all scenarios pass before expanding scope
+
+**Phase 2: Expand Coverage** (2-3 weeks)
+
+4. **Admin workflow suite**
+   - `docs/features/2-admin-authentication/` scenarios
+   - `docs/features/3-admin-events/` scenarios (create, publish, archive)
+   - `docs/features/5-admin-registrations/` scenarios (view, cancel, reactivate)
+
+5. **Error handling and edge cases**
+   - `docs/features/7-system-features/` scenarios (auth protection, availability, errors)
+   - Validation failure scenarios
+   - Rate limiting scenarios (may require test-only bypass)
+
+6. **Performance and load**
+   - Concurrent registration submissions
+   - Large CSV exports
+   - Pagination navigation (many pages)
+
+**Phase 3: CI/CD Integration** (1 week)
+
+7. **GitHub Actions workflow**
+   - Add `.github/workflows/e2e-tests.yml` (separate from `ci.yml`)
+   - Run Cucumber tests on: PR branches, pre-merge validation, nightly against staging
+   - Report results: pass/fail count, failure screenshots, video recordings for failures
+   - Badge/status in PR checks
+
+8. **Environment management**
+   - Secrets: staging admin email/password (read-only test account)
+   - Browser options: headed mode for local, headless for CI
+   - Parallel execution config (run multiple features concurrently on CI for speed)
+
+9. **Artifact capture**
+   - Screenshots on failure (stored in CI artifacts)
+   - Video recordings of failed scenarios (Playwright built-in)
+   - HTML report generation (Cucumber HTML reporter)
+
+**Phase 4: Maintenance and Evolution** (ongoing)
+
+10. **Keep features and tests in sync**
+    - When Gherkin features change in `docs/features/`, update/add test scenarios
+    - When code changes, run Cucumber suite in CI before merge
+    - Quarterly feature review to ensure coverage remains comprehensive
+
+11. **Extend with custom rules**
+    - Step definitions for domain-specific actions: "I register with [field] set to [value]"
+    - Reusable assertion steps: "I should see registration status [status]"
+    - Data fixtures for test setup (pre-created events, members, etc.)
+
+### Key Design Decisions
+
+**Gherkin Feature Files as Source of Truth**
+
+- Features exist in `docs/features/` (business-readable, already comprehensive)
+- Cucumber steps implement these features using Playwright
+- Any feature change updates both business doc and test code
+- Minimal duplication: scenarios describe behavior once, tested by step code
+
+**Page Object Model for Maintainability**
+
+- Tests refer to pages and actions, not DOM selectors
+- Selectors centralized in POM classes (easier to update if UI changes)
+- Example: `await loginPage.enterEmail('admin@example.com')` (readable intent)
+- Not: `await page.locator('input[type="email"]').fill('admin@example.com')` (brittle)
+
+**Parallel Test Execution**
+
+- Feature files run concurrently on CI to speed up feedback
+- Each feature gets its own isolated browser context
+- Test data prefixed with timestamp to prevent collisions
+- Staging environment must support concurrent test workload
+
+**Failure Handling and Debugging**
+
+- Screenshots and videos captured automatically on failure
+- Step logs include timing (helps identify slow steps)
+- Playwright trace files available for post-mortem analysis
+- Clear error messages indicate which step failed and why
+
+**Test Account and Data**
+
+- Dedicated test admin account (never use production credentials)
+- Test event created fresh per run (timestamped slug: "test-event-20260628-143022")
+- Test member IDs generated uniquely (avoid collisions)
+- Cleanup: delete test data after scenario completion (or mark as test data for weekly purge)
+
+### Implementation Blockers and Risks
+
+**Risk 1: Flaky Tests from Timing Issues**
+
+- **Mitigation**: Use explicit waits (not sleep), Playwright default timeouts (30s), retry strategy on CI
+- **Testing**: Run tests multiple times locally to identify flakiness
+
+**Risk 2: Test Environment Parity**
+
+- **Mitigation**: Maintain staging with feature parity to production; re-seed test data daily
+- **Alternative**: Run against local dev environment if staging is unstable
+
+**Risk 3: Performance Impact of Tests on Staging**
+
+- **Mitigation**: Run tests at off-peak hours; use dedicated test tenant if multi-tenant ready
+- **Alternative**: Cap concurrent test runs to reasonable limit (e.g., 3 concurrent browsers)
+
+**Risk 4: Maintenance Burden**
+
+- **Mitigation**: Keep step definitions DRY; document common patterns; quarterly review for cleanup
+- **Clear Ownership**: Assign QA/developer to maintain tests; budget time in sprint for test fixes
+
+### Success Metrics
+
+- **Coverage**: 100% of business-critical features (public registration, admin CRUD, error handling)
+- **Reliability**: <1% flaky test failure rate (failures are real bugs, not timing issues)
+- **Speed**: Full suite runs in <10 min on CI
+- **Maintenance**: Test code reviewed alongside feature code; no "stale test" debt
+- **Value**: Test failures catch bugs before production; regression protection enables confident releases
+
+### Timeline and Effort Estimate
+
+| Phase | Tasks                             | Duration   | Effort     | Dependencies                    |
+| ----- | --------------------------------- | ---------- | ---------- | ------------------------------- |
+| 1     | Setup + public registration suite | 1-2 weeks  | 1 engineer | Feature files done, post-launch |
+| 2     | Admin + error scenarios           | 2-3 weeks  | 1 engineer | Phase 1 complete                |
+| 3     | CI/CD integration + reports       | 1 week     | 1 engineer | Phase 2 complete                |
+| 4     | Ongoing maintenance               | Per sprint | 10-20%     | All phases complete             |
+
+**Total: 4-6 weeks (spread over 2-3 months post-launch)**
+
+### Future Enhancements
+
+- **Visual Regression Testing**: Screenshot comparison with Playwright (detect unintended UI changes)
+- **Performance Benchmarking**: Measure registration submit time, CSV export time trends
+- **Accessibility Testing**: WCAG compliance checks embedded in Cucumber steps
+- **Mobile Testing**: Run same scenarios on mobile viewports (Playwright supports multi-device)
+- **Mock Data Generators**: Faker.js for realistic test data (members, field responses, etc.)
+
+---
+
 ## Scalability and Security Architecture Addendum
 
 ### Data and Schema Evolution
