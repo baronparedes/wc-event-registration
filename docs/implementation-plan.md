@@ -803,73 +803,90 @@ Owners used below:
 #### Day 1 (2026-06-28): Typed Answer Storage Decision + Contract Lock
 
 1. Decide and document canonical answer storage shape for submissions and exports.
-  - Owner: BE
-  - Dependencies: none
-  - Exit: documented contract added in this plan and mirrored in export expectations
+
+- Owner: BE
+- Dependencies: none
+- Exit: documented contract added in this plan and mirrored in export expectations
+
 2. Implement submit/export alignment to the chosen contract.
-  - Owner: BE
-  - Dependencies: task 1
-  - Exit: build passes and CSV output matches expected typed values
+
+- Owner: BE
+- Dependencies: task 1
+- Exit: build passes and CSV output matches expected typed values
 
 #### Day 2 (2026-06-29): Failure-Path Test Expansion
 
 1. Add/expand integration and unit failure-path tests (429, schema mismatch, edge mutation errors).
-  - Owner: QA (with FE/BE support)
-  - Dependencies: Day 1 contract lock
-  - Exit: new failure-path tests committed; no regression to current coverage baseline
+
+- Owner: QA (with FE/BE support)
+- Dependencies: Day 1 contract lock
+- Exit: new failure-path tests committed; no regression to current coverage baseline
+
 2. Resolve integration env secret setup for test execution.
-  - Owner: OPS
-  - Dependencies: none
-  - Exit: integration tests runnable with required environment variables in agreed execution target
+
+- Owner: OPS
+- Dependencies: none
+- Exit: integration tests runnable with required environment variables in agreed execution target
 
 #### Day 3 (2026-06-30): Monitoring and Correlation
 
 1. Integrate Sentry for frontend and Edge Function error capture.
-  - Owner: FE + BE
-  - Dependencies: none
-  - Exit: verified test event visible in monitoring for both surfaces
+
+- Owner: FE + BE
+- Dependencies: none
+- Exit: verified test event visible in monitoring for both surfaces
+
 2. Standardize correlation IDs in user-safe error logs and runbook examples.
-  - Owner: BE + OPS
-  - Dependencies: task 1
-  - Exit: documented trace path from client incident to backend log entry
+
+- Owner: BE + OPS
+- Dependencies: task 1
+- Exit: documented trace path from client incident to backend log entry
 
 #### Day 4 (2026-07-01): Backup + Rollback Readiness
 
 1. Complete backup restore rehearsal in staging.
-  - Owner: OPS
-  - Dependencies: staging backup availability
-  - Exit: restore evidence captured with elapsed time and outcome
+
+- Owner: OPS
+- Dependencies: staging backup availability
+- Exit: restore evidence captured with elapsed time and outcome
+
 2. Publish rollback drill steps for app + migrations.
-  - Owner: OPS
-  - Dependencies: task 1
-  - Exit: runbook updated and reviewed
+
+- Owner: OPS
+- Dependencies: task 1
+- Exit: runbook updated and reviewed
 
 #### Day 5 (2026-07-02): End-to-End Smoke Gate
 
 1. Run full smoke suite: public registration, admin CRUD, cancel/reactivate, CSV export.
-  - Owner: QA
-  - Dependencies: Days 1-4 complete
-  - Exit: pass/fail checklist attached to session handoff with defects triaged
+
+- Owner: QA
+- Dependencies: Days 1-4 complete
+- Exit: pass/fail checklist attached to session handoff with defects triaged
 
 #### Day 6 (2026-07-03): Load Sanity + SLO Check
 
 1. Execute load sanity test (50 registrations/min for 10 min).
-  - Owner: QA + OPS
-  - Dependencies: Day 5 pass
-  - Exit: latency/error snapshot recorded; no stop-ship threshold breach
+
+- Owner: QA + OPS
+- Dependencies: Day 5 pass
+- Exit: latency/error snapshot recorded; no stop-ship threshold breach
+
 2. Compare results against Gate D criteria.
-  - Owner: OPS
-  - Dependencies: task 1
-  - Exit: explicit Gate D readiness recommendation drafted
+
+- Owner: OPS
+- Dependencies: task 1
+- Exit: explicit Gate D readiness recommendation drafted
 
 #### Day 7 (2026-07-04): Launch Decision
 
 1. Gate D sign-off review.
-  - Owner: FE + BE + OPS + QA
-  - Dependencies: Days 1-6 evidence complete
-  - Exit: one of two outcomes only
-    - Launch approved: soft-launch 10% cohort
-    - Launch blocked: blocker list with owner/date commitments
+
+- Owner: FE + BE + OPS + QA
+- Dependencies: Days 1-6 evidence complete
+- Exit: one of two outcomes only
+  - Launch approved: soft-launch 10% cohort
+  - Launch blocked: blocker list with owner/date commitments
 
 ### Current Blockers (as of 2026-06-28)
 
