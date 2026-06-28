@@ -126,6 +126,7 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                   <input
                     type="checkbox"
                     checked={isSelected}
+                    className="h-5 w-5 accent-primary"
                     onChange={(event) =>
                       handleSelectionChange(option.value, event.target.checked, configuredDefault)
                     }
@@ -133,42 +134,41 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                   <span>{option.label}</span>
                 </label>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-label={`${option.label} - Yes`}
-                    disabled={!isSelected}
-                    onClick={() => handleToggleChange(option.value, true)}
-                    className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
-                      toggleValue
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-text'
-                    } disabled:cursor-not-allowed disabled:opacity-50`}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`${option.label} - No`}
-                    disabled={!isSelected}
-                    onClick={() => handleToggleChange(option.value, false)}
-                    className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
-                      !toggleValue
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-text'
-                    } disabled:cursor-not-allowed disabled:opacity-50`}
-                  >
-                    No
-                  </button>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-sm font-medium text-muted">
+                    {option.toggle_label && option.toggle_label.length > 0
+                      ? option.toggle_label
+                      : 'Snack?'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label={`${option.label} - Yes`}
+                      disabled={!isSelected}
+                      onClick={() => handleToggleChange(option.value, true)}
+                      className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
+                        toggleValue
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-text'
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${option.label} - No`}
+                      disabled={!isSelected}
+                      onClick={() => handleToggleChange(option.value, false)}
+                      className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
+                        !toggleValue
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-text'
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      No
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="pt-1 pl-6 text-xs text-muted">
-                {option.toggle_label && option.toggle_label.length > 0
-                  ? option.toggle_label
-                  : isSelected
-                    ? 'Choose Yes or No'
-                    : 'Select the checkbox to enable Yes / No'}
               </div>
             </div>
           )
