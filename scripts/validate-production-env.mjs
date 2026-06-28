@@ -54,7 +54,7 @@ function main() {
     'VITE_SUPABASE_URL',
     'VITE_SUPABASE_ANON_KEY',
     'ALLOWED_ORIGINS',
-    'SUPABASE_ENV',
+    'RUNTIME_ENV',
   ]
 
   for (const name of requiredVars) {
@@ -63,10 +63,10 @@ function main() {
     }
   }
 
-  const supabaseEnv = (process.env.SUPABASE_ENV ?? '').trim().toLowerCase()
-  if (supabaseEnv && supabaseEnv !== 'production') {
+  const runtimeEnv = (process.env.RUNTIME_ENV ?? '').trim().toLowerCase()
+  if (runtimeEnv && runtimeEnv !== 'production') {
     errors.push(
-      `SUPABASE_ENV must be production for production validation (received: ${supabaseEnv})`,
+      `RUNTIME_ENV must be production for production validation (received: ${runtimeEnv})`,
     )
   }
 

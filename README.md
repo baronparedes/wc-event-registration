@@ -113,7 +113,7 @@ Required values:
 Edge Function required values:
 
 - ALLOWED_ORIGINS
-- SUPABASE_ENV
+- RUNTIME_ENV
 
 ALLOWED_ORIGINS rules:
 
@@ -122,7 +122,7 @@ ALLOWED_ORIGINS rules:
 - Invalid entries are ignored and logged.
 - If the resolved allowlist is empty, Edge Functions fail closed and deny cross-origin requests.
 
-SUPABASE_ENV rules:
+RUNTIME_ENV rules:
 
 - Use local, staging, or production.
 - In production, localhost, 127.0.0.1, and ::1 are rejected from ALLOWED_ORIGINS.
@@ -133,21 +133,21 @@ Examples:
 
   ```text
   ALLOWED_ORIGINS=http://localhost:5173
-  SUPABASE_ENV=local
+   RUNTIME_ENV=local
   ```
 
 - Staging:
 
   ```text
   ALLOWED_ORIGINS=https://staging.example.com
-  SUPABASE_ENV=staging
+   RUNTIME_ENV=staging
   ```
 
 - Production:
 
   ```text
   ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
-  SUPABASE_ENV=production
+   RUNTIME_ENV=production
   ```
 
 ## Local Supabase Workflow
@@ -174,7 +174,7 @@ Run the platform fully locally before any deployment.
 
    ```text
    ALLOWED_ORIGINS=http://localhost:5173
-   SUPABASE_ENV=local
+   RUNTIME_ENV=local
    ```
 
 5. Apply all migrations from scratch.
@@ -276,7 +276,7 @@ Behavior:
 - Requests from listed origins receive their own origin in Access-Control-Allow-Origin.
 - Requests from unlisted origins receive an obscured deny response.
 - If ALLOWED_ORIGINS is unset or resolves to no valid origins, functions fail closed instead of falling back to localhost.
-- If SUPABASE_ENV=production and ALLOWED_ORIGINS contains localhost-style origins, functions treat the configuration as invalid and deny requests.
+- If RUNTIME_ENV=production and ALLOWED_ORIGINS contains localhost-style origins, functions treat the configuration as invalid and deny requests.
 
 Operational rule:
 
