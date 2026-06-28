@@ -50,7 +50,10 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
   }, [lookupErrorMessage, suppressLookupWarning])
 
   return (
-    <SectionCard title="Step 1: Enter Your Member ID" subtitle="Enter your member ID to continue.">
+    <SectionCard
+      title="Step 1: Scan your RFID"
+      subtitle="Scan your RFID or enter your Member ID to continue with registration."
+    >
       <form className="space-y-3" onSubmit={lookupForm.handleSubmit(onLookupSubmit)} noValidate>
         <div className="space-y-1">
           <label className="text-sm font-medium text-text" htmlFor="member-id-input">
