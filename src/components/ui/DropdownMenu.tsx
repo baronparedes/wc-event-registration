@@ -28,7 +28,7 @@ export function DropdownMenu({ trigger, children, open, onOpenChange }: Dropdown
     <div ref={ref} className="relative">
       {trigger}
       {open && (
-        <div className="absolute right-0 top-full mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg">
+        <div className="absolute right-0 top-full z-40 mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg">
           {children}
         </div>
       )}

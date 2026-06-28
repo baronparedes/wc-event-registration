@@ -53,10 +53,17 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     <SectionCard
       title="Step 1: Scan your RFID"
       subtitle="Scan your RFID or enter your Member ID to continue with registration."
+      wrapperClassName="registration-step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
+      titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
+      subtitleClassName="registration-step-card__subtitle mt-2 text-sm text-muted"
+      contentClassName="registration-step-card__content mt-3"
     >
       <form className="space-y-3" onSubmit={lookupForm.handleSubmit(onLookupSubmit)} noValidate>
         <div className="space-y-1">
-          <label className="text-sm font-medium text-text" htmlFor="member-id-input">
+          <label
+            className="registration-field-label text-sm font-medium text-text"
+            htmlFor="member-id-input"
+          >
             Member ID
           </label>
           <input
@@ -64,7 +71,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             type="text"
             autoComplete="off"
             placeholder="Type your member ID"
-            className={`${baseInputClassName} ${
+            className={`${baseInputClassName} registration-field-input ${
               shouldHighlightInput
                 ? 'ring-2 ring-secondary/70 border-secondary focus:border-secondary'
                 : ''
@@ -77,7 +84,9 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             {...registerRest}
           />
           {lookupForm.formState.errors.memberId ? (
-            <p className="text-sm text-danger">{lookupForm.formState.errors.memberId.message}</p>
+            <p className="registration-field-error text-sm text-danger">
+              {lookupForm.formState.errors.memberId.message}
+            </p>
           ) : null}
         </div>
 
@@ -108,8 +117,12 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             </span>
             <div className="flex w-full items-start justify-between gap-3">
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-orange-950">Please check your Member ID</p>
-                <p className="text-sm text-orange-900">{lookupErrorMessage}</p>
+                <p className="registration-alert-title text-sm font-semibold text-orange-950">
+                  Please check your Member ID
+                </p>
+                <p className="registration-alert-message text-sm text-orange-900">
+                  {lookupErrorMessage}
+                </p>
               </div>
 
               {onDismissLookupError ? (

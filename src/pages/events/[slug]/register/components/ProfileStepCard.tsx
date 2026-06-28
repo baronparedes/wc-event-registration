@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Button } from '@/components/ui/Button'
 import type { MemberLookupProfile } from '@/lib/domain/members'
 import { SectionCard } from '@/components/ui/SectionCard'
 
@@ -7,6 +8,8 @@ type ProfileStepCardProps = {
   isUpdateMode?: boolean
   isRegistrationBlocked?: boolean
   shouldFadeDetails?: boolean
+  onContinueToStepThree?: () => void
+  confirmTimeoutSecondsRemaining?: number | null
 }
 
 export function ProfileStepCard(props: ProfileStepCardProps) {
@@ -15,6 +18,8 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
     isUpdateMode = false,
     isRegistrationBlocked = false,
     shouldFadeDetails = false,
+    onContinueToStepThree,
+    confirmTimeoutSecondsRemaining = null,
   } = props
   const shouldShowPlaceholder = !matchedMember || shouldFadeDetails
   const registrationStatusRef = useRef<HTMLDivElement | null>(null)
@@ -35,7 +40,12 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
   }, [matchedMember, isRegistrationBlocked, shouldFadeDetails])
 
   return (
-    <SectionCard title="Step 2: Confirm Your Details">
+    <SectionCard
+      title="Step 2: Confirm Your Details"
+      wrapperClassName="registration-step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
+      titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
+      contentClassName="registration-step-card__content mt-2"
+    >
       {matchedMember ? (
         <div
           className={`overflow-hidden transition-all duration-500 ${
@@ -44,7 +54,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
               : 'max-h-[32rem] opacity-100 translate-y-0'
           }`}
         >
-          <div className="space-y-2 pb-0.5 text-sm text-muted">
+          <div className="registration-details-copy space-y-2 pb-0.5 text-sm text-muted">
             <p>
               Name: <span className="font-medium text-text">{matchedMember.full_name}</span>
             </p>
@@ -90,7 +100,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
                 !
               </span>
               <div className="space-y-1">
-                <p className="text-base font-semibold leading-6">
+                <p className="registration-status-title text-base font-semibold leading-6">
                   {isRegistrationBlocked
                     ? 'You are already registered. No further actions are needed at the moment.'
                     : isUpdateMode
@@ -98,7 +108,7 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
                       : 'You are verified. You can now complete your registration form.'}
                 </p>
                 <p
-                  className={`text-sm font-medium ${
+                  className={`registration-status-message text-sm font-medium ${
                     isRegistrationBlocked
                       ? 'text-green-900'
                       : isUpdateMode
@@ -112,6 +122,22 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
                 </p>
               </div>
             </div>
+
+            {!isRegistrationBlocked && onContinueToStepThree ? (
+              <div className="pt-3">
+                <Button onClick={onContinueToStepThree} size="md" type="button" variant="default">
+                  Yes, Continue to Step 3
+                </Button>
+                {confirmTimeoutSecondsRemaining ? (
+                  <p
+                    className="registration-timeout-copy mt-2 text-sm text-muted"
+                    aria-live="polite"
+                  >
+                    Returning to Step 1 in {confirmTimeoutSecondsRemaining}s if no one continues.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -123,7 +149,9 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
             : 'max-h-0 opacity-0 -translate-y-1'
         }`}
       >
-        <p className="text-sm text-muted">Your details will appear here after Step 1.</p>
+        <p className="registration-placeholder-copy text-sm text-muted">
+          Your details will appear here after Step 1.
+        </p>
       </div>
     </SectionCard>
   )

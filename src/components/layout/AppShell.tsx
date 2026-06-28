@@ -26,7 +26,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-background text-text">
-      <header className="border-b border-border bg-surface/90 backdrop-blur-sm">
+      <header className="relative z-30 border-b border-border bg-surface/90 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3.5">
           <div>
             <p id="app-shell-title-anchor" className="font-heading text-lg font-semibold text-text">
@@ -89,7 +89,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl animate-fadeIn px-4 py-8">
+      <main className="relative z-0 mx-auto w-full max-w-6xl animate-fadeIn px-4 py-8">
         <Outlet />
       </main>
     </div>

@@ -1,0 +1,93 @@
+import {
+  DynamicFieldsStepCard,
+  EventHeaderCard,
+  LockedGateCard,
+  MemberLookupStepCard,
+  ProfileStepCard,
+} from '@/pages/events/[slug]/register/components'
+import { useEventRegistrationPageState } from './useEventRegistrationPageState'
+
+export function ClassicEventRegistrationFlow() {
+  const {
+    slug,
+    eventQuery,
+    availability,
+    isGateReady,
+    eventWindowText,
+    memberLookup,
+    handleLookupSubmit,
+    lookupErrorMessage,
+    lookupErrorFadeOut,
+    memberIdInputRef,
+    clearLookupError,
+    dynamicFieldsStepRef,
+    eventFieldsQuery,
+    activeFields,
+    dynamicForm,
+    handleSubmitRegistration,
+    fieldErrorMessage,
+    submitMutation,
+    submitErrorMessage,
+    submitSuccessMessage,
+    handleCancelUpdate,
+  } = useEventRegistrationPageState('classic')
+
+  return (
+    <section className="mx-auto max-w-3xl space-y-6">
+      <EventHeaderCard
+        slug={slug}
+        isLoading={eventQuery.isLoading}
+        isError={eventQuery.isError}
+        availability={availability}
+        isGateReady={isGateReady}
+        eventWindowText={eventWindowText}
+      />
+
+      {isGateReady ? (
+        <div className="space-y-6">
+          <MemberLookupStepCard
+            lookupForm={memberLookup.lookupForm}
+            onLookupSubmit={handleLookupSubmit}
+            isLookupPending={memberLookup.isLookupPending}
+            lookupErrorMessage={lookupErrorMessage}
+            shouldFadeLookupError={lookupErrorFadeOut}
+            suppressLookupWarning={memberLookup.isRegistrationBlocked}
+            memberIdInputRef={memberIdInputRef}
+            shouldHighlightInput={memberLookup.memberIdHighlight}
+            onDismissLookupError={clearLookupError}
+          />
+
+          <ProfileStepCard
+            matchedMember={memberLookup.matchedMember}
+            isUpdateMode={memberLookup.isUpdateMode}
+            isRegistrationBlocked={memberLookup.isRegistrationBlocked}
+            shouldFadeDetails={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+          />
+
+          <div ref={dynamicFieldsStepRef}>
+            <DynamicFieldsStepCard
+              matchedMember={memberLookup.matchedMember}
+              isLocked={memberLookup.isRegistrationBlocked}
+              shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+              lockedMessage={memberLookup.lockedStepMessage}
+              onCancelUpdate={handleCancelUpdate}
+              isLoadingFields={eventFieldsQuery.isLoading}
+              isFieldsError={eventFieldsQuery.isError}
+              fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
+              activeFields={activeFields}
+              dynamicForm={dynamicForm}
+              onSubmit={handleSubmitRegistration}
+              fieldErrorMessage={fieldErrorMessage}
+              isSubmitPending={submitMutation.isPending}
+              submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
+              submitErrorMessage={submitErrorMessage}
+              submitSuccessMessage={submitSuccessMessage}
+            />
+          </div>
+        </div>
+      ) : (
+        <LockedGateCard />
+      )}
+    </section>
+  )
+}

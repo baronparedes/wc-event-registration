@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
@@ -17,6 +17,7 @@ const {
   mockFocusMemberIdInput,
   mockScanBufferHandler,
   mockDynamicFieldsStepCard,
+  mockProfileStepCard,
   mockLockedGateCard,
   memberLookupState,
 } = vi.hoisted(() => {
@@ -66,6 +67,7 @@ const {
     mockFocusMemberIdInput: vi.fn(),
     mockScanBufferHandler: { current: null as null | ((scanValue: string) => void) },
     mockDynamicFieldsStepCard: vi.fn(),
+    mockProfileStepCard: vi.fn(),
     mockLockedGateCard: vi.fn(),
     memberLookupState: lookupState,
   }
@@ -152,7 +154,25 @@ vi.mock('@/hooks/utils', async () => {
 vi.mock('@/pages/events/[slug]/register/components', () => ({
   EventHeaderCard: () => <div>Event Header</div>,
   MemberLookupStepCard: () => <div>Member Lookup</div>,
-  ProfileStepCard: () => <div>Profile Step</div>,
+  ProfileStepCard: (props: {
+    confirmTimeoutSecondsRemaining?: number | null
+    onContinueToStepThree?: () => void
+  }) => {
+    mockProfileStepCard(props)
+    return (
+      <div>
+        <div>Profile Step</div>
+        {props.confirmTimeoutSecondsRemaining ? (
+          <div>Returns to scan in {props.confirmTimeoutSecondsRemaining}s</div>
+        ) : null}
+        {props.onContinueToStepThree ? (
+          <button onClick={props.onContinueToStepThree} type="button">
+            Continue to Step 3
+          </button>
+        ) : null}
+      </div>
+    )
+  },
   LockedGateCard: () => {
     mockLockedGateCard()
     return <div>Locked Gate</div>
@@ -178,11 +198,12 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
   },
 }))
 
-import { EventRegistrationPage } from '@/pages/events/[slug]/register'
+import { EventRegistrationPage } from '../index'
 
 describe('EventRegistrationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useRealTimers()
     mockUseParams.mockReturnValue({ slug: 'sample-event' })
     mockUseRfidAutoFocus.mockReturnValue(mockFocusMemberIdInput)
     mockUseErrorWithFadeout.mockReturnValue({
@@ -427,5 +448,147 @@ describe('EventRegistrationPage', () => {
     await mockScanBufferHandler.current?.('WC-100')
 
     expect(runMemberLookupSubmit).toHaveBeenCalledWith({ memberId: 'WC-100' })
+  })
+
+  it('keeps wizard update-mode lookups on step 2 before continuing', async () => {
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: true,
+      mode: 'update_registration',
+    })
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+      handleLookupSubmit: runMemberLookupSubmit,
+    })
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    await act(async () => {
+      await mockScanBufferHandler.current?.('WC-100')
+    })
+
+    expect(screen.getByText('Profile Step')).toBeInTheDocument()
+    expect(screen.queryByText('Update')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Continue to Step 3' })).toBeInTheDocument()
+  })
+
+  it('keeps completed step badges styled when wizard reaches step 3', async () => {
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: true,
+      mode: 'new_registration',
+    })
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+      handleLookupSubmit: runMemberLookupSubmit,
+    })
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    await act(async () => {
+      await mockScanBufferHandler.current?.('WC-101')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }))
+
+    expect(screen.getByText('Submit Registration')).toBeInTheDocument()
+    expect(screen.getByText('1')).toHaveClass('bg-secondary')
+    expect(screen.getByText('2')).toHaveClass('bg-secondary')
+    expect(screen.getByText('3')).toHaveClass('bg-primary')
+  })
+
+  it('returns wizard users to step 1 if they stop on step 2 too long', async () => {
+    vi.useFakeTimers()
+
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: true,
+      mode: 'new_registration',
+    })
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+      handleLookupSubmit: runMemberLookupSubmit,
+    })
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<EventRegistrationPage />)
+
+    await act(async () => {
+      await mockScanBufferHandler.current?.('WC-101')
+    })
+
+    expect(screen.getByText('Profile Step')).toBeInTheDocument()
+    expect(screen.getByText('Returns to scan in 15s')).toBeInTheDocument()
+
+    await act(async () => {
+      vi.advanceTimersByTime(15_000)
+    })
+
+    expect(screen.getByText('Member Lookup')).toBeInTheDocument()
   })
 })

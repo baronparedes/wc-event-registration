@@ -96,7 +96,12 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   const shouldShowBlockedLockedMessage = matchedMember && isLocked && !shouldFadeLockedState
 
   return (
-    <SectionCard title="Step 3: Complete Your Registration">
+    <SectionCard
+      title="Step 3: Complete Your Registration"
+      wrapperClassName="registration-step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
+      titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
+      contentClassName="registration-step-card__content mt-2"
+    >
       <div className="space-y-2">
         <div
           className={`overflow-hidden transition-all duration-500 ${
@@ -105,7 +110,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               : 'max-h-0 opacity-0 -translate-y-1'
           }`}
         >
-          <p className="text-sm text-muted">
+          <p className="registration-locked-copy text-sm text-muted">
             {lockedMessage ?? 'Please complete Step 1 to continue.'}
           </p>
         </div>
@@ -117,7 +122,9 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               : 'max-h-0 opacity-0 -translate-y-1'
           }`}
         >
-          <p className="text-sm text-muted">Please complete Step 1 to continue.</p>
+          <p className="registration-locked-copy text-sm text-muted">
+            Please complete Step 1 to continue.
+          </p>
         </div>
       </div>
 
@@ -134,13 +141,13 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
       ) : null}
 
       {matchedMember && !isLocked && isFieldsError ? (
-        <p className="mt-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+        <p className="registration-status-panel mt-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           We could not load your form right now. Please try Step 1 again.
         </p>
       ) : null}
 
       {matchedMember && !isLocked && fieldConfigIssues.length > 0 ? (
-        <div className="mt-3 space-y-2 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+        <div className="registration-status-panel mt-3 space-y-2 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           <p>Some questions could not be shown right now.</p>
           {fieldConfigIssues.map((issue) => (
             <p key={issue}>{issue}</p>
@@ -149,7 +156,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
       ) : null}
 
       {matchedMember && !isLocked && !isLoadingFields && activeFields.length === 0 ? (
-        <p className="mt-3 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
+        <p className="registration-status-panel mt-3 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
           There are no form questions for this event yet.
         </p>
       ) : null}
@@ -162,15 +169,19 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
             return (
               <div key={field.id} className="space-y-1">
                 <label
-                  className="text-sm font-medium text-text"
+                  className="registration-field-label text-sm font-medium text-text"
                   htmlFor={`field-${field.field_key}`}
                 >
                   {field.label}
                   {field.is_required ? <span className="text-danger"> *</span> : null}
                 </label>
-                {field.help_text ? <p className="text-xs text-muted">{field.help_text}</p> : null}
+                {field.help_text ? (
+                  <p className="registration-field-help text-xs text-muted">{field.help_text}</p>
+                ) : null}
                 <DynamicFieldInput field={field} dynamicForm={dynamicForm} />
-                {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
+                {errorMessage ? (
+                  <p className="registration-field-error text-sm text-danger">{errorMessage}</p>
+                ) : null}
               </div>
             )
           })}
@@ -197,14 +208,14 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
       ) : null}
 
       {submitErrorMessage ? (
-        <div className="mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+        <div className="registration-status-panel mt-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           <p className="font-semibold">We could not submit your registration</p>
           <p className="mt-1">{submitErrorMessage}</p>
         </div>
       ) : null}
 
       {matchedMember && submitSuccessMessage ? (
-        <div className="mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
+        <div className="registration-status-panel mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
           <p className="font-semibold">You are all set!</p>
           <p className="mt-1">{submitSuccessMessage}</p>
         </div>

@@ -1,0 +1,47 @@
+.wizard-registration-flow .registration-step-card {
+  padding: 1.75rem;
+}
+
+.wizard-registration-flow .registration-step-card__title {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.wizard-registration-flow .registration-step-card__subtitle {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}
+
+.wizard-registration-flow .registration-step-card__content {
+  margin-top: 1rem;
+}
+
+.wizard-registration-flow .registration-field-label,
+.wizard-registration-flow .registration-details-copy,
+.wizard-registration-flow .registration-locked-copy,
+.wizard-registration-flow .registration-placeholder-copy,
+.wizard-registration-flow .registration-timeout-copy,
+.wizard-registration-flow .registration-status-panel {
+  font-size: 1rem;
+}
+
+.wizard-registration-flow .registration-field-input {
+  padding: 0.75rem 1rem;
+  font-size: 1.125rem;
+}
+
+.wizard-registration-flow .registration-field-help {
+  font-size: 0.95rem;
+}
+
+.wizard-registration-flow .registration-field-error,
+.wizard-registration-flow .registration-alert-title,
+.wizard-registration-flow .registration-alert-message,
+.wizard-registration-flow .registration-status-message {
+  font-size: 1rem;
+}
+
+.wizard-registration-flow .registration-status-title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
