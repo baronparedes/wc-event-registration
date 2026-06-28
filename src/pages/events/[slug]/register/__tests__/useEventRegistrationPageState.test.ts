@@ -5,7 +5,7 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import {
   stepBadgeClassName,
   useEventRegistrationPageState,
-} from '@/pages/events/[slug]/register/useEventRegistrationPageState'
+} from '@/pages/events/[slug]/register/hooks'
 
 const {
   mockUseParams,

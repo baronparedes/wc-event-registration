@@ -6,8 +6,8 @@ import {
   MemberLookupStepCard,
   ProfileStepCard,
 } from '@/pages/events/[slug]/register/components'
-import { stepBadgeClassName, useEventRegistrationPageState } from './useEventRegistrationPageState'
-import './wizardRegistrationFlow.css'
+import { stepBadgeClassName, useEventRegistrationPageState } from '../hooks'
+import './WizardEventRegistrationFlow.css'
 
 export function WizardEventRegistrationFlow() {
   const {

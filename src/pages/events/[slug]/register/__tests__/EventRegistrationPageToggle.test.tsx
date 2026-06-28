@@ -10,10 +10,10 @@ async function loadPage(registrationWizardEnabled: boolean) {
       registrationWizardEnabled,
     },
   }))
-  vi.doMock('../ClassicEventRegistrationFlow', () => ({
+  vi.doMock('../components/ClassicEventRegistrationFlow', () => ({
     ClassicEventRegistrationFlow: () => <div>Classic Flow</div>,
   }))
-  vi.doMock('../WizardEventRegistrationFlow', () => ({
+  vi.doMock('../components/WizardEventRegistrationFlow', () => ({
     WizardEventRegistrationFlow: () => <div>Wizard Flow</div>,
   }))
 

@@ -13,7 +13,7 @@ const {
   mockDynamicFieldsStepCard: vi.fn(),
 }))
 
-vi.mock('../useEventRegistrationPageState', () => ({
+vi.mock('../hooks', () => ({
   useEventRegistrationPageState: (...args: unknown[]) => mockUseEventRegistrationPageState(...args),
 }))
 
@@ -34,7 +34,7 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
   },
 }))
 
-import { ClassicEventRegistrationFlow } from '@/pages/events/[slug]/register/ClassicEventRegistrationFlow'
+import { ClassicEventRegistrationFlow } from '@/pages/events/[slug]/register/components/ClassicEventRegistrationFlow'
 
 const baseState = {
   slug: 'event-1',

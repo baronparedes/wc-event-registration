@@ -5,7 +5,7 @@ import {
   MemberLookupStepCard,
   ProfileStepCard,
 } from '@/pages/events/[slug]/register/components'
-import { useEventRegistrationPageState } from './useEventRegistrationPageState'
+import { useEventRegistrationPageState } from '../hooks'
 
 export function ClassicEventRegistrationFlow() {
   const {
