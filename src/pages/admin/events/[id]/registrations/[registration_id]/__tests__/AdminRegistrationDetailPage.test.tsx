@@ -157,4 +157,204 @@ describe('AdminRegistrationDetailPage', () => {
       expect(mockReactivateMutateAsync).toHaveBeenCalledWith({ registration_id: 'reg-1' })
     })
   })
+
+  it('renders invalid param, loading, and not-found states', () => {
+    mockUseParams.mockReturnValueOnce({ id: undefined, registration_id: undefined })
+    const { rerender } = render(<AdminRegistrationDetailPage />)
+    expect(screen.getByText('Invalid registration ID')).toBeInTheDocument()
+
+    mockUseParams.mockReturnValue({ id: 'event-1', registration_id: 'reg-1' })
+    mockUseRegistrationDetailQuery.mockReturnValueOnce({
+      data: null,
+      isLoading: true,
+      error: null,
+    })
+    rerender(<AdminRegistrationDetailPage />)
+    expect(screen.getByText('Loading')).toBeInTheDocument()
+    expect(screen.getByText('Loading registration details...')).toBeInTheDocument()
+
+    mockUseRegistrationDetailQuery.mockReturnValueOnce({
+      data: null,
+      isLoading: false,
+      error: null,
+    })
+    rerender(<AdminRegistrationDetailPage />)
+    expect(screen.getByText('Not Found')).toBeInTheDocument()
+  })
+
+  it('renders query errors with Error and unknown values', () => {
+    mockUseRegistrationDetailQuery.mockReturnValueOnce({
+      data: null,
+      isLoading: false,
+      error: new Error('boom'),
+    })
+    const { rerender } = render(<AdminRegistrationDetailPage />)
+    expect(screen.getByText(/Error loading registration: boom/)).toBeInTheDocument()
+
+    mockUseRegistrationDetailQuery.mockReturnValueOnce({
+      data: null,
+      isLoading: false,
+      error: 'bad value',
+    })
+    rerender(<AdminRegistrationDetailPage />)
+    expect(screen.getByText(/Error loading registration: Unknown error/)).toBeInTheDocument()
+  })
+
+  it('formats rich field response types and unknown status labels', () => {
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-2',
+          status: 'pending_review',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-002',
+          full_name: 'John Doe',
+          email: 'john@example.com',
+          phone: '555-1234',
+          role: 'captain',
+          category: 'adult',
+          nickname: 'JD',
+        },
+        fieldResponses: [
+          {
+            field_id: 'f1',
+            field_label: 'Toggle Obj',
+            field_type: 'multi_select_toggle',
+            answer: { one: true, two: false, three: 'maybe' },
+          },
+          {
+            field_id: 'f2',
+            field_label: 'Toggle Primitive',
+            field_type: 'multi_select_toggle',
+            answer: 'raw',
+          },
+          {
+            field_id: 'f3',
+            field_label: 'Boolean',
+            field_type: 'boolean',
+            answer: false,
+          },
+          {
+            field_id: 'f4',
+            field_label: 'Boolean Unknown',
+            field_type: 'boolean',
+            answer: 'unexpected',
+          },
+          {
+            field_id: 'f5',
+            field_label: 'Choices',
+            field_type: 'multi_select',
+            answer: ['A', 'B'],
+          },
+          {
+            field_id: 'f6',
+            field_label: 'Checkbox Raw',
+            field_type: 'checkbox',
+            answer: 'single',
+          },
+          {
+            field_id: 'f7',
+            field_label: 'Date',
+            field_type: 'date',
+            answer: '2026-06-27T10:00:00.000Z',
+          },
+          {
+            field_id: 'f8',
+            field_label: 'Date Raw',
+            field_type: 'date',
+            answer: 9,
+          },
+          {
+            field_id: 'f9',
+            field_label: 'Null',
+            field_type: 'text',
+            answer: null,
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    })
+
+    render(<AdminRegistrationDetailPage />)
+
+    expect(screen.getByText('pending_review')).toBeInTheDocument()
+    expect(screen.getByText('JD')).toBeInTheDocument()
+    expect(screen.getByText('one: Yes, two: No, three: maybe')).toBeInTheDocument()
+    expect(screen.getByText('raw')).toBeInTheDocument()
+    expect(screen.getByText('No')).toBeInTheDocument()
+    expect(screen.getByText('unexpected')).toBeInTheDocument()
+    expect(screen.getByText('A, B')).toBeInTheDocument()
+    expect(screen.getByText('single')).toBeInTheDocument()
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+  })
+
+  it('shows fallback errors for failed cancel/reactivate mutations', async () => {
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'submitted',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+    mockCancelMutateAsync.mockRejectedValueOnce('cancel failed')
+
+    const { rerender } = render(<AdminRegistrationDetailPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cancel Registration' })[1])
+
+    await waitFor(() => {
+      expect(mockShowError).toHaveBeenCalledWith('Failed to cancel registration')
+    })
+
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'cancelled',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: null,
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+    })
+    mockReactivateMutateAsync.mockRejectedValueOnce('reactivate failed')
+
+    rerender(<AdminRegistrationDetailPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reactivate Registration' })[1])
+
+    await waitFor(() => {
+      expect(mockShowError).toHaveBeenCalledWith('Failed to reactivate registration')
+    })
+  })
 })

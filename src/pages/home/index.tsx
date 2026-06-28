@@ -3,7 +3,6 @@ import { EmptyState } from '@/components/ui'
 import { usePublicEventListingQuery } from '@/hooks/domain/events'
 import { EventSection } from './components'
 import { Calendar } from 'lucide-react'
-import heroImage from '@/assets/hero.png'
 
 export function HomePage() {
   const { data: events, isLoading, isError } = usePublicEventListingQuery()
@@ -14,9 +13,6 @@ export function HomePage() {
 
   return (
     <section className="relative space-y-10">
-      <div className="absolute inset-0 -z-10 overflow-hidden opacity-10">
-        <img src={heroImage} alt="" className="h-full w-full object-cover" aria-hidden="true" />
-      </div>
       <div className="space-y-2">
         <p className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
           Public Registration

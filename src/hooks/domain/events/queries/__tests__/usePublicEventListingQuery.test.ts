@@ -95,4 +95,53 @@ describe('usePublicEventListingQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error)
   })
+
+  it('handles null listing rows and resolves with an empty list', async () => {
+    mockQueryBuilder.order.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery())
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual([])
+  })
+
+  it('filters out events that are closed and not recent past while keeping open events with null close date', async () => {
+    mockQueryBuilder.order.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'evt-filtered',
+          slug: 'filtered',
+          title: 'Filtered',
+          starts_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          registration_opens_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          registration_closes_at: new Date(Date.now() - 1000).toISOString(),
+        },
+        {
+          id: 'evt-open',
+          slug: 'open-no-close',
+          title: 'Open No Close',
+          starts_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+        },
+      ],
+      error: null,
+    })
+
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery())
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual([
+      expect.objectContaining({ slug: 'open-no-close', listingStatus: 'open' }),
+    ])
+  })
 })
