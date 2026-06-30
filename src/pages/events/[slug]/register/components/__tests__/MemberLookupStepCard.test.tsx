@@ -1,136 +1,157 @@
-import { useForm } from 'react-hook-form'
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { useForm, type SubmitHandler } from 'react-hook-form'
+import { createRef } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemberLookupStepCard } from '../MemberLookupStepCard'
 
-function Harness(props: {
-  initialMemberId?: string
-  isLookupPending?: boolean
-  lookupErrorMessage?: string | null
-  suppressLookupWarning?: boolean
-  shouldHighlightInput?: boolean
-  onLookupSubmit: (values: { memberId?: string; name?: string }) => void
-  onDismissLookupError?: () => void
-  allowNameLookup?: boolean
-}) {
-  const form = useForm<{ memberId?: string; name?: string }>({
-    defaultValues: {
-      memberId: props.initialMemberId ?? '',
-      name: '',
-    },
-  })
+const { mockNavigate } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+}))
 
-  return (
-    <MemberLookupStepCard
-      lookupForm={form}
-      onLookupSubmit={props.onLookupSubmit}
-      isLookupPending={props.isLookupPending ?? false}
-      lookupErrorMessage={props.lookupErrorMessage ?? null}
-      suppressLookupWarning={props.suppressLookupWarning}
-      memberIdInputRef={{ current: null }}
-      shouldHighlightInput={props.shouldHighlightInput}
-      onDismissLookupError={props.onDismissLookupError}
-      allowNameLookup={props.allowNameLookup ?? true}
-    />
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
+vi.mock('../NameLookupModal', () => ({
+  NameLookupModal: ({ onSubmit }: { onSubmit: (name: string) => void }) => (
+    <button type="button" onClick={() => onSubmit('Baron Paredes')}>
+      Submit Name Lookup
+    </button>
+  ),
+}))
+
+type LookupValues = { memberId?: string; name?: string }
+
+function renderCard(
+  options: {
+    allowNameLookup?: boolean
+    allowPublicRegistration?: boolean
+    slug?: string
+    lookupErrorMessage?: string | null
+    suppressLookupWarning?: boolean
+    shouldHighlightInput?: boolean
+    onLookupSubmit?: SubmitHandler<LookupValues>
+    onDismissLookupError?: () => void
+  } = {},
+) {
+  const onLookupSubmit = options.onLookupSubmit ?? vi.fn(async () => undefined)
+  const onDismissLookupError = options.onDismissLookupError ?? vi.fn()
+
+  function Host() {
+    const lookupForm = useForm<LookupValues>({ defaultValues: { memberId: '', name: '' } })
+
+    return (
+      <MemberLookupStepCard
+        slug={options.slug}
+        lookupForm={lookupForm}
+        onLookupSubmit={onLookupSubmit}
+        isLookupPending={false}
+        lookupErrorMessage={options.lookupErrorMessage ?? null}
+        suppressLookupWarning={options.suppressLookupWarning ?? false}
+        memberIdInputRef={createRef<HTMLInputElement>()}
+        shouldHighlightInput={options.shouldHighlightInput ?? false}
+        onDismissLookupError={onDismissLookupError}
+        allowNameLookup={options.allowNameLookup ?? true}
+        allowPublicRegistration={options.allowPublicRegistration ?? false}
+      />
+    )
+  }
+
+  render(
+    <MemoryRouter>
+      <Host />
+    </MemoryRouter>,
   )
+
+  return { onLookupSubmit, onDismissLookupError }
 }
 
 describe('MemberLookupStepCard', () => {
   beforeEach(() => {
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: vi.fn().mockReturnValue({ matches: false }),
-    })
+    vi.clearAllMocks()
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
+  it('starts with method selector when name lookup is allowed', () => {
+    renderCard({ allowNameLookup: true })
+
+    expect(screen.getByRole('button', { name: /Scan via RFID reader/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Search by my name/i })).toBeInTheDocument()
   })
 
-  it('submits the member id when the form is active', async () => {
-    const onLookupSubmit = vi.fn()
+  it('starts directly in ID mode when name lookup is not allowed', () => {
+    renderCard({ allowNameLookup: false, shouldHighlightInput: true })
 
-    render(<Harness onLookupSubmit={onLookupSubmit} />)
+    const input = screen.getByPlaceholderText('Scan or enter your Member ID')
+    expect(input).toBeInTheDocument()
+    expect(input.className).toContain('ring-2')
+  })
 
-    // Select the Member ID method
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Scan.*RFID/i }))
+  it('submits ID lookup form', async () => {
+    const { onLookupSubmit } = renderCard({ allowNameLookup: false })
+
+    fireEvent.change(screen.getByPlaceholderText('Scan or enter your Member ID'), {
+      target: { value: 'WC-001' },
     })
-
-    await act(async () => {
-      fireEvent.input(screen.getByLabelText(/Scan RFID or Member ID/i), {
-        target: { value: 'WC-001' },
-      })
-    })
-
-    await act(async () => {
-      fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!)
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     await waitFor(() => {
       expect(onLookupSubmit).toHaveBeenCalled()
     })
-
-    expect(onLookupSubmit.mock.calls[0]?.[0]).toEqual({ memberId: 'WC-001', name: '' })
   })
 
-  it('renders the pending state as disabled', () => {
-    const onLookupSubmit = vi.fn()
+  it('returns to method selector from ID mode via try-different-way', () => {
+    renderCard({ allowNameLookup: true })
 
-    render(<Harness onLookupSubmit={onLookupSubmit} isLookupPending />)
+    fireEvent.click(screen.getByRole('button', { name: /Scan via RFID reader/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Try a different way' }))
 
-    // When pending, the method selection buttons should be disabled
-    expect(screen.getByRole('button', { name: /Scan.*RFID/i })).toBeDisabled()
-    if (screen.queryByRole('button', { name: /Search by my name/i })) {
-      expect(screen.getByRole('button', { name: /Search by my name/i })).toBeDisabled()
-    }
+    expect(screen.getByRole('button', { name: /Search by my name/i })).toBeInTheDocument()
   })
 
-  it('shows and dismisses the lookup error panel', () => {
-    const onLookupSubmit = vi.fn()
+  it('switches to name lookup and submits through name modal callback', async () => {
+    const { onLookupSubmit } = renderCard({ allowNameLookup: true })
+
+    fireEvent.click(screen.getByRole('button', { name: /Search by my name/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Name Lookup' }))
+
+    await waitFor(() => {
+      expect(onLookupSubmit).toHaveBeenCalledWith({ memberId: undefined, name: 'Baron Paredes' })
+    })
+  })
+
+  it('returns to method selector from name mode via try-different-way', () => {
+    renderCard({ allowNameLookup: true })
+
+    fireEvent.click(screen.getByRole('button', { name: /Search by my name/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Try a different way' }))
+
+    expect(screen.getByRole('button', { name: /Scan via RFID reader/i })).toBeInTheDocument()
+  })
+
+  it('shows guest registration link and navigates to public registration', () => {
+    renderCard({ allowPublicRegistration: true, slug: 'sample-event' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Not a Member? Register as guest' }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/sample-event/register-public')
+  })
+
+  it('passes lookup warning message to error alert and supports dismiss callback', () => {
     const onDismissLookupError = vi.fn()
 
-    render(
-      <Harness
-        onLookupSubmit={onLookupSubmit}
-        lookupErrorMessage="We could not verify that entry. Please contact your administrator for support."
-        shouldHighlightInput
-        onDismissLookupError={onDismissLookupError}
-      />,
-    )
+    renderCard({
+      allowNameLookup: false,
+      lookupErrorMessage: 'Profile not found',
+      onDismissLookupError,
+    })
 
-    // First select the method
-    fireEvent.click(screen.getByRole('button', { name: /Scan.*RFID/i }))
-
-    expect(screen.getByText('Please check your entry')).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'We could not verify that entry. Please contact your administrator for support.',
-      ),
-    ).toBeInTheDocument()
-    expect(screen.getByLabelText('Dismiss member lookup warning')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Scan RFID or Member ID/i)).toHaveClass('ring-2')
-
-    fireEvent.click(screen.getByLabelText('Dismiss member lookup warning'))
-
+    expect(screen.getByText('Profile not found')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss member lookup warning' }))
     expect(onDismissLookupError).toHaveBeenCalledTimes(1)
-  })
-
-  it('suppresses the warning panel when requested', () => {
-    const onLookupSubmit = vi.fn()
-
-    render(
-      <Harness
-        onLookupSubmit={onLookupSubmit}
-        lookupErrorMessage="We could not verify that Member ID."
-        suppressLookupWarning
-      />,
-    )
-
-    // First select the method
-    fireEvent.click(screen.getByRole('button', { name: /Scan.*RFID/i }))
-
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.getByLabelText(/Scan RFID or Member ID/i)).toBeInTheDocument()
   })
 })

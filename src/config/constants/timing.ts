@@ -6,6 +6,7 @@ export const TIMING = {
   registrationLookupClearDelayMs: 5600,
   registrationWizardConfirmTimeoutMs: 15 * 1000,
   kioskInactivityResetMs: 3 * 60 * 1000,
+  publicRegistrationConfirmationTimeoutMs: 30 * 1000,
   rfidFocusRestoreDelayMs: 120,
   rfidFocusFallbackDelayMs: 200,
   rfidBlurRefocusDelayMs: 150,

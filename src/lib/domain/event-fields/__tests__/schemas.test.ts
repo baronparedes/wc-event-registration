@@ -309,7 +309,7 @@ describe('event-fields schemas', () => {
       }),
     ])
 
-    expect(requiredPhoneSchema.safeParse({ phone: '+1 (555) 555-0100' }).success).toBe(true)
+    expect(requiredPhoneSchema.safeParse({ phone: '+63917555100' }).success).toBe(true)
     expect(requiredPhoneSchema.safeParse({ phone: 'abc' }).success).toBe(false)
 
     const optionalPhoneSchema = buildDynamicFieldResponseSchema([

@@ -18,33 +18,18 @@ export type AdminEvent = {
   duplicate_policy: DuplicatePolicy
   require_id_lookup: boolean
   registration_mode: RegistrationMode
+  allow_public_registrations: boolean
   metadata: Record<string, unknown>
   created_by_admin_id: string | null
   created_at: string
   updated_at: string
 }
 
-export type PublicEvent = {
-  id: string
-  slug: string
-  title: string
-  description: string | null
-  location: string | null
-  starts_at: string | null
-  ends_at: string | null
-  registration_opens_at: string | null
-  registration_closes_at: string | null
-  registration_mode: RegistrationMode
-  metadata?: {
-    allow_name_lookup?: boolean
-  }
-}
-
 export type EventAvailability =
-  | { status: 'available'; event: PublicEvent; registration_count: number }
+  | { status: 'available'; event: AdminEvent; registration_count: number }
   | { status: 'unavailable'; reason: 'not_found_or_unpublished' }
-  | { status: 'unavailable'; reason: 'not_open_yet'; event: PublicEvent }
-  | { status: 'unavailable'; reason: 'registration_closed'; event: PublicEvent }
+  | { status: 'unavailable'; reason: 'not_open_yet'; event: AdminEvent }
+  | { status: 'unavailable'; reason: 'registration_closed'; event: AdminEvent }
 
 export type PublicEventListingItem = {
   id: string

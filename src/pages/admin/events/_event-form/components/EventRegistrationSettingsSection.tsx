@@ -59,6 +59,24 @@ export function EventRegistrationSettingsSection({
             </div>
           </label>
         </div>
+
+        <div className="rounded-lg border border-border bg-background p-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="allow-public-registrations"
+              disabled={disabled}
+              {...register('allow_public_registrations')}
+              className="h-4 w-4 cursor-pointer rounded border-border"
+            />
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-text">Allow public registrations</span>
+              <span className="text-xs text-muted">
+                Non-members can register for this event via public registration form
+              </span>
+            </div>
+          </label>
+        </div>
       </div>
     </SectionCard>
   )

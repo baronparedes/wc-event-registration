@@ -1,0 +1,865 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
+import {
+  buildCorsHeaders,
+  createObscuredDenyResponse,
+  enforcePublicRateLimit,
+  isOriginAllowed,
+  readAllowedOrigins,
+} from '@/shared/security.ts'
+import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
+
+interface SubmitPublicRegistrationRequest {
+  event_slug: string
+  attendee: {
+    first_name: string
+    last_name: string
+    nickname?: string | null
+    email: string
+    phone?: string | null
+  }
+  responses: Record<string, unknown>
+  idempotency_key: string
+}
+
+interface SubmitPublicRegistrationSuccess {
+  success: true
+  registration_id: string
+  status: 'submitted' | 'updated'
+  is_new: boolean
+  message: string
+}
+
+interface SubmitPublicRegistrationError {
+  success: false
+  error: string
+  error_code?: string
+  errors?: FieldValidationError[]
+}
+
+interface FieldValidationError {
+  fieldKey: string
+  message: string
+}
+
+interface EventFieldWithValidation {
+  id: string
+  field_key: string
+  label: string
+  field_type: string
+  is_required: boolean
+  options: { label: string; value: string }[]
+  validation_rules: Record<string, unknown>
+}
+
+interface EventFieldRow {
+  id: string
+  field_key: string
+  label: string
+  field_type: string
+  is_required: boolean
+  options: unknown
+  validation_rules: unknown
+}
+
+interface PostgrestErrorLike {
+  code?: string | null
+  message?: string | null
+  details?: string | null
+  hint?: string | null
+}
+
+const REGISTRATION_EVENT_EMAIL_UNIQUE_CONSTRAINT = 'public_registrations_event_email_unique_idx'
+const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
+  'public_registrations_event_idempotency_unique_idx'
+
+/**
+ * Validates a single field value against its schema and validation rules.
+ * (Reuses logic from submit-registration)
+ */
+function validateFieldValue(
+  fieldKey: string,
+  value: unknown,
+  field: EventFieldWithValidation,
+): FieldValidationError | null {
+  const label = field.label || fieldKey
+  const rules = field.validation_rules || {}
+
+  // Check required field
+  if (field.is_required && (value === null || value === undefined || value === '')) {
+    return { fieldKey, message: `${label} is required.` }
+  }
+
+  // Optional empty values are valid
+  if (!field.is_required && (value === null || value === undefined || value === '')) {
+    return null
+  }
+
+  const type = field.field_type
+
+  // Text-like fields
+  if (type === 'text' || type === 'textarea' || type === 'email' || type === 'phone') {
+    if (typeof value !== 'string') {
+      return { fieldKey, message: `${label} must be text.` }
+    }
+
+    const text = value.trim()
+
+    const minLength = rules.min_length
+    if (minLength !== undefined && typeof minLength === 'number') {
+      if (text.length < minLength) {
+        return {
+          fieldKey,
+          message: `${label} must be at least ${minLength} characters.`,
+        }
+      }
+    }
+
+    const maxLength = rules.max_length
+    if (maxLength !== undefined && typeof maxLength === 'number') {
+      if (text.length > maxLength) {
+        return {
+          fieldKey,
+          message: `${label} must be at most ${maxLength} characters.`,
+        }
+      }
+    }
+
+    if (rules.pattern && typeof rules.pattern === 'string') {
+      try {
+        const regex = new RegExp(rules.pattern)
+        if (!regex.test(text)) {
+          return { fieldKey, message: `${label} format is invalid.` }
+        }
+      } catch {
+        // Ignore invalid regex patterns
+      }
+    }
+
+    if (type === 'email' && !isValidEmail(text)) {
+      return { fieldKey, message: `${label} must be a valid email address.` }
+    }
+
+    if (type === 'phone' && !isValidPhone(text)) {
+      return { fieldKey, message: `${label} must be a valid phone number.` }
+    }
+
+    return null
+  }
+
+  // Number field
+  if (type === 'number') {
+    let num: number
+
+    if (typeof value === 'number') {
+      num = value
+    } else if (typeof value === 'string') {
+      const parsed = Number(value)
+      if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
+        num = parsed
+      } else {
+        return { fieldKey, message: `${label} must be a valid number.` }
+      }
+    } else {
+      return { fieldKey, message: `${label} must be a number.` }
+    }
+
+    const min = rules.min
+    if (min !== undefined && typeof min === 'number') {
+      if (num < min) {
+        return { fieldKey, message: `${label} must be at least ${min}.` }
+      }
+    }
+
+    const max = rules.max
+    if (max !== undefined && typeof max === 'number') {
+      if (num > max) {
+        return { fieldKey, message: `${label} must be at most ${max}.` }
+      }
+    }
+
+    return null
+  }
+
+  // Single choice fields
+  if (type === 'select' || type === 'radio') {
+    if (typeof value !== 'string') {
+      return { fieldKey, message: `${label} must be text.` }
+    }
+
+    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    if (!allowedValues.has(value)) {
+      return { fieldKey, message: `${label} contains an unsupported option.` }
+    }
+
+    return null
+  }
+
+  // Boolean field
+  if (type === 'boolean') {
+    if (
+      typeof value !== 'boolean' &&
+      value !== 'true' &&
+      value !== 'false' &&
+      value !== 0 &&
+      value !== 1
+    ) {
+      return { fieldKey, message: `${label} must be true or false.` }
+    }
+
+    return null
+  }
+
+  // Multi-select field
+  if (type === 'multi_select') {
+    let arr: string[]
+
+    if (Array.isArray(value)) {
+      arr = value.map(String)
+    } else if (typeof value === 'string') {
+      arr = [value]
+    } else {
+      return { fieldKey, message: `${label} must be an array of values.` }
+    }
+
+    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    for (const item of arr) {
+      if (!allowedValues.has(item)) {
+        return { fieldKey, message: `${label} contains an unsupported option.` }
+      }
+    }
+
+    const minSelections = rules.min_selections
+    if (minSelections !== undefined && typeof minSelections === 'number') {
+      if (arr.length < minSelections) {
+        return {
+          fieldKey,
+          message: `${label} requires at least ${minSelections} selection(s).`,
+        }
+      }
+    }
+
+    const maxSelections = rules.max_selections
+    if (maxSelections !== undefined && typeof maxSelections === 'number') {
+      if (arr.length > maxSelections) {
+        return {
+          fieldKey,
+          message: `${label} allows at most ${maxSelections} selection(s).`,
+        }
+      }
+    }
+
+    return null
+  }
+
+  // Multi-select + toggle
+  if (type === 'multi_select_toggle') {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return { fieldKey, message: `${label} must be an object of option values.` }
+    }
+
+    const mapped = value as Record<string, unknown>
+    const selectedKeys = Object.keys(mapped)
+    const allowedValues = new Set(field.options.map((opt) => opt.value))
+
+    for (const key of selectedKeys) {
+      if (!allowedValues.has(key)) {
+        return { fieldKey, message: `${label} contains an unsupported option.` }
+      }
+
+      if (typeof mapped[key] !== 'boolean') {
+        return { fieldKey, message: `${label} selections must be Yes/No values.` }
+      }
+    }
+
+    const minSelections = rules.min_selections
+    if (minSelections !== undefined && typeof minSelections === 'number') {
+      if (selectedKeys.length < minSelections) {
+        return {
+          fieldKey,
+          message: `${label} requires at least ${minSelections} selection(s).`,
+        }
+      }
+    }
+
+    const maxSelections = rules.max_selections
+    if (maxSelections !== undefined && typeof maxSelections === 'number') {
+      if (selectedKeys.length > maxSelections) {
+        return {
+          fieldKey,
+          message: `${label} allows at most ${maxSelections} selection(s).`,
+        }
+      }
+    }
+
+    return null
+  }
+
+  // Date/datetime fields
+  if (type === 'date' || type === 'datetime') {
+    if (typeof value !== 'string') {
+      return { fieldKey, message: `${label} must be a date string.` }
+    }
+
+    const isDateOnly = type === 'date'
+    const dateRegex = isDateOnly ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
+
+    if (!dateRegex.test(value)) {
+      return {
+        fieldKey,
+        message: `${label} must use a valid ${isDateOnly ? 'date' : 'date and time'} format.`,
+      }
+    }
+
+    const minDate = rules.min_date
+    if (minDate && typeof minDate === 'string') {
+      if (value < minDate) {
+        return { fieldKey, message: `${label} must be on or after ${minDate}.` }
+      }
+    }
+
+    const maxDate = rules.max_date
+    if (maxDate && typeof maxDate === 'string') {
+      if (value > maxDate) {
+        return { fieldKey, message: `${label} must be on or before ${maxDate}.` }
+      }
+    }
+
+    return null
+  }
+
+  return null
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+function isValidPhone(phone: string): boolean {
+  return /\d/.test(phone)
+}
+
+function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
+  if (!error || error.code !== POSTGRES_ERROR_CODES.uniqueViolation) {
+    return false
+  }
+
+  const combinedMessage = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`
+  return combinedMessage.includes(constraint)
+}
+
+function isPublicRegistrationUniqueConflict(error: PostgrestErrorLike | null): boolean {
+  return (
+    isUniqueConstraintError(error, REGISTRATION_EVENT_EMAIL_UNIQUE_CONSTRAINT) ||
+    isUniqueConstraintError(error, REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT)
+  )
+}
+
+const allowedOrigins = readAllowedOrigins()
+
+Deno.serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = buildCorsHeaders(origin, allowedOrigins)
+
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    if (!isOriginAllowed(origin, allowedOrigins)) {
+      return createObscuredDenyResponse(corsHeaders)
+    }
+
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  if (!isOriginAllowed(origin, allowedOrigins)) {
+    return createObscuredDenyResponse(corsHeaders)
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  const rateLimitResponse = enforcePublicRateLimit({
+    req,
+    origin,
+    corsHeaders,
+    scope: 'submit-public-registration',
+    windowMs: RATE_LIMIT_PRESETS.submitRegistration.windowMs,
+    maxHits: RATE_LIMIT_PRESETS.submitRegistration.maxHits,
+  })
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
+  try {
+    // Validate environment
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Environment not configured',
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Parse and validate request
+    const body = (await req.json()) as SubmitPublicRegistrationRequest
+    const { event_slug, attendee, responses, idempotency_key } = body
+
+    // Validate required fields
+    if (
+      !event_slug ||
+      typeof event_slug !== 'string' ||
+      !attendee ||
+      typeof attendee !== 'object' ||
+      !responses ||
+      typeof responses !== 'object' ||
+      !idempotency_key ||
+      typeof idempotency_key !== 'string'
+    ) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid request: missing or invalid required fields',
+          error_code: 'INVALID_REQUEST',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    const { first_name, last_name, nickname, email, phone } = attendee as Record<string, unknown>
+
+    // Validate attendee fields
+    if (
+      !first_name ||
+      typeof first_name !== 'string' ||
+      !last_name ||
+      typeof last_name !== 'string' ||
+      !email ||
+      typeof email !== 'string'
+    ) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid request: attendee info is incomplete',
+          error_code: 'INVALID_ATTENDEE_INFO',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Create authenticated client with service role
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+
+    // Step 1: Look up event by slug
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select('id, duplicate_policy, allow_public_registrations')
+      .eq('slug', event_slug)
+      .maybeSingle()
+
+    if (eventError) {
+      console.error('Event lookup error:', eventError)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to process registration',
+          error_code: 'EVENT_LOOKUP_FAILED',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    if (!eventData) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Event not found',
+          error_code: 'EVENT_NOT_FOUND',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Check if public registrations are allowed for this event
+    if (!eventData.allow_public_registrations) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Public registrations are not allowed for this event',
+          error_code: 'PUBLIC_REGISTRATION_NOT_ALLOWED',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    const eventId = eventData.id
+    const duplicatePolicy = eventData.duplicate_policy
+
+    // Step 2: Fetch event fields for validation
+    const { data: fieldsData, error: fieldsError } = await supabase
+      .from('event_fields')
+      .select('id, field_key, label, field_type, is_required, options, validation_rules')
+      .eq('event_id', eventId)
+      .eq('is_active', true)
+
+    if (fieldsError) {
+      console.error('Fields lookup error:', fieldsError)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to process registration',
+          error_code: 'FIELDS_LOOKUP_FAILED',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Step 3: Validate responses against fields
+    const fields: EventFieldWithValidation[] = (fieldsData || []).map((f: EventFieldRow) => ({
+      id: f.id,
+      field_key: f.field_key,
+      label: f.label,
+      field_type: f.field_type,
+      is_required: f.is_required,
+      options: Array.isArray(f.options) ? f.options : [],
+      validation_rules: f.validation_rules || {},
+    }))
+
+    const validationErrors: FieldValidationError[] = []
+
+    for (const field of fields) {
+      const fieldValue = responses[field.field_key]
+      const error = validateFieldValue(field.field_key, fieldValue, field)
+      if (error) {
+        validationErrors.push(error)
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          error_code: 'VALIDATION_ERROR',
+          errors: validationErrors,
+        } as SubmitPublicRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Step 4: Insert or update registration
+    let registrationId: string | null = null
+    let status: 'submitted' | 'updated' = 'submitted'
+    let isNew = true
+    let shouldWriteAnswers = true
+
+    const { data: newReg, error: createError } = await supabase
+      .from('public_registrations')
+      .insert({
+        event_id: eventId,
+        first_name: (first_name as string).trim(),
+        last_name: (last_name as string).trim(),
+        nickname: typeof nickname === 'string' ? (nickname as string).trim() : null,
+        email: (email as string).trim(),
+        phone: typeof phone === 'string' ? (phone as string).trim() : null,
+        idempotency_key: idempotency_key,
+        status: 'submitted',
+      })
+      .select('id')
+      .single()
+
+    if (!createError && newReg) {
+      registrationId = newReg.id
+    } else if (
+      createError &&
+      isPublicRegistrationUniqueConflict(createError as PostgrestErrorLike)
+    ) {
+      const isIdempotencyConflict = isUniqueConstraintError(
+        createError as PostgrestErrorLike,
+        REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT,
+      )
+
+      if (isIdempotencyConflict) {
+        const { data: existingByIdempotency, error: idempotencyLookupError } = await supabase
+          .from('public_registrations')
+          .select('id, status')
+          .eq('event_id', eventId)
+          .eq('idempotency_key', idempotency_key)
+          .maybeSingle()
+
+        if (idempotencyLookupError) {
+          console.error('Idempotency recovery lookup error:', idempotencyLookupError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_IDEMPOTENCY_RECOVERY_FAILED',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        if (existingByIdempotency?.id) {
+          registrationId = existingByIdempotency.id
+          status = existingByIdempotency.status === 'updated' ? 'updated' : 'submitted'
+          isNew = false
+          shouldWriteAnswers = false
+        }
+      }
+
+      if (!registrationId) {
+        const { data: existingReg, error: regCheckError } = await supabase
+          .from('public_registrations')
+          .select('id, status')
+          .eq('event_id', eventId)
+          .ilike('email', email as string)
+          .maybeSingle()
+
+        if (regCheckError) {
+          console.error('Registration conflict recovery check error:', regCheckError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_CHECK_FAILED',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        if (!existingReg) {
+          console.error('Unique constraint violation but no existing registration found')
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'DUPLICATE_REGISTRATION',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        // Existing registration found
+        if (duplicatePolicy === 'block') {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'You have already registered for this event',
+              error_code: 'DUPLICATE_REGISTRATION',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        // duplicatePolicy === 'allow_update'
+        registrationId = existingReg.id
+        status = 'updated'
+        isNew = false
+      }
+    } else if (createError) {
+      console.error('Registration insert error:', createError)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to process registration',
+          error_code: 'REGISTRATION_INSERT_FAILED',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    if (!registrationId) {
+      console.error('Failed to obtain registration ID')
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to process registration',
+          error_code: 'REGISTRATION_ID_NOT_OBTAINED',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    // Step 5: Write answers if needed
+    if (shouldWriteAnswers && fields.length > 0) {
+      // Delete existing answers for update case
+      if (!isNew) {
+        const { error: deleteError } = await supabase
+          .from('public_registration_answers')
+          .delete()
+          .eq('public_registration_id', registrationId)
+
+        if (deleteError) {
+          console.error('Delete existing answers error:', deleteError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'DELETE_ANSWERS_FAILED',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+      }
+
+      // Insert new answers
+      const answersToInsert = fields
+        .map((field) => {
+          const value = responses[field.field_key]
+
+          // Skip empty optional fields
+          if (value === null || value === undefined || value === '') {
+            return null
+          }
+
+          let answerText: string | null = null
+          let answerNumber: number | null = null
+          let answerBoolean: boolean | null = null
+          let answerDate: string | null = null
+          let answerJson: unknown | null = null
+
+          if (field.field_type === 'number') {
+            answerNumber = typeof value === 'number' ? value : Number(value)
+          } else if (field.field_type === 'boolean') {
+            answerBoolean = value === true || value === 'true' || value === 1 ? true : false
+          } else if (field.field_type === 'date') {
+            answerDate = String(value)
+          } else if (
+            field.field_type === 'multi_select' ||
+            field.field_type === 'multi_select_toggle'
+          ) {
+            answerJson = Array.isArray(value) ? value : [value]
+          } else {
+            answerText = String(value)
+          }
+
+          return {
+            public_registration_id: registrationId,
+            event_field_id: field.id,
+            answer_text: answerText,
+            answer_number: answerNumber,
+            answer_boolean: answerBoolean,
+            answer_date: answerDate,
+            answer_json: answerJson,
+          }
+        })
+        .filter((a) => a !== null)
+
+      if (answersToInsert.length > 0) {
+        const { error: insertAnswersError } = await supabase
+          .from('public_registration_answers')
+          .insert(answersToInsert)
+
+        if (insertAnswersError) {
+          console.error('Insert answers error:', insertAnswersError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to save registration answers',
+              error_code: 'INSERT_ANSWERS_FAILED',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
+        }
+      }
+    }
+
+    // Step 6: Update registration status if it was updated
+    if (!isNew && status === 'updated') {
+      const { error: updateError } = await supabase
+        .from('public_registrations')
+        .update({ status: 'updated' })
+        .eq('id', registrationId)
+
+      if (updateError) {
+        console.error('Update status error:', updateError)
+      }
+    }
+
+    const response: SubmitPublicRegistrationSuccess = {
+      success: true,
+      registration_id: registrationId,
+      status,
+      is_new: isNew,
+      message: isNew ? 'Registration submitted successfully' : 'Registration updated successfully',
+    }
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'An unexpected error occurred',
+        error_code: 'INTERNAL_ERROR',
+      } as SubmitPublicRegistrationError),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
+  }
+})

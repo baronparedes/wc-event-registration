@@ -14,6 +14,11 @@ const EventRegistrationPage = lazy(() =>
     default: module.EventRegistrationPage,
   })),
 )
+const PublicEventRegistrationPage = lazy(() =>
+  import('../pages/events/[slug]/register-public').then((module) => ({
+    default: module.PublicEventRegistrationPage,
+  })),
+)
 const AdminLoginPage = lazy(() =>
   import('../pages/admin/login').then((module) => ({ default: module.AdminLoginPage })),
 )
@@ -42,6 +47,16 @@ const AdminEventFieldsPage = lazy(() =>
 const AdminRegistrationsPage = lazy(() =>
   import('../pages/admin/events/[id]/registrations').then((module) => ({
     default: module.AdminRegistrationsPage,
+  })),
+)
+const AdminPublicRegistrationsPage = lazy(() =>
+  import('../pages/admin/events/[id]/public-registrations').then((module) => ({
+    default: module.AdminPublicRegistrationsPage,
+  })),
+)
+const AdminPublicRegistrationDetailPage = lazy(() =>
+  import('../pages/admin/events/[id]/public-registrations/[registration_id]').then((module) => ({
+    default: module.AdminPublicRegistrationDetailPage,
   })),
 )
 const AdminRegistrationDetailPage = lazy(() =>
@@ -123,6 +138,14 @@ export function AppRouter() {
             </LazyRoute>
           }
         />
+        <Route
+          path={ROUTE_PATHS.eventPublicRegisterPattern}
+          element={
+            <LazyRoute>
+              <PublicEventRegistrationPage />
+            </LazyRoute>
+          }
+        />
 
         <Route
           path={ROUTE_PATHS.adminLogin}
@@ -198,6 +221,26 @@ export function AppRouter() {
             <RequireAdminAuth>
               <LazyRoute>
                 <AdminRegistrationsPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.adminPublicRegistrationDetailPattern}
+          element={
+            <RequireAdminAuth>
+              <LazyRoute>
+                <AdminPublicRegistrationDetailPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.adminEventPublicRegistrationsPattern}
+          element={
+            <RequireAdminAuth>
+              <LazyRoute>
+                <AdminPublicRegistrationsPage />
               </LazyRoute>
             </RequireAdminAuth>
           }

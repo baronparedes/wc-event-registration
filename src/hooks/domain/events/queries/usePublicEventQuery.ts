@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '@/config/constants'
 import { supabase } from '@/lib/infrastructure'
 import { logger } from '@/lib/infrastructure'
-import type { EventAvailability, PublicEvent } from '@/lib/domain/events'
+import type { EventAvailability, AdminEvent } from '@/lib/domain/events'
 
 /**
  * Hook to fetch a public event by slug with availability checks.
@@ -11,7 +11,7 @@ import type { EventAvailability, PublicEvent } from '@/lib/domain/events'
  * @param slug - The event slug (URL-friendly identifier)
  * @returns React Query result with availability status and event data
  */
-export function usePublicEventQuery(slug: string | undefined) {
+export function usePublicEventQuery(slug: string | null) {
   return useQuery({
     queryKey: QUERY_KEYS.publicEventBySlug(slug),
     queryFn: async () => {
@@ -24,10 +24,10 @@ export function usePublicEventQuery(slug: string | undefined) {
       const { data, error } = await supabase
         .from('events')
         .select(
-          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, registration_mode, metadata',
+          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, require_id_lookup, registration_mode, allow_public_registrations, metadata, created_by_admin_id, created_at, updated_at',
         )
         .eq('slug', slug)
-        .maybeSingle<PublicEvent>()
+        .maybeSingle<AdminEvent>()
 
       if (error) {
         throw error
@@ -40,6 +40,14 @@ export function usePublicEventQuery(slug: string | undefined) {
       const now = Date.now()
       const opensAt = data.registration_opens_at ? Date.parse(data.registration_opens_at) : null
       const closesAt = data.registration_closes_at ? Date.parse(data.registration_closes_at) : null
+
+      if (!data.allow_public_registrations) {
+        return {
+          status: 'unavailable',
+          reason: 'not_found_or_unpublished',
+          event: data,
+        } as EventAvailability
+      }
 
       if (data.registration_mode !== 'open') {
         return {

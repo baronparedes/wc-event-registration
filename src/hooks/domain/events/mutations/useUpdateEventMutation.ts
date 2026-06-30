@@ -18,7 +18,7 @@ export function useUpdateEventMutation() {
       const { data: previousEvent } = await supabase
         .from('events')
         .select(
-          'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode, metadata',
+          'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode, allow_public_registrations, metadata',
         )
         .eq('id', id)
         .maybeSingle()
@@ -34,6 +34,7 @@ export function useUpdateEventMutation() {
         status: input.status,
         duplicate_policy: input.duplicate_policy,
         registration_mode: input.registration_mode,
+        allow_public_registrations: input.allow_public_registrations ?? false,
       }
 
       // Handle metadata updates

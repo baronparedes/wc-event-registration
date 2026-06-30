@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { PAGINATION_DEFAULTS, PAGINATION_OPTIONS, TIMING } from '@/config/constants'
+import { Link, useParams } from 'react-router-dom'
+import {
+  PAGINATION_DEFAULTS,
+  PAGINATION_OPTIONS,
+  TIMING,
+  toAdminEventPublicRegistrations,
+} from '@/config/constants'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
 import { Button } from '@/components/ui/Button'
-import { RegistrationsList, ExportButton } from './components'
+import { ExportButton, RegistrationsList } from './components'
 
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>()
@@ -100,10 +105,16 @@ export function AdminRegistrationsPage() {
             Registrations for {event?.title ?? 'Event'}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Page {currentPage} of {totalPages} • {registrations.length} registrations on this page
+            Page {currentPage} of {totalPages} • {registrations.length} member registrations on this
+            page
           </p>
         </div>
-        <ExportButton eventId={eventId} />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to={toAdminEventPublicRegistrations(eventId)}>View Public Registrations</Link>
+          </Button>
+          <ExportButton eventId={eventId} />
+        </div>
       </div>
 
       {event && event.status !== 'draft' && (

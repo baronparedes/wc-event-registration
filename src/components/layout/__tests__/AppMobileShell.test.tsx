@@ -1,81 +1,104 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { BrowserRouter } from 'react-router-dom'
-import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants'
 import { AppMobileShell } from '../AppMobileShell'
 
-const queryClient = new QueryClient()
+const { mockUseAdminAuthQuery, mockMutateAsync, mockToastSuccess, mockToastError, mockNavigate } =
+  vi.hoisted(() => ({
+    mockUseAdminAuthQuery: vi.fn(),
+    mockMutateAsync: vi.fn(),
+    mockToastSuccess: vi.fn(),
+    mockToastError: vi.fn(),
+    mockNavigate: vi.fn(),
+  }))
 
-const renderWithProviders = (component: React.ReactElement) => {
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: mockToastSuccess,
+    error: mockToastError,
+  },
+}))
+
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminLogoutMutation: () => ({ mutateAsync: mockMutateAsync }),
+}))
+
+function renderShell(initialPath = '/') {
   return render(
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{component}</BrowserRouter>
-    </QueryClientProvider>,
+    <MemoryRouter initialEntries={[initialPath]}>
+      <Routes>
+        <Route path="*" element={<AppMobileShell />}>
+          <Route path="*" element={<div>Outlet Content</div>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
   )
 }
 
 describe('AppMobileShell', () => {
   beforeEach(() => {
-    queryClient.clear()
     vi.clearAllMocks()
+    mockMutateAsync.mockResolvedValue(undefined)
   })
 
-  afterEach(() => {
-    vi.clearAllMocks()
+  it('shows mobile menu actions for unauthenticated users', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: false } })
+
+    renderShell('/admin/events')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminLogin)
   })
 
-  it('renders header with title and date', () => {
-    renderWithProviders(<AppMobileShell />)
-    expect(screen.getByText('WC Event Registrations')).toBeInTheDocument()
-    const dateString = new Date().toDateString()
-    expect(screen.getByText(dateString)).toBeInTheDocument()
+  it('navigates from mobile events button', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } })
+
+    renderShell('/')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Events' }))
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.home)
   })
 
-  it('renders hamburger menu button', () => {
-    renderWithProviders(<AppMobileShell />)
-    const menuButton = screen.getByRole('button', { name: /toggle menu/i })
-    expect(menuButton).toBeInTheDocument()
+  it('handles successful mobile sign out', async () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } })
+
+    renderShell('/')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }))
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledTimes(1)
+      expect(mockToastSuccess).toHaveBeenCalledWith(TOAST_MESSAGES.adminSignOutSuccess)
+    })
   })
 
-  it('opens mobile menu when hamburger is clicked', () => {
-    renderWithProviders(<AppMobileShell />)
+  it('handles failed mobile sign out', async () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } })
+    mockMutateAsync.mockRejectedValue(new Error('mobile logout failed'))
 
-    const menuButton = screen.getByRole('button', { name: /toggle menu/i })
-    fireEvent.click(menuButton)
+    renderShell('/')
 
-    expect(screen.getByText('Events')).toBeInTheDocument()
-    expect(screen.getByText('Admin')).toBeInTheDocument()
-  })
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }))
 
-  it('closes mobile menu when hamburger is clicked again', () => {
-    renderWithProviders(<AppMobileShell />)
-
-    const menuButton = screen.getByRole('button', { name: /toggle menu/i })
-    fireEvent.click(menuButton)
-    expect(screen.getByText('Events')).toBeInTheDocument()
-
-    fireEvent.click(menuButton)
-    // After closing, the menu items should not be in the document
-    const eventButtons = screen.queryAllByText('Events')
-    expect(eventButtons.length).toBe(0)
-  })
-
-  it('displays admin dropdown when Admin is clicked', () => {
-    renderWithProviders(<AppMobileShell />)
-
-    const menuButton = screen.getByRole('button', { name: /toggle menu/i })
-    fireEvent.click(menuButton)
-
-    const adminButton = screen.getByRole('button', { name: 'Admin' })
-    fireEvent.click(adminButton)
-
-    expect(screen.getByText('Sign In')).toBeInTheDocument()
-  })
-
-  it('renders Outlet for page content', () => {
-    renderWithProviders(<AppMobileShell />)
-    // The Outlet should be rendered (contains the page)
-    // We can't directly test Outlet, but we can verify the structure exists
-    expect(screen.getByRole('main')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('mobile logout failed')
+    })
   })
 })

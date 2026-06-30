@@ -53,6 +53,7 @@ describe('usePublicEventQuery', () => {
         registration_mode: 'open',
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-07-01T00:00:00.000Z',
+        allow_public_registrations: true,
       },
       error: null,
     })
@@ -74,6 +75,7 @@ describe('usePublicEventQuery', () => {
         registration_mode: 'open',
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-07-01T00:00:00.000Z',
+        allow_public_registrations: true,
       },
       registration_count: 12,
     })
@@ -119,6 +121,7 @@ describe('usePublicEventQuery', () => {
         registration_mode: 'closed',
         registration_opens_at: null,
         registration_closes_at: null,
+        allow_public_registrations: true,
       },
       error: null,
     })
@@ -145,6 +148,7 @@ describe('usePublicEventQuery', () => {
         registration_mode: 'open',
         registration_opens_at: futureDate,
         registration_closes_at: null,
+        allow_public_registrations: true,
       },
       error: null,
     })
@@ -171,6 +175,7 @@ describe('usePublicEventQuery', () => {
         registration_mode: 'open',
         registration_opens_at: null,
         registration_closes_at: pastDate,
+        allow_public_registrations: true,
       },
       error: null,
     })
@@ -196,6 +201,7 @@ describe('usePublicEventQuery', () => {
         registration_mode: 'open',
         registration_opens_at: null,
         registration_closes_at: null,
+        allow_public_registrations: true,
       },
       error: null,
     })

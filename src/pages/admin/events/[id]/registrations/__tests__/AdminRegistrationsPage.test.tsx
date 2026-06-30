@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 
 const {
   mockUseParams,
@@ -98,6 +99,14 @@ vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
 
 import { AdminRegistrationsPage } from '@/pages/admin/events/[id]/registrations'
 
+function renderWithRouter() {
+  return render(
+    <MemoryRouter>
+      <AdminRegistrationsPage />
+    </MemoryRouter>,
+  )
+}
+
 describe('AdminRegistrationsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -123,7 +132,7 @@ describe('AdminRegistrationsPage', () => {
       error: null,
     })
 
-    render(<AdminRegistrationsPage />)
+    renderWithRouter()
 
     expect(screen.getByText('Registrations for Sample Event')).toBeInTheDocument()
     expect(
@@ -144,7 +153,7 @@ describe('AdminRegistrationsPage', () => {
       error: null,
     })
 
-    render(<AdminRegistrationsPage />)
+    renderWithRouter()
 
     expect(screen.getByText('Event Registrations')).toBeInTheDocument()
     expect(screen.getByText(/Error loading registrations:/)).toBeInTheDocument()
@@ -163,7 +172,7 @@ describe('AdminRegistrationsPage', () => {
       error: null,
     })
 
-    render(<AdminRegistrationsPage />)
+    renderWithRouter()
 
     expect(screen.getByText('Invalid event ID')).toBeInTheDocument()
   })
@@ -185,7 +194,7 @@ describe('AdminRegistrationsPage', () => {
       error: null,
     })
 
-    render(<AdminRegistrationsPage />)
+    renderWithRouter()
 
     expect(
       screen.getByText('This event is archived. Registrations cannot be cancelled.'),
@@ -211,7 +220,7 @@ describe('AdminRegistrationsPage', () => {
       error: null,
     })
 
-    render(<AdminRegistrationsPage />)
+    renderWithRouter()
 
     const clearButton = screen.getByRole('button', { name: 'Clear' })
     expect(clearButton).toBeDisabled()
@@ -250,7 +259,7 @@ describe('AdminRegistrationsPage', () => {
       error: null,
     })
 
-    render(<AdminRegistrationsPage />)
+    renderWithRouter()
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }))

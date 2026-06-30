@@ -15,6 +15,27 @@ describe('NameLookupModal', () => {
     expect(screen.getByText("Don't have your ID? Search by your full name →")).toBeInTheDocument()
   })
 
+  it('renders card variant trigger and pending label', () => {
+    const onSubmit = vi.fn()
+
+    const { rerender } = render(
+      <NameLookupModal onSubmit={onSubmit} isLookupPending={false} variant="card" />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Search by name' })).toBeInTheDocument()
+
+    rerender(<NameLookupModal onSubmit={onSubmit} isLookupPending={true} variant="card" />)
+    expect(screen.getByRole('button', { name: 'Searching...' })).toBeDisabled()
+  })
+
+  it('opens immediately when autoOpen is true', () => {
+    const onSubmit = vi.fn()
+
+    render(<NameLookupModal onSubmit={onSubmit} isLookupPending={false} autoOpen={true} />)
+
+    expect(screen.getByText('Find Your Profile')).toBeInTheDocument()
+  })
+
   it('opens modal when trigger button is clicked', async () => {
     const onSubmit = vi.fn()
 

@@ -48,6 +48,7 @@ export function ClassicEventRegistrationFlow() {
       {isGateReady ? (
         <div className="space-y-6">
           <MemberLookupStepCard
+            slug={slug}
             lookupForm={memberLookup.lookupForm}
             onLookupSubmit={handleLookupSubmit}
             isLookupPending={memberLookup.isLookupPending}
@@ -57,8 +58,13 @@ export function ClassicEventRegistrationFlow() {
             shouldHighlightInput={memberLookup.memberIdHighlight}
             onDismissLookupError={clearLookupError}
             allowNameLookup={
-              availability && 'event' in availability
-                ? (availability.event?.metadata?.allow_name_lookup ?? false)
+              availability?.status === 'available' && availability.event
+                ? Boolean(availability.event.metadata?.allow_name_lookup)
+                : false
+            }
+            allowPublicRegistration={
+              availability?.status === 'available' && availability.event
+                ? Boolean(availability.event.allow_public_registrations)
                 : false
             }
           />
