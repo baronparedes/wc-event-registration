@@ -98,7 +98,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="relative z-0 mx-auto w-full max-w-6xl animate-fadeIn px-4 py-8">
+      <main className="relative mx-auto w-full max-w-6xl animate-fadeIn px-4 py-8">
         <Outlet />
       </main>
     </div>
