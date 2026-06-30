@@ -383,6 +383,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     async (values: DynamicFieldResponseValues) => {
       setSubmitErrorMessage(null)
       setSubmitSuccessMessage(null)
+      dynamicForm.clearErrors()
 
       const parsed = responseSchema.safeParse(values)
       if (!parsed.success) {

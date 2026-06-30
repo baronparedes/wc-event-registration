@@ -120,12 +120,19 @@ export function FieldOptionsEditor({
                       <span className="block text-xs text-muted">Default toggle</span>
                       <select
                         {...register(`options.${index}.toggle_default`, {
-                          setValueAs: (value) => value === 'true',
+                          setValueAs: (value) => {
+                            if (value === '') {
+                              return undefined
+                            }
+
+                            return value === 'true'
+                          },
                         })}
                         disabled={isLocked}
                         aria-label={`Option ${index + 1} toggle default`}
                         className={inputClass}
                       >
+                        <option value="">Choose...</option>
                         <option value="false">No</option>
                         <option value="true">Yes</option>
                       </select>
@@ -142,7 +149,7 @@ export function FieldOptionsEditor({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ label: '', value: '', toggle_label: '', toggle_default: false })}
+          onClick={() => append({ label: '', value: '', toggle_label: '' })}
         >
           + Add Option
         </Button>

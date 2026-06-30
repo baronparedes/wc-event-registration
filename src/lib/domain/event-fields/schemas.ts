@@ -107,7 +107,7 @@ export const eventFieldFormSchema = z
         label: z.string().min(1, 'Option label is required'),
         value: z.string().min(1, 'Option value is required'),
         toggle_label: z.string(),
-        toggle_default: z.boolean(),
+        toggle_default: z.boolean().optional(),
       }),
     ),
     val_min_length: z.string(),
@@ -305,12 +305,26 @@ function buildMultiSelectToggleSchema(
 ): z.ZodType<Record<string, boolean> | undefined> {
   const rules = field.validation_rules
   const allowedValues = new Set(field.options.map((option) => option.value))
+  const toggleDefaultsByValue = new Map(
+    field.options.map((option) => [option.value, option.toggle_default]),
+  )
 
   let schema = z
-    .record(z.string(), z.boolean())
+    .record(z.string(), z.union([z.boolean(), z.null()]))
     .refine(
       (values) => Object.keys(values).every((key) => allowedValues.has(key)),
       `${field.label} contains an unsupported option.`,
+    )
+    .refine(
+      (values) =>
+        Object.entries(values).every(([key, value]) => {
+          if (value !== null) {
+            return true
+          }
+
+          return toggleDefaultsByValue.get(key) !== undefined
+        }),
+      `${field.label} requires a Yes/No choice for each selected option without a default.`,
     )
 
   if (field.is_required) {
@@ -334,17 +348,28 @@ function buildMultiSelectToggleSchema(
     )
   }
 
-  return z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') {
-      return {}
-    }
+  return z.preprocess(
+    (value) => {
+      if (value === null || value === undefined || value === '') {
+        return {}
+      }
 
-    if (typeof value !== 'object' || Array.isArray(value)) {
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        return value
+      }
+
       return value
-    }
-
-    return value
-  }, schema) as z.ZodType<Record<string, boolean> | undefined>
+    },
+    schema.transform(
+      (values) =>
+        Object.fromEntries(
+          Object.entries(values).map(([key, value]) => [
+            key,
+            value ?? toggleDefaultsByValue.get(key),
+          ]),
+        ) as Record<string, boolean>,
+    ),
+  ) as z.ZodType<Record<string, boolean> | undefined>
 }
 
 function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefined> {

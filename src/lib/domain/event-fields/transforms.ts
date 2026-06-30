@@ -39,7 +39,7 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
       label: option.label,
       value: option.value,
       toggle_label: option.toggle_label ?? '',
-      toggle_default: option.toggle_default ?? false,
+      ...(option.toggle_default !== undefined ? { toggle_default: option.toggle_default } : {}),
     })),
     val_min_length: rules.min_length != null ? String(rules.min_length) : '',
     val_max_length: rules.max_length != null ? String(rules.max_length) : '',

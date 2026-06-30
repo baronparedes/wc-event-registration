@@ -152,6 +152,36 @@ describe('event-fields schemas', () => {
     }
   })
 
+  it('accepts an unset toggle default in admin field form values', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'meal_windows',
+      label: 'Meal Windows',
+      field_type: 'multi_select_toggle',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: '9AM',
+          value: '9am',
+          toggle_label: 'With breakfast?',
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    })
+
+    expect(parsed.success).toBe(true)
+  })
+
   it('accepts valid update event field input', () => {
     const parsed = updateEventFieldSchema.parse({
       id: 'c9707ebf-a95d-4f42-ba04-bde679f92ed8',
@@ -377,7 +407,7 @@ describe('event-fields schemas', () => {
         is_required: true,
         options: [
           { label: '9AM', value: '9am' },
-          { label: '12NN', value: '12nn' },
+          { label: '12NN', value: '12nn', toggle_default: true },
           { label: '3PM', value: '3pm' },
         ],
         validation_rules: { min_selections: 1, max_selections: 2 },
@@ -385,6 +415,8 @@ describe('event-fields schemas', () => {
     ])
 
     expect(schema.safeParse({ meal_windows: { '9am': true, '12nn': false } }).success).toBe(true)
+    expect(schema.safeParse({ meal_windows: { '9am': null } }).success).toBe(false)
+    expect(schema.parse({ meal_windows: { '12nn': null } }).meal_windows).toEqual({ '12nn': true })
     expect(schema.safeParse({ meal_windows: {} }).success).toBe(false)
     expect(schema.safeParse({ meal_windows: { unknown: true } }).success).toBe(false)
     expect(schema.safeParse({ meal_windows: { '9am': 'yes' } }).success).toBe(false)

@@ -80,7 +80,7 @@ describe('SelectFieldRenderer family', () => {
     expect(screen.getByLabelText('Non-Vegetarian')).toBeInTheDocument()
   })
 
-  it('handles multi-select-toggle interaction and fallback toggle label', () => {
+  it('handles multi-select-toggle interaction, pending choice states, and fallback toggle label', () => {
     const toggleField = createField({
       field_key: 'meal_slots',
       field_type: 'multi_select_toggle',
@@ -109,6 +109,8 @@ describe('SelectFieldRenderer family', () => {
     const breakfastCheckbox = screen.getByLabelText('Breakfast Slot')
     const breakfastYes = screen.getByRole('button', { name: 'Breakfast Slot - Yes' })
     const breakfastNo = screen.getByRole('button', { name: 'Breakfast Slot - No' })
+    const lunchCheckbox = screen.getByLabelText('Lunch Slot')
+    const lunchYes = screen.getByRole('button', { name: 'Lunch Slot - Yes' })
 
     expect(breakfastYes).toBeDisabled()
     expect(breakfastNo).toBeDisabled()
@@ -117,9 +119,16 @@ describe('SelectFieldRenderer family', () => {
 
     expect(breakfastYes).toBeEnabled()
     expect(breakfastNo).toBeEnabled()
+    expect(screen.getByText('Choose Yes or No to continue.')).toBeInTheDocument()
+    expect(breakfastYes.className).not.toContain('border-4 border-primary')
+    expect(breakfastNo.className).not.toContain('border-4 border-primary')
 
     fireEvent.click(breakfastNo)
-    expect(breakfastNo.className).toContain('border-primary')
+    expect(breakfastNo.className).toContain('border-4 border-primary')
+    expect(screen.queryByText('Choose Yes or No to continue.')).not.toBeInTheDocument()
+
+    fireEvent.click(lunchCheckbox)
+    expect(lunchYes.className).toContain('border-4 border-primary')
 
     fireEvent.click(breakfastCheckbox)
     expect(breakfastYes).toBeDisabled()

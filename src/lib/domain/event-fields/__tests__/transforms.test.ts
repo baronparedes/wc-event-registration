@@ -180,7 +180,6 @@ describe('event-fields transforms', () => {
         label: 'Meal B',
         value: 'meal_b',
         toggle_label: '',
-        toggle_default: false,
       },
     ])
   })

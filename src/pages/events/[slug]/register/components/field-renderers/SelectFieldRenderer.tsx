@@ -58,23 +58,23 @@ export function MultiSelectFieldRenderer({ field, dynamicForm }: SelectFieldRend
   )
 }
 
-function isBooleanRecord(value: unknown): value is Record<string, boolean> {
+function isBooleanOrNullRecord(value: unknown): value is Record<string, boolean | null> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false
   }
 
-  return Object.values(value).every((entry) => typeof entry === 'boolean')
+  return Object.values(value).every((entry) => typeof entry === 'boolean' || entry === null)
 }
 
 export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
   const rawValue = useWatch({ control: dynamicForm.control, name: field.field_key })
-  const selectedValues = isBooleanRecord(rawValue) ? rawValue : {}
+  const selectedValues = isBooleanOrNullRecord(rawValue) ? rawValue : {}
 
-  function handleSelectionChange(optionValue: string, checked: boolean, defaultValue = false) {
+  function handleSelectionChange(optionValue: string, checked: boolean, defaultValue?: boolean) {
     const nextValues = { ...selectedValues }
 
     if (checked) {
-      nextValues[optionValue] = defaultValue
+      nextValues[optionValue] = defaultValue ?? null
     } else {
       delete nextValues[optionValue]
     }
@@ -83,6 +83,7 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
       shouldDirty: true,
       shouldValidate: true,
     })
+    dynamicForm.clearErrors(field.field_key)
   }
 
   function handleToggleChange(optionValue: string, value: boolean) {
@@ -101,6 +102,7 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
         shouldValidate: true,
       },
     )
+    dynamicForm.clearErrors(field.field_key)
   }
 
   return (
@@ -113,13 +115,20 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
           toggle_default?: boolean
         }) => {
           const isSelected = option.value in selectedValues
-          const configuredDefault = option.toggle_default ?? false
-          const toggleValue = selectedValues[option.value] ?? configuredDefault
+          const configuredDefault = option.toggle_default
+          const toggleValue = selectedValues[option.value]
+          const isToggleChoicePending = isSelected && toggleValue === null
+          const isYesSelected = toggleValue === true
+          const isNoSelected = toggleValue === false
 
           return (
             <div
               key={`${field.id}-${option.value}`}
-              className="rounded-md border border-border/70 px-3 py-2 text-sm text-text"
+              className={`rounded-md border px-3 py-2 text-sm text-text transition-colors ${
+                isToggleChoicePending
+                  ? 'border-accent/60 bg-accent/5'
+                  : 'border-border/70 bg-transparent'
+              }`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <label className="flex min-w-0 flex-1 items-center gap-2">
@@ -146,10 +155,10 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                       aria-label={`${option.label} - Yes`}
                       disabled={!isSelected}
                       onClick={() => handleToggleChange(option.value, true)}
-                      className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
-                        toggleValue
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-text'
+                      className={`min-w-16 rounded-md border px-3 py-1 text-xs font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                        isYesSelected
+                          ? 'border-4 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
+                          : 'border-border bg-background text-text hover:bg-primary/5'
                       } disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                       Yes
@@ -159,15 +168,18 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                       aria-label={`${option.label} - No`}
                       disabled={!isSelected}
                       onClick={() => handleToggleChange(option.value, false)}
-                      className={`min-w-16 rounded-md border px-3 py-1 text-xs text-center ${
-                        !toggleValue
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-text'
+                      className={`min-w-16 rounded-md border px-3 py-1 text-xs font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                        isNoSelected
+                          ? 'border-4 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
+                          : 'border-border bg-background text-text hover:bg-primary/5'
                       } disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                       No
                     </button>
                   </div>
+                  {isToggleChoicePending && (
+                    <p className="text-xs font-medium text-accent">Choose Yes or No to continue.</p>
+                  )}
                 </div>
               </div>
             </div>
