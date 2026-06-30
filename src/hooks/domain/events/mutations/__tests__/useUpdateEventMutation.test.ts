@@ -220,4 +220,52 @@ describe('useUpdateEventMutation', () => {
       }),
     )
   })
+
+  it('merges allow_name_lookup into metadata when provided', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        title: 'Existing',
+        description: null,
+        location: null,
+        starts_at: null,
+        ends_at: null,
+        registration_opens_at: null,
+        registration_closes_at: null,
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+        allow_public_registrations: false,
+        metadata: { legacy_flag: true },
+      },
+    })
+
+    const { result } = renderHookWithClient(() => useUpdateEventMutation())
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: 'event-4',
+        title: 'Existing',
+        description: undefined,
+        location: undefined,
+        starts_at: undefined,
+        ends_at: undefined,
+        registration_opens_at: undefined,
+        registration_closes_at: undefined,
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+        allow_public_registrations: false,
+        allow_name_lookup: true,
+      })
+    })
+
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: {
+          legacy_flag: true,
+          allow_name_lookup: true,
+        },
+      }),
+    )
+  })
 })
