@@ -26,10 +26,13 @@ type AdminEventFormPageProps = {
   mode: 'create' | 'edit'
 }
 
-/** Converts a UTC ISO timestamp to the datetime-local input format (YYYY-MM-DDTHH:mm). */
+/** Converts an ISO timestamp to the datetime-local input format in Asia/Manila (UTC+8). */
 function toDatetimeLocal(value: string | null | undefined): string {
   if (!value) return ''
-  return value.slice(0, 16)
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  // sv-SE locale produces "YYYY-MM-DD HH:mm:ss" — slice and replace space to get datetime-local value
+  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T')
 }
 
 const DEFAULT_VALUES: CreateEventInput = {
