@@ -17,7 +17,6 @@ export function ClassicEventRegistrationFlow() {
     memberLookup,
     handleLookupSubmit,
     lookupErrorMessage,
-    lookupErrorFadeOut,
     memberIdInputRef,
     clearLookupError,
     dynamicFieldsStepRef,
@@ -53,7 +52,6 @@ export function ClassicEventRegistrationFlow() {
             onLookupSubmit={handleLookupSubmit}
             isLookupPending={memberLookup.isLookupPending}
             lookupErrorMessage={lookupErrorMessage}
-            shouldFadeLookupError={lookupErrorFadeOut}
             suppressLookupWarning={memberLookup.isRegistrationBlocked}
             memberIdInputRef={memberIdInputRef}
             shouldHighlightInput={memberLookup.memberIdHighlight}

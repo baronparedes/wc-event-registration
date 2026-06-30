@@ -93,7 +93,6 @@ export function WizardEventRegistrationFlow() {
               onLookupSubmit={handleLookupSubmit}
               isLookupPending={memberLookup.isLookupPending}
               lookupErrorMessage={lookupErrorMessage}
-              shouldFadeLookupError={lookupErrorFadeOut}
               suppressLookupWarning={memberLookup.isRegistrationBlocked}
               memberIdInputRef={memberIdInputRef}
               shouldHighlightInput={memberLookup.memberIdHighlight}

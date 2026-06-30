@@ -1,5 +1,6 @@
 export type MemberLookupProfile = {
   user_id: string
+  member_id: string
   full_name: string
   nickname: string | null
   first_name: string | null

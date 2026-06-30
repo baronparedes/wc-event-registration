@@ -12,7 +12,7 @@ describe('NameLookupModal', () => {
 
     render(<NameLookupModal onSubmit={onSubmit} isLookupPending={false} />)
 
-    expect(screen.getByText('Search your profile by name →')).toBeInTheDocument()
+    expect(screen.getByText("Don't have your ID? Search by your full name →")).toBeInTheDocument()
   })
 
   it('opens modal when trigger button is clicked', async () => {
@@ -20,7 +20,7 @@ describe('NameLookupModal', () => {
 
     render(<NameLookupModal onSubmit={onSubmit} isLookupPending={false} />)
 
-    const triggerButton = screen.getByText('Search your profile by name →')
+    const triggerButton = screen.getByText("Don't have your ID? Search by your full name →")
 
     await act(async () => {
       fireEvent.click(triggerButton)
@@ -37,7 +37,7 @@ describe('NameLookupModal', () => {
 
     // Open modal
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Fill and submit form
@@ -70,7 +70,7 @@ describe('NameLookupModal', () => {
 
     // Open modal
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Fill and submit form
@@ -102,7 +102,7 @@ describe('NameLookupModal', () => {
 
     // Open modal
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     expect(screen.getByText('Find Your Profile')).toBeInTheDocument()
@@ -129,7 +129,7 @@ describe('NameLookupModal', () => {
 
     // Open modal
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Fill form
@@ -160,7 +160,7 @@ describe('NameLookupModal', () => {
 
     // First submission
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     await act(async () => {
@@ -179,7 +179,7 @@ describe('NameLookupModal', () => {
 
     // Open modal again
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Form should be cleared
@@ -193,7 +193,7 @@ describe('NameLookupModal', () => {
     render(<NameLookupModal onSubmit={onSubmit} isLookupPending={false} />)
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Try to submit with empty name
@@ -217,7 +217,7 @@ describe('NameLookupModal', () => {
     render(<NameLookupModal onSubmit={onSubmit} isLookupPending={false} />)
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Try to submit with name exceeding max length (200 chars)
@@ -253,7 +253,7 @@ describe('NameLookupModal', () => {
     )
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Search your profile by name →'))
+      fireEvent.click(screen.getByText("Don't have your ID? Search by your full name →"))
     })
 
     // Modal content should not be inside test-container

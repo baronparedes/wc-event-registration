@@ -7,6 +7,7 @@ import type { MemberLookupProfile } from '@/lib/domain/members'
 
 const matchedMember: MemberLookupProfile = {
   user_id: 'user-1',
+  member_id: 'WC-001',
   full_name: 'Jane Doe',
   nickname: null,
   first_name: 'Jane',

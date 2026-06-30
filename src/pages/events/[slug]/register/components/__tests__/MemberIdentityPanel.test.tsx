@@ -4,6 +4,7 @@ import { MemberIdentityPanel } from '../MemberIdentityPanel'
 
 const baseProfile = {
   user_id: 'user-1',
+  member_id: 'WC-001',
   full_name: 'Jane Doe',
   nickname: 'Janie',
   first_name: 'Jane',

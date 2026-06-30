@@ -15,6 +15,7 @@ interface MemberLookupRequest {
 
 interface MemberLookupProfile {
   user_id: string
+  member_id: string
   full_name: string
   nickname: string | null
   first_name: string | null
@@ -153,7 +154,9 @@ Deno.serve(async (req) => {
     })
 
     // Query users table based on lookup type
-    let query = supabase.from('users').select('id, full_name, nickname, first_name, last_name')
+    let query = supabase
+      .from('users')
+      .select('id, member_id, full_name, nickname, first_name, last_name')
     let filteredData: typeof data = null
 
     if (isIdLookup) {
@@ -219,6 +222,7 @@ Deno.serve(async (req) => {
     const profile = data
       ? ({
           user_id: data.id,
+          member_id: data.member_id,
           full_name: data.full_name,
           nickname: data.nickname,
           first_name: data.first_name,

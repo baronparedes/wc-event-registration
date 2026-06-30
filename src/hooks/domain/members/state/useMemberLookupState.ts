@@ -121,9 +121,9 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         }
 
         // Successful lookup - member found and eligible
-        const searchValue = values.memberId || values.name
         setMatchedMember(result.profile)
-        setVerifiedMemberId(searchValue || null)
+        // Always store the member_id from the profile for submission to Edge Function
+        setVerifiedMemberId(result.profile.member_id)
         setIsRegistrationBlocked(false)
         setIsUpdateMode(Boolean(result.existing_registration?.edit_allowed))
         setPrefillResponses(result.existing_registration?.responses ?? null)

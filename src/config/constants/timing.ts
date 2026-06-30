@@ -1,7 +1,7 @@
 export const TIMING = {
   searchDebounceMs: 300,
   errorFadeOutDelayMs: 4500,
-  errorClearDelayMs: 5000,
+  errorClearDelayMs: 10000,
   registrationLookupFadeOutDelayMs: 5000,
   registrationLookupClearDelayMs: 5600,
   registrationWizardConfirmTimeoutMs: 15 * 1000,

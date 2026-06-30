@@ -61,6 +61,7 @@ describe('useMemberLookupState', () => {
     mockMutateAsync.mockResolvedValue({
       profile: {
         user_id: '5f83f4cd-4370-4c4a-bd02-9730ec9bc8dc',
+        member_id: 'WC-001',
         full_name: 'Ada Lovelace',
         nickname: null,
         first_name: 'Ada',
@@ -79,7 +80,7 @@ describe('useMemberLookupState', () => {
 
     expect(outcome).toEqual({ success: true, mode: 'new_registration' })
     expect(result.current.matchedMember?.full_name).toBe('Ada Lovelace')
-    expect(result.current.verifiedMemberId).toBe(' WC-001 ')
+    expect(result.current.verifiedMemberId).toBe('WC-001')
     expect(result.current.isUpdateMode).toBe(false)
     expect(result.current.prefillResponses).toBeNull()
   })
@@ -88,6 +89,7 @@ describe('useMemberLookupState', () => {
     mockMutateAsync.mockResolvedValue({
       profile: {
         user_id: '81c4946d-edeb-4f88-97fc-c7632d94f8f5',
+        member_id: 'WC-002',
         full_name: 'Grace Hopper',
         nickname: null,
         first_name: 'Grace',
@@ -167,6 +169,7 @@ describe('useMemberLookupState', () => {
     mockMutateAsync.mockResolvedValue({
       profile: {
         user_id: '84446979-2e14-4812-a076-9360c4f92fc0',
+        member_id: 'WC-003',
         full_name: 'Alan Turing',
         nickname: null,
         first_name: 'Alan',

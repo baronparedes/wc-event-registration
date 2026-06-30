@@ -7,7 +7,6 @@ function Harness(props: {
   initialMemberId?: string
   isLookupPending?: boolean
   lookupErrorMessage?: string | null
-  shouldFadeLookupError?: boolean
   suppressLookupWarning?: boolean
   shouldHighlightInput?: boolean
   onLookupSubmit: (values: { memberId?: string; name?: string }) => void
@@ -27,12 +26,11 @@ function Harness(props: {
       onLookupSubmit={props.onLookupSubmit}
       isLookupPending={props.isLookupPending ?? false}
       lookupErrorMessage={props.lookupErrorMessage ?? null}
-      shouldFadeLookupError={props.shouldFadeLookupError}
       suppressLookupWarning={props.suppressLookupWarning}
       memberIdInputRef={{ current: null }}
       shouldHighlightInput={props.shouldHighlightInput}
       onDismissLookupError={props.onDismissLookupError}
-      allowNameLookup={props.allowNameLookup ?? false}
+      allowNameLookup={props.allowNameLookup ?? true}
     />
   )
 }
@@ -54,8 +52,13 @@ describe('MemberLookupStepCard', () => {
 
     render(<Harness onLookupSubmit={onLookupSubmit} />)
 
+    // Select the Member ID method
     await act(async () => {
-      fireEvent.input(screen.getByLabelText('Member ID'), {
+      fireEvent.click(screen.getByRole('button', { name: /Scan.*RFID/i }))
+    })
+
+    await act(async () => {
+      fireEvent.input(screen.getByLabelText(/Scan RFID or Member ID/i), {
         target: { value: 'WC-001' },
       })
     })
@@ -76,8 +79,11 @@ describe('MemberLookupStepCard', () => {
 
     render(<Harness onLookupSubmit={onLookupSubmit} isLookupPending />)
 
-    expect(screen.getByLabelText('Member ID')).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Checking...' })).toBeDisabled()
+    // When pending, the method selection buttons should be disabled
+    expect(screen.getByRole('button', { name: /Scan.*RFID/i })).toBeDisabled()
+    if (screen.queryByRole('button', { name: /Search by my name/i })) {
+      expect(screen.getByRole('button', { name: /Search by my name/i })).toBeDisabled()
+    }
   })
 
   it('shows and dismisses the lookup error panel', () => {
@@ -88,11 +94,13 @@ describe('MemberLookupStepCard', () => {
       <Harness
         onLookupSubmit={onLookupSubmit}
         lookupErrorMessage="We could not verify that entry. Please contact your administrator for support."
-        shouldFadeLookupError
         shouldHighlightInput
         onDismissLookupError={onDismissLookupError}
       />,
     )
+
+    // First select the method
+    fireEvent.click(screen.getByRole('button', { name: /Scan.*RFID/i }))
 
     expect(screen.getByText('Please check your entry')).toBeInTheDocument()
     expect(
@@ -101,7 +109,7 @@ describe('MemberLookupStepCard', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Dismiss member lookup warning')).toBeInTheDocument()
-    expect(screen.getByLabelText('Member ID')).toHaveClass('ring-2')
+    expect(screen.getByLabelText(/Scan RFID or Member ID/i)).toHaveClass('ring-2')
 
     fireEvent.click(screen.getByLabelText('Dismiss member lookup warning'))
 
@@ -119,7 +127,10 @@ describe('MemberLookupStepCard', () => {
       />,
     )
 
+    // First select the method
+    fireEvent.click(screen.getByRole('button', { name: /Scan.*RFID/i }))
+
     expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.getByText('Member ID')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Scan RFID or Member ID/i)).toBeInTheDocument()
   })
 })

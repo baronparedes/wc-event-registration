@@ -68,6 +68,8 @@ export function useUpdateEventMutation() {
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: adminEventQueryKey(id) })
+      // Invalidate all public event queries so registration pages see updated metadata (e.g. allow_name_lookup)
+      queryClient.invalidateQueries({ queryKey: ['public-event-by-slug'] })
     },
   })
 }

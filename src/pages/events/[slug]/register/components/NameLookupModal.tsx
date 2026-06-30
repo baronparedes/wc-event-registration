@@ -14,15 +14,25 @@ type NameLookupForm = z.infer<typeof nameLookupSchema>
 type NameLookupModalProps = {
   onSubmit: (name: string) => Promise<void>
   isLookupPending: boolean
+  variant?: 'link' | 'card'
+  autoOpen?: boolean
 }
 
 /**
  * Modal component for name-based member lookup in registration flow.
  * Renders via createPortal to document.body to avoid nesting inside parent form,
  * which ensures valid HTML and prevents form submission interference.
+ *
+ * @param variant - 'link' for subtle underlined text (default), 'card' for button-like appearance in dual-input layouts
+ * @param autoOpen - if true, opens modal automatically on mount (useful for progressive disclosure flows)
  */
-export function NameLookupModal({ onSubmit, isLookupPending }: NameLookupModalProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export function NameLookupModal({
+  onSubmit,
+  isLookupPending,
+  variant = 'link',
+  autoOpen = false,
+}: NameLookupModalProps) {
+  const [isOpen, setIsOpen] = useState(autoOpen)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -63,14 +73,27 @@ export function NameLookupModal({ onSubmit, isLookupPending }: NameLookupModalPr
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleOpen}
-        disabled={isLookupPending}
-        className="text-sm text-muted underline transition hover:text-text disabled:opacity-60"
-      >
-        Search your profile by name →
-      </button>
+      {variant === 'card' ? (
+        <Button
+          type="button"
+          onClick={handleOpen}
+          disabled={isLookupPending}
+          variant="outline"
+          size="md"
+          className="w-full justify-center"
+        >
+          {isLookupPending ? 'Searching...' : 'Search by name'}
+        </Button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleOpen}
+          disabled={isLookupPending}
+          className="text-sm text-muted underline transition hover:text-text disabled:opacity-60"
+        >
+          Don't have your ID? Search by your full name →
+        </button>
+      )}
 
       {isOpen &&
         createPortal(

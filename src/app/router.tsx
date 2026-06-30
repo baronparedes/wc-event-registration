@@ -2,8 +2,9 @@ import { lazy, Suspense, type ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ROUTE_PATHS } from '@/config/constants'
-import { AppShell } from '../components/layout/AppShell'
+import { AppShell, AppMobileShell } from '../components/layout'
 import { useAdminAuthQuery } from '../hooks/domain/auth'
+import { useIsMobileViewport } from '../hooks/utils'
 
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
@@ -73,6 +74,11 @@ function LazyRoute({ children }: { children: ReactElement }) {
   return <Suspense fallback={<RouteLoadingFallback />}>{children}</Suspense>
 }
 
+function ResponsiveShellLayout() {
+  const isMobile = useIsMobileViewport()
+  return isMobile ? <AppMobileShell /> : <AppShell />
+}
+
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const { data, isLoading } = useAdminAuthQuery()
 
@@ -100,7 +106,7 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
 export function AppRouter() {
   return (
     <Routes>
-      <Route element={<AppShell />}>
+      <Route element={<ResponsiveShellLayout />}>
         <Route
           path={ROUTE_PATHS.home}
           element={
