@@ -1,10 +1,11 @@
-Feature: ID-First Member Lookup
+Feature: Member Lookup by ID or Name
   As a public user registering for an event
-  I want to enter my member ID to look up my profile
+  I want to look up my member profile using either my member ID or my name
   So that I can verify my information and complete registration accurately
 
   Context: Business Rules
-    - ID lookup is the first and mandatory step in registration (core invariant)
+    - Member lookup is the first and mandatory step in registration (core invariant)
+    - Lookup can be performed by member ID or by member name (full or partial)
     - Lookup shows only essential information: member name and nickname
     - System prevents direct registration form access without lookup first
     - Lookup checks if member has an existing registration for this event
@@ -12,6 +13,8 @@ Feature: ID-First Member Lookup
     - Member lookup is normalized to avoid revealing whether an ID exists (anti-enumeration)
     - Lookup is rate-limited per IP and per member ID to prevent abuse
     - Member ID can be RFID badge ID, numeric identifier, or other unique identifier
+    - Name lookup performs case-insensitive partial matching
+    - If name lookup returns multiple matches, no results are displayed for security purposes; user must search again with their full registered name
 
   Scenario: Existing member successfully looks up profile
     Given I am registering for an open event
@@ -56,3 +59,38 @@ Feature: ID-First Member Lookup
     When I exceed the rate limit (e.g., 10 lookups per minute from my IP)
     Then I see a message: "Too many lookup attempts. Please try again in a few moments."
     And I must wait before I can look up another member ID
+
+  Scenario: Look up member by name
+    Given I am registering for an open event
+    And I don't have my member ID available
+    When I select the "Look up by name" option
+    And I enter my registered full name
+    And I click "Search"
+    Then my member profile appears with my name and nickname displayed
+    And I see a message confirming the lookup was successful
+    And I can proceed to the registration form
+
+  Scenario: Name lookup returns multiple matches
+    Given I am looking up by name
+    And multiple members have similar names in the system
+    When I search for a common or partial name
+    Then I see a message: "Multiple members found with that name. Please enter your full registered name to narrow results."
+    And no results are displayed
+    And I must try again with a more specific name (full registered name equivalent)
+    And I can enter my complete name to get an exact match
+
+  Scenario: Name lookup returns no matches
+    Given I enter a name that does not exist in the system
+    When I click "Search"
+    Then I see a message: "No members found with that name"
+    And I'm offered an option to try a different name
+    And I'm also offered an option to create a new member profile
+    And I cannot proceed with registration until a profile is found or created
+
+  Scenario: Switch between ID and name lookup
+    Given I am on the member lookup page
+    And I started with ID lookup but don't have my ID
+    When I click "Look up by name instead"
+    Then the lookup interface switches to name search
+    And my previous ID entry is cleared
+    And I can now enter a name to search
