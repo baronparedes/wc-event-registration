@@ -44,6 +44,7 @@ const DEFAULT_VALUES: CreateEventInput = {
   status: 'draft',
   duplicate_policy: 'block',
   registration_mode: 'open',
+  allow_name_lookup: false,
 }
 
 export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
@@ -81,6 +82,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   // Prefill form when editing an existing event
   useEffect(() => {
     if (isEditMode && existingEvent) {
+      const eventMetadata = (existingEvent.metadata ?? {}) as Record<string, unknown>
       reset({
         title: existingEvent.title,
         slug: existingEvent.slug,
@@ -93,6 +95,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         status: existingEvent.status,
         duplicate_policy: existingEvent.duplicate_policy,
         registration_mode: existingEvent.registration_mode,
+        allow_name_lookup: eventMetadata.allow_name_lookup === true,
       })
     }
   }, [isEditMode, existingEvent, reset])

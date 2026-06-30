@@ -144,7 +144,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   } = useErrorWithFadeout({
     fadeOutDelay: TIMING.registrationLookupFadeOutDelayMs,
     clearDelay: TIMING.registrationLookupClearDelayMs,
-    autoFadeOut: false,
+    autoFadeOut: true,
     onFadeStart: () => {
       const scrollBehavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)')
         .matches

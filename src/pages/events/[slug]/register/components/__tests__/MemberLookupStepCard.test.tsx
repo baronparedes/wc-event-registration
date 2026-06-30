@@ -10,12 +10,14 @@ function Harness(props: {
   shouldFadeLookupError?: boolean
   suppressLookupWarning?: boolean
   shouldHighlightInput?: boolean
-  onLookupSubmit: (values: { memberId: string }) => void
+  onLookupSubmit: (values: { memberId?: string; name?: string }) => void
   onDismissLookupError?: () => void
+  allowNameLookup?: boolean
 }) {
-  const form = useForm<{ memberId: string }>({
+  const form = useForm<{ memberId?: string; name?: string }>({
     defaultValues: {
       memberId: props.initialMemberId ?? '',
+      name: '',
     },
   })
 
@@ -30,6 +32,7 @@ function Harness(props: {
       memberIdInputRef={{ current: null }}
       shouldHighlightInput={props.shouldHighlightInput}
       onDismissLookupError={props.onDismissLookupError}
+      allowNameLookup={props.allowNameLookup ?? false}
     />
   )
 }
@@ -65,7 +68,7 @@ describe('MemberLookupStepCard', () => {
       expect(onLookupSubmit).toHaveBeenCalled()
     })
 
-    expect(onLookupSubmit.mock.calls[0]?.[0]).toEqual({ memberId: 'WC-001' })
+    expect(onLookupSubmit.mock.calls[0]?.[0]).toEqual({ memberId: 'WC-001', name: '' })
   })
 
   it('renders the pending state as disabled', () => {
@@ -84,15 +87,19 @@ describe('MemberLookupStepCard', () => {
     render(
       <Harness
         onLookupSubmit={onLookupSubmit}
-        lookupErrorMessage="We could not verify that Member ID."
+        lookupErrorMessage="We could not verify that entry. Please contact your administrator for support."
         shouldFadeLookupError
         shouldHighlightInput
         onDismissLookupError={onDismissLookupError}
       />,
     )
 
-    expect(screen.getByText('Please check your Member ID')).toBeInTheDocument()
-    expect(screen.getByText('We could not verify that Member ID.')).toBeInTheDocument()
+    expect(screen.getByText('Please check your entry')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'We could not verify that entry. Please contact your administrator for support.',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByLabelText('Dismiss member lookup warning')).toBeInTheDocument()
     expect(screen.getByLabelText('Member ID')).toHaveClass('ring-2')
 

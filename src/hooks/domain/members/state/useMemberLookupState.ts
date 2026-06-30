@@ -7,7 +7,8 @@ import type { MemberLookupProfile } from '@/lib/domain/members'
 import { useMemberLookupQuery } from '../queries/useMemberLookupQuery'
 
 const memberLookupSchema = z.object({
-  memberId: z.string().trim().min(1, 'Member ID is required').max(64, 'Member ID is too long'),
+  memberId: z.string().trim().max(64, 'Member ID is too long').optional(),
+  name: z.string().trim().max(200, 'Name is too long').optional(),
 })
 
 type MemberLookupFormValues = z.infer<typeof memberLookupSchema>
@@ -38,6 +39,7 @@ export type MemberLookupActions = {
 /**
  * Custom hook for managing member lookup state and logic.
  * Encapsulates all member verification, duplicate policy handling, and update mode logic.
+ * Supports both ID-first and name-based lookup modes.
  */
 export function useMemberLookupState(eventSlug: string | undefined, onMemberCleared?: () => void) {
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null)
@@ -52,6 +54,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
     resolver: zodResolver(memberLookupSchema),
     defaultValues: {
       memberId: '',
+      name: '',
     },
   })
 
@@ -79,9 +82,11 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
       clearMember()
 
       try {
-        logger.info('Member lookup attempt:', values.memberId)
+        logger.info('Member lookup attempt:', { memberId: values.memberId, name: values.name })
+
         const result = await lookupMutation.mutateAsync({
           memberId: values.memberId,
+          name: values.name,
           eventSlug: eventSlug || '',
         })
 
@@ -89,12 +94,11 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           setMatchedMember(null)
           setVerifiedMemberId(null)
           lookupForm.reset()
-          logger.warn('Member lookup returned null for ID:', values.memberId)
+          logger.warn('Member lookup returned null')
           // Return error state to caller via hook state
           return {
             success: false,
-            error:
-              'We could not verify that Member ID. Please contact your administrator for support.',
+            error: `We could not verify that entry. Please contact your administrator for support.`,
             reason: 'not_found',
           }
         }
@@ -105,10 +109,10 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           setIsRegistrationBlocked(true)
           setIsUpdateMode(false)
           setPrefillResponses(null)
-          setLockedStepMessage('Already registered for this event. Verify another member ID.')
+          setLockedStepMessage('Already registered for this event. Verify another member.')
           setMemberIdHighlight(true)
           lookupForm.reset()
-          logger.info('Duplicate registration blocked during lookup:', values.memberId)
+          logger.info('Duplicate registration blocked during lookup')
           return {
             success: false,
             error: 'You are already registered for this event.',
@@ -117,8 +121,9 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         }
 
         // Successful lookup - member found and eligible
+        const searchValue = values.memberId || values.name
         setMatchedMember(result.profile)
-        setVerifiedMemberId(values.memberId)
+        setVerifiedMemberId(searchValue || null)
         setIsRegistrationBlocked(false)
         setIsUpdateMode(Boolean(result.existing_registration?.edit_allowed))
         setPrefillResponses(result.existing_registration?.responses ?? null)

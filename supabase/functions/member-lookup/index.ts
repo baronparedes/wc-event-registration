@@ -8,7 +8,8 @@ import {
 } from '@/shared/security.ts'
 
 interface MemberLookupRequest {
-  memberId: string
+  memberId?: string
+  name?: string
   eventSlug?: string
 }
 
@@ -92,13 +93,19 @@ Deno.serve(async (req) => {
 
     // Parse and validate request
     const body = (await req.json()) as MemberLookupRequest
-    const { memberId, eventSlug } = body
+    const { memberId, name, eventSlug } = body
 
-    if (!memberId || typeof memberId !== 'string') {
+    // Infer lookup type from which field is provided
+    // Prefer memberId if both are provided; otherwise use name
+    const isIdLookup = Boolean(memberId?.trim())
+    const isNameLookup = !isIdLookup && Boolean(name?.trim())
+
+    // Validate that at least one search field is provided
+    if (!isIdLookup && !isNameLookup) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Invalid request: memberId is required and must be a string',
+          error: 'Invalid request: either memberId or name must be provided',
         }),
         {
           status: 400,
@@ -107,17 +114,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Normalize input (match existing RPC behavior)
-    const normalizedMemberId = memberId.trim()
-    if (!normalizedMemberId) {
-      return new Response(
-        JSON.stringify({ success: true, profile: null, existing_registration: null }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
+    const searchValue = isIdLookup ? memberId!.trim() : name!.trim()
 
     if (eventSlug !== undefined && typeof eventSlug !== 'string') {
       return new Response(
@@ -155,27 +152,68 @@ Deno.serve(async (req) => {
       },
     })
 
-    // Query users table directly for member lookup
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, full_name, nickname, first_name, last_name')
-      .eq('member_id', normalizedMemberId)
-      .maybeSingle()
+    // Query users table based on lookup type
+    let query = supabase.from('users').select('id, full_name, nickname, first_name, last_name')
+    let filteredData: typeof data = null
 
-    if (error) {
-      console.error('Query error:', error)
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Failed to lookup member',
-          detail: error.message,
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+    if (isIdLookup) {
+      query = query.eq('member_id', searchValue)
+      const { data } = await query.maybeSingle()
+      filteredData = data
+    } else {
+      // Name-based search: require (first_name or nickname) + last_name combination
+      // e.g., "Baron Paredes" matches first_name "Baron Patrick" + last_name "Paredes"
+      // e.g., "Bars Paredes" matches nickname "Bars" + last_name "Paredes"
+      const parts = searchValue.toLowerCase().split(/\s+/).filter(Boolean)
+
+      // Require minimum 2 parts: name + surname
+      if (parts.length < 2) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Invalid request: search with name and surname (e.g., "Baron Paredes")',
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        )
+      }
+
+      const surnameTerm = parts.pop()! // Last part is surname
+      const nameTerms = parts // Remaining parts are name
+
+      // Query all users matching the surname
+      const { data: results, error } = await query.ilike('last_name', surnameTerm)
+
+      if (error) {
+        console.error('Query error:', error)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to lookup member',
+            detail: error.message,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        )
+      }
+
+      // Filter to profiles matching ALL name terms in first_name or nickname
+      const filtered = results.filter((user) => {
+        const nameFieldsCombined = [user.first_name || '', user.nickname || '']
+          .join(' ')
+          .toLowerCase()
+        return nameTerms.every((term) => nameFieldsCombined.includes(term))
+      })
+
+      // Return exactly 1 match; multiple matches handled as no match for now
+      filteredData = filtered.length === 1 ? filtered[0] : null
     }
+
+    const data = filteredData
 
     // Transform response: rename id to user_id to match expected shape
     const profile = data
@@ -204,7 +242,7 @@ Deno.serve(async (req) => {
 
     const { data: eventData, error: eventError } = await supabase
       .from('events')
-      .select('id, duplicate_policy')
+      .select('id, duplicate_policy, metadata')
       .eq('slug', normalizedEventSlug)
       .maybeSingle()
 
@@ -234,6 +272,25 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
+    }
+
+    // Validate name lookup is enabled if name-based search is requested
+    if (isNameLookup) {
+      const eventMetadata = (eventData.metadata ?? {}) as Record<string, unknown>
+      const allowNameLookup = eventMetadata.allow_name_lookup === true
+      if (!allowNameLookup) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            profile: null,
+            existing_registration: null,
+          } as MemberLookupResponse),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        )
+      }
     }
 
     const { data: existingRegistration, error: registrationError } = await supabase

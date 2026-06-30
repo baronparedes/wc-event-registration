@@ -98,6 +98,11 @@ export function WizardEventRegistrationFlow() {
               memberIdInputRef={memberIdInputRef}
               shouldHighlightInput={memberLookup.memberIdHighlight}
               onDismissLookupError={clearLookupError}
+              allowNameLookup={
+                availability && 'event' in availability
+                  ? (availability.event?.metadata?.allow_name_lookup ?? false)
+                  : false
+              }
             />
           )}
 

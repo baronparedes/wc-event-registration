@@ -24,7 +24,7 @@ export function usePublicEventQuery(slug: string | undefined) {
       const { data, error } = await supabase
         .from('events')
         .select(
-          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, registration_mode',
+          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, registration_mode, metadata',
         )
         .eq('slug', slug)
         .maybeSingle<PublicEvent>()

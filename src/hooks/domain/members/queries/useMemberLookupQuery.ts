@@ -16,26 +16,43 @@ interface MemberLookupResponse {
 }
 
 const callMemberLookup = createEdgeFunctionCaller<
-  { memberId: string; eventSlug?: string },
+  { memberId?: string; name?: string; eventSlug?: string },
   MemberLookupResponse
 >('member-lookup')
 
+export type MemberLookupParams = {
+  memberId?: string
+  name?: string
+  eventSlug?: string
+}
+
 /**
- * Hook for member ID-first lookup in public registration flow.
- * Calls member-lookup Edge Function for ID verification and profile retrieval.
+ * Hook for member lookup in public registration flow.
+ * Supports both ID-first lookup and name-based lookup.
+ * Calls member-lookup Edge Function for member verification and profile retrieval.
+ * Edge Function infers lookup type from which field is provided.
  *
- * @returns React Query mutation for looking up member by ID
+ * @returns React Query mutation for looking up member by ID or name
  */
 export function useMemberLookupQuery() {
-  return useMutation<MemberLookupResult, Error, { memberId: string; eventSlug?: string }>({
-    mutationFn: async ({ memberId, eventSlug }) => {
-      const normalized = memberId.trim()
-      if (!normalized) {
+  return useMutation<MemberLookupResult, Error, MemberLookupParams>({
+    mutationFn: async ({ memberId, name, eventSlug }) => {
+      const normalizedMemberId = (memberId ?? '').trim()
+      const normalizedName = (name ?? '').trim()
+
+      if (!normalizedMemberId && !normalizedName) {
         return { profile: null, existing_registration: null }
       }
 
-      logger.debug('Looking up member:', normalized)
-      const response = await callMemberLookup({ memberId: normalized, eventSlug })
+      logger.debug('Looking up member:', {
+        memberId: normalizedMemberId || undefined,
+        name: normalizedName || undefined,
+      })
+      const response = await callMemberLookup({
+        memberId: normalizedMemberId || undefined,
+        name: normalizedName || undefined,
+        eventSlug,
+      })
       return {
         profile: response.profile,
         existing_registration: response.existing_registration,

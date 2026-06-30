@@ -116,7 +116,7 @@ describe('useMemberLookupState', () => {
     })
     expect(result.current.isRegistrationBlocked).toBe(true)
     expect(result.current.lockedStepMessage).toBe(
-      'Already registered for this event. Verify another member ID.',
+      'Already registered for this event. Verify another member.',
     )
     expect(result.current.memberIdHighlight).toBe(true)
   })
@@ -134,7 +134,7 @@ describe('useMemberLookupState', () => {
 
     expect(outcome).toEqual({
       success: false,
-      error: 'We could not verify that Member ID. Please contact your administrator for support.',
+      error: 'We could not verify that entry. Please contact your administrator for support.',
       reason: 'not_found',
     })
     expect(mockLoggerWarn).toHaveBeenCalled()

@@ -1,10 +1,11 @@
-import type { UseFormRegister } from 'react-hook-form'
+import type { UseFormRegister, UseFormWatch } from 'react-hook-form'
 import type { CreateEventInput } from '@/lib/domain/events'
 import { FormSelectField } from '@/components/ui/FormSelectField'
 import { SectionCard } from '@/components/ui/SectionCard'
 
 type EventRegistrationSettingsSectionProps = {
   register: UseFormRegister<CreateEventInput>
+  watch?: UseFormWatch<CreateEventInput>
   disabled?: boolean
 }
 
@@ -39,6 +40,24 @@ export function EventRegistrationSettingsSection({
             registration={register('registration_mode')}
             required
           />
+        </div>
+
+        <div className="rounded-lg border border-border bg-background p-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="allow-name-lookup"
+              disabled={disabled}
+              {...register('allow_name_lookup')}
+              className="h-4 w-4 cursor-pointer rounded border-border"
+            />
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-text">Allow name-based lookup</span>
+              <span className="text-xs text-muted">
+                Members can search by name if they don't have their RFID
+              </span>
+            </div>
+          </label>
         </div>
       </div>
     </SectionCard>

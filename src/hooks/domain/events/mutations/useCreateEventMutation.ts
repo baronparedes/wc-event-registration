@@ -47,6 +47,9 @@ export function useCreateEventMutation() {
           duplicate_policy: input.duplicate_policy,
           registration_mode: input.registration_mode,
           require_id_lookup: true,
+          metadata: {
+            allow_name_lookup: input.allow_name_lookup ?? false,
+          },
           created_by_admin_id: createdByAdminId,
         })
         .select('id')

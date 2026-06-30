@@ -225,20 +225,22 @@ describe('AdminEventFormPage', () => {
     fireEvent.click(saveButton)
 
     await waitFor(() => {
-      expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
-        id: 'event-1',
-        title: 'Updated Event Title',
-        slug: 'original-event',
-        description: 'Existing description',
-        location: 'Main Hall',
-        starts_at: '2026-07-01T10:00',
-        ends_at: '2026-07-01T12:00',
-        registration_opens_at: '2026-06-01T10:00',
-        registration_closes_at: '2026-06-30T10:00',
-        status: 'draft',
-        duplicate_policy: 'block',
-        registration_mode: 'open',
-      })
+      expect(mockUpdateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'event-1',
+          title: 'Updated Event Title',
+          slug: 'original-event',
+          description: 'Existing description',
+          location: 'Main Hall',
+          starts_at: '2026-07-01T10:00',
+          ends_at: '2026-07-01T12:00',
+          registration_opens_at: '2026-06-01T10:00',
+          registration_closes_at: '2026-06-30T10:00',
+          status: 'draft',
+          duplicate_policy: 'block',
+          registration_mode: 'open',
+        }),
+      )
     })
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Event updated successfully.')

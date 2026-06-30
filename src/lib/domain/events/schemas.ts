@@ -49,6 +49,7 @@ export const createEventSchema = z
     status: z.enum(['draft', 'published', 'archived']),
     duplicate_policy: z.enum(['block', 'allow_update']),
     registration_mode: z.enum(['open', 'closed']),
+    allow_name_lookup: z.boolean().optional(),
   })
   .superRefine(applyDateRangeChecks)
 
@@ -66,6 +67,7 @@ export const updateEventSchema = z
     status: z.enum(['draft', 'published', 'archived']),
     duplicate_policy: z.enum(['block', 'allow_update']),
     registration_mode: z.enum(['open', 'closed']),
+    allow_name_lookup: z.boolean().optional(),
   })
   .superRefine(applyDateRangeChecks)
 

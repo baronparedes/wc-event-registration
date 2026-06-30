@@ -35,6 +35,9 @@ export type PublicEvent = {
   registration_opens_at: string | null
   registration_closes_at: string | null
   registration_mode: RegistrationMode
+  metadata?: {
+    allow_name_lookup?: boolean
+  }
 }
 
 export type EventAvailability =

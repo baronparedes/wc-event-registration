@@ -36,6 +36,7 @@ export function SaveConfirmationDialog({
     status: 'Status',
     registration_mode: 'Registration Status',
     duplicate_policy: 'Re-registration Policy',
+    allow_name_lookup: 'Allow Name Lookup',
   }
 
   return (
