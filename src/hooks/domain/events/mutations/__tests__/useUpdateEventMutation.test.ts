@@ -100,6 +100,7 @@ describe('useUpdateEventMutation', () => {
         status: 'published',
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
+        allow_public_registrations: false,
       })
     })
 
@@ -114,6 +115,7 @@ describe('useUpdateEventMutation', () => {
       status: 'published',
       duplicate_policy: 'allow_update',
       registration_mode: 'open',
+      allow_public_registrations: false,
     })
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'update_event',
@@ -127,6 +129,7 @@ describe('useUpdateEventMutation', () => {
           'status',
           'duplicate_policy',
           'registration_mode',
+          'allow_public_registrations',
         ],
       },
     })
@@ -138,7 +141,20 @@ describe('useUpdateEventMutation', () => {
   })
 
   it('throws when event update fails', async () => {
-    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null })
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        title: 'Old Title',
+        description: 'old',
+        location: 'old',
+        starts_at: null,
+        ends_at: null,
+        registration_opens_at: null,
+        registration_closes_at: null,
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+      },
+    })
     mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
 
     const { result } = renderHookWithClient(() => useUpdateEventMutation())
@@ -180,6 +196,7 @@ describe('useUpdateEventMutation', () => {
         status: 'published',
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
+        allow_public_registrations: true,
       })
     })
 
@@ -197,6 +214,7 @@ describe('useUpdateEventMutation', () => {
             'status',
             'duplicate_policy',
             'registration_mode',
+            'allow_public_registrations',
           ],
         },
       }),

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button'
+import { StepIndicator } from '@/components/ui/StepIndicator'
 import {
   DynamicFieldsStepCard,
   EventHeaderCard,
@@ -6,7 +7,7 @@ import {
   MemberLookupStepCard,
   ProfileStepCard,
 } from '@/pages/events/[slug]/register/components'
-import { stepBadgeClassName, useEventRegistrationPageState } from '../hooks'
+import { useEventRegistrationPageState } from '../hooks'
 import './WizardEventRegistrationFlow.css'
 
 export function WizardEventRegistrationFlow() {
@@ -53,42 +54,15 @@ export function WizardEventRegistrationFlow() {
 
       {isGateReady ? (
         <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-surface px-5 py-4 shadow-xs">
-            <p className="text-sm font-semibold uppercase tracking-wide text-muted">
-              Registration steps
-            </p>
-            <div className="mt-3 flex items-center gap-3 text-base">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-base font-semibold ${stepBadgeClassName(activeWizardStep, 1)}`}
-                >
-                  1
-                </span>
-                <span className="text-text">Scan</span>
-              </div>
-              <div className="h-px flex-1 bg-border" aria-hidden="true" />
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-base font-semibold ${stepBadgeClassName(activeWizardStep, 2)}`}
-                >
-                  2
-                </span>
-                <span className="text-text">Confirm</span>
-              </div>
-              <div className="h-px flex-1 bg-border" aria-hidden="true" />
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-base font-semibold ${stepBadgeClassName(activeWizardStep, 3)}`}
-                >
-                  3
-                </span>
-                <span className="text-text">Complete</span>
-              </div>
-            </div>
-          </div>
+          <StepIndicator
+            currentStep={activeWizardStep}
+            totalSteps={3}
+            labels={['Scan', 'Confirm', 'Complete']}
+          />
 
           {activeWizardStep === 1 && (
             <MemberLookupStepCard
+              slug={slug}
               lookupForm={memberLookup.lookupForm}
               onLookupSubmit={handleLookupSubmit}
               isLookupPending={memberLookup.isLookupPending}
@@ -98,8 +72,13 @@ export function WizardEventRegistrationFlow() {
               shouldHighlightInput={memberLookup.memberIdHighlight}
               onDismissLookupError={clearLookupError}
               allowNameLookup={
-                availability && 'event' in availability
-                  ? (availability.event?.metadata?.allow_name_lookup ?? false)
+                availability?.status === 'available' && availability.event
+                  ? Boolean(availability.event.metadata?.allow_name_lookup)
+                  : false
+              }
+              allowPublicRegistration={
+                availability?.status === 'available' && availability.event
+                  ? Boolean(availability.event.allow_public_registrations)
                   : false
               }
             />

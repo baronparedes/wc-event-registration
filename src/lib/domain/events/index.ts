@@ -3,7 +3,6 @@ export type {
   DuplicatePolicy,
   RegistrationMode,
   AdminEvent,
-  PublicEvent,
   EventAvailability,
   PublicEventListingItem,
   DynamicFieldAnswerPreview,

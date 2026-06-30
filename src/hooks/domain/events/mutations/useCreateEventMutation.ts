@@ -46,6 +46,7 @@ export function useCreateEventMutation() {
           status: input.status,
           duplicate_policy: input.duplicate_policy,
           registration_mode: input.registration_mode,
+          allow_public_registrations: input.allow_public_registrations ?? false,
           require_id_lookup: true,
           metadata: {
             allow_name_lookup: input.allow_name_lookup ?? false,

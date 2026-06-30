@@ -1,9 +1,11 @@
 import { useForm } from 'react-hook-form'
+import { BrowserRouter } from 'react-router-dom'
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemberLookupStepCard } from '../MemberLookupStepCard'
 
 function Harness(props: {
+  slug?: string
   initialMemberId?: string
   isLookupPending?: boolean
   lookupErrorMessage?: string | null
@@ -12,6 +14,7 @@ function Harness(props: {
   onLookupSubmit: (values: { memberId?: string; name?: string }) => void
   onDismissLookupError?: () => void
   allowNameLookup?: boolean
+  allowPublicRegistration?: boolean
 }) {
   const form = useForm<{ memberId?: string; name?: string }>({
     defaultValues: {
@@ -21,17 +24,21 @@ function Harness(props: {
   })
 
   return (
-    <MemberLookupStepCard
-      lookupForm={form}
-      onLookupSubmit={props.onLookupSubmit}
-      isLookupPending={props.isLookupPending ?? false}
-      lookupErrorMessage={props.lookupErrorMessage ?? null}
-      suppressLookupWarning={props.suppressLookupWarning}
-      memberIdInputRef={{ current: null }}
-      shouldHighlightInput={props.shouldHighlightInput}
-      onDismissLookupError={props.onDismissLookupError}
-      allowNameLookup={props.allowNameLookup ?? true}
-    />
+    <BrowserRouter>
+      <MemberLookupStepCard
+        slug={props.slug ?? 'test-event'}
+        lookupForm={form}
+        onLookupSubmit={props.onLookupSubmit}
+        isLookupPending={props.isLookupPending ?? false}
+        lookupErrorMessage={props.lookupErrorMessage ?? null}
+        suppressLookupWarning={props.suppressLookupWarning}
+        memberIdInputRef={{ current: null }}
+        shouldHighlightInput={props.shouldHighlightInput}
+        onDismissLookupError={props.onDismissLookupError}
+        allowNameLookup={props.allowNameLookup ?? true}
+        allowPublicRegistration={props.allowPublicRegistration}
+      />
+    </BrowserRouter>
   )
 }
 

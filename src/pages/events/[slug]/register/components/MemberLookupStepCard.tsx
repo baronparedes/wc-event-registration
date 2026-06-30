@@ -1,4 +1,5 @@
 import { useState, type RefObject } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
 import { Button } from '@/components/ui/Button'
 import { SectionCard } from '@/components/ui/SectionCard'
@@ -10,6 +11,7 @@ const baseInputClassName =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20'
 
 type MemberLookupStepCardProps = {
+  slug?: string
   lookupForm: UseFormReturn<{ memberId?: string; name?: string }>
   onLookupSubmit: SubmitHandler<{ memberId?: string; name?: string }>
   isLookupPending: boolean
@@ -19,10 +21,13 @@ type MemberLookupStepCardProps = {
   shouldHighlightInput?: boolean
   onDismissLookupError?: () => void
   allowNameLookup: boolean
+  allowPublicRegistration?: boolean
 }
 
 export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
+  const navigate = useNavigate()
   const {
+    slug,
     lookupForm,
     onLookupSubmit,
     isLookupPending,
@@ -32,6 +37,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     shouldHighlightInput = false,
     onDismissLookupError,
     allowNameLookup,
+    allowPublicRegistration = false,
   } = props
 
   const { ref: memberIdRef, ...memberIdRest } = lookupForm.register('memberId')
@@ -144,6 +150,19 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
           onDismiss={onDismissLookupError}
         />
       </SectionCard>
+
+      {/* Guest/non-member registration option */}
+      {slug && allowPublicRegistration && (
+        <div className="flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => navigate(`/events/${slug}/register-public`)}
+            className="text-sm text-primary underline transition hover:text-primary/80"
+          >
+            Not a Member? Register as guest
+          </button>
+        </div>
+      )}
     </>
   )
 }

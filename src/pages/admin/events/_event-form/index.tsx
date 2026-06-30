@@ -45,6 +45,7 @@ const DEFAULT_VALUES: CreateEventInput = {
   duplicate_policy: 'block',
   registration_mode: 'open',
   allow_name_lookup: false,
+  allow_public_registrations: false,
 }
 
 export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
@@ -96,6 +97,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         duplicate_policy: existingEvent.duplicate_policy,
         registration_mode: existingEvent.registration_mode,
         allow_name_lookup: eventMetadata.allow_name_lookup === true,
+        allow_public_registrations: existingEvent.allow_public_registrations ?? false,
       })
     }
   }, [isEditMode, existingEvent, reset])

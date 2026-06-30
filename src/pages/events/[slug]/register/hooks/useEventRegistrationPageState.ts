@@ -72,7 +72,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   const [wizardStepSecondsRemaining, setWizardStepSecondsRemaining] = useState<number | null>(null)
 
   const submitMutation = useSubmitRegistrationMutation()
-  const eventQuery = usePublicEventQuery(slug)
+  const eventQuery = usePublicEventQuery(slug ?? null)
   const memberLookup = useMemberLookupState(slug)
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     defaultValues: {},

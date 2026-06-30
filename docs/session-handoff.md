@@ -1,6 +1,27 @@
 # Session Handoff
 
-Last updated: 2026-06-28
+Last updated: 2026-06-30
+
+## Current Session Work (2026-06-30)
+
+### Scope Completed This Session
+
+- Updated public registration Step 1 duplicate handling to validate by submitted email before advancing.
+- Moved duplicate feedback into the Step 1 Email input error (inline field-level messaging).
+- Updated public confirmation "Return to Event" to route to member registration flow.
+- Added Step 3 confirmation kiosk timeout: 30-second auto-return to member registration.
+- Added feature documentation for public self-registration behavior.
+
+### Files Added/Updated
+
+- Added [docs/features/1-public-registration/1.5-public-self-registration.feature](docs/features/1-public-registration/1.5-public-self-registration.feature)
+- Updated [docs/features/README.md](docs/features/README.md) public registration feature count and list
+- Updated [docs/session-handoff.md](docs/session-handoff.md) with this session summary
+
+### Notes
+
+- Existing Step 1-2 kiosk inactivity behavior remains unchanged.
+- Step 3 confirmation now uses a dedicated 30-second timeout path.
 
 ## Current Session Work (2026-06-28)
 

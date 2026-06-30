@@ -4,93 +4,53 @@ Feature: View Event Registrations
   So that I can manage and monitor who has registered
 
   Context: Business Rules
-    - Registrations list shows all registrations for a specific event regardless of status (submitted, updated, cancelled)
-    - Each registration shows: Member ID, Full Name, Email, Role, Category, Registration Status, Submission Date
-    - Registrations are paginated with configurable page size (20, 50, or 100 per page)
-    - Admin can search registrations by member ID or member name (with debounce)
-    - Admin can filter registrations by status (Submitted, Updated, Cancelled)
-    - Registrations are sorted by submission date (newest first by default, optionally changeable)
-    - Total registration count displayed
-    - Quick-action buttons for each registration: View Details, Cancel, Reactivate (if cancelled), etc.
-    - CSV Export button available for entire event's registrations
+    - Registrations list shows all member registrations for one event regardless of status (Submitted, Updated, Cancelled)
+    - Each row shows: Member ID, Name, Email, Role, Category, Status, Submitted date, and Actions
+    - Search supports member name, member ID, and email with debounce
+    - Pagination supports page size options 10, 25, and 50
+    - Actions are status-based: View plus Cancel for active rows, or View plus Reactivate for cancelled rows
+    - If event is archived, row actions that change status are disabled
+    - Export as CSV is available on the page
+    - Admin can navigate to a dedicated Public Registrations page from this view
 
   Scenario: View all registrations for an event
     Given I'm on an event's Registrations page
     When the page loads
-    Then I see a table with all registrations showing:
-      - Member ID
-      - Full Name
-      - Email
-      - Role and Category
-      - Registration Status (Submitted, Updated, Cancelled)
-      - Submission Date and time
-      - Action buttons (View Details, Cancel, etc.)
+    Then I see a table of member registrations for that event
+    And each row includes member details, status, submitted date, and actions
 
   Scenario: See active registrations (non-cancelled)
     Given registrations exist with both active and cancelled status
     When I view the registrations list
-    Then active registrations (Submitted/Updated) show:
-      - Full details visible
-      - "Cancel" and "View Details" buttons enabled
+    Then active rows show View and Cancel actions
 
   Scenario: See cancelled registrations
     Given registrations with Cancelled status exist
     When I view the registrations list
-    Then cancelled registrations show:
-      - Same details as active (preserved data)
-      - Status badge: "Cancelled"
-      - "Reactivate" and "View Details" buttons enabled
-      - "Cancel" button disabled/hidden (already cancelled)
+    Then cancelled rows show View and Reactivate actions
+    And cancelled status is visibly labeled
 
-  Scenario: Search registrations by member ID
+  Scenario: Search registrations by member ID, name, or email
     Given I'm on the registrations list
-    When I enter a member ID in the search box
-    And I wait for debounce (or press Enter)
-    Then the list filters to show only matching member ID
-    And I can clear search to see all registrations again
-
-  Scenario: Search registrations by member name
-    Given I'm on the registrations list
-    When I enter a member's name in the search box
+    When I enter part of a member ID, name, or email in search
     And I wait for debounce
-    Then the list filters to show matching registrations by member name
-    And partial matches work (e.g., "John" finds "John Smith")
-    And search is case-insensitive
-
-  Scenario: Filter by registration status
-    Given registrations with mixed statuses exist (Submitted, Updated, Cancelled)
-    When I click a status filter (Submitted, Updated, Cancelled)
-    Then the list shows only registrations with that status
-    And other statuses are hidden
-    And filter persists as I navigate pages
+    Then the list filters to matching registrations
+    And I can clear search to see all registrations again
 
   Scenario: Navigate between pages of registrations
     Given more than one page of registrations exists
     When I view page 1
-    And I click "Next" or page number button
+    And I click next page
     Then I navigate to the next page
     And registrations on that page load
-    And search/filter selections are preserved
+    And active search is preserved
 
   Scenario: Change page size for registrations
     Given I'm viewing the registrations list
     When I click the page size dropdown
-    And I select 50 per page (from options 20, 50, 100)
+    And I select a size from 10, 25, or 50
     Then the page reloads showing 50 registrations
     And pagination controls update
-    And my preference is remembered
-
-  Scenario: Sort registrations by submission date
-    Given registrations are displayed
-    When I click the "Submission Date" column header
-    Then registrations sort by date
-    And clicking again reverses sort order (newest/oldest)
-    And current sort indicator shows on column header
-
-  Scenario: See total registration count
-    Given I'm on the registrations list
-    Then I see a count display: "Showing X of Y registrations"
-    And this reflects current filter/search results
 
   Scenario: No registrations yet
     Given an event has no registrations
@@ -103,6 +63,12 @@ Feature: View Event Registrations
     Given registrations exist for this event
     When I click "Export as CSV"
     Then a CSV file is generated and downloaded
-    And filename includes event name and export date: "event-slug_registrations_2026-06-28.csv"
+    And filename includes event name or event identifier and export date
     And CSV includes: Member ID, Name, Email, Role, Category, Status, all field responses
     And cancelled registrations are included with status marked
+
+  Scenario: Archived event disables status-changing actions
+    Given the event is archived
+    When I view the registrations list
+    Then Cancel and Reactivate actions are disabled
+    And View remains available
