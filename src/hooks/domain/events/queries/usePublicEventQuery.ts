@@ -41,14 +41,6 @@ export function usePublicEventQuery(slug: string | null) {
       const opensAt = data.registration_opens_at ? Date.parse(data.registration_opens_at) : null
       const closesAt = data.registration_closes_at ? Date.parse(data.registration_closes_at) : null
 
-      if (!data.allow_public_registrations) {
-        return {
-          status: 'unavailable',
-          reason: 'not_found_or_unpublished',
-          event: data,
-        } as EventAvailability
-      }
-
       if (data.registration_mode !== 'open') {
         return {
           status: 'unavailable',

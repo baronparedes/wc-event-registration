@@ -1,4 +1,5 @@
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
+import { Info } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
 import type { MemberLookupProfile } from '@/lib/domain/members'
@@ -160,36 +161,50 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </div>
       )}
 
-      {matchedMember && !isLocked && !isLoadingFields && activeFields.length === 0 && (
-        <p className="registration-status-panel mt-3 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text">
-          There are no form questions for this event yet.
-        </p>
-      )}
-
-      {matchedMember && !isLocked && !isLoadingFields && activeFields.length > 0 && (
+      {matchedMember && !isLocked && !isLoadingFields && (
         <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
-          {activeFields.map((field) => {
-            const errorMessage = fieldErrorMessage(field.field_key)
-
-            return (
-              <div key={field.id} className="space-y-1">
-                <label
-                  className="registration-field-label text-sm font-medium text-text"
-                  htmlFor={`field-${field.field_key}`}
-                >
-                  {field.label}
-                  {field.is_required && <span className="text-danger"> *</span>}
-                </label>
-                {field.help_text && (
-                  <p className="registration-field-help text-xs text-muted">{field.help_text}</p>
-                )}
-                <DynamicFieldInput field={field} dynamicForm={dynamicForm} />
-                {errorMessage && (
-                  <p className="registration-field-error text-sm text-danger">{errorMessage}</p>
-                )}
+          {activeFields.length === 0 && (
+            <div
+              aria-live="polite"
+              className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-blue-600 bg-blue-100 px-4 py-3 text-sm text-blue-950 shadow-md"
+            >
+              <span
+                aria-hidden="true"
+                className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary text-white ring-1 ring-primary/30"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </span>
+              <div className="space-y-1">
+                <p className="registration-status-title text-base font-semibold leading-6">
+                  Tap "Submit Registration" to confirm your attendance for this event.
+                </p>
               </div>
-            )
-          })}
+            </div>
+          )}
+
+          {activeFields.length > 0 &&
+            activeFields.map((field) => {
+              const errorMessage = fieldErrorMessage(field.field_key)
+
+              return (
+                <div key={field.id} className="space-y-1">
+                  <label
+                    className="registration-field-label text-sm font-medium text-text"
+                    htmlFor={`field-${field.field_key}`}
+                  >
+                    {field.label}
+                    {field.is_required && <span className="text-danger"> *</span>}
+                  </label>
+                  {field.help_text && (
+                    <p className="registration-field-help text-xs text-muted">{field.help_text}</p>
+                  )}
+                  <DynamicFieldInput field={field} dynamicForm={dynamicForm} />
+                  {errorMessage && (
+                    <p className="registration-field-error text-sm text-danger">{errorMessage}</p>
+                  )}
+                </div>
+              )
+            })}
 
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={isSubmitPending} size="md" type="submit" variant="default">

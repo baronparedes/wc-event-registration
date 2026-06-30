@@ -7,7 +7,7 @@ import type { MemberLookupProfile } from '@/lib/domain/members'
 
 const matchedMember: MemberLookupProfile = {
   user_id: 'user-1',
-  member_id: 'WC-001',
+  member_id: 'member-1',
   full_name: 'Jane Doe',
   nickname: null,
   first_name: 'Jane',
@@ -256,7 +256,7 @@ function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsSte
 }
 
 describe('DynamicFieldsStepCard', () => {
-  it('renders the loading, error, empty, and locked branches', () => {
+  it('renders the loading, error, no-fields note, and locked branches', () => {
     const loading = renderCard({ isLoadingFields: true })
 
     expect(loading.container.querySelector('[aria-hidden="true"]')).toBeTruthy()
@@ -277,7 +277,10 @@ describe('DynamicFieldsStepCard', () => {
     issues.unmount()
 
     const empty = renderCard({ activeFields: [], isLoadingFields: false })
-    expect(screen.getByText('There are no form questions for this event yet.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Tap "Submit Registration" to confirm your attendance for this event.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Submit Registration' })).toBeInTheDocument()
     empty.unmount()
 
     renderCard({
@@ -360,5 +363,25 @@ describe('DynamicFieldsStepCard', () => {
     expect(screen.getByText('Server error')).toBeInTheDocument()
     expect(screen.getByText('You are all set!')).toBeInTheDocument()
     expect(screen.getByText('Registration submitted successfully.')).toBeInTheDocument()
+  })
+
+  it('allows submission when there are no dynamic fields', async () => {
+    const onSubmit = vi.fn()
+
+    renderCard({
+      activeFields: [],
+      isLoadingFields: false,
+      onSubmit,
+    })
+
+    expect(
+      screen.getByText('Tap "Submit Registration" to confirm your attendance for this event.'),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Registration' }))
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled()
+    })
   })
 })

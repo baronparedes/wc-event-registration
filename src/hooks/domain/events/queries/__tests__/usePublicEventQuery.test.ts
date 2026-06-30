@@ -81,6 +81,43 @@ describe('usePublicEventQuery', () => {
     })
   })
 
+  it('keeps event accessible when guest registration is disabled', async () => {
+    mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'evt-1b',
+        slug: 'member-only-event',
+        title: 'Member Only Event',
+        registration_mode: 'open',
+        registration_opens_at: '2026-06-01T00:00:00.000Z',
+        registration_closes_at: '2026-07-01T00:00:00.000Z',
+        allow_public_registrations: false,
+      },
+      error: null,
+    })
+
+    mockRpc.mockResolvedValueOnce({ data: 4, error: null })
+
+    const { result } = renderHookWithClient(() => usePublicEventQuery('member-only-event'))
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual({
+      status: 'available',
+      event: {
+        id: 'evt-1b',
+        slug: 'member-only-event',
+        title: 'Member Only Event',
+        registration_mode: 'open',
+        registration_opens_at: '2026-06-01T00:00:00.000Z',
+        registration_closes_at: '2026-07-01T00:00:00.000Z',
+        allow_public_registrations: false,
+      },
+      registration_count: 4,
+    })
+  })
+
   it('returns unavailable not_found_or_unpublished when event is missing', async () => {
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: null,
