@@ -6,6 +6,10 @@ import {
   isOriginAllowed,
   readAllowedOrigins,
 } from '@/shared/security.ts'
+import {
+  errorResponse as sharedErrorResponse,
+  successResponse as sharedSuccessResponse,
+} from '@/shared/http.ts'
 
 interface MemberLookupRequest {
   memberId?: string
@@ -27,18 +31,6 @@ interface ExistingRegistrationState {
   edit_allowed: boolean
   status: 'submitted' | 'updated' | 'cancelled'
   responses: Record<string, unknown>
-}
-
-interface MemberLookupResponse {
-  success: true
-  profile: MemberLookupProfile | null
-  existing_registration: ExistingRegistrationState | null
-}
-
-type MemberLookupErrorBody = {
-  success: false
-  error: string
-  detail?: string
 }
 
 type AnswerRow = {
@@ -72,42 +64,6 @@ type ExistingRegistrationLookupResult = {
 
 function normalizeName(value: string | null | undefined) {
   return (value ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
-}
-
-function jsonResponse(
-  corsHeaders: Record<string, string>,
-  body: MemberLookupResponse | MemberLookupErrorBody,
-  status: number,
-) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
-}
-
-function successResponse(
-  corsHeaders: Record<string, string>,
-  profile: MemberLookupProfile | null,
-  existingRegistration: ExistingRegistrationState | null,
-) {
-  return jsonResponse(
-    corsHeaders,
-    {
-      success: true,
-      profile,
-      existing_registration: existingRegistration,
-    },
-    200,
-  )
-}
-
-function errorResponse(
-  corsHeaders: Record<string, string>,
-  status: number,
-  error: string,
-  detail?: string,
-) {
-  return jsonResponse(corsHeaders, { success: false, error, detail }, status)
 }
 
 function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
@@ -270,7 +226,7 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return errorResponse(corsHeaders, 405, 'Method not allowed')
+    return sharedErrorResponse(corsHeaders, 405, 'Method not allowed')
   }
 
   const rateLimitResponse = enforcePublicRateLimit({
@@ -292,7 +248,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured')
+      return sharedErrorResponse(corsHeaders, 500, 'Environment not configured')
     }
 
     // 1.3 Parse payload and validate request input.
@@ -306,7 +262,7 @@ Deno.serve(async (req) => {
 
     // Validate that at least one search field is provided
     if (!isIdLookup && !isNameLookup) {
-      return errorResponse(
+      return sharedErrorResponse(
         corsHeaders,
         400,
         'Invalid request: either memberId or name must be provided',
@@ -314,7 +270,7 @@ Deno.serve(async (req) => {
     }
 
     if (eventSlug !== undefined && typeof eventSlug !== 'string') {
-      return errorResponse(
+      return sharedErrorResponse(
         corsHeaders,
         400,
         'Invalid request: eventSlug must be a string when provided',
@@ -324,7 +280,7 @@ Deno.serve(async (req) => {
     const normalizedEventSlug = eventSlug?.trim()
 
     if (eventSlug !== undefined && !normalizedEventSlug) {
-      return errorResponse(corsHeaders, 400, 'Invalid request: eventSlug cannot be blank')
+      return sharedErrorResponse(corsHeaders, 400, 'Invalid request: eventSlug cannot be blank')
     }
 
     // 1.4 Create Supabase service-role client.
@@ -342,7 +298,7 @@ Deno.serve(async (req) => {
       const eventResult = await getEventBySlug(supabase, normalizedEventSlug)
 
       if (eventResult.error) {
-        return errorResponse(corsHeaders, 500, 'Failed to lookup event', eventResult.error)
+        return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup event', eventResult.error)
       }
 
       eventData = eventResult.data
@@ -351,13 +307,21 @@ Deno.serve(async (req) => {
     // 1.6 Enforce event name-lookup policy before running name search.
     if (isNameLookup && normalizedEventSlug) {
       if (!eventData) {
-        return successResponse(corsHeaders, null, null)
+        return sharedSuccessResponse(
+          corsHeaders,
+          { profile: null, existing_registration: null },
+          200,
+        )
       }
 
       const eventMetadata = (eventData.metadata ?? {}) as Record<string, unknown>
       const allowNameLookup = eventMetadata.allow_name_lookup === true
       if (!allowNameLookup) {
-        return successResponse(corsHeaders, null, null)
+        return sharedSuccessResponse(
+          corsHeaders,
+          { profile: null, existing_registration: null },
+          200,
+        )
       }
     }
 
@@ -377,7 +341,7 @@ Deno.serve(async (req) => {
       const lookupResult = await findUserByNameOrNickname(baseQuery, normalizedSearchValue)
       if (lookupResult.error) {
         console.error('Query error:', lookupResult.error)
-        return errorResponse(corsHeaders, 500, 'Failed to lookup member', lookupResult.error)
+        return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup member', lookupResult.error)
       }
       filteredData = lookupResult.data
     }
@@ -386,11 +350,11 @@ Deno.serve(async (req) => {
     const profile = toProfile(filteredData)
 
     if (!profile || !normalizedEventSlug) {
-      return successResponse(corsHeaders, profile, null)
+      return sharedSuccessResponse(corsHeaders, { profile, existing_registration: null }, 200)
     }
 
     if (!eventData) {
-      return successResponse(corsHeaders, profile, null)
+      return sharedSuccessResponse(corsHeaders, { profile, existing_registration: null }, 200)
     }
 
     // Step 3: Registration Lookup
@@ -404,7 +368,7 @@ Deno.serve(async (req) => {
 
     if (registrationResult.error) {
       if (registrationResult.error.startsWith('registration_lookup:')) {
-        return errorResponse(
+        return sharedErrorResponse(
           corsHeaders,
           500,
           'Failed to lookup existing registration',
@@ -412,7 +376,7 @@ Deno.serve(async (req) => {
         )
       }
 
-      return errorResponse(
+      return sharedErrorResponse(
         corsHeaders,
         500,
         'Failed to load registration answers',
@@ -421,12 +385,16 @@ Deno.serve(async (req) => {
     }
 
     // 3.2 Return successful lookup with registration state (or null when not registered).
-    return successResponse(corsHeaders, profile, registrationResult.data)
+    return sharedSuccessResponse(
+      corsHeaders,
+      { profile, existing_registration: registrationResult.data },
+      200,
+    )
   } catch (error) {
     // 3.3 Return safe internal error response for unexpected failures.
     console.error('Unexpected error:', error)
     const message = error instanceof Error ? error.message : 'An unexpected error occurred'
 
-    return errorResponse(corsHeaders, 500, 'Internal server error', message)
+    return sharedErrorResponse(corsHeaders, 500, 'Internal server error', message)
   }
 })

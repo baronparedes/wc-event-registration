@@ -7,6 +7,7 @@ import {
   requireAdminAccess,
   readAllowedOrigins,
 } from '@/shared/security.ts'
+import { errorResponse, jsonResponse } from '@/shared/http.ts'
 
 interface ReactivateRegistrationRequest {
   registration_id: string
@@ -50,10 +51,7 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405)
   }
 
   try {
@@ -69,31 +67,20 @@ Deno.serve(async (req) => {
     })
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Environment not configured',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
 
     const body = (await req.json()) as ReactivateRegistrationRequest
     const { registration_id } = body
 
     if (!registration_id) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Missing registration_id',
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
+        400,
       )
     }
 
@@ -137,30 +124,26 @@ Deno.serve(async (req) => {
     })
 
     if (regFetchError || !registration) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Registration not found',
           error_code: 'NOT_FOUND',
-        }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
+        404,
       )
     }
 
     if (registration.status !== 'cancelled') {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Registration is not cancelled',
           error_code: 'NOT_CANCELLED',
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
+        400,
       )
     }
 
@@ -178,17 +161,9 @@ Deno.serve(async (req) => {
         errorCode: updateError.code,
         errorMessage: updateError.message,
       })
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Failed to reactivate registration',
-          error_code: 'UPDATE_FAILED',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return errorResponse(corsHeaders, 500, 'Failed to reactivate registration', undefined, {
+        error_code: 'UPDATE_FAILED',
+      })
     }
 
     await logAdminAction({
@@ -204,30 +179,19 @@ Deno.serve(async (req) => {
       },
     })
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      corsHeaders,
+      {
         success: true,
         registration_id,
-      } as ReactivateRegistrationSuccess),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      } as ReactivateRegistrationSuccess,
+      200,
     )
   } catch (error) {
     console.error('[reactivate-registration] unexpected error', {
       requestId,
       error: error instanceof Error ? error.message : String(error),
     })
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    return errorResponse(corsHeaders, 500, 'Internal server error')
   }
 })

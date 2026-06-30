@@ -8,6 +8,7 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
+import { errorResponse, jsonResponse } from '@/shared/http.ts'
 
 interface CreateMemberRequest {
   member_id: string
@@ -68,10 +69,7 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405)
   }
 
   try {
@@ -88,16 +86,7 @@ Deno.serve(async (req) => {
     })
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Environment not configured',
-        } as CreateMemberError),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
 
     // Parse and validate request
@@ -128,72 +117,62 @@ Deno.serve(async (req) => {
 
     // Validate required fields
     if (!member_id || !member_id.trim()) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Member ID is required',
           error_code: 'INVALID_REQUEST',
-        } as CreateMemberError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        } as CreateMemberError,
+        400,
       )
     }
 
     if (!first_name || !first_name.trim()) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'First name is required',
           error_code: 'INVALID_REQUEST',
-        } as CreateMemberError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        } as CreateMemberError,
+        400,
       )
     }
 
     if (!last_name || !last_name.trim()) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Last name is required',
           error_code: 'INVALID_REQUEST',
-        } as CreateMemberError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        } as CreateMemberError,
+        400,
       )
     }
 
     if (!role || !role.trim()) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Role is required',
           error_code: 'INVALID_REQUEST',
-        } as CreateMemberError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        } as CreateMemberError,
+        400,
       )
     }
 
     if (!category || !category.trim()) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: 'Category is required',
           error_code: 'INVALID_REQUEST',
-        } as CreateMemberError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        } as CreateMemberError,
+        400,
       )
     }
 
@@ -273,44 +252,36 @@ Deno.serve(async (req) => {
       // Check for specific error types
       if (insertError.code === POSTGRES_ERROR_CODES.uniqueViolation) {
         // Unique constraint violation for member_id
-        return new Response(
-          JSON.stringify({
+        return jsonResponse(
+          corsHeaders,
+          {
             success: false,
             error: `Member ID "${member_id}" already exists`,
             error_code: 'MEMBER_ID_DUPLICATE',
-          } as CreateMemberError),
-          {
-            status: 409,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
+          } as CreateMemberError,
+          409,
         )
       }
 
       // Generic error
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        corsHeaders,
+        {
           success: false,
           error: insertError.message || 'Failed to create member',
           error_code: insertError.code || 'INSERT_FAILED',
-        } as CreateMemberError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        } as CreateMemberError,
+        400,
       )
     }
 
     if (!newMember) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Member created but could not retrieve record',
-          error_code: 'RETRIEVE_FAILED',
-        } as CreateMemberError),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+      return errorResponse(
+        corsHeaders,
+        500,
+        'Member created but could not retrieve record',
+        undefined,
+        { error_code: 'RETRIEVE_FAILED' },
       )
     }
 
@@ -333,17 +304,15 @@ Deno.serve(async (req) => {
       fullName: maskValue(newMember.full_name),
     })
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      corsHeaders,
+      {
         success: true,
         id: newMember.id,
         member_id: newMember.member_id,
         full_name: newMember.full_name,
-      } as CreateMemberSuccess),
-      {
-        status: 201,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      } as CreateMemberSuccess,
+      201,
     )
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -353,16 +322,8 @@ Deno.serve(async (req) => {
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'An unexpected error occurred',
-        error_code: 'INTERNAL_ERROR',
-      } as CreateMemberError),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    return errorResponse(corsHeaders, 500, 'An unexpected error occurred', undefined, {
+      error_code: 'INTERNAL_ERROR',
+    })
   }
 })
