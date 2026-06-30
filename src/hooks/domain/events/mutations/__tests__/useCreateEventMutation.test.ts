@@ -171,7 +171,10 @@ describe('useCreateEventMutation', () => {
         created_by_admin_id: null,
         description: 'desc',
         location: 'Arena',
-        starts_at: '2026-07-01T10:00',
+        starts_at: '2026-07-01T10:00+08:00',
+        ends_at: '2026-07-01T12:00+08:00',
+        registration_opens_at: '2026-06-20T10:00+08:00',
+        registration_closes_at: '2026-06-30T10:00+08:00',
       }),
     )
   })

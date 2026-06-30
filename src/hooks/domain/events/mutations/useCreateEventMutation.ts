@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
+import { supabase, localDateTimeToUTC8ISO } from '@/lib/infrastructure'
 import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit'
 import type { CreateEventInput } from '@/lib/domain/events'
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
@@ -39,10 +39,10 @@ export function useCreateEventMutation() {
           title: input.title,
           description: emptyToNull(input.description),
           location: emptyToNull(input.location),
-          starts_at: emptyToNull(input.starts_at),
-          ends_at: emptyToNull(input.ends_at),
-          registration_opens_at: emptyToNull(input.registration_opens_at),
-          registration_closes_at: emptyToNull(input.registration_closes_at),
+          starts_at: localDateTimeToUTC8ISO(input.starts_at),
+          ends_at: localDateTimeToUTC8ISO(input.ends_at),
+          registration_opens_at: localDateTimeToUTC8ISO(input.registration_opens_at),
+          registration_closes_at: localDateTimeToUTC8ISO(input.registration_closes_at),
           status: input.status,
           duplicate_policy: input.duplicate_policy,
           registration_mode: input.registration_mode,
