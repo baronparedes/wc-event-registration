@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/infrastructure', async () => {
@@ -56,6 +56,43 @@ describe('EventHeaderCard', () => {
     expect(screen.getByText('June 30')).toBeInTheDocument()
   })
 
+  it('shows Open to Guests badge when public registrations are enabled', () => {
+    render(
+      <EventHeaderCard
+        isLoading={false}
+        isError={false}
+        isGateReady
+        eventWindowText={{ opens: 'June 1', closes: 'June 30' }}
+        availability={{
+          status: 'available',
+          event: {
+            id: '3bfc2d8f-067f-4f6f-9403-f420f819eca7',
+            slug: 'summer-sprint',
+            title: 'Summer Sprint',
+            description: null,
+            location: 'Main Hall',
+            starts_at: '2026-06-23T10:00:00.000Z',
+            ends_at: '2026-06-23T12:00:00.000Z',
+            registration_opens_at: '2026-06-01T10:00:00.000Z',
+            registration_closes_at: '2026-06-30T23:59:00.000Z',
+            registration_mode: 'open',
+            status: 'published',
+            duplicate_policy: 'block',
+            require_id_lookup: false,
+            allow_public_registrations: true,
+            metadata: {},
+            created_by_admin_id: null,
+            created_at: '2026-06-01T00:00:00.000Z',
+            updated_at: '2026-06-01T00:00:00.000Z',
+          },
+          registration_count: 12,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Open to Guests')).toBeInTheDocument()
+  })
+
   it('renders the unavailable message and event code when the event cannot be loaded', () => {
     render(
       <EventHeaderCard
@@ -74,7 +111,7 @@ describe('EventHeaderCard', () => {
     expect(screen.getAllByText('This event is unavailable right now.')).toHaveLength(2)
   })
 
-  it('allows collapsing and expanding event registration info', () => {
+  it('allows collapsing and expanding event registration info', async () => {
     render(
       <EventHeaderCard
         isLoading={false}
@@ -111,7 +148,9 @@ describe('EventHeaderCard', () => {
     expect(screen.getByText('Location:')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse event registration info' }))
-    expect(screen.queryByText('Location:')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('Location:')).not.toBeInTheDocument()
+    })
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand event registration info' }))
     expect(screen.getByText('Location:')).toBeInTheDocument()

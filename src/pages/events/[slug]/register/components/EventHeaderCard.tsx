@@ -1,7 +1,9 @@
 import DOMPurify from 'dompurify'
+import { Users } from 'lucide-react'
 import type { EventAvailability } from '@/lib/domain/events'
 import { formatDateTime } from '@/lib/infrastructure'
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard'
+import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 
 type EventHeaderCardProps = {
@@ -23,6 +25,18 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       : null
 
   const title = event?.title ?? 'Register for This Event'
+  const statusBadgeVariant =
+    availability?.status === 'available'
+      ? 'open'
+      : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
+        ? 'upcoming'
+        : 'closed'
+  const statusBadgeLabel =
+    availability?.status === 'available'
+      ? 'Open'
+      : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
+        ? 'Opens Soon'
+        : 'Closed'
 
   return (
     <CollapsibleSectionCard
@@ -30,9 +44,20 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       expandLabel="Expand event registration info"
       title={title}
       subtitle={
-        <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
-          Event Registration
-        </span>
+        event ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
+            {event.allow_public_registrations && (
+              <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
+                Open to Guests
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
+            Event Registration
+          </span>
+        )
       }
       wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
     >

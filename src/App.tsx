@@ -1,36 +1,38 @@
 import { BrowserRouter } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
-import type { ToasterProps } from 'sonner'
+import { useIsMobileViewport } from '@/hooks/utils'
 import { AppProviders } from './app/providers/AppProviders'
 import { AppRouter } from './app/router'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 function App() {
-  const [toastPosition, setToastPosition] = useState<ToasterProps['position']>(() =>
-    window.matchMedia('(max-width: 640px)').matches ? 'bottom-center' : 'bottom-right',
-  )
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 640px)')
-
-    const updatePosition = () => {
-      setToastPosition(mediaQuery.matches ? 'bottom-center' : 'bottom-right')
-    }
-
-    mediaQuery.addEventListener('change', updatePosition)
-
-    return () => {
-      mediaQuery.removeEventListener('change', updatePosition)
-    }
-  }, [])
+  const isMobileToastLayout = useIsMobileViewport()
 
   return (
     <ErrorBoundary>
       <AppProviders>
         <BrowserRouter>
           <AppRouter />
-          <Toaster richColors position={toastPosition} />
+          <Toaster
+            richColors
+            position={isMobileToastLayout ? 'bottom-center' : 'bottom-right'}
+            duration={7000}
+            mobileOffset={8}
+            toastOptions={{
+              style: {
+                width: isMobileToastLayout ? 'min(calc(100vw - 0.25rem), 34rem)' : '24rem',
+                fontSize: isMobileToastLayout ? '1.1rem' : '0.95rem',
+              },
+              classNames: {
+                toast: isMobileToastLayout
+                  ? 'min-h-20 rounded-2xl px-7 py-6 shadow-lg'
+                  : 'min-h-16 rounded-2xl px-5 py-4 shadow-lg',
+                title: isMobileToastLayout ? 'font-semibold leading-8' : 'font-semibold leading-6',
+                description: isMobileToastLayout ? 'leading-7 text-muted' : 'leading-5 text-muted',
+                closeButton: isMobileToastLayout ? 'h-10 w-10' : 'h-8 w-8',
+              },
+            }}
+          />
         </BrowserRouter>
       </AppProviders>
     </ErrorBoundary>

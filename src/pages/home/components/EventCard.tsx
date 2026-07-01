@@ -3,6 +3,7 @@ import { toEventRegistration } from '@/config/constants'
 import type { PublicEventListingItem } from '@/lib/domain/events'
 import { Button, Badge } from '@/components/ui'
 import { formatDateOnly } from '@/lib/infrastructure'
+import { Users } from 'lucide-react'
 
 type EventCardProps = {
   event: PublicEventListingItem
@@ -35,6 +36,14 @@ export function EventCard({ event }: EventCardProps) {
       </div>
 
       {event.description && <p className="line-clamp-2 text-sm text-muted">{event.description}</p>}
+
+      {event.allow_public_registrations && (
+        <div>
+          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
+            Open to Guests
+          </Badge>
+        </div>
+      )}
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted">
         {event.location && (

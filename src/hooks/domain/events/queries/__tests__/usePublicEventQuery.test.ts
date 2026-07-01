@@ -1,6 +1,8 @@
 import { waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+
+const FIXED_NOW = new Date('2026-06-15T00:00:00.000Z').getTime()
 
 const { mockEventsQueryBuilder, mockRpc, mockFrom, mockLogger } = vi.hoisted(() => {
   const eventsQueryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -41,7 +43,12 @@ import { usePublicEventQuery } from '@/hooks/domain/events/queries/usePublicEven
 
 describe('usePublicEventQuery', () => {
   beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW)
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('returns available status for open registration', async () => {

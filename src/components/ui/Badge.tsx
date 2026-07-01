@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-type BadgeVariant = 'upcoming' | 'open' | 'closed' | 'error'
+type BadgeVariant = 'upcoming' | 'open' | 'closed' | 'error' | 'guest'
 
 type BadgeProps = {
   variant?: BadgeVariant
@@ -14,6 +14,7 @@ const variantClassName: Record<BadgeVariant, string> = {
   open: 'bg-primary text-white',
   closed: 'bg-slate-200 text-slate-700',
   error: 'bg-red-100 text-red-700',
+  guest: 'border border-primary/60 bg-transparent text-text',
 }
 
 /**

@@ -1,6 +1,8 @@
 import { waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+
+const FIXED_NOW = new Date('2026-06-25T00:00:00.000Z').getTime()
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -34,7 +36,12 @@ import { usePublicEventListingQuery } from '@/hooks/domain/events/queries/usePub
 
 describe('usePublicEventListingQuery', () => {
   beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW)
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('maps events to listing statuses and filters closed ones', async () => {

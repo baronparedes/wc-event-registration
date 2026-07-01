@@ -15,7 +15,7 @@ export function usePublicEventListingQuery() {
       const { data, error } = await supabase
         .from('events')
         .select(
-          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at',
+          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, allow_public_registrations',
         )
         .eq('status', 'published')
         .order('starts_at', { ascending: true })
