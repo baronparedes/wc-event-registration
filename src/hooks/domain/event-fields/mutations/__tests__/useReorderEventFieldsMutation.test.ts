@@ -1,5 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery'
 
@@ -47,19 +48,21 @@ describe('useReorderEventFieldsMutation', () => {
   })
 
   it('reorders fields for a draft event and invalidates field list', async () => {
+    const eventId = faker.string.uuid()
+    const fieldIds = [faker.string.uuid(), faker.string.uuid()]
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
 
     const { result, queryClient } = renderHookWithClient(() => useReorderEventFieldsMutation())
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
     await act(async () => {
-      await result.current.mutateAsync({ event_id: 'event-1', orderedIds: ['field-2', 'field-1'] })
+      await result.current.mutateAsync({ event_id: eventId, orderedIds: fieldIds })
     })
 
     expect(mockUpdateBuilder.update).toHaveBeenNthCalledWith(1, { display_order: 0 })
     expect(mockUpdateBuilder.update).toHaveBeenNthCalledWith(2, { display_order: 1 })
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey('event-1') })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey(eventId) })
     })
   })
 
@@ -69,7 +72,10 @@ describe('useReorderEventFieldsMutation', () => {
     const { result } = renderHookWithClient(() => useReorderEventFieldsMutation())
 
     await expect(
-      result.current.mutateAsync({ event_id: 'event-1', orderedIds: ['field-1'] }),
+      result.current.mutateAsync({
+        event_id: faker.string.uuid(),
+        orderedIds: [faker.string.uuid()],
+      }),
     ).rejects.toThrow('Cannot reorder fields on a published or archived event')
   })
 
@@ -82,7 +88,10 @@ describe('useReorderEventFieldsMutation', () => {
     const { result } = renderHookWithClient(() => useReorderEventFieldsMutation())
 
     await expect(
-      result.current.mutateAsync({ event_id: 'event-1', orderedIds: ['field-1'] }),
+      result.current.mutateAsync({
+        event_id: faker.string.uuid(),
+        orderedIds: [faker.string.uuid()],
+      }),
     ).rejects.toThrow('lookup failed')
 
     expect(mockUpdateBuilder.update).not.toHaveBeenCalled()

@@ -1,6 +1,7 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminEventField } from '@/__tests__/factories'
 import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery'
 
 const { mockEventsBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
@@ -55,9 +56,10 @@ describe('useUpdateEventFieldMutation', () => {
   })
 
   it('updates a field on a draft event and invalidates field list', async () => {
+    const field = makeAdminEventField({ field_type: 'text' })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
     mockUpdateBuilder.single.mockResolvedValueOnce({
-      data: { id: 'field-1', label: 'New Label' },
+      data: { id: field.id, label: 'New Label' },
       error: null,
     })
 
@@ -66,34 +68,37 @@ describe('useUpdateEventFieldMutation', () => {
 
     const updated = await act(async () =>
       result.current.mutateAsync({
-        id: 'field-1',
-        event_id: 'event-1',
+        id: field.id,
+        event_id: field.event_id,
         label: 'New Label',
       }),
     )
 
-    expect(updated).toEqual({ id: 'field-1', label: 'New Label' })
+    expect(updated).toEqual({ id: field.id, label: 'New Label' })
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith({
-      event_id: 'event-1',
+      event_id: field.event_id,
       label: 'New Label',
     })
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey('event-1') })
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: adminEventFieldsQueryKey(field.event_id),
+      })
     })
   })
 
   it('rejects locked field changes on published events', async () => {
+    const field = makeAdminEventField({ field_type: 'number' })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'published' }, error: null })
 
     const { result } = renderHookWithClient(() => useUpdateEventFieldMutation())
 
     await expect(
       result.current.mutateAsync({
-        id: 'field-1',
-        event_id: 'event-1',
+        id: field.id,
+        event_id: field.event_id,
         label: 'New Label',
-        field_type: 'number',
+        field_type: field.field_type,
       }),
     ).rejects.toThrow(
       'Published events can only have field labels, placeholders, and help text edited',
@@ -101,34 +106,37 @@ describe('useUpdateEventFieldMutation', () => {
   })
 
   it('rejects all edits for archived events', async () => {
+    const field = makeAdminEventField()
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'archived' }, error: null })
 
     const { result } = renderHookWithClient(() => useUpdateEventFieldMutation())
 
     await expect(
       result.current.mutateAsync({
-        id: 'field-1',
-        event_id: 'event-1',
+        id: field.id,
+        event_id: field.event_id,
         label: 'New Label',
       }),
     ).rejects.toThrow('Cannot edit fields on archived events.')
   })
 
   it('throws when loading event status fails', async () => {
+    const field = makeAdminEventField()
     mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') })
 
     const { result } = renderHookWithClient(() => useUpdateEventFieldMutation())
 
     await expect(
       result.current.mutateAsync({
-        id: 'field-1',
-        event_id: 'event-1',
+        id: field.id,
+        event_id: field.event_id,
         label: 'New Label',
       }),
     ).rejects.toThrow('read failed')
   })
 
   it('throws when update operation fails', async () => {
+    const field = makeAdminEventField()
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
     mockUpdateBuilder.single.mockResolvedValueOnce({
       data: null,
@@ -139,8 +147,8 @@ describe('useUpdateEventFieldMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        id: 'field-1',
-        event_id: 'event-1',
+        id: field.id,
+        event_id: field.event_id,
         label: 'New Label',
       }),
     ).rejects.toThrow('update failed')

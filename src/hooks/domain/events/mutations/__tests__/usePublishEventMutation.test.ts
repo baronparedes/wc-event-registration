@@ -1,6 +1,8 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminEvent } from '@/__tests__/factories'
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery'
 
 const { mockSelectBuilder, mockUpdateBuilder, mockFrom, mockWriteAdminAuditLogSafely } = vi.hoisted(
@@ -66,21 +68,17 @@ describe('usePublishEventMutation', () => {
   })
 
   it('publishes a valid event, writes audit log, and invalidates events list', async () => {
+    const event = makeAdminEvent({
+      status: 'draft',
+      description: 'Desc',
+      location: 'Gym',
+      starts_at: '2026-07-01T10:00:00.000Z',
+      ends_at: '2026-07-01T12:00:00.000Z',
+      registration_opens_at: '2026-06-01T10:00:00.000Z',
+      registration_closes_at: '2026-06-30T10:00:00.000Z',
+    })
     mockSelectBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'event-1',
-        title: 'Event',
-        slug: 'event',
-        description: 'Desc',
-        location: 'Gym',
-        starts_at: '2026-07-01T10:00:00.000Z',
-        ends_at: '2026-07-01T12:00:00.000Z',
-        registration_opens_at: '2026-06-01T10:00:00.000Z',
-        registration_closes_at: '2026-06-30T10:00:00.000Z',
-        status: 'draft',
-        duplicate_policy: 'block',
-        registration_mode: 'open',
-      },
+      data: event,
       error: null,
     })
 
@@ -88,14 +86,14 @@ describe('usePublishEventMutation', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
     await act(async () => {
-      await result.current.mutateAsync('event-1')
+      await result.current.mutateAsync(event.id)
     })
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith({ status: 'published' })
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'publish_event',
       resourceType: 'event',
-      resourceId: 'event-1',
+      resourceId: event.id,
       metadata: {
         previous_status: 'draft',
         next_status: 'published',
@@ -108,27 +106,24 @@ describe('usePublishEventMutation', () => {
   })
 
   it('throws a validation error with missing fields when event cannot be published', async () => {
+    const eventId = faker.string.uuid()
     mockSelectBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'event-2',
-        title: 'Event',
-        slug: 'event',
-        description: '',
-        location: '',
+      data: makeAdminEvent({
+        id: eventId,
+        description: null,
+        location: null,
         starts_at: null,
         ends_at: null,
         registration_opens_at: null,
         registration_closes_at: null,
         status: 'draft',
-        duplicate_policy: 'block',
-        registration_mode: 'open',
-      },
+      }),
       error: null,
     })
 
     const { result } = renderHookWithClient(() => usePublishEventMutation())
 
-    await expect(result.current.mutateAsync('event-2')).rejects.toMatchObject({
+    await expect(result.current.mutateAsync(eventId)).rejects.toMatchObject({
       message: expect.stringContaining('Cannot publish:'),
       missingFields: expect.arrayContaining(['Description', 'Location']),
     })
@@ -139,7 +134,7 @@ describe('usePublishEventMutation', () => {
 
     const { result } = renderHookWithClient(() => usePublishEventMutation())
 
-    await expect(result.current.mutateAsync('event-3')).rejects.toThrow('fetch failed')
+    await expect(result.current.mutateAsync(faker.string.uuid())).rejects.toThrow('fetch failed')
   })
 
   it('throws when event cannot be found', async () => {
@@ -147,32 +142,25 @@ describe('usePublishEventMutation', () => {
 
     const { result } = renderHookWithClient(() => usePublishEventMutation())
 
-    await expect(result.current.mutateAsync('event-4')).rejects.toThrow('Event not found')
+    await expect(result.current.mutateAsync(faker.string.uuid())).rejects.toThrow('Event not found')
   })
 
   it('throws when publish update fails', async () => {
-    mockSelectBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'event-5',
-        title: 'Event',
-        slug: 'event',
-        description: 'Desc',
-        location: 'Gym',
-        starts_at: '2026-07-01T10:00:00.000Z',
-        ends_at: '2026-07-01T12:00:00.000Z',
-        registration_opens_at: '2026-06-01T10:00:00.000Z',
-        registration_closes_at: '2026-06-30T10:00:00.000Z',
-        status: 'draft',
-        duplicate_policy: 'block',
-        registration_mode: 'open',
-      },
-      error: null,
+    const event = makeAdminEvent({
+      status: 'draft',
+      description: 'Desc',
+      location: 'Gym',
+      starts_at: '2026-07-01T10:00:00.000Z',
+      ends_at: '2026-07-01T12:00:00.000Z',
+      registration_opens_at: '2026-06-01T10:00:00.000Z',
+      registration_closes_at: '2026-06-30T10:00:00.000Z',
     })
+    mockSelectBuilder.single.mockResolvedValueOnce({ data: event, error: null })
     mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('publish failed') })
 
     const { result } = renderHookWithClient(() => usePublishEventMutation())
 
-    await expect(result.current.mutateAsync('event-5')).rejects.toThrow('publish failed')
+    await expect(result.current.mutateAsync(event.id)).rejects.toThrow('publish failed')
     expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
   })
 })

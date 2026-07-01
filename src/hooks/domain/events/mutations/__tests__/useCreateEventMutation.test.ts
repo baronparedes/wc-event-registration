@@ -1,5 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery'
 
@@ -73,16 +74,20 @@ describe('useCreateEventMutation', () => {
     mockGetSession.mockResolvedValue({
       data: {
         session: {
-          user: { id: 'auth-1' },
+          user: { id: faker.string.uuid() },
         },
       },
     })
   })
 
   it('creates an event, writes audit log, and invalidates events list', async () => {
-    mockAdminsBuilder.maybeSingle.mockResolvedValueOnce({ data: { id: 'admin-1' } })
+    const adminId = faker.string.uuid()
+    const eventId = faker.string.uuid()
+    const slug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
+    const title = faker.lorem.words(3)
+    mockAdminsBuilder.maybeSingle.mockResolvedValueOnce({ data: { id: adminId } })
     mockEventsInsertBuilder.single.mockResolvedValueOnce({
-      data: { id: 'event-1' },
+      data: { id: eventId },
       error: null,
     })
 
@@ -91,8 +96,8 @@ describe('useCreateEventMutation', () => {
 
     const createdId = await act(async () =>
       result.current.mutateAsync({
-        title: 'World Cup',
-        slug: 'world-cup',
+        title,
+        slug,
         description: '',
         location: '',
         starts_at: '',
@@ -105,16 +110,16 @@ describe('useCreateEventMutation', () => {
       }),
     )
 
-    expect(createdId).toBe('event-1')
+    expect(createdId).toBe(eventId)
     expect(mockEventsInsertBuilder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
-        slug: 'world-cup',
-        title: 'World Cup',
+        slug,
+        title,
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'open',
         require_id_lookup: true,
-        created_by_admin_id: 'admin-1',
+        created_by_admin_id: adminId,
         description: null,
         location: null,
       }),
@@ -122,12 +127,8 @@ describe('useCreateEventMutation', () => {
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'create_event',
       resourceType: 'event',
-      resourceId: 'event-1',
-      metadata: {
-        slug: 'world-cup',
-        title: 'World Cup',
-        status: 'draft',
-      },
+      resourceId: eventId,
+      metadata: { slug, title, status: 'draft' },
     })
 
     await waitFor(() => {
@@ -136,13 +137,12 @@ describe('useCreateEventMutation', () => {
   })
 
   it('creates an event without admin lookup when no session exists', async () => {
+    const eventId = faker.string.uuid()
     mockGetSession.mockResolvedValueOnce({
-      data: {
-        session: null,
-      },
+      data: { session: null },
     })
     mockEventsInsertBuilder.single.mockResolvedValueOnce({
-      data: { id: 'event-2' },
+      data: { id: eventId },
       error: null,
     })
 
@@ -164,7 +164,7 @@ describe('useCreateEventMutation', () => {
       }),
     )
 
-    expect(createdId).toBe('event-2')
+    expect(createdId).toBe(eventId)
     expect(mockAdminsBuilder.select).not.toHaveBeenCalled()
     expect(mockEventsInsertBuilder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -180,9 +180,11 @@ describe('useCreateEventMutation', () => {
   })
 
   it('throws when event insert returns an error', async () => {
-    mockAdminsBuilder.maybeSingle.mockResolvedValueOnce({ data: { id: 'admin-1' } })
+    const adminId = faker.string.uuid()
+    const eventId = faker.string.uuid()
+    mockAdminsBuilder.maybeSingle.mockResolvedValueOnce({ data: { id: adminId } })
     mockEventsInsertBuilder.single.mockResolvedValueOnce({
-      data: { id: 'event-3' },
+      data: { id: eventId },
       error: new Error('insert failed'),
     })
 

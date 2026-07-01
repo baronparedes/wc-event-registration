@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminEvent } from '@/__tests__/factories'
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -38,18 +39,19 @@ describe('useAdminEventQuery', () => {
   })
 
   it('returns event data for a valid id', async () => {
+    const event = makeAdminEvent()
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
-      data: { id: 'evt-1', title: 'Event One' },
+      data: { id: event.id, title: event.title },
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => useAdminEventQuery('evt-1'))
+    const { result } = renderHookWithClient(() => useAdminEventQuery(event.id))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
 
-    expect(result.current.data).toEqual({ id: 'evt-1', title: 'Event One' })
+    expect(result.current.data).toEqual({ id: event.id, title: event.title })
     expect(mockFrom).toHaveBeenCalledWith('events')
   })
 

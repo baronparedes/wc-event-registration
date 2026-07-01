@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminMember } from '@/__tests__/factories'
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -45,29 +46,35 @@ describe('useAdminMembersQuery', () => {
   })
 
   it('returns paginated members and transforms metadata role/category', async () => {
+    const member = makeAdminMember({
+      nickname: 'J',
+      role: 'player',
+      category: 'adult',
+      phone: null,
+      date_of_birth: null,
+    })
+    const dbRow = {
+      id: member.id,
+      member_id: member.member_id,
+      full_name: member.full_name,
+      first_name: member.first_name,
+      last_name: member.last_name,
+      nickname: member.nickname,
+      email: member.email,
+      phone: member.phone,
+      date_of_birth: member.date_of_birth,
+      metadata: { role: member.role, category: member.category },
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+    }
     mockQueryBuilder.or.mockResolvedValueOnce({
-      data: [
-        {
-          id: 'user-1',
-          member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          first_name: 'Jane',
-          last_name: 'Doe',
-          nickname: 'J',
-          email: 'jane@example.com',
-          phone: null,
-          date_of_birth: null,
-          metadata: { role: 'player', category: 'adult' },
-          created_at: '2026-01-01T00:00:00.000Z',
-          updated_at: '2026-01-01T00:00:00.000Z',
-        },
-      ],
+      data: [dbRow],
       error: null,
       count: 1,
     })
 
     const { result } = renderHookWithClient(() =>
-      useAdminMembersQuery({ pageSize: 20, cursor: null, searchTerm: 'Jane' }),
+      useAdminMembersQuery({ pageSize: 20, cursor: null, searchTerm: member.first_name ?? '' }),
     )
 
     await waitFor(() => {
@@ -75,23 +82,7 @@ describe('useAdminMembersQuery', () => {
     })
 
     expect(result.current.data).toEqual({
-      items: [
-        {
-          id: 'user-1',
-          member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          first_name: 'Jane',
-          last_name: 'Doe',
-          nickname: 'J',
-          email: 'jane@example.com',
-          phone: null,
-          date_of_birth: null,
-          role: 'player',
-          category: 'adult',
-          created_at: '2026-01-01T00:00:00.000Z',
-          updated_at: '2026-01-01T00:00:00.000Z',
-        },
-      ],
+      items: [member],
       nextCursor: null,
       hasMore: false,
       totalCount: 1,

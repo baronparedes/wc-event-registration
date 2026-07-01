@@ -1,15 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { makeMemberLookupProfile } from '@/__tests__/factories'
 import { ProfileStepCard } from '../ProfileStepCard'
 
-const matchedMember = {
-  user_id: 'user-1',
-  member_id: 'WC-001',
-  full_name: 'Jane Doe',
-  nickname: 'Janie',
-  first_name: 'Jane',
-  last_name: 'Doe',
-}
+const matchedMember = makeMemberLookupProfile()
 
 describe('ProfileStepCard', () => {
   it('shows the placeholder before lookup and when details are fading', () => {

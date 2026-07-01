@@ -1,6 +1,8 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeMemberLookupProfile } from '@/__tests__/factories'
 
 const { mockLookupCaller, mockCreateEdgeFunctionCaller, mockLogger } = vi.hoisted(() => {
   const lookupCaller = vi.fn()
@@ -34,30 +36,26 @@ describe('useMemberLookupQuery', () => {
   })
 
   it('trims member id and returns profile result', async () => {
+    const profile = makeMemberLookupProfile()
     mockLookupCaller.mockResolvedValueOnce({
       success: true,
-      profile: {
-        user_id: 'user-1',
-        member_id: 'WC-001',
-      },
+      profile: { user_id: profile.user_id, member_id: profile.member_id },
       existing_registration: null,
     })
 
     const { result } = renderHookWithClient(() => useMemberLookupQuery())
+    const slug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
 
     const response = await act(async () =>
-      result.current.mutateAsync({ memberId: '  WC-001  ', eventSlug: 'sample-event' }),
+      result.current.mutateAsync({ memberId: `  ${profile.member_id}  `, eventSlug: slug }),
     )
 
     expect(mockLookupCaller).toHaveBeenCalledWith({
-      memberId: 'WC-001',
-      eventSlug: 'sample-event',
+      memberId: profile.member_id,
+      eventSlug: slug,
     })
     expect(response).toEqual({
-      profile: {
-        user_id: 'user-1',
-        member_id: 'WC-001',
-      },
+      profile: { user_id: profile.user_id, member_id: profile.member_id },
       existing_registration: null,
     })
   })

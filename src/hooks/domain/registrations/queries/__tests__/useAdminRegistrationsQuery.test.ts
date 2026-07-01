@@ -1,5 +1,6 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 
 const { mockRegistrationsBuilder, mockUsersBuilder, mockAnswersBuilder, mockFrom } = vi.hoisted(
@@ -63,37 +64,33 @@ vi.mock('@/lib/infrastructure', async () => {
 
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations/queries/useAdminRegistrationsQuery'
 
-const REG_ROW = {
-  id: 'reg-1',
-  event_id: 'evt-1',
-  user_id: 'user-1',
-  status: 'submitted',
-  submitted_at: '2026-06-26T10:00:00.000Z',
-  updated_at: '2026-06-26T10:00:00.000Z',
-}
+// Test data factory
+const createTestRegRow = (overrides?: Record<string, unknown>) => ({
+  id: faker.string.uuid(),
+  event_id: faker.string.uuid(),
+  user_id: faker.string.uuid(),
+  status: 'submitted' as const,
+  submitted_at: faker.date.recent().toISOString(),
+  updated_at: faker.date.recent().toISOString(),
+  ...overrides,
+})
 
-const USER_ROW = {
-  id: 'user-1',
-  member_id: 'WC-001',
-  full_name: 'Jane Doe',
-  email: 'jane@example.com',
-  phone: null,
+const createTestUserRow = (overrides?: Record<string, unknown>) => ({
+  id: faker.string.uuid(),
+  member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
+  full_name: faker.person.fullName(),
+  email: faker.internet.email(),
+  phone: faker.datatype.boolean() ? faker.phone.number() : null,
   metadata: { role: 'player', category: 'adult' },
-}
-
-const EXPECTED_ITEM = {
-  ...REG_ROW,
-  member_id: 'WC-001',
-  full_name: 'Jane Doe',
-  email: 'jane@example.com',
-  phone: null,
-  role: 'player',
-  category: 'adult',
-  answer_count: 2,
-}
+  ...overrides,
+})
 
 describe('useAdminRegistrationsQuery', () => {
+  let testEventId: string
+
   beforeEach(() => {
+    // Generate stable event ID once per test to ensure queryKey doesn't change
+    testEventId = faker.string.uuid()
     vi.clearAllMocks()
     mockRegistrationsBuilder.select.mockReturnValue(mockRegistrationsBuilder)
     mockRegistrationsBuilder.eq.mockReturnValue(mockRegistrationsBuilder)
@@ -104,24 +101,26 @@ describe('useAdminRegistrationsQuery', () => {
   })
 
   it('returns mapped registration rows with member and answer counts', async () => {
+    const regRow = createTestRegRow()
+    const userRow = createTestUserRow({ id: regRow.user_id })
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
-      data: [REG_ROW],
+      data: [regRow],
       error: null,
       count: 1,
     })
 
     mockUsersBuilder.in.mockResolvedValueOnce({
-      data: [USER_ROW],
+      data: [userRow],
       error: null,
     })
 
     mockAnswersBuilder.in.mockResolvedValueOnce({
-      data: [{ registration_id: 'reg-1' }, { registration_id: 'reg-1' }],
+      data: [{ registration_id: regRow.id }, { registration_id: regRow.id }],
       error: null,
     })
 
     const { result } = renderHookWithClient(() =>
-      useAdminRegistrationsQuery('evt-1', { pageSize: 25, cursor: null }),
+      useAdminRegistrationsQuery(regRow.event_id, { pageSize: 25, cursor: null }),
     )
 
     await waitFor(() => {
@@ -129,7 +128,18 @@ describe('useAdminRegistrationsQuery', () => {
     })
 
     expect(result.current.data).toEqual({
-      items: [EXPECTED_ITEM],
+      items: [
+        {
+          ...regRow,
+          member_id: userRow.member_id,
+          full_name: userRow.full_name,
+          email: userRow.email,
+          phone: userRow.phone,
+          role: 'player',
+          category: 'adult',
+          answer_count: 2,
+        },
+      ],
       hasMore: false,
       nextCursor: null,
       totalCount: 1,
@@ -138,6 +148,7 @@ describe('useAdminRegistrationsQuery', () => {
   })
 
   it('returns empty page when there are no registrations', async () => {
+    const eventId = faker.string.uuid()
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
       data: [],
       error: null,
@@ -145,7 +156,7 @@ describe('useAdminRegistrationsQuery', () => {
     })
 
     const { result } = renderHookWithClient(() =>
-      useAdminRegistrationsQuery('evt-1', { pageSize: 25, cursor: null }),
+      useAdminRegistrationsQuery(eventId, { pageSize: 25, cursor: null }),
     )
 
     await waitFor(() => {
@@ -168,7 +179,7 @@ describe('useAdminRegistrationsQuery', () => {
       count: null,
     })
 
-    const { result } = renderHookWithClient(() => useAdminRegistrationsQuery('evt-1'))
+    const { result } = renderHookWithClient(() => useAdminRegistrationsQuery('evt-error'))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)
@@ -178,24 +189,29 @@ describe('useAdminRegistrationsQuery', () => {
   })
 
   it('returns hasMore with next cursor when count exceeds current page size', async () => {
+    const regRow = createTestRegRow()
+    const userRow = createTestUserRow({
+      id: regRow.user_id,
+      metadata: { role: 123, category: null },
+    })
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
-      data: [REG_ROW],
+      data: [regRow],
       error: null,
       count: 3,
     })
 
     mockUsersBuilder.in.mockResolvedValueOnce({
-      data: [{ ...USER_ROW, metadata: { role: 123, category: null } }],
+      data: [userRow],
       error: null,
     })
 
     mockAnswersBuilder.in.mockResolvedValueOnce({
-      data: [{ registration_id: 'reg-1' }],
+      data: [{ registration_id: regRow.id }],
       error: null,
     })
 
     const { result } = renderHookWithClient(() =>
-      useAdminRegistrationsQuery('evt-1', { pageSize: 1, cursor: null }),
+      useAdminRegistrationsQuery(regRow.event_id, { pageSize: 1, cursor: null }),
     )
 
     await waitFor(() => {
@@ -209,8 +225,9 @@ describe('useAdminRegistrationsQuery', () => {
   })
 
   it('returns error state when user detail query fails', async () => {
+    const regRow = createTestRegRow()
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
-      data: [REG_ROW],
+      data: [regRow],
       error: null,
       count: 1,
     })
@@ -230,14 +247,16 @@ describe('useAdminRegistrationsQuery', () => {
   })
 
   it('returns error state when answer count query fails', async () => {
+    const regRow = createTestRegRow()
+    const userRow = createTestUserRow({ id: regRow.user_id })
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
-      data: [REG_ROW],
+      data: [regRow],
       error: null,
       count: 1,
     })
 
     mockUsersBuilder.in.mockResolvedValueOnce({
-      data: [USER_ROW],
+      data: [userRow],
       error: null,
     })
 
@@ -246,7 +265,7 @@ describe('useAdminRegistrationsQuery', () => {
       error: new Error('answers failed'),
     })
 
-    const { result } = renderHookWithClient(() => useAdminRegistrationsQuery('evt-1'))
+    const { result } = renderHookWithClient(() => useAdminRegistrationsQuery(regRow.event_id))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)
@@ -257,29 +276,35 @@ describe('useAdminRegistrationsQuery', () => {
 
   describe('with searchTerm', () => {
     it('filters registrations by matching user IDs when searchTerm is provided', async () => {
+      const regRow = createTestRegRow()
+      const userRow = createTestUserRow({ id: regRow.user_id })
       mockUsersBuilder.or.mockResolvedValueOnce({
-        data: [{ id: 'user-1' }],
+        data: [{ id: userRow.id }],
         error: null,
       })
 
       mockRegistrationsBuilder.in.mockResolvedValueOnce({
-        data: [REG_ROW],
+        data: [regRow],
         error: null,
         count: 1,
       })
 
       mockUsersBuilder.in.mockResolvedValueOnce({
-        data: [USER_ROW],
+        data: [userRow],
         error: null,
       })
 
       mockAnswersBuilder.in.mockResolvedValueOnce({
-        data: [{ registration_id: 'reg-1' }, { registration_id: 'reg-1' }],
+        data: [{ registration_id: regRow.id }, { registration_id: regRow.id }],
         error: null,
       })
 
       const { result } = renderHookWithClient(() =>
-        useAdminRegistrationsQuery('evt-1', { pageSize: 25, cursor: null, searchTerm: 'Jane' }),
+        useAdminRegistrationsQuery(regRow.event_id, {
+          pageSize: 25,
+          cursor: null,
+          searchTerm: 'Jane',
+        }),
       )
 
       await waitFor(() => {
@@ -290,7 +315,7 @@ describe('useAdminRegistrationsQuery', () => {
         expect.stringContaining('full_name.ilike.%Jane%'),
       )
       expect(result.current.data?.items).toHaveLength(1)
-      expect(result.current.data?.items[0]).toMatchObject({ full_name: 'Jane Doe' })
+      expect(result.current.data?.items[0]).toMatchObject({ full_name: userRow.full_name })
     })
 
     it('returns empty result immediately when no users match the search', async () => {
@@ -328,7 +353,11 @@ describe('useAdminRegistrationsQuery', () => {
       })
 
       const { result } = renderHookWithClient(() =>
-        useAdminRegistrationsQuery('evt-1', { pageSize: 25, cursor: null, searchTerm: 'Jane' }),
+        useAdminRegistrationsQuery(testEventId, {
+          pageSize: 25,
+          cursor: null,
+          searchTerm: 'Jane',
+        }),
       )
 
       await waitFor(() => {
@@ -339,22 +368,28 @@ describe('useAdminRegistrationsQuery', () => {
     })
 
     it('trims whitespace from searchTerm before querying', async () => {
+      const regRow = createTestRegRow()
+      const userRow = createTestUserRow({ id: regRow.user_id })
       mockUsersBuilder.or.mockResolvedValueOnce({
-        data: [{ id: 'user-1' }],
+        data: [{ id: userRow.id }],
         error: null,
       })
 
       mockRegistrationsBuilder.in.mockResolvedValueOnce({
-        data: [REG_ROW],
+        data: [regRow],
         error: null,
         count: 1,
       })
 
-      mockUsersBuilder.in.mockResolvedValueOnce({ data: [USER_ROW], error: null })
+      mockUsersBuilder.in.mockResolvedValueOnce({ data: [userRow], error: null })
       mockAnswersBuilder.in.mockResolvedValueOnce({ data: [], error: null })
 
       const { result } = renderHookWithClient(() =>
-        useAdminRegistrationsQuery('evt-1', { pageSize: 25, cursor: null, searchTerm: '  Jane  ' }),
+        useAdminRegistrationsQuery(regRow.event_id, {
+          pageSize: 25,
+          cursor: null,
+          searchTerm: '  Jane  ',
+        }),
       )
 
       await waitFor(() => {

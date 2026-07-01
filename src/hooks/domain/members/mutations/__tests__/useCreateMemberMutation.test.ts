@@ -1,6 +1,7 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminMember } from '@/__tests__/factories'
 import { ADMIN_MEMBERS_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMembersQuery'
 
 const { mockCreateCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
@@ -28,11 +29,12 @@ describe('useCreateMemberMutation', () => {
   })
 
   it('creates a member and invalidates admin members query', async () => {
+    const member = makeAdminMember({ role: 'player', category: 'adult' })
     mockCreateCaller.mockResolvedValueOnce({
       success: true,
-      id: 'user-1',
-      member_id: 'WC-001',
-      full_name: 'Jane Doe',
+      id: member.id,
+      member_id: member.member_id,
+      full_name: member.full_name,
     })
 
     const { result, queryClient } = renderHookWithClient(() => useCreateMemberMutation())
@@ -40,21 +42,21 @@ describe('useCreateMemberMutation', () => {
 
     const response = await act(async () =>
       result.current.mutateAsync({
-        member_id: 'WC-001',
-        first_name: 'Jane',
-        last_name: 'Doe',
+        member_id: member.member_id,
+        first_name: member.first_name ?? '',
+        last_name: member.last_name ?? '',
         nickname: '',
-        email: 'jane@example.com',
+        email: member.email ?? '',
         phone: '',
         date_of_birth: '',
-        role: 'player',
-        category: 'adult',
+        role: member.role,
+        category: member.category,
       }),
     )
 
-    expect(response.member_id).toBe('WC-001')
+    expect(response.member_id).toBe(member.member_id)
     expect(mockCreateCaller).toHaveBeenCalledWith(
-      expect.objectContaining({ member_id: 'WC-001', first_name: 'Jane' }),
+      expect.objectContaining({ member_id: member.member_id, first_name: member.first_name }),
     )
 
     await waitFor(() => {

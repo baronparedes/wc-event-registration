@@ -1,6 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeMemberLookupProfile, makeExistingRegistrationState } from '@/__tests__/factories'
 import { useMemberLookupState } from '../useMemberLookupState'
 
 const { mockMutateAsync, mockLoggerInfo, mockLoggerWarn, mockLoggerError } = vi.hoisted(() => ({
@@ -58,15 +59,9 @@ describe('useMemberLookupState', () => {
   })
 
   it('handles a successful lookup for a new registration', async () => {
+    const profile = makeMemberLookupProfile()
     mockMutateAsync.mockResolvedValue({
-      profile: {
-        user_id: '5f83f4cd-4370-4c4a-bd02-9730ec9bc8dc',
-        member_id: 'WC-001',
-        full_name: 'Ada Lovelace',
-        nickname: null,
-        first_name: 'Ada',
-        last_name: 'Lovelace',
-      },
+      profile,
       existing_registration: null,
     })
 
@@ -75,32 +70,26 @@ describe('useMemberLookupState', () => {
     })
 
     const outcome = await act(async () => {
-      return await result.current.handleLookupSubmit({ memberId: ' WC-001 ' })
+      return await result.current.handleLookupSubmit({ memberId: ` ${profile.member_id} ` })
     })
 
     expect(outcome).toEqual({ success: true, mode: 'new_registration' })
-    expect(result.current.matchedMember?.full_name).toBe('Ada Lovelace')
-    expect(result.current.verifiedMemberId).toBe('WC-001')
+    expect(result.current.matchedMember?.full_name).toBe(profile.full_name)
+    expect(result.current.verifiedMemberId).toBe(profile.member_id)
     expect(result.current.isUpdateMode).toBe(false)
     expect(result.current.prefillResponses).toBeNull()
   })
 
   it('blocks duplicate registrations and exposes the locked step message', async () => {
+    const profile = makeMemberLookupProfile()
+    const existingReg = makeExistingRegistrationState({
+      exists: true,
+      edit_allowed: false,
+      status: 'submitted',
+    })
     mockMutateAsync.mockResolvedValue({
-      profile: {
-        user_id: '81c4946d-edeb-4f88-97fc-c7632d94f8f5',
-        member_id: 'WC-002',
-        full_name: 'Grace Hopper',
-        nickname: null,
-        first_name: 'Grace',
-        last_name: 'Hopper',
-      },
-      existing_registration: {
-        exists: true,
-        edit_allowed: false,
-        status: 'submitted',
-        responses: {},
-      },
+      profile,
+      existing_registration: existingReg,
     })
 
     const { result } = renderHook(() => useMemberLookupState('sample-event'), {
@@ -108,7 +97,7 @@ describe('useMemberLookupState', () => {
     })
 
     const outcome = await act(async () => {
-      return await result.current.handleLookupSubmit({ memberId: 'WC-002' })
+      return await result.current.handleLookupSubmit({ memberId: profile.member_id })
     })
 
     expect(outcome).toEqual({
@@ -166,15 +155,9 @@ describe('useMemberLookupState', () => {
   })
 
   it('clears state via reset and clearMember actions', async () => {
+    const profile = makeMemberLookupProfile()
     mockMutateAsync.mockResolvedValue({
-      profile: {
-        user_id: '84446979-2e14-4812-a076-9360c4f92fc0',
-        member_id: 'WC-003',
-        full_name: 'Alan Turing',
-        nickname: null,
-        first_name: 'Alan',
-        last_name: 'Turing',
-      },
+      profile,
       existing_registration: null,
     })
 
@@ -184,7 +167,7 @@ describe('useMemberLookupState', () => {
     })
 
     await act(async () => {
-      await result.current.handleLookupSubmit({ memberId: 'WC-003' })
+      await result.current.handleLookupSubmit({ memberId: profile.member_id })
     })
 
     act(() => {

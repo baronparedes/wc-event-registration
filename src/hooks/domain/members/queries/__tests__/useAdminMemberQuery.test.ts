@@ -1,6 +1,8 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminMember } from '@/__tests__/factories'
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -33,59 +35,53 @@ vi.mock('@/lib/infrastructure', async () => {
 import { useAdminMemberQuery } from '@/hooks/domain/members/queries/useAdminMemberQuery'
 
 describe('useAdminMemberQuery', () => {
+  let testMemberId: string
+
   beforeEach(() => {
+    // Generate stable ID once per test to ensure queryKey doesn't change
+    testMemberId = faker.string.uuid()
     vi.clearAllMocks()
   })
 
   it('returns mapped member record', async () => {
+    const member = makeAdminMember({
+      nickname: 'J',
+      role: 'player',
+      category: 'adult',
+      phone: null,
+      date_of_birth: null,
+    })
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: 'J',
-        email: 'jane@example.com',
-        phone: null,
-        date_of_birth: null,
-        metadata: { role: 'player', category: 'adult' },
-        created_at: '2026-01-01T00:00:00.000Z',
-        updated_at: '2026-01-01T00:00:00.000Z',
+        id: member.id,
+        member_id: member.member_id,
+        full_name: member.full_name,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        nickname: member.nickname,
+        email: member.email,
+        phone: member.phone,
+        date_of_birth: member.date_of_birth,
+        metadata: { role: member.role, category: member.category },
+        created_at: member.created_at,
+        updated_at: member.updated_at,
       },
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery('user-1'))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
 
-    expect(result.current.data).toEqual({
-      id: 'user-1',
-      member_id: 'WC-001',
-      full_name: 'Jane Doe',
-      first_name: 'Jane',
-      last_name: 'Doe',
-      nickname: 'J',
-      email: 'jane@example.com',
-      phone: null,
-      date_of_birth: null,
-      role: 'player',
-      category: 'adult',
-      created_at: '2026-01-01T00:00:00.000Z',
-      updated_at: '2026-01-01T00:00:00.000Z',
-    })
+    expect(result.current.data).toEqual(member)
   })
 
   it('returns error state when member is not found', async () => {
-    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
-      data: null,
-      error: null,
-    })
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null })
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery('missing-user'))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(testMemberId))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)
@@ -95,25 +91,31 @@ describe('useAdminMemberQuery', () => {
   })
 
   it('returns empty role/category when metadata values are not strings', async () => {
+    const member = makeAdminMember({
+      phone: null,
+      date_of_birth: null,
+      nickname: null,
+      email: null,
+    })
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'user-2',
-        member_id: 'WC-002',
-        full_name: 'John Doe',
-        first_name: 'John',
-        last_name: 'Doe',
-        nickname: null,
-        email: null,
-        phone: null,
-        date_of_birth: null,
+        id: member.id,
+        member_id: member.member_id,
+        full_name: member.full_name,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        nickname: member.nickname,
+        email: member.email,
+        phone: member.phone,
+        date_of_birth: member.date_of_birth,
         metadata: { role: 123, category: false },
-        created_at: '2026-01-01T00:00:00.000Z',
-        updated_at: '2026-01-01T00:00:00.000Z',
+        created_at: member.created_at,
+        updated_at: member.updated_at,
       },
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery('user-2'))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -129,7 +131,7 @@ describe('useAdminMemberQuery', () => {
       error: new Error('query failed'),
     })
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery('user-3'))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(testMemberId))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)

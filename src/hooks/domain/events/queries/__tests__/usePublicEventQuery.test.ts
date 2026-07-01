@@ -1,5 +1,6 @@
 import { waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 
 const FIXED_NOW = new Date('2026-06-15T00:00:00.000Z').getTime()
@@ -42,7 +43,11 @@ vi.mock('@/lib/infrastructure', async () => {
 import { usePublicEventQuery } from '@/hooks/domain/events/queries/usePublicEventQuery'
 
 describe('usePublicEventQuery', () => {
+  let testEventSlug: string
+
   beforeEach(() => {
+    // Generate stable slug once per test to ensure queryKey doesn't change
+    testEventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
     vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW)
     vi.clearAllMocks()
   })
@@ -52,11 +57,14 @@ describe('usePublicEventQuery', () => {
   })
 
   it('returns available status for open registration', async () => {
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
+    const eventId = faker.string.uuid()
+    const registrationCount = faker.number.int({ min: 1, max: 100 })
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'evt-1',
-        slug: 'sample-event',
-        title: 'Sample Event',
+        id: eventId,
+        slug: eventSlug,
+        title: faker.lorem.sentence(),
         registration_mode: 'open',
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-07-01T00:00:00.000Z',
@@ -65,9 +73,9 @@ describe('usePublicEventQuery', () => {
       error: null,
     })
 
-    mockRpc.mockResolvedValueOnce({ data: 12, error: null })
+    mockRpc.mockResolvedValueOnce({ data: registrationCount, error: null })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('sample-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(eventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -76,24 +84,26 @@ describe('usePublicEventQuery', () => {
     expect(result.current.data).toEqual({
       status: 'available',
       event: {
-        id: 'evt-1',
-        slug: 'sample-event',
-        title: 'Sample Event',
+        id: eventId,
+        slug: eventSlug,
+        title: expect.any(String),
         registration_mode: 'open',
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-07-01T00:00:00.000Z',
         allow_public_registrations: true,
       },
-      registration_count: 12,
+      registration_count: registrationCount,
     })
   })
 
   it('keeps event accessible when guest registration is disabled', async () => {
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
+    const eventId = faker.string.uuid()
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'evt-1b',
-        slug: 'member-only-event',
-        title: 'Member Only Event',
+        id: eventId,
+        slug: eventSlug,
+        title: faker.lorem.sentence(),
         registration_mode: 'open',
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-07-01T00:00:00.000Z',
@@ -102,9 +112,9 @@ describe('usePublicEventQuery', () => {
       error: null,
     })
 
-    mockRpc.mockResolvedValueOnce({ data: 4, error: null })
+    mockRpc.mockResolvedValueOnce({ data: faker.number.int({ min: 1, max: 50 }), error: null })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('member-only-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(eventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -113,15 +123,15 @@ describe('usePublicEventQuery', () => {
     expect(result.current.data).toEqual({
       status: 'available',
       event: {
-        id: 'evt-1b',
-        slug: 'member-only-event',
-        title: 'Member Only Event',
+        id: eventId,
+        slug: eventSlug,
+        title: expect.any(String),
         registration_mode: 'open',
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-07-01T00:00:00.000Z',
         allow_public_registrations: false,
       },
-      registration_count: 4,
+      registration_count: expect.any(Number),
     })
   })
 
@@ -131,7 +141,7 @@ describe('usePublicEventQuery', () => {
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('missing-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(testEventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -149,7 +159,7 @@ describe('usePublicEventQuery', () => {
       error: new Error('event lookup failed'),
     })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('sample-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(testEventSlug))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)
@@ -157,11 +167,12 @@ describe('usePublicEventQuery', () => {
   })
 
   it('returns unavailable when registration mode is not open', async () => {
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'evt-2',
-        slug: 'closed-event',
-        title: 'Closed Event',
+        id: faker.string.uuid(),
+        slug: eventSlug,
+        title: faker.lorem.sentence(),
         registration_mode: 'closed',
         registration_opens_at: null,
         registration_closes_at: null,
@@ -170,7 +181,7 @@ describe('usePublicEventQuery', () => {
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('closed-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(eventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -184,11 +195,12 @@ describe('usePublicEventQuery', () => {
 
   it('returns unavailable when registration has not opened yet', async () => {
     const futureDate = new Date(Date.now() + 60_000).toISOString()
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'evt-3',
-        slug: 'future-event',
-        title: 'Future Event',
+        id: faker.string.uuid(),
+        slug: eventSlug,
+        title: faker.lorem.sentence(),
         registration_mode: 'open',
         registration_opens_at: futureDate,
         registration_closes_at: null,
@@ -197,7 +209,7 @@ describe('usePublicEventQuery', () => {
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('future-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(eventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -211,11 +223,12 @@ describe('usePublicEventQuery', () => {
 
   it('returns unavailable when registration is closed by date', async () => {
     const pastDate = new Date(Date.now() - 60_000).toISOString()
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'evt-4',
-        slug: 'past-event',
-        title: 'Past Event',
+        id: faker.string.uuid(),
+        slug: eventSlug,
+        title: faker.lorem.sentence(),
         registration_mode: 'open',
         registration_opens_at: null,
         registration_closes_at: pastDate,
@@ -224,7 +237,7 @@ describe('usePublicEventQuery', () => {
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('past-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(eventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -237,11 +250,12 @@ describe('usePublicEventQuery', () => {
   })
 
   it('falls back to 0 registration count when count RPC is unavailable', async () => {
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
     mockEventsQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
-        id: 'evt-5',
-        slug: 'sample-event',
-        title: 'Sample Event',
+        id: faker.string.uuid(),
+        slug: eventSlug,
+        title: faker.lorem.sentence(),
         registration_mode: 'open',
         registration_opens_at: null,
         registration_closes_at: null,
@@ -252,7 +266,7 @@ describe('usePublicEventQuery', () => {
 
     mockRpc.mockResolvedValueOnce({ data: null, error: new Error('rpc failed') })
 
-    const { result } = renderHookWithClient(() => usePublicEventQuery('sample-event'))
+    const { result } = renderHookWithClient(() => usePublicEventQuery(eventSlug))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)

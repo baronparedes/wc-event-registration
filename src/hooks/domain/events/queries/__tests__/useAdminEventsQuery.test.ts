@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminEvent } from '@/__tests__/factories'
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -42,13 +43,10 @@ describe('useAdminEventsQuery', () => {
   })
 
   it('returns paginated admin events on success', async () => {
+    const event = makeAdminEvent()
+    const dbRow = { id: event.id, title: event.title }
     mockQueryBuilder.range.mockResolvedValueOnce({
-      data: [
-        {
-          id: 'evt-1',
-          title: 'Event One',
-        },
-      ],
+      data: [dbRow],
       error: null,
       count: 11,
     })
@@ -65,7 +63,7 @@ describe('useAdminEventsQuery', () => {
     })
 
     expect(result.current.data).toEqual({
-      items: [{ id: 'evt-1', title: 'Event One' }],
+      items: [dbRow],
       hasMore: true,
       nextCursor: '10',
       totalCount: 11,

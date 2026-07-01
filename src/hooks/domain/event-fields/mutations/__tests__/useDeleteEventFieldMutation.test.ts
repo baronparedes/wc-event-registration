@@ -1,5 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery'
 
@@ -47,18 +48,20 @@ describe('useDeleteEventFieldMutation', () => {
   })
 
   it('deletes a field for a draft event and invalidates field list', async () => {
+    const fieldId = faker.string.uuid()
+    const eventId = faker.string.uuid()
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
 
     const { result, queryClient } = renderHookWithClient(() => useDeleteEventFieldMutation())
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
     await act(async () => {
-      await result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' })
+      await result.current.mutateAsync({ fieldId, eventId })
     })
 
     expect(mockDeleteBuilder.delete).toHaveBeenCalled()
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey('event-1') })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey(eventId) })
     })
   })
 
@@ -68,7 +71,7 @@ describe('useDeleteEventFieldMutation', () => {
     const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
 
     await expect(
-      result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' }),
+      result.current.mutateAsync({ fieldId: faker.string.uuid(), eventId: faker.string.uuid() }),
     ).rejects.toThrow('Cannot delete fields from a published or archived event')
   })
 
@@ -78,7 +81,7 @@ describe('useDeleteEventFieldMutation', () => {
     const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
 
     await expect(
-      result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' }),
+      result.current.mutateAsync({ fieldId: faker.string.uuid(), eventId: faker.string.uuid() }),
     ).rejects.toThrow('read failed')
   })
 
@@ -89,7 +92,7 @@ describe('useDeleteEventFieldMutation', () => {
     const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
 
     await expect(
-      result.current.mutateAsync({ fieldId: 'field-1', eventId: 'event-1' }),
+      result.current.mutateAsync({ fieldId: faker.string.uuid(), eventId: faker.string.uuid() }),
     ).rejects.toThrow('delete failed')
   })
 })

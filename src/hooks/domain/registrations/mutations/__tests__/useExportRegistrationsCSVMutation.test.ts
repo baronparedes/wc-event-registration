@@ -1,5 +1,6 @@
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 
 const { mockTextCaller, mockCreateEdgeFunctionTextCaller } = vi.hoisted(() => {
@@ -27,13 +28,14 @@ describe('useExportRegistrationsCSVMutation', () => {
   })
 
   it('calls export edge function with event id and returns text response', async () => {
+    const eventId = faker.string.uuid()
     mockTextCaller.mockResolvedValueOnce({ text: 'id,name', filename: 'registrations.csv' })
 
-    const { result } = renderHookWithClient(() => useExportRegistrationsCSVMutation('event-1'))
+    const { result } = renderHookWithClient(() => useExportRegistrationsCSVMutation(eventId))
 
     const response = await act(async () => result.current.mutateAsync())
 
-    expect(mockTextCaller).toHaveBeenCalledWith({ event_id: 'event-1' })
+    expect(mockTextCaller).toHaveBeenCalledWith({ event_id: eventId })
     expect(response).toEqual({ text: 'id,name', filename: 'registrations.csv' })
   })
 })

@@ -1,6 +1,7 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminEventField } from '@/__tests__/factories'
 import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery'
 
 const { mockEventsBuilder, mockOrderBuilder, mockInsertBuilder, mockFrom } = vi.hoisted(() => {
@@ -71,10 +72,11 @@ describe('useCreateEventFieldMutation', () => {
   })
 
   it('creates a field for a draft event and invalidates field list', async () => {
+    const field = makeAdminEventField({ field_type: 'text', display_order: 2 })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
-    mockOrderBuilder.limit.mockResolvedValueOnce({ data: [{ display_order: 2 }] })
+    mockOrderBuilder.limit.mockResolvedValueOnce({ data: [{ display_order: field.display_order }] })
     mockInsertBuilder.single.mockResolvedValueOnce({
-      data: { id: 'field-1', event_id: 'event-1', field_key: 'team_name' },
+      data: { id: field.id, event_id: field.event_id, field_key: field.field_key },
       error: null,
     })
 
@@ -83,46 +85,49 @@ describe('useCreateEventFieldMutation', () => {
 
     const created = await act(async () =>
       result.current.mutateAsync({
-        event_id: 'event-1',
-        field_key: 'team_name',
-        label: 'Team Name',
-        field_type: 'text',
-        is_required: true,
-        is_active: true,
+        event_id: field.event_id,
+        field_key: field.field_key,
+        label: field.label,
+        field_type: field.field_type,
+        is_required: field.is_required,
+        is_active: field.is_active,
         options: [],
         validation_rules: {},
         display_order: 0,
       }),
     )
 
-    expect(created).toEqual({ id: 'field-1', event_id: 'event-1', field_key: 'team_name' })
+    expect(created).toEqual({ id: field.id, event_id: field.event_id, field_key: field.field_key })
     expect(mockInsertBuilder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
-        event_id: 'event-1',
-        field_key: 'team_name',
-        label: 'Team Name',
-        display_order: 3,
+        event_id: field.event_id,
+        field_key: field.field_key,
+        label: field.label,
+        display_order: field.display_order + 1,
       }),
     )
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey('event-1') })
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: adminEventFieldsQueryKey(field.event_id),
+      })
     })
   })
 
   it('rejects creating fields on non-draft events', async () => {
+    const field = makeAdminEventField({ field_type: 'text' })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'published' }, error: null })
 
     const { result } = renderHookWithClient(() => useCreateEventFieldMutation())
 
     await expect(
       result.current.mutateAsync({
-        event_id: 'event-1',
-        field_key: 'team_name',
-        label: 'Team Name',
-        field_type: 'text',
-        is_required: true,
-        is_active: true,
+        event_id: field.event_id,
+        field_key: field.field_key,
+        label: field.label,
+        field_type: field.field_type,
+        is_required: field.is_required,
+        is_active: field.is_active,
         options: [],
         validation_rules: {},
         display_order: 0,
@@ -131,18 +136,19 @@ describe('useCreateEventFieldMutation', () => {
   })
 
   it('throws when loading event status fails', async () => {
+    const field = makeAdminEventField({ field_type: 'text' })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') })
 
     const { result } = renderHookWithClient(() => useCreateEventFieldMutation())
 
     await expect(
       result.current.mutateAsync({
-        event_id: 'event-1',
-        field_key: 'team_name',
-        label: 'Team Name',
-        field_type: 'text',
-        is_required: true,
-        is_active: true,
+        event_id: field.event_id,
+        field_key: field.field_key,
+        label: field.label,
+        field_type: field.field_type,
+        is_required: field.is_required,
+        is_active: field.is_active,
         options: [],
         validation_rules: {},
         display_order: 0,
@@ -151,10 +157,11 @@ describe('useCreateEventFieldMutation', () => {
   })
 
   it('starts display order at zero when no existing fields are present', async () => {
+    const field = makeAdminEventField({ field_type: 'text' })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
     mockOrderBuilder.limit.mockResolvedValueOnce({ data: [] })
     mockInsertBuilder.single.mockResolvedValueOnce({
-      data: { id: 'field-2', event_id: 'event-1', field_key: 'captain_name' },
+      data: { id: field.id, event_id: field.event_id, field_key: field.field_key },
       error: null,
     })
 
@@ -162,12 +169,12 @@ describe('useCreateEventFieldMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        event_id: 'event-1',
-        field_key: 'captain_name',
-        label: 'Captain Name',
-        field_type: 'text',
-        is_required: true,
-        is_active: true,
+        event_id: field.event_id,
+        field_key: field.field_key,
+        label: field.label,
+        field_type: field.field_type,
+        is_required: field.is_required,
+        is_active: field.is_active,
         options: [],
         validation_rules: {},
         display_order: 0,
@@ -182,8 +189,9 @@ describe('useCreateEventFieldMutation', () => {
   })
 
   it('throws when insert fails', async () => {
+    const field = makeAdminEventField({ field_type: 'text', display_order: 0 })
     mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
-    mockOrderBuilder.limit.mockResolvedValueOnce({ data: [{ display_order: 0 }] })
+    mockOrderBuilder.limit.mockResolvedValueOnce({ data: [{ display_order: field.display_order }] })
     mockInsertBuilder.single.mockResolvedValueOnce({
       data: null,
       error: new Error('insert failed'),
@@ -193,12 +201,12 @@ describe('useCreateEventFieldMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        event_id: 'event-1',
-        field_key: 'team_name',
-        label: 'Team Name',
-        field_type: 'text',
-        is_required: true,
-        is_active: true,
+        event_id: field.event_id,
+        field_key: field.field_key,
+        label: field.label,
+        field_type: field.field_type,
+        is_required: field.is_required,
+        is_active: field.is_active,
         options: [],
         validation_rules: {},
         display_order: 0,

@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makePublicEventField } from '@/__tests__/factories'
 
 const { mockQueryBuilder, mockFrom, mockLogger, mockValidatePublicEventFieldConfig } = vi.hoisted(
   () => {
@@ -56,25 +57,25 @@ describe('usePublicEventFieldsQuery', () => {
   })
 
   it('returns validated public field config', async () => {
+    const field = makePublicEventField()
+    const rawRow = { id: field.id, event_id: field.event_id, field_key: field.field_key }
     mockQueryBuilder.returns.mockResolvedValueOnce({
-      data: [{ id: 'field-1', event_id: 'event-1', field_key: 'team_name' }],
+      data: [rawRow],
       error: null,
     })
     mockValidatePublicEventFieldConfig.mockReturnValueOnce({
-      validFields: [{ id: 'field-1' }],
+      validFields: [{ id: field.id }],
       issues: [],
     })
 
-    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery('event-1'))
+    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery(field.event_id))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
 
-    expect(mockValidatePublicEventFieldConfig).toHaveBeenCalledWith([
-      { id: 'field-1', event_id: 'event-1', field_key: 'team_name' },
-    ])
-    expect(result.current.data).toEqual({ validFields: [{ id: 'field-1' }], issues: [] })
+    expect(mockValidatePublicEventFieldConfig).toHaveBeenCalledWith([rawRow])
+    expect(result.current.data).toEqual({ validFields: [{ id: field.id }], issues: [] })
   })
 
   it('returns query error state when field fetch fails', async () => {

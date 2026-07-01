@@ -1,5 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { ADMIN_MEMBER_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMemberQuery'
 import { ADMIN_MEMBERS_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMembersQuery'
@@ -52,6 +53,10 @@ describe('useUpdateMemberMutation', () => {
   })
 
   it('updates member fields and invalidates list/detail queries', async () => {
+    const userId = faker.string.uuid()
+    const firstName = faker.person.firstName()
+    const lastName = faker.person.lastName()
+    const email = faker.internet.email({ firstName, lastName })
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
       data: { metadata: { role: 'old-role', category: 'old-category', other: 'keep' } },
       error: null,
@@ -62,12 +67,12 @@ describe('useUpdateMemberMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        id: 'user-1',
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
+        id: userId,
+        full_name: `${firstName} ${lastName}`,
+        first_name: firstName,
+        last_name: lastName,
         nickname: '',
-        email: 'jane@example.com',
+        email,
         phone: '',
         date_of_birth: '',
         role: 'player',
@@ -76,11 +81,11 @@ describe('useUpdateMemberMutation', () => {
     })
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith({
-      full_name: 'Jane Doe',
-      first_name: 'Jane',
-      last_name: 'Doe',
+      full_name: `${firstName} ${lastName}`,
+      first_name: firstName,
+      last_name: lastName,
       nickname: null,
-      email: 'jane@example.com',
+      email,
       phone: null,
       date_of_birth: null,
       metadata: { other: 'keep', role: 'player' },
@@ -88,7 +93,7 @@ describe('useUpdateMemberMutation', () => {
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBERS_QUERY_KEY() })
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBER_QUERY_KEY('user-1') })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBER_QUERY_KEY(userId) })
     })
   })
 
@@ -99,8 +104,8 @@ describe('useUpdateMemberMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        id: 'missing-user',
-        full_name: 'Jane Doe',
+        id: faker.string.uuid(),
+        full_name: faker.person.fullName(),
         first_name: '',
         last_name: '',
         nickname: '',
@@ -123,8 +128,8 @@ describe('useUpdateMemberMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        id: 'user-2',
-        full_name: 'Jane Doe',
+        id: faker.string.uuid(),
+        full_name: faker.person.fullName(),
         first_name: '',
         last_name: '',
         nickname: '',
@@ -148,8 +153,8 @@ describe('useUpdateMemberMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        id: 'user-3',
-        full_name: 'Jane Doe',
+        id: faker.string.uuid(),
+        full_name: faker.person.fullName(),
         first_name: '',
         last_name: '',
         nickname: '',
@@ -172,8 +177,8 @@ describe('useUpdateMemberMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        id: 'user-4',
-        full_name: 'Jane Doe',
+        id: faker.string.uuid(),
+        full_name: faker.person.fullName(),
         first_name: '',
         last_name: '',
         nickname: '',

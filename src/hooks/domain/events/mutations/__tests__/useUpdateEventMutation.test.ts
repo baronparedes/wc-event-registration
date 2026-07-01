@@ -1,5 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery'
 import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery'
@@ -69,6 +70,7 @@ describe('useUpdateEventMutation', () => {
   })
 
   it('updates an event, records changed fields, and invalidates related queries', async () => {
+    const eventId = faker.string.uuid()
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
         title: 'Old Title',
@@ -89,7 +91,7 @@ describe('useUpdateEventMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        id: 'event-1',
+        id: eventId,
         title: 'New Title',
         description: '',
         location: '',
@@ -120,7 +122,7 @@ describe('useUpdateEventMutation', () => {
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'update_event',
       resourceType: 'event',
-      resourceId: 'event-1',
+      resourceId: eventId,
       metadata: {
         changed_fields: [
           'title',
@@ -136,7 +138,7 @@ describe('useUpdateEventMutation', () => {
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY })
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventQueryKey('event-1') })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventQueryKey(eventId) })
     })
   })
 
@@ -161,7 +163,7 @@ describe('useUpdateEventMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        id: 'event-2',
+        id: faker.string.uuid(),
         title: 'Title',
         description: 'desc',
         location: 'location',
@@ -185,7 +187,7 @@ describe('useUpdateEventMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        id: 'event-3',
+        id: faker.string.uuid(),
         title: 'Brand New',
         description: 'desc',
         location: 'hall',
@@ -243,7 +245,7 @@ describe('useUpdateEventMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        id: 'event-4',
+        id: faker.string.uuid(),
         title: 'Existing',
         description: undefined,
         location: undefined,

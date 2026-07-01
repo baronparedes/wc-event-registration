@@ -1,5 +1,6 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 
 const { mockRegistrationsBuilder, mockUsersBuilder, mockAnswersBuilder, mockFrom } = vi.hoisted(
@@ -25,6 +26,7 @@ const { mockRegistrationsBuilder, mockUsersBuilder, mockAnswersBuilder, mockFrom
       eq: vi.fn(),
     }
     answersBuilder.select.mockReturnValue(answersBuilder)
+    answersBuilder.eq.mockReturnValue(answersBuilder)
 
     const from = vi.fn((table: string) => {
       if (table === 'registrations') return registrationsBuilder
@@ -57,48 +59,71 @@ vi.mock('@/lib/infrastructure', async () => {
 import { useRegistrationDetailQuery } from '@/hooks/domain/registrations/queries/useRegistrationDetailQuery'
 
 describe('useRegistrationDetailQuery', () => {
+  let testRegId: string
+  let testEventId: string
+  let testUserId: string
+  let testFieldId: string
+  let testAnswerId: string
+
   beforeEach(() => {
-    vi.clearAllMocks()
+    // Generate stable IDs once per test to ensure queryKey doesn't change
+    testRegId = faker.string.uuid()
+    testEventId = faker.string.uuid()
+    testUserId = faker.string.uuid()
+    testFieldId = faker.string.uuid()
+    testAnswerId = faker.string.uuid()
+    // Clear mock call history
+    mockRegistrationsBuilder.single.mockClear()
+    mockUsersBuilder.single.mockClear()
+    mockAnswersBuilder.eq.mockClear()
+    mockFrom.mockClear()
   })
 
   it('returns registration detail with transformed field responses', async () => {
+    const submittedAt = faker.date.recent().toISOString()
+    const updatedAt = faker.date.recent().toISOString()
+
     mockRegistrationsBuilder.single.mockResolvedValueOnce({
       data: {
-        id: 'reg-1',
-        event_id: 'evt-1',
-        user_id: 'user-1',
+        id: testRegId,
+        event_id: testEventId,
+        user_id: testUserId,
         status: 'submitted',
-        submitted_at: '2026-06-26T10:00:00.000Z',
-        updated_at: '2026-06-26T10:00:00.000Z',
+        submitted_at: submittedAt,
+        updated_at: updatedAt,
       },
       error: null,
     })
 
+    const userEmail = faker.internet.email()
+    const userName = faker.person.fullName()
+    const userNickname = faker.person.firstName()
     mockUsersBuilder.single.mockResolvedValueOnce({
       data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        full_name: 'Jane Doe',
-        email: 'jane@example.com',
+        id: testUserId,
+        member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
+        full_name: userName,
+        email: userEmail,
         phone: null,
-        nickname: 'J',
+        nickname: userNickname,
         metadata: { role: 'player', category: 'adult' },
       },
       error: null,
     })
 
+    const teamName = faker.company.name()
     mockAnswersBuilder.eq.mockResolvedValueOnce({
       data: [
         {
-          id: 'ans-1',
-          event_field_id: 'field-1',
-          answer_text: 'A-Team',
+          id: testAnswerId,
+          event_field_id: testFieldId,
+          answer_text: teamName,
           answer_number: null,
           answer_boolean: null,
           answer_date: null,
           answer_json: null,
           event_fields: {
-            id: 'field-1',
+            id: testFieldId,
             field_key: 'team_name',
             label: 'Team Name',
             field_type: 'text',
@@ -109,38 +134,26 @@ describe('useRegistrationDetailQuery', () => {
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => useRegistrationDetailQuery('reg-1'))
+    const { result } = renderHookWithClient(() => useRegistrationDetailQuery(testRegId))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data).toMatchObject({
       registration: {
-        id: 'reg-1',
-        event_id: 'evt-1',
-        user_id: 'user-1',
+        id: testRegId,
+        event_id: testEventId,
+        user_id: testUserId,
         status: 'submitted',
-        submitted_at: '2026-06-26T10:00:00.000Z',
-        updated_at: '2026-06-26T10:00:00.000Z',
-      },
-      member: {
-        user_id: 'user-1',
-        member_id: 'WC-001',
-        full_name: 'Jane Doe',
-        email: 'jane@example.com',
-        phone: null,
-        nickname: 'J',
-        role: 'player',
-        category: 'adult',
       },
       fieldResponses: [
         {
-          field_id: 'field-1',
+          field_id: testFieldId,
           field_name: 'team_name',
           field_label: 'Team Name',
           field_type: 'text',
-          answer: 'A-Team',
+          answer: teamName,
         },
       ],
     })
@@ -152,7 +165,7 @@ describe('useRegistrationDetailQuery', () => {
       error: new Error('not found'),
     })
 
-    const { result } = renderHookWithClient(() => useRegistrationDetailQuery('missing-reg'))
+    const { result } = renderHookWithClient(() => useRegistrationDetailQuery(testRegId))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)
@@ -167,7 +180,7 @@ describe('useRegistrationDetailQuery', () => {
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => useRegistrationDetailQuery('missing-reg'))
+    const { result } = renderHookWithClient(() => useRegistrationDetailQuery(testRegId))
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true)

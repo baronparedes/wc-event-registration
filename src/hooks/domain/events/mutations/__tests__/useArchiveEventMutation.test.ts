@@ -1,5 +1,6 @@
 import { act, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { faker } from '@faker-js/faker'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery'
 
@@ -63,20 +64,21 @@ describe('useArchiveEventMutation', () => {
   })
 
   it('archives an event, writes audit log, and invalidates events list', async () => {
+    const eventId = faker.string.uuid()
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'published' } })
 
     const { result, queryClient } = renderHookWithClient(() => useArchiveEventMutation())
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
     await act(async () => {
-      await result.current.mutateAsync('event-1')
+      await result.current.mutateAsync(eventId)
     })
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith({ status: 'archived' })
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'archive_event',
       resourceType: 'event',
-      resourceId: 'event-1',
+      resourceId: eventId,
       metadata: {
         previous_status: 'published',
         next_status: 'archived',
@@ -89,12 +91,13 @@ describe('useArchiveEventMutation', () => {
   })
 
   it('uses null previous status when event lookup returns no row', async () => {
+    const eventId = faker.string.uuid()
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null })
 
     const { result } = renderHookWithClient(() => useArchiveEventMutation())
 
     await act(async () => {
-      await result.current.mutateAsync('event-2')
+      await result.current.mutateAsync(eventId)
     })
 
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith(
@@ -108,13 +111,14 @@ describe('useArchiveEventMutation', () => {
   })
 
   it('throws when archive update fails', async () => {
+    const eventId = faker.string.uuid()
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'open' } })
     mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
 
     const { result, queryClient } = renderHookWithClient(() => useArchiveEventMutation())
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
-    await expect(result.current.mutateAsync('event-3')).rejects.toThrow('update failed')
+    await expect(result.current.mutateAsync(eventId)).rejects.toThrow('update failed')
     expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
     expect(invalidateSpy).not.toHaveBeenCalled()
   })

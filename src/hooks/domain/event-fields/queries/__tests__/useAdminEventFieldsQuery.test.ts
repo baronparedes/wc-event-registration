@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { makeAdminEventField } from '@/__tests__/factories'
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -38,19 +39,20 @@ describe('useAdminEventFieldsQuery', () => {
   })
 
   it('returns ordered event fields for an event', async () => {
+    const field = makeAdminEventField()
     mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [{ id: 'field-1', event_id: 'event-1', field_key: 'team_name' }],
+      data: [{ id: field.id, event_id: field.event_id, field_key: field.field_key }],
       error: null,
     })
 
-    const { result } = renderHookWithClient(() => useAdminEventFieldsQuery('event-1'))
+    const { result } = renderHookWithClient(() => useAdminEventFieldsQuery(field.event_id))
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
 
     expect(result.current.data).toEqual([
-      { id: 'field-1', event_id: 'event-1', field_key: 'team_name' },
+      { id: field.id, event_id: field.event_id, field_key: field.field_key },
     ])
   })
 
