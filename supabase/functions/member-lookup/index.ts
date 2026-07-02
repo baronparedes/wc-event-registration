@@ -10,6 +10,7 @@ import {
   errorResponse as sharedErrorResponse,
   successResponse as sharedSuccessResponse,
 } from '@/shared/http.ts'
+import { tryConvertRfidInput } from '@/shared/rfid.ts'
 
 interface MemberLookupRequest {
   memberId?: string
@@ -327,7 +328,8 @@ Deno.serve(async (req) => {
 
     // Step 2: Member Lookup
     // 2.1 Lookup member by member_id or name/nickname.
-    const searchValue = isIdLookup ? memberId!.trim() : name!.trim()
+    // For ID lookups, automatically detect and convert Big-Endian RFID hex input to decimal.
+    const searchValue = isIdLookup ? tryConvertRfidInput(memberId!.trim()) : name!.trim()
     const baseQuery = supabase
       .from('users')
       .select('id, member_id, full_name, nickname, first_name, last_name')
