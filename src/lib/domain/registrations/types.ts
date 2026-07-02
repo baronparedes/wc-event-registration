@@ -43,3 +43,32 @@ export type AdminRegistrationDetail = {
   }
   fieldResponses: RegistrationFieldResponse[]
 }
+
+export const REGISTRATION_SHARE_FIELDS = [
+  'full_name',
+  'member_id',
+  'email',
+  'role',
+  'category',
+] as const
+
+export type RegistrationShareField = (typeof REGISTRATION_SHARE_FIELDS)[number]
+
+export type RegistrationShareRow = Record<RegistrationShareField, string>
+
+export const REGISTRATION_SHARE_FIELD_LABELS: Record<RegistrationShareField, string> = {
+  full_name: 'Full Name',
+  member_id: 'Member ID',
+  email: 'Email',
+  role: 'Role',
+  category: 'Category',
+}
+
+export type RegistrationShareAnswerField = {
+  field_id: string
+  label: string
+}
+
+export type RegistrationSharePayloadRow = RegistrationShareRow & {
+  answer_values: Record<string, string>
+}

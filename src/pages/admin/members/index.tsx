@@ -88,8 +88,8 @@ export function AdminMembersPage() {
 
   return (
     <section className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
           <h1 className="font-heading text-3xl font-bold text-text">Members</h1>
           <p className="text-sm text-muted">View and manage member profiles and details.</p>
           <p className="mt-1 text-xs text-muted">

@@ -10,6 +10,7 @@ import {
 
 interface ExportRegistrationsRequest {
   event_id: string
+  response_mode?: 'csv' | 'names_json'
 }
 
 type UserMetadata = {
@@ -27,6 +28,15 @@ function maskValue(value: string | null, visible = 6): string {
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : ''
+}
+
+type RegistrationShareRow = {
+  full_name: string
+  member_id: string
+  email: string
+  role: string
+  category: string
+  answer_values: Record<string, string>
 }
 
 // Helper function to escape CSV fields
@@ -171,7 +181,7 @@ Deno.serve(async (req) => {
 
     // Parse and validate request
     const body = (await req.json()) as ExportRegistrationsRequest
-    const { event_id } = body
+    const { event_id, response_mode } = body
 
     console.log('[export-registrations-csv] parsed body', {
       requestId,
@@ -360,6 +370,64 @@ Deno.serve(async (req) => {
 
       answersByRegistration.get(answer.registration_id)?.set(answer.event_field_id, answerValue)
     })
+
+    const shareRows: RegistrationShareRow[] =
+      registrations?.map((reg) => {
+        const user = userMap.get(reg.user_id)
+        const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null
+        const answerValues: Record<string, string> = {}
+
+        fields?.forEach((field) => {
+          const answer = answersByRegistration.get(reg.id)?.get(field.id)
+          answerValues[field.id] = formatAnswerValue(answer, field.field_type)
+        })
+
+        return {
+          full_name: user?.full_name ?? '',
+          member_id: user?.member_id ?? '',
+          email: user?.email ?? '',
+          role: readMetadataString(metadata?.role),
+          category: readMetadataString(metadata?.category),
+          answer_values: answerValues,
+        }
+      }) ?? []
+
+    const answerFields =
+      fields?.map((field) => ({
+        field_id: field.id,
+        label: field.label || formatBaseHeader(field.field_key),
+      })) ?? []
+
+    if (response_mode === 'names_json') {
+      await logAdminAction({
+        adminClient,
+        adminUserId: adminAccess.userId,
+        action: 'export_registration_names',
+        resourceType: 'export',
+        resourceId: event_id,
+        metadata: {
+          event_id,
+          row_count: shareRows.length,
+        },
+      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          event_title: eventData?.title ?? '',
+          row_count: shareRows.length,
+          answer_fields: answerFields,
+          rows: shareRows,
+        }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+    }
 
     // Build CSV content
     const headers: string[] = [

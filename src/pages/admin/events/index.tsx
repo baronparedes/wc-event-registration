@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
@@ -34,6 +34,7 @@ import {
 import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
 
 export function AdminEventsPage() {
+  const navigate = useNavigate()
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize)
   const [cursor, setCursor] = useState<string | null>(null)
 
@@ -97,8 +98,8 @@ export function AdminEventsPage() {
 
   return (
     <section className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
           <h1 className="font-heading text-3xl font-bold text-text">Events</h1>
           <p className="text-sm text-muted">
             Create, edit, archive, and manage registration behavior.
@@ -107,8 +108,8 @@ export function AdminEventsPage() {
             Page {currentPage} of {totalPages}
           </p>
         </div>
-        <Button asChild size="md" variant="default">
-          <Link to={ROUTE_PATHS.adminEventNew}>New Event</Link>
+        <Button size="md" variant="default" onClick={() => navigate(ROUTE_PATHS.adminEventNew)}>
+          New Event
         </Button>
       </div>
 

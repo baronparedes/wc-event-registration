@@ -36,9 +36,9 @@ export function AdminEventFieldsPage() {
   return (
     <section className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="mb-1 flex items-center gap-2 text-sm text-muted">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
               Events
             </Link>
@@ -60,11 +60,11 @@ export function AdminEventFieldsPage() {
             </p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex w-full flex-col items-start gap-1 md:w-auto md:items-end">
           <Button
             type="button"
             variant="default"
-            size="md"
+            className="w-full md:w-auto"
             onClick={openCreate}
             disabled={!isDraft}
             title={!isDraft ? 'Only draft events can add new fields.' : undefined}

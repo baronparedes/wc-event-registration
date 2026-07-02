@@ -26,6 +26,9 @@ export const TOAST_MESSAGES = {
     submitFailed: 'Failed to submit registration',
     cancelFailed: 'Failed to cancel registration',
     reactivateFailed: 'Failed to reactivate registration',
+    namesCopied: (count: number) =>
+      `Copied ${count} registration${count === 1 ? '' : 's'} to clipboard.`,
+    copyNamesFailed: 'Failed to copy registration names',
   },
 } as const
 

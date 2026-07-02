@@ -1,9 +1,11 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
+import { faker } from '@faker-js/faker'
 
 const {
   mockUseParams,
+  mockNavigate,
   mockUseAdminEventQuery,
   mockUseAdminRegistrationsQuery,
   mockGetCurrentPageFromCursor,
@@ -11,6 +13,7 @@ const {
   mockPaginationProps,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
+  mockNavigate: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminRegistrationsQuery: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
@@ -23,6 +26,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useParams: () => mockUseParams(),
+    useNavigate: () => mockNavigate,
   }
 })
 
@@ -94,6 +98,7 @@ vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
   RegistrationsList: (props: { registrations: Array<{ member_id: string }> }) => (
     <div>{`Registrations: ${props.registrations.map((registration) => registration.member_id).join(', ')}`}</div>
   ),
+  CopyNamesButton: () => <div>Copy Names Button</div>,
   ExportButton: () => <div>Export Button</div>,
 }))
 
@@ -108,22 +113,29 @@ function renderWithRouter() {
 }
 
 describe('AdminRegistrationsPage', () => {
+  let testEventId: string
+
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUseParams.mockReturnValue({ id: 'event-1' })
+    testEventId = faker.string.uuid()
+    mockUseParams.mockReturnValue({ id: testEventId })
+    mockNavigate.mockReset()
     mockGetCurrentPageFromCursor.mockReturnValue(1)
     mockGetPageCursor.mockReturnValue(null)
   })
 
   it('renders registrations and published-state banner', () => {
+    const eventTitle = faker.lorem.words(2)
+    const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase()
+
     mockUseAdminEventQuery.mockReturnValue({
-      data: { id: 'event-1', title: 'Sample Event', status: 'published' },
+      data: { id: testEventId, title: eventTitle, status: 'published' },
       isLoading: false,
       error: null,
     })
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: 'WC-001' }],
+        items: [{ member_id: memberId }],
         hasMore: false,
         nextCursor: null,
         totalPages: 1,
@@ -134,18 +146,20 @@ describe('AdminRegistrationsPage', () => {
 
     renderWithRouter()
 
-    expect(screen.getByText('Registrations for Sample Event')).toBeInTheDocument()
+    expect(screen.getByText(`Registrations for ${eventTitle}`)).toBeInTheDocument()
     expect(
       screen.getByText('This event is published. All registrations are visible.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Registrations: WC-001')).toBeInTheDocument()
+    expect(screen.getByText(`Registrations: ${memberId}`)).toBeInTheDocument()
   })
 
   it('renders error state when queries fail', () => {
+    const errorMessage = faker.lorem.words(2)
+
     mockUseAdminEventQuery.mockReturnValue({
       data: null,
       isLoading: false,
-      error: new Error('boom'),
+      error: new Error(errorMessage),
     })
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: null,
@@ -178,14 +192,17 @@ describe('AdminRegistrationsPage', () => {
   })
 
   it('renders archived-state banner', () => {
+    const eventTitle = faker.lorem.words(2)
+    const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase()
+
     mockUseAdminEventQuery.mockReturnValue({
-      data: { id: 'event-1', title: 'Old Event', status: 'archived' },
+      data: { id: testEventId, title: eventTitle, status: 'archived' },
       isLoading: false,
       error: null,
     })
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: 'WC-002' }],
+        items: [{ member_id: memberId }],
         hasMore: false,
         nextCursor: null,
         totalPages: 1,
@@ -203,9 +220,11 @@ describe('AdminRegistrationsPage', () => {
 
   it('enables clear button after debounced search and clears input', () => {
     vi.useFakeTimers()
+    const eventTitle = faker.lorem.words(2)
+    const searchTerm = faker.person.firstName()
 
     mockUseAdminEventQuery.mockReturnValue({
-      data: { id: 'event-1', title: 'Search Event', status: 'published' },
+      data: { id: testEventId, title: eventTitle, status: 'published' },
       isLoading: false,
       error: null,
     })
@@ -226,7 +245,7 @@ describe('AdminRegistrationsPage', () => {
     expect(clearButton).toBeDisabled()
 
     fireEvent.change(screen.getByPlaceholderText(/Search by name/i), {
-      target: { value: 'Jane' },
+      target: { value: searchTerm },
     })
 
     act(() => {
@@ -241,16 +260,19 @@ describe('AdminRegistrationsPage', () => {
   })
 
   it('wires pagination actions to cursor helper functions', () => {
+    const eventTitle = faker.lorem.words(2)
+    const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase()
+
     mockGetCurrentPageFromCursor.mockReturnValue(2)
     mockGetPageCursor.mockImplementation((page: number) => `cursor-${page}`)
     mockUseAdminEventQuery.mockReturnValue({
-      data: { id: 'event-1', title: 'Paged Event', status: 'published' },
+      data: { id: testEventId, title: eventTitle, status: 'published' },
       isLoading: false,
       error: null,
     })
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: 'WC-001' }],
+        items: [{ member_id: memberId }],
         hasMore: true,
         nextCursor: 'cursor-next',
         totalPages: 4,
@@ -271,5 +293,39 @@ describe('AdminRegistrationsPage', () => {
     expect(mockGetPageCursor).toHaveBeenCalledWith(1, expect.any(Number))
     expect(mockGetPageCursor).toHaveBeenCalledWith(4, expect.any(Number))
     expect(mockGetPageCursor).toHaveBeenCalledWith(2, expect.any(Number))
+  })
+
+  it('renders mobile-stacked header action group and navigates to public registrations', () => {
+    const eventTitle = faker.lorem.words(2)
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: testEventId, title: eventTitle, status: 'published' },
+      isLoading: false,
+      error: null,
+    })
+    mockUseAdminRegistrationsQuery.mockReturnValue({
+      data: {
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    })
+
+    renderWithRouter()
+
+    const publicRegistrationsButton = screen.getByRole('button', {
+      name: 'View Public Registrations',
+    })
+    const headerActionsContainer = publicRegistrationsButton.parentElement
+
+    expect(headerActionsContainer).toHaveClass('w-full')
+    expect(headerActionsContainer).toHaveClass('flex-col')
+    expect(headerActionsContainer).toHaveClass('items-stretch')
+
+    fireEvent.click(publicRegistrationsButton)
+    expect(mockNavigate).toHaveBeenCalledWith(`/admin/events/${testEventId}/public-registrations`)
   })
 })

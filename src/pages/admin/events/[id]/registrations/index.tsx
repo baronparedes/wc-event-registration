@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
@@ -11,7 +11,7 @@ import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
 import { Button } from '@/components/ui/Button'
-import { ExportButton, RegistrationsList } from './components'
+import { CopyNamesButton, ExportButton, RegistrationsList } from './components'
 
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>()
@@ -21,6 +21,8 @@ export function AdminRegistrationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -99,8 +101,8 @@ export function AdminRegistrationsPage() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
           <h1 className="font-heading text-3xl font-bold text-text">
             Registrations for {event?.title ?? 'Event'}
           </h1>
@@ -109,10 +111,16 @@ export function AdminRegistrationsPage() {
             page
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link to={toAdminEventPublicRegistrations(eventId)}>View Public Registrations</Link>
+        <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
+          >
+            View Public Registrations
           </Button>
+          <CopyNamesButton eventId={eventId} eventTitle={event?.title} />
           <ExportButton eventId={eventId} />
         </div>
       </div>

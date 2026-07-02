@@ -53,4 +53,10 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('button', { name: 'Nope' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled()
   })
+
+  it('applies custom max width class when provided', () => {
+    renderDialog({ maxWidthClass: 'max-w-2xl' })
+
+    expect(screen.getByText('Confirm Action').closest('div')).toHaveClass('max-w-2xl')
+  })
 })

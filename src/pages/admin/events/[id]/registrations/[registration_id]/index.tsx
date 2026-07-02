@@ -188,7 +188,7 @@ export function AdminRegistrationDetailPage() {
   return (
     <>
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="outline" onClick={() => navigate(-1)}>
             ← Back to Registrations
           </Button>

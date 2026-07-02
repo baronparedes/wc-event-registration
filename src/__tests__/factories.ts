@@ -28,6 +28,7 @@ import type {
   AdminRegistration,
   AdminRegistrationWithMember,
   AdminRegistrationDetail,
+  RegistrationSharePayloadRow,
   RegistrationFieldResponse,
   RegistrationStatus,
 } from '@/lib/domain/registrations'
@@ -280,6 +281,23 @@ export function makeAdminRegistrationDetail(
       category: 'regular',
     },
     fieldResponses: [],
+    ...overrides,
+  }
+}
+
+export function makeRegistrationSharePayloadRow(
+  overrides: Partial<RegistrationSharePayloadRow> = {},
+): RegistrationSharePayloadRow {
+  const firstName = faker.person.firstName()
+  const lastName = faker.person.lastName()
+  const fullName = `${firstName} ${lastName}`
+  return {
+    full_name: fullName,
+    member_id: `WC-${faker.string.numeric(3)}`,
+    email: faker.internet.email({ firstName, lastName }),
+    role: faker.helpers.arrayElement(['Member', 'Volunteer', 'Coordinator']),
+    category: faker.helpers.arrayElement(['Adult', 'Youth']),
+    answer_values: {},
     ...overrides,
   }
 }

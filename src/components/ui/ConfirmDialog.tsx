@@ -5,6 +5,7 @@ type ConfirmDialogProps = {
   isOpen: boolean
   title: string
   description: ReactNode
+  maxWidthClass?: string
   confirmLabel: string
   confirmLoadingLabel: string
   cancelLabel?: string
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   isOpen,
   title,
   description,
+  maxWidthClass = 'max-w-md',
   confirmLabel,
   confirmLoadingLabel,
   cancelLabel = 'Cancel',
@@ -38,7 +40,7 @@ export function ConfirmDialog({
       onClick={onCancel}
     >
       <div
-        className="mx-4 w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-lg"
+        className={`mx-4 w-full ${maxWidthClass} rounded-2xl border border-border bg-surface p-6 shadow-lg`}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-heading text-lg font-semibold text-text">{title}</h2>
