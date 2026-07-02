@@ -36,13 +36,14 @@ Features are organized into 7 epic folders:
 
 - **Configure Event Fields**: Admins design registration form fields for each event
 
-### 5. Admin Registrations (9 features)
+### 5. Admin Registrations (10 features)
 
 - **View Registrations**: Admins see paginated list of registrations for an event
 - **View Registration Detail**: Admins view complete registration record
 - **Cancel Registration**: Admins cancel a member's registration
 - **Reactivate Registration**: Admins restore a cancelled registration
 - **Export Registrations**: Admins download registration data as CSV
+- **Copy Registration Names**: Admins copy names and selected fields (including dynamic answers) to clipboard
 - **View Public Registrations**: Admins see paginated list of public self-registrations for an event
 - **View Public Registration Detail**: Admins view full details and responses for a public self-registration
 - **Cancel Public Registration**: Admins cancel an active public self-registration
@@ -192,6 +193,6 @@ If a feature is unclear or a scenario is ambiguous:
 
 ---
 
-**Last updated**: 2026-06-30  
+**Last updated**: 2026-07-02  
 **Created for**: Event Registration Platform  
 **Audience**: Product, QA, Development, Business Stakeholders
