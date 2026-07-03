@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
+import { AdminPageShell } from '@/components/layout'
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
@@ -44,7 +45,14 @@ export function AdminRegistrationsPage() {
   })
 
   if (!eventId) {
-    return <div>Invalid event ID</div>
+    return (
+      <AdminPageShell>
+        <AdminPageShell.Header title="Registrations" />
+        <AdminPageShell.Content>
+          <p className="text-sm text-red-600">Invalid event ID</p>
+        </AdminPageShell.Content>
+      </AdminPageShell>
+    )
   }
 
   const pagedResult = registrationsQuery.data
@@ -59,12 +67,14 @@ export function AdminRegistrationsPage() {
 
   if (error) {
     return (
-      <section className="space-y-4">
-        <h1 className="font-heading text-3xl font-bold text-text">Event Registrations</h1>
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="text-sm text-red-600">Error loading registrations: {String(error)}</p>
-        </div>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header title="Registrations" />
+        <AdminPageShell.Content>
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <p className="text-sm text-red-600">Error loading registrations: {String(error)}</p>
+          </div>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
@@ -102,44 +112,34 @@ export function AdminRegistrationsPage() {
     setCursor(null)
   }
 
-  return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <div className="flex flex-wrap items-center gap-2 text-muted">
-          <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
-            Events
-          </Link>
-          <span>›</span>
-          <Link to={toAdminEventDetail(eventId)} className="hover:underline">
-            {event?.title ?? 'Event'}
-          </Link>
-          <span>›</span>
-          <span>Registrations</span>
-        </div>
-        <ActionLink to={toAdminEventDetail(eventId)}>Back to Event</ActionLink>
-      </div>
+  const navActions = (
+    <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
+      >
+        View Public Registrations
+      </Button>
+      <CopyNamesButton eventId={eventId} eventTitle={event?.title} />
+      <ExportButton eventId={eventId} />
+    </div>
+  )
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-heading text-3xl font-bold text-text">Registrations</h1>
-          <p className="mt-1 text-sm text-muted">
-            Page {currentPage} of {totalPages} • {registrations.length} member registrations on this
-            page
-          </p>
-        </div>
-        <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
-          >
-            View Public Registrations
-          </Button>
-          <CopyNamesButton eventId={eventId} eventTitle={event?.title} />
-          <ExportButton eventId={eventId} />
-        </div>
-      </div>
+  return (
+    <AdminPageShell>
+      <AdminPageShell.Header
+        breadcrumbs={[
+          { label: 'Events', to: ROUTE_PATHS.adminEvents },
+          { label: event?.title ?? 'Event', to: toAdminEventDetail(eventId) },
+          { label: 'Registrations' },
+        ]}
+        navLinks={<ActionLink to={toAdminEventDetail(eventId)}>Back to Event</ActionLink>}
+        title="Registrations"
+        description={`Page ${currentPage} of ${totalPages} • ${registrations.length} member registrations on this page`}
+        actions={navActions}
+      />
 
       {event && event.status !== 'draft' && (
         <div
@@ -161,7 +161,7 @@ export function AdminRegistrationsPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-surface p-4">
+      <AdminPageShell.Filters>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
             Search registrations
@@ -183,40 +183,42 @@ export function AdminRegistrationsPage() {
             Clear
           </Button>
         </div>
-      </div>
+      </AdminPageShell.Filters>
 
-      <div className="rounded-2xl border border-border bg-surface">
-        <RegistrationsList
-          registrations={registrations}
-          isLoading={isLoading}
-          eventId={eventId}
-          isEventArchived={isEventArchived}
-          searchTerm={normalizedSearchTerm}
-        />
-
-        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p className="hidden text-xs text-muted sm:block">
-            {normalizedSearchTerm.length > 0
-              ? `Showing up to ${pageSize} matching registrations per page`
-              : `Showing up to ${pageSize} registrations per page`}
-          </p>
-          <AdminPaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
+      <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading registrations...">
+        <div className="rounded-2xl border border-border bg-surface">
+          <RegistrationsList
+            registrations={registrations}
             isLoading={isLoading}
-            canGoPrevious={currentPage > 1}
-            canGoNext={hasMore && Boolean(nextCursor)}
-            pageSize={pageSize}
-            pageSizeOptions={PAGINATION_OPTIONS.adminRegistrations}
-            onPageSizeChange={handlePageSizeChange}
-            onFirstPage={handleFirstPage}
-            onPreviousPage={handlePreviousPage}
-            onNextPage={handleNextPage}
-            onLastPage={handleLastPage}
-            onGoToPage={handleGoToPage}
+            eventId={eventId}
+            isEventArchived={isEventArchived}
+            searchTerm={normalizedSearchTerm}
           />
+
+          <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p className="hidden text-xs text-muted sm:block">
+              {normalizedSearchTerm.length > 0
+                ? `Showing up to ${pageSize} matching registrations per page`
+                : `Showing up to ${pageSize} registrations per page`}
+            </p>
+            <AdminPaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              isLoading={isLoading}
+              canGoPrevious={currentPage > 1}
+              canGoNext={hasMore && Boolean(nextCursor)}
+              pageSize={pageSize}
+              pageSizeOptions={PAGINATION_OPTIONS.adminRegistrations}
+              onPageSizeChange={handlePageSizeChange}
+              onFirstPage={handleFirstPage}
+              onPreviousPage={handlePreviousPage}
+              onNextPage={handleNextPage}
+              onLastPage={handleLastPage}
+              onGoToPage={handleGoToPage}
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </AdminPageShell.Content>
+    </AdminPageShell>
   )
 }

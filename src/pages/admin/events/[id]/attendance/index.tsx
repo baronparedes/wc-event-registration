@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button, SectionCard } from '@/components/ui'
 import { ActionLink } from '@/components/ui/ActionLink'
-import { ROUTE_PATHS, UI_MESSAGES, toAdminEventDetail } from '@/config/constants'
+import { AdminPageShell } from '@/components/layout'
+import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants'
 import {
   useAttendanceSettingsQuery,
   useUpdateAttendanceSettingsMutation,
@@ -108,9 +109,12 @@ export function AdminEventAttendancePage() {
 
   if (!eventId) {
     return (
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-red-600">Invalid event ID.</p>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header title="Attendance Settings" />
+        <AdminPageShell.Content>
+          <p className="text-sm text-red-600">Invalid event ID.</p>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
@@ -118,25 +122,33 @@ export function AdminEventAttendancePage() {
 
   if (isEventLoading || isSettingsLoading) {
     return (
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-muted">Loading attendance settings...</p>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Content isLoading={true} loadingMessage="Loading attendance settings...">
+          {null}
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
   if (!event) {
     return (
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-red-600">{UI_MESSAGES.errors.eventNotFound}</p>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header title="Attendance Settings" />
+        <AdminPageShell.Content>
+          <p className="text-sm text-red-600">Event not found.</p>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
   if (settingsError) {
     return (
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-red-600">Failed to load attendance settings.</p>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header title="Attendance Settings" />
+        <AdminPageShell.Content>
+          <p className="text-sm text-red-600">Failed to load attendance settings.</p>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
@@ -219,28 +231,17 @@ export function AdminEventAttendancePage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <div className="flex flex-wrap items-center gap-2 text-muted">
-          <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
-            Events
-          </Link>
-          <span>›</span>
-          <Link to={toAdminEventDetail(resolvedEventId)} className="hover:underline">
-            {activeEvent.title}
-          </Link>
-          <span>›</span>
-          <span>Attendance</span>
-        </div>
-        <ActionLink to={toAdminEventDetail(resolvedEventId)}>Back to Event</ActionLink>
-      </div>
-
-      <div>
-        <h1 className="font-heading text-3xl font-bold text-text">Attendance Settings</h1>
-        <p className="mt-1 text-sm text-muted">
-          Configure event-day attendance tracking, walk-ins, and timeslot attendance behavior.
-        </p>
-      </div>
+    <AdminPageShell>
+      <AdminPageShell.Header
+        breadcrumbs={[
+          { label: 'Events', to: ROUTE_PATHS.adminEvents },
+          { label: activeEvent.title, to: toAdminEventDetail(resolvedEventId) },
+          { label: 'Attendance' },
+        ]}
+        navLinks={<ActionLink to={toAdminEventDetail(resolvedEventId)}>Back to Event</ActionLink>}
+        title="Attendance Settings"
+        description="Configure event-day attendance tracking, walk-ins, and timeslot attendance behavior."
+      />
 
       {isArchived && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -251,123 +252,130 @@ export function AdminEventAttendancePage() {
         </div>
       )}
 
-      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-        <SectionCard title="Attendance Controls">
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-background p-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  disabled={isArchived}
-                  {...register('attendance_enabled')}
-                  className="h-4 w-4 cursor-pointer rounded border-border"
-                />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-text">Enable attendance tracking</span>
-                  <span className="text-xs text-muted">
-                    Allows check-in operations and attendance export for this event.
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            <div className="rounded-lg border border-border bg-background p-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  disabled={isArchived || !attendanceEnabled}
-                  {...register('walk_in_mode_enabled')}
-                  className="h-4 w-4 cursor-pointer rounded border-border"
-                />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-text">Enable walk-in mode</span>
-                  <span className="text-xs text-muted">
-                    Allows staff to add and check in walk-in attendees when no registration exists.
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            <div className="rounded-lg border border-border bg-background p-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  disabled={isArchived || !attendanceEnabled}
-                  {...register('timeslot_enabled')}
-                  className="h-4 w-4 cursor-pointer rounded border-border"
-                />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-text">Enable timeslot attendance</span>
-                  <span className="text-xs text-muted">
-                    Records attendance by configured slots (for example: 9AM, 12NN, 3PM).
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            {timeslotEnabled && attendanceEnabled && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text">Timeslots</label>
-                <p className="text-xs text-muted">
-                  Event window: {formatDateTime(activeEvent.starts_at)} to{' '}
-                  {formatDateTime(activeEvent.ends_at)}
-                </p>
-
-                <div className="space-y-2">
-                  {effectiveTimeslots.map((slot, index) => (
-                    <div key={`timeslot-${index}`} className="flex gap-2">
-                      <input
-                        type="datetime-local"
-                        disabled={isArchived}
-                        min={eventStartLocal || undefined}
-                        max={eventEndLocal || undefined}
-                        value={toDatetimeLocal(slot)}
-                        onChange={(event) => updateTimeslot(index, event.target.value)}
-                        className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isArchived}
-                        onClick={() => removeTimeslot(index)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isArchived}
-                  onClick={addTimeslot}
-                >
-                  Add Timeslot
-                </Button>
-                <p className="text-xs text-muted">
-                  Pick date-time slots within the event start and end date-time range.
-                </p>
-                {errors.timeslots && (
-                  <p className="text-xs text-red-600">{errors.timeslots.message}</p>
-                )}
+      <AdminPageShell.Content>
+        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <SectionCard title="Attendance Controls">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-background p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    disabled={isArchived}
+                    {...register('attendance_enabled')}
+                    className="h-4 w-4 cursor-pointer rounded border-border"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-text">
+                      Enable attendance tracking
+                    </span>
+                    <span className="text-xs text-muted">
+                      Allows check-in operations and attendance export for this event.
+                    </span>
+                  </div>
+                </label>
               </div>
-            )}
-          </div>
-        </SectionCard>
 
-        <div className="flex justify-end gap-3">
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isArchived || updateMutation.isPending || !isDirty}
-          >
-            {updateMutation.isPending ? 'Saving...' : 'Save Attendance Settings'}
-          </Button>
-        </div>
-      </form>
-    </section>
+              <div className="rounded-lg border border-border bg-background p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    disabled={isArchived || !attendanceEnabled}
+                    {...register('walk_in_mode_enabled')}
+                    className="h-4 w-4 cursor-pointer rounded border-border"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-text">Enable walk-in mode</span>
+                    <span className="text-xs text-muted">
+                      Allows staff to add and check in walk-in attendees when no registration
+                      exists.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="rounded-lg border border-border bg-background p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    disabled={isArchived || !attendanceEnabled}
+                    {...register('timeslot_enabled')}
+                    className="h-4 w-4 cursor-pointer rounded border-border"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-text">
+                      Enable timeslot attendance
+                    </span>
+                    <span className="text-xs text-muted">
+                      Records attendance by configured slots (for example: 9AM, 12NN, 3PM).
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {timeslotEnabled && attendanceEnabled && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text">Timeslots</label>
+                  <p className="text-xs text-muted">
+                    Event window: {formatDateTime(activeEvent.starts_at)} to{' '}
+                    {formatDateTime(activeEvent.ends_at)}
+                  </p>
+
+                  <div className="space-y-2">
+                    {effectiveTimeslots.map((slot, index) => (
+                      <div key={`timeslot-${index}`} className="flex gap-2">
+                        <input
+                          type="datetime-local"
+                          disabled={isArchived}
+                          min={eventStartLocal || undefined}
+                          max={eventEndLocal || undefined}
+                          value={toDatetimeLocal(slot)}
+                          onChange={(event) => updateTimeslot(index, event.target.value)}
+                          className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isArchived}
+                          onClick={() => removeTimeslot(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isArchived}
+                    onClick={addTimeslot}
+                  >
+                    Add Timeslot
+                  </Button>
+                  <p className="text-xs text-muted">
+                    Pick date-time slots within the event start and end date-time range.
+                  </p>
+                  {errors.timeslots && (
+                    <p className="text-xs text-red-600">{errors.timeslots.message}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </SectionCard>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isArchived || updateMutation.isPending || !isDirty}
+            >
+              {updateMutation.isPending ? 'Saving...' : 'Save Attendance Settings'}
+            </Button>
+          </div>
+        </form>
+      </AdminPageShell.Content>
+    </AdminPageShell>
   )
 }

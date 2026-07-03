@@ -178,7 +178,7 @@ describe('AdminRegistrationsPage', () => {
 
     renderWithRouter()
 
-    expect(screen.getByText('Event Registrations')).toBeInTheDocument()
+    expect(screen.getByText('Registrations')).toBeInTheDocument()
     expect(screen.getByText(/Error loading registrations:/)).toBeInTheDocument()
   })
 

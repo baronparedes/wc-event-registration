@@ -209,11 +209,6 @@ describe('AdminEventFormPage', () => {
     renderWithRouter('edit')
 
     expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', '/admin/events')
-    expect(screen.getByRole('link', { name: 'Original Event' })).toHaveAttribute(
-      'href',
-      '/admin/events/event-1',
-    )
-
     expect(screen.getByRole('link', { name: 'Attendance' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/attendance',

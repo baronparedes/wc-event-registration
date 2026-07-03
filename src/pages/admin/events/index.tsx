@@ -20,6 +20,7 @@ import {
   useArchiveEventMutation,
 } from '@/hooks/domain/events'
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
+import { AdminPageShell } from '@/components/layout'
 import { ActionLink } from '@/components/ui/ActionLink'
 import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
@@ -117,23 +118,25 @@ export function AdminEventsPage() {
   }
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-heading text-3xl font-bold text-text">Events</h1>
-          <p className="text-sm text-muted">
-            Create, edit, archive, and manage registration behavior.
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            Page {currentPage} of {totalPages}
-          </p>
-        </div>
-        <Button size="md" variant="default" onClick={() => navigate(ROUTE_PATHS.adminEventNew)}>
-          New Event
-        </Button>
-      </div>
+    <AdminPageShell>
+      <AdminPageShell.Header
+        breadcrumbs={[{ label: 'Events' }]}
+        title="Manage Events"
+        description="Create, edit, archive, and manage registration behavior."
+        actions={
+          <Button
+            size="md"
+            variant="default"
+            onClick={() => navigate(ROUTE_PATHS.adminEventNew)}
+            className="w-full sm:w-auto sm:inline-flex"
+          >
+            <Plus className="h-4 w-4" />
+            New Event
+          </Button>
+        }
+      />
 
-      <div className="rounded-2xl border border-border bg-surface p-4">
+      <AdminPageShell.Filters>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
             Search events
@@ -155,15 +158,17 @@ export function AdminEventsPage() {
             Clear
           </Button>
         </div>
-      </div>
+      </AdminPageShell.Filters>
 
-      <div className="rounded-2xl border border-border bg-surface">
-        {isLoading ? (
-          <p className="p-6 text-sm text-muted">{UI_MESSAGES.loading.events}</p>
-        ) : error ? (
-          <p className="p-6 text-sm text-red-600">{UI_MESSAGES.errors.eventsLoadFailed}</p>
-        ) : events.length === 0 ? (
-          <div className="px-6 py-12">
+      <AdminPageShell.Content isLoading={isLoading} loadingMessage={UI_MESSAGES.loading.events}>
+        {error && (
+          <div className="rounded-2xl border border-border bg-surface p-6">
+            <p className="text-sm text-red-600">{UI_MESSAGES.errors.eventsLoadFailed}</p>
+          </div>
+        )}
+
+        {!error && events.length === 0 && (
+          <div className="rounded-2xl border border-border bg-surface px-6 py-12">
             <EmptyState
               icon={<Plus className="h-6 w-6" />}
               title="No events yet"
@@ -175,8 +180,10 @@ export function AdminEventsPage() {
               }
             />
           </div>
-        ) : (
-          <>
+        )}
+
+        {!error && events.length > 0 && (
+          <div className="rounded-2xl border border-border bg-surface">
             <ListTable>
               <ListTableHead>
                 <ListTableHeaderRow>
@@ -190,7 +197,11 @@ export function AdminEventsPage() {
               </ListTableHead>
               <ListTableBody>
                 {events.map((event) => (
-                  <ListTableRow key={event.id}>
+                  <ListTableRow
+                    key={event.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate(toAdminEventDetail(event.id))}
+                  >
                     <ListTableCell className="px-6">
                       <p className="font-medium text-text">{event.title}</p>
                       <p className="mt-0.5 text-xs text-muted">{event.slug}</p>
@@ -209,7 +220,7 @@ export function AdminEventsPage() {
                     <ListTableCell>
                       <span className="text-sm text-text">{formatDateOnly(event.starts_at)}</span>
                     </ListTableCell>
-                    <ListTableCell>
+                    <ListTableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
                         <ActionLink to={toAdminEventDetail(event.id)}>Edit</ActionLink>
                         <ActionLink to={toAdminEventAttendance(event.id)}>Attendance</ActionLink>
@@ -273,9 +284,9 @@ export function AdminEventsPage() {
                 onGoToPage={handleGoToPage}
               />
             </div>
-          </>
+          </div>
         )}
-      </div>
-    </section>
+      </AdminPageShell.Content>
+    </AdminPageShell>
   )
 }

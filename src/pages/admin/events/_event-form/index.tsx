@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -8,7 +8,6 @@ import {
   TOAST_MESSAGES,
   UI_MESSAGES,
   toAdminEventAttendance,
-  toAdminEventDetail,
   toAdminEventFields,
   toAdminEventRegistrations,
 } from '@/config/constants'
@@ -20,6 +19,7 @@ import {
 import { useSlugGeneration, useSaveConfirmation } from '@/hooks/utils'
 import { createEventSchema } from '@/lib/domain/events'
 import type { CreateEventInput } from '@/lib/domain/events'
+import { AdminPageShell } from '@/components/layout'
 import { ActionLink } from '@/components/ui/ActionLink'
 import {
   EventDateRangeSection,
@@ -147,115 +147,120 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
 
   if (isEditMode && isLoadingEvent) {
     return (
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-muted">{UI_MESSAGES.loading.event}</p>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Content isLoading={true} loadingMessage={UI_MESSAGES.loading.event}>
+          {null}
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
   if (isEditMode && !existingEvent && !isLoadingEvent) {
     return (
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm text-red-600">{UI_MESSAGES.errors.eventNotFound}</p>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header title="Event Not Found" />
+        <AdminPageShell.Content>
+          <div className="text-sm text-red-600">{UI_MESSAGES.errors.eventNotFound}</div>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     )
   }
 
   const title = isEditMode ? 'Edit Event' : 'Create Event'
   const isArchivedEvent = isEditMode && existingEvent?.status === 'archived'
 
+  const breadcrumbs = isEditMode
+    ? [
+        { label: 'Events', to: ROUTE_PATHS.adminEvents },
+        { label: existingEvent?.title ?? 'Event' },
+        { label: 'Edit' },
+      ]
+    : undefined
+
+  const navLinks = isEditMode ? (
+    <div className="flex items-center gap-4">
+      <ActionLink to={toAdminEventAttendance(id!)}>Attendance</ActionLink>
+      <ActionLink to={toAdminEventFields(id!)}>Fields</ActionLink>
+      <ActionLink to={toAdminEventRegistrations(id!)}>Registrations</ActionLink>
+    </div>
+  ) : undefined
+
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
-      <div>
-        {isEditMode && id && (
-          <div className="mb-3 flex items-center justify-between gap-4 text-sm">
-            <div className="flex flex-wrap items-center gap-2 text-muted">
-              <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
-                Events
-              </Link>
-              <span>›</span>
-              <Link to={toAdminEventDetail(id)} className="hover:underline">
-                {existingEvent?.title ?? 'Event'}
-              </Link>
-              <span>›</span>
-              <span>Edit</span>
-            </div>
-            <div className="flex items-center justify-end gap-4">
-              <ActionLink to={toAdminEventAttendance(id)}>Attendance</ActionLink>
-              <ActionLink to={toAdminEventFields(id)}>Fields</ActionLink>
-              <ActionLink to={toAdminEventRegistrations(id)}>Registrations</ActionLink>
-            </div>
-          </div>
-        )}
-        <h1 className="font-heading text-3xl font-bold text-text">{title}</h1>
-        <p className="mt-1 text-sm text-muted">
-          {isEditMode ? 'Update event details below.' : 'Fill in the details for your new event.'}
-        </p>
-      </div>
+    <AdminPageShell>
+      <AdminPageShell.Header
+        breadcrumbs={breadcrumbs}
+        navLinks={navLinks}
+        title={title}
+        description={
+          isEditMode ? 'Update event details below.' : 'Fill in the details for your new event.'
+        }
+      />
 
       {existingEvent && <EventStatusWarning status={existingEvent.status} />}
 
-      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-        <EventDetailsSection
-          errors={errors}
-          isEditMode={isEditMode}
-          onSlugChange={onSlugChange}
-          register={register}
-          slugValue={slugValue}
-          disabled={isArchivedEvent}
-        />
+      <AdminPageShell.Content>
+        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <EventDetailsSection
+            errors={errors}
+            isEditMode={isEditMode}
+            onSlugChange={onSlugChange}
+            register={register}
+            slugValue={slugValue}
+            disabled={isArchivedEvent}
+          />
 
-        <EventDateRangeSection
-          endId="event-ends-at"
-          endLabel="Event End"
-          endName="ends_at"
-          errors={errors}
-          register={register}
-          startId="event-starts-at"
-          startLabel="Event Start"
-          startName="starts_at"
-          title="Event Schedule"
-          disabled={isArchivedEvent}
-        />
+          <EventDateRangeSection
+            endId="event-ends-at"
+            endLabel="Event End"
+            endName="ends_at"
+            errors={errors}
+            register={register}
+            startId="event-starts-at"
+            startLabel="Event Start"
+            startName="starts_at"
+            title="Event Schedule"
+            disabled={isArchivedEvent}
+          />
 
-        <EventDateRangeSection
-          endId="event-reg-closes-at"
-          endLabel="Registration Closes"
-          endName="registration_closes_at"
-          errors={errors}
-          register={register}
-          startId="event-reg-opens-at"
-          startLabel="Registration Opens"
-          startName="registration_opens_at"
-          title="Registration Window"
-          disabled={isArchivedEvent}
-        />
+          <EventDateRangeSection
+            endId="event-reg-closes-at"
+            endLabel="Registration Closes"
+            endName="registration_closes_at"
+            errors={errors}
+            register={register}
+            startId="event-reg-opens-at"
+            startLabel="Registration Opens"
+            startName="registration_opens_at"
+            title="Registration Window"
+            disabled={isArchivedEvent}
+          />
 
-        <EventRegistrationSettingsSection register={register} disabled={isArchivedEvent} />
+          <EventRegistrationSettingsSection register={register} disabled={isArchivedEvent} />
 
-        {formValues.status === 'draft' && <PublishRequirementsChecker formValues={formValues} />}
+          {formValues.status === 'draft' && <PublishRequirementsChecker formValues={formValues} />}
 
-        <EventFormActions
-          isEditMode={isEditMode}
-          isPending={isPending}
-          onCancel={() => navigate(ROUTE_PATHS.adminEvents)}
-          disabled={isArchivedEvent}
-          hasChanges={!isEditMode || isDirty}
-        />
-      </form>
+          <EventFormActions
+            isEditMode={isEditMode}
+            isPending={isPending}
+            onCancel={() => navigate(ROUTE_PATHS.adminEvents)}
+            disabled={isArchivedEvent}
+            hasChanges={!isEditMode || isDirty}
+          />
+        </form>
 
-      {pendingFormData && existingEvent && (
-        <SaveConfirmationDialog
-          isOpen={showDialog}
-          changedFieldNames={Object.keys(dirtyFields) as (keyof CreateEventInput)[]}
-          isPending={isPending}
-          onConfirm={() => {
-            confirmSave()
-            performSave(pendingFormData)
-          }}
-          onCancel={cancelSave}
-        />
-      )}
-    </section>
+        {pendingFormData && existingEvent && (
+          <SaveConfirmationDialog
+            isOpen={showDialog}
+            changedFieldNames={Object.keys(dirtyFields) as (keyof CreateEventInput)[]}
+            isPending={isPending}
+            onConfirm={() => {
+              confirmSave()
+              performSave(pendingFormData)
+            }}
+            onCancel={cancelSave}
+          />
+        )}
+      </AdminPageShell.Content>
+    </AdminPageShell>
   )
 }

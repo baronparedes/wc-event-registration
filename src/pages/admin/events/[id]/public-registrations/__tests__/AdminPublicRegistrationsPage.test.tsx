@@ -195,7 +195,7 @@ describe('AdminPublicRegistrationsPage', () => {
 
     expect(headerActionsContainer).toHaveClass('w-full')
     expect(headerActionsContainer).toHaveClass('flex-col')
-    expect(headerActionsContainer).toHaveClass('items-stretch')
+    expect(headerActionsContainer).toHaveClass('gap-2')
 
     fireEvent.click(memberRegistrationsButton)
     expect(mockNavigate).toHaveBeenCalledWith(`/admin/events/${testEventId}/registrations`)
