@@ -148,9 +148,6 @@ verify_jwt = true
 [functions.reorder-attendance-fields]
 verify_jwt = true
 
-[functions.upsert-attendance-answers]
-verify_jwt = true
-
 [functions.search-attendees]
 verify_jwt = true
 
