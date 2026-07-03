@@ -1,13 +1,15 @@
-import { describe, expect, it } from 'vitest'
-import { makeRegistrationSharePayloadRow } from '@/__tests__/factories'
-import { formatRegistrationShareText } from '../transforms'
-import type { RegistrationSharePayloadRow } from '../types'
+import { describe, expect, it } from 'vitest';
 
-const eventTitle = 'Community Night'
-const answerFieldId = 'field-1'
-const answerFieldLabel = 'Team'
-const firstAnswerValue = 'Blue Team'
-const secondAnswerValue = 'Red Team'
+import { makeRegistrationSharePayloadRow } from '@/__tests__/factories';
+
+import { formatRegistrationShareText } from '../transforms';
+import type { RegistrationSharePayloadRow } from '../types';
+
+const eventTitle = 'Community Night';
+const answerFieldId = 'field-1';
+const answerFieldLabel = 'Team';
+const firstAnswerValue = 'Blue Team';
+const secondAnswerValue = 'Red Team';
 
 const rows: RegistrationSharePayloadRow[] = [
   makeRegistrationSharePayloadRow({
@@ -30,7 +32,7 @@ const rows: RegistrationSharePayloadRow[] = [
       [answerFieldId]: secondAnswerValue,
     },
   }),
-]
+];
 
 describe('formatRegistrationShareText', () => {
   it('includes header and selected fields in deterministic order', () => {
@@ -38,12 +40,12 @@ describe('formatRegistrationShareText', () => {
       rows,
       selectedFields: ['full_name', 'email'],
       eventTitle,
-    })
+    });
 
-    expect(output).toContain(`Registered attendees for ${eventTitle} (2)`)
-    expect(output).toContain('1. Alice Santos | Email: alice@example.com')
-    expect(output).toContain('2. Bob Reyes | Email: bob@example.com')
-  })
+    expect(output).toContain(`Registered attendees for ${eventTitle} (2)`);
+    expect(output).toContain('1. Alice Santos | Email: alice@example.com');
+    expect(output).toContain('2. Bob Reyes | Email: bob@example.com');
+  });
 
   it('includes selected answer fields when provided', () => {
     const output = formatRegistrationShareText({
@@ -52,19 +54,19 @@ describe('formatRegistrationShareText', () => {
       selectedAnswerFieldIds: [answerFieldId],
       answerFields: [{ field_id: answerFieldId, label: answerFieldLabel }],
       includeHeader: false,
-    })
+    });
 
-    expect(output).toContain(`1. Alice Santos | ${answerFieldLabel}: ${firstAnswerValue}`)
-    expect(output).toContain(`2. Bob Reyes | ${answerFieldLabel}: ${secondAnswerValue}`)
-  })
+    expect(output).toContain(`1. Alice Santos | ${answerFieldLabel}: ${firstAnswerValue}`);
+    expect(output).toContain(`2. Bob Reyes | ${answerFieldLabel}: ${secondAnswerValue}`);
+  });
 
   it('falls back to full name when selected fields are empty', () => {
     const output = formatRegistrationShareText({
       rows,
       selectedFields: [],
       includeHeader: false,
-    })
+    });
 
-    expect(output).toBe('1. Alice Santos\n2. Bob Reyes')
-  })
-})
+    expect(output).toBe('1. Alice Santos\n2. Bob Reyes');
+  });
+});

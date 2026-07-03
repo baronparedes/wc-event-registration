@@ -1,25 +1,28 @@
-import { type ReactNode } from 'react'
-import { type UseFormReturn } from 'react-hook-form'
+import { type ReactNode } from 'react';
+
+import { type UseFormReturn } from 'react-hook-form';
+
 import type {
   DynamicFieldResponseValues,
-  PublicEventField,
   EventFieldType,
-} from '@/lib/domain/event-fields'
+  PublicEventField,
+} from '@/lib/domain/event-fields';
+
+import { CheckboxFieldRenderer } from './CheckboxFieldRenderer';
+import { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer';
 import {
-  TextFieldRenderer,
-  EmailFieldRenderer,
-  PhoneFieldRenderer,
-  NumberFieldRenderer,
-  TextareaFieldRenderer,
-} from './TextFieldRenderer'
-import { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer'
-import {
-  SelectFieldRenderer,
-  RadioFieldRenderer,
   MultiSelectFieldRenderer,
   MultiSelectToggleFieldRenderer,
-} from './SelectFieldRenderer'
-import { CheckboxFieldRenderer } from './CheckboxFieldRenderer'
+  RadioFieldRenderer,
+  SelectFieldRenderer,
+} from './SelectFieldRenderer';
+import {
+  EmailFieldRenderer,
+  NumberFieldRenderer,
+  PhoneFieldRenderer,
+  TextFieldRenderer,
+  TextareaFieldRenderer,
+} from './TextFieldRenderer';
 
 /**
  * Render the appropriate field component for a given field type.
@@ -32,31 +35,31 @@ export function renderFieldByType(
 ): ReactNode {
   switch (fieldType) {
     case 'text':
-      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'email':
-      return <EmailFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <EmailFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'phone':
-      return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'number':
-      return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'textarea':
-      return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'date':
-      return <DateFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <DateFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'datetime':
-      return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'select':
-      return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'radio':
-      return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'multi_select':
-      return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'multi_select_toggle':
-      return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'checkbox':
     case 'boolean':
-      return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />;
     default:
-      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />;
   }
 }

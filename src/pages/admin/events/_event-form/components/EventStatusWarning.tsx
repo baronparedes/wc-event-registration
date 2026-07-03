@@ -1,6 +1,6 @@
 type EventStatusWarningProps = {
-  status: 'draft' | 'published' | 'archived'
-}
+  status: 'draft' | 'published' | 'archived';
+};
 
 /**
  * Warning banner displayed when editing published or archived events.
@@ -8,7 +8,7 @@ type EventStatusWarningProps = {
  * Archived: informs that event is immutable
  */
 export function EventStatusWarning({ status }: EventStatusWarningProps) {
-  if (status === 'draft') return null
+  if (status === 'draft') return null;
 
   if (status === 'archived') {
     return (
@@ -17,7 +17,7 @@ export function EventStatusWarning({ status }: EventStatusWarningProps) {
           ⚠️ This event is archived and cannot be edited. Publish it again to make changes.
         </p>
       </div>
-    )
+    );
   }
 
   if (status === 'published') {
@@ -27,8 +27,8 @@ export function EventStatusWarning({ status }: EventStatusWarningProps) {
           ℹ️ This event is published. Changes will be visible to registrants.
         </p>
       </div>
-    )
+    );
   }
 
-  return null
+  return null;
 }

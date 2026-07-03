@@ -1,13 +1,14 @@
-import { type UseFormReturn } from 'react-hook-form'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
+import { type UseFormReturn } from 'react-hook-form';
+
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 
 const baseInputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary';
 
 type TextFieldRendererProps = {
-  field: PublicEventField
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>
-}
+  field: PublicEventField;
+  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+};
 
 export function TextFieldRenderer({ field, dynamicForm }: TextFieldRendererProps) {
   return (
@@ -18,7 +19,7 @@ export function TextFieldRenderer({ field, dynamicForm }: TextFieldRendererProps
       className={baseInputClassName}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }
 
 export function EmailFieldRenderer({ field, dynamicForm }: TextFieldRendererProps) {
@@ -30,7 +31,7 @@ export function EmailFieldRenderer({ field, dynamicForm }: TextFieldRendererProp
       className={baseInputClassName}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }
 
 export function PhoneFieldRenderer({ field, dynamicForm }: TextFieldRendererProps) {
@@ -42,7 +43,7 @@ export function PhoneFieldRenderer({ field, dynamicForm }: TextFieldRendererProp
       className={baseInputClassName}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }
 
 export function NumberFieldRenderer({ field, dynamicForm }: TextFieldRendererProps) {
@@ -54,7 +55,7 @@ export function NumberFieldRenderer({ field, dynamicForm }: TextFieldRendererPro
       className={baseInputClassName}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }
 
 export function TextareaFieldRenderer({ field, dynamicForm }: TextFieldRendererProps) {
@@ -66,5 +67,5 @@ export function TextareaFieldRenderer({ field, dynamicForm }: TextFieldRendererP
       rows={4}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }

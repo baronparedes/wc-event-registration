@@ -1,20 +1,21 @@
-import { supabase } from '@/lib/infrastructure'
-import type { AdminAuthState } from './types'
+import { supabase } from '@/lib/infrastructure';
 
-export const ADMIN_AUTH_QUERY_KEY = ['admin-auth-state'] as const
+import type { AdminAuthState } from './types';
+
+export const ADMIN_AUTH_QUERY_KEY = ['admin-auth-state'] as const;
 
 type AdminRow = {
-  role: 'admin' | 'super_admin'
-}
+  role: 'admin' | 'super_admin';
+};
 
 export async function fetchAdminAuthState(): Promise<AdminAuthState> {
   const {
     data: { session },
     error: sessionError,
-  } = await supabase.auth.getSession()
+  } = await supabase.auth.getSession();
 
   if (sessionError) {
-    throw sessionError
+    throw sessionError;
   }
 
   if (!session) {
@@ -22,17 +23,17 @@ export async function fetchAdminAuthState(): Promise<AdminAuthState> {
       isAuthenticated: false,
       session: null,
       adminRole: null,
-    }
+    };
   }
 
   const { data: adminRow, error: adminError } = await supabase
     .from('admins')
     .select('role')
     .eq('auth_user_id', session.user.id)
-    .maybeSingle<AdminRow>()
+    .maybeSingle<AdminRow>();
 
   if (adminError) {
-    throw adminError
+    throw adminError;
   }
 
   if (!adminRow) {
@@ -40,12 +41,12 @@ export async function fetchAdminAuthState(): Promise<AdminAuthState> {
       isAuthenticated: false,
       session,
       adminRole: null,
-    }
+    };
   }
 
   return {
     isAuthenticated: true,
     session,
     adminRole: adminRow.role,
-  }
+  };
 }

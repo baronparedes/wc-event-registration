@@ -1,10 +1,11 @@
-import { type UseFormReturn } from 'react-hook-form'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
+import { type UseFormReturn } from 'react-hook-form';
+
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 
 type CheckboxFieldRendererProps = {
-  field: PublicEventField
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>
-}
+  field: PublicEventField;
+  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+};
 
 export function CheckboxFieldRenderer({ field, dynamicForm }: CheckboxFieldRendererProps) {
   return (
@@ -19,5 +20,5 @@ export function CheckboxFieldRenderer({ field, dynamicForm }: CheckboxFieldRende
       />
       <span>{field.placeholder ?? 'I confirm this statement.'}</span>
     </label>
-  )
+  );
 }

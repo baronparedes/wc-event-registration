@@ -1,41 +1,42 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants'
-import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure'
-import type { AdminMember } from '@/lib/domain/members'
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+
+import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
+import type { AdminMember } from '@/lib/domain/members';
+import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
 
 type UserMetadata = {
-  role?: unknown
-  category?: unknown
-}
+  role?: unknown;
+  category?: unknown;
+};
 
 function readMetadataString(value: unknown): string {
-  return typeof value === 'string' ? value : ''
+  return typeof value === 'string' ? value : '';
 }
 
 function escapeOrFilterValue(value: string): string {
-  return value.replace(/[,%_]/g, (char) => `\\${char}`)
+  return value.replace(/[,%_]/g, (char) => `\\${char}`);
 }
 
-export const ADMIN_MEMBERS_QUERY_KEY = () => ['admin-members'] as const
+export const ADMIN_MEMBERS_QUERY_KEY = () => ['admin-members'] as const;
 
 export const adminMembersPageQueryKey = (
   pageSize: number,
   cursor: string | null,
   searchTerm: string,
-) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm] as const
+) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm] as const;
 
 export interface AdminMembersPageParams {
-  pageSize?: number
-  cursor?: string | null
-  searchTerm?: string
+  pageSize?: number;
+  cursor?: string | null;
+  searchTerm?: string;
 }
 
 export interface AdminMembersPage {
-  items: AdminMember[]
-  nextCursor: string | null
-  hasMore: boolean
-  totalCount: number
-  totalPages: number
+  items: AdminMember[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  totalCount: number;
+  totalPages: number;
 }
 
 /**
@@ -43,11 +44,11 @@ export interface AdminMembersPage {
  * Returns members with role and category from metadata.
  */
 export function useAdminMembersQuery(params?: AdminMembersPageParams) {
-  const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize
-  const cursor = params?.cursor ?? null
-  const searchTerm = params?.searchTerm?.trim() ?? ''
-  const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0)
-  const offset = decodeOffsetCursor(cursor)
+  const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize;
+  const cursor = params?.cursor ?? null;
+  const searchTerm = params?.searchTerm?.trim() ?? '';
+  const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0);
+  const offset = decodeOffsetCursor(cursor);
 
   return useQuery({
     queryKey: adminMembersPageQueryKey(pageSize, cursor, searchTerm),
@@ -61,23 +62,23 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         )
         .order('full_name', { ascending: true })
         .order('member_id', { ascending: true })
-        .range(offset, offset + pageSize - 1)
+        .range(offset, offset + pageSize - 1);
 
       if (searchTokens.length > 0) {
-        const escapedSearchTerm = escapeOrFilterValue(searchTerm)
+        const escapedSearchTerm = escapeOrFilterValue(searchTerm);
         const escapedTokenPattern = `%${searchTokens
           .map((token) => escapeOrFilterValue(token))
-          .join('%')}%`
+          .join('%')}%`;
 
         query = query.or(
           `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.${escapedTokenPattern}`,
-        )
+        );
       }
 
-      const { data: members, error: membersError, count } = await query
+      const { data: members, error: membersError, count } = await query;
 
-      if (membersError) throw membersError
-      const totalCount = count ?? 0
+      if (membersError) throw membersError;
+      const totalCount = count ?? 0;
       if (!members?.length) {
         return {
           items: [],
@@ -85,12 +86,12 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
           hasMore: false,
           totalCount,
           totalPages: getTotalPages(totalCount, pageSize),
-        }
+        };
       }
 
       // Transform members data
       const items = members.map((member) => {
-        const metadata = (member.metadata as UserMetadata | null | undefined) ?? null
+        const metadata = (member.metadata as UserMetadata | null | undefined) ?? null;
 
         return {
           id: member.id,
@@ -106,11 +107,11 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
           category: readMetadataString(metadata?.category),
           created_at: member.created_at,
           updated_at: member.updated_at,
-        } satisfies AdminMember
-      })
+        } satisfies AdminMember;
+      });
 
-      const hasMore = offset + items.length < totalCount
-      const nextCursor = hasMore ? String(offset + pageSize) : null
+      const hasMore = offset + items.length < totalCount;
+      const nextCursor = hasMore ? String(offset + pageSize) : null;
 
       return {
         items,
@@ -118,8 +119,8 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         hasMore,
         totalCount,
         totalPages: getTotalPages(totalCount, pageSize),
-      }
+      };
     },
     staleTime: QUERY_STALE_TIME_MS.immediate,
-  })
+  });
 }

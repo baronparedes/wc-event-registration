@@ -1,19 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Users } from 'lucide-react'
-import {
-  PAGINATION_DEFAULTS,
-  PAGINATION_OPTIONS,
-  TIMING,
-  UI_MESSAGES,
-  toAdminMemberDetail,
-} from '@/config/constants'
-import { useAdminMembersQuery } from '@/hooks/domain/members'
-import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
-import { AdminPageShell } from '@/components/layout'
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
-import { Button, EmptyState } from '@/components/ui'
-import { ActionLink } from '@/components/ui/ActionLink'
+import { useEffect, useMemo, useState } from 'react';
+
+import { Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+import { AdminPageShell } from '@/components/layout';
+import { Button, EmptyState } from '@/components/ui';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import {
   ListTable,
   ListTableBody,
@@ -22,71 +15,81 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
-} from '@/components/ui/ListTable'
-import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog'
-import { AddMemberDialog } from './components/AddMemberDialog'
+} from '@/components/ui/ListTable';
+import {
+  PAGINATION_DEFAULTS,
+  PAGINATION_OPTIONS,
+  TIMING,
+  UI_MESSAGES,
+  toAdminMemberDetail,
+} from '@/config/constants';
+import { useAdminMembersQuery } from '@/hooks/domain/members';
+import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+
+import { AddMemberDialog } from './components/AddMemberDialog';
+import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
 
 export function AdminMembersPage() {
-  const navigate = useNavigate()
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize)
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
+  const navigate = useNavigate();
+  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, TIMING.searchDebounceMs)
+      setDebouncedSearchTerm(searchTerm);
+    }, TIMING.searchDebounceMs);
 
     return () => {
-      window.clearTimeout(timer)
-    }
-  }, [searchTerm])
+      window.clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
   const membersQuery = useAdminMembersQuery({
     pageSize,
     cursor,
     searchTerm: normalizedSearchTerm,
-  })
-  const members = membersQuery.data?.items ?? []
-  const hasMore = membersQuery.data?.hasMore ?? false
-  const nextCursor = membersQuery.data?.nextCursor ?? null
-  const totalPages = membersQuery.data?.totalPages ?? 1
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize)
+  });
+  const members = membersQuery.data?.items ?? [];
+  const hasMore = membersQuery.data?.hasMore ?? false;
+  const nextCursor = membersQuery.data?.nextCursor ?? null;
+  const totalPages = membersQuery.data?.totalPages ?? 1;
+  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
 
-  const isLoading = membersQuery.isLoading
-  const error = membersQuery.error
+  const isLoading = membersQuery.isLoading;
+  const error = membersQuery.error;
 
   function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm)
-    setCursor(null)
+    setSearchTerm(nextSearchTerm);
+    setCursor(null);
   }
 
   function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize)
-    setCursor(null)
+    setPageSize(nextPageSize);
+    setCursor(null);
   }
 
   function handleNextPage() {
-    if (!nextCursor) return
-    setCursor(nextCursor)
+    if (!nextCursor) return;
+    setCursor(nextCursor);
   }
 
   function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize))
+    setCursor(getPageCursor(currentPage - 1, pageSize));
   }
 
   function handleFirstPage() {
-    setCursor(null)
+    setCursor(null);
   }
 
   function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize))
+    setCursor(getPageCursor(page, pageSize));
   }
 
   function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize))
+    setCursor(getPageCursor(totalPages, pageSize));
   }
 
   return (
@@ -229,5 +232,5 @@ export function AdminMembersPage() {
         )}
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

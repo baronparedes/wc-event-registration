@@ -15,48 +15,48 @@ export const ROUTE_PATHS = {
   adminEventPublicRegistrationsPattern: '/admin/events/:id/public-registrations',
   adminRegistrationDetailPattern: '/admin/events/:id/registrations/:registration_id',
   adminPublicRegistrationDetailPattern: '/admin/events/:id/public-registrations/:registration_id',
-} as const
+} as const;
 
 export const ROUTE_PREFIXES = {
   admin: '/admin/',
-} as const
+} as const;
 
 export function toEventRegistration(slug: string): string {
-  return `/events/${slug}/register`
+  return `/events/${slug}/register`;
 }
 
 export function toEventPublicRegistration(slug: string): string {
-  return `/events/${slug}/register-public`
+  return `/events/${slug}/register-public`;
 }
 
 export function toAdminMemberDetail(memberId: string): string {
-  return `/admin/members/${memberId}`
+  return `/admin/members/${memberId}`;
 }
 
 export function toAdminEventDetail(eventId: string): string {
-  return `/admin/events/${eventId}`
+  return `/admin/events/${eventId}`;
 }
 
 export function toAdminEventFields(eventId: string): string {
-  return `/admin/events/${eventId}/fields`
+  return `/admin/events/${eventId}/fields`;
 }
 
 export function toAdminEventAttendance(eventId: string): string {
-  return `/admin/events/${eventId}/attendance`
+  return `/admin/events/${eventId}/attendance`;
 }
 
 export function toAdminEventRegistrations(eventId: string): string {
-  return `/admin/events/${eventId}/registrations`
+  return `/admin/events/${eventId}/registrations`;
 }
 
 export function toAdminEventPublicRegistrations(eventId: string): string {
-  return `/admin/events/${eventId}/public-registrations`
+  return `/admin/events/${eventId}/public-registrations`;
 }
 
 export function toAdminRegistrationDetail(eventId: string, registrationId: string): string {
-  return `/admin/events/${eventId}/registrations/${registrationId}`
+  return `/admin/events/${eventId}/registrations/${registrationId}`;
 }
 
 export function toAdminPublicRegistrationDetail(eventId: string, registrationId: string): string {
-  return `/admin/events/${eventId}/public-registrations/${registrationId}`
+  return `/admin/events/${eventId}/public-registrations/${registrationId}`;
 }

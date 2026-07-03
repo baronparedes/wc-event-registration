@@ -1,17 +1,19 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase, localDateTimeToUTC8ISO } from '@/lib/infrastructure'
-import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit'
-import type { UpdateEventInput } from '@/lib/domain/events'
-import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
-import { adminEventQueryKey } from '../queries/useAdminEventQuery'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
+import type { UpdateEventInput } from '@/lib/domain/events';
+import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
+
+import { adminEventQueryKey } from '../queries/useAdminEventQuery';
+import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
 
 function emptyToNull(value: string | undefined): string | null {
-  return value && value.trim() !== '' ? value : null
+  return value && value.trim() !== '' ? value : null;
 }
 
 /** Updates an existing event by ID. Invalidates the event list and single-event queries. */
 export function useUpdateEventMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string } & UpdateEventInput): Promise<void> => {
@@ -21,7 +23,7 @@ export function useUpdateEventMutation() {
           'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode, allow_public_registrations, metadata',
         )
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle();
 
       const nextValues: Record<string, unknown> = {
         title: input.title,
@@ -35,27 +37,27 @@ export function useUpdateEventMutation() {
         duplicate_policy: input.duplicate_policy,
         registration_mode: input.registration_mode,
         allow_public_registrations: input.allow_public_registrations ?? false,
-      }
+      };
 
       // Handle metadata updates
       if (input.allow_name_lookup !== undefined) {
-        const previousMetadata = (previousEvent?.metadata as Record<string, unknown> | null) ?? {}
+        const previousMetadata = (previousEvent?.metadata as Record<string, unknown> | null) ?? {};
         nextValues.metadata = {
           ...previousMetadata,
           allow_name_lookup: input.allow_name_lookup,
-        }
+        };
       }
 
-      const { error } = await supabase.from('events').update(nextValues).eq('id', id)
+      const { error } = await supabase.from('events').update(nextValues).eq('id', id);
 
-      if (error) throw error
+      if (error) throw error;
 
       const changedFields = Object.entries(nextValues).reduce<string[]>((acc, [key, value]) => {
         if ((previousEvent as Record<string, unknown> | null)?.[key] !== value) {
-          acc.push(key)
+          acc.push(key);
         }
-        return acc
-      }, [])
+        return acc;
+      }, []);
 
       await writeAdminAuditLogSafely({
         action: 'update_event',
@@ -64,13 +66,13 @@ export function useUpdateEventMutation() {
         metadata: {
           changed_fields: changedFields,
         },
-      })
+      });
     },
     onSuccess: (_data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY })
-      queryClient.invalidateQueries({ queryKey: adminEventQueryKey(id) })
+      queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: adminEventQueryKey(id) });
       // Invalidate all public event queries so registration pages see updated metadata (e.g. allow_name_lookup)
-      queryClient.invalidateQueries({ queryKey: ['public-event-by-slug'] })
+      queryClient.invalidateQueries({ queryKey: ['public-event-by-slug'] });
     },
-  })
+  });
 }

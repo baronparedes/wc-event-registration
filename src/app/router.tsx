@@ -1,77 +1,80 @@
-import { lazy, Suspense, type ReactElement } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { ROUTE_PATHS } from '@/config/constants'
-import { AppShell, AppMobileShell } from '../components/layout'
-import { useAdminAuthQuery } from '../hooks/domain/auth'
-import { useIsMobileViewport } from '../hooks/utils'
+import { type ReactElement, Suspense, lazy } from 'react';
+
+import { Navigate, Route, Routes } from 'react-router-dom';
+
+import { Skeleton } from '@/components/ui/Skeleton';
+import { ROUTE_PATHS } from '@/config/constants';
+
+import { AppMobileShell, AppShell } from '../components/layout';
+import { useAdminAuthQuery } from '../hooks/domain/auth';
+import { useIsMobileViewport } from '../hooks/utils';
 
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
-)
+);
 const EventRegistrationPage = lazy(() =>
   import('../pages/events/[slug]/register').then((module) => ({
     default: module.EventRegistrationPage,
   })),
-)
+);
 const PublicEventRegistrationPage = lazy(() =>
   import('../pages/events/[slug]/register-public').then((module) => ({
     default: module.PublicEventRegistrationPage,
   })),
-)
+);
 const AdminLoginPage = lazy(() =>
   import('../pages/admin/login').then((module) => ({ default: module.AdminLoginPage })),
-)
+);
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
-)
+);
 const AdminMemberDetailPage = lazy(() =>
   import('../pages/admin/members/[id]').then((module) => ({
     default: module.AdminMemberDetailPage,
   })),
-)
+);
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
-)
+);
 const AdminNewEventPage = lazy(() =>
   import('../pages/admin/events/new').then((module) => ({ default: module.AdminNewEventPage })),
-)
+);
 const AdminEditEventPage = lazy(() =>
   import('../pages/admin/events/[id]').then((module) => ({ default: module.AdminEditEventPage })),
-)
+);
 const AdminEventFieldsPage = lazy(() =>
   import('../pages/admin/events/[id]/fields').then((module) => ({
     default: module.AdminEventFieldsPage,
   })),
-)
+);
 const AdminEventAttendancePage = lazy(() =>
   import('../pages/admin/events/[id]/attendance').then((module) => ({
     default: module.AdminEventAttendancePage,
   })),
-)
+);
 const AdminRegistrationsPage = lazy(() =>
   import('../pages/admin/events/[id]/registrations').then((module) => ({
     default: module.AdminRegistrationsPage,
   })),
-)
+);
 const AdminPublicRegistrationsPage = lazy(() =>
   import('../pages/admin/events/[id]/public-registrations').then((module) => ({
     default: module.AdminPublicRegistrationsPage,
   })),
-)
+);
 const AdminPublicRegistrationDetailPage = lazy(() =>
   import('../pages/admin/events/[id]/public-registrations/[registration_id]').then((module) => ({
     default: module.AdminPublicRegistrationDetailPage,
   })),
-)
+);
 const AdminRegistrationDetailPage = lazy(() =>
   import('../pages/admin/events/[id]/registrations/[registration_id]').then((module) => ({
     default: module.AdminRegistrationDetailPage,
   })),
-)
+);
 const NotFoundPage = lazy(() =>
   import('../pages/not-found').then((module) => ({ default: module.NotFoundPage })),
-)
+);
 
 function RouteLoadingFallback() {
   return (
@@ -87,20 +90,20 @@ function RouteLoadingFallback() {
         <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     </section>
-  )
+  );
 }
 
 function LazyRoute({ children }: { children: ReactElement }) {
-  return <Suspense fallback={<RouteLoadingFallback />}>{children}</Suspense>
+  return <Suspense fallback={<RouteLoadingFallback />}>{children}</Suspense>;
 }
 
 function ResponsiveShellLayout() {
-  const isMobile = useIsMobileViewport()
-  return isMobile ? <AppMobileShell /> : <AppShell />
+  const isMobile = useIsMobileViewport();
+  return isMobile ? <AppMobileShell /> : <AppShell />;
 }
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
-  const { data, isLoading } = useAdminAuthQuery()
+  const { data, isLoading } = useAdminAuthQuery();
 
   if (isLoading) {
     return (
@@ -111,16 +114,16 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
           <Skeleton className="h-10 w-4/5" />
         </div>
       </section>
-    )
+    );
   }
 
-  const isAuthenticated = data?.isAuthenticated ?? false
+  const isAuthenticated = data?.isAuthenticated ?? false;
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTE_PATHS.adminLogin} replace />
+    return <Navigate to={ROUTE_PATHS.adminLogin} replace />;
   }
 
-  return children
+  return children;
 }
 
 export function AppRouter() {
@@ -281,5 +284,5 @@ export function AppRouter() {
         }
       />
     </Routes>
-  )
+  );
 }

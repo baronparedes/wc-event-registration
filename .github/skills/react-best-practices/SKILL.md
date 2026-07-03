@@ -129,9 +129,9 @@ See [forms.md](./references/forms.md) for full details.
 
 ```ts
 useEffect(() => {
-  const id = setTimeout(() => doSomething(), delay)
-  return () => clearTimeout(id) // capture local var, clean up local var
-}, [delay])
+  const id = setTimeout(() => doSomething(), delay);
+  return () => clearTimeout(id); // capture local var, clean up local var
+}, [delay]);
 ```
 
 ---

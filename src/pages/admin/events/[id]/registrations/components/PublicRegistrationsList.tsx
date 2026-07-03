@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { ClipboardList } from 'lucide-react'
-import { UI_MESSAGES, toAdminPublicRegistrationDetail } from '@/config/constants'
-import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations'
-import { EmptyState } from '@/components/ui'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useState } from 'react';
+
+import { ClipboardList } from 'lucide-react';
+
+import { EmptyState } from '@/components/ui';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   ListTable,
   ListTableBody,
@@ -13,30 +13,32 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
-} from '@/components/ui/ListTable'
+} from '@/components/ui/ListTable';
+import { UI_MESSAGES, toAdminPublicRegistrationDetail } from '@/config/constants';
 import {
   useCancelPublicRegistrationMutation,
   useReactivatePublicRegistrationMutation,
-} from '@/hooks/domain/public-registrations'
-import { useErrorWithFadeout } from '@/hooks/utils'
+} from '@/hooks/domain/public-registrations';
+import { useErrorWithFadeout } from '@/hooks/utils';
+import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 
 interface PublicRegistrationsListProps {
-  registrations: PublicRegistrationSummary[]
-  isLoading?: boolean
-  eventId: string
-  isEventArchived?: boolean
-  searchTerm?: string
+  registrations: PublicRegistrationSummary[];
+  isLoading?: boolean;
+  eventId: string;
+  isEventArchived?: boolean;
+  searchTerm?: string;
 }
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 function getStatusBadge(status: string) {
@@ -46,30 +48,30 @@ function getStatusBadge(status: string) {
         <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
           {UI_MESSAGES.registrationStatus.submitted}
         </span>
-      )
+      );
     case 'updated':
       return (
         <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
           {UI_MESSAGES.registrationStatus.updated}
         </span>
-      )
+      );
     case 'cancelled':
       return (
         <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
           {UI_MESSAGES.registrationStatus.cancelled}
         </span>
-      )
+      );
     default:
       return (
         <span className="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
           {status}
         </span>
-      )
+      );
   }
 }
 
 function fullName(registration: PublicRegistrationSummary): string {
-  return `${registration.first_name} ${registration.last_name}`.trim()
+  return `${registration.first_name} ${registration.last_name}`.trim();
 }
 
 export function PublicRegistrationsList({
@@ -80,19 +82,19 @@ export function PublicRegistrationsList({
   searchTerm,
 }: PublicRegistrationsListProps) {
   const [selectedRegistration, setSelectedRegistration] =
-    useState<PublicRegistrationSummary | null>(null)
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
-  const cancelMutation = useCancelPublicRegistrationMutation(eventId)
-  const reactivateMutation = useReactivatePublicRegistrationMutation(eventId)
-  const { showError } = useErrorWithFadeout()
+    useState<PublicRegistrationSummary | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const cancelMutation = useCancelPublicRegistrationMutation(eventId);
+  const reactivateMutation = useReactivatePublicRegistrationMutation(eventId);
+  const { showError } = useErrorWithFadeout();
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center text-gray-500">{UI_MESSAGES.loading.registrations}</div>
       </div>
-    )
+    );
   }
 
   if (registrations.length === 0) {
@@ -110,44 +112,46 @@ export function PublicRegistrationsList({
           }
         />
       </div>
-    )
+    );
   }
 
   const handleCancelClick = (registration: PublicRegistrationSummary) => {
-    setSelectedRegistration(registration)
-    setShowCancelDialog(true)
-  }
+    setSelectedRegistration(registration);
+    setShowCancelDialog(true);
+  };
 
   const handleReactivateClick = (registration: PublicRegistrationSummary) => {
-    setSelectedRegistration(registration)
-    setShowReactivateDialog(true)
-  }
+    setSelectedRegistration(registration);
+    setShowReactivateDialog(true);
+  };
 
   const handleConfirmCancel = async () => {
-    if (!selectedRegistration) return
+    if (!selectedRegistration) return;
 
     try {
-      await cancelMutation.mutateAsync({ registration_id: selectedRegistration.id })
+      await cancelMutation.mutateAsync({ registration_id: selectedRegistration.id });
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to cancel public registration')
+      showError(error instanceof Error ? error.message : 'Failed to cancel public registration');
     } finally {
-      setShowCancelDialog(false)
-      setSelectedRegistration(null)
+      setShowCancelDialog(false);
+      setSelectedRegistration(null);
     }
-  }
+  };
 
   const handleConfirmReactivate = async () => {
-    if (!selectedRegistration) return
+    if (!selectedRegistration) return;
 
     try {
-      await reactivateMutation.mutateAsync({ registration_id: selectedRegistration.id })
+      await reactivateMutation.mutateAsync({ registration_id: selectedRegistration.id });
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to reactivate public registration')
+      showError(
+        error instanceof Error ? error.message : 'Failed to reactivate public registration',
+      );
     } finally {
-      setShowReactivateDialog(false)
-      setSelectedRegistration(null)
+      setShowReactivateDialog(false);
+      setSelectedRegistration(null);
     }
-  }
+  };
 
   return (
     <>
@@ -221,8 +225,8 @@ export function PublicRegistrationsList({
         <ConfirmDialog
           isOpen={showCancelDialog}
           onCancel={() => {
-            setShowCancelDialog(false)
-            setSelectedRegistration(null)
+            setShowCancelDialog(false);
+            setSelectedRegistration(null);
           }}
           title="Cancel Public Registration"
           description={
@@ -251,8 +255,8 @@ export function PublicRegistrationsList({
         <ConfirmDialog
           isOpen={showReactivateDialog}
           onCancel={() => {
-            setShowReactivateDialog(false)
-            setSelectedRegistration(null)
+            setShowReactivateDialog(false);
+            setSelectedRegistration(null);
           }}
           title="Reactivate Public Registration"
           description={
@@ -273,5 +277,5 @@ export function PublicRegistrationsList({
         />
       )}
     </>
-  )
+  );
 }

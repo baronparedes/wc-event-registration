@@ -1,10 +1,11 @@
-import type { PublicEventListingItem } from '@/lib/domain/events'
-import { EventCard } from './EventCard'
+import type { PublicEventListingItem } from '@/lib/domain/events';
+
+import { EventCard } from './EventCard';
 
 type EventSectionProps = {
-  title: string
-  events: PublicEventListingItem[]
-}
+  title: string;
+  events: PublicEventListingItem[];
+};
 
 /**
  * Renders a titled section containing a grid of EventCards.
@@ -12,7 +13,7 @@ type EventSectionProps = {
  */
 export function EventSection({ title, events }: EventSectionProps) {
   if (events.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -24,5 +25,5 @@ export function EventSection({ title, events }: EventSectionProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }

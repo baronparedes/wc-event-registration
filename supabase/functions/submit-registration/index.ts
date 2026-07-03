@@ -1,63 +1,64 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+
+import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   enforcePublicRateLimit,
   isOriginAllowed,
   readAllowedOrigins,
-} from '@/shared/security.ts'
-import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
+} from '@/shared/security.ts';
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
 
 const submitRegistrationRequestSchema = z.object({
   event_slug: z.string().trim().min(1, 'event_slug is required'),
   member_id: z.string().trim().min(1, 'member_id is required'),
   responses: z.record(z.string(), z.unknown()),
   idempotency_key: z.string().trim().min(1, 'idempotency_key is required'),
-})
+});
 
-type SubmitRegistrationRequest = z.infer<typeof submitRegistrationRequestSchema>
+type SubmitRegistrationRequest = z.infer<typeof submitRegistrationRequestSchema>;
 
 interface SubmitRegistrationSuccess {
-  success: true
-  registration_id: string
-  status: 'submitted' | 'updated'
-  is_new: boolean
-  message: string
+  success: true;
+  registration_id: string;
+  status: 'submitted' | 'updated';
+  is_new: boolean;
+  message: string;
 }
 
 interface SubmitRegistrationError {
-  success: false
-  error: string
-  error_code?: string
-  errors?: FieldValidationError[]
+  success: false;
+  error: string;
+  error_code?: string;
+  errors?: FieldValidationError[];
 }
 
 interface FieldValidationError {
-  fieldKey: string
-  message: string
+  fieldKey: string;
+  message: string;
 }
 
 interface EventFieldWithValidation {
-  id: string
-  field_key: string
-  label: string
-  field_type: string
-  is_required: boolean
-  options: { label: string; value: string }[]
-  validation_rules: Record<string, unknown>
+  id: string;
+  field_key: string;
+  label: string;
+  field_type: string;
+  is_required: boolean;
+  options: { label: string; value: string }[];
+  validation_rules: Record<string, unknown>;
 }
 
 interface PostgrestErrorLike {
-  code?: string | null
-  message?: string | null
-  details?: string | null
-  hint?: string | null
+  code?: string | null;
+  message?: string | null;
+  details?: string | null;
+  hint?: string | null;
 }
 
-const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx'
+const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx';
 const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
-  'registrations_event_idempotency_unique_idx'
+  'registrations_event_idempotency_unique_idx';
 
 /**
  * Validates a single field value against its schema and validation rules.
@@ -68,56 +69,56 @@ function validateFieldValue(
   value: unknown,
   field: EventFieldWithValidation,
 ): FieldValidationError | null {
-  const label = field.label || fieldKey
-  const rules = field.validation_rules || {}
+  const label = field.label || fieldKey;
+  const rules = field.validation_rules || {};
 
   // Check required field
   if (field.is_required && (value === null || value === undefined || value === '')) {
-    return { fieldKey, message: `${label} is required.` }
+    return { fieldKey, message: `${label} is required.` };
   }
 
   // Optional empty values are valid (don't validate further)
   if (!field.is_required && (value === null || value === undefined || value === '')) {
-    return null
+    return null;
   }
 
-  const type = field.field_type
+  const type = field.field_type;
 
   // Text-like fields (text, textarea, email, phone)
   if (type === 'text' || type === 'textarea' || type === 'email' || type === 'phone') {
     if (typeof value !== 'string') {
-      return { fieldKey, message: `${label} must be text.` }
+      return { fieldKey, message: `${label} must be text.` };
     }
 
-    const text = value.trim()
+    const text = value.trim();
 
     // Check length constraints
-    const minLength = rules.min_length
+    const minLength = rules.min_length;
     if (minLength !== undefined && typeof minLength === 'number') {
       if (text.length < minLength) {
         return {
           fieldKey,
           message: `${label} must be at least ${minLength} characters.`,
-        }
+        };
       }
     }
 
-    const maxLength = rules.max_length
+    const maxLength = rules.max_length;
     if (maxLength !== undefined && typeof maxLength === 'number') {
       if (text.length > maxLength) {
         return {
           fieldKey,
           message: `${label} must be at most ${maxLength} characters.`,
-        }
+        };
       }
     }
 
     // Check pattern constraint
     if (rules.pattern && typeof rules.pattern === 'string') {
       try {
-        const regex = new RegExp(rules.pattern)
+        const regex = new RegExp(rules.pattern);
         if (!regex.test(text)) {
-          return { fieldKey, message: `${label} format is invalid.` }
+          return { fieldKey, message: `${label} format is invalid.` };
         }
       } catch {
         // Ignore invalid regex patterns
@@ -126,62 +127,62 @@ function validateFieldValue(
 
     // Type-specific format checks
     if (type === 'email' && !isValidEmail(text)) {
-      return { fieldKey, message: `${label} must be a valid email address.` }
+      return { fieldKey, message: `${label} must be a valid email address.` };
     }
 
     if (type === 'phone' && !isValidPhone(text)) {
-      return { fieldKey, message: `${label} must be a valid phone number.` }
+      return { fieldKey, message: `${label} must be a valid phone number.` };
     }
 
-    return null
+    return null;
   }
 
   // Number field
   if (type === 'number') {
-    let num: number
+    let num: number;
 
     if (typeof value === 'number') {
-      num = value
+      num = value;
     } else if (typeof value === 'string') {
-      const parsed = Number(value)
+      const parsed = Number(value);
       if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
-        num = parsed
+        num = parsed;
       } else {
-        return { fieldKey, message: `${label} must be a valid number.` }
+        return { fieldKey, message: `${label} must be a valid number.` };
       }
     } else {
-      return { fieldKey, message: `${label} must be a number.` }
+      return { fieldKey, message: `${label} must be a number.` };
     }
 
-    const min = rules.min
+    const min = rules.min;
     if (min !== undefined && typeof min === 'number') {
       if (num < min) {
-        return { fieldKey, message: `${label} must be at least ${min}.` }
+        return { fieldKey, message: `${label} must be at least ${min}.` };
       }
     }
 
-    const max = rules.max
+    const max = rules.max;
     if (max !== undefined && typeof max === 'number') {
       if (num > max) {
-        return { fieldKey, message: `${label} must be at most ${max}.` }
+        return { fieldKey, message: `${label} must be at most ${max}.` };
       }
     }
 
-    return null
+    return null;
   }
 
   // Single choice fields (select, radio)
   if (type === 'select' || type === 'radio') {
     if (typeof value !== 'string') {
-      return { fieldKey, message: `${label} must be text.` }
+      return { fieldKey, message: `${label} must be text.` };
     }
 
-    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    const allowedValues = new Set(field.options.map((opt) => opt.value));
     if (!allowedValues.has(value)) {
-      return { fieldKey, message: `${label} contains an unsupported option.` }
+      return { fieldKey, message: `${label} contains an unsupported option.` };
     }
 
-    return null
+    return null;
   }
 
   // Boolean field (checkbox single)
@@ -193,187 +194,187 @@ function validateFieldValue(
       value !== 0 &&
       value !== 1
     ) {
-      return { fieldKey, message: `${label} must be true or false.` }
+      return { fieldKey, message: `${label} must be true or false.` };
     }
 
-    return null
+    return null;
   }
 
   // Multi-select field
   if (type === 'multi_select') {
-    let arr: string[]
+    let arr: string[];
 
     if (Array.isArray(value)) {
-      arr = value.map(String)
+      arr = value.map(String);
     } else if (typeof value === 'string') {
-      arr = [value]
+      arr = [value];
     } else {
-      return { fieldKey, message: `${label} must be an array of values.` }
+      return { fieldKey, message: `${label} must be an array of values.` };
     }
 
-    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    const allowedValues = new Set(field.options.map((opt) => opt.value));
     for (const item of arr) {
       if (!allowedValues.has(item)) {
-        return { fieldKey, message: `${label} contains an unsupported option.` }
+        return { fieldKey, message: `${label} contains an unsupported option.` };
       }
     }
 
-    const minSelections = rules.min_selections
+    const minSelections = rules.min_selections;
     if (minSelections !== undefined && typeof minSelections === 'number') {
       if (arr.length < minSelections) {
         return {
           fieldKey,
           message: `${label} requires at least ${minSelections} selection(s).`,
-        }
+        };
       }
     }
 
-    const maxSelections = rules.max_selections
+    const maxSelections = rules.max_selections;
     if (maxSelections !== undefined && typeof maxSelections === 'number') {
       if (arr.length > maxSelections) {
         return {
           fieldKey,
           message: `${label} allows at most ${maxSelections} selection(s).`,
-        }
+        };
       }
     }
 
-    return null
+    return null;
   }
 
   // Multi-select + Yes/No toggle field
   if (type === 'multi_select_toggle') {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      return { fieldKey, message: `${label} must be an object of option values.` }
+      return { fieldKey, message: `${label} must be an object of option values.` };
     }
 
-    const mapped = value as Record<string, unknown>
-    const selectedKeys = Object.keys(mapped)
-    const allowedValues = new Set(field.options.map((opt) => opt.value))
+    const mapped = value as Record<string, unknown>;
+    const selectedKeys = Object.keys(mapped);
+    const allowedValues = new Set(field.options.map((opt) => opt.value));
 
     for (const key of selectedKeys) {
       if (!allowedValues.has(key)) {
-        return { fieldKey, message: `${label} contains an unsupported option.` }
+        return { fieldKey, message: `${label} contains an unsupported option.` };
       }
 
       if (typeof mapped[key] !== 'boolean') {
-        return { fieldKey, message: `${label} selections must be Yes/No values.` }
+        return { fieldKey, message: `${label} selections must be Yes/No values.` };
       }
     }
 
-    const minSelections = rules.min_selections
+    const minSelections = rules.min_selections;
     if (minSelections !== undefined && typeof minSelections === 'number') {
       if (selectedKeys.length < minSelections) {
         return {
           fieldKey,
           message: `${label} requires at least ${minSelections} selection(s).`,
-        }
+        };
       }
     }
 
-    const maxSelections = rules.max_selections
+    const maxSelections = rules.max_selections;
     if (maxSelections !== undefined && typeof maxSelections === 'number') {
       if (selectedKeys.length > maxSelections) {
         return {
           fieldKey,
           message: `${label} allows at most ${maxSelections} selection(s).`,
-        }
+        };
       }
     }
 
-    return null
+    return null;
   }
 
   // Date field
   if (type === 'date' || type === 'datetime') {
     if (typeof value !== 'string') {
-      return { fieldKey, message: `${label} must be a date string.` }
+      return { fieldKey, message: `${label} must be a date string.` };
     }
 
-    const isDateOnly = type === 'date'
-    const dateRegex = isDateOnly ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
+    const isDateOnly = type === 'date';
+    const dateRegex = isDateOnly ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
     if (!dateRegex.test(value)) {
       return {
         fieldKey,
         message: `${label} must use a valid ${isDateOnly ? 'date' : 'date and time'} format.`,
-      }
+      };
     }
 
-    const minDate = rules.min_date
+    const minDate = rules.min_date;
     if (minDate && typeof minDate === 'string') {
       if (value < minDate) {
-        return { fieldKey, message: `${label} must be on or after ${minDate}.` }
+        return { fieldKey, message: `${label} must be on or after ${minDate}.` };
       }
     }
 
-    const maxDate = rules.max_date
+    const maxDate = rules.max_date;
     if (maxDate && typeof maxDate === 'string') {
       if (value > maxDate) {
-        return { fieldKey, message: `${label} must be on or before ${maxDate}.` }
+        return { fieldKey, message: `${label} must be on or before ${maxDate}.` };
       }
     }
 
-    return null
+    return null;
   }
 
-  return null
+  return null;
 }
 
 /**
  * Simple email validation using basic regex.
  */
 function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 /**
  * Simple phone validation - must contain digits.
  */
 function isValidPhone(phone: string): boolean {
-  return /\d/.test(phone)
+  return /\d/.test(phone);
 }
 
 function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
   if (!error || error.code !== POSTGRES_ERROR_CODES.uniqueViolation) {
-    return false
+    return false;
   }
 
-  const combinedMessage = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`
-  return combinedMessage.includes(constraint)
+  const combinedMessage = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`;
+  return combinedMessage.includes(constraint);
 }
 
 function isRegistrationUniqueConflict(error: PostgrestErrorLike | null): boolean {
   return (
     isUniqueConstraintError(error, REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT) ||
     isUniqueConstraintError(error, REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT)
-  )
+  );
 }
 
-const allowedOrigins = readAllowedOrigins()
+const allowedOrigins = readAllowedOrigins();
 
 Deno.serve(async (req) => {
-  const origin = req.headers.get('origin')
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins)
+  const origin = req.headers.get('origin');
+  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders)
+      return createObscuredDenyResponse(corsHeaders);
     }
 
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders)
+    return createObscuredDenyResponse(corsHeaders);
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   }
 
   const rateLimitResponse = enforcePublicRateLimit({
@@ -383,14 +384,14 @@ Deno.serve(async (req) => {
     scope: 'submit-registration',
     windowMs: RATE_LIMIT_PRESETS.submitRegistration.windowMs,
     maxHits: RATE_LIMIT_PRESETS.submitRegistration.maxHits,
-  })
+  });
 
   if (rateLimitResponse) {
-    return rateLimitResponse
+    return rateLimitResponse;
   }
 
   try {
-    const env = parseFunctionEnvironment()
+    const env = parseFunctionEnvironment();
 
     if (!env) {
       return new Response(
@@ -402,11 +403,11 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
-    const { supabaseUrl, supabaseServiceKey } = env
+    const { supabaseUrl, supabaseServiceKey } = env;
 
-    const parsedBody = await parseRequestBody(req, submitRegistrationRequestSchema)
+    const parsedBody = await parseRequestBody(req, submitRegistrationRequestSchema);
     if (!parsedBody.success) {
       return new Response(
         JSON.stringify({
@@ -419,11 +420,11 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     const { event_slug, member_id, responses, idempotency_key }: SubmitRegistrationRequest =
-      parsedBody.data
+      parsedBody.data;
 
     // Create authenticated client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -431,17 +432,17 @@ Deno.serve(async (req) => {
         persistSession: false,
         autoRefreshToken: false,
       },
-    })
+    });
 
     // Step 1: Look up event by slug
     const { data: eventData, error: eventError } = await supabase
       .from('events')
       .select('id, duplicate_policy')
       .eq('slug', event_slug)
-      .maybeSingle()
+      .maybeSingle();
 
     if (eventError) {
-      console.error('Event lookup error:', eventError)
+      console.error('Event lookup error:', eventError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -452,7 +453,7 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     if (!eventData) {
@@ -466,7 +467,7 @@ Deno.serve(async (req) => {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     // Step 2: Look up user by member_id
@@ -474,10 +475,10 @@ Deno.serve(async (req) => {
       .from('users')
       .select('id')
       .eq('member_id', member_id)
-      .maybeSingle()
+      .maybeSingle();
 
     if (userError) {
-      console.error('User lookup error:', userError)
+      console.error('User lookup error:', userError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -488,7 +489,7 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     if (!userData) {
@@ -502,18 +503,18 @@ Deno.serve(async (req) => {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
-    const userId = userData.id
-    const eventId = eventData.id
-    const duplicatePolicy = eventData.duplicate_policy
+    const userId = userData.id;
+    const eventId = eventData.id;
+    const duplicatePolicy = eventData.duplicate_policy;
 
     // Step 3: Insert registration first, then recover from unique conflicts.
-    let registrationId: string | null = null
-    let status: 'submitted' | 'updated' = 'submitted'
-    let isNew = true
-    let shouldWriteAnswers = true
+    let registrationId: string | null = null;
+    let status: 'submitted' | 'updated' = 'submitted';
+    let isNew = true;
+    let shouldWriteAnswers = true;
 
     const { data: newReg, error: createError } = await supabase
       .from('registrations')
@@ -525,15 +526,15 @@ Deno.serve(async (req) => {
         source: 'public',
       })
       .select('id')
-      .single()
+      .single();
 
     if (!createError && newReg) {
-      registrationId = newReg.id
+      registrationId = newReg.id;
     } else if (createError && isRegistrationUniqueConflict(createError as PostgrestErrorLike)) {
       const isIdempotencyConflict = isUniqueConstraintError(
         createError as PostgrestErrorLike,
         REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT,
-      )
+      );
 
       if (isIdempotencyConflict) {
         const { data: existingByIdempotency, error: idempotencyLookupError } = await supabase
@@ -541,10 +542,10 @@ Deno.serve(async (req) => {
           .select('id, user_id, status')
           .eq('event_id', eventId)
           .eq('idempotency_key', idempotency_key)
-          .maybeSingle()
+          .maybeSingle();
 
         if (idempotencyLookupError) {
-          console.error('Idempotency recovery lookup error:', idempotencyLookupError)
+          console.error('Idempotency recovery lookup error:', idempotencyLookupError);
           return new Response(
             JSON.stringify({
               success: false,
@@ -555,14 +556,14 @@ Deno.serve(async (req) => {
               status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             },
-          )
+          );
         }
 
         if (existingByIdempotency?.id && existingByIdempotency.user_id === userId) {
-          registrationId = existingByIdempotency.id
-          status = existingByIdempotency.status === 'updated' ? 'updated' : 'submitted'
-          isNew = false
-          shouldWriteAnswers = false
+          registrationId = existingByIdempotency.id;
+          status = existingByIdempotency.status === 'updated' ? 'updated' : 'submitted';
+          isNew = false;
+          shouldWriteAnswers = false;
         }
       }
 
@@ -572,10 +573,10 @@ Deno.serve(async (req) => {
           .select('id, status')
           .eq('event_id', eventId)
           .eq('user_id', userId)
-          .maybeSingle()
+          .maybeSingle();
 
         if (regCheckError) {
-          console.error('Registration conflict recovery check error:', regCheckError)
+          console.error('Registration conflict recovery check error:', regCheckError);
           return new Response(
             JSON.stringify({
               success: false,
@@ -586,7 +587,7 @@ Deno.serve(async (req) => {
               status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             },
-          )
+          );
         }
 
         if (!existingReg) {
@@ -597,7 +598,7 @@ Deno.serve(async (req) => {
               userId,
               idempotencyKey: idempotency_key,
             },
-          )
+          );
           return new Response(
             JSON.stringify({
               success: false,
@@ -608,7 +609,7 @@ Deno.serve(async (req) => {
               status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             },
-          )
+          );
         }
 
         if (duplicatePolicy === 'block') {
@@ -622,20 +623,20 @@ Deno.serve(async (req) => {
               status: 200,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             },
-          )
+          );
         }
 
-        registrationId = existingReg.id
-        status = 'updated'
-        isNew = false
+        registrationId = existingReg.id;
+        status = 'updated';
+        isNew = false;
 
         const { error: updateError } = await supabase
           .from('registrations')
           .update({ status: 'updated', submitted_at: new Date().toISOString() })
-          .eq('id', registrationId)
+          .eq('id', registrationId);
 
         if (updateError) {
-          console.error('Registration update error:', updateError)
+          console.error('Registration update error:', updateError);
           return new Response(
             JSON.stringify({
               success: false,
@@ -646,11 +647,11 @@ Deno.serve(async (req) => {
               status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             },
-          )
+          );
         }
       }
     } else {
-      console.error('Registration create error:', createError)
+      console.error('Registration create error:', createError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -661,7 +662,7 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     if (!registrationId) {
@@ -675,7 +676,7 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     if (!shouldWriteAnswers) {
@@ -694,7 +695,7 @@ Deno.serve(async (req) => {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     // Step 4: Get event fields with validation rules
@@ -702,10 +703,10 @@ Deno.serve(async (req) => {
       .from('event_fields')
       .select('id, field_key, label, field_type, is_required, options, validation_rules')
       .eq('event_id', eventId)
-      .eq('is_active', true)
+      .eq('is_active', true);
 
     if (fieldsError) {
-      console.error('Fields lookup error:', fieldsError)
+      console.error('Fields lookup error:', fieldsError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -716,25 +717,25 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     // Step 5: Validate all response values against field schemas
     const fieldMap = new Map(
       (eventFields || []).map((f) => [f.field_key, f as EventFieldWithValidation]),
-    )
-    const validationErrors: FieldValidationError[] = []
+    );
+    const validationErrors: FieldValidationError[] = [];
 
     for (const [fieldKey, value] of Object.entries(responses)) {
-      const field = fieldMap.get(fieldKey)
+      const field = fieldMap.get(fieldKey);
       if (!field) {
         // Unknown field in responses - skip (could be old data)
-        continue
+        continue;
       }
 
-      const error = validateFieldValue(fieldKey, value, field)
+      const error = validateFieldValue(fieldKey, value, field);
       if (error) {
-        validationErrors.push(error)
+        validationErrors.push(error);
       }
     }
 
@@ -744,12 +745,12 @@ Deno.serve(async (req) => {
         validationErrors.push({
           fieldKey,
           message: `${field.label} is required.`,
-        })
+        });
       }
     }
 
     if (validationErrors.length > 0) {
-      console.warn('Registration validation failed:', validationErrors)
+      console.warn('Registration validation failed:', validationErrors);
       return new Response(
         JSON.stringify({
           success: false,
@@ -761,7 +762,7 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
-      )
+      );
     }
 
     // Step 6: Delete existing answers if updating (clean slate)
@@ -769,22 +770,22 @@ Deno.serve(async (req) => {
       const { error: deleteAnswersError } = await supabase
         .from('registration_answers')
         .delete()
-        .eq('registration_id', registrationId)
+        .eq('registration_id', registrationId);
 
       if (deleteAnswersError) {
-        console.error('Delete answers error:', deleteAnswersError)
+        console.error('Delete answers error:', deleteAnswersError);
         // Continue - not fatal
       }
     }
 
     // Step 7: Insert registration answers
-    const fieldIdMap = new Map((eventFields || []).map((f) => [f.field_key, f.id]))
+    const fieldIdMap = new Map((eventFields || []).map((f) => [f.field_key, f.id]));
     const answersToInsert = Object.entries(responses)
       .map(([fieldKey, answer]) => {
-        const fieldId = fieldIdMap.get(fieldKey)
+        const fieldId = fieldIdMap.get(fieldKey);
         if (!fieldId) {
-          console.warn(`Field ${fieldKey} not found in event`)
-          return null
+          console.warn(`Field ${fieldKey} not found in event`);
+          return null;
         }
 
         // Simple type mapping: assume string for now
@@ -792,17 +793,17 @@ Deno.serve(async (req) => {
           registration_id: registrationId,
           event_field_id: fieldId,
           answer_text: typeof answer === 'string' ? answer : JSON.stringify(answer),
-        }
+        };
       })
-      .filter((a) => a !== null)
+      .filter((a) => a !== null);
 
     if (answersToInsert.length > 0) {
       const { error: answersError } = await supabase
         .from('registration_answers')
-        .insert(answersToInsert)
+        .insert(answersToInsert);
 
       if (answersError) {
-        console.error('Answers insert error:', answersError)
+        console.error('Answers insert error:', answersError);
         return new Response(
           JSON.stringify({
             success: false,
@@ -813,7 +814,7 @@ Deno.serve(async (req) => {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           },
-        )
+        );
       }
     }
 
@@ -831,9 +832,9 @@ Deno.serve(async (req) => {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    )
+    );
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('Unexpected error:', error);
 
     return new Response(
       JSON.stringify({
@@ -845,6 +846,6 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    )
+    );
   }
-})
+});

@@ -3,10 +3,10 @@ export type {
   ExistingRegistrationState,
   MemberLookupResult,
   AdminMember,
-} from './types'
+} from './types';
 export {
   updateMemberSchema,
   createMemberSchema,
   type UpdateMemberInput,
   type CreateMemberInput,
-} from './schemas'
+} from './schemas';

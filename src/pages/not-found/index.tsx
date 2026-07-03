@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '@/config/constants'
-import { Button } from '@/components/ui/Button'
+import { useNavigate } from 'react-router-dom';
+
+import { Button } from '@/components/ui/Button';
+import { ROUTE_PATHS } from '@/config/constants';
 
 export function NotFoundPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <section className="mx-auto flex max-w-md flex-col items-center justify-center space-y-4 text-center">
@@ -21,5 +22,5 @@ export function NotFoundPage() {
         </Button>
       </div>
     </section>
-  )
+  );
 }

@@ -1,123 +1,125 @@
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
-import { TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants'
+import { useMemo, useState } from 'react';
+
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Col } from '@/components/ui/Grid';
+import { Grid } from '@/components/ui/Grid';
+import { TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
+import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
+import { useErrorWithFadeout } from '@/hooks/utils';
 import {
-  formatRegistrationShareText,
   REGISTRATION_SHARE_FIELDS,
   REGISTRATION_SHARE_FIELD_LABELS,
   type RegistrationShareField,
-} from '@/lib/domain/registrations'
-import { Button } from '@/components/ui/Button'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Col } from '@/components/ui/Grid'
-import { Grid } from '@/components/ui/Grid'
-import { useRegistrationNamesQuery } from '@/hooks/domain/registrations'
-import { useErrorWithFadeout } from '@/hooks/utils'
+  formatRegistrationShareText,
+} from '@/lib/domain/registrations';
 
 interface CopyNamesButtonProps {
-  eventId: string
-  eventTitle?: string
+  eventId: string;
+  eventTitle?: string;
 }
 
 function copyTextToClipboard(text: string): Promise<void> {
   if (navigator.clipboard?.writeText) {
-    return navigator.clipboard.writeText(text)
+    return navigator.clipboard.writeText(text);
   }
 
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.setAttribute('readonly', 'true')
-  textarea.style.position = 'absolute'
-  textarea.style.left = '-9999px'
-  document.body.appendChild(textarea)
-  textarea.select()
-  const didCopy = document.execCommand('copy')
-  document.body.removeChild(textarea)
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const didCopy = document.execCommand('copy');
+  document.body.removeChild(textarea);
 
   if (!didCopy) {
-    throw new Error('Clipboard is not available in this browser')
+    throw new Error('Clipboard is not available in this browser');
   }
 
-  return Promise.resolve()
+  return Promise.resolve();
 }
 
 export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
-  const registrationNamesQuery = useRegistrationNamesQuery(eventId, { enabled: false })
-  const { showError } = useErrorWithFadeout()
+  const registrationNamesQuery = useRegistrationNamesQuery(eventId, { enabled: false });
+  const { showError } = useErrorWithFadeout();
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [selectedFields, setSelectedFields] = useState<RegistrationShareField[]>(['full_name'])
-  const [selectedAnswerFieldIds, setSelectedAnswerFieldIds] = useState<string[]>([])
-  const [dynamicFieldSearch, setDynamicFieldSearch] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedFields, setSelectedFields] = useState<RegistrationShareField[]>(['full_name']);
+  const [selectedAnswerFieldIds, setSelectedAnswerFieldIds] = useState<string[]>([]);
+  const [dynamicFieldSearch, setDynamicFieldSearch] = useState('');
 
   const answerFieldOptions = useMemo(
     () => registrationNamesQuery.data?.answer_fields ?? [],
     [registrationNamesQuery.data?.answer_fields],
-  )
+  );
 
   const filteredAnswerFieldOptions = useMemo(() => {
-    const normalizedSearch = dynamicFieldSearch.trim().toLowerCase()
-    if (!normalizedSearch) return answerFieldOptions
+    const normalizedSearch = dynamicFieldSearch.trim().toLowerCase();
+    if (!normalizedSearch) return answerFieldOptions;
 
     return answerFieldOptions.filter((field) =>
       field.label.toLowerCase().includes(normalizedSearch),
-    )
-  }, [answerFieldOptions, dynamicFieldSearch])
+    );
+  }, [answerFieldOptions, dynamicFieldSearch]);
 
   const handleToggleField = (field: RegistrationShareField) => {
     setSelectedFields((currentFields) => {
       if (currentFields.includes(field)) {
-        if (currentFields.length === 1) return currentFields
-        return currentFields.filter((value) => value !== field)
+        if (currentFields.length === 1) return currentFields;
+        return currentFields.filter((value) => value !== field);
       }
 
-      return [...currentFields, field]
-    })
-  }
+      return [...currentFields, field];
+    });
+  };
 
   const handleToggleAnswerField = (fieldId: string) => {
     setSelectedAnswerFieldIds((currentFieldIds) => {
       if (currentFieldIds.includes(fieldId)) {
-        return currentFieldIds.filter((value) => value !== fieldId)
+        return currentFieldIds.filter((value) => value !== fieldId);
       }
 
-      return [...currentFieldIds, fieldId]
-    })
-  }
+      return [...currentFieldIds, fieldId];
+    });
+  };
 
   const loadRegistrationNames = async () => {
-    const cached = registrationNamesQuery.data
-    if (cached) return cached
+    const cached = registrationNamesQuery.data;
+    if (cached) return cached;
 
-    const fetched = await registrationNamesQuery.refetch()
-    if (fetched.error) throw fetched.error
-    if (!fetched.data) throw new Error(TOAST_MESSAGES.registration.copyNamesFailed)
+    const fetched = await registrationNamesQuery.refetch();
+    if (fetched.error) throw fetched.error;
+    if (!fetched.data) throw new Error(TOAST_MESSAGES.registration.copyNamesFailed);
 
-    return fetched.data
-  }
+    return fetched.data;
+  };
 
   const handleOpen = async () => {
-    setIsDialogOpen(true)
+    setIsDialogOpen(true);
 
     if (registrationNamesQuery.data || registrationNamesQuery.isFetching) {
-      return
+      return;
     }
 
     try {
-      await loadRegistrationNames()
+      await loadRegistrationNames();
     } catch (error) {
       showError(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.copyNamesFailed,
-      )
+      );
     }
-  }
+  };
 
   const handleCopy = async () => {
     try {
-      const payload = await loadRegistrationNames()
+      const payload = await loadRegistrationNames();
 
       if (payload.rows.length === 0) {
-        throw new Error(UI_MESSAGES.empty.noRegistrationsYet)
+        throw new Error(UI_MESSAGES.empty.noRegistrationsYet);
       }
 
       const text = formatRegistrationShareText({
@@ -126,17 +128,17 @@ export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
         selectedAnswerFieldIds,
         answerFields: payload.answer_fields,
         eventTitle: payload.event_title || eventTitle,
-      })
+      });
 
-      await copyTextToClipboard(text)
-      toast.success(TOAST_MESSAGES.registration.namesCopied(payload.row_count))
-      setIsDialogOpen(false)
+      await copyTextToClipboard(text);
+      toast.success(TOAST_MESSAGES.registration.namesCopied(payload.row_count));
+      setIsDialogOpen(false);
     } catch (error) {
       showError(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.copyNamesFailed,
-      )
+      );
     }
-  }
+  };
 
   return (
     <>
@@ -144,7 +146,7 @@ export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
         type="button"
         variant="outline"
         onClick={() => {
-          void handleOpen()
+          void handleOpen();
         }}
       >
         Copy Names
@@ -241,10 +243,10 @@ export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
         confirmLoadingLabel="Copying..."
         isPending={registrationNamesQuery.isFetching}
         onConfirm={() => {
-          void handleCopy()
+          void handleCopy();
         }}
         onCancel={() => setIsDialogOpen(false)}
       />
     </>
-  )
+  );
 }

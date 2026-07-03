@@ -1,7 +1,7 @@
 export {
   fetchPublicAttendeeCheck,
   usePublicAttendeeCheckQuery,
-} from './usePublicAttendeeCheckQuery'
-export { useSubmitPublicRegistrationMutation } from './useSubmitPublicRegistrationMutation'
-export { useAdminPublicRegistrationsQuery } from './useAdminPublicRegistrationsQuery'
-export { usePublicRegistrationDetailQuery } from './usePublicRegistrationDetailQuery'
+} from './usePublicAttendeeCheckQuery';
+export { useSubmitPublicRegistrationMutation } from './useSubmitPublicRegistrationMutation';
+export { useAdminPublicRegistrationsQuery } from './useAdminPublicRegistrationsQuery';
+export { usePublicRegistrationDetailQuery } from './usePublicRegistrationDetailQuery';

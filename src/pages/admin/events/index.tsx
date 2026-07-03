@@ -1,7 +1,23 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react';
+
+import { Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { AdminPageShell } from '@/components/layout';
+import { Button, EmptyState } from '@/components/ui';
+import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable';
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
@@ -13,108 +29,95 @@ import {
   toAdminEventDetail,
   toAdminEventFields,
   toAdminEventRegistrations,
-} from '@/config/constants'
+} from '@/config/constants';
 import {
   useAdminEventsQuery,
-  usePublishEventMutation,
   useArchiveEventMutation,
-} from '@/hooks/domain/events'
-import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
-import { AdminPageShell } from '@/components/layout'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton'
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
-import { Button, EmptyState } from '@/components/ui'
-import {
-  ListTable,
-  ListTableBody,
-  ListTableCell,
-  ListTableHead,
-  ListTableHeaderCell,
-  ListTableHeaderRow,
-  ListTableRow,
-} from '@/components/ui/ListTable'
-import { EventStatusBadge, PublishActionButton, DuplicatePolicyLabel } from './components'
+  usePublishEventMutation,
+} from '@/hooks/domain/events';
+import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+
+import { DuplicatePolicyLabel, EventStatusBadge, PublishActionButton } from './components';
 
 export function AdminEventsPage() {
-  const navigate = useNavigate()
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize)
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
+  const navigate = useNavigate();
+  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, TIMING.searchDebounceMs)
+      setDebouncedSearchTerm(searchTerm);
+    }, TIMING.searchDebounceMs);
 
     return () => {
-      window.clearTimeout(timer)
-    }
-  }, [searchTerm])
+      window.clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
-  const eventsQuery = useAdminEventsQuery({ pageSize, cursor, searchTerm: normalizedSearchTerm })
-  const events = eventsQuery.data?.items ?? []
-  const hasMore = eventsQuery.data?.hasMore ?? false
-  const nextCursor = eventsQuery.data?.nextCursor ?? null
-  const totalPages = eventsQuery.data?.totalPages ?? 1
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize)
+  const eventsQuery = useAdminEventsQuery({ pageSize, cursor, searchTerm: normalizedSearchTerm });
+  const events = eventsQuery.data?.items ?? [];
+  const hasMore = eventsQuery.data?.hasMore ?? false;
+  const nextCursor = eventsQuery.data?.nextCursor ?? null;
+  const totalPages = eventsQuery.data?.totalPages ?? 1;
+  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
 
-  const isLoading = eventsQuery.isLoading
-  const error = eventsQuery.error
-  const publishMutation = usePublishEventMutation()
-  const archiveMutation = useArchiveEventMutation()
+  const isLoading = eventsQuery.isLoading;
+  const error = eventsQuery.error;
+  const publishMutation = usePublishEventMutation();
+  const archiveMutation = useArchiveEventMutation();
 
   async function handlePublish(eventId: string, eventTitle: string) {
     try {
-      await publishMutation.mutateAsync(eventId)
-      toast.success(TOAST_MESSAGES.eventSaved.published(eventTitle))
+      await publishMutation.mutateAsync(eventId);
+      toast.success(TOAST_MESSAGES.eventSaved.published(eventTitle));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.publishFailed
-      toast.error(message)
+        error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.publishFailed;
+      toast.error(message);
     }
   }
 
   async function handleArchive(eventId: string, eventTitle: string) {
     try {
-      await archiveMutation.mutateAsync(eventId)
-      toast.success(TOAST_MESSAGES.eventSaved.archived(eventTitle))
+      await archiveMutation.mutateAsync(eventId);
+      toast.success(TOAST_MESSAGES.eventSaved.archived(eventTitle));
     } catch {
-      toast.error(TOAST_MESSAGES.eventSaved.archiveFailed)
+      toast.error(TOAST_MESSAGES.eventSaved.archiveFailed);
     }
   }
 
   function handleNextPage() {
-    if (!nextCursor) return
-    setCursor(nextCursor)
+    if (!nextCursor) return;
+    setCursor(nextCursor);
   }
 
   function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize))
+    setCursor(getPageCursor(currentPage - 1, pageSize));
   }
 
   function handleFirstPage() {
-    setCursor(null)
+    setCursor(null);
   }
 
   function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize))
+    setCursor(getPageCursor(page, pageSize));
   }
 
   function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize))
+    setCursor(getPageCursor(totalPages, pageSize));
   }
 
   function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize)
-    setCursor(null)
+    setPageSize(nextPageSize);
+    setCursor(null);
   }
 
   function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm)
-    setCursor(null)
+    setSearchTerm(nextSearchTerm);
+    setCursor(null);
   }
 
   return (
@@ -288,5 +291,5 @@ export function AdminEventsPage() {
         )}
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

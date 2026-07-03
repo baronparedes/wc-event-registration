@@ -1,18 +1,19 @@
-import type { UseFormRegisterReturn } from 'react-hook-form'
-import { LockedFieldIndicator } from './LockedFieldIndicator'
+import type { UseFormRegisterReturn } from 'react-hook-form';
+
+import { LockedFieldIndicator } from './LockedFieldIndicator';
 
 const inputClass =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600';
 
 type RuleInputProps = {
-  id: string
-  label: string
-  type: 'number' | 'date' | 'text'
-  registration: UseFormRegisterReturn
-  disabled: boolean
-  placeholder?: string
-  helperText?: string
-}
+  id: string;
+  label: string;
+  type: 'number' | 'date' | 'text';
+  registration: UseFormRegisterReturn;
+  disabled: boolean;
+  placeholder?: string;
+  helperText?: string;
+};
 
 /** Input for validation rule fields. */
 export function RuleInput({
@@ -40,5 +41,5 @@ export function RuleInput({
       />
       {helperText && <p className="text-xs text-muted">{helperText}</p>}
     </div>
-  )
+  );
 }

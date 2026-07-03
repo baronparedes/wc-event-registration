@@ -1,12 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@/config/constants'
-import { supabase } from '@/lib/infrastructure'
-import { logger } from '@/lib/infrastructure'
-import { validatePublicEventFieldConfig } from '@/lib/domain/event-fields'
+import { useQuery } from '@tanstack/react-query';
+
+import { QUERY_KEYS } from '@/config/constants';
+import { validatePublicEventFieldConfig } from '@/lib/domain/event-fields';
 import type {
   EventFieldConfigValidationResult,
   PublicEventFieldRow,
-} from '@/lib/domain/event-fields'
+} from '@/lib/domain/event-fields';
+import { supabase } from '@/lib/infrastructure';
+import { logger } from '@/lib/infrastructure';
 
 /**
  * Hook to fetch dynamic event fields for a specific event.
@@ -20,10 +21,10 @@ export function usePublicEventFieldsQuery(eventId: string | undefined) {
     queryKey: QUERY_KEYS.publicEventFields(eventId),
     queryFn: async () => {
       if (!eventId) {
-        return { validFields: [], issues: [] } as EventFieldConfigValidationResult
+        return { validFields: [], issues: [] } as EventFieldConfigValidationResult;
       }
 
-      logger.debug('Fetching event fields for event:', eventId)
+      logger.debug('Fetching event fields for event:', eventId);
 
       const { data, error } = await supabase
         .from('event_fields')
@@ -33,14 +34,14 @@ export function usePublicEventFieldsQuery(eventId: string | undefined) {
         .eq('event_id', eventId)
         .eq('is_active', true)
         .order('display_order', { ascending: true })
-        .returns<PublicEventFieldRow[]>()
+        .returns<PublicEventFieldRow[]>();
 
       if (error) {
-        throw error
+        throw error;
       }
 
-      return validatePublicEventFieldConfig(data ?? [])
+      return validatePublicEventFieldConfig(data ?? []);
     },
     enabled: Boolean(eventId),
-  })
+  });
 }

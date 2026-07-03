@@ -15,7 +15,7 @@ export type {
   PublicRegistrationNotFoundResult,
   CancelPublicRegistrationRequest,
   CancelPublicRegistrationResult,
-} from './types'
+} from './types';
 
 export {
   publicAttendeeInfoSchema,
@@ -25,4 +25,4 @@ export {
   type PublicAttendeeInfoInput,
   type PublicAttendeeCheckInput,
   type CancelPublicRegistrationInput,
-} from './schemas'
+} from './schemas';

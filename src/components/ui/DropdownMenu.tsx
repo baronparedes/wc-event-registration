@@ -1,28 +1,29 @@
-import { useEffect, useRef, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { type ReactNode, useEffect, useRef } from 'react';
+
+import { Link } from 'react-router-dom';
 
 type DropdownMenuProps = {
-  trigger: ReactNode
-  children: ReactNode
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+  trigger: ReactNode;
+  children: ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
 
 export function DropdownMenu({ trigger, children, open, onOpenChange }: DropdownMenuProps) {
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        onOpenChange(false)
+        onOpenChange(false);
       }
     }
 
     if (open) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [open, onOpenChange])
+  }, [open, onOpenChange]);
 
   return (
     <div ref={ref} className="relative">
@@ -33,14 +34,14 @@ export function DropdownMenu({ trigger, children, open, onOpenChange }: Dropdown
         </div>
       )}
     </div>
-  )
+  );
 }
 
 type DropdownMenuItemProps = {
-  to: string
-  children: ReactNode
-  onClick?: () => void
-}
+  to: string;
+  children: ReactNode;
+  onClick?: () => void;
+};
 
 export function DropdownMenuItem({ to, children, onClick }: DropdownMenuItemProps) {
   return (
@@ -51,5 +52,5 @@ export function DropdownMenuItem({ to, children, onClick }: DropdownMenuItemProp
     >
       {children}
     </Link>
-  )
+  );
 }

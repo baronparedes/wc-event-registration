@@ -1,47 +1,47 @@
-import { waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
-import { makeAdminMember } from '@/__tests__/factories'
+import { faker } from '@faker-js/faker';
+import { waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { makeAdminMember } from '@/__tests__/factories';
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useAdminMemberQuery } from '@/hooks/domain/members/queries/useAdminMemberQuery';
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
     maybeSingle: vi.fn(),
-  }
+  };
 
-  queryBuilder.select.mockReturnValue(queryBuilder)
-  queryBuilder.eq.mockReturnValue(queryBuilder)
+  queryBuilder.select.mockReturnValue(queryBuilder);
+  queryBuilder.eq.mockReturnValue(queryBuilder);
 
   return {
     mockQueryBuilder: queryBuilder,
     mockFrom: vi.fn(() => queryBuilder),
-  }
-})
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
 
   return {
     ...actual,
     supabase: {
       from: mockFrom,
     },
-  }
-})
-
-import { useAdminMemberQuery } from '@/hooks/domain/members/queries/useAdminMemberQuery'
+  };
+});
 
 describe('useAdminMemberQuery', () => {
-  let testMemberId: string
+  let testMemberId: string;
 
   beforeEach(() => {
     // Generate stable ID once per test to ensure queryKey doesn't change
-    testMemberId = faker.string.uuid()
-    vi.clearAllMocks()
-  })
+    testMemberId = faker.string.uuid();
+    vi.clearAllMocks();
+  });
 
   it('returns mapped member record', async () => {
     const member = makeAdminMember({
@@ -50,7 +50,7 @@ describe('useAdminMemberQuery', () => {
       category: 'adult',
       phone: null,
       date_of_birth: null,
-    })
+    });
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
         id: member.id,
@@ -67,28 +67,28 @@ describe('useAdminMemberQuery', () => {
         updated_at: member.updated_at,
       },
       error: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id));
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
-    expect(result.current.data).toEqual(member)
-  })
+    expect(result.current.data).toEqual(member);
+  });
 
   it('returns error state when member is not found', async () => {
-    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null })
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery(testMemberId))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(testMemberId));
 
     await waitFor(() => {
-      expect(result.current.isError).toBe(true)
-    })
+      expect(result.current.isError).toBe(true);
+    });
 
-    expect(result.current.error).toBeInstanceOf(Error)
-  })
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
 
   it('returns empty role/category when metadata values are not strings', async () => {
     const member = makeAdminMember({
@@ -96,7 +96,7 @@ describe('useAdminMemberQuery', () => {
       date_of_birth: null,
       nickname: null,
       email: null,
-    })
+    });
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
         id: member.id,
@@ -113,39 +113,39 @@ describe('useAdminMemberQuery', () => {
         updated_at: member.updated_at,
       },
       error: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id));
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
-    expect(result.current.data?.role).toBe('')
-    expect(result.current.data?.category).toBe('')
-  })
+    expect(result.current.data?.role).toBe('');
+    expect(result.current.data?.category).toBe('');
+  });
 
   it('returns query error state when the users query fails', async () => {
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: null,
       error: new Error('query failed'),
-    })
+    });
 
-    const { result } = renderHookWithClient(() => useAdminMemberQuery(testMemberId))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(testMemberId));
 
     await waitFor(() => {
-      expect(result.current.isError).toBe(true)
-    })
+      expect(result.current.isError).toBe(true);
+    });
 
-    expect(result.current.error).toBeInstanceOf(Error)
-  })
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
 
   it('stays idle when member ID is missing', () => {
-    const { result } = renderHookWithClient(() => useAdminMemberQuery(undefined))
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(undefined));
 
-    expect(result.current.isPending).toBe(true)
-    expect(result.current.isSuccess).toBe(false)
-    expect(result.current.fetchStatus).toBe('idle')
-    expect(mockFrom).not.toHaveBeenCalled()
-  })
-})
+    expect(result.current.isPending).toBe(true);
+    expect(result.current.isSuccess).toBe(false);
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+});

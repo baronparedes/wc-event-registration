@@ -1,27 +1,27 @@
-import type { HTMLAttributes, ReactNode } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react';
 
-type GridColumns = 1 | 2 | 3 | 4 | 5 | 6
+type GridColumns = 1 | 2 | 3 | 4 | 5 | 6;
 
 type GridProps = HTMLAttributes<HTMLDivElement> & {
-  children: ReactNode
-  base?: GridColumns
-  sm?: GridColumns
-  md?: GridColumns
-  lg?: GridColumns
-  xl?: GridColumns
-  gapClassName?: string
-}
+  children: ReactNode;
+  base?: GridColumns;
+  sm?: GridColumns;
+  md?: GridColumns;
+  lg?: GridColumns;
+  xl?: GridColumns;
+  gapClassName?: string;
+};
 
-type ColSpan = 1 | 2 | 3 | 4 | 5 | 6
+type ColSpan = 1 | 2 | 3 | 4 | 5 | 6;
 
 type ColProps = HTMLAttributes<HTMLElement> & {
-  children: ReactNode
-  base?: ColSpan
-  sm?: ColSpan
-  md?: ColSpan
-  lg?: ColSpan
-  xl?: ColSpan
-}
+  children: ReactNode;
+  base?: ColSpan;
+  sm?: ColSpan;
+  md?: ColSpan;
+  lg?: ColSpan;
+  xl?: ColSpan;
+};
 
 const BASE_COL_CLASS: Record<GridColumns, string> = {
   1: 'grid-cols-1',
@@ -30,7 +30,7 @@ const BASE_COL_CLASS: Record<GridColumns, string> = {
   4: 'grid-cols-4',
   5: 'grid-cols-5',
   6: 'grid-cols-6',
-}
+};
 
 const SM_COL_CLASS: Record<GridColumns, string> = {
   1: 'sm:grid-cols-1',
@@ -39,7 +39,7 @@ const SM_COL_CLASS: Record<GridColumns, string> = {
   4: 'sm:grid-cols-4',
   5: 'sm:grid-cols-5',
   6: 'sm:grid-cols-6',
-}
+};
 
 const MD_COL_CLASS: Record<GridColumns, string> = {
   1: 'md:grid-cols-1',
@@ -48,7 +48,7 @@ const MD_COL_CLASS: Record<GridColumns, string> = {
   4: 'md:grid-cols-4',
   5: 'md:grid-cols-5',
   6: 'md:grid-cols-6',
-}
+};
 
 const LG_COL_CLASS: Record<GridColumns, string> = {
   1: 'lg:grid-cols-1',
@@ -57,7 +57,7 @@ const LG_COL_CLASS: Record<GridColumns, string> = {
   4: 'lg:grid-cols-4',
   5: 'lg:grid-cols-5',
   6: 'lg:grid-cols-6',
-}
+};
 
 const XL_COL_CLASS: Record<GridColumns, string> = {
   1: 'xl:grid-cols-1',
@@ -66,7 +66,7 @@ const XL_COL_CLASS: Record<GridColumns, string> = {
   4: 'xl:grid-cols-4',
   5: 'xl:grid-cols-5',
   6: 'xl:grid-cols-6',
-}
+};
 
 const BASE_SPAN_CLASS: Record<ColSpan, string> = {
   1: 'col-span-1',
@@ -75,7 +75,7 @@ const BASE_SPAN_CLASS: Record<ColSpan, string> = {
   4: 'col-span-4',
   5: 'col-span-5',
   6: 'col-span-6',
-}
+};
 
 const SM_SPAN_CLASS: Record<ColSpan, string> = {
   1: 'sm:col-span-1',
@@ -84,7 +84,7 @@ const SM_SPAN_CLASS: Record<ColSpan, string> = {
   4: 'sm:col-span-4',
   5: 'sm:col-span-5',
   6: 'sm:col-span-6',
-}
+};
 
 const MD_SPAN_CLASS: Record<ColSpan, string> = {
   1: 'md:col-span-1',
@@ -93,7 +93,7 @@ const MD_SPAN_CLASS: Record<ColSpan, string> = {
   4: 'md:col-span-4',
   5: 'md:col-span-5',
   6: 'md:col-span-6',
-}
+};
 
 const LG_SPAN_CLASS: Record<ColSpan, string> = {
   1: 'lg:col-span-1',
@@ -102,7 +102,7 @@ const LG_SPAN_CLASS: Record<ColSpan, string> = {
   4: 'lg:col-span-4',
   5: 'lg:col-span-5',
   6: 'lg:col-span-6',
-}
+};
 
 const XL_SPAN_CLASS: Record<ColSpan, string> = {
   1: 'xl:col-span-1',
@@ -111,10 +111,10 @@ const XL_SPAN_CLASS: Record<ColSpan, string> = {
   4: 'xl:col-span-4',
   5: 'xl:col-span-5',
   6: 'xl:col-span-6',
-}
+};
 
 function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 /**
@@ -147,7 +147,7 @@ export function Grid({
     >
       {children}
     </div>
-  )
+  );
 }
 
 /**
@@ -170,5 +170,5 @@ export function Col({ children, base, sm, md, lg, xl, className, ...props }: Col
     >
       {children}
     </div>
-  )
+  );
 }

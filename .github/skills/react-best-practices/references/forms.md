@@ -55,11 +55,11 @@ const category = form.watch('category')
 ```tsx
 // Load existing data into the form
 useEffect(() => {
-  if (data) reset(data) // reset sets defaultValues and clears dirty state
-}, [data, reset])
+  if (data) reset(data); // reset sets defaultValues and clears dirty state
+}, [data, reset]);
 
 // Gate save button on dirty state
-;<Button disabled={!isDirty || isSubmitting}>Save Changes</Button>
+<Button disabled={!isDirty || isSubmitting}>Save Changes</Button>;
 ```
 
 ## Dirty State and Change Detection
@@ -71,10 +71,10 @@ useEffect(() => {
 ```tsx
 const {
   formState: { isDirty, dirtyFields },
-} = form
+} = form;
 
 // Show confirmation only if name changed
-const nameChanged = !!dirtyFields.name
+const nameChanged = !!dirtyFields.name;
 ```
 
 ## Cross-Field Validation
@@ -93,9 +93,9 @@ const schema = z
         code: z.ZodIssueCode.custom,
         message: 'End date must be after start date',
         path: ['endDate'],
-      })
+      });
     }
-  })
+  });
 ```
 
 ## Common Mistakes

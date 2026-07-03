@@ -1,8 +1,9 @@
-import type { AdminEventField, DynamicFieldResponseValues, PublicEventField } from './types'
-import type { DynamicFieldAnswerPreview } from '@/lib/domain/events'
-import type { EventFieldFormValues, EventFieldTypeEnum } from './schemas'
+import type { DynamicFieldAnswerPreview } from '@/lib/domain/events';
 
-export type { EventFieldFormValues } from './schemas'
+import type { EventFieldFormValues, EventFieldTypeEnum } from './schemas';
+import type { AdminEventField, DynamicFieldResponseValues, PublicEventField } from './types';
+
+export type { EventFieldFormValues } from './schemas';
 
 export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   field_key: '',
@@ -22,11 +23,11 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   val_max_selections: '',
   val_min_date: '',
   val_max_date: '',
-}
+};
 
 /** Convert a saved AdminEventField to form default values for pre-filling the edit panel. */
 export function fieldToFormValues(field: AdminEventField): EventFieldFormValues {
-  const rules = field.validation_rules ?? {}
+  const rules = field.validation_rules ?? {};
   return {
     field_key: field.field_key,
     label: field.label,
@@ -50,26 +51,26 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
     val_max_selections: rules.max_selections != null ? String(rules.max_selections) : '',
     val_min_date: typeof rules.min_date === 'string' ? rules.min_date : '',
     val_max_date: typeof rules.max_date === 'string' ? rules.max_date : '',
-  }
+  };
 }
 
 /** Convert flat form values to a typed validation_rules object. */
 export function toValidationRules(values: EventFieldFormValues): Record<string, unknown> {
-  const rules: Record<string, unknown> = {}
-  if (values.val_min_length !== '') rules.min_length = parseInt(values.val_min_length, 10)
-  if (values.val_max_length !== '') rules.max_length = parseInt(values.val_max_length, 10)
-  if (values.val_pattern !== '') rules.pattern = values.val_pattern
-  if (values.val_min !== '') rules.min = parseFloat(values.val_min)
-  if (values.val_max !== '') rules.max = parseFloat(values.val_max)
+  const rules: Record<string, unknown> = {};
+  if (values.val_min_length !== '') rules.min_length = parseInt(values.val_min_length, 10);
+  if (values.val_max_length !== '') rules.max_length = parseInt(values.val_max_length, 10);
+  if (values.val_pattern !== '') rules.pattern = values.val_pattern;
+  if (values.val_min !== '') rules.min = parseFloat(values.val_min);
+  if (values.val_max !== '') rules.max = parseFloat(values.val_max);
   if (values.val_min_selections !== '') {
-    rules.min_selections = parseInt(values.val_min_selections, 10)
+    rules.min_selections = parseInt(values.val_min_selections, 10);
   }
   if (values.val_max_selections !== '') {
-    rules.max_selections = parseInt(values.val_max_selections, 10)
+    rules.max_selections = parseInt(values.val_max_selections, 10);
   }
-  if (values.val_min_date !== '') rules.min_date = values.val_min_date
-  if (values.val_max_date !== '') rules.max_date = values.val_max_date
-  return rules
+  if (values.val_min_date !== '') rules.min_date = values.val_min_date;
+  if (values.val_max_date !== '') rules.max_date = values.val_max_date;
+  return rules;
 }
 
 export function normalizeDynamicFieldAnswersForPreview(
@@ -81,7 +82,7 @@ export function normalizeDynamicFieldAnswersForPreview(
     field_key: field.field_key,
     field_type: field.field_type,
     value: values[field.field_key],
-  }))
+  }));
 }
 
 export function createDynamicFieldDefaultValues(
@@ -89,21 +90,21 @@ export function createDynamicFieldDefaultValues(
 ): DynamicFieldResponseValues {
   return fields.reduce<DynamicFieldResponseValues>((defaults, field) => {
     if (field.field_type === 'checkbox' || field.field_type === 'boolean') {
-      defaults[field.field_key] = false
-      return defaults
+      defaults[field.field_key] = false;
+      return defaults;
     }
 
     if (field.field_type === 'multi_select') {
-      defaults[field.field_key] = []
-      return defaults
+      defaults[field.field_key] = [];
+      return defaults;
     }
 
     if (field.field_type === 'multi_select_toggle') {
-      defaults[field.field_key] = {}
-      return defaults
+      defaults[field.field_key] = {};
+      return defaults;
     }
 
-    defaults[field.field_key] = ''
-    return defaults
-  }, {})
+    defaults[field.field_key] = '';
+    return defaults;
+  }, {});
 }

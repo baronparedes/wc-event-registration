@@ -1,13 +1,14 @@
-import { type UseFormReturn } from 'react-hook-form'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
+import { type UseFormReturn } from 'react-hook-form';
+
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 
 const baseInputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary';
 
 type DateFieldRendererProps = {
-  field: PublicEventField
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>
-}
+  field: PublicEventField;
+  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+};
 
 export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps) {
   return (
@@ -17,7 +18,7 @@ export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps
       className={baseInputClassName}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }
 
 export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererProps) {
@@ -28,5 +29,5 @@ export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererP
       className={baseInputClassName}
       {...dynamicForm.register(field.field_key)}
     />
-  )
+  );
 }

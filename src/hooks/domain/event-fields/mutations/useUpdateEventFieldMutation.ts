@@ -1,8 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
-import type { AdminEventField } from '@/lib/domain/event-fields'
-import type { UpdateEventFieldInput } from '@/lib/domain/event-fields'
-import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import type { UpdateEventFieldInput } from '@/lib/domain/event-fields';
+import { supabase } from '@/lib/infrastructure';
+
+import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 
 /**
  * Updates an existing event field.
@@ -11,7 +13,7 @@ import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery'
  * On archived events: no changes are permitted.
  */
 export function useUpdateEventFieldMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: UpdateEventFieldInput): Promise<AdminEventField> => {
@@ -19,24 +21,24 @@ export function useUpdateEventFieldMutation() {
         .from('events')
         .select('status')
         .eq('id', input.event_id)
-        .single()
+        .single();
 
-      if (eventError) throw eventError
+      if (eventError) throw eventError;
 
       if (event.status === 'archived') {
-        throw new Error('Cannot edit fields on archived events.')
+        throw new Error('Cannot edit fields on archived events.');
       }
 
-      const { id, ...updates } = input
+      const { id, ...updates } = input;
 
       if (event.status === 'published') {
         const lockedKeys = Object.keys(updates).filter(
           (k) => k !== 'label' && k !== 'placeholder' && k !== 'help_text',
-        )
+        );
         if (lockedKeys.length > 0) {
           throw new Error(
             'Published events can only have field labels, placeholders, and help text edited. To change field types or validation rules, archive this event and create a new one.',
-          )
+          );
         }
       }
 
@@ -45,13 +47,13 @@ export function useUpdateEventFieldMutation() {
         .update(updates)
         .eq('id', id)
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
-      return data as AdminEventField
+      if (error) throw error;
+      return data as AdminEventField;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) })
+      queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) });
     },
-  })
+  });
 }

@@ -1,11 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
-import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit'
-import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
+import { supabase } from '@/lib/infrastructure';
+
+import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
 
 /** Archives an event (soft-delete) by setting its status to 'archived'. */
 export function useArchiveEventMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
@@ -13,11 +15,11 @@ export function useArchiveEventMutation() {
         .from('events')
         .select('status')
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle();
 
-      const { error } = await supabase.from('events').update({ status: 'archived' }).eq('id', id)
+      const { error } = await supabase.from('events').update({ status: 'archived' }).eq('id', id);
 
-      if (error) throw error
+      if (error) throw error;
 
       await writeAdminAuditLogSafely({
         action: 'archive_event',
@@ -27,10 +29,10 @@ export function useArchiveEventMutation() {
           previous_status: event?.status ?? null,
           next_status: 'archived',
         },
-      })
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
     },
-  })
+  });
 }

@@ -1,14 +1,16 @@
-import { useRef, useState } from 'react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/Button'
-import { ActionButton } from '@/components/ui/ActionLink'
-import { useUpdateMemberIdMutation } from '@/hooks/domain/members'
-import { useRfidAutoFocus } from '@/hooks/utils'
+import { useRef, useState } from 'react';
+
+import { toast } from 'sonner';
+
+import { ActionButton } from '@/components/ui/ActionLink';
+import { Button } from '@/components/ui/Button';
+import { useUpdateMemberIdMutation } from '@/hooks/domain/members';
+import { useRfidAutoFocus } from '@/hooks/utils';
 
 interface UpdateMemberIdDialogProps {
-  memberId: string
-  memberName: string
-  currentMemberId: string
+  memberId: string;
+  memberName: string;
+  currentMemberId: string;
 }
 
 export function UpdateMemberIdDialog({
@@ -16,38 +18,38 @@ export function UpdateMemberIdDialog({
   memberName,
   currentMemberId,
 }: UpdateMemberIdDialogProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const updateMutation = useUpdateMemberIdMutation()
-  const [isOpen, setIsOpen] = useState(false)
-  const [newMemberId, setNewMemberId] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null);
+  const updateMutation = useUpdateMemberIdMutation();
+  const [isOpen, setIsOpen] = useState(false);
+  const [newMemberId, setNewMemberId] = useState('');
 
-  const trimmedNewId = newMemberId.trim()
-  const hasChanges = trimmedNewId && trimmedNewId !== currentMemberId
-  const isUpdating = updateMutation.isPending
+  const trimmedNewId = newMemberId.trim();
+  const hasChanges = trimmedNewId && trimmedNewId !== currentMemberId;
+  const isUpdating = updateMutation.isPending;
 
-  useRfidAutoFocus(inputRef, isOpen)
+  useRfidAutoFocus(inputRef, isOpen);
 
   function handleClose() {
-    setNewMemberId('')
-    setIsOpen(false)
+    setNewMemberId('');
+    setIsOpen(false);
   }
 
   function handleOpen() {
-    setIsOpen(true)
+    setIsOpen(true);
   }
 
   async function handleConfirm() {
-    if (!trimmedNewId) return
+    if (!trimmedNewId) return;
 
     try {
       await updateMutation.mutateAsync({
         id: memberId,
         newMemberId: trimmedNewId,
-      })
-      toast.success(`Member ID updated to "${trimmedNewId}".`)
-      handleClose()
+      });
+      toast.success(`Member ID updated to "${trimmedNewId}".`);
+      handleClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update Member ID.')
+      toast.error(error instanceof Error ? error.message : 'Failed to update Member ID.');
     }
   }
 
@@ -110,5 +112,5 @@ export function UpdateMemberIdDialog({
         </div>
       )}
     </>
-  )
+  );
 }

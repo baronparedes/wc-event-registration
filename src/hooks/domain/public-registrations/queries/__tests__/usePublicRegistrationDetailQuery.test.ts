@@ -1,57 +1,57 @@
-import { waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { faker } from '@faker-js/faker';
+import { waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { usePublicRegistrationDetailQuery } from '@/hooks/domain/public-registrations/queries/usePublicRegistrationDetailQuery';
 
 const { mockRegistrationBuilder, mockAnswersBuilder, mockFrom } = vi.hoisted(() => {
   const registrationBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),
-  }
-  registrationBuilder.select.mockReturnValue(registrationBuilder)
-  registrationBuilder.eq.mockReturnValue(registrationBuilder)
+  };
+  registrationBuilder.select.mockReturnValue(registrationBuilder);
+  registrationBuilder.eq.mockReturnValue(registrationBuilder);
 
   const answersBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
-  }
-  answersBuilder.select.mockReturnValue(answersBuilder)
+  };
+  answersBuilder.select.mockReturnValue(answersBuilder);
 
   const from = vi.fn((table: string) => {
-    if (table === 'public_registrations') return registrationBuilder
-    if (table === 'public_registration_answers') return answersBuilder
-    throw new Error(`Unexpected table: ${table}`)
-  })
+    if (table === 'public_registrations') return registrationBuilder;
+    if (table === 'public_registration_answers') return answersBuilder;
+    throw new Error(`Unexpected table: ${table}`);
+  });
 
   return {
     mockRegistrationBuilder: registrationBuilder,
     mockAnswersBuilder: answersBuilder,
     mockFrom: from,
-  }
-})
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     supabase: {
       from: mockFrom,
     },
-  }
-})
-
-import { usePublicRegistrationDetailQuery } from '@/hooks/domain/public-registrations/queries/usePublicRegistrationDetailQuery'
+  };
+});
 
 describe('usePublicRegistrationDetailQuery', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('returns transformed public registration details with parsed answer types', async () => {
-    const registrationId = faker.string.uuid()
-    const eventId = faker.string.uuid()
+    const registrationId = faker.string.uuid();
+    const eventId = faker.string.uuid();
 
     mockRegistrationBuilder.single.mockResolvedValueOnce({
       data: {
@@ -67,7 +67,7 @@ describe('usePublicRegistrationDetailQuery', () => {
         updated_at: faker.date.recent().toISOString(),
       },
       error: null,
-    })
+    });
 
     mockAnswersBuilder.eq.mockResolvedValueOnce({
       data: [
@@ -195,18 +195,18 @@ describe('usePublicRegistrationDetailQuery', () => {
         },
       ],
       error: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => usePublicRegistrationDetailQuery(registrationId))
+    const { result } = renderHookWithClient(() => usePublicRegistrationDetailQuery(registrationId));
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
     expect(result.current.data?.registration).toMatchObject({
       id: registrationId,
       event_id: eventId,
-    })
+    });
     expect(result.current.data?.fieldResponses).toMatchObject([
       { field_id: 'f8', field_name: '', field_label: '', field_type: 'text', answer: 'fallback' },
       { field_id: 'f5', answer: null },
@@ -216,33 +216,33 @@ describe('usePublicRegistrationDetailQuery', () => {
       { field_id: 'f4', answer: true },
       { field_id: 'f6', answer: 'abc' },
       { field_id: 'f7', answer: false },
-    ])
-  })
+    ]);
+  });
 
   it('returns query error state when registration is not found', async () => {
-    mockRegistrationBuilder.single.mockResolvedValueOnce({ data: null, error: null })
+    mockRegistrationBuilder.single.mockResolvedValueOnce({ data: null, error: null });
 
     const { result } = renderHookWithClient(() =>
       usePublicRegistrationDetailQuery(faker.string.uuid()),
-    )
+    );
 
-    const refetchResult = await result.current.refetch()
-    expect(refetchResult.isError).toBe(true)
-  })
+    const refetchResult = await result.current.refetch();
+    expect(refetchResult.isError).toBe(true);
+  });
 
   it('returns query error state when registration lookup fails', async () => {
     mockRegistrationBuilder.single.mockResolvedValueOnce({
       data: null,
       error: new Error('registration query failed'),
-    })
+    });
 
     const { result } = renderHookWithClient(() =>
       usePublicRegistrationDetailQuery(faker.string.uuid()),
-    )
+    );
 
-    const refetchResult = await result.current.refetch()
-    expect(refetchResult.isError).toBe(true)
-  })
+    const refetchResult = await result.current.refetch();
+    expect(refetchResult.isError).toBe(true);
+  });
 
   it('returns query error state when answers lookup fails', async () => {
     mockRegistrationBuilder.single.mockResolvedValueOnce({
@@ -259,18 +259,18 @@ describe('usePublicRegistrationDetailQuery', () => {
         updated_at: faker.date.recent().toISOString(),
       },
       error: null,
-    })
+    });
 
     mockAnswersBuilder.eq.mockResolvedValueOnce({
       data: null,
       error: new Error('answer lookup failed'),
-    })
+    });
 
     const { result } = renderHookWithClient(() =>
       usePublicRegistrationDetailQuery(faker.string.uuid()),
-    )
+    );
 
-    const refetchResult = await result.current.refetch()
-    expect(refetchResult.isError).toBe(true)
-  })
-})
+    const refetchResult = await result.current.refetch();
+    expect(refetchResult.isError).toBe(true);
+  });
+});

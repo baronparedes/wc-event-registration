@@ -1,10 +1,10 @@
-export { useMemberLookupQuery } from './useMemberLookupQuery'
-export { useAdminMembersQuery } from './useAdminMembersQuery'
-export { useAdminMemberQuery } from './useAdminMemberQuery'
+export { useMemberLookupQuery } from './useMemberLookupQuery';
+export { useAdminMembersQuery } from './useAdminMembersQuery';
+export { useAdminMemberQuery } from './useAdminMemberQuery';
 
 export type {
   MemberLookupProfile,
   MemberLookupResult,
   ExistingRegistrationState,
   AdminMember,
-} from '@/lib/domain/members'
+} from '@/lib/domain/members';

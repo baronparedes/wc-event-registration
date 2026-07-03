@@ -1,5 +1,5 @@
-import { AdminEventFormPage } from '../_event-form'
+import { AdminEventFormPage } from '../_event-form';
 
 export function AdminNewEventPage() {
-  return <AdminEventFormPage mode="create" />
+  return <AdminEventFormPage mode="create" />;
 }

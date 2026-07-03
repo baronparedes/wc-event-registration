@@ -1,4 +1,4 @@
-import type { AttendanceFieldType } from './types'
+import type { AttendanceFieldType } from './types';
 
 export const ATTENDANCE_FIELD_TYPE_LABELS: Record<AttendanceFieldType, string> = {
   text: 'Single Line Text',
@@ -14,7 +14,7 @@ export const ATTENDANCE_FIELD_TYPE_LABELS: Record<AttendanceFieldType, string> =
   date: 'Date',
   datetime: 'Date & Time',
   boolean: 'Yes / No Toggle',
-}
+};
 
 export function attendanceFieldTypeHasOptions(fieldType: AttendanceFieldType): boolean {
   return (
@@ -22,7 +22,7 @@ export function attendanceFieldTypeHasOptions(fieldType: AttendanceFieldType): b
     fieldType === 'radio' ||
     fieldType === 'multi_select' ||
     fieldType === 'multi_select_toggle'
-  )
+  );
 }
 
 export function attendanceFieldTypeHasTextValidation(fieldType: AttendanceFieldType): boolean {
@@ -31,9 +31,9 @@ export function attendanceFieldTypeHasTextValidation(fieldType: AttendanceFieldT
     fieldType === 'textarea' ||
     fieldType === 'email' ||
     fieldType === 'phone'
-  )
+  );
 }
 
 export function attendanceFieldTypeHasNumberValidation(fieldType: AttendanceFieldType): boolean {
-  return fieldType === 'number'
+  return fieldType === 'number';
 }

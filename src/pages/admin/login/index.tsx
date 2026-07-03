@@ -1,25 +1,27 @@
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
-import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants'
-import { Button } from '@/components/ui/Button'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { useAdminAuthQuery, useAdminLoginMutation } from '@/hooks/domain/auth'
+import { useEffect } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/Button';
+import { FormInputField } from '@/components/ui/FormInputField';
+import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
+import { useAdminAuthQuery, useAdminLoginMutation } from '@/hooks/domain/auth';
 
 const adminLoginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
-})
+});
 
-type AdminLoginForm = z.infer<typeof adminLoginSchema>
+type AdminLoginForm = z.infer<typeof adminLoginSchema>;
 
 export function AdminLoginPage() {
-  const navigate = useNavigate()
-  const loginMutation = useAdminLoginMutation()
-  const { data: adminAuth, isLoading } = useAdminAuthQuery()
+  const navigate = useNavigate();
+  const loginMutation = useAdminLoginMutation();
+  const { data: adminAuth, isLoading } = useAdminAuthQuery();
 
   const form = useForm<AdminLoginForm>({
     resolver: zodResolver(adminLoginSchema),
@@ -27,22 +29,22 @@ export function AdminLoginPage() {
       email: '',
       password: '',
     },
-  })
+  });
 
   useEffect(() => {
     if (!isLoading && adminAuth?.isAuthenticated) {
-      navigate(ROUTE_PATHS.adminEvents, { replace: true })
+      navigate(ROUTE_PATHS.adminEvents, { replace: true });
     }
-  }, [adminAuth?.isAuthenticated, isLoading, navigate])
+  }, [adminAuth?.isAuthenticated, isLoading, navigate]);
 
   async function handleSubmit(values: AdminLoginForm) {
     try {
-      await loginMutation.mutateAsync(values)
-      toast.success(TOAST_MESSAGES.adminSignInSuccess)
-      navigate(ROUTE_PATHS.adminEvents, { replace: true })
+      await loginMutation.mutateAsync(values);
+      toast.success(TOAST_MESSAGES.adminSignInSuccess);
+      navigate(ROUTE_PATHS.adminEvents, { replace: true });
     } catch (error) {
-      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure
-      toast.error(message)
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure;
+      toast.error(message);
     }
   }
 
@@ -79,5 +81,5 @@ export function AdminLoginPage() {
         </Button>
       </form>
     </section>
-  )
+  );
 }

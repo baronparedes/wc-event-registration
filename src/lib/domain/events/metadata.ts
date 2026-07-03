@@ -4,18 +4,18 @@
  */
 
 export type PublishRequirement = {
-  key: string
-  label: string
-  filled: boolean
-}
+  key: string;
+  label: string;
+  filled: boolean;
+};
 
 export function getPublishRequirements(data: {
-  description?: string | null
-  location?: string | null
-  starts_at?: string | null
-  ends_at?: string | null
-  registration_opens_at?: string | null
-  registration_closes_at?: string | null
+  description?: string | null;
+  location?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  registration_opens_at?: string | null;
+  registration_closes_at?: string | null;
 }): PublishRequirement[] {
   return [
     { key: 'description', label: 'Description', filled: !!data.description?.trim() },
@@ -32,9 +32,9 @@ export function getPublishRequirements(data: {
       label: 'Registration Closes',
       filled: !!data.registration_closes_at,
     },
-  ]
+  ];
 }
 
 export function areAllRequirementsMet(data: Parameters<typeof getPublishRequirements>[0]): boolean {
-  return getPublishRequirements(data).every((req) => req.filled)
+  return getPublishRequirements(data).every((req) => req.filled);
 }

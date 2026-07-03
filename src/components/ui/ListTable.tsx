@@ -1,38 +1,38 @@
-import { createContext, useContext } from 'react'
-import type { ComponentPropsWithoutRef, ReactNode } from 'react'
+import { createContext, useContext } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-type ListTableDensity = 'default' | 'dense'
-type ListTableHeaderVariant = 'default' | 'muted' | 'plain'
-type ListTableBodyDivider = 'default' | 'none'
-type ListTableRowHover = 'default' | 'muted' | 'none'
+type ListTableDensity = 'default' | 'dense';
+type ListTableHeaderVariant = 'default' | 'muted' | 'plain';
+type ListTableBodyDivider = 'default' | 'none';
+type ListTableRowHover = 'default' | 'muted' | 'none';
 
 type ListTableProps = ComponentPropsWithoutRef<'table'> & {
-  density?: ListTableDensity
-}
+  density?: ListTableDensity;
+};
 type ListTableSectionProps = {
-  children: ReactNode
-  className?: string
-}
+  children: ReactNode;
+  className?: string;
+};
 type ListTableBodyProps = ListTableSectionProps & {
-  divider?: ListTableBodyDivider
-}
+  divider?: ListTableBodyDivider;
+};
 type ListTableRowProps = ComponentPropsWithoutRef<'tr'> & {
-  hover?: ListTableRowHover
-}
+  hover?: ListTableRowHover;
+};
 type ListTableCellProps = ComponentPropsWithoutRef<'td'> & {
-  density?: ListTableDensity
-}
+  density?: ListTableDensity;
+};
 type ListTableHeaderRowProps = ComponentPropsWithoutRef<'tr'> & {
-  variant?: ListTableHeaderVariant
-}
+  variant?: ListTableHeaderVariant;
+};
 type ListTableHeaderCellProps = ComponentPropsWithoutRef<'th'> & {
-  density?: ListTableDensity
-}
+  density?: ListTableDensity;
+};
 
-const tableDensityContext = createContext<ListTableDensity>('default')
+const tableDensityContext = createContext<ListTableDensity>('default');
 
 function joinClasses(...classes: Array<string | undefined>) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 /**
@@ -47,11 +47,11 @@ export function ListTable({ className, density = 'default', ...props }: ListTabl
         <table className={joinClasses('w-full text-sm', className)} {...props} />
       </div>
     </tableDensityContext.Provider>
-  )
+  );
 }
 
 export function ListTableHead({ children, className }: ListTableSectionProps) {
-  return <thead className={joinClasses(className)}>{children}</thead>
+  return <thead className={joinClasses(className)}>{children}</thead>;
 }
 
 export function ListTableHeaderRow({
@@ -66,18 +66,18 @@ export function ListTableHeaderRow({
       'border-b border-border bg-muted/30 text-left text-sm font-medium normal-case tracking-normal text-muted',
     plain:
       'border-b border-gray-200 text-left text-sm font-semibold normal-case tracking-normal text-gray-900',
-  }
+  };
 
-  return <tr className={joinClasses(headerStyles[variant], className)} {...props} />
+  return <tr className={joinClasses(headerStyles[variant], className)} {...props} />;
 }
 
 export function ListTableBody({ children, className, divider = 'default' }: ListTableBodyProps) {
   const dividerStyles: Record<ListTableBodyDivider, string> = {
     default: 'divide-y divide-border',
     none: '',
-  }
+  };
 
-  return <tbody className={joinClasses(dividerStyles[divider], className)}>{children}</tbody>
+  return <tbody className={joinClasses(dividerStyles[divider], className)}>{children}</tbody>;
 }
 
 export function ListTableRow({ className, hover = 'default', ...props }: ListTableRowProps) {
@@ -85,29 +85,29 @@ export function ListTableRow({ className, hover = 'default', ...props }: ListTab
     default: 'transition-all hover:bg-slate-50 hover:shadow-xs',
     muted: 'transition hover:bg-muted/10',
     none: '',
-  }
+  };
 
-  return <tr className={joinClasses(hoverStyles[hover], className)} {...props} />
+  return <tr className={joinClasses(hoverStyles[hover], className)} {...props} />;
 }
 
 export function ListTableHeaderCell({ className, density, ...props }: ListTableHeaderCellProps) {
-  const tableDensity = useContext(tableDensityContext)
-  const resolvedDensity = density ?? tableDensity
+  const tableDensity = useContext(tableDensityContext);
+  const resolvedDensity = density ?? tableDensity;
   const densityStyles: Record<ListTableDensity, string> = {
     default: 'px-4 py-3',
     dense: 'px-4 py-2.5',
-  }
+  };
 
-  return <th className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />
+  return <th className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />;
 }
 
 export function ListTableCell({ className, density, ...props }: ListTableCellProps) {
-  const tableDensity = useContext(tableDensityContext)
-  const resolvedDensity = density ?? tableDensity
+  const tableDensity = useContext(tableDensityContext);
+  const resolvedDensity = density ?? tableDensity;
   const densityStyles: Record<ListTableDensity, string> = {
     default: 'px-4 py-4',
     dense: 'px-4 py-3',
-  }
+  };
 
-  return <td className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />
+  return <td className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />;
 }

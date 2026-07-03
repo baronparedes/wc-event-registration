@@ -1,36 +1,38 @@
-import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, useWatch } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
-import { Button, SectionCard } from '@/components/ui'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { AdminPageShell } from '@/components/layout'
-import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants'
+import { useEffect } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useWatch } from 'react-hook-form';
+import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
+import { AdminPageShell } from '@/components/layout';
+import { Button, SectionCard } from '@/components/ui';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useUpdateAttendanceSettingsMutation,
-} from '@/hooks/domain/attendance'
-import { useAdminEventQuery } from '@/hooks/domain/events'
+} from '@/hooks/domain/attendance';
+import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
-  updateAttendanceSettingsSchema,
   type UpdateAttendanceSettingsInput,
-} from '@/lib/domain/attendance'
-import { formatDateTime, localDateTimeToUTC8ISO } from '@/lib/infrastructure'
+  updateAttendanceSettingsSchema,
+} from '@/lib/domain/attendance';
+import { formatDateTime, localDateTimeToUTC8ISO } from '@/lib/infrastructure';
 
 const ATTENDANCE_TOAST_MESSAGES = {
   updated: 'Attendance settings updated successfully.',
   updateFailed: 'Failed to update attendance settings.',
-} as const
+} as const;
 
-type AttendanceSettingsFormInput = z.input<typeof updateAttendanceSettingsSchema>
+type AttendanceSettingsFormInput = z.input<typeof updateAttendanceSettingsSchema>;
 
 function toDatetimeLocal(value: string | null | undefined): string {
-  if (!value) return ''
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return ''
-  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T')
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T');
 }
 
 function isWithinEventWindow(
@@ -38,26 +40,26 @@ function isWithinEventWindow(
   startsAt: string | null,
   endsAt: string | null,
 ): boolean {
-  const slotMs = new Date(slotIso).getTime()
-  const startMs = startsAt ? new Date(startsAt).getTime() : Number.NaN
-  const endMs = endsAt ? new Date(endsAt).getTime() : Number.NaN
+  const slotMs = new Date(slotIso).getTime();
+  const startMs = startsAt ? new Date(startsAt).getTime() : Number.NaN;
+  const endMs = endsAt ? new Date(endsAt).getTime() : Number.NaN;
 
   if (!Number.isFinite(slotMs) || !Number.isFinite(startMs) || !Number.isFinite(endMs)) {
-    return false
+    return false;
   }
 
-  return slotMs >= startMs && slotMs <= endMs
+  return slotMs >= startMs && slotMs <= endMs;
 }
 
 export function AdminEventAttendancePage() {
-  const { id: eventId } = useParams<{ id: string }>()
-  const { data: event, isLoading: isEventLoading } = useAdminEventQuery(eventId)
+  const { id: eventId } = useParams<{ id: string }>();
+  const { data: event, isLoading: isEventLoading } = useAdminEventQuery(eventId);
   const {
     data: settings,
     isLoading: isSettingsLoading,
     error: settingsError,
-  } = useAttendanceSettingsQuery(eventId)
-  const updateMutation = useUpdateAttendanceSettingsMutation()
+  } = useAttendanceSettingsQuery(eventId);
+  const updateMutation = useUpdateAttendanceSettingsMutation();
 
   const {
     register,
@@ -75,37 +77,37 @@ export function AdminEventAttendancePage() {
       timeslot_enabled: false,
       timeslots: [],
     },
-  })
+  });
 
   useEffect(() => {
-    if (!eventId) return
-    setValue('event_id', eventId)
-  }, [eventId, setValue])
+    if (!eventId) return;
+    setValue('event_id', eventId);
+  }, [eventId, setValue]);
 
   useEffect(() => {
-    if (!settings) return
+    if (!settings) return;
 
-    reset(settings)
-  }, [settings, reset])
+    reset(settings);
+  }, [settings, reset]);
 
-  const attendanceEnabled = useWatch({ control, name: 'attendance_enabled' })
-  const timeslotEnabled = useWatch({ control, name: 'timeslot_enabled' })
-  const timeslots = useWatch({ control, name: 'timeslots' })
-  const effectiveTimeslots = timeslots ?? []
-
-  useEffect(() => {
-    if (attendanceEnabled !== false) return
-
-    setValue('walk_in_mode_enabled', false, { shouldDirty: true, shouldValidate: true })
-    setValue('timeslot_enabled', false, { shouldDirty: true, shouldValidate: true })
-    setValue('timeslots', [], { shouldDirty: true, shouldValidate: true })
-  }, [attendanceEnabled, setValue])
+  const attendanceEnabled = useWatch({ control, name: 'attendance_enabled' });
+  const timeslotEnabled = useWatch({ control, name: 'timeslot_enabled' });
+  const timeslots = useWatch({ control, name: 'timeslots' });
+  const effectiveTimeslots = timeslots ?? [];
 
   useEffect(() => {
-    if (timeslotEnabled !== false) return
+    if (attendanceEnabled !== false) return;
 
-    setValue('timeslots', [], { shouldDirty: true, shouldValidate: true })
-  }, [timeslotEnabled, setValue])
+    setValue('walk_in_mode_enabled', false, { shouldDirty: true, shouldValidate: true });
+    setValue('timeslot_enabled', false, { shouldDirty: true, shouldValidate: true });
+    setValue('timeslots', [], { shouldDirty: true, shouldValidate: true });
+  }, [attendanceEnabled, setValue]);
+
+  useEffect(() => {
+    if (timeslotEnabled !== false) return;
+
+    setValue('timeslots', [], { shouldDirty: true, shouldValidate: true });
+  }, [timeslotEnabled, setValue]);
 
   if (!eventId) {
     return (
@@ -115,10 +117,10 @@ export function AdminEventAttendancePage() {
           <p className="text-sm text-red-600">Invalid event ID.</p>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
-  const resolvedEventId = eventId ?? ''
+  const resolvedEventId = eventId ?? '';
 
   if (isEventLoading || isSettingsLoading) {
     return (
@@ -127,7 +129,7 @@ export function AdminEventAttendancePage() {
           {null}
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
   if (!event) {
@@ -138,7 +140,7 @@ export function AdminEventAttendancePage() {
           <p className="text-sm text-red-600">Event not found.</p>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
   if (settingsError) {
@@ -149,19 +151,19 @@ export function AdminEventAttendancePage() {
           <p className="text-sm text-red-600">Failed to load attendance settings.</p>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
-  const activeEvent = event
-  const isArchived = activeEvent.status === 'archived'
-  const eventStartLocal = toDatetimeLocal(activeEvent.starts_at)
-  const eventEndLocal = toDatetimeLocal(activeEvent.ends_at)
+  const activeEvent = event;
+  const isArchived = activeEvent.status === 'archived';
+  const eventStartLocal = toDatetimeLocal(activeEvent.starts_at);
+  const eventEndLocal = toDatetimeLocal(activeEvent.ends_at);
 
   function addTimeslot() {
     setValue('timeslots', [...effectiveTimeslots, ''], {
       shouldDirty: true,
       shouldValidate: true,
-    })
+    });
   }
 
   function removeTimeslot(index: number) {
@@ -172,25 +174,25 @@ export function AdminEventAttendancePage() {
         shouldDirty: true,
         shouldValidate: true,
       },
-    )
+    );
   }
 
   function updateTimeslot(index: number, localValue: string) {
-    const next = [...effectiveTimeslots]
-    next[index] = localValue ? (localDateTimeToUTC8ISO(localValue) ?? '') : ''
+    const next = [...effectiveTimeslots];
+    next[index] = localValue ? (localDateTimeToUTC8ISO(localValue) ?? '') : '';
 
     setValue('timeslots', next, {
       shouldDirty: true,
       shouldValidate: true,
-    })
+    });
   }
 
   async function onSubmit(formValues: AttendanceSettingsFormInput) {
-    const requiredEventId = resolvedEventId
+    const requiredEventId = resolvedEventId;
 
     if (!requiredEventId) {
-      toast.error(ATTENDANCE_TOAST_MESSAGES.updateFailed)
-      return
+      toast.error(ATTENDANCE_TOAST_MESSAGES.updateFailed);
+      return;
     }
 
     const payload: UpdateAttendanceSettingsInput = {
@@ -202,31 +204,31 @@ export function AdminEventAttendancePage() {
         formValues.attendance_enabled && formValues.timeslot_enabled
           ? (formValues.timeslots ?? [])
           : [],
-    }
+    };
 
     if (payload.attendance_enabled && payload.timeslot_enabled) {
       if (!activeEvent.starts_at || !activeEvent.ends_at) {
-        toast.error('Event start and end date-time are required for timeslot attendance.')
-        return
+        toast.error('Event start and end date-time are required for timeslot attendance.');
+        return;
       }
 
       const hasOutOfRangeTimeslot = payload.timeslots.some(
         (slot) => !isWithinEventWindow(slot, activeEvent.starts_at, activeEvent.ends_at),
-      )
+      );
 
       if (hasOutOfRangeTimeslot) {
-        toast.error('All timeslots must be within the event start and end date-time window.')
-        return
+        toast.error('All timeslots must be within the event start and end date-time window.');
+        return;
       }
     }
 
     try {
-      await updateMutation.mutateAsync(payload)
-      toast.success(ATTENDANCE_TOAST_MESSAGES.updated)
+      await updateMutation.mutateAsync(payload);
+      toast.success(ATTENDANCE_TOAST_MESSAGES.updated);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : ATTENDANCE_TOAST_MESSAGES.updateFailed
-      toast.error(message)
+        error instanceof Error ? error.message : ATTENDANCE_TOAST_MESSAGES.updateFailed;
+      toast.error(message);
     }
   }
 
@@ -377,5 +379,5 @@ export function AdminEventAttendancePage() {
         </form>
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

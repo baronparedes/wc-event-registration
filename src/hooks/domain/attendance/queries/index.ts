@@ -1,1 +1,1 @@
-export { useAttendanceSettingsQuery } from './useAttendanceSettingsQuery'
+export { useAttendanceSettingsQuery } from './useAttendanceSettingsQuery';

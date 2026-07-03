@@ -1,11 +1,12 @@
-import { z } from 'zod'
-import { VALIDATION_PATTERNS } from '@/config/constants'
+import { z } from 'zod';
 
-const emailPattern = VALIDATION_PATTERNS.email
-const datePattern = VALIDATION_PATTERNS.dateYyyyMmDd
+import { VALIDATION_PATTERNS } from '@/config/constants';
+
+const emailPattern = VALIDATION_PATTERNS.email;
+const datePattern = VALIDATION_PATTERNS.dateYyyyMmDd;
 
 function optionalText(maxLength: number, message: string) {
-  return z.string().trim().max(maxLength, message)
+  return z.string().trim().max(maxLength, message);
 }
 
 function optionalEmail() {
@@ -13,7 +14,7 @@ function optionalEmail() {
     .string()
     .trim()
     .max(320, 'Email must be 320 characters or less')
-    .refine((value) => value === '' || emailPattern.test(value), 'Enter a valid email address')
+    .refine((value) => value === '' || emailPattern.test(value), 'Enter a valid email address');
 }
 
 function optionalDate() {
@@ -24,7 +25,7 @@ function optionalDate() {
     .refine(
       (value) => value === '' || datePattern.test(value),
       'Date of birth must use YYYY-MM-DD format',
-    )
+    );
 }
 
 export const updateMemberSchema = z.object({
@@ -41,9 +42,9 @@ export const updateMemberSchema = z.object({
   date_of_birth: optionalDate(),
   role: optionalText(100, 'Role must be 100 characters or less'),
   category: optionalText(100, 'Category must be 100 characters or less'),
-})
+});
 
-export type UpdateMemberInput = z.infer<typeof updateMemberSchema>
+export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
 
 export const createMemberSchema = z.object({
   member_id: z
@@ -75,6 +76,6 @@ export const createMemberSchema = z.object({
     .trim()
     .min(1, 'Category is required')
     .max(100, 'Category must be 100 characters or less'),
-})
+});
 
-export type CreateMemberInput = z.infer<typeof createMemberSchema>
+export type CreateMemberInput = z.infer<typeof createMemberSchema>;

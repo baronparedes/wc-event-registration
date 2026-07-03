@@ -1,15 +1,17 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
-import type { AdminEventField } from '@/lib/domain/event-fields'
-import type { CreateEventFieldInput } from '@/lib/domain/event-fields'
-import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import type { CreateEventFieldInput } from '@/lib/domain/event-fields';
+import { supabase } from '@/lib/infrastructure';
+
+import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 
 /**
  * Creates a new event field. Only permitted on draft events.
  * Automatically sets display_order to one beyond the current maximum.
  */
 export function useCreateEventFieldMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: CreateEventFieldInput): Promise<AdminEventField> => {
@@ -17,14 +19,14 @@ export function useCreateEventFieldMutation() {
         .from('events')
         .select('status')
         .eq('id', input.event_id)
-        .single()
+        .single();
 
-      if (eventError) throw eventError
+      if (eventError) throw eventError;
 
       if (event.status !== 'draft') {
         throw new Error(
           'Cannot add fields to a published or archived event. Archive this event and create a new one to change the registration form.',
-        )
+        );
       }
 
       const { data: orderData } = await supabase
@@ -32,9 +34,9 @@ export function useCreateEventFieldMutation() {
         .select('display_order')
         .eq('event_id', input.event_id)
         .order('display_order', { ascending: false })
-        .limit(1)
+        .limit(1);
 
-      const nextOrder = ((orderData?.[0]?.display_order as number) ?? -1) + 1
+      const nextOrder = ((orderData?.[0]?.display_order as number) ?? -1) + 1;
 
       const { data, error } = await supabase
         .from('event_fields')
@@ -53,13 +55,13 @@ export function useCreateEventFieldMutation() {
           display_order: nextOrder,
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
-      return data as AdminEventField
+      if (error) throw error;
+      return data as AdminEventField;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) })
+      queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) });
     },
-  })
+  });
 }

@@ -1,7 +1,9 @@
-import { waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { faker } from '@faker-js/faker';
+import { waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations/queries/useAdminPublicRegistrationsQuery';
 
 const { mockFrom, mockDecodeOffsetCursor, mockGetTotalPages, mockBuilder, mockSetQueryResult } =
   vi.hoisted(() => {
@@ -9,16 +11,16 @@ const { mockFrom, mockDecodeOffsetCursor, mockGetTotalPages, mockBuilder, mockSe
       data: [],
       error: null,
       count: 0,
-    }
+    };
 
     type MockQueryBuilder = {
-      select: ReturnType<typeof vi.fn>
-      eq: ReturnType<typeof vi.fn>
-      order: ReturnType<typeof vi.fn>
-      range: ReturnType<typeof vi.fn>
-      or: ReturnType<typeof vi.fn>
-      then: (resolve: (value: typeof queryResult) => unknown) => Promise<unknown>
-    }
+      select: ReturnType<typeof vi.fn>;
+      eq: ReturnType<typeof vi.fn>;
+      order: ReturnType<typeof vi.fn>;
+      range: ReturnType<typeof vi.fn>;
+      or: ReturnType<typeof vi.fn>;
+      then: (resolve: (value: typeof queryResult) => unknown) => Promise<unknown>;
+    };
 
     const builder: MockQueryBuilder = {
       select: vi.fn(),
@@ -27,15 +29,15 @@ const { mockFrom, mockDecodeOffsetCursor, mockGetTotalPages, mockBuilder, mockSe
       range: vi.fn(),
       or: vi.fn(),
       then: (resolve) => Promise.resolve(resolve(queryResult)),
-    }
+    };
 
-    builder.select.mockReturnValue(builder)
-    builder.eq.mockReturnValue(builder)
-    builder.order.mockReturnValue(builder)
-    builder.range.mockReturnValue(builder)
-    builder.or.mockReturnValue(builder)
+    builder.select.mockReturnValue(builder);
+    builder.eq.mockReturnValue(builder);
+    builder.order.mockReturnValue(builder);
+    builder.range.mockReturnValue(builder);
+    builder.or.mockReturnValue(builder);
 
-    const from = vi.fn(() => builder)
+    const from = vi.fn(() => builder);
 
     return {
       mockFrom: from,
@@ -43,14 +45,14 @@ const { mockFrom, mockDecodeOffsetCursor, mockGetTotalPages, mockBuilder, mockSe
       mockGetTotalPages: vi.fn(),
       mockBuilder: builder,
       mockSetQueryResult: (nextResult: typeof queryResult) => {
-        queryResult = nextResult
+        queryResult = nextResult;
       },
-    }
-  })
+    };
+  });
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     decodeOffsetCursor: (...args: unknown[]) => mockDecodeOffsetCursor(...args),
@@ -58,22 +60,20 @@ vi.mock('@/lib/infrastructure', async () => {
     supabase: {
       from: mockFrom,
     },
-  }
-})
-
-import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations/queries/useAdminPublicRegistrationsQuery'
+  };
+});
 
 describe('useAdminPublicRegistrationsQuery', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockDecodeOffsetCursor.mockReturnValue(0)
-    mockGetTotalPages.mockReturnValue(1)
-    mockSetQueryResult({ data: [], error: null, count: 0 })
-  })
+    vi.clearAllMocks();
+    mockDecodeOffsetCursor.mockReturnValue(0);
+    mockGetTotalPages.mockReturnValue(1);
+    mockSetQueryResult({ data: [], error: null, count: 0 });
+  });
 
   it('returns paged registrations and does not apply search filter when search is blank', async () => {
-    const eventId = faker.string.uuid()
-    const attendeeEmail = faker.internet.email()
+    const eventId = faker.string.uuid();
+    const attendeeEmail = faker.internet.email();
 
     mockSetQueryResult({
       data: [
@@ -90,7 +90,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
       ],
       error: null,
       count: 1,
-    })
+    });
 
     const { result } = renderHookWithClient(() =>
       useAdminPublicRegistrationsQuery(eventId, {
@@ -98,11 +98,11 @@ describe('useAdminPublicRegistrationsQuery', () => {
         cursor: null,
         searchTerm: '   ',
       }),
-    )
+    );
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
     expect(result.current.data).toMatchObject({
       items: [{ email: attendeeEmail }],
@@ -110,16 +110,16 @@ describe('useAdminPublicRegistrationsQuery', () => {
       nextCursor: null,
       totalCount: 1,
       totalPages: 1,
-    })
-    expect(mockBuilder.or).not.toHaveBeenCalled()
-  })
+    });
+    expect(mockBuilder.or).not.toHaveBeenCalled();
+  });
 
   it('applies escaped search filter and computes next cursor when more results exist', async () => {
-    const eventId = faker.string.uuid()
-    const pageSize = 10
+    const eventId = faker.string.uuid();
+    const pageSize = 10;
 
-    mockDecodeOffsetCursor.mockReturnValue(10)
-    mockGetTotalPages.mockReturnValue(3)
+    mockDecodeOffsetCursor.mockReturnValue(10);
+    mockGetTotalPages.mockReturnValue(3);
     mockSetQueryResult({
       data: Array.from({ length: 10 }, () => ({
         id: faker.string.uuid(),
@@ -133,7 +133,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
       })),
       error: null,
       count: 30,
-    })
+    });
 
     const { result } = renderHookWithClient(() =>
       useAdminPublicRegistrationsQuery(eventId, {
@@ -141,34 +141,34 @@ describe('useAdminPublicRegistrationsQuery', () => {
         cursor: '10',
         searchTerm: 'john%_smith,',
       }),
-    )
+    );
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
-    expect(result.current.data?.hasMore).toBe(true)
-    expect(result.current.data?.nextCursor).toBe('20')
+    expect(result.current.data?.hasMore).toBe(true);
+    expect(result.current.data?.nextCursor).toBe('20');
     expect(mockBuilder.or).toHaveBeenCalledWith(
       'first_name.ilike.%john\\%\\_smith\\,%,last_name.ilike.%john\\%\\_smith\\,%,nickname.ilike.%john\\%\\_smith\\,%,email.ilike.%john\\%\\_smith\\,%',
-    )
-  })
+    );
+  });
 
   it('returns query error state when supabase query fails', async () => {
-    const eventId = faker.string.uuid()
-    mockSetQueryResult({ data: null, error: new Error('query failed'), count: null })
+    const eventId = faker.string.uuid();
+    mockSetQueryResult({ data: null, error: new Error('query failed'), count: null });
 
-    const { result } = renderHookWithClient(() => useAdminPublicRegistrationsQuery(eventId))
+    const { result } = renderHookWithClient(() => useAdminPublicRegistrationsQuery(eventId));
 
     await waitFor(() => {
-      expect(result.current.isError).toBe(true)
-    })
-  })
+      expect(result.current.isError).toBe(true);
+    });
+  });
 
   it('does not run when event id is empty', () => {
-    const { result } = renderHookWithClient(() => useAdminPublicRegistrationsQuery(''))
+    const { result } = renderHookWithClient(() => useAdminPublicRegistrationsQuery(''));
 
-    expect(result.current.fetchStatus).toBe('idle')
-    expect(mockFrom).not.toHaveBeenCalled()
-  })
-})
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+});

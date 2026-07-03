@@ -1,30 +1,31 @@
-import { useMutation } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '@/lib/infrastructure'
-import { logger } from '@/lib/infrastructure'
+import { useMutation } from '@tanstack/react-query';
+
 import type {
   ExistingRegistrationState,
   MemberLookupProfile,
   MemberLookupResult,
-} from '@/lib/domain/members'
+} from '@/lib/domain/members';
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
+import { logger } from '@/lib/infrastructure';
 
-export type { MemberLookupProfile, ExistingRegistrationState, MemberLookupResult }
+export type { MemberLookupProfile, ExistingRegistrationState, MemberLookupResult };
 
 interface MemberLookupResponse {
-  success: true
-  profile: MemberLookupProfile | null
-  existing_registration: ExistingRegistrationState | null
+  success: true;
+  profile: MemberLookupProfile | null;
+  existing_registration: ExistingRegistrationState | null;
 }
 
 const callMemberLookup = createEdgeFunctionCaller<
   { memberId?: string; name?: string; eventSlug?: string },
   MemberLookupResponse
->('member-lookup')
+>('member-lookup');
 
 export type MemberLookupParams = {
-  memberId?: string
-  name?: string
-  eventSlug?: string
-}
+  memberId?: string;
+  name?: string;
+  eventSlug?: string;
+};
 
 /**
  * Hook for member lookup in public registration flow.
@@ -37,29 +38,29 @@ export type MemberLookupParams = {
 export function useMemberLookupQuery() {
   return useMutation<MemberLookupResult, Error, MemberLookupParams>({
     mutationFn: async ({ memberId, name, eventSlug }) => {
-      const normalizedMemberId = (memberId ?? '').trim()
-      const normalizedName = (name ?? '').trim()
+      const normalizedMemberId = (memberId ?? '').trim();
+      const normalizedName = (name ?? '').trim();
 
       if (!normalizedMemberId && !normalizedName) {
-        return { profile: null, existing_registration: null }
+        return { profile: null, existing_registration: null };
       }
 
       logger.debug('Looking up member:', {
         memberId: normalizedMemberId || undefined,
         name: normalizedName || undefined,
-      })
+      });
       const response = await callMemberLookup({
         memberId: normalizedMemberId || undefined,
         name: normalizedName || undefined,
         eventSlug,
-      })
+      });
       return {
         profile: response.profile,
         existing_registration: response.existing_registration,
-      }
+      };
     },
     onError: (error) => {
-      logger.error('Member lookup query error:', error)
+      logger.error('Member lookup query error:', error);
     },
-  })
+  });
 }

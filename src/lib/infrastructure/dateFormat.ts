@@ -7,15 +7,15 @@
  * @returns Formatted date string (e.g., "Jun 23, 2026")
  */
 export function formatDateOnly(isoString: string | null, fallback = '—'): string {
-  if (!isoString) return fallback
-  const parsed = new Date(isoString)
-  if (Number.isNaN(parsed.getTime())) return fallback
+  if (!isoString) return fallback;
+  const parsed = new Date(isoString);
+  if (Number.isNaN(parsed.getTime())) return fallback;
   return parsed.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     timeZone: 'Asia/Manila',
-  })
+  });
 }
 
 /**
@@ -27,10 +27,10 @@ export function formatDateOnly(isoString: string | null, fallback = '—'): stri
  * @returns Formatted datetime string (e.g., "Jun 23, 2026, 2:30 PM")
  */
 export function formatDateTime(isoString: string | null, fallback = 'TBD'): string {
-  if (!isoString) return fallback
-  const parsed = new Date(isoString)
-  if (Number.isNaN(parsed.getTime())) return fallback
-  return parsed.toLocaleString(undefined, { timeZone: 'Asia/Manila' })
+  if (!isoString) return fallback;
+  const parsed = new Date(isoString);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleString(undefined, { timeZone: 'Asia/Manila' });
 }
 
 /**
@@ -42,10 +42,10 @@ export function formatDateTime(isoString: string | null, fallback = 'TBD'): stri
  * @returns ISO string with UTC+8 offset (e.g., "2026-08-15T21:00:00+08:00"), or null if invalid
  */
 export function localDateTimeToUTC8ISO(localDateTimeValue: string | undefined): string | null {
-  if (!localDateTimeValue) return null
+  if (!localDateTimeValue) return null;
   // datetime-local gives us "YYYY-MM-DDTHH:mm:ss"
   // We treat it as UTC+8 and append the offset
-  const trimmed = localDateTimeValue.trim()
-  if (!trimmed) return null
-  return `${trimmed}+08:00`
+  const trimmed = localDateTimeValue.trim();
+  if (!trimmed) return null;
+  return `${trimmed}+08:00`;
 }

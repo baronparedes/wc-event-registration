@@ -1,2 +1,2 @@
-export { useCancelPublicRegistrationMutation } from './useCancelPublicRegistrationMutation'
-export { useReactivatePublicRegistrationMutation } from './useReactivatePublicRegistrationMutation'
+export { useCancelPublicRegistrationMutation } from './useCancelPublicRegistrationMutation';
+export { useReactivatePublicRegistrationMutation } from './useReactivatePublicRegistrationMutation';

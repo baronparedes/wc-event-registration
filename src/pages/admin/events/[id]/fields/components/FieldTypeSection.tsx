@@ -1,17 +1,19 @@
-import type { UseFormRegisterReturn } from 'react-hook-form'
-import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields'
-import type { EventFieldTypeEnum } from '@/lib/domain/event-fields'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { FieldTypeSelector } from './FieldTypeSelector'
+import type { UseFormRegisterReturn } from 'react-hook-form';
+
+import { SectionCard } from '@/components/ui/SectionCard';
+import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields';
+import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
+
+import { FieldTypeSelector } from './FieldTypeSelector';
 
 type FieldTypeSectionProps = {
-  isEditing: boolean
-  isFullyLocked: boolean
-  selectedFieldType: EventFieldTypeEnum
-  onTypeSelect: (type: EventFieldTypeEnum) => void
-  fieldTypeRegistration: UseFormRegisterReturn
-  error?: string
-}
+  isEditing: boolean;
+  isFullyLocked: boolean;
+  selectedFieldType: EventFieldTypeEnum;
+  onTypeSelect: (type: EventFieldTypeEnum) => void;
+  fieldTypeRegistration: UseFormRegisterReturn;
+  error?: string;
+};
 
 /** Section for field type selection (create) or display (edit). */
 export function FieldTypeSection({
@@ -31,7 +33,7 @@ export function FieldTypeSection({
           error={error}
         />
       </SectionCard>
-    )
+    );
   }
 
   return (
@@ -42,5 +44,5 @@ export function FieldTypeSection({
         <span className="ml-2 text-xs text-gray-600">(cannot be changed after creation)</span>
       </p>
     </div>
-  )
+  );
 }

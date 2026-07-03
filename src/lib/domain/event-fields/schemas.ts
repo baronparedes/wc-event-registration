@@ -1,6 +1,8 @@
-import { z } from 'zod'
-import { VALIDATION_PATTERNS } from '@/config/constants'
-import type { PublicEventField } from './types'
+import { z } from 'zod';
+
+import { VALIDATION_PATTERNS } from '@/config/constants';
+
+import type { PublicEventField } from './types';
 
 export const FIELD_TYPES = [
   'text',
@@ -16,18 +18,18 @@ export const FIELD_TYPES = [
   'date',
   'datetime',
   'boolean',
-] as const
+] as const;
 
-export type EventFieldTypeEnum = (typeof FIELD_TYPES)[number]
+export type EventFieldTypeEnum = (typeof FIELD_TYPES)[number];
 
 const fieldOptionSchema = z.object({
   label: z.string().min(1, 'Option label is required'),
   value: z.string().min(1, 'Option value is required'),
   toggle_label: z.string().optional(),
   toggle_default: z.boolean().optional(),
-})
+});
 
-export type FieldOption = z.infer<typeof fieldOptionSchema>
+export type FieldOption = z.infer<typeof fieldOptionSchema>;
 
 export const createEventFieldSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
@@ -55,9 +57,9 @@ export const createEventFieldSchema = z.object({
   options: z.array(fieldOptionSchema).default([]),
   validation_rules: z.record(z.string(), z.unknown()).default({}),
   display_order: z.number().int().min(0).default(0),
-})
+});
 
-export type CreateEventFieldInput = z.infer<typeof createEventFieldSchema>
+export type CreateEventFieldInput = z.infer<typeof createEventFieldSchema>;
 
 export const updateEventFieldSchema = z.object({
   id: z.string().uuid('Invalid field ID'),
@@ -75,16 +77,16 @@ export const updateEventFieldSchema = z.object({
   options: z.array(fieldOptionSchema).optional(),
   validation_rules: z.record(z.string(), z.unknown()).optional(),
   display_order: z.number().int().min(0).optional(),
-})
+});
 
-export type UpdateEventFieldInput = z.infer<typeof updateEventFieldSchema>
+export type UpdateEventFieldInput = z.infer<typeof updateEventFieldSchema>;
 
 export const reorderEventFieldsSchema = z.object({
   event_id: z.string().uuid(),
   orderedIds: z.array(z.string().uuid()).min(1, 'At least one field ID is required'),
-})
+});
 
-export type ReorderEventFieldsInput = z.infer<typeof reorderEventFieldsSchema>
+export type ReorderEventFieldsInput = z.infer<typeof reorderEventFieldsSchema>;
 
 export const eventFieldFormSchema = z
   .object({
@@ -122,7 +124,7 @@ export const eventFieldFormSchema = z
   })
   .superRefine((values, context) => {
     if (values.field_type !== 'multi_select_toggle') {
-      return
+      return;
     }
 
     values.options.forEach((option, index) => {
@@ -131,183 +133,183 @@ export const eventFieldFormSchema = z
           code: z.ZodIssueCode.custom,
           message: 'Toggle label is required',
           path: ['options', index, 'toggle_label'],
-        })
+        });
       }
-    })
-  })
+    });
+  });
 
-export type EventFieldFormValues = z.infer<typeof eventFieldFormSchema>
+export type EventFieldFormValues = z.infer<typeof eventFieldFormSchema>;
 
 function coerceOptionalString(value: unknown): unknown {
   if (typeof value !== 'string') {
-    return value
+    return value;
   }
 
-  const trimmed = value.trim()
-  return trimmed.length === 0 ? undefined : trimmed
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
 }
 
 function buildStringSchema(field: PublicEventField): z.ZodType<string | undefined> {
-  const rules = field.validation_rules
+  const rules = field.validation_rules;
 
-  let schema = z.string({ message: `${field.label} is required.` }).trim()
+  let schema = z.string({ message: `${field.label} is required.` }).trim();
 
   if (rules.min_length !== undefined) {
     schema = schema.min(
       rules.min_length,
       `${field.label} must be at least ${rules.min_length} characters.`,
-    )
+    );
   }
 
   if (rules.max_length !== undefined) {
     schema = schema.max(
       rules.max_length,
       `${field.label} must be at most ${rules.max_length} characters.`,
-    )
+    );
   }
 
   if (rules.pattern) {
     try {
-      const regex = new RegExp(rules.pattern)
-      schema = schema.regex(regex, `${field.label} format is invalid.`)
+      const regex = new RegExp(rules.pattern);
+      schema = schema.regex(regex, `${field.label} format is invalid.`);
     } catch {
       // Ignore invalid patterns from metadata and rely on basic schema checks.
     }
   }
 
   if (field.is_required) {
-    return schema.min(1, `${field.label} is required.`)
+    return schema.min(1, `${field.label} is required.`);
   }
 
-  return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>
+  return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>;
 }
 
 function buildNumberSchema(field: PublicEventField): z.ZodType<number | undefined> {
-  const rules = field.validation_rules
+  const rules = field.validation_rules;
 
-  let schema = z.number({ message: `${field.label} must be a number.` }).finite()
+  let schema = z.number({ message: `${field.label} must be a number.` }).finite();
 
   if (rules.min !== undefined) {
-    schema = schema.min(rules.min, `${field.label} must be at least ${rules.min}.`)
+    schema = schema.min(rules.min, `${field.label} must be at least ${rules.min}.`);
   }
 
   if (rules.max !== undefined) {
-    schema = schema.max(rules.max, `${field.label} must be at most ${rules.max}.`)
+    schema = schema.max(rules.max, `${field.label} must be at most ${rules.max}.`);
   }
 
   const preprocessed = z.preprocess(
     (value) => {
       if (value === null || value === undefined || value === '') {
-        return undefined
+        return undefined;
       }
 
       if (typeof value === 'number') {
-        return value
+        return value;
       }
 
       if (typeof value === 'string') {
-        const parsed = Number(value)
-        return Number.isNaN(parsed) ? value : parsed
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? value : parsed;
       }
 
-      return value
+      return value;
     },
     field.is_required ? schema : schema.optional(),
-  )
+  );
 
-  return preprocessed as z.ZodType<number | undefined>
+  return preprocessed as z.ZodType<number | undefined>;
 }
 
 function buildSingleChoiceSchema(field: PublicEventField): z.ZodType<string | undefined> {
-  const allowedValues = new Set(field.options.map((option) => option.value))
+  const allowedValues = new Set(field.options.map((option) => option.value));
 
   const schema = z
     .string({ message: `${field.label} is required.` })
     .min(1, `${field.label} is required.`)
-    .refine((value) => allowedValues.has(value), `${field.label} contains an unsupported option.`)
+    .refine((value) => allowedValues.has(value), `${field.label} contains an unsupported option.`);
 
   if (field.is_required) {
-    return schema
+    return schema;
   }
 
-  return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>
+  return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>;
 }
 
 function buildMultiSelectSchema(field: PublicEventField): z.ZodType<string[] | undefined> {
-  const rules = field.validation_rules
-  const allowedValues = new Set(field.options.map((option) => option.value))
+  const rules = field.validation_rules;
+  const allowedValues = new Set(field.options.map((option) => option.value));
 
   let schema = z
     .array(z.string())
     .refine(
       (values) => values.every((value) => allowedValues.has(value)),
       `${field.label} contains an unsupported option.`,
-    )
+    );
 
   if (field.is_required) {
-    schema = schema.min(1, `${field.label} is required.`)
+    schema = schema.min(1, `${field.label} is required.`);
   }
 
   if (rules.min_selections !== undefined) {
     schema = schema.min(
       rules.min_selections,
       `${field.label} requires at least ${rules.min_selections} selection(s).`,
-    )
+    );
   }
 
   if (rules.max_selections !== undefined) {
     schema = schema.max(
       rules.max_selections,
       `${field.label} allows at most ${rules.max_selections} selection(s).`,
-    )
+    );
   }
 
   const preprocessed = z.preprocess((value) => {
     if (value === null || value === undefined || value === '') {
-      return []
+      return [];
     }
 
     if (Array.isArray(value)) {
-      return value
+      return value;
     }
 
-    return [String(value)]
-  }, schema)
+    return [String(value)];
+  }, schema);
 
   return field.is_required
     ? (preprocessed as z.ZodType<string[] | undefined>)
     : (z.preprocess(
         (value) => {
           if (Array.isArray(value) && value.length === 0) {
-            return undefined
+            return undefined;
           }
 
-          return value
+          return value;
         },
         z
           .preprocess((inner) => {
             if (inner === null || inner === undefined || inner === '') {
-              return []
+              return [];
             }
 
             if (Array.isArray(inner)) {
-              return inner
+              return inner;
             }
 
-            return [String(inner)]
+            return [String(inner)];
           }, schema)
           .optional(),
-      ) as z.ZodType<string[] | undefined>)
+      ) as z.ZodType<string[] | undefined>);
 }
 
 function buildMultiSelectToggleSchema(
   field: PublicEventField,
 ): z.ZodType<Record<string, boolean> | undefined> {
-  const rules = field.validation_rules
-  const allowedValues = new Set(field.options.map((option) => option.value))
+  const rules = field.validation_rules;
+  const allowedValues = new Set(field.options.map((option) => option.value));
   const toggleDefaultsByValue = new Map(
     field.options.map((option) => [option.value, option.toggle_default]),
-  )
+  );
 
   let schema = z
     .record(z.string(), z.union([z.boolean(), z.null()]))
@@ -319,46 +321,46 @@ function buildMultiSelectToggleSchema(
       (values) =>
         Object.entries(values).every(([key, value]) => {
           if (value !== null) {
-            return true
+            return true;
           }
 
-          return toggleDefaultsByValue.get(key) !== undefined
+          return toggleDefaultsByValue.get(key) !== undefined;
         }),
       `${field.label} requires a Yes/No choice for each selected option without a default.`,
-    )
+    );
 
   if (field.is_required) {
     schema = schema.refine(
       (values) => Object.keys(values).length > 0,
       `${field.label} is required.`,
-    )
+    );
   }
 
   if (rules.min_selections !== undefined) {
     schema = schema.refine(
       (values) => Object.keys(values).length >= rules.min_selections!,
       `${field.label} requires at least ${rules.min_selections} selection(s).`,
-    )
+    );
   }
 
   if (rules.max_selections !== undefined) {
     schema = schema.refine(
       (values) => Object.keys(values).length <= rules.max_selections!,
       `${field.label} allows at most ${rules.max_selections} selection(s).`,
-    )
+    );
   }
 
   return z.preprocess(
     (value) => {
       if (value === null || value === undefined || value === '') {
-        return {}
+        return {};
       }
 
       if (typeof value !== 'object' || Array.isArray(value)) {
-        return value
+        return value;
       }
 
-      return value
+      return value;
     },
     schema.transform(
       (values) =>
@@ -369,12 +371,12 @@ function buildMultiSelectToggleSchema(
           ]),
         ) as Record<string, boolean>,
     ),
-  ) as z.ZodType<Record<string, boolean> | undefined>
+  ) as z.ZodType<Record<string, boolean> | undefined>;
 }
 
 function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefined> {
-  const rules = field.validation_rules
-  const isDateOnly = field.field_type === 'date'
+  const rules = field.validation_rules;
+  const isDateOnly = field.field_type === 'date';
 
   let schema = z
     .string({ message: `${field.label} is required.` })
@@ -382,107 +384,107 @@ function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefi
     .refine(
       (value) => {
         if (isDateOnly) {
-          return VALIDATION_PATTERNS.dateYyyyMmDd.test(value)
+          return VALIDATION_PATTERNS.dateYyyyMmDd.test(value);
         }
 
-        return VALIDATION_PATTERNS.datetimeYyyyMmDdThhMm.test(value)
+        return VALIDATION_PATTERNS.datetimeYyyyMmDdThhMm.test(value);
       },
       `${field.label} must use a valid ${isDateOnly ? 'date' : 'date and time'} format.`,
-    )
+    );
 
   if (rules.min_date) {
     schema = schema.refine((value) => {
       if (isDateOnly) {
-        return value >= rules.min_date!
+        return value >= rules.min_date!;
       }
-      return new Date(value).getTime() >= new Date(rules.min_date!).getTime()
-    }, `${field.label} must be on or after ${rules.min_date}.`)
+      return new Date(value).getTime() >= new Date(rules.min_date!).getTime();
+    }, `${field.label} must be on or after ${rules.min_date}.`);
   }
 
   if (rules.max_date) {
     schema = schema.refine((value) => {
       if (isDateOnly) {
-        return value <= rules.max_date!
+        return value <= rules.max_date!;
       }
-      return new Date(value).getTime() <= new Date(rules.max_date!).getTime()
-    }, `${field.label} must be on or before ${rules.max_date}.`)
+      return new Date(value).getTime() <= new Date(rules.max_date!).getTime();
+    }, `${field.label} must be on or before ${rules.max_date}.`);
   }
 
   if (field.is_required) {
-    return schema
+    return schema;
   }
 
-  return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>
+  return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>;
 }
 
 function buildBooleanSchema(field: PublicEventField): z.ZodType<boolean | undefined> {
   if (field.is_required) {
     return z.literal(true, {
       message: `${field.label} must be accepted.`,
-    }) as unknown as z.ZodType<boolean | undefined>
+    }) as unknown as z.ZodType<boolean | undefined>;
   }
 
-  return z.boolean().optional() as z.ZodType<boolean | undefined>
+  return z.boolean().optional() as z.ZodType<boolean | undefined>;
 }
 
 function buildSchemaForField(field: PublicEventField): z.ZodType<unknown> {
   if (field.field_type === 'number') {
-    return buildNumberSchema(field)
+    return buildNumberSchema(field);
   }
 
   if (field.field_type === 'email') {
-    let schema = z.string().trim().email(`${field.label} must be a valid email address.`)
+    let schema = z.string().trim().email(`${field.label} must be a valid email address.`);
     if (field.is_required) {
-      schema = schema.min(1, `${field.label} is required.`)
-      return schema
+      schema = schema.min(1, `${field.label} is required.`);
+      return schema;
     }
 
-    return z.preprocess(coerceOptionalString, schema.optional())
+    return z.preprocess(coerceOptionalString, schema.optional());
   }
 
   if (field.field_type === 'phone') {
-    let schema = buildStringSchema(field)
+    let schema = buildStringSchema(field);
 
-    const phonePattern = VALIDATION_PATTERNS.phone
+    const phonePattern = VALIDATION_PATTERNS.phone;
     schema = schema.refine(
       (value) => value === undefined || phonePattern.test(value),
       `${field.label} must be a valid phone number.`,
-    ) as z.ZodType<string | undefined>
+    ) as z.ZodType<string | undefined>;
 
-    return schema
+    return schema;
   }
 
   if (field.field_type === 'select' || field.field_type === 'radio') {
-    return buildSingleChoiceSchema(field)
+    return buildSingleChoiceSchema(field);
   }
 
   if (field.field_type === 'multi_select') {
-    return buildMultiSelectSchema(field)
+    return buildMultiSelectSchema(field);
   }
 
   if (field.field_type === 'multi_select_toggle') {
-    return buildMultiSelectToggleSchema(field)
+    return buildMultiSelectToggleSchema(field);
   }
 
   if (field.field_type === 'date' || field.field_type === 'datetime') {
-    return buildDateLikeSchema(field)
+    return buildDateLikeSchema(field);
   }
 
   if (field.field_type === 'checkbox' || field.field_type === 'boolean') {
-    return buildBooleanSchema(field)
+    return buildBooleanSchema(field);
   }
 
-  return buildStringSchema(field)
+  return buildStringSchema(field);
 }
 
 export function buildDynamicFieldResponseSchema(
   fields: PublicEventField[],
 ): z.ZodObject<Record<string, z.ZodType<unknown>>> {
-  const shape: Record<string, z.ZodType<unknown>> = {}
+  const shape: Record<string, z.ZodType<unknown>> = {};
 
   fields.forEach((field) => {
-    shape[field.field_key] = buildSchemaForField(field)
-  })
+    shape[field.field_key] = buildSchemaForField(field);
+  });
 
-  return z.object(shape)
+  return z.object(shape);
 }

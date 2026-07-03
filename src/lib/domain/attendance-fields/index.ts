@@ -5,7 +5,7 @@ export type {
   AttendanceField,
   AttendanceFieldRow,
   DynamicAttendanceResponseValues,
-} from './types'
+} from './types';
 
 export type {
   AttendanceFieldTypeEnum,
@@ -14,14 +14,14 @@ export type {
   UpdateAttendanceFieldInput,
   DeleteAttendanceFieldInput,
   ReorderAttendanceFieldsInput,
-} from './schemas'
+} from './schemas';
 
 export {
   ATTENDANCE_FIELD_TYPE_LABELS,
   attendanceFieldTypeHasOptions,
   attendanceFieldTypeHasTextValidation,
   attendanceFieldTypeHasNumberValidation,
-} from './metadata'
+} from './metadata';
 
 export {
   ATTENDANCE_FIELD_TYPES,
@@ -30,4 +30,4 @@ export {
   deleteAttendanceFieldSchema,
   reorderAttendanceFieldsSchema,
   buildDynamicAttendanceResponseSchema,
-} from './schemas'
+} from './schemas';

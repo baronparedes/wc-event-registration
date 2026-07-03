@@ -1,42 +1,42 @@
-import { act } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { faker } from '@faker-js/faker';
+import { act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useSubmitPublicRegistrationMutation } from '@/hooks/domain/public-registrations/queries/useSubmitPublicRegistrationMutation';
 
 const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
-  const caller = vi.fn()
+  const caller = vi.fn();
   return {
     mockCaller: caller,
     mockCreateEdgeFunctionCaller: vi.fn(() => caller),
-  }
-})
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
-  }
-})
-
-import { useSubmitPublicRegistrationMutation } from '@/hooks/domain/public-registrations/queries/useSubmitPublicRegistrationMutation'
+  };
+});
 
 describe('useSubmitPublicRegistrationMutation', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('submits registration and invalidates attendee-check and count queries', async () => {
-    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
-    const email = faker.internet.email()
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
+    const email = faker.internet.email();
 
-    mockCaller.mockResolvedValueOnce({ success: true, registration_id: faker.string.uuid() })
+    mockCaller.mockResolvedValueOnce({ success: true, registration_id: faker.string.uuid() });
 
     const { result, queryClient } = renderHookWithClient(() =>
       useSubmitPublicRegistrationMutation(),
-    )
-    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await act(async () => {
       await result.current.mutateAsync({
@@ -50,21 +50,21 @@ describe('useSubmitPublicRegistrationMutation', () => {
         },
         responses: {},
         idempotency_key: faker.string.uuid(),
-      })
-    })
+      });
+    });
 
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['publicAttendeeCheck', email, eventSlug],
-    })
+    });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['publicRegistrationCount'],
-    })
-  })
+    });
+  });
 
   it('throws edge function message when submission fails', async () => {
-    mockCaller.mockResolvedValueOnce({ success: false, message: 'Submission failed' })
+    mockCaller.mockResolvedValueOnce({ success: false, message: 'Submission failed' });
 
-    const { result } = renderHookWithClient(() => useSubmitPublicRegistrationMutation())
+    const { result } = renderHookWithClient(() => useSubmitPublicRegistrationMutation());
 
     await expect(
       result.current.mutateAsync({
@@ -79,13 +79,13 @@ describe('useSubmitPublicRegistrationMutation', () => {
         responses: {},
         idempotency_key: faker.string.uuid(),
       }),
-    ).rejects.toThrow('Submission failed')
-  })
+    ).rejects.toThrow('Submission failed');
+  });
 
   it('throws fallback message when failure does not include a message', async () => {
-    mockCaller.mockResolvedValueOnce({ success: false })
+    mockCaller.mockResolvedValueOnce({ success: false });
 
-    const { result } = renderHookWithClient(() => useSubmitPublicRegistrationMutation())
+    const { result } = renderHookWithClient(() => useSubmitPublicRegistrationMutation());
 
     await expect(
       result.current.mutateAsync({
@@ -100,6 +100,6 @@ describe('useSubmitPublicRegistrationMutation', () => {
         responses: {},
         idempotency_key: faker.string.uuid(),
       }),
-    ).rejects.toThrow('Failed to submit registration')
-  })
-})
+    ).rejects.toThrow('Failed to submit registration');
+  });
+});

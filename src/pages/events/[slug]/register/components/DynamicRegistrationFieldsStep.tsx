@@ -1,81 +1,83 @@
-import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
-import { Info } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
-import type { MemberLookupProfile } from '@/lib/domain/members'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { Skeleton } from '@/components/ui/Skeleton'
+import { Info } from 'lucide-react';
+import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
+
+import { Button } from '@/components/ui/Button';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { Skeleton } from '@/components/ui/Skeleton';
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { MemberLookupProfile } from '@/lib/domain/members';
+
+import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer';
+import { DateFieldRenderer, DatetimeFieldRenderer } from './field-renderers/DateFieldRenderer';
 import {
-  TextFieldRenderer,
-  EmailFieldRenderer,
-  PhoneFieldRenderer,
-  NumberFieldRenderer,
-  TextareaFieldRenderer,
-} from './field-renderers/TextFieldRenderer'
-import { DateFieldRenderer, DatetimeFieldRenderer } from './field-renderers/DateFieldRenderer'
-import {
-  SelectFieldRenderer,
-  RadioFieldRenderer,
   MultiSelectFieldRenderer,
   MultiSelectToggleFieldRenderer,
-} from './field-renderers/SelectFieldRenderer'
-import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer'
+  RadioFieldRenderer,
+  SelectFieldRenderer,
+} from './field-renderers/SelectFieldRenderer';
+import {
+  EmailFieldRenderer,
+  NumberFieldRenderer,
+  PhoneFieldRenderer,
+  TextFieldRenderer,
+  TextareaFieldRenderer,
+} from './field-renderers/TextFieldRenderer';
 
 function DynamicFieldInput(props: {
-  field: PublicEventField
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>
+  field: PublicEventField;
+  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
 }) {
-  const { field, dynamicForm } = props
+  const { field, dynamicForm } = props;
 
   switch (field.field_type) {
     case 'textarea':
-      return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'number':
-      return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'email':
-      return <EmailFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <EmailFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'phone':
-      return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'date':
-      return <DateFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <DateFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'datetime':
-      return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'select':
-      return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'radio':
-      return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'multi_select':
-      return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'multi_select_toggle':
-      return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'checkbox':
     case 'boolean':
-      return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'text':
     default:
-      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />
+      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />;
   }
 }
 
 type DynamicFieldsStepCardProps = {
-  matchedMember: MemberLookupProfile | null
-  isLocked?: boolean
-  shouldFadeLockedState?: boolean
-  lockedMessage?: string | null
-  onCancelUpdate?: () => void
-  isLoadingFields: boolean
-  isFieldsError: boolean
-  fieldConfigIssues: string[]
-  activeFields: PublicEventField[]
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>
-  onSubmit: SubmitHandler<DynamicFieldResponseValues>
-  fieldErrorMessage: (fieldKey: string) => string | undefined
-  isSubmitPending: boolean
-  submitButtonLabel?: string
-  submitErrorMessage: string | null
-  submitSuccessMessage: string | null
-  stepTimeoutSecondsRemaining?: number | null
-}
+  matchedMember: MemberLookupProfile | null;
+  isLocked?: boolean;
+  shouldFadeLockedState?: boolean;
+  lockedMessage?: string | null;
+  onCancelUpdate?: () => void;
+  isLoadingFields: boolean;
+  isFieldsError: boolean;
+  fieldConfigIssues: string[];
+  activeFields: PublicEventField[];
+  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+  onSubmit: SubmitHandler<DynamicFieldResponseValues>;
+  fieldErrorMessage: (fieldKey: string) => string | undefined;
+  isSubmitPending: boolean;
+  submitButtonLabel?: string;
+  submitErrorMessage: string | null;
+  submitSuccessMessage: string | null;
+  stepTimeoutSecondsRemaining?: number | null;
+};
 
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   const {
@@ -96,10 +98,10 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     submitErrorMessage,
     submitSuccessMessage,
     stepTimeoutSecondsRemaining = null,
-  } = props
+  } = props;
 
-  const shouldShowDefaultLockedMessage = !matchedMember || shouldFadeLockedState
-  const shouldShowBlockedLockedMessage = matchedMember && isLocked && !shouldFadeLockedState
+  const shouldShowDefaultLockedMessage = !matchedMember || shouldFadeLockedState;
+  const shouldShowBlockedLockedMessage = matchedMember && isLocked && !shouldFadeLockedState;
 
   return (
     <SectionCard
@@ -184,7 +186,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
 
           {activeFields.length > 0 &&
             activeFields.map((field) => {
-              const errorMessage = fieldErrorMessage(field.field_key)
+              const errorMessage = fieldErrorMessage(field.field_key);
 
               return (
                 <div key={field.id} className="space-y-1">
@@ -203,7 +205,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
                     <p className="registration-field-error text-sm text-danger">{errorMessage}</p>
                   )}
                 </div>
-              )
+              );
             })}
 
           <div className="flex flex-wrap items-center gap-2">
@@ -247,5 +249,5 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </div>
       )}
     </SectionCard>
-  )
+  );
 }

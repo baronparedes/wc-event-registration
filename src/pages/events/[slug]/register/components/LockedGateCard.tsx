@@ -1,4 +1,4 @@
-import { SectionCard } from '@/components/ui/SectionCard'
+import { SectionCard } from '@/components/ui/SectionCard';
 
 export function LockedGateCard() {
   return (
@@ -10,5 +10,5 @@ export function LockedGateCard() {
         This event is not accepting registrations right now. Please check back later.
       </p>
     </SectionCard>
-  )
+  );
 }

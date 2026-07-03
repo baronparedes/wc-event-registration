@@ -9,48 +9,48 @@
  * const field = makeAdminEventField({ event_id: event.id, field_type: 'email' })
  * const member = makeMemberLookupProfile()
  */
+import { faker } from '@faker-js/faker';
 
-import { faker } from '@faker-js/faker'
+import type { AdminEventField, EventFieldType, PublicEventField } from '@/lib/domain/event-fields';
 import type {
   AdminEvent,
   DuplicatePolicy,
   EventStatus,
   PublicEventListingItem,
   RegistrationMode,
-} from '@/lib/domain/events'
-import type { AdminEventField, EventFieldType, PublicEventField } from '@/lib/domain/event-fields'
+} from '@/lib/domain/events';
 import type {
   AdminMember,
-  MemberLookupProfile,
   ExistingRegistrationState,
-} from '@/lib/domain/members'
-import type {
-  AdminRegistration,
-  AdminRegistrationWithMember,
-  AdminRegistrationDetail,
-  RegistrationSharePayloadRow,
-  RegistrationFieldResponse,
-  RegistrationStatus,
-} from '@/lib/domain/registrations'
+  MemberLookupProfile,
+} from '@/lib/domain/members';
 import type {
   PublicRegistration,
   PublicRegistrationSummary,
-} from '@/lib/domain/public-registrations'
+} from '@/lib/domain/public-registrations';
+import type {
+  AdminRegistration,
+  AdminRegistrationDetail,
+  AdminRegistrationWithMember,
+  RegistrationFieldResponse,
+  RegistrationSharePayloadRow,
+  RegistrationStatus,
+} from '@/lib/domain/registrations';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function isoTimestamp(date?: Date): string {
-  return (date ?? faker.date.recent()).toISOString()
+  return (date ?? faker.date.recent()).toISOString();
 }
 
 function pastIso(): string {
-  return faker.date.past().toISOString()
+  return faker.date.past().toISOString();
 }
 
 function futureIso(): string {
-  return faker.date.future().toISOString()
+  return faker.date.future().toISOString();
 }
 
 // ---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ function futureIso(): string {
 // ---------------------------------------------------------------------------
 
 export function makeAdminEvent(overrides: Partial<AdminEvent> = {}): AdminEvent {
-  const createdAt = isoTimestamp()
+  const createdAt = isoTimestamp();
   return {
     id: faker.string.uuid(),
     slug: faker.helpers.slugify(faker.lorem.words(3)).toLowerCase(),
@@ -79,7 +79,7 @@ export function makeAdminEvent(overrides: Partial<AdminEvent> = {}): AdminEvent 
     created_at: createdAt,
     updated_at: createdAt,
     ...overrides,
-  }
+  };
 }
 
 export function makePublicEventListingItem(
@@ -98,7 +98,7 @@ export function makePublicEventListingItem(
     allow_public_registrations: true,
     listingStatus: 'open',
     ...overrides,
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -119,10 +119,10 @@ const FIELD_TYPES: EventFieldType[] = [
   'date',
   'datetime',
   'boolean',
-]
+];
 
 export function makeAdminEventField(overrides: Partial<AdminEventField> = {}): AdminEventField {
-  const createdAt = isoTimestamp()
+  const createdAt = isoTimestamp();
   return {
     id: faker.string.uuid(),
     event_id: faker.string.uuid(),
@@ -139,7 +139,7 @@ export function makeAdminEventField(overrides: Partial<AdminEventField> = {}): A
     created_at: createdAt,
     updated_at: createdAt,
     ...overrides,
-  }
+  };
 }
 
 export function makePublicEventField(overrides: Partial<PublicEventField> = {}): PublicEventField {
@@ -157,7 +157,7 @@ export function makePublicEventField(overrides: Partial<PublicEventField> = {}):
     validation_rules: {},
     display_order: faker.number.int({ min: 0, max: 20 }),
     ...overrides,
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -167,8 +167,8 @@ export function makePublicEventField(overrides: Partial<PublicEventField> = {}):
 export function makeMemberLookupProfile(
   overrides: Partial<MemberLookupProfile> = {},
 ): MemberLookupProfile {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
   return {
     user_id: faker.string.uuid(),
     member_id: `WC-${faker.string.numeric(3)}`,
@@ -177,13 +177,13 @@ export function makeMemberLookupProfile(
     first_name: firstName,
     last_name: lastName,
     ...overrides,
-  }
+  };
 }
 
 export function makeAdminMember(overrides: Partial<AdminMember> = {}): AdminMember {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
-  const createdAt = isoTimestamp()
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  const createdAt = isoTimestamp();
   return {
     id: faker.string.uuid(),
     member_id: `WC-${faker.string.numeric(3)}`,
@@ -199,7 +199,7 @@ export function makeAdminMember(overrides: Partial<AdminMember> = {}): AdminMemb
     created_at: createdAt,
     updated_at: createdAt,
     ...overrides,
-  }
+  };
 }
 
 export function makeExistingRegistrationState(
@@ -211,7 +211,7 @@ export function makeExistingRegistrationState(
     status: 'submitted',
     responses: {},
     ...overrides,
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -229,14 +229,14 @@ export function makeAdminRegistration(
     submitted_at: pastIso(),
     updated_at: null,
     ...overrides,
-  }
+  };
 }
 
 export function makeAdminRegistrationWithMember(
   overrides: Partial<AdminRegistrationWithMember> = {},
 ): AdminRegistrationWithMember {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
   return {
     ...makeAdminRegistration(),
     member_id: `WC-${faker.string.numeric(3)}`,
@@ -247,7 +247,7 @@ export function makeAdminRegistrationWithMember(
     category: 'regular',
     answer_count: faker.number.int({ min: 0, max: 10 }),
     ...overrides,
-  }
+  };
 }
 
 export function makeRegistrationFieldResponse(
@@ -260,14 +260,14 @@ export function makeRegistrationFieldResponse(
     field_type: 'text' as EventFieldType,
     answer: faker.lorem.words(2),
     ...overrides,
-  }
+  };
 }
 
 export function makeAdminRegistrationDetail(
   overrides: Partial<AdminRegistrationDetail> = {},
 ): AdminRegistrationDetail {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
   return {
     registration: makeAdminRegistration(),
     member: {
@@ -282,15 +282,15 @@ export function makeAdminRegistrationDetail(
     },
     fieldResponses: [],
     ...overrides,
-  }
+  };
 }
 
 export function makeRegistrationSharePayloadRow(
   overrides: Partial<RegistrationSharePayloadRow> = {},
 ): RegistrationSharePayloadRow {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
-  const fullName = `${firstName} ${lastName}`
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  const fullName = `${firstName} ${lastName}`;
   return {
     full_name: fullName,
     member_id: `WC-${faker.string.numeric(3)}`,
@@ -299,7 +299,7 @@ export function makeRegistrationSharePayloadRow(
     category: faker.helpers.arrayElement(['Adult', 'Youth']),
     answer_values: {},
     ...overrides,
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -309,9 +309,9 @@ export function makeRegistrationSharePayloadRow(
 export function makePublicRegistration(
   overrides: Partial<PublicRegistration> = {},
 ): PublicRegistration {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
-  const createdAt = isoTimestamp()
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  const createdAt = isoTimestamp();
   return {
     id: faker.string.uuid(),
     event_id: faker.string.uuid(),
@@ -326,14 +326,14 @@ export function makePublicRegistration(
     created_at: createdAt,
     updated_at: createdAt,
     ...overrides,
-  }
+  };
 }
 
 export function makePublicRegistrationSummary(
   overrides: Partial<PublicRegistrationSummary> = {},
 ): PublicRegistrationSummary {
-  const firstName = faker.person.firstName()
-  const lastName = faker.person.lastName()
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
   return {
     id: faker.string.uuid(),
     first_name: firstName,
@@ -344,5 +344,5 @@ export function makePublicRegistrationSummary(
     status: 'submitted' as RegistrationStatus,
     submitted_at: isoTimestamp(),
     ...overrides,
-  }
+  };
 }

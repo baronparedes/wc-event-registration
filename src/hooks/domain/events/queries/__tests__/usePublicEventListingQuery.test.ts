@@ -1,48 +1,48 @@
-import { waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const FIXED_NOW = new Date('2026-06-25T00:00:00.000Z').getTime()
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { usePublicEventListingQuery } from '@/hooks/domain/events/queries/usePublicEventListingQuery';
+
+const FIXED_NOW = new Date('2026-06-25T00:00:00.000Z').getTime();
 
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
     order: vi.fn(),
-  }
+  };
 
-  queryBuilder.select.mockReturnValue(queryBuilder)
-  queryBuilder.eq.mockReturnValue(queryBuilder)
+  queryBuilder.select.mockReturnValue(queryBuilder);
+  queryBuilder.eq.mockReturnValue(queryBuilder);
 
   return {
     mockQueryBuilder: queryBuilder,
     mockFrom: vi.fn(() => queryBuilder),
-  }
-})
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
 
   return {
     ...actual,
     supabase: {
       from: mockFrom,
     },
-  }
-})
-
-import { usePublicEventListingQuery } from '@/hooks/domain/events/queries/usePublicEventListingQuery'
+  };
+});
 
 describe('usePublicEventListingQuery', () => {
   beforeEach(() => {
-    vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW)
-    vi.clearAllMocks()
-  })
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
+    vi.clearAllMocks();
+  });
 
   afterEach(() => {
-    vi.restoreAllMocks()
-  })
+    vi.restoreAllMocks();
+  });
 
   it('maps events to listing statuses and filters closed ones', async () => {
     mockQueryBuilder.order.mockResolvedValueOnce({
@@ -73,50 +73,50 @@ describe('usePublicEventListingQuery', () => {
         },
       ],
       error: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => usePublicEventListingQuery())
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery());
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
     expect(result.current.data).toEqual([
       expect.objectContaining({ slug: 'open-event', listingStatus: 'open' }),
       expect.objectContaining({ slug: 'upcoming-event', listingStatus: 'upcoming' }),
       expect.objectContaining({ slug: 'past-event', listingStatus: 'past' }),
-    ])
-  })
+    ]);
+  });
 
   it('returns query error state when listing query fails', async () => {
     mockQueryBuilder.order.mockResolvedValueOnce({
       data: null,
       error: new Error('listing failed'),
-    })
+    });
 
-    const { result } = renderHookWithClient(() => usePublicEventListingQuery())
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery());
 
     await waitFor(() => {
-      expect(result.current.isError).toBe(true)
-    })
+      expect(result.current.isError).toBe(true);
+    });
 
-    expect(result.current.error).toBeInstanceOf(Error)
-  })
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
 
   it('handles null listing rows and resolves with an empty list', async () => {
     mockQueryBuilder.order.mockResolvedValueOnce({
       data: null,
       error: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => usePublicEventListingQuery())
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery());
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
-    expect(result.current.data).toEqual([])
-  })
+    expect(result.current.data).toEqual([]);
+  });
 
   it('filters out events that are closed and not recent past while keeping open events with null close date', async () => {
     mockQueryBuilder.order.mockResolvedValueOnce({
@@ -139,16 +139,16 @@ describe('usePublicEventListingQuery', () => {
         },
       ],
       error: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => usePublicEventListingQuery())
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery());
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
     expect(result.current.data).toEqual([
       expect.objectContaining({ slug: 'open-no-close', listingStatus: 'open' }),
-    ])
-  })
-})
+    ]);
+  });
+});

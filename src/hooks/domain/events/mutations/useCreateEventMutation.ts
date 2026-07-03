@@ -1,11 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase, localDateTimeToUTC8ISO } from '@/lib/infrastructure'
-import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit'
-import type { CreateEventInput } from '@/lib/domain/events'
-import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
+import type { CreateEventInput } from '@/lib/domain/events';
+import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
+
+import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
 
 function emptyToNull(value: string | undefined): string | null {
-  return value && value.trim() !== '' ? value : null
+  return value && value.trim() !== '' ? value : null;
 }
 
 /**
@@ -13,22 +15,22 @@ function emptyToNull(value: string | undefined): string | null {
  * Sets created_by_admin_id from the current session's admin row.
  */
 export function useCreateEventMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: CreateEventInput): Promise<string> => {
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await supabase.auth.getSession();
 
-      let createdByAdminId: string | null = null
+      let createdByAdminId: string | null = null;
       if (session) {
         const { data: adminRow } = await supabase
           .from('admins')
           .select('id')
           .eq('auth_user_id', session.user.id)
-          .maybeSingle()
-        createdByAdminId = adminRow?.id ?? null
+          .maybeSingle();
+        createdByAdminId = adminRow?.id ?? null;
       }
 
       const { data, error } = await supabase
@@ -54,9 +56,9 @@ export function useCreateEventMutation() {
           created_by_admin_id: createdByAdminId,
         })
         .select('id')
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
       await writeAdminAuditLogSafely({
         action: 'create_event',
@@ -67,12 +69,12 @@ export function useCreateEventMutation() {
           title: input.title,
           status: input.status,
         },
-      })
+      });
 
-      return data.id as string
+      return data.id as string;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
     },
-  })
+  });
 }

@@ -1,16 +1,18 @@
-import type { UseFormRegister } from 'react-hook-form'
-import type { EventFieldFormValues } from '@/lib/domain/event-fields'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { RuleInput } from './RuleInput'
+import type { UseFormRegister } from 'react-hook-form';
+
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { EventFieldFormValues } from '@/lib/domain/event-fields';
+
+import { RuleInput } from './RuleInput';
 
 type ValidationRulesSectionProps = {
-  isStructurallyLocked: boolean
-  showTextValidation: boolean
-  showNumberValidation: boolean
-  showMultiSelectValidation: boolean
-  showDateValidation: boolean
-  register: UseFormRegister<EventFieldFormValues>
-}
+  isStructurallyLocked: boolean;
+  showTextValidation: boolean;
+  showNumberValidation: boolean;
+  showMultiSelectValidation: boolean;
+  showDateValidation: boolean;
+  register: UseFormRegister<EventFieldFormValues>;
+};
 
 /** Section for all validation rule inputs (text, number, date, multi-select). */
 export function ValidationRulesSection({
@@ -126,5 +128,5 @@ export function ValidationRulesSection({
         )}
       </div>
     </SectionCard>
-  )
+  );
 }

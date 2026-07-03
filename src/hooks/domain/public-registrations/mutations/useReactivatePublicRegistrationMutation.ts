@@ -1,19 +1,20 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '@/lib/infrastructure'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 interface ReactivatePublicRegistrationRequest {
-  registration_id: string
+  registration_id: string;
 }
 
 interface ReactivatePublicRegistrationResponse {
-  success: true
-  registration_id: string
+  success: true;
+  registration_id: string;
 }
 
 interface ReactivatePublicRegistrationErrorResponse {
-  success: false
-  error: string
-  error_code?: string
+  success: false;
+  error: string;
+  error_code?: string;
 }
 
 /**
@@ -21,29 +22,29 @@ interface ReactivatePublicRegistrationErrorResponse {
  * Invalidates admin public registrations queries on success.
  */
 export function useReactivatePublicRegistrationMutation(eventId: string) {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: ReactivatePublicRegistrationRequest) => {
       const caller = createEdgeFunctionCaller<
         ReactivatePublicRegistrationRequest,
         ReactivatePublicRegistrationResponse | ReactivatePublicRegistrationErrorResponse
-      >('reactivate-public-registration')
-      const response = await caller(data)
+      >('reactivate-public-registration');
+      const response = await caller(data);
       if (!('success' in response) || !response.success) {
-        const error = response as ReactivatePublicRegistrationErrorResponse
-        throw new Error(error.error ?? 'Failed to reactivate public registration')
+        const error = response as ReactivatePublicRegistrationErrorResponse;
+        throw new Error(error.error ?? 'Failed to reactivate public registration');
       }
-      return response
+      return response;
     },
     onSuccess: () => {
       // Invalidate both event and admin queries for public registrations
       queryClient.invalidateQueries({
         queryKey: ['admin-public-registrations', eventId],
-      })
+      });
       queryClient.invalidateQueries({
         queryKey: ['publicRegistrationCount', eventId],
-      })
+      });
     },
-  })
+  });
 }

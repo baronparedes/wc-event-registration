@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useState } from 'react'
-import { TIMING } from '@/config/constants'
+import { useCallback, useEffect, useRef } from 'react';
+import { useState } from 'react';
+
+import { TIMING } from '@/config/constants';
 
 /**
  * Kiosk inactivity timeout hook.
@@ -18,83 +19,83 @@ export function useKioskInactivityReset(
   timeoutMs: number = TIMING.kioskInactivityResetMs,
   isActive: boolean = true,
 ) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const deadlineRef = useRef<number | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const deadlineRef = useRef<number | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(() =>
     isActive ? Math.ceil(timeoutMs / 1000) : null,
-  )
+  );
 
   const clearTimers = useCallback(() => {
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
     if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-    deadlineRef.current = null
-  }, [])
+    deadlineRef.current = null;
+  }, []);
 
   const resetTimeout = useCallback(() => {
-    clearTimers()
+    clearTimers();
 
     if (isActive) {
-      deadlineRef.current = Date.now() + timeoutMs
-      setSecondsRemaining(Math.ceil(timeoutMs / 1000))
-      timeoutRef.current = setTimeout(onReset, timeoutMs)
+      deadlineRef.current = Date.now() + timeoutMs;
+      setSecondsRemaining(Math.ceil(timeoutMs / 1000));
+      timeoutRef.current = setTimeout(onReset, timeoutMs);
       intervalRef.current = setInterval(() => {
-        const deadline = deadlineRef.current
+        const deadline = deadlineRef.current;
         if (!deadline) {
-          setSecondsRemaining(null)
-          return
+          setSecondsRemaining(null);
+          return;
         }
 
-        const remainingMs = Math.max(0, deadline - Date.now())
-        setSecondsRemaining(Math.ceil(remainingMs / 1000))
-      }, 1000)
+        const remainingMs = Math.max(0, deadline - Date.now());
+        setSecondsRemaining(Math.ceil(remainingMs / 1000));
+      }, 1000);
     }
-  }, [clearTimers, onReset, timeoutMs, isActive])
+  }, [clearTimers, onReset, timeoutMs, isActive]);
 
   // Clear and restart timeout on any user activity
   const recordActivity = useCallback(() => {
-    resetTimeout()
-  }, [resetTimeout])
+    resetTimeout();
+  }, [resetTimeout]);
 
   // Set up global activity listeners
   useEffect(() => {
     if (!isActive) {
-      clearTimers()
-      return
+      clearTimers();
+      return;
     }
 
     // Defer the initial setup so the effect does not synchronously trigger state updates.
     const initialSetupId = setTimeout(() => {
-      resetTimeout()
-    }, 0)
+      resetTimeout();
+    }, 0);
 
     // Listen for activity: keydown, click, input change
     const handleActivity = () => {
-      recordActivity()
-    }
+      recordActivity();
+    };
 
-    document.addEventListener('keydown', handleActivity)
-    document.addEventListener('click', handleActivity)
-    document.addEventListener('input', handleActivity)
-    document.addEventListener('change', handleActivity)
+    document.addEventListener('keydown', handleActivity);
+    document.addEventListener('click', handleActivity);
+    document.addEventListener('input', handleActivity);
+    document.addEventListener('change', handleActivity);
 
     return () => {
-      clearTimeout(initialSetupId)
-      document.removeEventListener('keydown', handleActivity)
-      document.removeEventListener('click', handleActivity)
-      document.removeEventListener('input', handleActivity)
-      document.removeEventListener('change', handleActivity)
-      clearTimers()
-    }
-  }, [clearTimers, isActive, recordActivity, resetTimeout])
+      clearTimeout(initialSetupId);
+      document.removeEventListener('keydown', handleActivity);
+      document.removeEventListener('click', handleActivity);
+      document.removeEventListener('input', handleActivity);
+      document.removeEventListener('change', handleActivity);
+      clearTimers();
+    };
+  }, [clearTimers, isActive, recordActivity, resetTimeout]);
 
   return {
     secondsRemaining: isActive ? secondsRemaining : null,
-  }
+  };
 }

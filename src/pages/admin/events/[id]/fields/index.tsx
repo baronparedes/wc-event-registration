@@ -1,37 +1,43 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { AdminPageShell } from '@/components/layout'
-import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants'
-import { useAdminEventQuery } from '@/hooks/domain/events'
-import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields'
-import type { AdminEventField } from '@/lib/domain/event-fields'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { Button } from '@/components/ui/Button'
-import { EventFieldsList, EventFieldEditPanel } from './components'
+import { useState } from 'react';
 
-type PanelState = { mode: 'closed' } | { mode: 'create' } | { mode: 'edit'; field: AdminEventField }
+import { Link, useParams } from 'react-router-dom';
+
+import { AdminPageShell } from '@/components/layout';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { Button } from '@/components/ui/Button';
+import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
+import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
+import { useAdminEventQuery } from '@/hooks/domain/events';
+import type { AdminEventField } from '@/lib/domain/event-fields';
+
+import { EventFieldEditPanel, EventFieldsList } from './components';
+
+type PanelState =
+  | { mode: 'closed' }
+  | { mode: 'create' }
+  | { mode: 'edit'; field: AdminEventField };
 
 export function AdminEventFieldsPage() {
-  const { id } = useParams<{ id: string }>()
-  const { data: event, isLoading: eventLoading } = useAdminEventQuery(id)
-  const { data: fields, isLoading: fieldsLoading } = useAdminEventFieldsQuery(id)
-  const [panelState, setPanelState] = useState<PanelState>({ mode: 'closed' })
+  const { id } = useParams<{ id: string }>();
+  const { data: event, isLoading: eventLoading } = useAdminEventQuery(id);
+  const { data: fields, isLoading: fieldsLoading } = useAdminEventFieldsQuery(id);
+  const [panelState, setPanelState] = useState<PanelState>({ mode: 'closed' });
 
-  const isLoading = eventLoading || fieldsLoading
-  const isDraft = event?.status === 'draft'
-  const isPublished = event?.status === 'published'
-  const panelField: AdminEventField | null = panelState.mode === 'edit' ? panelState.field : null
+  const isLoading = eventLoading || fieldsLoading;
+  const isDraft = event?.status === 'draft';
+  const isPublished = event?.status === 'published';
+  const panelField: AdminEventField | null = panelState.mode === 'edit' ? panelState.field : null;
 
   function openCreate() {
-    setPanelState({ mode: 'create' })
+    setPanelState({ mode: 'create' });
   }
 
   function openEdit(field: AdminEventField) {
-    setPanelState({ mode: 'edit', field })
+    setPanelState({ mode: 'edit', field });
   }
 
   function closePanel() {
-    setPanelState({ mode: 'closed' })
+    setPanelState({ mode: 'closed' });
   }
 
   return (
@@ -106,5 +112,5 @@ export function AdminEventFieldsPage() {
         )}
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

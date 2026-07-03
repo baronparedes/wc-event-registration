@@ -1,20 +1,21 @@
-import { useForm } from 'react-hook-form'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { FormTextareaField } from '@/components/ui/FormTextareaField'
+import { render, screen } from '@testing-library/react';
+import { useForm } from 'react-hook-form';
+import { describe, expect, it } from 'vitest';
+
+import { FormTextareaField } from '@/components/ui/FormTextareaField';
 
 type TestFormValues = {
-  description: string
-}
+  description: string;
+};
 
 function Harness(props: {
-  error?: string
-  disabled?: boolean
-  helperText?: string
-  rows?: number
-  textareaClassName?: string
+  error?: string;
+  disabled?: boolean;
+  helperText?: string;
+  rows?: number;
+  textareaClassName?: string;
 }) {
-  const { register } = useForm<TestFormValues>()
+  const { register } = useForm<TestFormValues>();
 
   return (
     <FormTextareaField
@@ -30,31 +31,31 @@ function Harness(props: {
       helperText={props.helperText}
       textareaClassName={props.textareaClassName}
     />
-  )
+  );
 }
 
 describe('FormTextareaField', () => {
   it('renders helper text and default styling without errors', () => {
-    render(<Harness helperText="Optional details" textareaClassName="custom-textarea" />)
+    render(<Harness helperText="Optional details" textareaClassName="custom-textarea" />);
 
-    const textarea = screen.getByLabelText(/^Description/)
+    const textarea = screen.getByLabelText(/^Description/);
 
-    expect(textarea).toHaveAttribute('placeholder', 'Describe your event')
-    expect(textarea).toHaveAttribute('rows', '4')
-    expect(textarea.className).toContain('border-border')
-    expect(textarea.className).toContain('custom-textarea')
-    expect(screen.getByText('Optional details')).toBeInTheDocument()
-    expect(screen.getByTestId('description-adornment')).toBeInTheDocument()
-  })
+    expect(textarea).toHaveAttribute('placeholder', 'Describe your event');
+    expect(textarea).toHaveAttribute('rows', '4');
+    expect(textarea.className).toContain('border-border');
+    expect(textarea.className).toContain('custom-textarea');
+    expect(screen.getByText('Optional details')).toBeInTheDocument();
+    expect(screen.getByTestId('description-adornment')).toBeInTheDocument();
+  });
 
   it('renders error styling, custom rows, and disabled state', () => {
-    render(<Harness error="Description is required" disabled rows={6} />)
+    render(<Harness error="Description is required" disabled rows={6} />);
 
-    const textarea = screen.getByLabelText(/^Description/)
+    const textarea = screen.getByLabelText(/^Description/);
 
-    expect(textarea).toBeDisabled()
-    expect(textarea).toHaveAttribute('rows', '6')
-    expect(textarea.className).toContain('border-red-400')
-    expect(screen.getByText('Description is required')).toBeInTheDocument()
-  })
-})
+    expect(textarea).toBeDisabled();
+    expect(textarea).toHaveAttribute('rows', '6');
+    expect(textarea.className).toContain('border-red-400');
+    expect(screen.getByText('Description is required')).toBeInTheDocument();
+  });
+});

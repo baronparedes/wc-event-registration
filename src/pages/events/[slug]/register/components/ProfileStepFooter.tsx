@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button';
 
 type ProfileStepFooterProps = {
-  canContinueToStepThree: boolean
-  isRegistrationBlocked: boolean
-  onContinueToStepThree?: () => void
-  stepTimeoutSecondsRemaining: number | null
-}
+  canContinueToStepThree: boolean;
+  isRegistrationBlocked: boolean;
+  onContinueToStepThree?: () => void;
+  stepTimeoutSecondsRemaining: number | null;
+};
 
 function buildTimeoutMessage(
   stepTimeoutSecondsRemaining: number | null,
@@ -13,18 +13,18 @@ function buildTimeoutMessage(
   canContinueToStepThree: boolean,
 ): string | null {
   if (!stepTimeoutSecondsRemaining) {
-    return null
+    return null;
   }
 
   if (isRegistrationBlocked) {
-    return `Returning to Step 1 in ${stepTimeoutSecondsRemaining}s.`
+    return `Returning to Step 1 in ${stepTimeoutSecondsRemaining}s.`;
   }
 
   if (canContinueToStepThree) {
-    return `Returning to Step 1 in ${stepTimeoutSecondsRemaining}s if no one continues.`
+    return `Returning to Step 1 in ${stepTimeoutSecondsRemaining}s if no one continues.`;
   }
 
-  return `Returning to Step 1 in ${stepTimeoutSecondsRemaining}s if this registration is not completed.`
+  return `Returning to Step 1 in ${stepTimeoutSecondsRemaining}s if this registration is not completed.`;
 }
 
 export function ProfileStepFooter(props: ProfileStepFooterProps) {
@@ -33,13 +33,13 @@ export function ProfileStepFooter(props: ProfileStepFooterProps) {
     isRegistrationBlocked,
     onContinueToStepThree,
     stepTimeoutSecondsRemaining,
-  } = props
+  } = props;
 
   const timeoutMessage = buildTimeoutMessage(
     stepTimeoutSecondsRemaining,
     isRegistrationBlocked,
     canContinueToStepThree,
-  )
+  );
 
   if (canContinueToStepThree) {
     return (
@@ -53,7 +53,7 @@ export function ProfileStepFooter(props: ProfileStepFooterProps) {
           </p>
         )}
       </div>
-    )
+    );
   }
 
   if (timeoutMessage) {
@@ -61,8 +61,8 @@ export function ProfileStepFooter(props: ProfileStepFooterProps) {
       <p className="registration-timeout-copy mt-3 text-sm text-muted" aria-live="polite">
         {timeoutMessage}
       </p>
-    )
+    );
   }
 
-  return null
+  return null;
 }

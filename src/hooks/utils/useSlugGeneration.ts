@@ -1,6 +1,8 @@
-import { useRef, useEffect } from 'react'
-import type { UseFormWatch, UseFormSetValue } from 'react-hook-form'
-import type { CreateEventInput } from '@/lib/domain/events'
+import { useEffect, useRef } from 'react';
+
+import type { UseFormSetValue, UseFormWatch } from 'react-hook-form';
+
+import type { CreateEventInput } from '@/lib/domain/events';
 
 /**
  * Encapsulates slug auto-generation logic for event forms.
@@ -22,30 +24,30 @@ export function useSlugGeneration(
   setValue: UseFormSetValue<CreateEventInput>,
   onManualEdit?: () => void,
 ): {
-  slugValue: string
-  onSlugChange: (value: string) => void
+  slugValue: string;
+  onSlugChange: (value: string) => void;
 } {
-  const slugManuallyEdited = useRef(false)
-  const titleValue = watch('title')
-  const slugValue = watch('slug')
+  const slugManuallyEdited = useRef(false);
+  const titleValue = watch('title');
+  const slugValue = watch('slug');
 
   // Auto-generate slug from title in create mode
   useEffect(() => {
     if (!isEditMode && !slugManuallyEdited.current) {
-      setValue('slug', generateSlug(titleValue), { shouldValidate: false })
+      setValue('slug', generateSlug(titleValue), { shouldValidate: false });
     }
-  }, [isEditMode, titleValue, setValue])
+  }, [isEditMode, titleValue, setValue]);
 
   function onSlugChange(value: string) {
-    slugManuallyEdited.current = true
-    setValue('slug', value, { shouldValidate: true })
-    onManualEdit?.()
+    slugManuallyEdited.current = true;
+    setValue('slug', value, { shouldValidate: true });
+    onManualEdit?.();
   }
 
   return {
     slugValue,
     onSlugChange,
-  }
+  };
 }
 
 /**
@@ -59,5 +61,5 @@ function generateSlug(title: string): string {
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/^-|-$/g, '');
 }

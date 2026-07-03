@@ -1,15 +1,9 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
-import type { AdminEventField } from '@/lib/domain/event-fields'
-import type { EventStatus } from '@/lib/domain/events'
-import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields'
-import type { EventFieldTypeEnum } from '@/lib/domain/event-fields'
-import {
-  useDeleteEventFieldMutation,
-  useReorderEventFieldsMutation,
-} from '@/hooks/domain/event-fields'
-import { ActionButton } from '@/components/ui/ActionLink'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useState } from 'react';
+
+import { toast } from 'sonner';
+
+import { ActionButton } from '@/components/ui/ActionLink';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   ListTable,
   ListTableBody,
@@ -18,14 +12,22 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
-} from '@/components/ui/ListTable'
+} from '@/components/ui/ListTable';
+import {
+  useDeleteEventFieldMutation,
+  useReorderEventFieldsMutation,
+} from '@/hooks/domain/event-fields';
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields';
+import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
+import type { EventStatus } from '@/lib/domain/events';
 
 type EventFieldsListProps = {
-  fields: AdminEventField[]
-  eventId: string
-  eventStatus: EventStatus
-  onEdit: (field: AdminEventField) => void
-}
+  fields: AdminEventField[];
+  eventId: string;
+  eventStatus: EventStatus;
+  onEdit: (field: AdminEventField) => void;
+};
 
 const STATUS_COLORS: Record<string, string> = {
   text: 'bg-blue-100 text-blue-800',
@@ -41,46 +43,46 @@ const STATUS_COLORS: Record<string, string> = {
   date: 'bg-rose-100 text-rose-800',
   datetime: 'bg-rose-100 text-rose-800',
   boolean: 'bg-amber-100 text-amber-800',
-}
+};
 
 /** List of registration form fields with reorder, edit, and delete actions. */
 export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventFieldsListProps) {
-  const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null)
-  const deleteMutation = useDeleteEventFieldMutation()
-  const reorderMutation = useReorderEventFieldsMutation()
+  const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
+  const deleteMutation = useDeleteEventFieldMutation();
+  const reorderMutation = useReorderEventFieldsMutation();
 
-  const isDraft = eventStatus === 'draft'
-  const isLocked = eventStatus === 'published' || eventStatus === 'archived'
+  const isDraft = eventStatus === 'draft';
+  const isLocked = eventStatus === 'published' || eventStatus === 'archived';
 
   async function handleDelete(fieldId: string, fieldLabel: string) {
     try {
-      await deleteMutation.mutateAsync({ fieldId, eventId })
-      toast.success(`"${fieldLabel}" removed.`)
+      await deleteMutation.mutateAsync({ fieldId, eventId });
+      toast.success(`"${fieldLabel}" removed.`);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to remove field. Please try again.'
-      toast.error(message)
+        error instanceof Error ? error.message : 'Failed to remove field. Please try again.';
+      toast.error(message);
     } finally {
-      setDeletingFieldId(null)
+      setDeletingFieldId(null);
     }
   }
 
   async function handleMove(index: number, direction: 'up' | 'down') {
-    const swapIndex = direction === 'up' ? index - 1 : index + 1
-    if (swapIndex < 0 || swapIndex >= fields.length) return
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= fields.length) return;
 
-    const newOrder = [...fields]
-    ;[newOrder[index], newOrder[swapIndex]] = [newOrder[swapIndex], newOrder[index]]
+    const newOrder = [...fields];
+    [newOrder[index], newOrder[swapIndex]] = [newOrder[swapIndex], newOrder[index]];
 
     try {
       await reorderMutation.mutateAsync({
         event_id: eventId,
         orderedIds: newOrder.map((f) => f.id),
-      })
+      });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to reorder fields. Please try again.'
-      toast.error(message)
+        error instanceof Error ? error.message : 'Failed to reorder fields. Please try again.';
+      toast.error(message);
     }
   }
 
@@ -94,10 +96,10 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
           </p>
         )}
       </div>
-    )
+    );
   }
 
-  const deletingField = fields.find((f) => f.id === deletingFieldId)
+  const deletingField = fields.find((f) => f.id === deletingFieldId);
 
   return (
     <>
@@ -224,10 +226,10 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
         confirmVariant="destructive"
         isPending={deleteMutation.isPending}
         onConfirm={() => {
-          if (deletingField) handleDelete(deletingField.id, deletingField.label)
+          if (deletingField) handleDelete(deletingField.id, deletingField.label);
         }}
         onCancel={() => setDeletingFieldId(null)}
       />
     </>
-  )
+  );
 }

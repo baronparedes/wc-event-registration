@@ -1,13 +1,14 @@
-import type { UseFormRegister, UseFormWatch } from 'react-hook-form'
-import type { CreateEventInput } from '@/lib/domain/events'
-import { FormSelectField } from '@/components/ui/FormSelectField'
-import { SectionCard } from '@/components/ui/SectionCard'
+import type { UseFormRegister, UseFormWatch } from 'react-hook-form';
+
+import { FormSelectField } from '@/components/ui/FormSelectField';
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { CreateEventInput } from '@/lib/domain/events';
 
 type EventRegistrationSettingsSectionProps = {
-  register: UseFormRegister<CreateEventInput>
-  watch?: UseFormWatch<CreateEventInput>
-  disabled?: boolean
-}
+  register: UseFormRegister<CreateEventInput>;
+  watch?: UseFormWatch<CreateEventInput>;
+  disabled?: boolean;
+};
 
 export function EventRegistrationSettingsSection({
   register,
@@ -79,5 +80,5 @@ export function EventRegistrationSettingsSection({
         </div>
       </div>
     </SectionCard>
-  )
+  );
 }

@@ -5,13 +5,13 @@ export type AdminAuditAction =
   | 'archive_event'
   | 'cancel_registration'
   | 'reactivate_registration'
-  | 'export_registrations_csv'
+  | 'export_registrations_csv';
 
-export type AdminAuditResourceType = 'event' | 'registration' | 'export'
+export type AdminAuditResourceType = 'event' | 'registration' | 'export';
 
 export interface AdminAuditPayload {
-  action: AdminAuditAction
-  resourceType: AdminAuditResourceType
-  resourceId?: string
-  metadata?: Record<string, unknown>
+  action: AdminAuditAction;
+  resourceType: AdminAuditResourceType;
+  resourceId?: string;
+  metadata?: Record<string, unknown>;
 }

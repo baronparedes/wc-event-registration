@@ -1,98 +1,98 @@
-import { act, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
-import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery'
+import { faker } from '@faker-js/faker';
+import { act, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useDeleteEventFieldMutation } from '@/hooks/domain/event-fields/mutations/useDeleteEventFieldMutation';
+import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery';
 
 const { mockEventsBuilder, mockDeleteBuilder, mockFrom } = vi.hoisted(() => {
   const eventsBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),
-  }
-  eventsBuilder.select.mockReturnValue(eventsBuilder)
-  eventsBuilder.eq.mockReturnValue(eventsBuilder)
+  };
+  eventsBuilder.select.mockReturnValue(eventsBuilder);
+  eventsBuilder.eq.mockReturnValue(eventsBuilder);
 
   const deleteBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     delete: vi.fn(),
     eq: vi.fn(),
-  }
-  deleteBuilder.delete.mockReturnValue(deleteBuilder)
+  };
+  deleteBuilder.delete.mockReturnValue(deleteBuilder);
 
   const from = vi.fn((table: string) => {
-    if (table === 'events') return eventsBuilder
-    if (table === 'event_fields') return deleteBuilder
-    throw new Error(`Unexpected table: ${table}`)
-  })
+    if (table === 'events') return eventsBuilder;
+    if (table === 'event_fields') return deleteBuilder;
+    throw new Error(`Unexpected table: ${table}`);
+  });
 
-  return { mockEventsBuilder: eventsBuilder, mockDeleteBuilder: deleteBuilder, mockFrom: from }
-})
+  return { mockEventsBuilder: eventsBuilder, mockDeleteBuilder: deleteBuilder, mockFrom: from };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     supabase: {
       from: mockFrom,
     },
-  }
-})
-
-import { useDeleteEventFieldMutation } from '@/hooks/domain/event-fields/mutations/useDeleteEventFieldMutation'
+  };
+});
 
 describe('useDeleteEventFieldMutation', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockDeleteBuilder.eq.mockResolvedValue({ error: null })
-  })
+    vi.clearAllMocks();
+    mockDeleteBuilder.eq.mockResolvedValue({ error: null });
+  });
 
   it('deletes a field for a draft event and invalidates field list', async () => {
-    const fieldId = faker.string.uuid()
-    const eventId = faker.string.uuid()
-    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
+    const fieldId = faker.string.uuid();
+    const eventId = faker.string.uuid();
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null });
 
-    const { result, queryClient } = renderHookWithClient(() => useDeleteEventFieldMutation())
-    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result, queryClient } = renderHookWithClient(() => useDeleteEventFieldMutation());
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await act(async () => {
-      await result.current.mutateAsync({ fieldId, eventId })
-    })
+      await result.current.mutateAsync({ fieldId, eventId });
+    });
 
-    expect(mockDeleteBuilder.delete).toHaveBeenCalled()
+    expect(mockDeleteBuilder.delete).toHaveBeenCalled();
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey(eventId) })
-    })
-  })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey(eventId) });
+    });
+  });
 
   it('rejects deleting a field for non-draft events', async () => {
-    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'archived' }, error: null })
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'archived' }, error: null });
 
-    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
+    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation());
 
     await expect(
       result.current.mutateAsync({ fieldId: faker.string.uuid(), eventId: faker.string.uuid() }),
-    ).rejects.toThrow('Cannot delete fields from a published or archived event')
-  })
+    ).rejects.toThrow('Cannot delete fields from a published or archived event');
+  });
 
   it('throws when loading event status fails', async () => {
-    mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') })
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: null, error: new Error('read failed') });
 
-    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
+    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation());
 
     await expect(
       result.current.mutateAsync({ fieldId: faker.string.uuid(), eventId: faker.string.uuid() }),
-    ).rejects.toThrow('read failed')
-  })
+    ).rejects.toThrow('read failed');
+  });
 
   it('throws when delete operation fails', async () => {
-    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null })
-    mockDeleteBuilder.eq.mockResolvedValueOnce({ error: new Error('delete failed') })
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'draft' }, error: null });
+    mockDeleteBuilder.eq.mockResolvedValueOnce({ error: new Error('delete failed') });
 
-    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation())
+    const { result } = renderHookWithClient(() => useDeleteEventFieldMutation());
 
     await expect(
       result.current.mutateAsync({ fieldId: faker.string.uuid(), eventId: faker.string.uuid() }),
-    ).rejects.toThrow('delete failed')
-  })
-})
+    ).rejects.toThrow('delete failed');
+  });
+});

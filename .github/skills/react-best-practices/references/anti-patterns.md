@@ -10,8 +10,8 @@ A catalog of common mistakes, why they are wrong, and how to fix them.
 
 ```tsx
 // ❌ Wrong
-const [email, setEmail] = useState('')
-;<input value={email} onChange={(e) => setEmail(e.target.value)} />
+const [email, setEmail] = useState('');
+<input value={email} onChange={(e) => setEmail(e.target.value)} />;
 ```
 
 **Fix:** Use React Hook Form's `register()`.
@@ -29,17 +29,17 @@ const [email, setEmail] = useState('')
 
 ```tsx
 // ❌ Wrong
-const [fullName, setFullName] = useState('')
+const [fullName, setFullName] = useState('');
 useEffect(() => {
-  setFullName(`${firstName} ${lastName}`)
-}, [firstName, lastName])
+  setFullName(`${firstName} ${lastName}`);
+}, [firstName, lastName]);
 ```
 
 **Fix:** Derive inline or with `useMemo`.
 
 ```tsx
 // ✅ Correct
-const fullName = `${firstName} ${lastName}`
+const fullName = `${firstName} ${lastName}`;
 ```
 
 ---
@@ -51,7 +51,7 @@ const fullName = `${firstName} ${lastName}`
 ```tsx
 // ❌ Wrong
 if (isAdmin) {
-  const data = useAdminQuery() // violates Rules of Hooks
+  const data = useAdminQuery(); // violates Rules of Hooks
 }
 ```
 
@@ -72,8 +72,8 @@ if (!isAdmin) return null
 ```tsx
 // ❌ Wrong
 useEffect(() => {
-  setTimeout(() => setVisible(false), 3000)
-}, [])
+  setTimeout(() => setVisible(false), 3000);
+}, []);
 ```
 
 **Fix:** Always return a cleanup function that clears local handles.
@@ -81,9 +81,9 @@ useEffect(() => {
 ```tsx
 // ✅ Correct
 useEffect(() => {
-  const id = setTimeout(() => setVisible(false), 3000)
-  return () => clearTimeout(id)
-}, [])
+  const id = setTimeout(() => setVisible(false), 3000);
+  return () => clearTimeout(id);
+}, []);
 ```
 
 ---
@@ -120,7 +120,7 @@ useEffect(() => {
 ```tsx
 // ❌ Wrong
 try {
-  await submit()
+  await submit();
 } catch {
   // nothing
 }
@@ -131,10 +131,10 @@ try {
 ```tsx
 // ✅ Correct
 try {
-  await submit()
+  await submit();
 } catch (err) {
-  logger.error('Submit failed', err)
-  toast.error('Something went wrong. Please try again.')
+  logger.error('Submit failed', err);
+  toast.error('Something went wrong. Please try again.');
 }
 ```
 
@@ -146,15 +146,15 @@ try {
 
 ```tsx
 // ❌ Wrong
-const { data } = useEventsQuery()
-const [events, setEvents] = useState(data) // stale after refetch
+const { data } = useEventsQuery();
+const [events, setEvents] = useState(data); // stale after refetch
 ```
 
 **Fix:** Read directly from the query result; do not copy to local state.
 
 ```tsx
 // ✅ Correct
-const { data: events, isLoading } = useEventsQuery()
+const { data: events, isLoading } = useEventsQuery();
 ```
 
 ---
@@ -172,8 +172,8 @@ const { data: events, isLoading } = useEventsQuery()
 
 ```tsx
 // ✅ Correct
-const chartOptions = { animate: true } // outside component or useMemo
-;<Chart options={chartOptions} />
+const chartOptions = { animate: true }; // outside component or useMemo
+<Chart options={chartOptions} />;
 ```
 
 ---
@@ -184,14 +184,14 @@ const chartOptions = { animate: true } // outside component or useMemo
 
 ```tsx
 // ❌ Wrong
-const data = response as UserProfile // assumes shape without validation
+const data = response as UserProfile; // assumes shape without validation
 ```
 
 **Fix:** Use Zod to validate external data at the boundary; derive types with `z.infer`.
 
 ```tsx
 // ✅ Correct
-const result = UserProfileSchema.safeParse(response)
-if (!result.success) throw new Error('Invalid profile shape')
-const data: UserProfile = result.data
+const result = UserProfileSchema.safeParse(response);
+if (!result.success) throw new Error('Invalid profile shape');
+const data: UserProfile = result.data;
 ```

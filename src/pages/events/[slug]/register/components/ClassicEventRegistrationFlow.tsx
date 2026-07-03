@@ -4,8 +4,9 @@ import {
   LockedGateCard,
   MemberLookupStepCard,
   ProfileStepCard,
-} from '@/pages/events/[slug]/register/components'
-import { useEventRegistrationPageState } from '../hooks'
+} from '@/pages/events/[slug]/register/components';
+
+import { useEventRegistrationPageState } from '../hooks';
 
 export function ClassicEventRegistrationFlow() {
   const {
@@ -32,7 +33,7 @@ export function ClassicEventRegistrationFlow() {
     handleCancelUpdate,
     isRegistrationBlockedForCurrentFlow,
     shouldFadeBlockedRegistrationState,
-  } = useEventRegistrationPageState('classic')
+  } = useEventRegistrationPageState('classic');
 
   return (
     <section className="mx-auto max-w-3xl space-y-6">
@@ -103,5 +104,5 @@ export function ClassicEventRegistrationFlow() {
         <LockedGateCard />
       )}
     </section>
-  )
+  );
 }

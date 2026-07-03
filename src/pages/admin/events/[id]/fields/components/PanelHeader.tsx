@@ -1,7 +1,7 @@
 type PanelHeaderProps = {
-  isEditing: boolean
-  onClose: () => void
-}
+  isEditing: boolean;
+  onClose: () => void;
+};
 
 /** Panel header with title and close button. */
 export function PanelHeader({ isEditing, onClose }: PanelHeaderProps) {
@@ -27,5 +27,5 @@ export function PanelHeader({ isEditing, onClose }: PanelHeaderProps) {
         </svg>
       </button>
     </div>
-  )
+  );
 }

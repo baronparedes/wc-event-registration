@@ -1,14 +1,15 @@
-import { z } from 'zod'
-import { VALIDATION_PATTERNS } from '@/config/constants'
+import { z } from 'zod';
 
-const slugRegex = VALIDATION_PATTERNS.eventSlug
+import { VALIDATION_PATTERNS } from '@/config/constants';
+
+const slugRegex = VALIDATION_PATTERNS.eventSlug;
 
 function applyDateRangeChecks(
   data: {
-    starts_at?: string
-    ends_at?: string
-    registration_opens_at?: string
-    registration_closes_at?: string
+    starts_at?: string;
+    ends_at?: string;
+    registration_opens_at?: string;
+    registration_closes_at?: string;
   },
   ctx: z.RefinementCtx,
 ) {
@@ -17,7 +18,7 @@ function applyDateRangeChecks(
       code: z.ZodIssueCode.custom,
       message: 'Event end must be after event start',
       path: ['ends_at'],
-    })
+    });
   }
   if (
     data.registration_opens_at &&
@@ -28,7 +29,7 @@ function applyDateRangeChecks(
       code: z.ZodIssueCode.custom,
       message: 'Registration close must be after registration open',
       path: ['registration_closes_at'],
-    })
+    });
   }
 }
 
@@ -52,9 +53,9 @@ export const createEventSchema = z
     allow_name_lookup: z.boolean().optional(),
     allow_public_registrations: z.boolean().optional(),
   })
-  .superRefine(applyDateRangeChecks)
+  .superRefine(applyDateRangeChecks);
 
-export type CreateEventInput = z.infer<typeof createEventSchema>
+export type CreateEventInput = z.infer<typeof createEventSchema>;
 
 export const updateEventSchema = z
   .object({
@@ -71,9 +72,9 @@ export const updateEventSchema = z
     allow_name_lookup: z.boolean().optional(),
     allow_public_registrations: z.boolean().optional(),
   })
-  .superRefine(applyDateRangeChecks)
+  .superRefine(applyDateRangeChecks);
 
-export type UpdateEventInput = z.infer<typeof updateEventSchema>
+export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 
 /**
  * Validation schema for publishing an event.
@@ -101,6 +102,6 @@ export const publishEventSchema = z
     duplicate_policy: z.enum(['block', 'allow_update']),
     registration_mode: z.enum(['open', 'closed']),
   })
-  .superRefine(applyDateRangeChecks)
+  .superRefine(applyDateRangeChecks);
 
-export type PublishEventInput = z.infer<typeof publishEventSchema>
+export type PublishEventInput = z.infer<typeof publishEventSchema>;

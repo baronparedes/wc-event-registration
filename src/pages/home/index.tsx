@@ -1,15 +1,17 @@
-import { Skeleton } from '@/components/ui/Skeleton'
-import { EmptyState } from '@/components/ui'
-import { usePublicEventListingQuery } from '@/hooks/domain/events'
-import { EventSection } from './components'
-import { Calendar } from 'lucide-react'
+import { Calendar } from 'lucide-react';
+
+import { EmptyState } from '@/components/ui';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { usePublicEventListingQuery } from '@/hooks/domain/events';
+
+import { EventSection } from './components';
 
 export function HomePage() {
-  const { data: events, isLoading, isError } = usePublicEventListingQuery()
+  const { data: events, isLoading, isError } = usePublicEventListingQuery();
 
-  const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? []
-  const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? []
-  const pastEvents = events?.filter((e) => e.listingStatus === 'past') ?? []
+  const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? [];
+  const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? [];
+  const pastEvents = events?.filter((e) => e.listingStatus === 'past') ?? [];
 
   return (
     <section className="relative space-y-10">
@@ -67,5 +69,5 @@ export function HomePage() {
       <EventSection events={upcomingEvents} title="Upcoming" />
       <EventSection events={pastEvents} title="Past 3 Months" />
     </section>
-  )
+  );
 }

@@ -1,17 +1,19 @@
-import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
-import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants'
-import { AdminPageShell } from '@/components/layout'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { Button } from '@/components/ui/Button'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { SectionCard } from '@/components/ui/SectionCard'
-import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members'
-import { updateMemberSchema } from '@/lib/domain/members'
-import { useAdminMemberQuery, useUpdateMemberMutation } from '@/hooks/domain/members'
+import { useEffect } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { AdminPageShell } from '@/components/layout';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { Button } from '@/components/ui/Button';
+import { FormInputField } from '@/components/ui/FormInputField';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
+import { useAdminMemberQuery, useUpdateMemberMutation } from '@/hooks/domain/members';
+import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
+import { updateMemberSchema } from '@/lib/domain/members';
 
 const DEFAULT_VALUES: UpdateMemberInput = {
   full_name: '',
@@ -23,7 +25,7 @@ const DEFAULT_VALUES: UpdateMemberInput = {
   date_of_birth: '',
   role: '',
   category: '',
-}
+};
 
 function toFormValues(member: AdminMember): UpdateMemberInput {
   return {
@@ -36,15 +38,15 @@ function toFormValues(member: AdminMember): UpdateMemberInput {
     date_of_birth: member.date_of_birth ?? '',
     role: member.role,
     category: member.category,
-  }
+  };
 }
 
 export function AdminMemberDetailPage() {
-  const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
-  const memberQuery = useAdminMemberQuery(id)
-  const updateMemberMutation = useUpdateMemberMutation()
+  const memberQuery = useAdminMemberQuery(id);
+  const updateMemberMutation = useUpdateMemberMutation();
 
   const {
     register,
@@ -54,23 +56,23 @@ export function AdminMemberDetailPage() {
   } = useForm<UpdateMemberInput>({
     resolver: zodResolver(updateMemberSchema),
     defaultValues: DEFAULT_VALUES,
-  })
+  });
 
   useEffect(() => {
     if (memberQuery.data) {
-      reset(toFormValues(memberQuery.data))
+      reset(toFormValues(memberQuery.data));
     }
-  }, [memberQuery.data, reset])
+  }, [memberQuery.data, reset]);
 
   async function onSubmit(values: UpdateMemberInput) {
-    if (!id) return
+    if (!id) return;
 
     try {
-      await updateMemberMutation.mutateAsync({ id, ...values })
-      toast.success(TOAST_MESSAGES.member.updated)
-      navigate(ROUTE_PATHS.adminMembers)
+      await updateMemberMutation.mutateAsync({ id, ...values });
+      toast.success(TOAST_MESSAGES.member.updated);
+      navigate(ROUTE_PATHS.adminMembers);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : TOAST_MESSAGES.member.updateFailed)
+      toast.error(error instanceof Error ? error.message : TOAST_MESSAGES.member.updateFailed);
     }
   }
 
@@ -82,7 +84,7 @@ export function AdminMemberDetailPage() {
           <p className="text-sm text-red-600">Member ID is missing.</p>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
   if (memberQuery.isLoading) {
@@ -92,7 +94,7 @@ export function AdminMemberDetailPage() {
           {null}
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
   if (memberQuery.isError || !memberQuery.data) {
@@ -103,10 +105,10 @@ export function AdminMemberDetailPage() {
           <p className="text-sm text-red-600">{UI_MESSAGES.errors.memberNotFound}</p>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
-  const member = memberQuery.data
+  const member = memberQuery.data;
 
   return (
     <AdminPageShell>
@@ -210,5 +212,5 @@ export function AdminMemberDetailPage() {
         </SectionCard>
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

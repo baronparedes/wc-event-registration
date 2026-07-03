@@ -1,19 +1,23 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
-import type { AdminRegistrationDetail, RegistrationFieldResponse } from '@/lib/domain/registrations'
-import type { EventFieldType } from '@/lib/domain/event-fields'
+import { useQuery } from '@tanstack/react-query';
+
+import type { EventFieldType } from '@/lib/domain/event-fields';
+import type {
+  AdminRegistrationDetail,
+  RegistrationFieldResponse,
+} from '@/lib/domain/registrations';
+import { supabase } from '@/lib/infrastructure';
 
 type UserMetadata = {
-  role?: unknown
-  category?: unknown
-}
+  role?: unknown;
+  category?: unknown;
+};
 
 function readMetadataString(value: unknown): string {
-  return typeof value === 'string' ? value : ''
+  return typeof value === 'string' ? value : '';
 }
 
 export const REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
-  ['registration-detail', registrationId] as const
+  ['registration-detail', registrationId] as const;
 
 /**
  * Fetches a single registration with full details including member info and all field responses.
@@ -28,22 +32,22 @@ export function useRegistrationDetailQuery(registrationId: string) {
         .from('registrations')
         .select('id, event_id, user_id, status, submitted_at, updated_at')
         .eq('id', registrationId)
-        .single()
+        .single();
 
-      if (regError) throw new Error('Registration not found')
-      if (!registration) throw new Error('Registration not found')
+      if (regError) throw new Error('Registration not found');
+      if (!registration) throw new Error('Registration not found');
 
       // Fetch user details
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('id, member_id, full_name, email, phone, nickname, metadata')
         .eq('id', registration.user_id)
-        .single()
+        .single();
 
-      if (userError) throw new Error('Member not found')
-      if (!user) throw new Error('Member not found')
+      if (userError) throw new Error('Member not found');
+      if (!user) throw new Error('Member not found');
 
-      const metadata = (user.metadata as UserMetadata | null | undefined) ?? null
+      const metadata = (user.metadata as UserMetadata | null | undefined) ?? null;
 
       // Fetch field responses with field metadata
       const { data: answers, error: answerError } = await supabase
@@ -51,38 +55,38 @@ export function useRegistrationDetailQuery(registrationId: string) {
         .select(
           'id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order)',
         )
-        .eq('registration_id', registrationId)
+        .eq('registration_id', registrationId);
 
-      if (answerError) throw answerError
+      if (answerError) throw answerError;
 
       // Type for answer with joined field metadata
       type AnswerWithFields = (typeof answers)[number] & {
         event_fields: {
-          id: string
-          field_key: string
-          label: string
-          field_type: string
-          display_order: number
-        } | null
-      }
+          id: string;
+          field_key: string;
+          label: string;
+          field_type: string;
+          display_order: number;
+        } | null;
+      };
 
       // Transform answers into readable format
       const fieldResponses: RegistrationFieldResponse[] = ((answers as AnswerWithFields[]) ?? [])
         .sort((a, b) => {
-          const aOrder = a.event_fields?.display_order ?? 0
-          const bOrder = b.event_fields?.display_order ?? 0
-          return aOrder - bOrder
+          const aOrder = a.event_fields?.display_order ?? 0;
+          const bOrder = b.event_fields?.display_order ?? 0;
+          return aOrder - bOrder;
         })
         .map((answer) => {
-          const ef = answer.event_fields
-          const fieldType = ef?.field_type
+          const ef = answer.event_fields;
+          const fieldType = ef?.field_type;
 
           // All answers are stored in answer_text (possibly as JSON for complex types)
-          let answerValue: string | number | boolean | string[] | null
-          const rawAnswer = answer.answer_text
+          let answerValue: string | number | boolean | string[] | null;
+          const rawAnswer = answer.answer_text;
 
           if (!rawAnswer) {
-            answerValue = null
+            answerValue = null;
           } else if (
             fieldType === 'select' ||
             fieldType === 'radio' ||
@@ -92,24 +96,24 @@ export function useRegistrationDetailQuery(registrationId: string) {
           ) {
             // These are stored as JSON strings in answer_text
             try {
-              answerValue = JSON.parse(rawAnswer)
+              answerValue = JSON.parse(rawAnswer);
             } catch {
               // If not valid JSON, treat as string
-              answerValue = rawAnswer
+              answerValue = rawAnswer;
             }
           } else if (fieldType === 'number') {
             // Try to parse as number
-            const num = Number(rawAnswer)
-            answerValue = isNaN(num) ? rawAnswer : num
+            const num = Number(rawAnswer);
+            answerValue = isNaN(num) ? rawAnswer : num;
           } else if (fieldType === 'boolean') {
             // Parse as boolean
-            answerValue = rawAnswer === 'true' || rawAnswer === '1' || rawAnswer === true
+            answerValue = rawAnswer === 'true' || rawAnswer === '1' || rawAnswer === true;
           } else if (fieldType === 'date' || fieldType === 'datetime') {
             // Already a string, keep as-is
-            answerValue = rawAnswer
+            answerValue = rawAnswer;
           } else {
             // Default: treat as string
-            answerValue = rawAnswer
+            answerValue = rawAnswer;
           }
 
           return {
@@ -118,8 +122,8 @@ export function useRegistrationDetailQuery(registrationId: string) {
             field_label: ef?.label ?? '',
             field_type: (fieldType ?? 'text') as EventFieldType,
             answer: answerValue,
-          }
-        })
+          };
+        });
 
       return {
         registration: {
@@ -141,8 +145,8 @@ export function useRegistrationDetailQuery(registrationId: string) {
           category: readMetadataString(metadata?.category),
         },
         fieldResponses,
-      }
+      };
     },
     staleTime: 0,
-  })
+  });
 }

@@ -9,7 +9,7 @@ export type {
   PublicEventFieldValidationRules,
   EventFieldConfigValidationResult,
   DynamicFieldResponseValues,
-} from './types'
+} from './types';
 
 export type {
   EventFieldTypeEnum,
@@ -17,19 +17,19 @@ export type {
   CreateEventFieldInput,
   UpdateEventFieldInput,
   ReorderEventFieldsInput,
-} from './schemas'
+} from './schemas';
 
-export type { PublishedEditableField } from './metadata'
-export type { EventFieldFormValues } from './transforms'
+export type { PublishedEditableField } from './metadata';
+export type { EventFieldFormValues } from './transforms';
 
-export { validatePublicEventFieldConfig } from './validation'
+export { validatePublicEventFieldConfig } from './validation';
 export {
   normalizeDynamicFieldAnswersForPreview,
   DEFAULT_FIELD_FORM_VALUES,
   fieldToFormValues,
   toValidationRules,
   createDynamicFieldDefaultValues,
-} from './transforms'
+} from './transforms';
 export {
   FIELD_TYPES,
   buildDynamicFieldResponseSchema,
@@ -37,7 +37,7 @@ export {
   updateEventFieldSchema,
   reorderEventFieldsSchema,
   eventFieldFormSchema,
-} from './schemas'
+} from './schemas';
 export {
   FIELD_TYPE_LABELS,
   PUBLISHED_EDITABLE_FIELDS,
@@ -47,4 +47,4 @@ export {
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
-} from './metadata'
+} from './metadata';

@@ -1,9 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { useForm } from 'react-hook-form'
-import { describe, expect, it, vi } from 'vitest'
-import { DynamicFieldsStepCard } from '../index'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
-import type { MemberLookupProfile } from '@/lib/domain/members'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useForm } from 'react-hook-form';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { MemberLookupProfile } from '@/lib/domain/members';
+
+import { DynamicFieldsStepCard } from '../index';
 
 const matchedMember: MemberLookupProfile = {
   user_id: 'user-1',
@@ -12,7 +14,7 @@ const matchedMember: MemberLookupProfile = {
   nickname: null,
   first_name: 'Jane',
   last_name: 'Doe',
-}
+};
 
 const baseFields: PublicEventField[] = [
   {
@@ -209,7 +211,7 @@ const baseFields: PublicEventField[] = [
     validation_rules: {},
     display_order: 12,
   },
-]
+];
 
 function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsStepCard>>) {
   function Harness() {
@@ -229,7 +231,7 @@ function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsSte
         terms: false,
         terms_duplicate: false,
       },
-    })
+    });
 
     return (
       <DynamicFieldsStepCard
@@ -241,114 +243,114 @@ function renderCard(props?: Partial<React.ComponentProps<typeof DynamicFieldsSte
         dynamicForm={dynamicForm}
         onSubmit={props?.onSubmit ?? vi.fn()}
         fieldErrorMessage={(fieldKey) => {
-          const maybeError = dynamicForm.formState.errors[fieldKey]
-          return typeof maybeError?.message === 'string' ? maybeError.message : undefined
+          const maybeError = dynamicForm.formState.errors[fieldKey];
+          return typeof maybeError?.message === 'string' ? maybeError.message : undefined;
         }}
         isSubmitPending={false}
         submitErrorMessage={null}
         submitSuccessMessage={null}
         {...props}
       />
-    )
+    );
   }
 
-  return render(<Harness />)
+  return render(<Harness />);
 }
 
 describe('DynamicFieldsStepCard', () => {
   it('renders the loading, error, no-fields note, and locked branches', () => {
-    const loading = renderCard({ isLoadingFields: true })
+    const loading = renderCard({ isLoadingFields: true });
 
-    expect(loading.container.querySelector('[aria-hidden="true"]')).toBeTruthy()
-    loading.unmount()
+    expect(loading.container.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    loading.unmount();
 
     const issues = renderCard({
       isLoadingFields: false,
       isFieldsError: true,
       fieldConfigIssues: ['Bad field config'],
       activeFields: [],
-    })
+    });
 
     expect(
       screen.getByText('We could not load your form right now. Please try Step 1 again.'),
-    ).toBeInTheDocument()
-    expect(screen.getByText('Some questions could not be shown right now.')).toBeInTheDocument()
-    expect(screen.getByText('Bad field config')).toBeInTheDocument()
-    issues.unmount()
+    ).toBeInTheDocument();
+    expect(screen.getByText('Some questions could not be shown right now.')).toBeInTheDocument();
+    expect(screen.getByText('Bad field config')).toBeInTheDocument();
+    issues.unmount();
 
-    const empty = renderCard({ activeFields: [], isLoadingFields: false })
+    const empty = renderCard({ activeFields: [], isLoadingFields: false });
     expect(
       screen.getByText('Tap "Submit Registration" to confirm your attendance for this event.'),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Submit Registration' })).toBeInTheDocument()
-    empty.unmount()
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit Registration' })).toBeInTheDocument();
+    empty.unmount();
 
     renderCard({
       isLocked: true,
       lockedMessage: 'Already registered',
       activeFields: [],
-    })
+    });
 
-    expect(screen.getByText('Already registered')).toBeInTheDocument()
-    expect(screen.getByText('Please complete Step 1 to continue.')).toBeInTheDocument()
-  })
+    expect(screen.getByText('Already registered')).toBeInTheDocument();
+    expect(screen.getByText('Please complete Step 1 to continue.')).toBeInTheDocument();
+  });
 
   it('submits entered dynamic field values for a matched member', async () => {
-    const onSubmit = vi.fn()
+    const onSubmit = vi.fn();
 
-    renderCard({ onSubmit })
+    renderCard({ onSubmit });
 
     act(() => {
       fireEvent.change(screen.getByLabelText('Team Name *'), {
         target: { value: 'A-Team' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Notes'), {
         target: { value: 'Bring snacks' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Age'), {
         target: { value: '42' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Email'), {
         target: { value: 'team@example.com' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Phone'), {
         target: { value: '555-0100' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Start Date'), {
         target: { value: '2026-06-23' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Start Time'), {
         target: { value: '2026-06-23T10:00' },
-      })
+      });
       fireEvent.change(screen.getByLabelText('Meal Choice'), {
         target: { value: 'vegetarian' },
-      })
-      fireEvent.click(screen.getByLabelText('Small'))
-      fireEvent.click(screen.getByLabelText('Run'))
-      fireEvent.click(screen.getByLabelText('9AM, with Breakfast'))
-      fireEvent.click(screen.getByRole('button', { name: '9AM, with Breakfast - Yes' }))
-      fireEvent.click(screen.getByLabelText('I agree to the event terms.'))
-      fireEvent.click(screen.getByLabelText('I agree again.'))
-    })
+      });
+      fireEvent.click(screen.getByLabelText('Small'));
+      fireEvent.click(screen.getByLabelText('Run'));
+      fireEvent.click(screen.getByLabelText('9AM, with Breakfast'));
+      fireEvent.click(screen.getByRole('button', { name: '9AM, with Breakfast - Yes' }));
+      fireEvent.click(screen.getByLabelText('I agree to the event terms.'));
+      fireEvent.click(screen.getByLabelText('I agree again.'));
+    });
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Submit Registration' }))
-    })
+      fireEvent.click(screen.getByRole('button', { name: 'Submit Registration' }));
+    });
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled()
-    })
-    expect(screen.getByLabelText('Notes')).toHaveValue('Bring snacks')
-    expect(screen.getByLabelText('Age')).toHaveValue(42)
-    expect(screen.getByLabelText('Email')).toHaveValue('team@example.com')
-    expect(screen.getByLabelText('Phone')).toHaveValue('555-0100')
-    expect(screen.getByLabelText('Meal Choice')).toHaveValue('vegetarian')
-    expect(screen.getByLabelText('Small')).toBeChecked()
-    expect(screen.getByLabelText('Run')).toBeChecked()
-    expect(screen.getByLabelText('9AM, with Breakfast')).toBeChecked()
-    expect(screen.getByLabelText('I agree to the event terms.')).toBeChecked()
-    expect(screen.getByLabelText('I agree again.')).toBeChecked()
-  })
+      expect(onSubmit).toHaveBeenCalled();
+    });
+    expect(screen.getByLabelText('Notes')).toHaveValue('Bring snacks');
+    expect(screen.getByLabelText('Age')).toHaveValue(42);
+    expect(screen.getByLabelText('Email')).toHaveValue('team@example.com');
+    expect(screen.getByLabelText('Phone')).toHaveValue('555-0100');
+    expect(screen.getByLabelText('Meal Choice')).toHaveValue('vegetarian');
+    expect(screen.getByLabelText('Small')).toBeChecked();
+    expect(screen.getByLabelText('Run')).toBeChecked();
+    expect(screen.getByLabelText('9AM, with Breakfast')).toBeChecked();
+    expect(screen.getByLabelText('I agree to the event terms.')).toBeChecked();
+    expect(screen.getByLabelText('I agree again.')).toBeChecked();
+  });
 
   it('renders pending state and surfaced submit messages', () => {
     renderCard({
@@ -356,32 +358,32 @@ describe('DynamicFieldsStepCard', () => {
       submitErrorMessage: 'Server error',
       submitSuccessMessage: 'Registration submitted successfully.',
       submitButtonLabel: 'Update Registration',
-    })
+    });
 
-    expect(screen.getByRole('button', { name: 'Update Registration...' })).toBeDisabled()
-    expect(screen.getByText('We could not submit your registration')).toBeInTheDocument()
-    expect(screen.getByText('Server error')).toBeInTheDocument()
-    expect(screen.getByText('You are all set!')).toBeInTheDocument()
-    expect(screen.getByText('Registration submitted successfully.')).toBeInTheDocument()
-  })
+    expect(screen.getByRole('button', { name: 'Update Registration...' })).toBeDisabled();
+    expect(screen.getByText('We could not submit your registration')).toBeInTheDocument();
+    expect(screen.getByText('Server error')).toBeInTheDocument();
+    expect(screen.getByText('You are all set!')).toBeInTheDocument();
+    expect(screen.getByText('Registration submitted successfully.')).toBeInTheDocument();
+  });
 
   it('allows submission when there are no dynamic fields', async () => {
-    const onSubmit = vi.fn()
+    const onSubmit = vi.fn();
 
     renderCard({
       activeFields: [],
       isLoadingFields: false,
       onSubmit,
-    })
+    });
 
     expect(
       screen.getByText('Tap "Submit Registration" to confirm your attendance for this event.'),
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Submit Registration' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Registration' }));
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled()
-    })
-  })
-})
+      expect(onSubmit).toHaveBeenCalled();
+    });
+  });
+});

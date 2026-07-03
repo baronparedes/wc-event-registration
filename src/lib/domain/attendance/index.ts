@@ -6,20 +6,20 @@ export type {
   WalkInPayload,
   AttendanceSlotPayload,
   TimeslotAttendanceRecord,
-} from './types'
+} from './types';
 
 export type {
   AttendanceSettingsInput,
   UpdateAttendanceSettingsInput,
   WalkInPayloadInput,
   AttendanceSlotPayloadInput,
-} from './schemas'
+} from './schemas';
 
-export { ATTENDEE_KINDS, CHECK_IN_STATUSES, CHECK_IN_STATUS_LABELS } from './metadata'
+export { ATTENDEE_KINDS, CHECK_IN_STATUSES, CHECK_IN_STATUS_LABELS } from './metadata';
 export {
   attendanceSettingsSchema,
   updateAttendanceSettingsSchema,
   walkInPayloadSchema,
   attendanceSlotPayloadSchema,
   buildTimeslotSelectionSchema,
-} from './schemas'
+} from './schemas';

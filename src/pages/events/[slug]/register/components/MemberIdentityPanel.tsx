@@ -1,13 +1,13 @@
-import type { MemberLookupProfile } from '@/lib/domain/members'
+import type { MemberLookupProfile } from '@/lib/domain/members';
 
 type MemberIdentityPanelProps = {
-  matchedMember: MemberLookupProfile
-}
+  matchedMember: MemberLookupProfile;
+};
 
 type MemberDetailRowProps = {
-  label: string
-  value: string | null
-}
+  label: string;
+  value: string | null;
+};
 
 function MemberDetailRow({ label, value }: MemberDetailRowProps) {
   return (
@@ -17,7 +17,7 @@ function MemberDetailRow({ label, value }: MemberDetailRowProps) {
         {value ? value : 'Not set'}
       </dd>
     </div>
-  )
+  );
 }
 
 export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps) {
@@ -28,5 +28,5 @@ export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps)
       <MemberDetailRow label="First name" value={matchedMember.first_name} />
       <MemberDetailRow label="Last name" value={matchedMember.last_name} />
     </dl>
-  )
+  );
 }

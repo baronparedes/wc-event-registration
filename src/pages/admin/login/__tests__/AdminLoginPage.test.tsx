@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AdminLoginPage } from '@/pages/admin/login';
 
 const {
   mockNavigate,
@@ -15,125 +17,123 @@ const {
   mockLoginMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
-}))
+}));
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-  }
-})
+  };
+});
 
 vi.mock('sonner', () => ({
   toast: {
     success: mockToastSuccess,
     error: mockToastError,
   },
-}))
+}));
 
 vi.mock('@/hooks/domain/auth', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth')
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
     useAdminAuthQuery: () => mockUseAdminAuthQuery(),
     useAdminLoginMutation: () => mockUseAdminLoginMutation(),
-  }
-})
-
-import { AdminLoginPage } from '@/pages/admin/login'
+  };
+});
 
 describe('AdminLoginPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
     mockUseAdminAuthQuery.mockReturnValue({
       data: { isAuthenticated: false },
       isLoading: false,
-    })
-    mockLoginMutateAsync.mockResolvedValue({ isAuthenticated: true })
+    });
+    mockLoginMutateAsync.mockResolvedValue({ isAuthenticated: true });
     mockUseAdminLoginMutation.mockReturnValue({
       mutateAsync: mockLoginMutateAsync,
       isPending: false,
-    })
-  })
+    });
+  });
 
   it('submits admin credentials and navigates on success', async () => {
-    render(<AdminLoginPage />)
+    render(<AdminLoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
-    })
+    });
     fireEvent.change(screen.getByLabelText('Password *'), {
       target: { value: 'secret' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
 
     await waitFor(() => {
       expect(mockLoginMutateAsync).toHaveBeenCalledWith({
         email: 'admin@example.com',
         password: 'secret',
-      })
-    })
+      });
+    });
 
-    expect(mockToastSuccess).toHaveBeenCalledWith('Welcome back. Admin access granted.')
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true })
-  })
+    expect(mockToastSuccess).toHaveBeenCalledWith('Welcome back. Admin access granted.');
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
+  });
 
   it('redirects authenticated admins immediately', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: { isAuthenticated: true },
       isLoading: false,
-    })
+    });
 
-    render(<AdminLoginPage />)
+    render(<AdminLoginPage />);
 
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true })
-  })
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
+  });
 
   it('shows API error message when login fails with an Error instance', async () => {
-    mockLoginMutateAsync.mockRejectedValueOnce(new Error('Invalid credentials'))
+    mockLoginMutateAsync.mockRejectedValueOnce(new Error('Invalid credentials'));
 
-    render(<AdminLoginPage />)
+    render(<AdminLoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
-    })
+    });
     fireEvent.change(screen.getByLabelText('Password *'), {
       target: { value: 'wrong' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('Invalid credentials')
-    })
-  })
+      expect(mockToastError).toHaveBeenCalledWith('Invalid credentials');
+    });
+  });
 
   it('falls back to default error toast for non-Error rejections', async () => {
-    mockLoginMutateAsync.mockRejectedValueOnce('bad response')
+    mockLoginMutateAsync.mockRejectedValueOnce('bad response');
 
-    render(<AdminLoginPage />)
+    render(<AdminLoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
-    })
+    });
     fireEvent.change(screen.getByLabelText('Password *'), {
       target: { value: 'wrong' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('Failed to sign in as admin.')
-    })
-  })
+      expect(mockToastError).toHaveBeenCalledWith('Failed to sign in as admin.');
+    });
+  });
 
   it('renders pending submit state while login mutation is in-flight', () => {
     mockUseAdminLoginMutation.mockReturnValue({
       mutateAsync: mockLoginMutateAsync,
       isPending: true,
-    })
+    });
 
-    render(<AdminLoginPage />)
+    render(<AdminLoginPage />);
 
-    expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled()
-  })
-})
+    expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled();
+  });
+});

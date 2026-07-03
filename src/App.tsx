@@ -1,12 +1,14 @@
-import { BrowserRouter } from 'react-router-dom'
-import { Toaster } from 'sonner'
-import { useIsMobileViewport } from '@/hooks/utils'
-import { AppProviders } from './app/providers/AppProviders'
-import { AppRouter } from './app/router'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { BrowserRouter } from 'react-router-dom';
+import { Toaster } from 'sonner';
+
+import { useIsMobileViewport } from '@/hooks/utils';
+
+import { AppProviders } from './app/providers/AppProviders';
+import { AppRouter } from './app/router';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
-  const isMobileToastLayout = useIsMobileViewport()
+  const isMobileToastLayout = useIsMobileViewport();
 
   return (
     <ErrorBoundary>
@@ -36,7 +38,7 @@ function App() {
         </BrowserRouter>
       </AppProviders>
     </ErrorBoundary>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -1,13 +1,13 @@
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button';
 
 type PanelFooterProps = {
-  isFullyLocked: boolean
-  isEditing: boolean
-  canSave: boolean
-  isPending: boolean
-  disabledHint: string | null
-  onClose: () => void
-}
+  isFullyLocked: boolean;
+  isEditing: boolean;
+  canSave: boolean;
+  isPending: boolean;
+  disabledHint: string | null;
+  onClose: () => void;
+};
 
 /** Form footer with cancel and save buttons. */
 export function PanelFooter({
@@ -18,7 +18,7 @@ export function PanelFooter({
   disabledHint,
   onClose,
 }: PanelFooterProps) {
-  const showDisabledHint = !canSave && !isFullyLocked && Boolean(disabledHint)
+  const showDisabledHint = !canSave && !isFullyLocked && Boolean(disabledHint);
 
   return (
     <div className="border-t border-border pt-4">
@@ -39,5 +39,5 @@ export function PanelFooter({
         )}
       </div>
     </div>
-  )
+  );
 }

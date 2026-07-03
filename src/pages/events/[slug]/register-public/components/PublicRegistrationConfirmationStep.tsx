@@ -1,13 +1,14 @@
-import { CheckCircle2 } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { toEventRegistration } from '@/config/constants'
+import { CheckCircle2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/Button';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { toEventRegistration } from '@/config/constants';
 
 type PublicRegistrationConfirmationStepProps = {
-  registrationId: string
-  email: string
-  eventSlug: string
-}
+  registrationId: string;
+  email: string;
+  eventSlug: string;
+};
 
 export function PublicRegistrationConfirmationStep({
   registrationId,
@@ -55,5 +56,5 @@ export function PublicRegistrationConfirmationStep({
         </div>
       </div>
     </SectionCard>
-  )
+  );
 }

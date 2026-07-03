@@ -3,4 +3,4 @@ export {
   useEventRegistrationPageState,
   type RegistrationLayoutVariant,
   type WizardStep,
-} from './useEventRegistrationPageState'
+} from './useEventRegistrationPageState';

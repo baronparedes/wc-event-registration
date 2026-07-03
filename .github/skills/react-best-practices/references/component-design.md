@@ -44,17 +44,17 @@ Prefer composable components over prop-explosion or heavily branched components.
 ```tsx
 // Single-branch: use &&
 {
-  isLoggedIn && <UserMenu />
+  isLoggedIn && <UserMenu />;
 }
 
 // Two-branch: use ternary only when both branches render something
 {
-  isLoading ? <Spinner /> : <Content />
+  isLoading ? <Spinner /> : <Content />;
 }
 
 // Avoid: ternary where one side is null
 {
-  isLoggedIn ? <UserMenu /> : null
+  isLoggedIn ? <UserMenu /> : null;
 } // ❌ use && instead
 ```
 

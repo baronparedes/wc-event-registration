@@ -1,31 +1,34 @@
-import { useState, type RefObject } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { type SubmitHandler, type UseFormReturn } from 'react-hook-form'
-import { Button } from '@/components/ui/Button'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { NameLookupModal } from './NameLookupModal'
-import { MemberLookupMethodSelector } from './MemberLookupMethodSelector'
-import { MemberLookupErrorAlert } from './MemberLookupErrorAlert'
+import { type RefObject, useState } from 'react';
+
+import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+
+import { Button } from '@/components/ui/Button';
+import { SectionCard } from '@/components/ui/SectionCard';
+
+import { MemberLookupErrorAlert } from './MemberLookupErrorAlert';
+import { MemberLookupMethodSelector } from './MemberLookupMethodSelector';
+import { NameLookupModal } from './NameLookupModal';
 
 const baseInputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20';
 
 type MemberLookupStepCardProps = {
-  slug?: string
-  lookupForm: UseFormReturn<{ memberId?: string; name?: string }>
-  onLookupSubmit: SubmitHandler<{ memberId?: string; name?: string }>
-  isLookupPending: boolean
-  lookupErrorMessage: string | null
-  suppressLookupWarning?: boolean
-  memberIdInputRef: RefObject<HTMLInputElement | null>
-  shouldHighlightInput?: boolean
-  onDismissLookupError?: () => void
-  allowNameLookup: boolean
-  allowPublicRegistration?: boolean
-}
+  slug?: string;
+  lookupForm: UseFormReturn<{ memberId?: string; name?: string }>;
+  onLookupSubmit: SubmitHandler<{ memberId?: string; name?: string }>;
+  isLookupPending: boolean;
+  lookupErrorMessage: string | null;
+  suppressLookupWarning?: boolean;
+  memberIdInputRef: RefObject<HTMLInputElement | null>;
+  shouldHighlightInput?: boolean;
+  onDismissLookupError?: () => void;
+  allowNameLookup: boolean;
+  allowPublicRegistration?: boolean;
+};
 
 export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     slug,
     lookupForm,
@@ -38,16 +41,16 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     onDismissLookupError,
     allowNameLookup,
     allowPublicRegistration = false,
-  } = props
+  } = props;
 
-  const { ref: memberIdRef, ...memberIdRest } = lookupForm.register('memberId')
+  const { ref: memberIdRef, ...memberIdRest } = lookupForm.register('memberId');
   const [lookupMethod, setLookupMethod] = useState<'id' | 'name' | null>(
     !allowNameLookup ? 'id' : null,
-  )
+  );
 
   const handleNameLookupSubmit = async (name: string) => {
-    await onLookupSubmit({ memberId: undefined, name })
-  }
+    await onLookupSubmit({ memberId: undefined, name });
+  };
 
   return (
     <>
@@ -102,8 +105,8 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
                 }`}
                 disabled={isLookupPending}
                 ref={(el) => {
-                  memberIdRef(el)
-                  memberIdInputRef.current = el
+                  memberIdRef(el);
+                  memberIdInputRef.current = el;
                 }}
                 {...memberIdRest}
                 autoFocus
@@ -164,5 +167,5 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
         </div>
       )}
     </>
-  )
+  );
 }

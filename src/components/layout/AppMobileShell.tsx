@@ -1,37 +1,40 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { Menu, X } from 'lucide-react'
-import { ROUTE_PATHS, ROUTE_PREFIXES, TOAST_MESSAGES } from '@/config/constants'
-import brandLogo from '@/assets/wc-events-brand.png'
-import { Button } from '../ui/Button'
-import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth'
+import { useState } from 'react';
+
+import { Menu, X } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import brandLogo from '@/assets/wc-events-brand.png';
+import { ROUTE_PATHS, ROUTE_PREFIXES, TOAST_MESSAGES } from '@/config/constants';
+
+import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
+import { Button } from '../ui/Button';
 
 export function AppMobileShell() {
-  const navigate = useNavigate()
-  const { data: adminAuth } = useAdminAuthQuery()
-  const logoutMutation = useAdminLogoutMutation()
-  const location = useLocation()
-  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const navigate = useNavigate();
+  const { data: adminAuth } = useAdminAuthQuery();
+  const logoutMutation = useAdminLogoutMutation();
+  const location = useLocation();
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleMobileNavigation = (path: string) => {
-    setMobileMenuOpen(false)
-    setAdminDropdownOpen(false)
-    navigate(path)
-  }
+    setMobileMenuOpen(false);
+    setAdminDropdownOpen(false);
+    navigate(path);
+  };
 
   async function handleLogout() {
     try {
-      await logoutMutation.mutateAsync()
-      toast.success(TOAST_MESSAGES.adminSignOutSuccess)
+      await logoutMutation.mutateAsync();
+      toast.success(TOAST_MESSAGES.adminSignOutSuccess);
     } catch (error) {
-      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignOutFailure
-      toast.error(message)
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignOutFailure;
+      toast.error(message);
     }
   }
 
-  const isAdminPath = location.pathname.startsWith(ROUTE_PREFIXES.admin)
+  const isAdminPath = location.pathname.startsWith(ROUTE_PREFIXES.admin);
 
   return (
     <div className="min-h-screen bg-background text-text">
@@ -104,8 +107,8 @@ export function AppMobileShell() {
               <Button
                 className="mt-2 self-start hover:bg-primary/10"
                 onClick={() => {
-                  handleLogout()
-                  setMobileMenuOpen(false)
+                  handleLogout();
+                  setMobileMenuOpen(false);
                 }}
                 size="sm"
                 type="button"
@@ -122,5 +125,5 @@ export function AppMobileShell() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

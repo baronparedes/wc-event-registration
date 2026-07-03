@@ -6,7 +6,7 @@ export type {
   EventAvailability,
   PublicEventListingItem,
   DynamicFieldAnswerPreview,
-} from './types'
+} from './types';
 
 export {
   createEventSchema,
@@ -15,6 +15,6 @@ export {
   type CreateEventInput,
   type UpdateEventInput,
   type PublishEventInput,
-} from './schemas'
+} from './schemas';
 
-export { getPublishRequirements, areAllRequirementsMet, type PublishRequirement } from './metadata'
+export { getPublishRequirements, areAllRequirementsMet, type PublishRequirement } from './metadata';

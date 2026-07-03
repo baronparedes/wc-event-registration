@@ -1,25 +1,25 @@
 import {
-  cloneElement,
-  isValidElement,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type ReactElement,
   type ReactNode,
-} from 'react'
+  cloneElement,
+  isValidElement,
+} from 'react';
 
-type ButtonVariant = 'default' | 'outline' | 'destructive'
-type ButtonSize = 'sm' | 'md' | 'lg'
+type ButtonVariant = 'default' | 'outline' | 'destructive';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant
-  size?: ButtonSize
-  fullWidth?: boolean
-  asChild?: boolean
-  children: ReactNode
-}
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  fullWidth?: boolean;
+  asChild?: boolean;
+  children: ReactNode;
+};
 
 function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 const variantClassName: Record<ButtonVariant, string> = {
@@ -28,13 +28,13 @@ const variantClassName: Record<ButtonVariant, string> = {
   outline: 'border border-border bg-background text-text hover:bg-background disabled:opacity-60',
   destructive:
     'bg-red-600 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60',
-}
+};
 
 const sizeClassName: Record<ButtonSize, string> = {
   sm: 'min-h-10 px-3.5 py-2 text-sm',
   md: 'min-h-11 px-4 py-2.5 text-sm',
   lg: 'min-h-12 px-5 py-3 text-base',
-}
+};
 
 /** Shared button primitive for consistent variants, sizes, and disabled behavior. */
 export function Button(props: ButtonProps) {
@@ -47,7 +47,7 @@ export function Button(props: ButtonProps) {
     type = 'button',
     children,
     ...buttonProps
-  } = props
+  } = props;
 
   const classes = cx(
     'inline-flex items-center justify-center gap-2 rounded-md font-medium leading-snug transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/30',
@@ -55,18 +55,18 @@ export function Button(props: ButtonProps) {
     sizeClassName[size],
     fullWidth && 'w-full',
     className,
-  )
+  );
 
   if (asChild && isValidElement(children)) {
-    const child = children as ReactElement<HTMLAttributes<HTMLElement>>
+    const child = children as ReactElement<HTMLAttributes<HTMLElement>>;
     return cloneElement(child, {
       className: cx(child.props.className, classes),
-    })
+    });
   }
 
   return (
     <button className={classes} type={type} {...buttonProps}>
       {children}
     </button>
-  )
+  );
 }

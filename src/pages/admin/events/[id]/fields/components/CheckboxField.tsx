@@ -1,14 +1,15 @@
-import type { UseFormRegisterReturn } from 'react-hook-form'
-import { LockedFieldIndicator } from './LockedFieldIndicator'
+import type { UseFormRegisterReturn } from 'react-hook-form';
+
+import { LockedFieldIndicator } from './LockedFieldIndicator';
 
 type CheckboxFieldProps = {
-  id: string
-  label: string
-  description: string
-  registration: UseFormRegisterReturn
-  disabled: boolean
-  showLock: boolean
-}
+  id: string;
+  label: string;
+  description: string;
+  registration: UseFormRegisterReturn;
+  disabled: boolean;
+  showLock: boolean;
+};
 
 /** Checkbox toggle for boolean field properties. */
 export function CheckboxField({
@@ -39,5 +40,5 @@ export function CheckboxField({
         <p className="text-xs text-muted">{description}</p>
       </div>
     </div>
-  )
+  );
 }

@@ -1,13 +1,14 @@
-import { Link } from 'react-router-dom'
-import { toEventRegistration } from '@/config/constants'
-import type { PublicEventListingItem } from '@/lib/domain/events'
-import { Button, Badge } from '@/components/ui'
-import { formatDateOnly } from '@/lib/infrastructure'
-import { Users } from 'lucide-react'
+import { Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { Badge, Button } from '@/components/ui';
+import { toEventRegistration } from '@/config/constants';
+import type { PublicEventListingItem } from '@/lib/domain/events';
+import { formatDateOnly } from '@/lib/infrastructure';
 
 type EventCardProps = {
-  event: PublicEventListingItem
-}
+  event: PublicEventListingItem;
+};
 
 /**
  * Displays a single event card with title, status, description, and key dates.
@@ -70,5 +71,5 @@ export function EventCard({ event }: EventCardProps) {
         </Button>
       )}
     </div>
-  )
+  );
 }

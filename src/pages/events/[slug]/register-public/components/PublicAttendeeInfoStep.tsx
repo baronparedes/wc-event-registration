@@ -1,17 +1,18 @@
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/Button'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { publicAttendeeInfoSchema } from '@/lib/domain/public-registrations'
-import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+
+import { Button } from '@/components/ui/Button';
+import { FormInputField } from '@/components/ui/FormInputField';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { publicAttendeeInfoSchema } from '@/lib/domain/public-registrations';
+import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
 
 type PublicAttendeeInfoStepProps = {
-  onSubmit: (data: PublicAttendeeInfoInput) => void
-  isSubmitting?: boolean
-  emailErrorMessage?: string
-  defaultValues?: PublicAttendeeInfoInput
-}
+  onSubmit: (data: PublicAttendeeInfoInput) => void;
+  isSubmitting?: boolean;
+  emailErrorMessage?: string;
+  defaultValues?: PublicAttendeeInfoInput;
+};
 
 export function PublicAttendeeInfoStep({
   onSubmit,
@@ -27,7 +28,7 @@ export function PublicAttendeeInfoStep({
     resolver: zodResolver(publicAttendeeInfoSchema),
     mode: 'onBlur',
     defaultValues,
-  })
+  });
 
   return (
     <SectionCard title="Step 1: Your Information">
@@ -91,5 +92,5 @@ export function PublicAttendeeInfoStep({
         </div>
       </form>
     </SectionCard>
-  )
+  );
 }

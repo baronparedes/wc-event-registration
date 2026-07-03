@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { AdminPageShell } from '@/components/layout'
+import { useEffect, useMemo, useState } from 'react';
+
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { AdminPageShell } from '@/components/layout';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
+import { Button } from '@/components/ui/Button';
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
@@ -8,41 +13,39 @@ import {
   TIMING,
   toAdminEventDetail,
   toAdminEventPublicRegistrations,
-} from '@/config/constants'
-import { useAdminEventQuery } from '@/hooks/domain/events'
-import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
-import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { Button } from '@/components/ui/Button'
-import { CopyNamesButton, ExportButton, RegistrationsList } from './components'
+} from '@/config/constants';
+import { useAdminEventQuery } from '@/hooks/domain/events';
+import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
+import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+
+import { CopyNamesButton, ExportButton, RegistrationsList } from './components';
 
 export function AdminRegistrationsPage() {
-  const { id: eventId } = useParams<{ id: string }>()
+  const { id: eventId } = useParams<{ id: string }>();
 
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminRegistrationsPageSize)
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
+  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminRegistrationsPageSize);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, TIMING.searchDebounceMs)
+      setDebouncedSearchTerm(searchTerm);
+    }, TIMING.searchDebounceMs);
     return () => {
-      window.clearTimeout(timer)
-    }
-  }, [searchTerm])
+      window.clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
-  const eventQuery = useAdminEventQuery(eventId ?? '')
+  const eventQuery = useAdminEventQuery(eventId ?? '');
   const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', {
     pageSize,
     cursor,
     searchTerm: normalizedSearchTerm,
-  })
+  });
 
   if (!eventId) {
     return (
@@ -52,18 +55,18 @@ export function AdminRegistrationsPage() {
           <p className="text-sm text-red-600">Invalid event ID</p>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
-  const pagedResult = registrationsQuery.data
-  const registrations = pagedResult?.items ?? []
-  const hasMore = pagedResult?.hasMore ?? false
-  const nextCursor = pagedResult?.nextCursor ?? null
-  const totalPages = pagedResult?.totalPages ?? 1
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize)
+  const pagedResult = registrationsQuery.data;
+  const registrations = pagedResult?.items ?? [];
+  const hasMore = pagedResult?.hasMore ?? false;
+  const nextCursor = pagedResult?.nextCursor ?? null;
+  const totalPages = pagedResult?.totalPages ?? 1;
+  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
 
-  const isLoading = eventQuery.isLoading || registrationsQuery.isLoading
-  const error = eventQuery.error || registrationsQuery.error
+  const isLoading = eventQuery.isLoading || registrationsQuery.isLoading;
+  const error = eventQuery.error || registrationsQuery.error;
 
   if (error) {
     return (
@@ -75,41 +78,41 @@ export function AdminRegistrationsPage() {
           </div>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
-  const event = eventQuery.data
-  const isEventArchived = event?.status === 'archived'
+  const event = eventQuery.data;
+  const isEventArchived = event?.status === 'archived';
 
   function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm)
-    setCursor(null)
+    setSearchTerm(nextSearchTerm);
+    setCursor(null);
   }
 
   function handleNextPage() {
-    if (!nextCursor) return
-    setCursor(nextCursor)
+    if (!nextCursor) return;
+    setCursor(nextCursor);
   }
 
   function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize))
+    setCursor(getPageCursor(currentPage - 1, pageSize));
   }
 
   function handleFirstPage() {
-    setCursor(null)
+    setCursor(null);
   }
 
   function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize))
+    setCursor(getPageCursor(page, pageSize));
   }
 
   function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize))
+    setCursor(getPageCursor(totalPages, pageSize));
   }
 
   function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize)
-    setCursor(null)
+    setPageSize(nextPageSize);
+    setCursor(null);
   }
 
   const navActions = (
@@ -125,7 +128,7 @@ export function AdminRegistrationsPage() {
       <CopyNamesButton eventId={eventId} eventTitle={event?.title} />
       <ExportButton eventId={eventId} />
     </div>
-  )
+  );
 
   return (
     <AdminPageShell>
@@ -220,5 +223,5 @@ export function AdminRegistrationsPage() {
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

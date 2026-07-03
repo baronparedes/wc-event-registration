@@ -1,12 +1,12 @@
-import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields'
-import type { EventFieldTypeEnum } from '@/lib/domain/event-fields'
+import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields';
+import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
 
 type FieldTypeSelectorProps = {
-  value: EventFieldTypeEnum
-  onChange: (type: EventFieldTypeEnum) => void
-  disabled?: boolean
-  error?: string | null
-}
+  value: EventFieldTypeEnum;
+  onChange: (type: EventFieldTypeEnum) => void;
+  disabled?: boolean;
+  error?: string | null;
+};
 
 const FIELD_TYPES_ORDERED: EventFieldTypeEnum[] = [
   'text',
@@ -22,7 +22,7 @@ const FIELD_TYPES_ORDERED: EventFieldTypeEnum[] = [
   'date',
   'datetime',
   'boolean',
-]
+];
 
 /** Grid of all 12 field types. Used in create mode to select a field type. */
 export function FieldTypeSelector({ value, onChange, disabled, error }: FieldTypeSelectorProps) {
@@ -47,5 +47,5 @@ export function FieldTypeSelector({ value, onChange, disabled, error }: FieldTyp
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
-  )
+  );
 }

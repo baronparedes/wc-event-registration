@@ -1,34 +1,35 @@
-import type { ChangeEventHandler, ReactNode } from 'react'
-import type { UseFormRegisterReturn } from 'react-hook-form'
+import type { ChangeEventHandler, ReactNode } from 'react';
+
+import type { UseFormRegisterReturn } from 'react-hook-form';
 
 type FormInputFieldBaseProps = {
-  id: string
-  label: string
-  error?: string | null
-  required?: boolean
-  placeholder?: string
-  type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local'
-  autoComplete?: string
-  readOnly?: boolean
-  disabled?: boolean
-  helperText?: string
-  labelAdornment?: ReactNode
-  inputClassName?: string
-}
+  id: string;
+  label: string;
+  error?: string | null;
+  required?: boolean;
+  placeholder?: string;
+  type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local';
+  autoComplete?: string;
+  readOnly?: boolean;
+  disabled?: boolean;
+  helperText?: string;
+  labelAdornment?: ReactNode;
+  inputClassName?: string;
+};
 
 type RegisteredInputProps = {
-  registration: UseFormRegisterReturn
-  value?: never
-  onChange?: never
-}
+  registration: UseFormRegisterReturn;
+  value?: never;
+  onChange?: never;
+};
 
 type ControlledInputProps = {
-  registration?: never
-  value: string
-  onChange: ChangeEventHandler<HTMLInputElement>
-}
+  registration?: never;
+  value: string;
+  onChange: ChangeEventHandler<HTMLInputElement>;
+};
 
-type FormInputFieldProps = FormInputFieldBaseProps & (RegisteredInputProps | ControlledInputProps)
+type FormInputFieldProps = FormInputFieldBaseProps & (RegisteredInputProps | ControlledInputProps);
 
 /** Shared labeled input field with consistent styling and error rendering. */
 export function FormInputField(props: FormInputFieldProps) {
@@ -48,14 +49,14 @@ export function FormInputField(props: FormInputFieldProps) {
     helperText,
     labelAdornment,
     inputClassName,
-  } = props
+  } = props;
 
   const controlledProps = registration
     ? registration
     : {
         value,
         onChange,
-      }
+      };
 
   return (
     <div className="space-y-1.5">
@@ -81,5 +82,5 @@ export function FormInputField(props: FormInputFieldProps) {
       {helperText && <p className="text-xs text-muted">{helperText}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
-  )
+  );
 }

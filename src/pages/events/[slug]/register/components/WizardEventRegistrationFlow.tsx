@@ -1,14 +1,15 @@
-import { Button } from '@/components/ui/Button'
-import { StepIndicator } from '@/components/ui/StepIndicator'
+import { Button } from '@/components/ui/Button';
+import { StepIndicator } from '@/components/ui/StepIndicator';
 import {
   DynamicFieldsStepCard,
   EventHeaderCard,
   LockedGateCard,
   MemberLookupStepCard,
   ProfileStepCard,
-} from '@/pages/events/[slug]/register/components'
-import { useEventRegistrationPageState } from '../hooks'
-import './WizardEventRegistrationFlow.css'
+} from '@/pages/events/[slug]/register/components';
+
+import { useEventRegistrationPageState } from '../hooks';
+import './WizardEventRegistrationFlow.css';
 
 export function WizardEventRegistrationFlow() {
   const {
@@ -39,7 +40,7 @@ export function WizardEventRegistrationFlow() {
     handleCancelUpdate,
     enterWizardConfirmStep,
     isEffectiveRegistrationBlocked,
-  } = useEventRegistrationPageState('wizard')
+  } = useEventRegistrationPageState('wizard');
 
   return (
     <section className="wizard-registration-flow mx-auto max-w-3xl space-y-6">
@@ -143,5 +144,5 @@ export function WizardEventRegistrationFlow() {
         <LockedGateCard />
       )}
     </section>
-  )
+  );
 }

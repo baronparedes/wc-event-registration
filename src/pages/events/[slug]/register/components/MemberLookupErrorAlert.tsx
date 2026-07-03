@@ -1,69 +1,70 @@
-import { useEffect, useRef, useState } from 'react'
-import { TIMING } from '@/config/constants'
+import { useEffect, useRef, useState } from 'react';
+
+import { TIMING } from '@/config/constants';
 
 type MemberLookupErrorAlertProps = {
-  message: string | null
-  suppress?: boolean
-  onDismiss?: () => void
-}
+  message: string | null;
+  suppress?: boolean;
+  onDismiss?: () => void;
+};
 
 export function MemberLookupErrorAlert({
   message,
   suppress = false,
   onDismiss,
 }: MemberLookupErrorAlertProps) {
-  const alertRef = useRef<HTMLDivElement | null>(null)
-  const [shouldFade, setShouldFade] = useState(false)
-  const [errorCountdown, setErrorCountdown] = useState(0)
+  const alertRef = useRef<HTMLDivElement | null>(null);
+  const [shouldFade, setShouldFade] = useState(false);
+  const [errorCountdown, setErrorCountdown] = useState(0);
 
   // Auto-scroll into view when message appears
   useEffect(() => {
     if (!message || suppress) {
-      return
+      return;
     }
 
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
-      : 'smooth'
+      : 'smooth';
 
     alertRef.current?.scrollIntoView({
       behavior,
       block: 'center',
-    })
-  }, [message, suppress])
+    });
+  }, [message, suppress]);
 
   // Countdown timer with auto-dismiss
   useEffect(() => {
     if (!message || suppress || shouldFade) {
-      return
+      return;
     }
 
-    let remaining = TIMING.errorClearDelayMs / 1000
+    let remaining = TIMING.errorClearDelayMs / 1000;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setErrorCountdown(remaining)
+    setErrorCountdown(remaining);
 
     const interval = setInterval(() => {
-      remaining -= 1
-      setErrorCountdown(remaining)
+      remaining -= 1;
+      setErrorCountdown(remaining);
 
       if (remaining <= 0) {
-        clearInterval(interval)
-        setShouldFade(true)
-        onDismiss?.()
+        clearInterval(interval);
+        setShouldFade(true);
+        onDismiss?.();
       }
-    }, 1000)
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [message, suppress, shouldFade, onDismiss])
+    return () => clearInterval(interval);
+  }, [message, suppress, shouldFade, onDismiss]);
 
   if (!message || suppress) {
-    return null
+    return null;
   }
 
   const handleDismiss = () => {
-    setShouldFade(true)
-    onDismiss?.()
-  }
+    setShouldFade(true);
+    onDismiss?.();
+  };
 
   return (
     <div
@@ -110,5 +111,5 @@ export function MemberLookupErrorAlert({
         </div>
       </div>
     </div>
-  )
+  );
 }

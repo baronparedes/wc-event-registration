@@ -1,17 +1,17 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from 'react';
 
 type EmptyStateProps = {
   /** Icon component or ReactNode to display (typically a lucide-react icon) */
-  icon: ReactNode
+  icon: ReactNode;
   /** Main heading */
-  title: string
+  title: string;
   /** Secondary description text */
-  description: string
+  description: string;
   /** Optional action (e.g., CTA button or link) */
-  action?: ReactNode
+  action?: ReactNode;
   /** Optional container className for customization */
-  className?: string
-}
+  className?: string;
+};
 
 /**
  * Branded empty state component for "no data" scenarios.
@@ -29,5 +29,5 @@ export function EmptyState({ icon, title, description, action, className }: Empt
       <p className="mb-6 max-w-sm text-sm text-muted">{description}</p>
       {action && <div>{action}</div>}
     </div>
-  )
+  );
 }

@@ -1,15 +1,15 @@
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button';
 
 type EventFormActionsProps = {
-  isPending: boolean
-  isEditMode: boolean
-  onCancel: () => void
-  disabled?: boolean
-  hasChanges?: boolean
-}
+  isPending: boolean;
+  isEditMode: boolean;
+  onCancel: () => void;
+  disabled?: boolean;
+  hasChanges?: boolean;
+};
 
 export function EventFormActions(props: EventFormActionsProps) {
-  const { isPending, isEditMode, onCancel, disabled, hasChanges = true } = props
+  const { isPending, isEditMode, onCancel, disabled, hasChanges = true } = props;
 
   if (disabled) {
     return (
@@ -18,7 +18,7 @@ export function EventFormActions(props: EventFormActionsProps) {
           Back to Events
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -30,5 +30,5 @@ export function EventFormActions(props: EventFormActionsProps) {
         {isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Event'}
       </Button>
     </div>
-  )
+  );
 }

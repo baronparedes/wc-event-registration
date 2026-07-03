@@ -1,13 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
+
 import {
+  type AdminEventField,
+  type EventFieldFormValues,
+  type PublicEventField,
   createDynamicFieldDefaultValues,
   fieldToFormValues,
   normalizeDynamicFieldAnswersForPreview,
   toValidationRules,
-  type AdminEventField,
-  type EventFieldFormValues,
-  type PublicEventField,
-} from '@/lib/domain/event-fields'
+} from '@/lib/domain/event-fields';
 
 function makeAdminField(overrides: Partial<AdminEventField> = {}): AdminEventField {
   return {
@@ -30,7 +31,7 @@ function makeAdminField(overrides: Partial<AdminEventField> = {}): AdminEventFie
     created_at: '2026-06-25T10:00:00.000Z',
     updated_at: '2026-06-25T10:00:00.000Z',
     ...overrides,
-  }
+  };
 }
 
 function makePublicField(overrides: Partial<PublicEventField> = {}): PublicEventField {
@@ -48,19 +49,19 @@ function makePublicField(overrides: Partial<PublicEventField> = {}): PublicEvent
     validation_rules: {},
     display_order: 0,
     ...overrides,
-  }
+  };
 }
 
 describe('event-fields transforms', () => {
   it('converts an admin field to event field form values', () => {
-    const values = fieldToFormValues(makeAdminField())
+    const values = fieldToFormValues(makeAdminField());
 
-    expect(values.field_key).toBe('team_name')
-    expect(values.label).toBe('Team Name')
-    expect(values.val_min_length).toBe('2')
-    expect(values.val_max_length).toBe('50')
-    expect(values.val_pattern).toBe('^[A-Za-z ]+$')
-  })
+    expect(values.field_key).toBe('team_name');
+    expect(values.label).toBe('Team Name');
+    expect(values.val_min_length).toBe('2');
+    expect(values.val_max_length).toBe('50');
+    expect(values.val_pattern).toBe('^[A-Za-z ]+$');
+  });
 
   it('builds validation rules and excludes empty values', () => {
     const values: EventFieldFormValues = {
@@ -81,17 +82,17 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
-    }
+    };
 
-    const rules = toValidationRules(values)
+    const rules = toValidationRules(values);
 
     expect(rules).toEqual({
       min_length: 2,
       pattern: '^[A-Za-z ]+$',
       min: 1,
       max: 10,
-    })
-  })
+    });
+  });
 
   it('builds all supported validation rule types when values are provided', () => {
     const values: EventFieldFormValues = {
@@ -112,9 +113,9 @@ describe('event-fields transforms', () => {
       val_max_selections: '4',
       val_min_date: '2026-01-01',
       val_max_date: '2026-12-31',
-    }
+    };
 
-    const rules = toValidationRules(values)
+    const rules = toValidationRules(values);
 
     expect(rules).toEqual({
       min_length: 1,
@@ -126,8 +127,8 @@ describe('event-fields transforms', () => {
       max_selections: 4,
       min_date: '2026-01-01',
       max_date: '2026-12-31',
-    })
-  })
+    });
+  });
 
   it('normalizes nullable admin field metadata into safe form defaults', () => {
     const values = fieldToFormValues(
@@ -141,15 +142,15 @@ describe('event-fields transforms', () => {
           max_date: false as unknown as string,
         },
       }),
-    )
+    );
 
-    expect(values.placeholder).toBe('')
-    expect(values.help_text).toBe('')
-    expect(values.options).toEqual([])
-    expect(values.val_pattern).toBe('')
-    expect(values.val_min_date).toBe('')
-    expect(values.val_max_date).toBe('')
-  })
+    expect(values.placeholder).toBe('');
+    expect(values.help_text).toBe('');
+    expect(values.options).toEqual([]);
+    expect(values.val_pattern).toBe('');
+    expect(values.val_min_date).toBe('');
+    expect(values.val_max_date).toBe('');
+  });
 
   it('maps option toggle fields with explicit and default toggle values', () => {
     const values = fieldToFormValues(
@@ -167,7 +168,7 @@ describe('event-fields transforms', () => {
           },
         ],
       }),
-    )
+    );
 
     expect(values.options).toEqual([
       {
@@ -181,20 +182,20 @@ describe('event-fields transforms', () => {
         value: 'meal_b',
         toggle_label: '',
       },
-    ])
-  })
+    ]);
+  });
 
   it('normalizes dynamic answer payloads into preview records', () => {
     const fields = [
       makePublicField({ id: 'f1', field_key: 'team_name', field_type: 'text' }),
       makePublicField({ id: 'f2', field_key: 'accept_terms', field_type: 'checkbox' }),
-    ]
+    ];
 
     const preview = normalizeDynamicFieldAnswersForPreview(fields, {
       team_name: 'Falcons',
       accept_terms: true,
       unrelated: 'ignored',
-    })
+    });
 
     expect(preview).toEqual([
       {
@@ -209,8 +210,8 @@ describe('event-fields transforms', () => {
         field_type: 'checkbox',
         value: true,
       },
-    ])
-  })
+    ]);
+  });
 
   it('creates dynamic defaults by field type', () => {
     const defaults = createDynamicFieldDefaultValues([
@@ -219,7 +220,7 @@ describe('event-fields transforms', () => {
       makePublicField({ field_key: 'positions', field_type: 'multi_select' }),
       makePublicField({ field_key: 'meal_slots', field_type: 'multi_select_toggle' }),
       makePublicField({ field_key: 'nickname', field_type: 'text' }),
-    ])
+    ]);
 
     expect(defaults).toEqual({
       accept_terms: false,
@@ -227,6 +228,6 @@ describe('event-fields transforms', () => {
       positions: [],
       meal_slots: {},
       nickname: '',
-    })
-  })
-})
+    });
+  });
+});

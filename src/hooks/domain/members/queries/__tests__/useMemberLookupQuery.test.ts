@@ -1,11 +1,13 @@
-import { act, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
-import { makeMemberLookupProfile } from '@/__tests__/factories'
+import { faker } from '@faker-js/faker';
+import { act, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { makeMemberLookupProfile } from '@/__tests__/factories';
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useMemberLookupQuery } from '@/hooks/domain/members/queries/useMemberLookupQuery';
 
 const { mockLookupCaller, mockCreateEdgeFunctionCaller, mockLogger } = vi.hoisted(() => {
-  const lookupCaller = vi.fn()
+  const lookupCaller = vi.fn();
 
   return {
     mockLookupCaller: lookupCaller,
@@ -14,75 +16,73 @@ const { mockLookupCaller, mockCreateEdgeFunctionCaller, mockLogger } = vi.hoiste
       debug: vi.fn(),
       error: vi.fn(),
     },
-  }
-})
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
 
   return {
     ...actual,
     createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
     logger: mockLogger,
-  }
-})
-
-import { useMemberLookupQuery } from '@/hooks/domain/members/queries/useMemberLookupQuery'
+  };
+});
 
 describe('useMemberLookupQuery', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('trims member id and returns profile result', async () => {
-    const profile = makeMemberLookupProfile()
+    const profile = makeMemberLookupProfile();
     mockLookupCaller.mockResolvedValueOnce({
       success: true,
       profile: { user_id: profile.user_id, member_id: profile.member_id },
       existing_registration: null,
-    })
+    });
 
-    const { result } = renderHookWithClient(() => useMemberLookupQuery())
-    const slug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase()
+    const { result } = renderHookWithClient(() => useMemberLookupQuery());
+    const slug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     const response = await act(async () =>
       result.current.mutateAsync({ memberId: `  ${profile.member_id}  `, eventSlug: slug }),
-    )
+    );
 
     expect(mockLookupCaller).toHaveBeenCalledWith({
       memberId: profile.member_id,
       eventSlug: slug,
-    })
+    });
     expect(response).toEqual({
       profile: { user_id: profile.user_id, member_id: profile.member_id },
       existing_registration: null,
-    })
-  })
+    });
+  });
 
   it('returns empty result when member id is blank', async () => {
-    const { result } = renderHookWithClient(() => useMemberLookupQuery())
+    const { result } = renderHookWithClient(() => useMemberLookupQuery());
 
-    const response = await act(async () => result.current.mutateAsync({ memberId: '   ' }))
+    const response = await act(async () => result.current.mutateAsync({ memberId: '   ' }));
 
-    expect(mockLookupCaller).not.toHaveBeenCalled()
+    expect(mockLookupCaller).not.toHaveBeenCalled();
     expect(response).toEqual({
       profile: null,
       existing_registration: null,
-    })
-  })
+    });
+  });
 
   it('surfaces error state when edge function throws', async () => {
-    mockLookupCaller.mockRejectedValueOnce(new Error('lookup failed'))
+    mockLookupCaller.mockRejectedValueOnce(new Error('lookup failed'));
 
-    const { result } = renderHookWithClient(() => useMemberLookupQuery())
+    const { result } = renderHookWithClient(() => useMemberLookupQuery());
 
     await expect(result.current.mutateAsync({ memberId: 'WC-001' })).rejects.toThrow(
       'lookup failed',
-    )
+    );
 
     await waitFor(() => {
-      expect(mockLogger.error).toHaveBeenCalled()
-    })
-  })
-})
+      expect(mockLogger.error).toHaveBeenCalled();
+    });
+  });
+});

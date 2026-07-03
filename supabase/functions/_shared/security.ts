@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+
 import {
   AUTH,
   CORS,
@@ -9,58 +10,58 @@ import {
   LOCALHOST_HOSTNAMES,
   MIME_TYPES,
   RATE_LIMIT,
-} from './constants.ts'
+} from './constants.ts';
 
-const LOCALHOST_HOSTNAMES_SET = new Set(LOCALHOST_HOSTNAMES)
+const LOCALHOST_HOSTNAMES_SET = new Set(LOCALHOST_HOSTNAMES);
 
 type RateLimitBucket = {
-  count: number
-  windowStartMs: number
-}
+  count: number;
+  windowStartMs: number;
+};
 
-const rateLimitBuckets = new Map<string, RateLimitBucket>()
-let lastRateLimitCleanupMs = 0
+const rateLimitBuckets = new Map<string, RateLimitBucket>();
+let lastRateLimitCleanupMs = 0;
 
 export interface RateLimitOptions {
-  key: string
-  windowMs: number
-  maxHits: number
-  nowMs?: number
+  key: string;
+  windowMs: number;
+  maxHits: number;
+  nowMs?: number;
 }
 
 export interface RateLimitResult {
-  allowed: boolean
-  remaining: number
-  retryAfterSeconds: number
+  allowed: boolean;
+  remaining: number;
+  retryAfterSeconds: number;
 }
 
 export interface PublicRateLimitGuardOptions {
-  req: Request
-  origin: string | null
-  corsHeaders: Record<string, string>
-  scope: string
-  windowMs: number
-  maxHits: number
-  errorMessage?: string
+  req: Request;
+  origin: string | null;
+  corsHeaders: Record<string, string>;
+  scope: string;
+  windowMs: number;
+  maxHits: number;
+  errorMessage?: string;
 }
 
 export interface AdminGuardOptions {
-  requestId: string
-  logPrefix: string
-  supabaseUrl: string
-  supabaseServiceKey: string
-  authHeader: string | null
-  corsHeaders: Record<string, string>
+  requestId: string;
+  logPrefix: string;
+  supabaseUrl: string;
+  supabaseServiceKey: string;
+  authHeader: string | null;
+  corsHeaders: Record<string, string>;
   rateLimit?: {
-    scope: string
-    windowMs: number
-    maxHits: number
-  }
+    scope: string;
+    windowMs: number;
+    maxHits: number;
+  };
 }
 
 export interface AdminAuditLogOptions {
-  adminClient: ReturnType<typeof createClient>
-  adminUserId: string
+  adminClient: ReturnType<typeof createClient>;
+  adminUserId: string;
   action:
     | 'create_event'
     | 'update_event'
@@ -68,32 +69,32 @@ export interface AdminAuditLogOptions {
     | 'archive_event'
     | 'cancel_registration'
     | 'reactivate_registration'
-    | 'export_registrations_csv'
-  resourceType: 'event' | 'registration' | 'export'
-  resourceId?: string | null
-  metadata?: Record<string, unknown>
+    | 'export_registrations_csv';
+  resourceType: 'event' | 'registration' | 'export';
+  resourceId?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
-export type AdminGuardResult = { ok: true; userId: string } | { ok: false; response: Response }
+export type AdminGuardResult = { ok: true; userId: string } | { ok: false; response: Response };
 
 function maskValue(value: string | null, visible = 6): string {
-  if (!value) return 'null'
-  if (value.length <= visible * 2) return value
-  return `${value.slice(0, visible)}...${value.slice(-visible)}`
+  if (!value) return 'null';
+  if (value.length <= visible * 2) return value;
+  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
 }
 
 function cleanupRateLimitBuckets(nowMs: number): void {
   if (nowMs - lastRateLimitCleanupMs < RATE_LIMIT.cleanupIntervalMs) {
-    return
+    return;
   }
 
   for (const [key, bucket] of rateLimitBuckets.entries()) {
     if (nowMs - bucket.windowStartMs > RATE_LIMIT.cleanupIntervalMs * 2) {
-      rateLimitBuckets.delete(key)
+      rateLimitBuckets.delete(key);
     }
   }
 
-  lastRateLimitCleanupMs = nowMs
+  lastRateLimitCleanupMs = nowMs;
 }
 
 function createJsonResponse(
@@ -109,85 +110,85 @@ function createJsonResponse(
       [HTTP_HEADERS.contentType]: MIME_TYPES.json,
       ...(extraHeaders ?? {}),
     },
-  })
+  });
 }
 
 function isSupportedOriginProtocol(protocol: string): boolean {
-  return protocol === 'http:' || protocol === 'https:'
+  return protocol === 'http:' || protocol === 'https:';
 }
 
 function isLocalhostOrigin(origin: string): boolean {
   try {
-    return LOCALHOST_HOSTNAMES_SET.has(new URL(origin).hostname)
+    return LOCALHOST_HOSTNAMES_SET.has(new URL(origin).hostname);
   } catch {
-    return false
+    return false;
   }
 }
 
 function normalizeAllowedOrigin(origin: string): string | null {
   try {
-    const url = new URL(origin)
+    const url = new URL(origin);
     if (!isSupportedOriginProtocol(url.protocol)) {
-      return null
+      return null;
     }
 
-    return url.origin
+    return url.origin;
   } catch {
-    return null
+    return null;
   }
 }
 
 export function enforceInMemoryRateLimit(options: RateLimitOptions): RateLimitResult {
-  const nowMs = options.nowMs ?? Date.now()
-  cleanupRateLimitBuckets(nowMs)
+  const nowMs = options.nowMs ?? Date.now();
+  cleanupRateLimitBuckets(nowMs);
 
-  const existing = rateLimitBuckets.get(options.key)
+  const existing = rateLimitBuckets.get(options.key);
   if (!existing || nowMs - existing.windowStartMs >= options.windowMs) {
-    rateLimitBuckets.set(options.key, { count: 1, windowStartMs: nowMs })
+    rateLimitBuckets.set(options.key, { count: 1, windowStartMs: nowMs });
     return {
       allowed: true,
       remaining: Math.max(0, options.maxHits - 1),
       retryAfterSeconds: 0,
-    }
+    };
   }
 
-  existing.count += 1
-  const overLimit = existing.count > options.maxHits
+  existing.count += 1;
+  const overLimit = existing.count > options.maxHits;
   if (overLimit) {
-    const elapsedMs = nowMs - existing.windowStartMs
-    const remainingWindowMs = Math.max(0, options.windowMs - elapsedMs)
+    const elapsedMs = nowMs - existing.windowStartMs;
+    const remainingWindowMs = Math.max(0, options.windowMs - elapsedMs);
     return {
       allowed: false,
       remaining: 0,
       retryAfterSeconds: Math.ceil(remainingWindowMs / 1000),
-    }
+    };
   }
 
   return {
     allowed: true,
     remaining: Math.max(0, options.maxHits - existing.count),
     retryAfterSeconds: 0,
-  }
+  };
 }
 
 export function getRequestIdentityForRateLimit(req: Request, origin: string | null): string {
-  const xForwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  const xRealIp = req.headers.get('x-real-ip')?.trim()
-  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim()
+  const xForwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const xRealIp = req.headers.get('x-real-ip')?.trim();
+  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim();
 
-  return xForwardedFor || xRealIp || cfConnectingIp || `origin:${origin ?? 'unknown'}`
+  return xForwardedFor || xRealIp || cfConnectingIp || `origin:${origin ?? 'unknown'}`;
 }
 
 export function enforcePublicRateLimit(options: PublicRateLimitGuardOptions): Response | null {
-  const sourceIdentity = getRequestIdentityForRateLimit(options.req, options.origin)
+  const sourceIdentity = getRequestIdentityForRateLimit(options.req, options.origin);
   const rateLimit = enforceInMemoryRateLimit({
     key: `${options.scope}:${sourceIdentity}`,
     windowMs: options.windowMs,
     maxHits: options.maxHits,
-  })
+  });
 
   if (rateLimit.allowed) {
-    return null
+    return null;
   }
 
   return createJsonResponse(
@@ -202,7 +203,7 @@ export function enforcePublicRateLimit(options: PublicRateLimitGuardOptions): Re
     {
       [HTTP_HEADERS.retryAfter]: String(rateLimit.retryAfterSeconds),
     },
-  )
+  );
 }
 
 export async function requireAdminAccess(options: AdminGuardOptions): Promise<AdminGuardResult> {
@@ -214,7 +215,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     authHeader,
     corsHeaders,
     rateLimit,
-  } = options
+  } = options;
 
   if (!authHeader || !authHeader.startsWith(AUTH.bearerPrefix)) {
     return {
@@ -228,10 +229,10 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
-    }
+    };
   }
 
-  const token = authHeader.replace(AUTH.bearerPrefix, '').trim()
+  const token = authHeader.replace(AUTH.bearerPrefix, '').trim();
   if (!token) {
     return {
       ok: false,
@@ -244,7 +245,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
-    }
+    };
   }
 
   const authClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -253,10 +254,10 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         [HTTP_HEADERS.authorization]: authHeader,
       },
     },
-  })
+  });
 
-  const { data: authData, error: authError } = await authClient.auth.getUser(token)
-  const userId = authData?.user?.id ?? null
+  const { data: authData, error: authError } = await authClient.auth.getUser(token);
+  const userId = authData?.user?.id ?? null;
 
   console.log(`[${logPrefix}] auth user check`, {
     requestId,
@@ -264,7 +265,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     userId: maskValue(userId),
     authErrorStatus: authError?.status ?? null,
     authErrorMessage: authError?.message ?? null,
-  })
+  });
 
   if (!userId) {
     return {
@@ -278,16 +279,16 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
-    }
+    };
   }
 
   if (rateLimit) {
-    const limiterKey = `${rateLimit.scope}:${userId}`
+    const limiterKey = `${rateLimit.scope}:${userId}`;
     const limitResult = enforceInMemoryRateLimit({
       key: limiterKey,
       windowMs: rateLimit.windowMs,
       maxHits: rateLimit.maxHits,
-    })
+    });
 
     if (!limitResult.allowed) {
       return {
@@ -305,7 +306,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
             [HTTP_HEADERS.retryAfter]: String(limitResult.retryAfterSeconds),
           },
         ),
-      }
+      };
     }
   }
 
@@ -313,7 +314,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     .from('admins')
     .select('id')
     .eq('auth_user_id', userId)
-    .single()
+    .single();
 
   console.log(`[${logPrefix}] admin check result`, {
     requestId,
@@ -321,7 +322,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     hasAdminRecord: Boolean(adminRecord),
     adminCheckErrorCode: adminCheckError?.code ?? null,
     adminCheckErrorMessage: adminCheckError?.message ?? null,
-  })
+  });
 
   if (adminCheckError || !adminRecord) {
     return {
@@ -335,71 +336,71 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
         HTTP_STATUS.unauthorized,
         corsHeaders,
       ),
-    }
+    };
   }
 
-  return { ok: true, userId }
+  return { ok: true, userId };
 }
 
 export function readAllowedOrigins(): string[] {
-  const rawAllowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.trim() ?? ''
-  const runtimeEnvironment = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase() ?? ENVIRONMENT.local
+  const rawAllowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.trim() ?? '';
+  const runtimeEnvironment = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase() ?? ENVIRONMENT.local;
 
   if (!rawAllowedOrigins) {
     console.error(
       '[security] ALLOWED_ORIGINS is not configured; denying all cross-origin requests. Set it in supabase/functions/.env for local development.',
       { runtimeEnvironment },
-    )
-    return []
+    );
+    return [];
   }
 
   const normalizedOrigins = rawAllowedOrigins
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean)
-    .map((origin) => ({ raw: origin, normalized: normalizeAllowedOrigin(origin) }))
+    .map((origin) => ({ raw: origin, normalized: normalizeAllowedOrigin(origin) }));
 
   const invalidOrigins = normalizedOrigins
     .filter((origin) => !origin.normalized)
-    .map((origin) => origin.raw)
+    .map((origin) => origin.raw);
 
   if (invalidOrigins.length > 0) {
     console.error('[security] Ignoring invalid ALLOWED_ORIGINS entries', {
       invalidOrigins,
       runtimeEnvironment,
-    })
+    });
   }
 
   const allowedOrigins = Array.from(
     new Set(normalizedOrigins.flatMap((origin) => (origin.normalized ? [origin.normalized] : []))),
-  )
+  );
 
   if (runtimeEnvironment === ENVIRONMENT.production) {
-    const localhostOrigins = allowedOrigins.filter((origin) => isLocalhostOrigin(origin))
+    const localhostOrigins = allowedOrigins.filter((origin) => isLocalhostOrigin(origin));
 
     if (localhostOrigins.length > 0) {
       console.error('[security] Refusing localhost origins in production ALLOWED_ORIGINS', {
         localhostOrigins,
-      })
-      return []
+      });
+      return [];
     }
   }
 
   if (allowedOrigins.length === 0) {
     console.error('[security] ALLOWED_ORIGINS resolved to an empty valid allowlist', {
       runtimeEnvironment,
-    })
+    });
   }
 
-  return allowedOrigins
+  return allowedOrigins;
 }
 
 export function isOriginAllowed(origin: string | null, allowedOrigins: string[]): origin is string {
   if (!origin) {
-    return false
+    return false;
   }
 
-  return allowedOrigins.includes(origin)
+  return allowedOrigins.includes(origin);
 }
 
 export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]) {
@@ -411,17 +412,17 @@ export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]
       ? origin
       : CORS.nullOrigin,
     [HTTP_HEADERS.vary]: HTTP_HEADERS.origin,
-  }
+  };
 }
 
 export async function logAdminAction(options: AdminAuditLogOptions): Promise<void> {
-  const { adminClient, adminUserId, action, resourceType, resourceId, metadata } = options
+  const { adminClient, adminUserId, action, resourceType, resourceId, metadata } = options;
 
   const { data: adminRow, error: adminRowError } = await adminClient
     .from('admins')
     .select('id')
     .eq('auth_user_id', adminUserId)
-    .maybeSingle()
+    .maybeSingle();
 
   if (adminRowError || !adminRow?.id) {
     console.error('[audit-log] unable to resolve admin id', {
@@ -429,8 +430,8 @@ export async function logAdminAction(options: AdminAuditLogOptions): Promise<voi
       action,
       adminRowErrorCode: adminRowError?.code ?? null,
       adminRowErrorMessage: adminRowError?.message ?? null,
-    })
-    return
+    });
+    return;
   }
 
   const { error: auditError } = await adminClient.from('admin_audit_logs').insert({
@@ -439,7 +440,7 @@ export async function logAdminAction(options: AdminAuditLogOptions): Promise<voi
     resource_type: resourceType,
     resource_id: resourceId ?? null,
     metadata: metadata ?? {},
-  })
+  });
 
   if (auditError) {
     console.error('[audit-log] insert failed', {
@@ -449,7 +450,7 @@ export async function logAdminAction(options: AdminAuditLogOptions): Promise<voi
       resourceId,
       auditErrorCode: auditError.code ?? null,
       auditErrorMessage: auditError.message ?? null,
-    })
+    });
   }
 }
 
@@ -458,5 +459,5 @@ export function createObscuredDenyResponse(corsHeaders: Record<string, string>) 
   return new Response(JSON.stringify({ success: false, error: 'Not found' }), {
     status: HTTP_STATUS.notFound,
     headers: { ...corsHeaders, [HTTP_HEADERS.contentType]: MIME_TYPES.json },
-  })
+  });
 }

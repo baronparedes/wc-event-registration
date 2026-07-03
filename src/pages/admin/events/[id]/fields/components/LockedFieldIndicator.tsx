@@ -1,5 +1,5 @@
 const LOCKED_TOOLTIP =
-  'This field cannot be changed on published events. Archive and create a new event to change the registration form structure.'
+  'This field cannot be changed on published events. Archive and create a new event to change the registration form structure.';
 
 /** Displays a lock icon with an explanatory tooltip on fields locked by event status. */
 export function LockedFieldIndicator() {
@@ -24,5 +24,5 @@ export function LockedFieldIndicator() {
         />
       </svg>
     </span>
-  )
+  );
 }

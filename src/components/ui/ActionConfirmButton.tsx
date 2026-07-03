@@ -1,20 +1,21 @@
-import { useState, type ReactNode } from 'react'
-import { ActionButton } from './ActionLink'
-import { ConfirmDialog } from './ConfirmDialog'
+import { type ReactNode, useState } from 'react';
 
-type ActionVariant = 'default' | 'destructive'
+import { ActionButton } from './ActionLink';
+import { ConfirmDialog } from './ConfirmDialog';
+
+type ActionVariant = 'default' | 'destructive';
 
 type ActionConfirmButtonProps = {
-  children: ReactNode
-  variant?: ActionVariant
-  className?: string
-  title: string
-  description: ReactNode
-  confirmLabel: string
-  confirmLoadingLabel: string
-  isPending: boolean
-  onConfirm: () => void
-}
+  children: ReactNode;
+  variant?: ActionVariant;
+  className?: string;
+  title: string;
+  description: ReactNode;
+  confirmLabel: string;
+  confirmLoadingLabel: string;
+  isPending: boolean;
+  onConfirm: () => void;
+};
 
 /**
  * Inline action button that opens a confirm dialog on click.
@@ -31,11 +32,11 @@ export function ActionConfirmButton({
   isPending,
   onConfirm,
 }: ActionConfirmButtonProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   async function handleConfirm() {
-    await onConfirm()
-    setIsOpen(false)
+    await onConfirm();
+    setIsOpen(false);
   }
 
   return (
@@ -61,5 +62,5 @@ export function ActionConfirmButton({
         onCancel={() => setIsOpen(false)}
       />
     </>
-  )
+  );
 }

@@ -1,44 +1,44 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { fileURLToPath, URL } from 'node:url'
+import react from '@vitejs/plugin-react';
+import { URL, fileURLToPath } from 'node:url';
+import { defineConfig } from 'vite';
 
 function getNodeModulePackageName(id: string) {
-  const modulePath = id.split('node_modules/')[1]
+  const modulePath = id.split('node_modules/')[1];
 
   if (!modulePath) {
-    return undefined
+    return undefined;
   }
 
-  const [scopeOrName, maybeName] = modulePath.split('/')
+  const [scopeOrName, maybeName] = modulePath.split('/');
 
   if (scopeOrName?.startsWith('@') && maybeName) {
-    return `${scopeOrName}/${maybeName}`
+    return `${scopeOrName}/${maybeName}`;
   }
 
-  return scopeOrName
+  return scopeOrName;
 }
 
 function getVendorChunkName(id: string) {
   if (!id.includes('node_modules')) {
-    return undefined
+    return undefined;
   }
 
-  const packageName = getNodeModulePackageName(id)
+  const packageName = getNodeModulePackageName(id);
 
   if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-    return 'react-vendor'
+    return 'react-vendor';
   }
 
   if (id.includes('node_modules/react-router') || id.includes('node_modules/@remix-run/')) {
-    return 'router-vendor'
+    return 'router-vendor';
   }
 
   if (id.includes('node_modules/@tanstack/react-query/')) {
-    return 'query-vendor'
+    return 'query-vendor';
   }
 
   if (packageName?.startsWith('@supabase/')) {
-    return `supabase-${packageName.split('/')[1]}`
+    return `supabase-${packageName.split('/')[1]}`;
   }
 
   if (
@@ -46,10 +46,10 @@ function getVendorChunkName(id: string) {
     id.includes('node_modules/framer-motion/') ||
     id.includes('node_modules/sonner/')
   ) {
-    return 'ui-vendor'
+    return 'ui-vendor';
   }
 
-  return 'vendor'
+  return 'vendor';
 }
 
 // https://vite.dev/config/
@@ -70,4 +70,4 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-})
+});

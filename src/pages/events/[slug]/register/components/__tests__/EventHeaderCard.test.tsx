@@ -1,17 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { EventHeaderCard } from '../EventHeaderCard';
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
 
   return {
     ...actual,
     formatDateTime: (value: string | null) => (value ? `formatted:${value}` : 'TBD'),
-  }
-})
-
-import { EventHeaderCard } from '../EventHeaderCard'
+  };
+});
 
 describe('EventHeaderCard', () => {
   it('renders the available event summary and gate window', () => {
@@ -46,15 +46,15 @@ describe('EventHeaderCard', () => {
           registration_count: 12,
         }}
       />,
-    )
+    );
 
-    expect(screen.getByText('Summer Sprint')).toBeInTheDocument()
-    expect(screen.getByText('Location:')).toBeInTheDocument()
-    expect(screen.getByText('formatted:2026-06-23T10:00:00.000Z')).toBeInTheDocument()
-    expect(screen.getByText('Registered:')).toBeInTheDocument()
-    expect(screen.getByText('June 1')).toBeInTheDocument()
-    expect(screen.getByText('June 30')).toBeInTheDocument()
-  })
+    expect(screen.getByText('Summer Sprint')).toBeInTheDocument();
+    expect(screen.getByText('Location:')).toBeInTheDocument();
+    expect(screen.getByText('formatted:2026-06-23T10:00:00.000Z')).toBeInTheDocument();
+    expect(screen.getByText('Registered:')).toBeInTheDocument();
+    expect(screen.getByText('June 1')).toBeInTheDocument();
+    expect(screen.getByText('June 30')).toBeInTheDocument();
+  });
 
   it('shows Open to Guests badge when public registrations are enabled', () => {
     render(
@@ -88,10 +88,10 @@ describe('EventHeaderCard', () => {
           registration_count: 12,
         }}
       />,
-    )
+    );
 
-    expect(screen.getByText('Open to Guests')).toBeInTheDocument()
-  })
+    expect(screen.getByText('Open to Guests')).toBeInTheDocument();
+  });
 
   it('renders the unavailable message and event code when the event cannot be loaded', () => {
     render(
@@ -103,13 +103,13 @@ describe('EventHeaderCard', () => {
         eventWindowText={null}
         availability={{ status: 'unavailable', reason: 'not_found_or_unpublished' }}
       />,
-    )
+    );
 
-    expect(screen.getByText('Register for This Event')).toBeInTheDocument()
-    expect(screen.getByText('Event code:')).toBeInTheDocument()
-    expect(screen.getByText('sample-event')).toBeInTheDocument()
-    expect(screen.getAllByText('This event is unavailable right now.')).toHaveLength(2)
-  })
+    expect(screen.getByText('Register for This Event')).toBeInTheDocument();
+    expect(screen.getByText('Event code:')).toBeInTheDocument();
+    expect(screen.getByText('sample-event')).toBeInTheDocument();
+    expect(screen.getAllByText('This event is unavailable right now.')).toHaveLength(2);
+  });
 
   it('allows collapsing and expanding event registration info', async () => {
     render(
@@ -143,16 +143,16 @@ describe('EventHeaderCard', () => {
           registration_count: 12,
         }}
       />,
-    )
+    );
 
-    expect(screen.getByText('Location:')).toBeInTheDocument()
+    expect(screen.getByText('Location:')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Collapse event registration info' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse event registration info' }));
     await waitFor(() => {
-      expect(screen.queryByText('Location:')).not.toBeInTheDocument()
-    })
+      expect(screen.queryByText('Location:')).not.toBeInTheDocument();
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand event registration info' }))
-    expect(screen.getByText('Location:')).toBeInTheDocument()
-  })
-})
+    fireEvent.click(screen.getByRole('button', { name: 'Expand event registration info' }));
+    expect(screen.getByText('Location:')).toBeInTheDocument();
+  });
+});

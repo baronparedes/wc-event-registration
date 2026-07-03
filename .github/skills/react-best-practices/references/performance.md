@@ -13,10 +13,10 @@ Use when a value is **expensive to compute** and recomputes on every render.
 const filteredItems = useMemo(
   () => items.filter((i) => i.status === activeStatus),
   [items, activeStatus],
-)
+);
 
 // ❌ Over-memoized — string template is not expensive
-const title = useMemo(() => `Hello, ${name}`, [name])
+const title = useMemo(() => `Hello, ${name}`, [name]);
 ```
 
 ## useCallback
@@ -27,13 +27,13 @@ Use only when passing a **stable callback to a memoized child** component.
 // ✅ Appropriate — child is wrapped in React.memo
 const handleDelete = useCallback(
   (id: string) => {
-    deleteItem(id)
+    deleteItem(id);
   },
   [deleteItem],
-)
+);
 
 // ❌ Over-memoized — child is not memoized, callback stability doesn't matter
-const handleClick = useCallback(() => setOpen(true), [])
+const handleClick = useCallback(() => setOpen(true), []);
 ```
 
 ## React.memo
@@ -46,8 +46,8 @@ Wrap a component in `React.memo` when:
 
 ```tsx
 const Row = React.memo(function Row({ item }: { item: Item }) {
-  return <li>{item.name}</li>
-})
+  return <li>{item.name}</li>;
+});
 ```
 
 ## Avoid Unstable Props
@@ -56,11 +56,11 @@ Anonymous objects, arrays, and functions in JSX create new references on every r
 
 ```tsx
 // ❌ New object on every render — breaks React.memo
-;<Table config={{ density: 'compact' }} />
+<Table config={{ density: 'compact' }} />;
 
 // ✅ Stable reference
-const tableConfig = useMemo(() => ({ density: 'compact' }), [])
-;<Table config={tableConfig} />
+const tableConfig = useMemo(() => ({ density: 'compact' }), []);
+<Table config={tableConfig} />;
 ```
 
 ## useWatch for Scoped Subscriptions
@@ -69,7 +69,7 @@ const tableConfig = useMemo(() => ({ density: 'compact' }), [])
 
 ```tsx
 // ✅ Only this component re-renders when field changes
-const value = useWatch({ control, name: 'quantity' })
+const value = useWatch({ control, name: 'quantity' });
 ```
 
 ## Code Splitting

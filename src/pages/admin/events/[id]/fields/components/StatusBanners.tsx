@@ -1,8 +1,8 @@
-import type { EventStatus } from '@/lib/domain/events'
+import type { EventStatus } from '@/lib/domain/events';
 
 type StatusBannersProps = {
-  eventStatus: EventStatus
-}
+  eventStatus: EventStatus;
+};
 
 /** Display published or archived status warnings. */
 export function StatusBanners({ eventStatus }: StatusBannersProps) {
@@ -15,7 +15,7 @@ export function StatusBanners({ eventStatus }: StatusBannersProps) {
           archive this event and create a new one.
         </p>
       </div>
-    )
+    );
   }
 
   if (eventStatus === 'archived') {
@@ -24,8 +24,8 @@ export function StatusBanners({ eventStatus }: StatusBannersProps) {
         <p className="text-sm font-medium text-amber-800">Archived event</p>
         <p className="mt-1 text-xs text-amber-700">Field edits are disabled on archived events.</p>
       </div>
-    )
+    );
   }
 
-  return null
+  return null;
 }

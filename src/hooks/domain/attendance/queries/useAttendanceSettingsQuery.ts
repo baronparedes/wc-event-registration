@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@/config/constants'
-import type { AttendanceSettings } from '@/lib/domain/attendance'
-import { supabase } from '@/lib/infrastructure'
+import { useQuery } from '@tanstack/react-query';
+
+import { QUERY_KEYS } from '@/config/constants';
+import type { AttendanceSettings } from '@/lib/domain/attendance';
+import { supabase } from '@/lib/infrastructure';
 
 function buildDefaultSettings(eventId: string): AttendanceSettings {
   return {
@@ -11,7 +12,7 @@ function buildDefaultSettings(eventId: string): AttendanceSettings {
     timeslot_enabled: false,
     timeslots: [],
     updated_at: new Date().toISOString(),
-  }
+  };
 }
 
 /** Fetches attendance settings for an event, returning defaults if no row exists yet. */
@@ -20,7 +21,7 @@ export function useAttendanceSettingsQuery(eventId: string | undefined) {
     queryKey: QUERY_KEYS.adminAttendanceSettings(eventId),
     queryFn: async (): Promise<AttendanceSettings> => {
       if (!eventId) {
-        throw new Error('Event ID is required to load attendance settings.')
+        throw new Error('Event ID is required to load attendance settings.');
       }
 
       const { data, error } = await supabase
@@ -29,11 +30,11 @@ export function useAttendanceSettingsQuery(eventId: string | undefined) {
           'event_id, attendance_enabled, walk_in_mode_enabled, timeslot_enabled, timeslots, updated_at',
         )
         .eq('event_id', eventId)
-        .maybeSingle()
+        .maybeSingle();
 
-      if (error) throw error
-      return (data as AttendanceSettings | null) ?? buildDefaultSettings(eventId)
+      if (error) throw error;
+      return (data as AttendanceSettings | null) ?? buildDefaultSettings(eventId);
     },
     enabled: Boolean(eventId),
-  })
+  });
 }

@@ -1,29 +1,30 @@
-import type { FieldErrors, UseFormRegister } from 'react-hook-form'
-import type { CreateEventInput } from '@/lib/domain/events'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { SectionCard } from '@/components/ui/SectionCard'
+import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 
-type DateFieldName = 'starts_at' | 'ends_at' | 'registration_opens_at' | 'registration_closes_at'
+import { FormInputField } from '@/components/ui/FormInputField';
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { CreateEventInput } from '@/lib/domain/events';
+
+type DateFieldName = 'starts_at' | 'ends_at' | 'registration_opens_at' | 'registration_closes_at';
 
 type EventDateRangeSectionProps = {
-  title: string
-  startName: DateFieldName
-  startLabel: string
-  startId: string
-  endName: DateFieldName
-  endLabel: string
-  endId: string
-  errors: FieldErrors<CreateEventInput>
-  register: UseFormRegister<CreateEventInput>
-  disabled?: boolean
-}
+  title: string;
+  startName: DateFieldName;
+  startLabel: string;
+  startId: string;
+  endName: DateFieldName;
+  endLabel: string;
+  endId: string;
+  errors: FieldErrors<CreateEventInput>;
+  register: UseFormRegister<CreateEventInput>;
+  disabled?: boolean;
+};
 
 function getErrorMessage(
   errors: FieldErrors<CreateEventInput>,
   name: DateFieldName,
 ): string | null {
-  const message = errors[name]?.message
-  return typeof message === 'string' ? message : null
+  const message = errors[name]?.message;
+  return typeof message === 'string' ? message : null;
 }
 
 export function EventDateRangeSection(props: EventDateRangeSectionProps) {
@@ -38,10 +39,10 @@ export function EventDateRangeSection(props: EventDateRangeSectionProps) {
     errors,
     register,
     disabled,
-  } = props
+  } = props;
 
-  const startError = getErrorMessage(errors, startName)
-  const endError = getErrorMessage(errors, endName)
+  const startError = getErrorMessage(errors, startName);
+  const endError = getErrorMessage(errors, endName);
 
   return (
     <SectionCard title={title}>
@@ -65,5 +66,5 @@ export function EventDateRangeSection(props: EventDateRangeSectionProps) {
         />
       </div>
     </SectionCard>
-  )
+  );
 }

@@ -1,30 +1,31 @@
-import { useQuery } from '@tanstack/react-query'
-import { createEdgeFunctionCaller } from '@/lib/infrastructure'
-import type { PublicRegistrationCheckResult } from '@/lib/domain/public-registrations'
+import { useQuery } from '@tanstack/react-query';
+
+import type { PublicRegistrationCheckResult } from '@/lib/domain/public-registrations';
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 interface PublicAttendeeCheckRequest {
-  email: string
-  event_slug: string
+  email: string;
+  event_slug: string;
 }
 
 export async function fetchPublicAttendeeCheck(email: string, eventSlug: string) {
   const caller = createEdgeFunctionCaller<
     PublicAttendeeCheckRequest,
     PublicRegistrationCheckResult
-  >('public-attendee-lookup')
+  >('public-attendee-lookup');
 
-  const response = await caller({ email, event_slug: eventSlug })
+  const response = await caller({ email, event_slug: eventSlug });
 
   if (!response.success) {
     if ('reason' in response && response.reason === 'not_found') {
-      return null
+      return null;
     }
 
-    const reason = 'reason' in response ? String(response.reason) : 'Failed to check attendee'
-    throw new Error(reason)
+    const reason = 'reason' in response ? String(response.reason) : 'Failed to check attendee';
+    throw new Error(reason);
   }
 
-  return response.existing_registration
+  return response.existing_registration;
 }
 
 /**
@@ -36,12 +37,12 @@ export function usePublicAttendeeCheckQuery(email: string | null, eventSlug: str
     queryKey: ['publicAttendeeCheck', email, eventSlug],
     queryFn: async () => {
       if (!email || !eventSlug) {
-        return null
+        return null;
       }
 
-      return fetchPublicAttendeeCheck(email, eventSlug)
+      return fetchPublicAttendeeCheck(email, eventSlug);
     },
     enabled: Boolean(email && eventSlug),
     staleTime: 0,
-  })
+  });
 }

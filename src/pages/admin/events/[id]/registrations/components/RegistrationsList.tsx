@@ -1,11 +1,10 @@
-import { useState } from 'react'
-import { ClipboardList } from 'lucide-react'
-import { TOAST_MESSAGES, UI_MESSAGES, toAdminRegistrationDetail } from '@/config/constants'
-import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
-import { ActionLink } from '@/components/ui/ActionLink'
-import { EmptyState } from '@/components/ui'
-import { CancelRegistrationDialog } from './CancelRegistrationDialog'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useState } from 'react';
+
+import { ClipboardList } from 'lucide-react';
+
+import { EmptyState } from '@/components/ui';
+import { ActionLink } from '@/components/ui/ActionLink';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   ListTable,
   ListTableBody,
@@ -14,16 +13,20 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
-} from '@/components/ui/ListTable'
-import { useReactivateRegistrationMutation } from '@/hooks/domain/registrations'
-import { useErrorWithFadeout } from '@/hooks/utils'
+} from '@/components/ui/ListTable';
+import { TOAST_MESSAGES, UI_MESSAGES, toAdminRegistrationDetail } from '@/config/constants';
+import { useReactivateRegistrationMutation } from '@/hooks/domain/registrations';
+import { useErrorWithFadeout } from '@/hooks/utils';
+import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
+
+import { CancelRegistrationDialog } from './CancelRegistrationDialog';
 
 interface RegistrationsListProps {
-  registrations: AdminRegistrationWithMember[]
-  isLoading?: boolean
-  eventId: string
-  isEventArchived?: boolean
-  searchTerm?: string
+  registrations: AdminRegistrationWithMember[];
+  isLoading?: boolean;
+  eventId: string;
+  isEventArchived?: boolean;
+  searchTerm?: string;
 }
 
 function getStatusBadge(status: string) {
@@ -33,37 +36,37 @@ function getStatusBadge(status: string) {
         <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
           {UI_MESSAGES.registrationStatus.submitted}
         </span>
-      )
+      );
     case 'updated':
       return (
         <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
           {UI_MESSAGES.registrationStatus.updated}
         </span>
-      )
+      );
     case 'cancelled':
       return (
         <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
           {UI_MESSAGES.registrationStatus.cancelled}
         </span>
-      )
+      );
     default:
       return (
         <span className="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
           {status}
         </span>
-      )
+      );
   }
 }
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 export function RegistrationsList({
@@ -74,18 +77,18 @@ export function RegistrationsList({
   searchTerm,
 }: RegistrationsListProps) {
   const [selectedRegistration, setSelectedRegistration] =
-    useState<AdminRegistrationWithMember | null>(null)
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
-  const reactivateMutation = useReactivateRegistrationMutation(eventId)
-  const { showError } = useErrorWithFadeout()
+    useState<AdminRegistrationWithMember | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const reactivateMutation = useReactivateRegistrationMutation(eventId);
+  const { showError } = useErrorWithFadeout();
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center text-gray-500">{UI_MESSAGES.loading.registrations}</div>
       </div>
-    )
+    );
   }
 
   if (registrations.length === 0) {
@@ -101,34 +104,34 @@ export function RegistrationsList({
           }
         />
       </div>
-    )
+    );
   }
 
   const handleCancelClick = (registration: AdminRegistrationWithMember) => {
-    setSelectedRegistration(registration)
-    setShowCancelDialog(true)
-  }
+    setSelectedRegistration(registration);
+    setShowCancelDialog(true);
+  };
 
   const handleReactivateClick = (registration: AdminRegistrationWithMember) => {
-    setSelectedRegistration(registration)
-    setShowReactivateDialog(true)
-  }
+    setSelectedRegistration(registration);
+    setShowReactivateDialog(true);
+  };
 
   const handleConfirmReactivate = async () => {
-    if (!selectedRegistration) return
+    if (!selectedRegistration) return;
 
     try {
       await reactivateMutation.mutateAsync({
         registration_id: selectedRegistration.id,
-      })
-      setShowReactivateDialog(false)
-      setSelectedRegistration(null)
+      });
+      setShowReactivateDialog(false);
+      setSelectedRegistration(null);
     } catch (error) {
       showError(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.reactivateFailed,
-      )
+      );
     }
-  }
+  };
 
   return (
     <>
@@ -205,8 +208,8 @@ export function RegistrationsList({
           registration={selectedRegistration}
           isOpen={showCancelDialog}
           onClose={() => {
-            setShowCancelDialog(false)
-            setSelectedRegistration(null)
+            setShowCancelDialog(false);
+            setSelectedRegistration(null);
           }}
           eventId={eventId}
         />
@@ -216,8 +219,8 @@ export function RegistrationsList({
         <ConfirmDialog
           isOpen={showReactivateDialog}
           onCancel={() => {
-            setShowReactivateDialog(false)
-            setSelectedRegistration(null)
+            setShowReactivateDialog(false);
+            setSelectedRegistration(null);
           }}
           title="Reactivate Registration"
           description={
@@ -240,5 +243,5 @@ export function RegistrationsList({
         />
       )}
     </>
-  )
+  );
 }

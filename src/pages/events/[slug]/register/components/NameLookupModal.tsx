@@ -1,22 +1,25 @@
-import { useState } from 'react'
-import { createPortal } from 'react-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/Button'
+import { useState } from 'react';
+
+import { createPortal } from 'react-dom';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/Button';
 
 const nameLookupSchema = z.object({
   name: z.string().trim().min(1, 'Please enter your name').max(200, 'Name is too long'),
-})
+});
 
-type NameLookupForm = z.infer<typeof nameLookupSchema>
+type NameLookupForm = z.infer<typeof nameLookupSchema>;
 
 type NameLookupModalProps = {
-  onSubmit: (name: string) => Promise<void>
-  isLookupPending: boolean
-  variant?: 'link' | 'card'
-  autoOpen?: boolean
-}
+  onSubmit: (name: string) => Promise<void>;
+  isLookupPending: boolean;
+  variant?: 'link' | 'card';
+  autoOpen?: boolean;
+};
 
 /**
  * Modal component for name-based member lookup in registration flow.
@@ -32,9 +35,9 @@ export function NameLookupModal({
   variant = 'link',
   autoOpen = false,
 }: NameLookupModalProps) {
-  const [isOpen, setIsOpen] = useState(autoOpen)
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isOpen, setIsOpen] = useState(autoOpen);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -43,33 +46,33 @@ export function NameLookupModal({
     reset,
   } = useForm<NameLookupForm>({
     resolver: zodResolver(nameLookupSchema),
-  })
+  });
 
   const handleFormSubmit = async (data: NameLookupForm) => {
-    setErrorMessage(null)
-    setIsLoading(true)
+    setErrorMessage(null);
+    setIsLoading(true);
     try {
-      await onSubmit(data.name)
-      handleClose()
+      await onSubmit(data.name);
+      handleClose();
     } catch {
-      setErrorMessage('Unable to search by name. Please try again.')
+      setErrorMessage('Unable to search by name. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleOpen = () => {
-    setErrorMessage(null)
-    setIsLoading(false)
-    reset()
-    setIsOpen(true)
-  }
+    setErrorMessage(null);
+    setIsLoading(false);
+    reset();
+    setIsOpen(true);
+  };
 
   const handleClose = () => {
-    reset()
-    setIsOpen(false)
-    setErrorMessage(null)
-  }
+    reset();
+    setIsOpen(false);
+    setErrorMessage(null);
+  };
 
   return (
     <>
@@ -174,5 +177,5 @@ export function NameLookupModal({
           document.body,
         )}
     </>
-  )
+  );
 }

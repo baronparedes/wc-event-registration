@@ -1,74 +1,77 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { toast } from 'sonner'
-import { formatDateTime } from '@/lib/infrastructure'
-import { TIMING, TOAST_MESSAGES, toEventRegistration } from '@/config/constants'
-import { useKioskInactivityReset } from '@/hooks/utils'
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { AlertCircle, Calendar } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { StepIndicator } from '@/components/ui/StepIndicator';
+import { TIMING, TOAST_MESSAGES, toEventRegistration } from '@/config/constants';
+import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields/queries';
+import { usePublicEventQuery } from '@/hooks/domain/events/queries';
 import {
   fetchPublicAttendeeCheck,
   useSubmitPublicRegistrationMutation,
-} from '@/hooks/domain/public-registrations'
-import { usePublicEventQuery } from '@/hooks/domain/events/queries'
-import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields/queries'
+} from '@/hooks/domain/public-registrations';
+import { useKioskInactivityReset } from '@/hooks/utils';
+import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
+import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
+import { buildSubmitPublicRegistrationSchema } from '@/lib/domain/public-registrations';
+import { formatDateTime } from '@/lib/infrastructure';
+
+import { EventHeaderCard } from '../register/components/EventHeaderCard';
 import {
   PublicAttendeeInfoStep,
   PublicEventFieldsStep,
   PublicRegistrationConfirmationStep,
-} from './components'
-import { EventHeaderCard } from '../register/components/EventHeaderCard'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { StepIndicator } from '@/components/ui/StepIndicator'
-import { AlertCircle, Calendar } from 'lucide-react'
-import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations'
-import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields'
-import { buildSubmitPublicRegistrationSchema } from '@/lib/domain/public-registrations'
+} from './components';
 
-type Step = 'attendee-info' | 'event-fields' | 'confirmation'
+type Step = 'attendee-info' | 'event-fields' | 'confirmation';
 
 interface RouteParams extends Record<string, string | undefined> {
-  slug?: string
+  slug?: string;
 }
 
 export function PublicEventRegistrationPage() {
-  const { slug } = useParams<RouteParams>()
-  const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState<Step>('attendee-info')
+  const { slug } = useParams<RouteParams>();
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<Step>('attendee-info');
 
   // Auto-redirect to member registration after 3 minutes of inactivity
   const handleInactivityReset = useCallback(() => {
     if (slug) {
-      navigate(toEventRegistration(slug))
+      navigate(toEventRegistration(slug));
     }
-  }, [slug, navigate])
+  }, [slug, navigate]);
 
-  const isGuestRegistrationActive = currentStep !== 'confirmation'
+  const isGuestRegistrationActive = currentStep !== 'confirmation';
   const { secondsRemaining } = useKioskInactivityReset(
     handleInactivityReset,
     TIMING.kioskInactivityResetMs,
     isGuestRegistrationActive,
-  )
+  );
   const { secondsRemaining: confirmationSecondsRemaining } = useKioskInactivityReset(
     handleInactivityReset,
     TIMING.publicRegistrationConfirmationTimeoutMs,
     currentStep === 'confirmation',
-  )
-  const [attendeeInfo, setAttendeeInfo] = useState<PublicAttendeeInfoInput | null>(null)
-  const [attendeeEmailErrorMessage, setAttendeeEmailErrorMessage] = useState<string | null>(null)
-  const [isCheckingAttendee, setIsCheckingAttendee] = useState(false)
-  const [fieldResponses, setFieldResponses] = useState<DynamicFieldResponseValues>({})
+  );
+  const [attendeeInfo, setAttendeeInfo] = useState<PublicAttendeeInfoInput | null>(null);
+  const [attendeeEmailErrorMessage, setAttendeeEmailErrorMessage] = useState<string | null>(null);
+  const [isCheckingAttendee, setIsCheckingAttendee] = useState(false);
+  const [fieldResponses, setFieldResponses] = useState<DynamicFieldResponseValues>({});
   const [confirmationData, setConfirmationData] = useState<{
-    registrationId: string
-    email: string
-  } | null>(null)
-  const hasShownFieldsErrorToastRef = useRef(false)
+    registrationId: string;
+    email: string;
+  } | null>(null);
+  const hasShownFieldsErrorToastRef = useRef(false);
 
-  const eventQuery = usePublicEventQuery(slug ?? null)
+  const eventQuery = usePublicEventQuery(slug ?? null);
   const event =
-    eventQuery.data?.status === 'available' && eventQuery.data.event ? eventQuery.data.event : null
+    eventQuery.data?.status === 'available' && eventQuery.data.event ? eventQuery.data.event : null;
 
-  const fieldsQuery = usePublicEventFieldsQuery(event?.id)
-  const submitMutation = useSubmitPublicRegistrationMutation()
+  const fieldsQuery = usePublicEventFieldsQuery(event?.id);
+  const submitMutation = useSubmitPublicRegistrationMutation();
 
   useEffect(() => {
     if (
@@ -76,53 +79,53 @@ export function PublicEventRegistrationPage() {
       fieldsQuery.isError &&
       !hasShownFieldsErrorToastRef.current
     ) {
-      toast.error('Failed to load event fields. Please try again.')
-      hasShownFieldsErrorToastRef.current = true
-      return
+      toast.error('Failed to load event fields. Please try again.');
+      hasShownFieldsErrorToastRef.current = true;
+      return;
     }
 
     if (!fieldsQuery.isError) {
-      hasShownFieldsErrorToastRef.current = false
+      hasShownFieldsErrorToastRef.current = false;
     }
-  }, [currentStep, fieldsQuery.isError])
+  }, [currentStep, fieldsQuery.isError]);
 
   const handleAttendeeInfoSubmit = useCallback(
     async (data: PublicAttendeeInfoInput) => {
       if (!slug) {
-        return
+        return;
       }
 
-      setAttendeeEmailErrorMessage(null)
-      setIsCheckingAttendee(true)
+      setAttendeeEmailErrorMessage(null);
+      setIsCheckingAttendee(true);
 
       try {
-        const existingRegistration = await fetchPublicAttendeeCheck(data.email, slug)
+        const existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
 
         if (existingRegistration) {
-          setAttendeeEmailErrorMessage('This email is already registered for this event.')
-          return
+          setAttendeeEmailErrorMessage('This email is already registered for this event.');
+          return;
         }
 
-        setAttendeeInfo(data)
-        setCurrentStep('event-fields')
+        setAttendeeInfo(data);
+        setCurrentStep('event-fields');
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to check attendee'
-        toast.error(message)
+        const message = error instanceof Error ? error.message : 'Failed to check attendee';
+        toast.error(message);
       } finally {
-        setIsCheckingAttendee(false)
+        setIsCheckingAttendee(false);
       }
     },
     [slug],
-  )
+  );
 
   const displayedSecondsRemaining =
-    currentStep === 'confirmation' ? confirmationSecondsRemaining : secondsRemaining
+    currentStep === 'confirmation' ? confirmationSecondsRemaining : secondsRemaining;
 
   const handleFieldsSubmit = useCallback(
     async (responses: DynamicFieldResponseValues) => {
-      if (!attendeeInfo || !eventQuery.data || !slug) return
+      if (!attendeeInfo || !eventQuery.data || !slug) return;
 
-      setFieldResponses(responses)
+      setFieldResponses(responses);
 
       try {
         // Build proper response object (exclude attendee fields)
@@ -134,10 +137,10 @@ export function PublicEventRegistrationPage() {
             key !== 'email' &&
             key !== 'phone'
           ) {
-            acc[key] = value
+            acc[key] = value;
           }
-          return acc
-        }, {} as DynamicFieldResponseValues)
+          return acc;
+        }, {} as DynamicFieldResponseValues);
 
         // Build and validate request data with proper structure
         const requestData = {
@@ -151,33 +154,33 @@ export function PublicEventRegistrationPage() {
           },
           responses: fieldResponses,
           idempotency_key: `${attendeeInfo.email}-${slug}-${Date.now()}`,
-        }
+        };
 
         // Validate request structure
-        const schema = buildSubmitPublicRegistrationSchema(fieldsQuery.data?.validFields || [])
-        schema.parse(requestData)
+        const schema = buildSubmitPublicRegistrationSchema(fieldsQuery.data?.validFields || []);
+        schema.parse(requestData);
 
-        const result = await submitMutation.mutateAsync(requestData)
+        const result = await submitMutation.mutateAsync(requestData);
 
         if (result.success) {
           setConfirmationData({
             registrationId: result.registration_id,
             email: attendeeInfo.email,
-          })
-          setCurrentStep('confirmation')
+          });
+          setCurrentStep('confirmation');
         }
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : TOAST_MESSAGES.registration.submitFailed
-        toast.error(message)
+          error instanceof Error ? error.message : TOAST_MESSAGES.registration.submitFailed;
+        toast.error(message);
       }
     },
     [attendeeInfo, eventQuery.data, slug, fieldsQuery.data, submitMutation],
-  )
+  );
 
   const handleBackToAttendeeInfo = useCallback(() => {
-    setCurrentStep('attendee-info')
-  }, [])
+    setCurrentStep('attendee-info');
+  }, []);
 
   if (!slug) {
     return (
@@ -188,7 +191,7 @@ export function PublicEventRegistrationPage() {
           description="No event specified."
         />
       </section>
-    )
+    );
   }
 
   if (eventQuery.isLoading) {
@@ -202,7 +205,7 @@ export function PublicEventRegistrationPage() {
           </div>
         </SectionCard>
       </section>
-    )
+    );
   }
 
   if (eventQuery.isError) {
@@ -214,7 +217,7 @@ export function PublicEventRegistrationPage() {
           description={eventQuery.error?.message || 'Unable to load event information'}
         />
       </section>
-    )
+    );
   }
 
   if (!eventQuery.data) {
@@ -226,23 +229,23 @@ export function PublicEventRegistrationPage() {
           description="The event you're looking for does not exist or is not accepting registrations."
         />
       </section>
-    )
+    );
   }
 
   const getStepNumber = (): number => {
-    if (currentStep === 'attendee-info') return 1
-    if (currentStep === 'event-fields') return 2
-    return 3
-  }
+    if (currentStep === 'attendee-info') return 1;
+    if (currentStep === 'event-fields') return 2;
+    return 3;
+  };
 
   return (
     <section className="mx-auto max-w-3xl space-y-6">
       {(() => {
-        const isAvailable = eventQuery.data?.status === 'available'
+        const isAvailable = eventQuery.data?.status === 'available';
         const availData = isAvailable
           ? (eventQuery.data as Extract<typeof eventQuery.data, { status: 'available' }>)
-          : null
-        const event = availData?.event
+          : null;
+        const event = availData?.event;
 
         return (
           <EventHeaderCard
@@ -261,7 +264,7 @@ export function PublicEventRegistrationPage() {
                 : null
             }
           />
-        )
+        );
       })()}
 
       <StepIndicator
@@ -331,5 +334,5 @@ export function PublicEventRegistrationPage() {
         </div>
       )}
     </section>
-  )
+  );
 }

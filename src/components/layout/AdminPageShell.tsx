@@ -1,30 +1,31 @@
-import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
-import { cx } from 'class-variance-authority'
+import type { ReactNode } from 'react';
+
+import { cx } from 'class-variance-authority';
+import { ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 type AdminPageShellProps = {
-  children: ReactNode
-}
+  children: ReactNode;
+};
 
 export function AdminPageShell({ children }: AdminPageShellProps) {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6">
       <div className="space-y-5">{children}</div>
     </div>
-  )
+  );
 }
 
 type AdminPageHeaderProps = {
-  title: string
-  description?: string
-  actions?: ReactNode
+  title: string;
+  description?: string;
+  actions?: ReactNode;
   breadcrumbs?: Array<{
-    label: string
-    to?: string
-  }>
-  navLinks?: ReactNode
-}
+    label: string;
+    to?: string;
+  }>;
+  navLinks?: ReactNode;
+};
 
 function AdminPageHeader({
   title,
@@ -69,28 +70,28 @@ function AdminPageHeader({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 type AdminPageFiltersProps = {
-  children: ReactNode
-  className?: string
-}
+  children: ReactNode;
+  className?: string;
+};
 
 function AdminPageFilters({ children, className }: AdminPageFiltersProps) {
   return (
     <div className={cx('rounded-2xl border border-border bg-surface p-4', className)}>
       {children}
     </div>
-  )
+  );
 }
 
 type AdminPageContentProps = {
-  children: ReactNode
-  className?: string
-  isLoading?: boolean
-  loadingMessage?: string
-}
+  children: ReactNode;
+  className?: string;
+  isLoading?: boolean;
+  loadingMessage?: string;
+};
 
 function AdminPageContent({
   children,
@@ -103,12 +104,12 @@ function AdminPageContent({
       <div className={className}>
         <p className="text-sm text-muted">{loadingMessage || 'Loading...'}</p>
       </div>
-    )
+    );
   }
 
-  return <div className={className}>{children}</div>
+  return <div className={className}>{children}</div>;
 }
 
-AdminPageShell.Header = AdminPageHeader
-AdminPageShell.Filters = AdminPageFilters
-AdminPageShell.Content = AdminPageContent
+AdminPageShell.Header = AdminPageHeader;
+AdminPageShell.Filters = AdminPageFilters;
+AdminPageShell.Content = AdminPageContent;

@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/Button'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { createMemberSchema, type CreateMemberInput } from '@/lib/domain/members'
-import { useCreateMemberMutation } from '@/hooks/domain/members'
+import { useEffect, useRef, useState } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/Button';
+import { FormInputField } from '@/components/ui/FormInputField';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { useCreateMemberMutation } from '@/hooks/domain/members';
+import { type CreateMemberInput, createMemberSchema } from '@/lib/domain/members';
 
 const DEFAULT_VALUES: CreateMemberInput = {
   member_id: '',
@@ -18,12 +20,12 @@ const DEFAULT_VALUES: CreateMemberInput = {
   date_of_birth: '',
   role: '',
   category: '',
-}
+};
 
 export function AddMemberDialog() {
-  const [isOpen, setIsOpen] = useState(false)
-  const createMemberMutation = useCreateMemberMutation()
-  const formRef = useRef<HTMLFormElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const createMemberMutation = useCreateMemberMutation();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const {
     register,
@@ -34,33 +36,33 @@ export function AddMemberDialog() {
   } = useForm<CreateMemberInput>({
     resolver: zodResolver(createMemberSchema),
     defaultValues: DEFAULT_VALUES,
-  })
+  });
 
-  const firstName = useWatch({ control, name: 'first_name' })
-  const lastName = useWatch({ control, name: 'last_name' })
+  const firstName = useWatch({ control, name: 'first_name' });
+  const lastName = useWatch({ control, name: 'last_name' });
   const derivedFullName = [firstName ?? '', lastName ?? '']
     .map((value) => value.trim())
     .filter(Boolean)
-    .join(' ')
+    .join(' ');
 
   useEffect(() => {
     if (!isOpen) {
-      reset(DEFAULT_VALUES)
+      reset(DEFAULT_VALUES);
     }
-  }, [isOpen, reset])
+  }, [isOpen, reset]);
 
   async function onSubmit(values: CreateMemberInput) {
     try {
-      await createMemberMutation.mutateAsync(values)
-      toast.success('Member created successfully.')
-      setIsOpen(false)
+      await createMemberMutation.mutateAsync(values);
+      toast.success('Member created successfully.');
+      setIsOpen(false);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create member.'
-      toast.error(errorMessage)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create member.';
+      toast.error(errorMessage);
     }
   }
 
-  const isLoading = createMemberMutation.isPending || isSubmitting
+  const isLoading = createMemberMutation.isPending || isSubmitting;
 
   return (
     <>
@@ -74,7 +76,7 @@ export function AddMemberDialog() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 lg:px-8"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setIsOpen(false)
+              setIsOpen(false);
             }
           }}
         >
@@ -175,5 +177,5 @@ export function AddMemberDialog() {
         </div>
       )}
     </>
-  )
+  );
 }

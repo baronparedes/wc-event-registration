@@ -1,29 +1,32 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { ROUTE_PATHS, ROUTE_PREFIXES, TOAST_MESSAGES } from '@/config/constants'
-import brandLogo from '@/assets/wc-events-brand.png'
-import { Button } from '../ui/Button'
-import { DropdownMenu, DropdownMenuItem } from '../ui/DropdownMenu'
-import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth'
+import { useState } from 'react';
+
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import brandLogo from '@/assets/wc-events-brand.png';
+import { ROUTE_PATHS, ROUTE_PREFIXES, TOAST_MESSAGES } from '@/config/constants';
+
+import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
+import { Button } from '../ui/Button';
+import { DropdownMenu, DropdownMenuItem } from '../ui/DropdownMenu';
 
 export function AppShell() {
-  const { data: adminAuth } = useAdminAuthQuery()
-  const logoutMutation = useAdminLogoutMutation()
-  const location = useLocation()
-  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false)
+  const { data: adminAuth } = useAdminAuthQuery();
+  const logoutMutation = useAdminLogoutMutation();
+  const location = useLocation();
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
 
   async function handleLogout() {
     try {
-      await logoutMutation.mutateAsync()
-      toast.success(TOAST_MESSAGES.adminSignOutSuccess)
+      await logoutMutation.mutateAsync();
+      toast.success(TOAST_MESSAGES.adminSignOutSuccess);
     } catch (error) {
-      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignOutFailure
-      toast.error(message)
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignOutFailure;
+      toast.error(message);
     }
   }
 
-  const isAdminPath = location.pathname.startsWith(ROUTE_PREFIXES.admin)
+  const isAdminPath = location.pathname.startsWith(ROUTE_PREFIXES.admin);
 
   return (
     <div className="min-h-screen bg-background text-text">
@@ -102,5 +105,5 @@ export function AppShell() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

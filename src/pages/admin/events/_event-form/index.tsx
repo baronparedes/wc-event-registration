@@ -1,8 +1,12 @@
-import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useForm, useWatch } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
+import { useEffect } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useWatch } from 'react-hook-form';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { AdminPageShell } from '@/components/layout';
+import { ActionLink } from '@/components/ui/ActionLink';
 import {
   ROUTE_PATHS,
   TOAST_MESSAGES,
@@ -10,38 +14,37 @@ import {
   toAdminEventAttendance,
   toAdminEventFields,
   toAdminEventRegistrations,
-} from '@/config/constants'
+} from '@/config/constants';
 import {
   useAdminEventQuery,
   useCreateEventMutation,
   useUpdateEventMutation,
-} from '@/hooks/domain/events'
-import { useSlugGeneration, useSaveConfirmation } from '@/hooks/utils'
-import { createEventSchema } from '@/lib/domain/events'
-import type { CreateEventInput } from '@/lib/domain/events'
-import { AdminPageShell } from '@/components/layout'
-import { ActionLink } from '@/components/ui/ActionLink'
+} from '@/hooks/domain/events';
+import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
+import { createEventSchema } from '@/lib/domain/events';
+import type { CreateEventInput } from '@/lib/domain/events';
+
 import {
   EventDateRangeSection,
   EventDetailsSection,
   EventFormActions,
   EventRegistrationSettingsSection,
   EventStatusWarning,
-  SaveConfirmationDialog,
   PublishRequirementsChecker,
-} from './components'
+  SaveConfirmationDialog,
+} from './components';
 
 type AdminEventFormPageProps = {
-  mode: 'create' | 'edit'
-}
+  mode: 'create' | 'edit';
+};
 
 /** Converts an ISO timestamp to the datetime-local input format in Asia/Manila (UTC+8). */
 function toDatetimeLocal(value: string | null | undefined): string {
-  if (!value) return ''
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return ''
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
   // sv-SE locale produces "YYYY-MM-DD HH:mm:ss" — slice and replace space to get datetime-local value
-  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T')
+  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T');
 }
 
 const DEFAULT_VALUES: CreateEventInput = {
@@ -58,23 +61,23 @@ const DEFAULT_VALUES: CreateEventInput = {
   registration_mode: 'open',
   allow_name_lookup: false,
   allow_public_registrations: false,
-}
+};
 
 export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
-  const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
-  const isEditMode = mode === 'edit'
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = mode === 'edit';
 
   const { data: existingEvent, isLoading: isLoadingEvent } = useAdminEventQuery(
     isEditMode ? id : undefined,
-  )
-  const createMutation = useCreateEventMutation()
-  const updateMutation = useUpdateEventMutation()
-  const isPending = createMutation.isPending || updateMutation.isPending
+  );
+  const createMutation = useCreateEventMutation();
+  const updateMutation = useUpdateEventMutation();
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   // Extract save confirmation logic
   const { showDialog, pendingFormData, requestConfirmation, confirmSave, cancelSave } =
-    useSaveConfirmation()
+    useSaveConfirmation();
 
   const {
     register,
@@ -87,15 +90,15 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   } = useForm<CreateEventInput>({
     resolver: zodResolver(createEventSchema),
     defaultValues: DEFAULT_VALUES,
-  })
+  });
 
   // Extract slug generation logic (after useForm to ensure watch/setValue are available)
-  const { slugValue, onSlugChange } = useSlugGeneration(isEditMode, watch, setValue)
+  const { slugValue, onSlugChange } = useSlugGeneration(isEditMode, watch, setValue);
 
   // Prefill form when editing an existing event
   useEffect(() => {
     if (isEditMode && existingEvent) {
-      const eventMetadata = (existingEvent.metadata ?? {}) as Record<string, unknown>
+      const eventMetadata = (existingEvent.metadata ?? {}) as Record<string, unknown>;
       reset({
         title: existingEvent.title,
         slug: existingEvent.slug,
@@ -110,40 +113,40 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         registration_mode: existingEvent.registration_mode,
         allow_name_lookup: eventMetadata.allow_name_lookup === true,
         allow_public_registrations: existingEvent.allow_public_registrations ?? false,
-      })
+      });
     }
-  }, [isEditMode, existingEvent, reset])
+  }, [isEditMode, existingEvent, reset]);
 
   async function onSubmit(data: CreateEventInput) {
     // If event is published and we're editing, show confirmation dialog
     if (isEditMode && existingEvent?.status === 'published') {
-      requestConfirmation(data)
-      return
+      requestConfirmation(data);
+      return;
     }
 
     // Otherwise, save directly
-    await performSave(data)
+    await performSave(data);
   }
 
   async function performSave(data: CreateEventInput) {
     try {
       if (isEditMode && id) {
-        await updateMutation.mutateAsync({ id, ...data })
-        toast.success(TOAST_MESSAGES.eventSaved.updated)
+        await updateMutation.mutateAsync({ id, ...data });
+        toast.success(TOAST_MESSAGES.eventSaved.updated);
       } else {
-        await createMutation.mutateAsync(data)
-        toast.success(TOAST_MESSAGES.eventSaved.created)
+        await createMutation.mutateAsync(data);
+        toast.success(TOAST_MESSAGES.eventSaved.created);
       }
-      navigate(ROUTE_PATHS.adminEvents)
+      navigate(ROUTE_PATHS.adminEvents);
     } catch (error) {
-      const message = error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.saveFailed
-      toast.error(message)
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.saveFailed;
+      toast.error(message);
     } finally {
-      cancelSave()
+      cancelSave();
     }
   }
 
-  const formValues = useWatch({ control }) as CreateEventInput
+  const formValues = useWatch({ control }) as CreateEventInput;
 
   if (isEditMode && isLoadingEvent) {
     return (
@@ -152,7 +155,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           {null}
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
   if (isEditMode && !existingEvent && !isLoadingEvent) {
@@ -163,11 +166,11 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           <div className="text-sm text-red-600">{UI_MESSAGES.errors.eventNotFound}</div>
         </AdminPageShell.Content>
       </AdminPageShell>
-    )
+    );
   }
 
-  const title = isEditMode ? 'Edit Event' : 'Create Event'
-  const isArchivedEvent = isEditMode && existingEvent?.status === 'archived'
+  const title = isEditMode ? 'Edit Event' : 'Create Event';
+  const isArchivedEvent = isEditMode && existingEvent?.status === 'archived';
 
   const breadcrumbs = isEditMode
     ? [
@@ -175,7 +178,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         { label: existingEvent?.title ?? 'Event' },
         { label: 'Edit' },
       ]
-    : undefined
+    : undefined;
 
   const navLinks = isEditMode ? (
     <div className="flex items-center gap-4">
@@ -183,7 +186,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
       <ActionLink to={toAdminEventFields(id!)}>Fields</ActionLink>
       <ActionLink to={toAdminEventRegistrations(id!)}>Registrations</ActionLink>
     </div>
-  ) : undefined
+  ) : undefined;
 
   return (
     <AdminPageShell>
@@ -254,13 +257,13 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             changedFieldNames={Object.keys(dirtyFields) as (keyof CreateEventInput)[]}
             isPending={isPending}
             onConfirm={() => {
-              confirmSave()
-              performSave(pendingFormData)
+              confirmSave();
+              performSave(pendingFormData);
             }}
             onCancel={cancelSave}
           />
         )}
       </AdminPageShell.Content>
     </AdminPageShell>
-  )
+  );
 }

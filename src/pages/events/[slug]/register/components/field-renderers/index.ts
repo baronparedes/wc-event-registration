@@ -5,11 +5,11 @@ export {
   PhoneFieldRenderer,
   NumberFieldRenderer,
   TextareaFieldRenderer,
-} from './TextFieldRenderer'
-export { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer'
+} from './TextFieldRenderer';
+export { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer';
 export {
   SelectFieldRenderer,
   RadioFieldRenderer,
   MultiSelectFieldRenderer,
-} from './SelectFieldRenderer'
-export { CheckboxFieldRenderer } from './CheckboxFieldRenderer'
+} from './SelectFieldRenderer';
+export { CheckboxFieldRenderer } from './CheckboxFieldRenderer';

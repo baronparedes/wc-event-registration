@@ -1,6 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AdminEventFormPage } from '@/pages/admin/events/_event-form';
 
 const {
   mockNavigate,
@@ -18,28 +20,28 @@ const {
   mockUpdateMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
-}))
+}));
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
 
   return {
     ...actual,
     useNavigate: () => mockNavigate,
     useParams: () => mockUseParams(),
-  }
-})
+  };
+});
 
 vi.mock('sonner', () => ({
   toast: {
     success: mockToastSuccess,
     error: mockToastError,
   },
-}))
+}));
 
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
-    await vi.importActual<typeof import('@/hooks/domain/events')>('@/hooks/domain/events')
+    await vi.importActual<typeof import('@/hooks/domain/events')>('@/hooks/domain/events');
 
   return {
     ...actual,
@@ -52,23 +54,21 @@ vi.mock('@/hooks/domain/events', async () => {
       mutateAsync: mockUpdateMutateAsync,
       isPending: false,
     }),
-  }
-})
-
-import { AdminEventFormPage } from '@/pages/admin/events/_event-form'
+  };
+});
 
 function renderWithRouter(mode: 'create' | 'edit') {
   return render(
     <MemoryRouter>
       <AdminEventFormPage mode={mode} />
     </MemoryRouter>,
-  )
+  );
 }
 
 describe('AdminEventFormPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockUseParams.mockReturnValue({ id: 'event-1' })
+    vi.clearAllMocks();
+    mockUseParams.mockReturnValue({ id: 'event-1' });
     mockUseAdminEventQuery.mockReturnValue({
       data: {
         id: 'event-1',
@@ -85,41 +85,41 @@ describe('AdminEventFormPage', () => {
         registration_mode: 'open',
       },
       isLoading: false,
-    })
-    mockUpdateMutateAsync.mockResolvedValue(undefined)
-    mockCreateMutateAsync.mockResolvedValue(undefined)
-  })
+    });
+    mockUpdateMutateAsync.mockResolvedValue(undefined);
+    mockCreateMutateAsync.mockResolvedValue(undefined);
+  });
 
   it('renders loading and not-found states for edit mode', () => {
     mockUseAdminEventQuery.mockReturnValue({
       data: null,
       isLoading: true,
-    })
+    });
 
-    const { rerender } = renderWithRouter('edit')
-    expect(screen.getByText('Loading event...')).toBeInTheDocument()
+    const { rerender } = renderWithRouter('edit');
+    expect(screen.getByText('Loading event...')).toBeInTheDocument();
 
     mockUseAdminEventQuery.mockReturnValue({
       data: null,
       isLoading: false,
-    })
+    });
 
     rerender(
       <MemoryRouter>
         <AdminEventFormPage mode="edit" />
       </MemoryRouter>,
-    )
-    expect(screen.getByText('Event not found.')).toBeInTheDocument()
-  })
+    );
+    expect(screen.getByText('Event not found.')).toBeInTheDocument();
+  });
 
   it('submits create mode successfully', async () => {
-    renderWithRouter('create')
+    renderWithRouter('create');
 
     fireEvent.change(screen.getByLabelText('Title *'), {
       target: { value: 'Brand New Event' },
-    })
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create Event' }));
 
     await waitFor(() => {
       expect(mockCreateMutateAsync).toHaveBeenCalledWith(
@@ -130,12 +130,12 @@ describe('AdminEventFormPage', () => {
           duplicate_policy: 'block',
           registration_mode: 'open',
         }),
-      )
-    })
+      );
+    });
 
-    expect(mockToastSuccess).toHaveBeenCalledWith('Event created successfully.')
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/events')
-  })
+    expect(mockToastSuccess).toHaveBeenCalledWith('Event created successfully.');
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/events');
+  });
 
   it('shows save confirmation for published events before mutating', async () => {
     mockUseAdminEventQuery.mockReturnValue({
@@ -154,20 +154,20 @@ describe('AdminEventFormPage', () => {
         registration_mode: 'open',
       },
       isLoading: false,
-    })
+    });
 
-    renderWithRouter('edit')
+    renderWithRouter('edit');
 
     fireEvent.change(screen.getByLabelText('Title *'), {
       target: { value: 'Published Event Updated' },
-    })
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
-    expect(mockUpdateMutateAsync).not.toHaveBeenCalled()
-    expect(await screen.findByText('Review Changes')).toBeInTheDocument()
+    expect(mockUpdateMutateAsync).not.toHaveBeenCalled();
+    expect(await screen.findByText('Review Changes')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save Changes' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save Changes' })[1]);
 
     await waitFor(() => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith(
@@ -175,9 +175,9 @@ describe('AdminEventFormPage', () => {
           id: 'event-1',
           title: 'Published Event Updated',
         }),
-      )
-    })
-  })
+      );
+    });
+  });
 
   it('renders archived edit mode as read-only with Back to Events action', () => {
     mockUseAdminEventQuery.mockReturnValue({
@@ -196,64 +196,64 @@ describe('AdminEventFormPage', () => {
         registration_mode: 'open',
       },
       isLoading: false,
-    })
+    });
 
-    renderWithRouter('edit')
+    renderWithRouter('edit');
 
-    expect(screen.getByText(/This event is archived and cannot be edited/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Back to Events' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument()
-  })
+    expect(screen.getByText(/This event is archived and cannot be edited/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to Events' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument();
+  });
 
   it('shows quick links to attendance, fields, and registrations in edit mode', () => {
-    renderWithRouter('edit')
+    renderWithRouter('edit');
 
-    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', '/admin/events')
+    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', '/admin/events');
     expect(screen.getByRole('link', { name: 'Attendance' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/attendance',
-    )
+    );
     expect(screen.getByRole('link', { name: 'Fields' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/fields',
-    )
+    );
     expect(screen.getByRole('link', { name: 'Registrations' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/registrations',
-    )
-  })
+    );
+  });
 
   it('shows error toast when save fails', async () => {
-    mockUpdateMutateAsync.mockRejectedValueOnce(new Error('save failed'))
+    mockUpdateMutateAsync.mockRejectedValueOnce(new Error('save failed'));
 
-    renderWithRouter('edit')
+    renderWithRouter('edit');
 
     fireEvent.change(screen.getByLabelText('Title *'), {
       target: { value: 'Updated Event Title' },
-    })
+    });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('save failed')
-    })
-  })
+      expect(mockToastError).toHaveBeenCalledWith('save failed');
+    });
+  });
 
   it('keeps Save Changes disabled until the edit form becomes dirty, then submits', async () => {
-    renderWithRouter('edit')
+    renderWithRouter('edit');
 
-    const saveButton = await screen.findByRole('button', { name: 'Save Changes' })
-    expect(saveButton.hasAttribute('disabled')).toBe(true)
+    const saveButton = await screen.findByRole('button', { name: 'Save Changes' });
+    expect(saveButton.hasAttribute('disabled')).toBe(true);
 
     fireEvent.change(screen.getByLabelText('Title *'), {
       target: { value: 'Updated Event Title' },
-    })
+    });
 
     await waitFor(() => {
-      expect(saveButton.hasAttribute('disabled')).toBe(false)
-    })
+      expect(saveButton.hasAttribute('disabled')).toBe(false);
+    });
 
-    fireEvent.click(saveButton)
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith(
@@ -271,10 +271,10 @@ describe('AdminEventFormPage', () => {
           duplicate_policy: 'block',
           registration_mode: 'open',
         }),
-      )
-    })
+      );
+    });
 
-    expect(mockToastSuccess).toHaveBeenCalledWith('Event updated successfully.')
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/events')
-  })
-})
+    expect(mockToastSuccess).toHaveBeenCalledWith('Event updated successfully.');
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/events');
+  });
+});

@@ -1,15 +1,16 @@
-import type { ReactNode } from 'react'
-import { Component } from 'react'
-import { logger } from '@/lib/infrastructure'
+import type { ReactNode } from 'react';
+import { Component } from 'react';
+
+import { logger } from '@/lib/infrastructure';
 
 interface Props {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface State {
-  hasError: boolean
-  error: Error | null
-  requestId: string
+  hasError: boolean;
+  error: Error | null;
+  requestId: string;
 }
 
 /**
@@ -22,16 +23,16 @@ interface State {
  */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
+    super(props);
     this.state = {
       hasError: false,
       error: null,
       requestId: crypto.randomUUID(),
-    }
+    };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -40,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
-    })
+    });
   }
 
   render() {
@@ -79,9 +80,9 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }

@@ -1,36 +1,36 @@
-import { waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { act } from '@testing-library/react'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
+import { faker } from '@faker-js/faker';
+import { waitFor } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useRegistrationNamesQuery } from '@/hooks/domain/registrations/queries/useRegistrationNamesQuery';
 
 const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
-  const caller = vi.fn()
+  const caller = vi.fn();
   return {
     mockCaller: caller,
     mockCreateEdgeFunctionCaller: vi.fn(() => caller),
-  }
-})
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
-  }
-})
-
-import { useRegistrationNamesQuery } from '@/hooks/domain/registrations/queries/useRegistrationNamesQuery'
+  };
+});
 
 describe('useRegistrationNamesQuery', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('returns parsed registration names payload from export edge function', async () => {
-    const eventId = faker.string.uuid()
-    const eventTitle = faker.lorem.words(2)
+    const eventId = faker.string.uuid();
+    const eventTitle = faker.lorem.words(2);
 
     mockCaller.mockResolvedValueOnce({
       success: true,
@@ -47,32 +47,32 @@ describe('useRegistrationNamesQuery', () => {
           answer_values: { 'field-1': faker.company.name() },
         },
       ],
-    })
+    });
 
-    const { result } = renderHookWithClient(() => useRegistrationNamesQuery(eventId))
+    const { result } = renderHookWithClient(() => useRegistrationNamesQuery(eventId));
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true)
-    })
+      expect(result.current.isSuccess).toBe(true);
+    });
 
-    expect(result.current.data?.event_title).toBe(eventTitle)
-    expect(mockCaller).toHaveBeenCalledWith({ event_id: eventId, response_mode: 'names_json' })
-  })
+    expect(result.current.data?.event_title).toBe(eventTitle);
+    expect(mockCaller).toHaveBeenCalledWith({ event_id: eventId, response_mode: 'names_json' });
+  });
 
   it('returns query error state when response parsing fails', async () => {
-    mockCaller.mockResolvedValueOnce({})
+    mockCaller.mockResolvedValueOnce({});
 
-    const { result } = renderHookWithClient(() => useRegistrationNamesQuery(faker.string.uuid()))
+    const { result } = renderHookWithClient(() => useRegistrationNamesQuery(faker.string.uuid()));
 
     await act(async () => {
-      const refetchResult = await result.current.refetch()
-      expect(refetchResult.isError).toBe(true)
-    })
-  })
+      const refetchResult = await result.current.refetch();
+      expect(refetchResult.isError).toBe(true);
+    });
+  });
 
   it('does not run when explicitly disabled', () => {
-    renderHookWithClient(() => useRegistrationNamesQuery(faker.string.uuid(), { enabled: false }))
+    renderHookWithClient(() => useRegistrationNamesQuery(faker.string.uuid(), { enabled: false }));
 
-    expect(mockCaller).not.toHaveBeenCalled()
-  })
-})
+    expect(mockCaller).not.toHaveBeenCalled();
+  });
+});

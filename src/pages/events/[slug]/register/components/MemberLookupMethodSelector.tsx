@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button';
 
 type MemberLookupMethodSelectorProps = {
-  allowNameLookup: boolean
-  isLookupPending: boolean
-  onSelectMethod: (method: 'id' | 'name') => void
-}
+  allowNameLookup: boolean;
+  isLookupPending: boolean;
+  onSelectMethod: (method: 'id' | 'name') => void;
+};
 
 /**
  * Component for choosing how to lookup a member: by ID or by name.
@@ -49,5 +49,5 @@ export function MemberLookupMethodSelector({
         )}
       </div>
     </div>
-  )
+  );
 }

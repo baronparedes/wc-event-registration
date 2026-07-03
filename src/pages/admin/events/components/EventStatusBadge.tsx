@@ -1,6 +1,7 @@
-import type { EventStatus } from '@/lib/domain/events'
-import { Badge } from '@/components/ui'
-import { CheckCircle2, Trash2, FileText } from 'lucide-react'
+import { CheckCircle2, FileText, Trash2 } from 'lucide-react';
+
+import { Badge } from '@/components/ui';
+import type { EventStatus } from '@/lib/domain/events';
 
 const statusConfig: Record<
   EventStatus,
@@ -21,17 +22,17 @@ const statusConfig: Record<
     variant: 'error',
     icon: <Trash2 className="h-3 w-3" />,
   },
-}
+};
 
 type EventStatusBadgeProps = {
-  status: EventStatus
-}
+  status: EventStatus;
+};
 
 export function EventStatusBadge({ status }: EventStatusBadgeProps) {
-  const config = statusConfig[status] ?? statusConfig.draft
+  const config = statusConfig[status] ?? statusConfig.draft;
   return (
     <Badge variant={config.variant} icon={config.icon}>
       {config.label}
     </Badge>
-  )
+  );
 }

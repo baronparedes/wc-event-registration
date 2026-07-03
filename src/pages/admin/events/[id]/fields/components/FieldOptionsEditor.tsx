@@ -1,26 +1,27 @@
 import type {
-  UseFormRegister,
-  FieldErrors,
-  UseFieldArrayRemove,
-  UseFieldArrayAppend,
   FieldArrayWithId,
-} from 'react-hook-form'
-import type { EventFieldFormValues } from '@/lib/domain/event-fields'
-import type { EventFieldTypeEnum } from '@/lib/domain/event-fields'
-import { Button } from '@/components/ui/Button'
+  FieldErrors,
+  UseFieldArrayAppend,
+  UseFieldArrayRemove,
+  UseFormRegister,
+} from 'react-hook-form';
+
+import { Button } from '@/components/ui/Button';
+import type { EventFieldFormValues } from '@/lib/domain/event-fields';
+import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
 
 type FieldOptionsEditorProps = {
-  fields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[]
-  register: UseFormRegister<EventFieldFormValues>
-  errors: FieldErrors<EventFieldFormValues>
-  remove: UseFieldArrayRemove
-  append: UseFieldArrayAppend<EventFieldFormValues, 'options'>
-  isLocked: boolean
-  selectedFieldType: EventFieldTypeEnum
-}
+  fields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[];
+  register: UseFormRegister<EventFieldFormValues>;
+  errors: FieldErrors<EventFieldFormValues>;
+  remove: UseFieldArrayRemove;
+  append: UseFieldArrayAppend<EventFieldFormValues, 'options'>;
+  isLocked: boolean;
+  selectedFieldType: EventFieldTypeEnum;
+};
 
 const inputClass =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600';
 
 /** Manages the options list for select, radio, and multi_select field types. */
 export function FieldOptionsEditor({
@@ -32,7 +33,7 @@ export function FieldOptionsEditor({
   isLocked,
   selectedFieldType,
 }: FieldOptionsEditorProps) {
-  const showToggleLabel = selectedFieldType === 'multi_select_toggle'
+  const showToggleLabel = selectedFieldType === 'multi_select_toggle';
 
   return (
     <div className="space-y-3">
@@ -40,9 +41,9 @@ export function FieldOptionsEditor({
         <p className="text-sm text-muted">No options added yet. Add at least one option.</p>
       )}
       {fields.map((field, index) => {
-        const labelError = errors.options?.[index]?.label?.message
-        const valueError = errors.options?.[index]?.value?.message
-        const toggleLabelError = errors.options?.[index]?.toggle_label?.message
+        const labelError = errors.options?.[index]?.label?.message;
+        const valueError = errors.options?.[index]?.value?.message;
+        const toggleLabelError = errors.options?.[index]?.toggle_label?.message;
         return (
           <div
             key={field.id}
@@ -122,10 +123,10 @@ export function FieldOptionsEditor({
                         {...register(`options.${index}.toggle_default`, {
                           setValueAs: (value) => {
                             if (value === '') {
-                              return undefined
+                              return undefined;
                             }
 
-                            return value === 'true'
+                            return value === 'true';
                           },
                         })}
                         disabled={isLocked}
@@ -142,7 +143,7 @@ export function FieldOptionsEditor({
               )}
             </div>
           </div>
-        )
+        );
       })}
       {!isLocked && (
         <Button
@@ -155,5 +156,5 @@ export function FieldOptionsEditor({
         </Button>
       )}
     </div>
-  )
+  );
 }

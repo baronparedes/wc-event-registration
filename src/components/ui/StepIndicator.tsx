@@ -1,12 +1,12 @@
-import { cx } from 'class-variance-authority'
+import { cx } from 'class-variance-authority';
 
 export interface StepIndicatorProps {
   /** Current active step (1-indexed) */
-  currentStep: number
+  currentStep: number;
   /** Total number of steps */
-  totalSteps: number
+  totalSteps: number;
   /** Optional labels for each step */
-  labels?: string[]
+  labels?: string[];
 }
 
 /**
@@ -14,31 +14,31 @@ export interface StepIndicatorProps {
  * Reused by both member and public registration wizards.
  */
 export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicatorProps) {
-  const steps = Array.from({ length: totalSteps }, (_, i) => i + 1)
+  const steps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   const getBadgeClassName = (stepNumber: number): string => {
     if (currentStep === stepNumber) {
       // Current step: primary blue
-      return 'bg-primary text-white'
+      return 'bg-primary text-white';
     }
 
     if (currentStep > stepNumber) {
       // Completed step: secondary teal
-      return 'bg-secondary text-white'
+      return 'bg-secondary text-white';
     }
 
     // Future step: outline
-    return 'bg-surface text-muted border border-border'
-  }
+    return 'bg-surface text-muted border border-border';
+  };
 
   // Flatten steps and lines into a single array for rendering
-  const elements: Array<{ type: 'step' | 'line'; stepNumber?: number; index?: number }> = []
+  const elements: Array<{ type: 'step' | 'line'; stepNumber?: number; index?: number }> = [];
   steps.forEach((stepNumber, index) => {
-    elements.push({ type: 'step', stepNumber, index })
+    elements.push({ type: 'step', stepNumber, index });
     if (index < steps.length - 1) {
-      elements.push({ type: 'line' })
+      elements.push({ type: 'line' });
     }
-  })
+  });
 
   return (
     <div className="rounded-xl border border-border bg-surface px-5 py-4 shadow-xs">
@@ -48,11 +48,11 @@ export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicator
       <div className="mt-3 flex items-center gap-3 text-base">
         {elements.map((element, i) => {
           if (element.type === 'line') {
-            return <div key={`line-${i}`} className="h-px flex-1 bg-border" aria-hidden="true" />
+            return <div key={`line-${i}`} className="h-px flex-1 bg-border" aria-hidden="true" />;
           }
 
-          const stepNumber = element.stepNumber!
-          const index = element.index!
+          const stepNumber = element.stepNumber!;
+          const index = element.index!;
 
           return (
             <div key={`step-${stepNumber}`} className="flex items-center gap-2">
@@ -75,9 +75,9 @@ export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicator
                 </span>
               )}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

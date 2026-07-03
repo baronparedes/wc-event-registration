@@ -1,18 +1,20 @@
-import { useEffect, useRef } from 'react'
-import type { MemberLookupProfile } from '@/lib/domain/members'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { MemberIdentityPanel } from './MemberIdentityPanel'
-import { ProfileStepFooter } from './ProfileStepFooter'
-import { RegistrationStatusPanel } from './RegistrationStatusPanel'
+import { useEffect, useRef } from 'react';
+
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { MemberLookupProfile } from '@/lib/domain/members';
+
+import { MemberIdentityPanel } from './MemberIdentityPanel';
+import { ProfileStepFooter } from './ProfileStepFooter';
+import { RegistrationStatusPanel } from './RegistrationStatusPanel';
 
 type ProfileStepCardProps = {
-  matchedMember: MemberLookupProfile | null
-  isUpdateMode?: boolean
-  isRegistrationBlocked?: boolean
-  shouldFadeDetails?: boolean
-  onContinueToStepThree?: () => void
-  stepTimeoutSecondsRemaining?: number | null
-}
+  matchedMember: MemberLookupProfile | null;
+  isUpdateMode?: boolean;
+  isRegistrationBlocked?: boolean;
+  shouldFadeDetails?: boolean;
+  onContinueToStepThree?: () => void;
+  stepTimeoutSecondsRemaining?: number | null;
+};
 
 export function ProfileStepCard(props: ProfileStepCardProps) {
   const {
@@ -22,31 +24,31 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
     shouldFadeDetails = false,
     onContinueToStepThree,
     stepTimeoutSecondsRemaining = null,
-  } = props
-  const shouldShowPlaceholder = !matchedMember || shouldFadeDetails
-  const registrationStatusRef = useRef<HTMLDivElement | null>(null)
-  const canContinueToStepThree = !isRegistrationBlocked && Boolean(onContinueToStepThree)
+  } = props;
+  const shouldShowPlaceholder = !matchedMember || shouldFadeDetails;
+  const registrationStatusRef = useRef<HTMLDivElement | null>(null);
+  const canContinueToStepThree = !isRegistrationBlocked && Boolean(onContinueToStepThree);
   const detailsTransitionClassName = shouldFadeDetails
     ? 'max-h-0 opacity-0 -translate-y-1'
-    : 'max-h-[32rem] opacity-100 translate-y-0'
+    : 'max-h-[32rem] opacity-100 translate-y-0';
   const placeholderTransitionClassName = shouldShowPlaceholder
     ? 'max-h-16 opacity-100 translate-y-0'
-    : 'max-h-0 opacity-0 -translate-y-1'
+    : 'max-h-0 opacity-0 -translate-y-1';
 
   useEffect(() => {
     if (!matchedMember || !isRegistrationBlocked || shouldFadeDetails) {
-      return
+      return;
     }
 
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
-      : 'smooth'
+      : 'smooth';
 
     registrationStatusRef.current?.scrollIntoView({
       behavior,
       block: 'center',
-    })
-  }, [matchedMember, isRegistrationBlocked, shouldFadeDetails])
+    });
+  }, [matchedMember, isRegistrationBlocked, shouldFadeDetails]);
 
   return (
     <SectionCard
@@ -85,5 +87,5 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
         </p>
       </div>
     </SectionCard>
-  )
+  );
 }

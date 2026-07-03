@@ -1,17 +1,18 @@
-import type { UseFormRegisterReturn } from 'react-hook-form'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { FormTextareaField } from '@/components/ui/FormTextareaField'
+import type { UseFormRegisterReturn } from 'react-hook-form';
+
+import { FormInputField } from '@/components/ui/FormInputField';
+import { FormTextareaField } from '@/components/ui/FormTextareaField';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 type DisplayTextSectionProps = {
-  isFullyLocked: boolean
-  placeholderRegistration: UseFormRegisterReturn
-  helpTextRegistration: UseFormRegisterReturn
+  isFullyLocked: boolean;
+  placeholderRegistration: UseFormRegisterReturn;
+  helpTextRegistration: UseFormRegisterReturn;
   errors: {
-    placeholder?: { message?: string }
-    help_text?: { message?: string }
-  }
-}
+    placeholder?: { message?: string };
+    help_text?: { message?: string };
+  };
+};
 
 /** Section for placeholder and help text. */
 export function DisplayTextSection({
@@ -44,5 +45,5 @@ export function DisplayTextSection({
         />
       </div>
     </SectionCard>
-  )
+  );
 }

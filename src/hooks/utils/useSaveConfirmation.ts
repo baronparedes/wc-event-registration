@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react'
-import type { CreateEventInput } from '@/lib/domain/events'
+import { useCallback, useState } from 'react';
+
+import type { CreateEventInput } from '@/lib/domain/events';
 
 export type SaveConfirmationState = {
-  showDialog: boolean
-  pendingFormData: CreateEventInput | null
-}
+  showDialog: boolean;
+  pendingFormData: CreateEventInput | null;
+};
 
 /**
  * Encapsulates confirmation dialog state for published event saves.
@@ -21,23 +22,23 @@ export type SaveConfirmationState = {
  * }
  */
 export function useSaveConfirmation() {
-  const [showDialog, setShowDialog] = useState(false)
-  const [pendingFormData, setPendingFormData] = useState<CreateEventInput | null>(null)
+  const [showDialog, setShowDialog] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<CreateEventInput | null>(null);
 
   const requestConfirmation = useCallback((data: CreateEventInput) => {
-    setPendingFormData(data)
-    setShowDialog(true)
-  }, [])
+    setPendingFormData(data);
+    setShowDialog(true);
+  }, []);
 
   const confirmSave = useCallback(() => {
-    setShowDialog(false)
+    setShowDialog(false);
     // Caller will use pendingFormData directly via the returned ref
-  }, [])
+  }, []);
 
   const cancelSave = useCallback(() => {
-    setShowDialog(false)
-    setPendingFormData(null)
-  }, [])
+    setShowDialog(false);
+    setPendingFormData(null);
+  }, []);
 
   return {
     showDialog,
@@ -45,5 +46,5 @@ export function useSaveConfirmation() {
     requestConfirmation,
     confirmSave,
     cancelSave,
-  }
+  };
 }

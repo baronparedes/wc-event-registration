@@ -1,19 +1,20 @@
-import type { ReactNode } from 'react'
-import type { UseFormRegisterReturn } from 'react-hook-form'
+import type { ReactNode } from 'react';
+
+import type { UseFormRegisterReturn } from 'react-hook-form';
 
 type FormTextareaFieldProps = {
-  id: string
-  label: string
-  registration: UseFormRegisterReturn
-  error?: string | null
-  required?: boolean
-  placeholder?: string
-  rows?: number
-  disabled?: boolean
-  helperText?: string
-  labelAdornment?: ReactNode
-  textareaClassName?: string
-}
+  id: string;
+  label: string;
+  registration: UseFormRegisterReturn;
+  error?: string | null;
+  required?: boolean;
+  placeholder?: string;
+  rows?: number;
+  disabled?: boolean;
+  helperText?: string;
+  labelAdornment?: ReactNode;
+  textareaClassName?: string;
+};
 
 /** Shared labeled textarea field with consistent styling and error rendering. */
 export function FormTextareaField(props: FormTextareaFieldProps) {
@@ -29,7 +30,7 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
     helperText,
     labelAdornment,
     textareaClassName,
-  } = props
+  } = props;
 
   return (
     <div className="space-y-1.5">
@@ -53,5 +54,5 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
       {helperText && <p className="text-xs text-muted">{helperText}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
-  )
+  );
 }

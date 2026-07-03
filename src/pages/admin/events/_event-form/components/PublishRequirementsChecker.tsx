@@ -1,22 +1,23 @@
-import { useMemo } from 'react'
-import { getPublishRequirements } from '@/lib/domain/events'
+import { useMemo } from 'react';
+
+import { getPublishRequirements } from '@/lib/domain/events';
 
 type PublishRequirementsCheckerProps = {
   formValues: {
-    description?: string | null
-    location?: string | null
-    starts_at?: string | null
-    ends_at?: string | null
-    registration_opens_at?: string | null
-    registration_closes_at?: string | null
-  }
-}
+    description?: string | null;
+    location?: string | null;
+    starts_at?: string | null;
+    ends_at?: string | null;
+    registration_opens_at?: string | null;
+    registration_closes_at?: string | null;
+  };
+};
 
 export function PublishRequirementsChecker({ formValues }: PublishRequirementsCheckerProps) {
-  const requirements = useMemo(() => getPublishRequirements(formValues), [formValues])
+  const requirements = useMemo(() => getPublishRequirements(formValues), [formValues]);
 
-  const allFilled = requirements.every((req) => req.filled)
-  const filledCount = requirements.filter((req) => req.filled).length
+  const allFilled = requirements.every((req) => req.filled);
+  const filledCount = requirements.filter((req) => req.filled).length;
 
   return (
     <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
@@ -41,5 +42,5 @@ export function PublishRequirementsChecker({ formValues }: PublishRequirementsCh
         </div>
       )}
     </div>
-  )
+  );
 }

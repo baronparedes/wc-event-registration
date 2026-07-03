@@ -1,14 +1,15 @@
-import { useState } from 'react'
-import type { AdminRegistrationWithMember } from '@/lib/domain/registrations'
-import { useCancelRegistrationMutation } from '@/hooks/domain/registrations'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { useErrorWithFadeout } from '@/hooks/utils'
+import { useState } from 'react';
+
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useCancelRegistrationMutation } from '@/hooks/domain/registrations';
+import { useErrorWithFadeout } from '@/hooks/utils';
+import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
 
 interface CancelRegistrationDialogProps {
-  registration: AdminRegistrationWithMember
-  isOpen: boolean
-  onClose: () => void
-  eventId: string
+  registration: AdminRegistrationWithMember;
+  isOpen: boolean;
+  onClose: () => void;
+  eventId: string;
 }
 
 export function CancelRegistrationDialog({
@@ -17,22 +18,22 @@ export function CancelRegistrationDialog({
   onClose,
   eventId,
 }: CancelRegistrationDialogProps) {
-  const [reason, setReason] = useState('')
-  const cancelMutation = useCancelRegistrationMutation(eventId)
-  const { showError } = useErrorWithFadeout()
+  const [reason, setReason] = useState('');
+  const cancelMutation = useCancelRegistrationMutation(eventId);
+  const { showError } = useErrorWithFadeout();
 
   const handleConfirm = async () => {
     try {
       await cancelMutation.mutateAsync({
         registration_id: registration.id,
         reason: reason || undefined,
-      })
-      setReason('')
-      onClose()
+      });
+      setReason('');
+      onClose();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to cancel registration')
+      showError(error instanceof Error ? error.message : 'Failed to cancel registration');
     }
-  }
+  };
 
   return (
     <ConfirmDialog
@@ -63,5 +64,5 @@ export function CancelRegistrationDialog({
       onConfirm={handleConfirm}
       isPending={cancelMutation.isPending}
     />
-  )
+  );
 }

@@ -1,19 +1,20 @@
-import type { ChangeEvent } from 'react'
-import { FormInputField } from './FormInputField'
+import type { ChangeEvent } from 'react';
+
+import { FormInputField } from './FormInputField';
 
 type SlugFieldProps = {
-  isEditMode: boolean
-  value: string
-  onChange: (value: string) => void
-  error?: string
-  disabled?: boolean
-}
+  isEditMode: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  disabled?: boolean;
+};
 
 /** Renders the slug input. In create mode it is editable with an auto-generate note.
  *  In edit mode it is locked to preserve existing public event URLs. */
 export function SlugField({ isEditMode, value, onChange, error, disabled }: SlugFieldProps) {
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+    onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
   }
 
   return (
@@ -42,5 +43,5 @@ export function SlugField({ isEditMode, value, onChange, error, disabled }: Slug
       readOnly={isEditMode}
       value={value}
     />
-  )
+  );
 }

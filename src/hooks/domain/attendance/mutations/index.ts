@@ -1,1 +1,1 @@
-export { useUpdateAttendanceSettingsMutation } from './useUpdateAttendanceSettingsMutation'
+export { useUpdateAttendanceSettingsMutation } from './useUpdateAttendanceSettingsMutation';

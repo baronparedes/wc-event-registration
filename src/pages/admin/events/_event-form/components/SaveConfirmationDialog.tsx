@@ -1,13 +1,13 @@
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import type { CreateEventInput } from '@/lib/domain/events'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import type { CreateEventInput } from '@/lib/domain/events';
 
 type SaveConfirmationDialogProps = {
-  isOpen: boolean
-  changedFieldNames: (keyof CreateEventInput)[]
-  isPending: boolean
-  onConfirm: () => void
-  onCancel: () => void
-}
+  isOpen: boolean;
+  changedFieldNames: (keyof CreateEventInput)[];
+  isPending: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
 
 /**
  * Shows what fields are being changed when saving a published event.
@@ -21,7 +21,7 @@ export function SaveConfirmationDialog({
   onCancel,
 }: SaveConfirmationDialogProps) {
   if (!isOpen || changedFieldNames.length === 0) {
-    return null
+    return null;
   }
 
   const fieldLabels: Record<keyof CreateEventInput, string> = {
@@ -38,7 +38,7 @@ export function SaveConfirmationDialog({
     duplicate_policy: 'Re-registration Policy',
     allow_name_lookup: 'Allow Name Lookup',
     allow_public_registrations: 'Allow Public Registrations',
-  }
+  };
 
   return (
     <ConfirmDialog
@@ -63,5 +63,5 @@ export function SaveConfirmationDialog({
       onConfirm={onConfirm}
       onCancel={onCancel}
     />
-  )
+  );
 }

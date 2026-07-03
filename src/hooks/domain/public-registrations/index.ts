@@ -9,9 +9,9 @@ export {
   usePublicRegistrationDetailQuery,
   usePublicAttendeeCheckQuery,
   useSubmitPublicRegistrationMutation,
-} from './queries'
+} from './queries';
 
 export {
   useCancelPublicRegistrationMutation,
   useReactivatePublicRegistrationMutation,
-} from './mutations'
+} from './mutations';

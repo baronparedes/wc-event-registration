@@ -1,8 +1,9 @@
-import { useMutation } from '@tanstack/react-query'
-import { createEdgeFunctionTextCaller } from '@/lib/infrastructure'
+import { useMutation } from '@tanstack/react-query';
+
+import { createEdgeFunctionTextCaller } from '@/lib/infrastructure';
 
 interface ExportRegistrationsCSVRequest {
-  event_id: string
+  event_id: string;
 }
 
 /**
@@ -14,8 +15,8 @@ export function useExportRegistrationsCSVMutation(eventId: string) {
     mutationFn: () => {
       const caller = createEdgeFunctionTextCaller<ExportRegistrationsCSVRequest>(
         'export-registrations-csv',
-      )
-      return caller({ event_id: eventId })
+      );
+      return caller({ event_id: eventId });
     },
-  })
+  });
 }

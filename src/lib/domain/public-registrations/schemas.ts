@@ -1,8 +1,10 @@
-import { z } from 'zod'
-import { VALIDATION_PATTERNS } from '@/config/constants'
-import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields'
-import type { PublicEventField } from '@/lib/domain/event-fields'
-import type { SubmitPublicRegistrationRequest } from './types'
+import { z } from 'zod';
+
+import { VALIDATION_PATTERNS } from '@/config/constants';
+import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
+import type { PublicEventField } from '@/lib/domain/event-fields';
+
+import type { SubmitPublicRegistrationRequest } from './types';
 
 /**
  * Schema for public attendee information
@@ -25,9 +27,9 @@ export const publicAttendeeInfoSchema = z.object({
     .nullable()
     .optional()
     .or(z.literal('')), // Allow empty string as valid optional value
-})
+});
 
-export type PublicAttendeeInfoInput = z.infer<typeof publicAttendeeInfoSchema>
+export type PublicAttendeeInfoInput = z.infer<typeof publicAttendeeInfoSchema>;
 
 /**
  * Schema for public registration submission
@@ -36,14 +38,14 @@ export type PublicAttendeeInfoInput = z.infer<typeof publicAttendeeInfoSchema>
 export function buildSubmitPublicRegistrationSchema(
   fields: PublicEventField[],
 ): z.ZodSchema<SubmitPublicRegistrationRequest> {
-  const responseSchema = buildDynamicFieldResponseSchema(fields)
+  const responseSchema = buildDynamicFieldResponseSchema(fields);
 
   return z.object({
     event_slug: z.string().min(1, 'Event slug is required'),
     attendee: publicAttendeeInfoSchema,
     responses: responseSchema,
     idempotency_key: z.string().min(1, 'Idempotency key is required'),
-  })
+  });
 }
 
 /**
@@ -52,9 +54,9 @@ export function buildSubmitPublicRegistrationSchema(
 export const publicAttendeeCheckSchema = z.object({
   email: z.string().email('Invalid email address'),
   event_slug: z.string().min(1, 'Event slug is required'),
-})
+});
 
-export type PublicAttendeeCheckInput = z.infer<typeof publicAttendeeCheckSchema>
+export type PublicAttendeeCheckInput = z.infer<typeof publicAttendeeCheckSchema>;
 
 /**
  * Schema for admin to cancel a public registration
@@ -62,6 +64,6 @@ export type PublicAttendeeCheckInput = z.infer<typeof publicAttendeeCheckSchema>
 export const cancelPublicRegistrationSchema = z.object({
   registration_id: z.string().uuid('Invalid registration ID'),
   reason: z.string().optional(),
-})
+});
 
-export type CancelPublicRegistrationInput = z.infer<typeof cancelPublicRegistrationSchema>
+export type CancelPublicRegistrationInput = z.infer<typeof cancelPublicRegistrationSchema>;

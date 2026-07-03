@@ -1,19 +1,20 @@
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/Button'
-import { SectionCard } from '@/components/ui/SectionCard'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
-import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields'
-import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+
+import { Button } from '@/components/ui/Button';
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
+import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
 
 type PublicEventFieldsStepProps = {
-  fields: PublicEventField[]
-  onSubmit: (data: DynamicFieldResponseValues) => void
-  onBack: () => void
-  isSubmitting?: boolean
-  errorMessage?: string
-  defaultValues?: DynamicFieldResponseValues
-}
+  fields: PublicEventField[];
+  onSubmit: (data: DynamicFieldResponseValues) => void;
+  onBack: () => void;
+  isSubmitting?: boolean;
+  errorMessage?: string;
+  defaultValues?: DynamicFieldResponseValues;
+};
 
 export function PublicEventFieldsStep({
   fields,
@@ -23,12 +24,12 @@ export function PublicEventFieldsStep({
   errorMessage,
   defaultValues,
 }: PublicEventFieldsStepProps) {
-  const schema = buildDynamicFieldResponseSchema(fields)
+  const schema = buildDynamicFieldResponseSchema(fields);
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     resolver: zodResolver(schema),
     mode: 'onBlur',
     defaultValues,
-  })
+  });
 
   return (
     <SectionCard title="Step 2: Event Details">
@@ -67,5 +68,5 @@ export function PublicEventFieldsStep({
         </div>
       </form>
     </SectionCard>
-  )
+  );
 }

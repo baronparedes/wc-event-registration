@@ -1,14 +1,16 @@
-import { useId, useState, type ReactNode } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { SectionCard, type SectionCardProps } from './SectionCard'
+import { type ReactNode, useId, useState } from 'react';
+
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+
+import { SectionCard, type SectionCardProps } from './SectionCard';
 
 export type CollapsibleSectionCardProps = SectionCardProps & {
-  children: ReactNode
-  defaultExpanded?: boolean
-  collapseLabel?: string
-  expandLabel?: string
-}
+  children: ReactNode;
+  defaultExpanded?: boolean;
+  collapseLabel?: string;
+  expandLabel?: string;
+};
 
 /**
  * Composed section card that adds optional collapse/expand behavior while
@@ -21,21 +23,21 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
     collapseLabel = 'Collapse section',
     expandLabel = 'Expand section',
     ...sectionCardProps
-  } = props
+  } = props;
 
-  const contentId = useId()
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-  const shouldReduceMotion = useReducedMotion()
-  const actionLabel = isExpanded ? collapseLabel : expandLabel
+  const contentId = useId();
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const shouldReduceMotion = useReducedMotion();
+  const actionLabel = isExpanded ? collapseLabel : expandLabel;
   const wrapperClassName = sectionCardProps.wrapperClassName
     ? `${sectionCardProps.wrapperClassName} relative`
-    : 'relative rounded-2xl border border-border bg-surface p-6 shadow-sm'
+    : 'relative rounded-2xl border border-border bg-surface p-6 shadow-sm';
   const titleClassName = sectionCardProps.titleClassName
     ? `${sectionCardProps.titleClassName} pr-16`
-    : 'font-heading text-xl font-semibold text-text pr-16'
+    : 'font-heading text-xl font-semibold text-text pr-16';
   const subtitleClassName = sectionCardProps.subtitleClassName
     ? `${sectionCardProps.subtitleClassName} pr-16`
-    : 'mt-2 text-sm text-muted pr-16'
+    : 'mt-2 text-sm text-muted pr-16';
 
   return (
     <SectionCard
@@ -50,7 +52,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
         aria-label={actionLabel}
         className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
         onClick={() => {
-          setIsExpanded((current) => !current)
+          setIsExpanded((current) => !current);
         }}
         title={actionLabel}
         type="button"
@@ -85,5 +87,5 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
         )}
       </AnimatePresence>
     </SectionCard>
-  )
+  );
 }

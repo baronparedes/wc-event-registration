@@ -1,23 +1,25 @@
-import type { UseFormRegisterReturn } from 'react-hook-form'
-import type { AdminEventField } from '@/lib/domain/event-fields'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { FormInputField } from '@/components/ui/FormInputField'
-import { CheckboxField } from './CheckboxField'
+import type { UseFormRegisterReturn } from 'react-hook-form';
+
+import { FormInputField } from '@/components/ui/FormInputField';
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { AdminEventField } from '@/lib/domain/event-fields';
+
+import { CheckboxField } from './CheckboxField';
 
 type FieldDetailsSectionProps = {
-  isEditing: boolean
-  isFullyLocked: boolean
-  isStructurallyLocked: boolean
-  field: AdminEventField | null
-  fieldKeyRegistration: UseFormRegisterReturn
-  labelRegistration: UseFormRegisterReturn
-  isRequiredRegistration: UseFormRegisterReturn
-  isActiveRegistration: UseFormRegisterReturn
+  isEditing: boolean;
+  isFullyLocked: boolean;
+  isStructurallyLocked: boolean;
+  field: AdminEventField | null;
+  fieldKeyRegistration: UseFormRegisterReturn;
+  labelRegistration: UseFormRegisterReturn;
+  isRequiredRegistration: UseFormRegisterReturn;
+  isActiveRegistration: UseFormRegisterReturn;
   errors: {
-    field_key?: { message?: string }
-    label?: { message?: string }
-  }
-}
+    field_key?: { message?: string };
+    label?: { message?: string };
+  };
+};
 
 /** Section for field name, label, and required/active checkboxes. */
 export function FieldDetailsSection({
@@ -87,5 +89,5 @@ export function FieldDetailsSection({
         </div>
       </div>
     </SectionCard>
-  )
+  );
 }

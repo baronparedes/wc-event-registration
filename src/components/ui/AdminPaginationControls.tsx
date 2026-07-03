@@ -1,22 +1,24 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { Button } from '@/components/ui/Button'
+import { type FormEvent, useState } from 'react';
+
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+
+import { Button } from '@/components/ui/Button';
 
 type AdminPaginationControlsProps = {
-  currentPage: number
-  totalPages: number
-  isLoading?: boolean
-  canGoPrevious: boolean
-  canGoNext: boolean
-  pageSize?: number
-  pageSizeOptions?: number[]
-  onPageSizeChange?: (pageSize: number) => void
-  onFirstPage: () => void
-  onPreviousPage: () => void
-  onNextPage: () => void
-  onLastPage: () => void
-  onGoToPage: (page: number) => void
-}
+  currentPage: number;
+  totalPages: number;
+  isLoading?: boolean;
+  canGoPrevious: boolean;
+  canGoNext: boolean;
+  pageSize?: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (pageSize: number) => void;
+  onFirstPage: () => void;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
+  onLastPage: () => void;
+  onGoToPage: (page: number) => void;
+};
 
 export function AdminPaginationControls(props: AdminPaginationControlsProps) {
   const {
@@ -33,51 +35,51 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
     onNextPage,
     onLastPage,
     onGoToPage,
-  } = props
+  } = props;
 
-  const [pageInput, setPageInput] = useState(String(currentPage))
-  const [isEditingPage, setIsEditingPage] = useState(false)
+  const [pageInput, setPageInput] = useState(String(currentPage));
+  const [isEditingPage, setIsEditingPage] = useState(false);
 
-  const displayedPageInput = isEditingPage ? pageInput : String(currentPage)
+  const displayedPageInput = isEditingPage ? pageInput : String(currentPage);
 
   function commitPage(nextValue: string, finishEditing = true) {
-    const parsedPage = Number.parseInt(nextValue, 10)
+    const parsedPage = Number.parseInt(nextValue, 10);
     if (!Number.isFinite(parsedPage)) {
-      setPageInput(String(currentPage))
+      setPageInput(String(currentPage));
       if (finishEditing) {
-        setIsEditingPage(false)
+        setIsEditingPage(false);
       }
-      return
+      return;
     }
 
-    const nextPage = Math.min(totalPages, Math.max(1, parsedPage))
-    setPageInput(String(nextPage))
+    const nextPage = Math.min(totalPages, Math.max(1, parsedPage));
+    setPageInput(String(nextPage));
     if (finishEditing) {
-      setIsEditingPage(false)
+      setIsEditingPage(false);
     }
 
     if (nextPage !== currentPage) {
-      onGoToPage(nextPage)
+      onGoToPage(nextPage);
     }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    commitPage(displayedPageInput)
+    event.preventDefault();
+    commitPage(displayedPageInput);
   }
 
   function handlePageInputChange(nextValue: string) {
-    setIsEditingPage(true)
-    setPageInput(nextValue)
+    setIsEditingPage(true);
+    setPageInput(nextValue);
 
-    const parsedPage = Number.parseInt(nextValue, 10)
+    const parsedPage = Number.parseInt(nextValue, 10);
     if (!Number.isFinite(parsedPage)) {
-      return
+      return;
     }
 
-    const nextPage = Math.min(totalPages, Math.max(1, parsedPage))
+    const nextPage = Math.min(totalPages, Math.max(1, parsedPage));
     if (Math.abs(nextPage - currentPage) === 1) {
-      commitPage(nextValue, false)
+      commitPage(nextValue, false);
     }
   }
 
@@ -180,5 +182,5 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
         </Button>
       </div>
     </div>
-  )
+  );
 }

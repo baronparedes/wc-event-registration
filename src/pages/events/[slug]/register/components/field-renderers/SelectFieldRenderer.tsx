@@ -1,13 +1,14 @@
-import { type UseFormReturn, useWatch } from 'react-hook-form'
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields'
+import { type UseFormReturn, useWatch } from 'react-hook-form';
+
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 
 const baseInputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary'
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary';
 
 type SelectFieldRendererProps = {
-  field: PublicEventField
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>
-}
+  field: PublicEventField;
+  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+};
 
 export function SelectFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
   return (
@@ -23,7 +24,7 @@ export function SelectFieldRenderer({ field, dynamicForm }: SelectFieldRendererP
         </option>
       ))}
     </select>
-  )
+  );
 }
 
 export function RadioFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
@@ -39,7 +40,7 @@ export function RadioFieldRenderer({ field, dynamicForm }: SelectFieldRendererPr
         </label>
       ))}
     </div>
-  )
+  );
 }
 
 export function MultiSelectFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
@@ -55,40 +56,40 @@ export function MultiSelectFieldRenderer({ field, dynamicForm }: SelectFieldRend
         </label>
       ))}
     </div>
-  )
+  );
 }
 
 function isBooleanOrNullRecord(value: unknown): value is Record<string, boolean | null> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false
+    return false;
   }
 
-  return Object.values(value).every((entry) => typeof entry === 'boolean' || entry === null)
+  return Object.values(value).every((entry) => typeof entry === 'boolean' || entry === null);
 }
 
 export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
-  const rawValue = useWatch({ control: dynamicForm.control, name: field.field_key })
-  const selectedValues = isBooleanOrNullRecord(rawValue) ? rawValue : {}
+  const rawValue = useWatch({ control: dynamicForm.control, name: field.field_key });
+  const selectedValues = isBooleanOrNullRecord(rawValue) ? rawValue : {};
 
   function handleSelectionChange(optionValue: string, checked: boolean, defaultValue?: boolean) {
-    const nextValues = { ...selectedValues }
+    const nextValues = { ...selectedValues };
 
     if (checked) {
-      nextValues[optionValue] = defaultValue ?? null
+      nextValues[optionValue] = defaultValue ?? null;
     } else {
-      delete nextValues[optionValue]
+      delete nextValues[optionValue];
     }
 
     dynamicForm.setValue(field.field_key, nextValues, {
       shouldDirty: true,
       shouldValidate: true,
-    })
-    dynamicForm.clearErrors(field.field_key)
+    });
+    dynamicForm.clearErrors(field.field_key);
   }
 
   function handleToggleChange(optionValue: string, value: boolean) {
     if (!(optionValue in selectedValues)) {
-      return
+      return;
     }
 
     dynamicForm.setValue(
@@ -101,25 +102,25 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
         shouldDirty: true,
         shouldValidate: true,
       },
-    )
-    dynamicForm.clearErrors(field.field_key)
+    );
+    dynamicForm.clearErrors(field.field_key);
   }
 
   return (
     <div className="space-y-2">
       {field.options.map(
         (option: {
-          value: string
-          label: string
-          toggle_label?: string
-          toggle_default?: boolean
+          value: string;
+          label: string;
+          toggle_label?: string;
+          toggle_default?: boolean;
         }) => {
-          const isSelected = option.value in selectedValues
-          const configuredDefault = option.toggle_default
-          const toggleValue = selectedValues[option.value]
-          const isToggleChoicePending = isSelected && toggleValue === null
-          const isYesSelected = toggleValue === true
-          const isNoSelected = toggleValue === false
+          const isSelected = option.value in selectedValues;
+          const configuredDefault = option.toggle_default;
+          const toggleValue = selectedValues[option.value];
+          const isToggleChoicePending = isSelected && toggleValue === null;
+          const isYesSelected = toggleValue === true;
+          const isNoSelected = toggleValue === false;
 
           return (
             <div
@@ -183,9 +184,9 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                 </div>
               </div>
             </div>
-          )
+          );
         },
       )}
     </div>
-  )
+  );
 }

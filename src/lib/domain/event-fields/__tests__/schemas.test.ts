@@ -1,14 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
+
 import {
   buildDynamicFieldResponseSchema,
   createEventFieldSchema,
   eventFieldFormSchema,
   reorderEventFieldsSchema,
   updateEventFieldSchema,
-} from '@/lib/domain/event-fields'
-import type { PublicEventField } from '@/lib/domain/event-fields'
+} from '@/lib/domain/event-fields';
+import type { PublicEventField } from '@/lib/domain/event-fields';
 
-const EVENT_ID = '9a693702-90e6-499f-8835-8f57ef1ea8d7'
+const EVENT_ID = '9a693702-90e6-499f-8835-8f57ef1ea8d7';
 
 function createField(overrides: Partial<PublicEventField>): PublicEventField {
   return {
@@ -25,7 +26,7 @@ function createField(overrides: Partial<PublicEventField>): PublicEventField {
     validation_rules: {},
     display_order: 0,
     ...overrides,
-  }
+  };
 }
 
 describe('event-fields schemas', () => {
@@ -42,11 +43,11 @@ describe('event-fields schemas', () => {
       options: [],
       validation_rules: { min_length: 2 },
       display_order: 0,
-    })
+    });
 
-    expect(parsed.field_key).toBe('team_name')
-    expect(parsed.validation_rules).toEqual({ min_length: 2 })
-  })
+    expect(parsed.field_key).toBe('team_name');
+    expect(parsed.validation_rules).toEqual({ min_length: 2 });
+  });
 
   it('rejects create input with invalid field_key format', () => {
     const parsed = createEventFieldSchema.safeParse({
@@ -54,10 +55,10 @@ describe('event-fields schemas', () => {
       field_key: 'Team Name',
       label: 'Team Name',
       field_type: 'text',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
+    expect(parsed.success).toBe(false);
+  });
 
   it('rejects create input with invalid field_type value', () => {
     const parsed = createEventFieldSchema.safeParse({
@@ -65,10 +66,10 @@ describe('event-fields schemas', () => {
       field_key: 'team_name',
       label: 'Team Name',
       field_type: 'unknown_type',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
+    expect(parsed.success).toBe(false);
+  });
 
   it('accepts valid event field form values', () => {
     const parsed = eventFieldFormSchema.parse({
@@ -89,10 +90,10 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
-    })
+    });
 
-    expect(parsed.field_type).toBe('number')
-  })
+    expect(parsed.field_type).toBe('number');
+  });
 
   it('rejects event field form values with missing label', () => {
     const parsed = eventFieldFormSchema.safeParse({
@@ -113,10 +114,10 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
+    expect(parsed.success).toBe(false);
+  });
 
   it('requires a toggle label for each multi_select_toggle option', () => {
     const parsed = eventFieldFormSchema.safeParse({
@@ -144,13 +145,13 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
+    expect(parsed.success).toBe(false);
     if (!parsed.success) {
-      expect(parsed.error.issues[0]?.path).toEqual(['options', 0, 'toggle_label'])
+      expect(parsed.error.issues[0]?.path).toEqual(['options', 0, 'toggle_label']);
     }
-  })
+  });
 
   it('accepts an unset toggle default in admin field form values', () => {
     const parsed = eventFieldFormSchema.safeParse({
@@ -177,10 +178,10 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
-    })
+    });
 
-    expect(parsed.success).toBe(true)
-  })
+    expect(parsed.success).toBe(true);
+  });
 
   it('accepts valid update event field input', () => {
     const parsed = updateEventFieldSchema.parse({
@@ -188,19 +189,19 @@ describe('event-fields schemas', () => {
       event_id: '9a693702-90e6-499f-8835-8f57ef1ea8d7',
       label: 'Updated Label',
       is_required: false,
-    })
+    });
 
-    expect(parsed.label).toBe('Updated Label')
-  })
+    expect(parsed.label).toBe('Updated Label');
+  });
 
   it('requires at least one id in reorder payload', () => {
     const parsed = reorderEventFieldsSchema.safeParse({
       event_id: '9a693702-90e6-499f-8835-8f57ef1ea8d7',
       orderedIds: [],
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
+    expect(parsed.success).toBe(false);
+  });
 
   it('parses optional text fields as undefined when blank and enforces required text constraints', () => {
     const requiredTextSchema = buildDynamicFieldResponseSchema([
@@ -211,11 +212,11 @@ describe('event-fields schemas', () => {
         is_required: true,
         validation_rules: { min_length: 2, max_length: 10, pattern: '^[A-Za-z ]+$' },
       }),
-    ])
+    ]);
 
-    expect(requiredTextSchema.safeParse({ team_name: 'Alpha' }).success).toBe(true)
-    expect(requiredTextSchema.safeParse({ team_name: 'A' }).success).toBe(false)
-    expect(requiredTextSchema.safeParse({ team_name: '123' }).success).toBe(false)
+    expect(requiredTextSchema.safeParse({ team_name: 'Alpha' }).success).toBe(true);
+    expect(requiredTextSchema.safeParse({ team_name: 'A' }).success).toBe(false);
+    expect(requiredTextSchema.safeParse({ team_name: '123' }).success).toBe(false);
 
     const optionalTextSchema = buildDynamicFieldResponseSchema([
       createField({
@@ -224,11 +225,11 @@ describe('event-fields schemas', () => {
         field_type: 'textarea',
         is_required: false,
       }),
-    ])
+    ]);
 
-    const parsed = optionalTextSchema.parse({ nickname: '   ' })
-    expect(parsed.nickname).toBeUndefined()
-  })
+    const parsed = optionalTextSchema.parse({ nickname: '   ' });
+    expect(parsed.nickname).toBeUndefined();
+  });
 
   it('ignores invalid regex metadata patterns for string fields', () => {
     const schema = buildDynamicFieldResponseSchema([
@@ -239,11 +240,11 @@ describe('event-fields schemas', () => {
         is_required: false,
         validation_rules: { pattern: '[' },
       }),
-    ])
+    ]);
 
-    const parsed = schema.safeParse({ custom_text: 'keeps-working' })
-    expect(parsed.success).toBe(true)
-  })
+    const parsed = schema.safeParse({ custom_text: 'keeps-working' });
+    expect(parsed.success).toBe(true);
+  });
 
   it('coerces numbers and validates min/max constraints', () => {
     const requiredNumberSchema = buildDynamicFieldResponseSchema([
@@ -254,12 +255,12 @@ describe('event-fields schemas', () => {
         is_required: true,
         validation_rules: { min: 1, max: 99 },
       }),
-    ])
+    ]);
 
-    expect(requiredNumberSchema.parse({ jersey_number: '42' }).jersey_number).toBe(42)
-    expect(requiredNumberSchema.safeParse({ jersey_number: '0' }).success).toBe(false)
-    expect(requiredNumberSchema.safeParse({ jersey_number: '100' }).success).toBe(false)
-    expect(requiredNumberSchema.safeParse({ jersey_number: 'abc' }).success).toBe(false)
+    expect(requiredNumberSchema.parse({ jersey_number: '42' }).jersey_number).toBe(42);
+    expect(requiredNumberSchema.safeParse({ jersey_number: '0' }).success).toBe(false);
+    expect(requiredNumberSchema.safeParse({ jersey_number: '100' }).success).toBe(false);
+    expect(requiredNumberSchema.safeParse({ jersey_number: 'abc' }).success).toBe(false);
 
     const optionalNumberSchema = buildDynamicFieldResponseSchema([
       createField({
@@ -268,10 +269,10 @@ describe('event-fields schemas', () => {
         field_type: 'number',
         is_required: false,
       }),
-    ])
+    ]);
 
-    expect(optionalNumberSchema.parse({ favorite_number: '' }).favorite_number).toBeUndefined()
-  })
+    expect(optionalNumberSchema.parse({ favorite_number: '' }).favorite_number).toBeUndefined();
+  });
 
   it('validates email fields for required and optional behavior', () => {
     const requiredEmailSchema = buildDynamicFieldResponseSchema([
@@ -281,11 +282,11 @@ describe('event-fields schemas', () => {
         field_type: 'email',
         is_required: true,
       }),
-    ])
+    ]);
 
-    expect(requiredEmailSchema.safeParse({ email: 'user@example.com' }).success).toBe(true)
-    expect(requiredEmailSchema.safeParse({ email: '' }).success).toBe(false)
-    expect(requiredEmailSchema.safeParse({ email: 'invalid' }).success).toBe(false)
+    expect(requiredEmailSchema.safeParse({ email: 'user@example.com' }).success).toBe(true);
+    expect(requiredEmailSchema.safeParse({ email: '' }).success).toBe(false);
+    expect(requiredEmailSchema.safeParse({ email: 'invalid' }).success).toBe(false);
 
     const optionalEmailSchema = buildDynamicFieldResponseSchema([
       createField({
@@ -294,10 +295,10 @@ describe('event-fields schemas', () => {
         field_type: 'email',
         is_required: false,
       }),
-    ])
+    ]);
 
-    expect(optionalEmailSchema.parse({ secondary_email: '   ' }).secondary_email).toBeUndefined()
-  })
+    expect(optionalEmailSchema.parse({ secondary_email: '   ' }).secondary_email).toBeUndefined();
+  });
 
   it('validates phone format while allowing optional blanks', () => {
     const requiredPhoneSchema = buildDynamicFieldResponseSchema([
@@ -307,10 +308,10 @@ describe('event-fields schemas', () => {
         field_type: 'phone',
         is_required: true,
       }),
-    ])
+    ]);
 
-    expect(requiredPhoneSchema.safeParse({ phone: '+63917555100' }).success).toBe(true)
-    expect(requiredPhoneSchema.safeParse({ phone: 'abc' }).success).toBe(false)
+    expect(requiredPhoneSchema.safeParse({ phone: '+63917555100' }).success).toBe(true);
+    expect(requiredPhoneSchema.safeParse({ phone: 'abc' }).success).toBe(false);
 
     const optionalPhoneSchema = buildDynamicFieldResponseSchema([
       createField({
@@ -319,10 +320,10 @@ describe('event-fields schemas', () => {
         field_type: 'phone',
         is_required: false,
       }),
-    ])
+    ]);
 
-    expect(optionalPhoneSchema.parse({ backup_phone: '' }).backup_phone).toBeUndefined()
-  })
+    expect(optionalPhoneSchema.parse({ backup_phone: '' }).backup_phone).toBeUndefined();
+  });
 
   it('validates select and radio values against allowed options', () => {
     const selectSchema = buildDynamicFieldResponseSchema([
@@ -347,14 +348,14 @@ describe('event-fields schemas', () => {
           { label: 'Meat', value: 'meat' },
         ],
       }),
-    ])
+    ]);
 
-    expect(selectSchema.safeParse({ shirt_size: 's', meal_choice: 'veg' }).success).toBe(true)
-    expect(selectSchema.safeParse({ shirt_size: 'xl', meal_choice: 'veg' }).success).toBe(false)
+    expect(selectSchema.safeParse({ shirt_size: 's', meal_choice: 'veg' }).success).toBe(true);
+    expect(selectSchema.safeParse({ shirt_size: 'xl', meal_choice: 'veg' }).success).toBe(false);
 
-    const parsed = selectSchema.parse({ shirt_size: 'l', meal_choice: '' })
-    expect(parsed.meal_choice).toBeUndefined()
-  })
+    const parsed = selectSchema.parse({ shirt_size: 'l', meal_choice: '' });
+    expect(parsed.meal_choice).toBeUndefined();
+  });
 
   it('validates multiselect fields including normalization and min/max selection rules', () => {
     const requiredMultiSelectSchema = buildDynamicFieldResponseSchema([
@@ -370,14 +371,14 @@ describe('event-fields schemas', () => {
         ],
         validation_rules: { min_selections: 1, max_selections: 2 },
       }),
-    ])
+    ]);
 
-    expect(requiredMultiSelectSchema.parse({ roles: 'player' }).roles).toEqual(['player'])
-    expect(requiredMultiSelectSchema.safeParse({ roles: [] }).success).toBe(false)
-    expect(requiredMultiSelectSchema.safeParse({ roles: ['invalid'] }).success).toBe(false)
+    expect(requiredMultiSelectSchema.parse({ roles: 'player' }).roles).toEqual(['player']);
+    expect(requiredMultiSelectSchema.safeParse({ roles: [] }).success).toBe(false);
+    expect(requiredMultiSelectSchema.safeParse({ roles: ['invalid'] }).success).toBe(false);
     expect(
       requiredMultiSelectSchema.safeParse({ roles: ['player', 'coach', 'manager'] }).success,
-    ).toBe(false)
+    ).toBe(false);
 
     const optionalMultiSelectSchema = buildDynamicFieldResponseSchema([
       createField({
@@ -390,13 +391,13 @@ describe('event-fields schemas', () => {
           { label: 'Volunteer', value: 'volunteer' },
         ],
       }),
-    ])
+    ]);
 
-    expect(optionalMultiSelectSchema.parse({ extra_roles: '' }).extra_roles).toEqual([])
+    expect(optionalMultiSelectSchema.parse({ extra_roles: '' }).extra_roles).toEqual([]);
     expect(optionalMultiSelectSchema.parse({ extra_roles: ['staff'] }).extra_roles).toEqual([
       'staff',
-    ])
-  })
+    ]);
+  });
 
   it('validates multi-select toggle fields with option-keyed boolean values', () => {
     const schema = buildDynamicFieldResponseSchema([
@@ -412,18 +413,18 @@ describe('event-fields schemas', () => {
         ],
         validation_rules: { min_selections: 1, max_selections: 2 },
       }),
-    ])
+    ]);
 
-    expect(schema.safeParse({ meal_windows: { '9am': true, '12nn': false } }).success).toBe(true)
-    expect(schema.safeParse({ meal_windows: { '9am': null } }).success).toBe(false)
-    expect(schema.parse({ meal_windows: { '12nn': null } }).meal_windows).toEqual({ '12nn': true })
-    expect(schema.safeParse({ meal_windows: {} }).success).toBe(false)
-    expect(schema.safeParse({ meal_windows: { unknown: true } }).success).toBe(false)
-    expect(schema.safeParse({ meal_windows: { '9am': 'yes' } }).success).toBe(false)
+    expect(schema.safeParse({ meal_windows: { '9am': true, '12nn': false } }).success).toBe(true);
+    expect(schema.safeParse({ meal_windows: { '9am': null } }).success).toBe(false);
+    expect(schema.parse({ meal_windows: { '12nn': null } }).meal_windows).toEqual({ '12nn': true });
+    expect(schema.safeParse({ meal_windows: {} }).success).toBe(false);
+    expect(schema.safeParse({ meal_windows: { unknown: true } }).success).toBe(false);
+    expect(schema.safeParse({ meal_windows: { '9am': 'yes' } }).success).toBe(false);
     expect(
       schema.safeParse({ meal_windows: { '9am': true, '12nn': false, '3pm': true } }).success,
-    ).toBe(false)
-  })
+    ).toBe(false);
+  });
 
   it('validates date and datetime formats with min/max boundary checks', () => {
     const dateSchema = buildDynamicFieldResponseSchema([
@@ -445,18 +446,18 @@ describe('event-fields schemas', () => {
           max_date: '2024-01-01T18:00:00.000Z',
         },
       }),
-    ])
+    ]);
 
-    expect(dateSchema.safeParse({ birth_date: '2024-06-01', arrival_time: '' }).success).toBe(true)
-    expect(dateSchema.safeParse({ birth_date: '06/01/2024' }).success).toBe(false)
-    expect(dateSchema.safeParse({ birth_date: '2023-12-31' }).success).toBe(false)
+    expect(dateSchema.safeParse({ birth_date: '2024-06-01', arrival_time: '' }).success).toBe(true);
+    expect(dateSchema.safeParse({ birth_date: '06/01/2024' }).success).toBe(false);
+    expect(dateSchema.safeParse({ birth_date: '2023-12-31' }).success).toBe(false);
     expect(
       dateSchema.safeParse({
         birth_date: '2024-06-01',
         arrival_time: '2024-01-01T19:00:00.000Z',
       }).success,
-    ).toBe(false)
-  })
+    ).toBe(false);
+  });
 
   it('enforces required checkboxes/booleans and allows optional booleans', () => {
     const schema = buildDynamicFieldResponseSchema([
@@ -473,10 +474,10 @@ describe('event-fields schemas', () => {
         field_type: 'boolean',
         is_required: false,
       }),
-    ])
+    ]);
 
-    expect(schema.safeParse({ terms_accepted: true, newsletter: false }).success).toBe(true)
-    expect(schema.safeParse({ terms_accepted: false, newsletter: true }).success).toBe(false)
-    expect(schema.parse({ terms_accepted: true }).newsletter).toBeUndefined()
-  })
-})
+    expect(schema.safeParse({ terms_accepted: true, newsletter: false }).success).toBe(true);
+    expect(schema.safeParse({ terms_accepted: false, newsletter: true }).success).toBe(false);
+    expect(schema.parse({ terms_accepted: true }).newsletter).toBeUndefined();
+  });
+});

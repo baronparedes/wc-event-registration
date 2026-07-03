@@ -49,8 +49,8 @@ Do NOT use for:
 ```tsx
 // ✅ After mutation success
 onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: queryKeys.events.admin() })
-}
+  queryClient.invalidateQueries({ queryKey: queryKeys.events.admin() });
+};
 ```
 
 ## Derived State (useMemo)

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { areAllRequirementsMet, getPublishRequirements } from '../metadata'
+import { describe, expect, it } from 'vitest';
+
+import { areAllRequirementsMet, getPublishRequirements } from '../metadata';
 
 describe('event publish metadata', () => {
   it('maps publish requirements to filled states', () => {
@@ -10,7 +11,7 @@ describe('event publish metadata', () => {
       ends_at: '',
       registration_opens_at: '2026-06-01T00:00:00.000Z',
       registration_closes_at: null,
-    })
+    });
 
     expect(requirements).toEqual([
       { key: 'description', label: 'Description', filled: true },
@@ -19,8 +20,8 @@ describe('event publish metadata', () => {
       { key: 'ends_at', label: 'Event End Date & Time', filled: false },
       { key: 'registration_opens_at', label: 'Registration Opens', filled: true },
       { key: 'registration_closes_at', label: 'Registration Closes', filled: false },
-    ])
-  })
+    ]);
+  });
 
   it('reports whether all publish requirements are met', () => {
     expect(
@@ -32,7 +33,7 @@ describe('event publish metadata', () => {
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-06-22T00:00:00.000Z',
       }),
-    ).toBe(true)
+    ).toBe(true);
 
     expect(
       areAllRequirementsMet({
@@ -43,6 +44,6 @@ describe('event publish metadata', () => {
         registration_opens_at: '2026-06-01T00:00:00.000Z',
         registration_closes_at: '2026-06-22T00:00:00.000Z',
       }),
-    ).toBe(false)
-  })
-})
+    ).toBe(false);
+  });
+});

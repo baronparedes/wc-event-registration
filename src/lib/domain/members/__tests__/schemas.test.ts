@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { createMemberSchema, updateMemberSchema } from '@/lib/domain/members'
+import { describe, expect, it } from 'vitest';
+
+import { createMemberSchema, updateMemberSchema } from '@/lib/domain/members';
 
 describe('members schemas', () => {
   it('accepts valid create member input', () => {
@@ -13,11 +14,11 @@ describe('members schemas', () => {
       date_of_birth: '1995-10-12',
       role: 'player',
       category: 'adult',
-    })
+    });
 
-    expect(parsed.member_id).toBe('WC-001')
-    expect(parsed.email).toBe('jane.doe@example.com')
-  })
+    expect(parsed.member_id).toBe('WC-001');
+    expect(parsed.email).toBe('jane.doe@example.com');
+  });
 
   it('rejects create member input when required fields are missing', () => {
     const parsed = createMemberSchema.safeParse({
@@ -30,10 +31,10 @@ describe('members schemas', () => {
       email: '',
       phone: '',
       date_of_birth: '',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
+    expect(parsed.success).toBe(false);
+  });
 
   it('rejects create member input with invalid email', () => {
     const parsed = createMemberSchema.safeParse({
@@ -46,10 +47,10 @@ describe('members schemas', () => {
       date_of_birth: '',
       role: 'staff',
       category: 'adult',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
+    expect(parsed.success).toBe(false);
+  });
 
   it('accepts valid update member input with optional blank values', () => {
     const parsed = updateMemberSchema.parse({
@@ -62,10 +63,10 @@ describe('members schemas', () => {
       date_of_birth: '',
       role: '',
       category: '',
-    })
+    });
 
-    expect(parsed.full_name).toBe('Jane Doe')
-  })
+    expect(parsed.full_name).toBe('Jane Doe');
+  });
 
   it('rejects update member input with invalid date format', () => {
     const parsed = updateMemberSchema.safeParse({
@@ -78,8 +79,8 @@ describe('members schemas', () => {
       date_of_birth: '12/10/1995',
       role: '',
       category: '',
-    })
+    });
 
-    expect(parsed.success).toBe(false)
-  })
-})
+    expect(parsed.success).toBe(false);
+  });
+});

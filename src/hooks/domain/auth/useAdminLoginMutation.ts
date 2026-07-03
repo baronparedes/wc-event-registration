@@ -1,29 +1,30 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
-import { ADMIN_AUTH_QUERY_KEY, fetchAdminAuthState } from '@/lib/domain/auth'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { ADMIN_AUTH_QUERY_KEY, fetchAdminAuthState } from '@/lib/domain/auth';
+import { supabase } from '@/lib/infrastructure';
 
 export function useAdminLoginMutation() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        throw error
+        throw error;
       }
 
-      const authState = await fetchAdminAuthState()
+      const authState = await fetchAdminAuthState();
 
       if (!authState.isAuthenticated) {
-        await supabase.auth.signOut()
-        throw new Error('This account is not authorized as an admin.')
+        await supabase.auth.signOut();
+        throw new Error('This account is not authorized as an admin.');
       }
 
-      return authState
+      return authState;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADMIN_AUTH_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ADMIN_AUTH_QUERY_KEY });
     },
-  })
+  });
 }

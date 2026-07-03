@@ -1,42 +1,43 @@
-import DOMPurify from 'dompurify'
-import { Users } from 'lucide-react'
-import type { EventAvailability } from '@/lib/domain/events'
-import { formatDateTime } from '@/lib/infrastructure'
-import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard'
-import { Badge } from '@/components/ui/Badge'
-import { Skeleton } from '@/components/ui/Skeleton'
+import DOMPurify from 'dompurify';
+import { Users } from 'lucide-react';
+
+import { Badge } from '@/components/ui/Badge';
+import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
+import { Skeleton } from '@/components/ui/Skeleton';
+import type { EventAvailability } from '@/lib/domain/events';
+import { formatDateTime } from '@/lib/infrastructure';
 
 type EventHeaderCardProps = {
-  slug?: string
-  isLoading: boolean
-  isError: boolean
-  availability?: EventAvailability
-  isGateReady: boolean
-  eventWindowText: { opens: string; closes: string } | null
-}
+  slug?: string;
+  isLoading: boolean;
+  isError: boolean;
+  availability?: EventAvailability;
+  isGateReady: boolean;
+  eventWindowText: { opens: string; closes: string } | null;
+};
 
 export function EventHeaderCard(props: EventHeaderCardProps) {
-  const { slug, isLoading, isError, availability, isGateReady, eventWindowText } = props
+  const { slug, isLoading, isError, availability, isGateReady, eventWindowText } = props;
 
   const event =
     availability?.status === 'available' ||
     (availability?.status === 'unavailable' && availability.reason !== 'not_found_or_unpublished')
       ? (availability as Extract<EventAvailability, { event: unknown }>).event
-      : null
+      : null;
 
-  const title = event?.title ?? 'Register for This Event'
+  const title = event?.title ?? 'Register for This Event';
   const statusBadgeVariant =
     availability?.status === 'available'
       ? 'open'
       : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
         ? 'upcoming'
-        : 'closed'
+        : 'closed';
   const statusBadgeLabel =
     availability?.status === 'available'
       ? 'Open'
       : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
         ? 'Opens Soon'
-        : 'Closed'
+        : 'Closed';
 
   return (
     <CollapsibleSectionCard
@@ -161,5 +162,5 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
         </p>
       )}
     </CollapsibleSectionCard>
-  )
+  );
 }

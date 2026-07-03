@@ -1,9 +1,11 @@
-import { act, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { faker } from '@faker-js/faker'
-import { renderHookWithClient } from '@/__tests__/unit-test-utils'
-import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery'
-import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery'
+import { faker } from '@faker-js/faker';
+import { act, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { useUpdateEventMutation } from '@/hooks/domain/events/mutations/useUpdateEventMutation';
+import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery';
+import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
 const { mockSelectBuilder, mockUpdateBuilder, mockFrom, mockWriteAdminAuditLogSafely } = vi.hoisted(
   () => {
@@ -11,66 +13,64 @@ const { mockSelectBuilder, mockUpdateBuilder, mockFrom, mockWriteAdminAuditLogSa
       select: vi.fn(),
       eq: vi.fn(),
       maybeSingle: vi.fn(),
-    }
-    selectBuilder.select.mockReturnValue(selectBuilder)
-    selectBuilder.eq.mockReturnValue(selectBuilder)
+    };
+    selectBuilder.select.mockReturnValue(selectBuilder);
+    selectBuilder.eq.mockReturnValue(selectBuilder);
 
     const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
       update: vi.fn(),
       eq: vi.fn(),
-    }
-    updateBuilder.update.mockReturnValue(updateBuilder)
+    };
+    updateBuilder.update.mockReturnValue(updateBuilder);
 
     return {
       mockSelectBuilder: selectBuilder,
       mockUpdateBuilder: updateBuilder,
       mockFrom: vi.fn((table: string) => {
         if (table !== 'events') {
-          throw new Error(`Unexpected table: ${table}`)
+          throw new Error(`Unexpected table: ${table}`);
         }
         return {
           select: selectBuilder.select,
           eq: selectBuilder.eq,
           maybeSingle: selectBuilder.maybeSingle,
           update: updateBuilder.update,
-        }
+        };
       }),
       mockWriteAdminAuditLogSafely: vi.fn(),
-    }
+    };
   },
-)
+);
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     supabase: {
       from: mockFrom,
     },
-  }
-})
+  };
+});
 
 vi.mock('@/lib/domain/admin-audit', async () => {
   const actual = await vi.importActual<typeof import('@/lib/domain/admin-audit')>(
     '@/lib/domain/admin-audit',
-  )
+  );
   return {
     ...actual,
     writeAdminAuditLogSafely: mockWriteAdminAuditLogSafely,
-  }
-})
-
-import { useUpdateEventMutation } from '@/hooks/domain/events/mutations/useUpdateEventMutation'
+  };
+});
 
 describe('useUpdateEventMutation', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockUpdateBuilder.eq.mockResolvedValue({ error: null })
-  })
+    vi.clearAllMocks();
+    mockUpdateBuilder.eq.mockResolvedValue({ error: null });
+  });
 
   it('updates an event, records changed fields, and invalidates related queries', async () => {
-    const eventId = faker.string.uuid()
+    const eventId = faker.string.uuid();
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
       data: {
         title: 'Old Title',
@@ -84,10 +84,10 @@ describe('useUpdateEventMutation', () => {
         duplicate_policy: 'block',
         registration_mode: 'closed',
       },
-    })
+    });
 
-    const { result, queryClient } = renderHookWithClient(() => useUpdateEventMutation())
-    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result, queryClient } = renderHookWithClient(() => useUpdateEventMutation());
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await act(async () => {
       await result.current.mutateAsync({
@@ -103,8 +103,8 @@ describe('useUpdateEventMutation', () => {
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
         allow_public_registrations: false,
-      })
-    })
+      });
+    });
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith({
       title: 'New Title',
@@ -118,7 +118,7 @@ describe('useUpdateEventMutation', () => {
       duplicate_policy: 'allow_update',
       registration_mode: 'open',
       allow_public_registrations: false,
-    })
+    });
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'update_event',
       resourceType: 'event',
@@ -134,13 +134,13 @@ describe('useUpdateEventMutation', () => {
           'allow_public_registrations',
         ],
       },
-    })
+    });
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY })
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventQueryKey(eventId) })
-    })
-  })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventQueryKey(eventId) });
+    });
+  });
 
   it('throws when event update fails', async () => {
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
@@ -156,10 +156,10 @@ describe('useUpdateEventMutation', () => {
         duplicate_policy: 'block',
         registration_mode: 'closed',
       },
-    })
-    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
+    });
+    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') });
 
-    const { result } = renderHookWithClient(() => useUpdateEventMutation())
+    const { result } = renderHookWithClient(() => useUpdateEventMutation());
 
     await expect(
       result.current.mutateAsync({
@@ -175,15 +175,15 @@ describe('useUpdateEventMutation', () => {
         duplicate_policy: 'block',
         registration_mode: 'closed',
       }),
-    ).rejects.toThrow('update failed')
+    ).rejects.toThrow('update failed');
 
-    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled()
-  })
+    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled();
+  });
 
   it('records every field as changed when previous event is missing', async () => {
-    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null })
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null });
 
-    const { result } = renderHookWithClient(() => useUpdateEventMutation())
+    const { result } = renderHookWithClient(() => useUpdateEventMutation());
 
     await act(async () => {
       await result.current.mutateAsync({
@@ -199,8 +199,8 @@ describe('useUpdateEventMutation', () => {
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
         allow_public_registrations: true,
-      })
-    })
+      });
+    });
 
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -220,8 +220,8 @@ describe('useUpdateEventMutation', () => {
           ],
         },
       }),
-    )
-  })
+    );
+  });
 
   it('merges allow_name_lookup into metadata when provided', async () => {
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
@@ -239,9 +239,9 @@ describe('useUpdateEventMutation', () => {
         allow_public_registrations: false,
         metadata: { legacy_flag: true },
       },
-    })
+    });
 
-    const { result } = renderHookWithClient(() => useUpdateEventMutation())
+    const { result } = renderHookWithClient(() => useUpdateEventMutation());
 
     await act(async () => {
       await result.current.mutateAsync({
@@ -258,8 +258,8 @@ describe('useUpdateEventMutation', () => {
         registration_mode: 'closed',
         allow_public_registrations: false,
         allow_name_lookup: true,
-      })
-    })
+      });
+    });
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -268,6 +268,6 @@ describe('useUpdateEventMutation', () => {
           allow_name_lookup: true,
         },
       }),
-    )
-  })
-})
+    );
+  });
+});

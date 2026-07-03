@@ -30,14 +30,14 @@ export const TOAST_MESSAGES = {
       `Copied ${count} registration${count === 1 ? '' : 's'} to clipboard.`,
     copyNamesFailed: 'Failed to copy registration names',
   },
-} as const
+} as const;
 
 export const FORM_MESSAGES = {
   eventSlugMissing: 'Event slug is missing',
   memberLookupRequired: 'Member lookup is required',
   eventNotAvailable: 'Event is not available',
   memberLookupFailed: 'Member lookup failed',
-} as const
+} as const;
 
 export const UI_MESSAGES = {
   loading: {
@@ -68,4 +68,4 @@ export const UI_MESSAGES = {
     updated: 'Updated',
     cancelled: 'Cancelled',
   },
-} as const
+} as const;

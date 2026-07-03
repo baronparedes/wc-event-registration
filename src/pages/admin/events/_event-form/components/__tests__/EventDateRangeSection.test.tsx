@@ -1,12 +1,13 @@
-import { useForm } from 'react-hook-form'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import type { FieldErrors } from 'react-hook-form'
-import type { CreateEventInput } from '@/lib/domain/events'
-import { EventDateRangeSection } from '@/pages/admin/events/_event-form/components/EventDateRangeSection'
+import { render, screen } from '@testing-library/react';
+import { useForm } from 'react-hook-form';
+import type { FieldErrors } from 'react-hook-form';
+import { describe, expect, it } from 'vitest';
+
+import type { CreateEventInput } from '@/lib/domain/events';
+import { EventDateRangeSection } from '@/pages/admin/events/_event-form/components/EventDateRangeSection';
 
 function Harness(props: { errors?: FieldErrors<CreateEventInput>; disabled?: boolean }) {
-  const { register } = useForm<CreateEventInput>()
+  const { register } = useForm<CreateEventInput>();
 
   return (
     <EventDateRangeSection
@@ -21,26 +22,26 @@ function Harness(props: { errors?: FieldErrors<CreateEventInput>; disabled?: boo
       register={register}
       disabled={props.disabled}
     />
-  )
+  );
 }
 
 describe('EventDateRangeSection', () => {
   it('renders datetime inputs and supports disabled mode', () => {
-    render(<Harness disabled />)
+    render(<Harness disabled />);
 
-    expect(screen.getByLabelText('Event Start')).toBeDisabled()
-    expect(screen.getByLabelText('Event End')).toBeDisabled()
-  })
+    expect(screen.getByLabelText('Event Start')).toBeDisabled();
+    expect(screen.getByLabelText('Event End')).toBeDisabled();
+  });
 
   it('shows only string validation errors from react-hook-form', () => {
     const errors = {
       starts_at: { message: 'Event start is required' },
       ends_at: { message: { nested: 'not-a-string' } },
-    } as unknown as FieldErrors<CreateEventInput>
+    } as unknown as FieldErrors<CreateEventInput>;
 
-    render(<Harness errors={errors} />)
+    render(<Harness errors={errors} />);
 
-    expect(screen.getByText('Event start is required')).toBeInTheDocument()
-    expect(screen.queryByText('not-a-string')).not.toBeInTheDocument()
-  })
-})
+    expect(screen.getByText('Event start is required')).toBeInTheDocument();
+    expect(screen.queryByText('not-a-string')).not.toBeInTheDocument();
+  });
+});

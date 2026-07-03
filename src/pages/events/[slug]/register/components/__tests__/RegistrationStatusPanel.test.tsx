@@ -1,7 +1,9 @@
-import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { RegistrationStatusPanel } from '../RegistrationStatusPanel'
+import { createRef } from 'react';
+
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import { RegistrationStatusPanel } from '../RegistrationStatusPanel';
 
 describe('RegistrationStatusPanel', () => {
   it('renders blocked variant copy and styles', () => {
@@ -11,15 +13,15 @@ describe('RegistrationStatusPanel', () => {
         isUpdateMode={false}
         registrationStatusRef={createRef()}
       />,
-    )
+    );
 
     expect(
       screen.getByText('You are already registered. No further actions are needed at the moment.'),
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     expect(
       screen.getByText('Your registration is already complete for this event.'),
-    ).toBeInTheDocument()
-  })
+    ).toBeInTheDocument();
+  });
 
   it('renders update variant copy when not blocked and update mode is true', () => {
     render(
@@ -28,13 +30,13 @@ describe('RegistrationStatusPanel', () => {
         isUpdateMode
         registrationStatusRef={createRef()}
       />,
-    )
+    );
 
-    expect(screen.getByText('Review your details below.')).toBeInTheDocument()
+    expect(screen.getByText('Review your details below.')).toBeInTheDocument();
     expect(
       screen.getByText('Tap "Yes, I confirm" to continue to Step 3 and update your registration.'),
-    ).toBeInTheDocument()
-  })
+    ).toBeInTheDocument();
+  });
 
   it('renders new-registration variant copy when not blocked and update mode is false', () => {
     render(
@@ -43,8 +45,8 @@ describe('RegistrationStatusPanel', () => {
         isUpdateMode={false}
         registrationStatusRef={createRef()}
       />,
-    )
+    );
 
-    expect(screen.getByText('Tap "Yes, I confirm" to continue to Step 3.')).toBeInTheDocument()
-  })
-})
+    expect(screen.getByText('Tap "Yes, I confirm" to continue to Step 3.')).toBeInTheDocument();
+  });
+});

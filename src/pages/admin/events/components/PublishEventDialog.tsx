@@ -1,42 +1,43 @@
-import { useState, useEffect } from 'react'
-import { ActionButton } from '@/components/ui/ActionLink'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { getPublishRequirements, areAllRequirementsMet } from '@/lib/domain/events'
-import type { AdminEvent } from '@/lib/domain/events'
+import { useEffect, useState } from 'react';
+
+import { ActionButton } from '@/components/ui/ActionLink';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { areAllRequirementsMet, getPublishRequirements } from '@/lib/domain/events';
+import type { AdminEvent } from '@/lib/domain/events';
 
 type PublishEventModalProps = {
-  eventData: AdminEvent | null
-  isPending: boolean
-  onConfirm: () => void
-  onClose: () => void
-}
+  eventData: AdminEvent | null;
+  isPending: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+};
 
 function PublishEventModal({ eventData, isPending, onConfirm, onClose }: PublishEventModalProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   // Open dialog when eventData is set, close when cleared
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    setIsOpen(!!eventData)
-  }, [eventData])
+    setIsOpen(!!eventData);
+  }, [eventData]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  if (!eventData) return null
+  if (!eventData) return null;
 
-  const requirements = getPublishRequirements(eventData)
-  const allFilled = areAllRequirementsMet(eventData)
-  const filledCount = requirements.filter((req) => req.filled).length
+  const requirements = getPublishRequirements(eventData);
+  const allFilled = areAllRequirementsMet(eventData);
+  const filledCount = requirements.filter((req) => req.filled).length;
 
   const handleCancel = () => {
-    setIsOpen(false)
-    onClose()
-  }
+    setIsOpen(false);
+    onClose();
+  };
 
   const handleConfirm = () => {
-    onConfirm()
-    setIsOpen(false)
-    onClose()
-  }
+    onConfirm();
+    setIsOpen(false);
+    onClose();
+  };
 
   return (
     <ConfirmDialog
@@ -76,21 +77,21 @@ function PublishEventModal({ eventData, isPending, onConfirm, onClose }: Publish
       onCancel={handleCancel}
       disabled={!allFilled}
     />
-  )
+  );
 }
 
 type PublishActionButtonProps = {
-  event: AdminEvent
-  isPending: boolean
-  onPublish: (eventId: string, eventTitle: string) => void
-}
+  event: AdminEvent;
+  isPending: boolean;
+  onPublish: (eventId: string, eventTitle: string) => void;
+};
 
 /**
  * Publish button that opens a dialog showing requirements checklist.
  * Manages both button rendering and dialog state internally.
  */
 export function PublishActionButton({ event, isPending, onPublish }: PublishActionButtonProps) {
-  const [selectedEvent, setSelectedEvent] = useState<AdminEvent | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<AdminEvent | null>(null);
 
   return (
     <>
@@ -104,5 +105,5 @@ export function PublishActionButton({ event, isPending, onPublish }: PublishActi
         onClose={() => setSelectedEvent(null)}
       />
     </>
-  )
+  );
 }

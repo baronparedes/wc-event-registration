@@ -1,8 +1,8 @@
-import type { AdminEvent } from '@/lib/domain/events'
+import type { AdminEvent } from '@/lib/domain/events';
 
 type DuplicatePolicyLabelProps = {
-  policy: AdminEvent['duplicate_policy']
-}
+  policy: AdminEvent['duplicate_policy'];
+};
 
 /**
  * Displays the duplicate registration policy as a human-readable label.
@@ -13,5 +13,5 @@ export function DuplicatePolicyLabel({ policy }: DuplicatePolicyLabelProps) {
     <span className="text-sm text-text">
       {policy === 'allow_update' ? 'Allow Update' : 'Block'}
     </span>
-  )
+  );
 }

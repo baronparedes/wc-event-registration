@@ -1,20 +1,21 @@
-import type { ReactNode } from 'react'
-import { Button } from './Button'
+import type { ReactNode } from 'react';
+
+import { Button } from './Button';
 
 type ConfirmDialogProps = {
-  isOpen: boolean
-  title: string
-  description: ReactNode
-  maxWidthClass?: string
-  confirmLabel: string
-  confirmLoadingLabel: string
-  cancelLabel?: string
-  confirmVariant?: 'default' | 'destructive' | 'outline'
-  isPending: boolean
-  disabled?: boolean
-  onConfirm: () => void
-  onCancel: () => void
-}
+  isOpen: boolean;
+  title: string;
+  description: ReactNode;
+  maxWidthClass?: string;
+  confirmLabel: string;
+  confirmLoadingLabel: string;
+  cancelLabel?: string;
+  confirmVariant?: 'default' | 'destructive' | 'outline';
+  isPending: boolean;
+  disabled?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
 
 export function ConfirmDialog({
   isOpen,
@@ -30,9 +31,9 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  const confirmDisabled = isPending || disabled
+  const confirmDisabled = isPending || disabled;
 
   return (
     <div
@@ -61,5 +62,5 @@ export function ConfirmDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }

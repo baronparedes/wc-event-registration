@@ -1,17 +1,19 @@
-import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form'
-import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { FieldOptionsEditor } from './FieldOptionsEditor'
+import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form';
+
+import { SectionCard } from '@/components/ui/SectionCard';
+import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields';
+
+import { FieldOptionsEditor } from './FieldOptionsEditor';
 
 type OptionsSectionProps = {
-  isStructurallyLocked: boolean
-  optionFields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[]
-  register: UseFormRegister<EventFieldFormValues>
-  errors: Record<string, unknown>
-  append: UseFieldArrayReturn<EventFieldFormValues>['append']
-  remove: UseFieldArrayReturn<EventFieldFormValues>['remove']
-  selectedFieldType: EventFieldTypeEnum
-}
+  isStructurallyLocked: boolean;
+  optionFields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[];
+  register: UseFormRegister<EventFieldFormValues>;
+  errors: Record<string, unknown>;
+  append: UseFieldArrayReturn<EventFieldFormValues>['append'];
+  remove: UseFieldArrayReturn<EventFieldFormValues>['remove'];
+  selectedFieldType: EventFieldTypeEnum;
+};
 
 /** Section for choice field options (select, radio, multi-select). */
 export function OptionsSection({
@@ -42,5 +44,5 @@ export function OptionsSection({
         selectedFieldType={selectedFieldType}
       />
     </SectionCard>
-  )
+  );
 }

@@ -1,56 +1,58 @@
-import { useNavigate, useParams } from 'react-router-dom'
-import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { SectionCard } from '@/components/ui/SectionCard'
-import { UI_MESSAGES, toAdminEventPublicRegistrations } from '@/config/constants'
+import { useState } from 'react';
+
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { UI_MESSAGES, toAdminEventPublicRegistrations } from '@/config/constants';
 import {
   useCancelPublicRegistrationMutation,
   usePublicRegistrationDetailQuery,
   useReactivatePublicRegistrationMutation,
-} from '@/hooks/domain/public-registrations'
-import { useErrorWithFadeout } from '@/hooks/utils'
+} from '@/hooks/domain/public-registrations';
+import { useErrorWithFadeout } from '@/hooks/utils';
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 function formatAnswer(answer: unknown, fieldType: string): string {
   if (answer === null || answer === undefined) {
-    return '—'
+    return '—';
   }
 
   if (fieldType === 'multi_select_toggle') {
     if (typeof answer === 'object' && answer !== null && !Array.isArray(answer)) {
-      const entries = Object.entries(answer as Record<string, unknown>)
+      const entries = Object.entries(answer as Record<string, unknown>);
       return entries
         .map(
           ([key, value]) =>
             `${key}: ${value === true ? 'Yes' : value === false ? 'No' : String(value)}`,
         )
-        .join(', ')
+        .join(', ');
     }
-    return String(answer)
+    return String(answer);
   }
 
   if (fieldType === 'boolean') {
-    return answer === true ? 'Yes' : answer === false ? 'No' : String(answer)
+    return answer === true ? 'Yes' : answer === false ? 'No' : String(answer);
   }
 
   if (fieldType === 'multi_select' || fieldType === 'checkbox') {
     if (Array.isArray(answer)) {
-      return answer.join(', ')
+      return answer.join(', ');
     }
   }
 
-  return String(answer)
+  return String(answer);
 }
 
 function getStatusBadge(status: string) {
@@ -60,44 +62,44 @@ function getStatusBadge(status: string) {
         <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
           {UI_MESSAGES.registrationStatus.submitted}
         </span>
-      )
+      );
     case 'updated':
       return (
         <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
           {UI_MESSAGES.registrationStatus.updated}
         </span>
-      )
+      );
     case 'cancelled':
       return (
         <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
           {UI_MESSAGES.registrationStatus.cancelled}
         </span>
-      )
+      );
     default:
       return (
         <span className="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
           {status}
         </span>
-      )
+      );
   }
 }
 
 export function AdminPublicRegistrationDetailPage() {
   const { id: eventId, registration_id: registrationId } = useParams<{
-    id: string
-    registration_id: string
-  }>()
-  const navigate = useNavigate()
-  const { showError } = useErrorWithFadeout()
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
+    id: string;
+    registration_id: string;
+  }>();
+  const navigate = useNavigate();
+  const { showError } = useErrorWithFadeout();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
-  const detailQuery = usePublicRegistrationDetailQuery(registrationId ?? '')
-  const cancelMutation = useCancelPublicRegistrationMutation(eventId ?? '')
-  const reactivateMutation = useReactivatePublicRegistrationMutation(eventId ?? '')
+  const detailQuery = usePublicRegistrationDetailQuery(registrationId ?? '');
+  const cancelMutation = useCancelPublicRegistrationMutation(eventId ?? '');
+  const reactivateMutation = useReactivatePublicRegistrationMutation(eventId ?? '');
 
   if (!eventId || !registrationId) {
-    return <div>Invalid public registration ID</div>
+    return <div>Invalid public registration ID</div>;
   }
 
   if (detailQuery.error) {
@@ -116,7 +118,7 @@ export function AdminPublicRegistrationDetailPage() {
           </p>
         </SectionCard>
       </section>
-    )
+    );
   }
 
   if (detailQuery.isLoading) {
@@ -132,10 +134,10 @@ export function AdminPublicRegistrationDetailPage() {
           <p className="text-sm text-muted">{UI_MESSAGES.loading.registrationDetails}</p>
         </SectionCard>
       </section>
-    )
+    );
   }
 
-  const data = detailQuery.data
+  const data = detailQuery.data;
   if (!data) {
     return (
       <section className="space-y-4">
@@ -149,31 +151,33 @@ export function AdminPublicRegistrationDetailPage() {
           <p className="text-sm text-muted">Public registration not found.</p>
         </SectionCard>
       </section>
-    )
+    );
   }
 
-  const { registration, fieldResponses } = data
-  const canCancel = registration.status !== 'cancelled'
+  const { registration, fieldResponses } = data;
+  const canCancel = registration.status !== 'cancelled';
 
   const handleCancel = async () => {
     try {
-      await cancelMutation.mutateAsync({ registration_id: registrationId })
-      setShowCancelDialog(false)
-      navigate(toAdminEventPublicRegistrations(eventId))
+      await cancelMutation.mutateAsync({ registration_id: registrationId });
+      setShowCancelDialog(false);
+      navigate(toAdminEventPublicRegistrations(eventId));
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to cancel public registration')
+      showError(error instanceof Error ? error.message : 'Failed to cancel public registration');
     }
-  }
+  };
 
   const handleReactivate = async () => {
     try {
-      await reactivateMutation.mutateAsync({ registration_id: registrationId })
-      setShowReactivateDialog(false)
-      navigate(toAdminEventPublicRegistrations(eventId))
+      await reactivateMutation.mutateAsync({ registration_id: registrationId });
+      setShowReactivateDialog(false);
+      navigate(toAdminEventPublicRegistrations(eventId));
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to reactivate public registration')
+      showError(
+        error instanceof Error ? error.message : 'Failed to reactivate public registration',
+      );
     }
-  }
+  };
 
   return (
     <>
@@ -309,5 +313,5 @@ export function AdminPublicRegistrationDetailPage() {
         isPending={reactivateMutation.isPending}
       />
     </>
-  )
+  );
 }

@@ -1,23 +1,24 @@
-import type { ReactNode } from 'react'
-import type { UseFormRegisterReturn } from 'react-hook-form'
+import type { ReactNode } from 'react';
+
+import type { UseFormRegisterReturn } from 'react-hook-form';
 
 type SelectOption = {
-  value: string
-  label: string
-}
+  value: string;
+  label: string;
+};
 
 type FormSelectFieldProps = {
-  id: string
-  label: string
-  registration: UseFormRegisterReturn
-  options: SelectOption[]
-  error?: string | null
-  required?: boolean
-  disabled?: boolean
-  helperText?: string
-  labelAdornment?: ReactNode
-  selectClassName?: string
-}
+  id: string;
+  label: string;
+  registration: UseFormRegisterReturn;
+  options: SelectOption[];
+  error?: string | null;
+  required?: boolean;
+  disabled?: boolean;
+  helperText?: string;
+  labelAdornment?: ReactNode;
+  selectClassName?: string;
+};
 
 /** Shared labeled select field with consistent styling and error rendering. */
 export function FormSelectField(props: FormSelectFieldProps) {
@@ -32,7 +33,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
     helperText,
     labelAdornment,
     selectClassName,
-  } = props
+  } = props;
 
   return (
     <div className="space-y-1.5">
@@ -60,5 +61,5 @@ export function FormSelectField(props: FormSelectFieldProps) {
       {helperText && <p className="text-xs text-muted">{helperText}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
-  )
+  );
 }
