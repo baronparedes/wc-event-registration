@@ -11,18 +11,16 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.6)
 - Sessions are ordered by hard dependencies.
 - Do not change MVP scope during execution unless explicitly approved.
 
-## Open Decisions To Resolve Before Session 1
+## Resolved Decisions
 
 1. DEC-004: Read path for check-in search
 
-- Option A: direct Supabase reads with strict admin RLS
-- Option B: edge-mediated read endpoints
-- Recommended default: Option B if RLS surface is uncertain, otherwise Option A for lower latency
+- **Resolved**: Option B selected — edge-mediated reads via search-attendees Edge Function.
+- Rationale: simpler RLS surface; avoids direct authenticated reads on attendance tables.
 
 2. ASM-003: Assignment field max lengths
 
-- Confirm max length for table, area, team color, area leader
-- Recommended temporary defaults if not decided before coding: 80, 80, 40, 120
+- **Resolved**: Superseded by design change. Assignment fields are now dynamic (admin-configured), matching the event-fields pattern. Field-level validation_rules control any max length constraints per field definition.
 
 ## Session Plan
 
@@ -35,7 +33,9 @@ Goal:
 Checklist:
 
 - [ ] Add attendance domain module under src/lib/domain/attendance
-- [ ] Add Zod schemas for settings, assignment payload, walk-in payload, slot payload
+- [ ] Add attendance-fields domain module under src/lib/domain/attendance-fields
+- [ ] Add Zod schemas for settings (dependency enforcement), walk-in payload (superRefine contact check), slot payload
+- [ ] Add Zod schemas for assignment field CRUD and buildDynamicAssignmentResponseSchema factory
 - [ ] Add additive migration for attendance tables and constraints
 - [ ] Add deny-by-default RLS and explicit service_role grants
 - [ ] Register planned attendance functions in supabase/config.toml
@@ -44,6 +44,7 @@ Checklist:
 Expected file touch zones:
 
 - src/lib/domain/attendance/
+- src/lib/domain/attendance-fields/
 - supabase/migrations/
 - supabase/config.toml
 
@@ -87,35 +88,44 @@ Exit criteria:
 
 - Attendance settings are persisted and enforce dependency rules.
 
-## Session 3 - EPIC-8-S3 Pre-Event Assignments
+## Session 3 - EPIC-8-S3 Attendance Field Configuration
 
 Goal:
 
-- Deliver assignment list and assignment upsert for registered attendees.
+- Deliver attendance field definition CRUD and per-registrant data entry for configured fields.
 
 Checklist:
 
-- [ ] Add assignment list query and missing-assignment indicator
-- [ ] Add assignment form and save action
-- [ ] Implement upsert-attendance-assignment Edge Function
-- [ ] Block assignment edits when attendance is disabled
+- [ ] Add attendance field query and mutation hooks under src/hooks/domain/attendance-fields/
+- [ ] Add answer query and mutation hooks under src/hooks/domain/attendance/
+- [ ] Add field configuration UI (create, edit, delete, reorder) under attendance/fields/ page
+- [ ] Add data entry list (per-registrant fill-in) under same page section
+- [ ] Implement create-attendance-field, update-attendance-field, delete-attendance-field, reorder-attendance-fields Edge Functions
+- [ ] Implement upsert-attendance-answers Edge Function
+- [ ] Block assignment field edits when attendance is disabled
 - [ ] Keep assignment data separate from registration answers
 
 Expected file touch zones:
 
 - src/pages/admin/events/[id]/attendance/assignments/
-- src/hooks/domain/attendance/queries/
-- src/hooks/domain/attendance/mutations/
-- supabase/functions/upsert-attendance-assignment/
+- src/hooks/domain/attendance-fields/queries/
+- src/hooks/domain/attendance-fields/mutations/
+- src/hooks/domain/attendance/queries/ (assignment answers query)
+- src/hooks/domain/attendance/mutations/ (upsert answers mutation)
+- supabase/functions/create-assignment-field/
+- supabase/functions/update-assignment-field/
+- supabase/functions/delete-assignment-field/
+- supabase/functions/reorder-assignment-fields/
+- supabase/functions/upsert-assignment-answers/
 
 Validation gate:
 
 - [ ] Feature 8.2 scenarios pass in local QA
-- [ ] Assignment updates visible in downstream check-in context read
+- [ ] Configured field values visible in downstream check-in context read
 
 Exit criteria:
 
-- Assignment management is operational and isolated from registration answer storage.
+- Attendance field configuration and data entry operational; data isolated from registration answer storage.
 
 ## Session 4 - EPIC-8-S4 Registered Check-In
 
@@ -125,9 +135,10 @@ Goal:
 
 Checklist:
 
-- [ ] Add attendee search by Member ID token, name fragment, and email
+- [ ] Add attendee search by Member ID token, name fragment, and email (via search-attendees Edge Function)
 - [ ] Add disambiguation result list for multi-match names
 - [ ] Add check-in action flow and success/duplicate states
+- [ ] Implement search-attendees Edge Function (edge-mediated read, DEC-004 Option B)
 - [ ] Implement check-in-attendee Edge Function with idempotent first check-in behavior
 - [ ] Ensure official first check-in timestamp is never overwritten
 
@@ -136,6 +147,7 @@ Expected file touch zones:
 - src/pages/admin/events/[id]/attendance/check-in/
 - src/hooks/domain/attendance/queries/
 - src/hooks/domain/attendance/mutations/
+- supabase/functions/search-attendees/
 - supabase/functions/check-in-attendee/
 
 Validation gate:

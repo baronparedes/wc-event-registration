@@ -24,6 +24,11 @@ Term alignment note:
 
 - Feature 8.3 uses RFID scan language. Canonical term is Member ID. This design treats RFID as one form of Member ID input token without changing glossary semantics.
 
+## Resolved Decisions
+
+- DEC-004 (Read path for check-in search): **Option B selected** — edge-mediated read via search-attendees Edge Function for simpler RLS surface.
+- ASM-003 (Assignment field max lengths): **Superseded** — assignment fields are now fully dynamic (admin-configurable, like event-fields). Field-level max lengths are controlled via validation_rules in each field definition. Hardcoded column lengths no longer apply.
+
 ## Architecture Scope
 
 - Target epic/chunk:
@@ -52,15 +57,16 @@ Term alignment note:
   - New attendance pages under admin event route segments orchestrate query/mutation hooks and state
 - Hooks:
   - Queries for attendance settings, assignment list, attendee search results, attendance summaries
-  - Mutations for settings updates, assignment upsert, check-in, walk-in check-in, CSV export trigger
+  - Mutations for settings updates, assignment field CRUD, assignment answer upsert, check-in, walk-in check-in, CSV export trigger
 - Domain modules:
-  - src/lib/domain/attendance for schemas, contracts, transforms, metadata constants
+  - src/lib/domain/attendance for core check-in schemas, contracts, transforms, metadata constants
+  - src/lib/domain/attendance-fields for dynamic assignment field definitions, answer schemas, and field builder contracts
 - Backend:
   - Edge Functions as write path for attendance mutations and export generation
-  - Read APIs can be query hooks via Supabase select when safe, or edge-backed when joins/permissions are sensitive
+  - Read APIs for check-in attendee search are edge-mediated (DEC-004 resolved: Option B)
 - Database:
   - Additive attendance tables scoped by event_id
-  - Explicit separation between registration answers and assignment details
+  - Explicit separation between registration answers and assignment field answers
 
 ### Data-flow and control-flow outline
 
@@ -73,10 +79,11 @@ Term alignment note:
 
 2. Pre-event assignments
 
-- Admin opens assignment list for one event.
-- Query returns registrants plus current assignment details and missing-assignment indicators.
-- Admin edits assignment values and submits.
-- Mutation upserts assignment row and invalidates assignment queries.
+- Admin opens assignment field builder for one event and defines custom fields (label, type, options).
+- Admin opens assignment data entry list for one event.
+- Query returns registrants plus their current assignment field answers and missing-value indicators.
+- Admin edits values per registrant and submits.
+- Mutation upserts assignment answers and invalidates assignment queries.
 
 3. Check-in (registered)
 
@@ -117,15 +124,19 @@ Term alignment note:
 
 ### Domain types and schema changes
 
-Create domain package:
+Create domain packages:
 
 - src/lib/domain/attendance/types.ts
 - src/lib/domain/attendance/schemas.ts
 - src/lib/domain/attendance/metadata.ts
-- src/lib/domain/attendance/transforms.ts
 - src/lib/domain/attendance/index.ts
 
-Core contract shapes:
+- src/lib/domain/attendance-fields/types.ts
+- src/lib/domain/attendance-fields/schemas.ts
+- src/lib/domain/attendance-fields/metadata.ts
+- src/lib/domain/attendance-fields/index.ts
+
+Core contract shapes (attendance):
 
 - AttendanceSettings
   - eventId: string
@@ -133,14 +144,6 @@ Core contract shapes:
   - walkInModeEnabled: boolean
   - timeslotEnabled: boolean
   - timeslots: string[]
-  - updatedAt: string
-- AssignmentDetails
-  - eventId: string
-  - registrationId: string
-  - table: string | null
-  - area: string | null
-  - teamColor: string | null
-  - areaLeader: string | null
   - updatedAt: string
 - CheckInResult
   - success: boolean
@@ -152,18 +155,34 @@ Core contract shapes:
   - fullName: string
   - email: string | null
   - phone: string | null
-  - optionalOperationalDetails: object
 - TimeslotAttendanceRecord
   - eventId: string
   - attendeeRef: string
   - slot: string
   - recordedAt: string
 
+Core contract shapes (attendance-fields):
+
+- AssignmentFieldType: 'text' | 'textarea' | 'select' | 'number'
+- AssignmentField
+  - id: string
+  - eventId: string
+  - fieldKey: string
+  - label: string
+  - fieldType: AssignmentFieldType
+  - isRequired: boolean
+  - displayOrder: number
+  - options: string[]
+  - validationRules: object
+  - updatedAt: string
+- AssignmentFieldAnswers: Record<string, unknown>
+
 Validation rules (Zod):
 
-- Walk-in requires fullName and at least one of email or phone.
+- Walk-in requires fullName and at least one of email or phone (superRefine).
 - Slot selection must belong to event-configured timeslots when timeslotEnabled is true.
-- Assignment values are optional strings with bounded length.
+- Assignment field answers are all optional (partial fill is valid for assignments).
+- buildDynamicAssignmentResponseSchema(fields) generates a Zod object schema from AssignmentField[] — mirrors buildDynamicFieldResponseSchema from event-fields.
 - Settings dependency validation:
   - walkInModeEnabled and timeslotEnabled cannot be true when attendanceEnabled is false.
 
@@ -184,15 +203,33 @@ Validation rules (Zod):
   - errorCode
   - message
 
-2. upsert-attendance-assignment
+2a. create-assignment-field / update-assignment-field / delete-assignment-field / reorder-assignment-fields
+
+- Admin CRUD for dynamic assignment field definitions per event.
+- Requests carry eventId plus field payload (label, fieldType, isRequired, options, displayOrder as applicable).
+- Responses return success discriminator and updated AssignmentField shape.
+
+2b. upsert-assignment-answers
 
 - Request:
   - eventId
   - registrationId
-  - assignment fields
+  - answers: AssignmentFieldAnswers (Record<fieldKey, value>)
 - Response:
   - success: true
-  - assignment: AssignmentDetails
+  - answers: AssignmentFieldAnswers
+  - success: false
+  - errorCode
+  - message
+
+2c. search-attendees (DEC-004 resolved: Option B — edge-mediated read)
+
+- Request:
+  - eventId
+  - query (Member ID token | name fragment | email)
+- Response:
+  - success: true
+  - results: AttendeeSearchResult[] (includes disambiguation fields: name, memberId, email, registration status, assignment summary)
   - success: false
   - errorCode
   - message
@@ -234,61 +271,84 @@ Validation rules (Zod):
 
 ### Database and migration impacts
 
-Recommended data model (validated decision):
+Revised data model (decisions finalized):
+
+- attendance_field_type enum: text, textarea, select, number
+- attendee_kind enum: registered, walk_in
 
 - attendance_settings
   - event_id primary key references events
-  - attendance_enabled boolean default false
-  - walk_in_mode_enabled boolean default false
-  - timeslot_enabled boolean default false
-  - timeslots text[] default {}
-  - updated_at timestamptz
-- attendance_assignments
-  - event_id references events
-  - registration_id references registrations
-  - table_label text null
-  - area_label text null
-  - team_color text null
-  - area_leader text null
-  - updated_at timestamptz
-  - unique(event_id, registration_id)
-- attendance_check_ins
-  - event_id references events
-  - attendee_kind enum (registered, walk_in)
-  - registration_id nullable references registrations
-  - walk_in_id nullable references attendance_walk_ins
-  - first_checked_in_at timestamptz not null
-  - created_at timestamptz
-  - unique(event_id, registration_id) where registration_id is not null
-  - unique(event_id, walk_in_id) where walk_in_id is not null
+  - attendance_enabled boolean NOT NULL DEFAULT false
+  - walk_in_mode_enabled boolean NOT NULL DEFAULT false
+  - timeslot_enabled boolean NOT NULL DEFAULT false
+  - timeslots text[] NOT NULL DEFAULT '{}'
+  - updated_at timestamptz NOT NULL DEFAULT now()
+
+- attendance_assignment_fields (replaces attendance_assignments fixed-column table)
+  - id uuid primary key
+  - event_id references events ON DELETE CASCADE
+  - field_key text NOT NULL
+  - label text NOT NULL
+  - field_type attendance_field_type NOT NULL
+  - is_required boolean NOT NULL DEFAULT false
+  - display_order integer NOT NULL DEFAULT 0
+  - options jsonb NOT NULL DEFAULT '[]'
+  - validation_rules jsonb NOT NULL DEFAULT '{}'
+  - created_at timestamptz NOT NULL DEFAULT now()
+  - updated_at timestamptz NOT NULL DEFAULT now()
+  - unique(event_id, field_key)
+
+- attendance_assignment_answers
+  - id uuid primary key
+  - registration_id references registrations ON DELETE CASCADE
+  - assignment_field_id references attendance_assignment_fields ON DELETE CASCADE
+  - answer_text text
+  - answer_number numeric
+  - created_at timestamptz NOT NULL DEFAULT now()
+  - updated_at timestamptz NOT NULL DEFAULT now()
+  - unique(registration_id, assignment_field_id)
+  - CHECK: at least one of answer_text or answer_number is not null
+
 - attendance_walk_ins
   - id uuid primary key
-  - event_id references events
-  - full_name text not null
-  - email text null
-  - phone text null
-  - created_at timestamptz
+  - event_id references events ON DELETE CASCADE
+  - full_name text NOT NULL
+  - email text
+  - phone text
+  - created_at timestamptz NOT NULL DEFAULT now()
+
+- attendance_check_ins
+  - id uuid primary key
+  - event_id references events ON DELETE CASCADE
+  - attendee_kind attendee_kind NOT NULL
+  - registration_id nullable references registrations ON DELETE CASCADE
+  - walk_in_id nullable references attendance_walk_ins ON DELETE CASCADE
+  - first_checked_in_at timestamptz NOT NULL
+  - created_at timestamptz NOT NULL DEFAULT now()
+  - unique(event_id, registration_id) WHERE registration_id IS NOT NULL
+  - unique(event_id, walk_in_id) WHERE walk_in_id IS NOT NULL
+  - CHECK: exactly one of registration_id or walk_in_id is not null
+
 - attendance_slot_records
-  - event_id references events
-  - check_in_id references attendance_check_ins
-  - slot text not null
-  - recorded_at timestamptz
+  - id uuid primary key
+  - event_id references events ON DELETE CASCADE
+  - check_in_id references attendance_check_ins ON DELETE CASCADE
+  - slot text NOT NULL
+  - recorded_at timestamptz NOT NULL DEFAULT now()
   - unique(check_in_id, slot)
 
 Migration strategy:
 
-- Add tables and constraints only (no destructive migration).
+- Add tables, enums, and constraints only (no destructive migration).
 - Backfill attendance_settings rows lazily on first read/write or via one-time insert for existing events.
 
 ### RLS, grants, authorization implications
 
-- attendance_settings, attendance_assignments, attendance_check_ins, attendance_walk_ins, attendance_slot_records:
+- attendance_settings, attendance_assignment_fields, attendance_assignment_answers, attendance_check_ins, attendance_walk_ins, attendance_slot_records:
   - deny anon by default for write and read
   - authenticated direct writes disallowed
-  - service_role granted required select/insert/update for Edge Functions
-- Optional authenticated reads for admin UI can be either:
-  - direct select with strict admin policy checks, or
-  - edge-mediated reads for simpler policy surface
+  - service_role granted SELECT, INSERT, UPDATE, DELETE for Edge Functions
+- Check-in attendee search uses edge-mediated reads (DEC-004: Option B) via search-attendees Edge Function for simpler RLS surface.
 - Edge Functions must be registered in supabase/config.toml with verify_jwt = true for admin flows.
 
 ## Chunk-by-Chunk Technical Specs
@@ -302,13 +362,16 @@ Migration strategy:
 - Technical objective:
   - Establish additive storage model and typed validation boundaries.
 - Implementation surfaces:
-  - Domain package, migration, RLS/grants, config.toml function entries scaffold.
+  - Two domain packages (attendance + attendance-fields), migration, RLS/grants, config.toml function entries scaffold.
 - Files/folders expected to change:
   - src/lib/domain/attendance/
+  - src/lib/domain/attendance-fields/
   - supabase/migrations/
   - supabase/config.toml
 - Contract and validation requirements:
-  - Zod schemas for settings, assignment payload, walk-in payload, slot payload.
+  - Zod schemas for settings (with dependency enforcement), walk-in payload (superRefine contact check), slot payload.
+  - Zod schemas for assignment field CRUD (createAssignmentFieldSchema, updateAssignmentFieldSchema).
+  - buildDynamicAssignmentResponseSchema factory for dynamic answer validation.
 - Dependency type:
   - Hard prerequisite.
 - Dependency gates:
@@ -354,36 +417,45 @@ Migration strategy:
 - Definition of done:
   - 8.1 scenarios pass and settings persist across reload.
 
-### Slice EPIC-8-S3: Assignment Management for Registered Attendees
+### Slice EPIC-8-S3: Attendance Field Configuration
 
 - Vertical slice scope:
-  - Admin can list and upsert pre-event assignment details with missing-assignment visibility.
+  - Admin can define custom attendance fields per event, then fill in field values per registered attendee. Two-part: field schema definition + data entry UI.
 - Estimated effort:
-  - Approximately one day for one dev-agent.
+  - Approximately one to two days for one dev-agent depending on field builder complexity.
 - Technical objective:
-  - Deliver 8.2 behavior while preserving separation from registration answers.
+  - Deliver 8.2 behavior with dynamic field definitions replacing fixed columns.
 - Implementation surfaces:
-  - Assignment list page/components, assignment query, upsert-assignment mutation/function.
+  - Attendance field configuration page (CRUD for field definitions), attendance data entry list, field query/mutation hooks, upsert answers function, field CRUD functions.
 - Files/folders expected to change:
   - src/pages/admin/events/[id]/attendance/assignments/
-  - src/hooks/domain/attendance/queries/
-  - src/hooks/domain/attendance/mutations/
-  - supabase/functions/upsert-attendance-assignment/
+  - src/hooks/domain/attendance-fields/queries/
+  - src/hooks/domain/attendance-fields/mutations/
+  - src/hooks/domain/attendance/queries/ (assignment answers query)
+  - src/hooks/domain/attendance/mutations/ (upsert answers mutation)
+  - supabase/functions/create-assignment-field/
+  - supabase/functions/update-assignment-field/
+  - supabase/functions/delete-assignment-field/
+  - supabase/functions/reorder-assignment-fields/
+  - supabase/functions/upsert-assignment-answers/
 - Contract and validation requirements:
-  - Optional fields accepted blank; editing blocked when attendance disabled.
+  - Field definitions: label required, fieldType must be AssignmentFieldType, options required for select type.
+  - Assignment answers: all fields optional; validated against field definitions via buildDynamicAssignmentResponseSchema.
+  - Editing blocked when attendance disabled.
 - Dependency type:
   - Hard prerequisite after S2.
 - Dependency gates:
   - Attendance-enabled state readable in UI and backend.
 - Key risks and mitigations:
-  - Risk: assignment edits leaking into registration domain.
-  - Mitigation: dedicated table and dedicated domain module only.
+  - Risk: field configuration scope balloons similar to event-fields builder.
+  - Mitigation: scope to text/textarea/select/number types only; no reordering drag-and-drop in MVP2.
 - Verification and test expectations:
-  - UI tests for blocked state and successful upsert; query-level tests for summary completeness.
+  - Schema tests for buildDynamicAssignmentResponseSchema with each field type.
+  - UI tests for blocked state, field CRUD, and answer upsert.
 - Definition of ready:
-  - Assignment field contract and list columns agreed.
+  - Attendance field type set confirmed (text, textarea, select, number).
 - Definition of done:
-  - 8.2 scenarios pass with latest values visible in check-in context API.
+  - 8.2 scenarios pass with field values visible in check-in context read.
 
 ### Slice EPIC-8-S4: Registered Attendee Search and Check-In
 
@@ -394,11 +466,12 @@ Migration strategy:
 - Technical objective:
   - Deliver 8.3 behavior including duplicate-timestamp prevention.
 - Implementation surfaces:
-  - Check-in page orchestration, search query endpoints, check-in mutation/function.
+  - Check-in page orchestration, search-attendees Edge Function (edge-mediated read), check-in mutation/function.
 - Files/folders expected to change:
   - src/pages/admin/events/[id]/attendance/check-in/
   - src/hooks/domain/attendance/queries/
   - src/hooks/domain/attendance/mutations/
+  - supabase/functions/search-attendees/
   - supabase/functions/check-in-attendee/
 - Contract and validation requirements:
   - Return already_checked_in status without timestamp overwrite.

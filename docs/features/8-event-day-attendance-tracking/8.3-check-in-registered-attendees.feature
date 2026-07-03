@@ -42,3 +42,21 @@ Feature: Check In Registered Attendees
     When I search by name
     Then I see a list of matching attendees with enough detail to choose correctly
     And check-in is completed only after I select one attendee
+
+# Implementation Notes (MVP2 Session 1)
+
+## Decision: DEC-004 — Edge-Mediated Attendee Search (Option B)
+
+Check-in search (by RFID/Member ID, name, or email) is implemented via edge-mediated read endpoint.
+- New Edge Function: search-attendees (verified_jwt = true)
+- Handles query construction and disambiguation logic server-side
+- Returns attendee match results with identity and collected attendance data
+- Rationale: Simpler RLS surface than direct authenticated reads on attendance tables
+
+## Integration: Attendance Data Collection in Check-In Display
+
+The check-in view (feature 8.3) displays both:
+1. Registration details (from registrations table)
+2. Attendance field data (from attendance_field_answers table, collected in feature 8.2)
+
+Admins configure what attendance data is collected (feature 8.2); check-in staff see that data during attendee lookup and check-in action (feature 8.3).
