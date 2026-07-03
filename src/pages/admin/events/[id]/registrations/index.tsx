@@ -60,6 +60,7 @@ export function AdminRegistrationsPage() {
 
   const pagedResult = registrationsQuery.data;
   const registrations = pagedResult?.items ?? [];
+  const totalRegistrations = pagedResult?.totalCount ?? 0;
   const hasMore = pagedResult?.hasMore ?? false;
   const nextCursor = pagedResult?.nextCursor ?? null;
   const totalPages = pagedResult?.totalPages ?? 1;
@@ -67,6 +68,7 @@ export function AdminRegistrationsPage() {
 
   const isLoading = eventQuery.isLoading || registrationsQuery.isLoading;
   const error = eventQuery.error || registrationsQuery.error;
+  const hasRegistrations = totalRegistrations > 0;
 
   if (error) {
     return (
@@ -119,14 +121,18 @@ export function AdminRegistrationsPage() {
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
       <Button
         asChild
-        variant="outline"
+        variant="primaryOutline"
         size="sm"
         onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
       >
         View Public Registrations
       </Button>
-      <CopyNamesButton eventId={eventId} eventTitle={event?.title} />
-      <ExportButton eventId={eventId} />
+      <CopyNamesButton
+        eventId={eventId}
+        eventTitle={event?.title}
+        disabled={isLoading || !hasRegistrations}
+      />
+      <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
     </div>
   );
 

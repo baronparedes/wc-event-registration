@@ -7,7 +7,7 @@ import {
   isValidElement,
 } from 'react';
 
-type ButtonVariant = 'default' | 'outline' | 'destructive';
+type ButtonVariant = 'default' | 'outline' | 'primaryOutline' | 'destructive';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -26,6 +26,8 @@ const variantClassName: Record<ButtonVariant, string> = {
   default:
     'bg-primary text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60',
   outline: 'border border-border bg-background text-text hover:bg-background disabled:opacity-60',
+  primaryOutline:
+    'border border-primary bg-background text-primary shadow-xs hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60',
   destructive:
     'bg-red-600 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60',
 };

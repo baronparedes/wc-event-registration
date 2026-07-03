@@ -4,13 +4,18 @@ import { useErrorWithFadeout } from '@/hooks/utils';
 
 interface ExportButtonProps {
   eventId: string;
+  disabled?: boolean;
 }
 
-export function ExportButton({ eventId }: ExportButtonProps) {
+export function ExportButton({ eventId, disabled = false }: ExportButtonProps) {
   const exportMutation = useExportRegistrationsCSVMutation(eventId);
   const { showError } = useErrorWithFadeout();
 
   const handleExport = async () => {
+    if (disabled) {
+      return;
+    }
+
     try {
       const { text, filename } = await exportMutation.mutateAsync();
       const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
@@ -28,7 +33,11 @@ export function ExportButton({ eventId }: ExportButtonProps) {
   };
 
   return (
-    <Button onClick={handleExport} disabled={exportMutation.isPending} variant="outline">
+    <Button
+      onClick={handleExport}
+      disabled={disabled || exportMutation.isPending}
+      variant="primaryOutline"
+    >
       {exportMutation.isPending ? 'Exporting...' : 'Export as CSV'}
     </Button>
   );

@@ -19,6 +19,7 @@ import {
 interface CopyNamesButtonProps {
   eventId: string;
   eventTitle?: string;
+  disabled?: boolean;
 }
 
 function copyTextToClipboard(text: string): Promise<void> {
@@ -43,7 +44,7 @@ function copyTextToClipboard(text: string): Promise<void> {
   return Promise.resolve();
 }
 
-export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
+export function CopyNamesButton({ eventId, eventTitle, disabled = false }: CopyNamesButtonProps) {
   const registrationNamesQuery = useRegistrationNamesQuery(eventId, { enabled: false });
   const { showError } = useErrorWithFadeout();
 
@@ -99,6 +100,10 @@ export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
   };
 
   const handleOpen = async () => {
+    if (disabled) {
+      return;
+    }
+
     setIsDialogOpen(true);
 
     if (registrationNamesQuery.data || registrationNamesQuery.isFetching) {
@@ -144,7 +149,8 @@ export function CopyNamesButton({ eventId, eventTitle }: CopyNamesButtonProps) {
     <>
       <Button
         type="button"
-        variant="outline"
+        variant="primaryOutline"
+        disabled={disabled}
         onClick={() => {
           void handleOpen();
         }}

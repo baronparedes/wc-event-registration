@@ -100,8 +100,16 @@ vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
   RegistrationsList: (props: { registrations: Array<{ member_id: string }> }) => (
     <div>{`Registrations: ${props.registrations.map((registration) => registration.member_id).join(', ')}`}</div>
   ),
-  CopyNamesButton: () => <div>Copy Names Button</div>,
-  ExportButton: () => <div>Export Button</div>,
+  CopyNamesButton: (props: { disabled?: boolean }) => (
+    <button type="button" disabled={props.disabled}>
+      Copy Names
+    </button>
+  ),
+  ExportButton: (props: { disabled?: boolean }) => (
+    <button type="button" disabled={props.disabled}>
+      Export as CSV
+    </button>
+  ),
 }));
 
 function renderWithRouter() {
@@ -138,6 +146,7 @@ describe('AdminRegistrationsPage', () => {
         items: [{ member_id: memberId }],
         hasMore: false,
         nextCursor: null,
+        totalCount: 1,
         totalPages: 1,
       },
       isLoading: false,
@@ -214,6 +223,7 @@ describe('AdminRegistrationsPage', () => {
         items: [{ member_id: memberId }],
         hasMore: false,
         nextCursor: null,
+        totalCount: 1,
         totalPages: 1,
       },
       isLoading: false,
@@ -242,6 +252,7 @@ describe('AdminRegistrationsPage', () => {
         items: [],
         hasMore: false,
         nextCursor: null,
+        totalCount: 0,
         totalPages: 1,
       },
       isLoading: false,
@@ -284,6 +295,7 @@ describe('AdminRegistrationsPage', () => {
         items: [{ member_id: memberId }],
         hasMore: true,
         nextCursor: 'cursor-next',
+        totalCount: 4,
         totalPages: 4,
       },
       isLoading: false,
@@ -317,6 +329,7 @@ describe('AdminRegistrationsPage', () => {
         items: [],
         hasMore: false,
         nextCursor: null,
+        totalCount: 0,
         totalPages: 1,
       },
       isLoading: false,
@@ -336,5 +349,31 @@ describe('AdminRegistrationsPage', () => {
 
     fireEvent.click(publicRegistrationsButton);
     expect(mockNavigate).toHaveBeenCalledWith(`/admin/events/${testEventId}/public-registrations`);
+  });
+
+  it('disables copy and export actions when there are no registrations yet', () => {
+    const eventTitle = faker.lorem.words(2);
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: testEventId, title: eventTitle, status: 'published' },
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminRegistrationsQuery.mockReturnValue({
+      data: {
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        totalCount: 0,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByRole('button', { name: 'Copy Names' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export as CSV' })).toBeDisabled();
   });
 });

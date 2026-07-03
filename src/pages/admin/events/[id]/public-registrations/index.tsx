@@ -121,7 +121,7 @@ export function AdminPublicRegistrationsPage() {
   const navActions = (
     <Button
       asChild
-      variant="outline"
+      variant="primaryOutline"
       size="sm"
       onClick={() => navigate(toAdminEventRegistrations(eventId))}
     >
