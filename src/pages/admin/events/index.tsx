@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
+  TIMING,
   TOAST_MESSAGES,
   UI_MESSAGES,
   toAdminEventAttendance,
@@ -38,8 +39,21 @@ export function AdminEventsPage() {
   const navigate = useNavigate()
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize)
   const [cursor, setCursor] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm])
 
-  const eventsQuery = useAdminEventsQuery({ pageSize, cursor })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, TIMING.searchDebounceMs)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [searchTerm])
+
+  const eventsQuery = useAdminEventsQuery({ pageSize, cursor, searchTerm: normalizedSearchTerm })
   const events = eventsQuery.data?.items ?? []
   const hasMore = eventsQuery.data?.hasMore ?? false
   const nextCursor = eventsQuery.data?.nextCursor ?? null
@@ -97,6 +111,11 @@ export function AdminEventsPage() {
     setCursor(null)
   }
 
+  function handleSearchTermChange(nextSearchTerm: string) {
+    setSearchTerm(nextSearchTerm)
+    setCursor(null)
+  }
+
   return (
     <section className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -112,6 +131,30 @@ export function AdminEventsPage() {
         <Button size="md" variant="default" onClick={() => navigate(ROUTE_PATHS.adminEventNew)}>
           New Event
         </Button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
+            Search events
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => handleSearchTermChange(event.target.value)}
+              placeholder="Search by event title or slug"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleSearchTermChange('')}
+            disabled={normalizedSearchTerm.length === 0}
+          >
+            Clear
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-surface">
@@ -210,7 +253,9 @@ export function AdminEventsPage() {
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="hidden text-xs text-muted sm:block">
-                Showing up to {pageSize} events per page
+                {normalizedSearchTerm.length > 0
+                  ? `Showing up to ${pageSize} matching events per page`
+                  : `Showing up to ${pageSize} events per page`}
               </p>
               <AdminPaginationControls
                 currentPage={currentPage}

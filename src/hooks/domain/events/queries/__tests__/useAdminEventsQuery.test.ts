@@ -6,11 +6,13 @@ import { makeAdminEvent } from '@/__tests__/factories'
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
+    or: vi.fn(),
     order: vi.fn(),
     range: vi.fn(),
   }
 
   queryBuilder.select.mockReturnValue(queryBuilder)
+  queryBuilder.or.mockReturnValue(queryBuilder)
   queryBuilder.order.mockReturnValue(queryBuilder)
 
   return {
@@ -118,5 +120,27 @@ describe('useAdminEventsQuery', () => {
       totalCount: 1,
       totalPages: 1,
     })
+  })
+
+  it('applies ilike filter when search term is provided', async () => {
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [],
+      error: null,
+      count: 0,
+    })
+
+    const { result } = renderHookWithClient(() =>
+      useAdminEventsQuery({
+        pageSize: 10,
+        cursor: null,
+        searchTerm: 'sample',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(mockQueryBuilder.or).toHaveBeenCalledWith('title.ilike.%sample%,slug.ilike.%sample%')
   })
 })

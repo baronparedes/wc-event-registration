@@ -111,7 +111,18 @@ describe('AdminPublicRegistrationsPage', () => {
 
     renderWithRouter()
 
-    expect(screen.getByText(`Public Registrations for ${eventTitle}`)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', '/admin/events')
+    expect(screen.getByRole('link', { name: eventTitle })).toHaveAttribute(
+      'href',
+      `/admin/events/${testEventId}`,
+    )
+    expect(screen.getByRole('link', { name: 'Back to Event' })).toHaveAttribute(
+      'href',
+      `/admin/events/${testEventId}`,
+    )
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Public Registrations' }),
+    ).toBeInTheDocument()
     expect(
       screen.getByText('This event is published. All public registrations are visible.'),
     ).toBeInTheDocument()

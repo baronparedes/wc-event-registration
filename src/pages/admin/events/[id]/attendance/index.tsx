@@ -5,6 +5,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button, SectionCard } from '@/components/ui'
+import { ActionLink } from '@/components/ui/ActionLink'
 import { ROUTE_PATHS, UI_MESSAGES, toAdminEventDetail } from '@/config/constants'
 import {
   useAttendanceSettingsQuery,
@@ -219,8 +220,8 @@ export function AdminEventAttendancePage() {
 
   return (
     <section className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <div className="mb-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-muted">
           <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
             Events
           </Link>
@@ -231,6 +232,10 @@ export function AdminEventAttendancePage() {
           <span>›</span>
           <span>Attendance</span>
         </div>
+        <ActionLink to={toAdminEventDetail(resolvedEventId)}>Back to Event</ActionLink>
+      </div>
+
+      <div>
         <h1 className="font-heading text-3xl font-bold text-text">Attendance Settings</h1>
         <p className="mt-1 text-sm text-muted">
           Configure event-day attendance tracking, walk-ins, and timeslot attendance behavior.
@@ -354,9 +359,6 @@ export function AdminEventAttendancePage() {
         </SectionCard>
 
         <div className="flex justify-end gap-3">
-          <Button asChild type="button" variant="outline" size="lg">
-            <Link to={toAdminEventDetail(resolvedEventId)}>Back to Event</Link>
-          </Button>
           <Button
             type="submit"
             size="lg"

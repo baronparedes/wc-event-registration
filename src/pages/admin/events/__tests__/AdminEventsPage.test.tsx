@@ -270,4 +270,21 @@ describe('AdminEventsPage', () => {
     expect(mockGetPageCursor).toHaveBeenCalledWith(4, expect.any(Number))
     expect(mockGetPageCursor).toHaveBeenCalledWith(3, expect.any(Number))
   })
+
+  it('renders search controls and passes search term to events query', async () => {
+    render(
+      <MemoryRouter>
+        <AdminEventsPage />
+      </MemoryRouter>,
+    )
+
+    const searchInput = screen.getByPlaceholderText('Search by event title or slug')
+    fireEvent.change(searchInput, { target: { value: 'sample' } })
+
+    await waitFor(() => {
+      expect(mockUseAdminEventsQuery).toHaveBeenLastCalledWith(
+        expect.objectContaining({ searchTerm: 'sample' }),
+      )
+    })
+  })
 })

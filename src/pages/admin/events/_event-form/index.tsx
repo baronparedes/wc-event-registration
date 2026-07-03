@@ -1,9 +1,17 @@
 import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants'
+import {
+  ROUTE_PATHS,
+  TOAST_MESSAGES,
+  UI_MESSAGES,
+  toAdminEventAttendance,
+  toAdminEventDetail,
+  toAdminEventFields,
+  toAdminEventRegistrations,
+} from '@/config/constants'
 import {
   useAdminEventQuery,
   useCreateEventMutation,
@@ -12,6 +20,7 @@ import {
 import { useSlugGeneration, useSaveConfirmation } from '@/hooks/utils'
 import { createEventSchema } from '@/lib/domain/events'
 import type { CreateEventInput } from '@/lib/domain/events'
+import { ActionLink } from '@/components/ui/ActionLink'
 import {
   EventDateRangeSection,
   EventDetailsSection,
@@ -158,6 +167,26 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   return (
     <section className="mx-auto max-w-4xl space-y-6">
       <div>
+        {isEditMode && id && (
+          <div className="mb-3 flex items-center justify-between gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-2 text-muted">
+              <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
+                Events
+              </Link>
+              <span>›</span>
+              <Link to={toAdminEventDetail(id)} className="hover:underline">
+                {existingEvent?.title ?? 'Event'}
+              </Link>
+              <span>›</span>
+              <span>Edit</span>
+            </div>
+            <div className="flex items-center justify-end gap-4">
+              <ActionLink to={toAdminEventAttendance(id)}>Attendance</ActionLink>
+              <ActionLink to={toAdminEventFields(id)}>Fields</ActionLink>
+              <ActionLink to={toAdminEventRegistrations(id)}>Registrations</ActionLink>
+            </div>
+          </div>
+        )}
         <h1 className="font-heading text-3xl font-bold text-text">{title}</h1>
         <p className="mt-1 text-sm text-muted">
           {isEditMode ? 'Update event details below.' : 'Fill in the details for your new event.'}

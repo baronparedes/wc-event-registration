@@ -246,6 +246,15 @@ describe('AdminEventAttendancePage', () => {
     })
   })
 
+  it('renders a top back link to event detail', () => {
+    renderPage()
+
+    expect(screen.getAllByRole('link', { name: 'Back to Event' })[0]).toHaveAttribute(
+      'href',
+      `/admin/events/${EVENT_ID}`,
+    )
+  })
+
   it('submits attendance settings and shows success toast', async () => {
     renderPage()
 

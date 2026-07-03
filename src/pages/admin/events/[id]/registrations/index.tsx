@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
+  ROUTE_PATHS,
   TIMING,
+  toAdminEventDetail,
   toAdminEventPublicRegistrations,
 } from '@/config/constants'
 import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations'
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure'
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls'
+import { ActionLink } from '@/components/ui/ActionLink'
 import { Button } from '@/components/ui/Button'
 import { CopyNamesButton, ExportButton, RegistrationsList } from './components'
 
@@ -101,11 +104,24 @@ export function AdminRegistrationsPage() {
 
   return (
     <section className="space-y-4">
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-muted">
+          <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
+            Events
+          </Link>
+          <span>›</span>
+          <Link to={toAdminEventDetail(eventId)} className="hover:underline">
+            {event?.title ?? 'Event'}
+          </Link>
+          <span>›</span>
+          <span>Registrations</span>
+        </div>
+        <ActionLink to={toAdminEventDetail(eventId)}>Back to Event</ActionLink>
+      </div>
+
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
-          <h1 className="font-heading text-3xl font-bold text-text">
-            Registrations for {event?.title ?? 'Event'}
-          </h1>
+          <h1 className="font-heading text-3xl font-bold text-text">Registrations</h1>
           <p className="mt-1 text-sm text-muted">
             Page {currentPage} of {totalPages} • {registrations.length} member registrations on this
             page

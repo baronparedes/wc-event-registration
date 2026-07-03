@@ -5,6 +5,7 @@ import { useAdminEventQuery } from '@/hooks/domain/events'
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields'
 import type { AdminEventField } from '@/lib/domain/event-fields'
 import { Button } from '@/components/ui/Button'
+import { ActionLink } from '@/components/ui/ActionLink'
 import { EventFieldsList, EventFieldEditPanel } from './components'
 
 type PanelState = { mode: 'closed' } | { mode: 'create' } | { mode: 'edit'; field: AdminEventField }
@@ -35,23 +36,27 @@ export function AdminEventFieldsPage() {
 
   return (
     <section className="space-y-5">
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-muted">
+          <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
+            Events
+          </Link>
+          <span>›</span>
+          <Link
+            to={id ? toAdminEventDetail(id) : ROUTE_PATHS.adminEvents}
+            className="hover:underline"
+          >
+            {event?.title ?? 'Event'}
+          </Link>
+          <span>›</span>
+          <span>Fields</span>
+        </div>
+        {id && <ActionLink to={toAdminEventDetail(id)}>Back to Event</ActionLink>}
+      </div>
+
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-            <Link to={ROUTE_PATHS.adminEvents} className="hover:underline">
-              Events
-            </Link>
-            <span>›</span>
-            <Link
-              to={id ? toAdminEventDetail(id) : ROUTE_PATHS.adminEvents}
-              className="hover:underline"
-            >
-              {event?.title ?? 'Event'}
-            </Link>
-            <span>›</span>
-            <span>Fields</span>
-          </div>
           <h1 className="font-heading text-3xl font-bold text-text">Registration Fields</h1>
           {event && (
             <p className="mt-1 text-sm text-muted">

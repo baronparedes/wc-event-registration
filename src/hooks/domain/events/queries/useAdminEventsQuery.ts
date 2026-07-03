@@ -5,9 +5,20 @@ import type { AdminEvent } from '@/lib/domain/events'
 
 export const ADMIN_EVENTS_QUERY_KEY = ['admin-events'] as const
 
+function escapeOrFilterValue(value: string): string {
+  return value.replace(/[,%_]/g, (char) => `\\${char}`)
+}
+
+export const adminEventsPageQueryKey = (
+  pageSize: number,
+  cursor: string | null,
+  searchTerm: string,
+) => [...ADMIN_EVENTS_QUERY_KEY, pageSize, cursor, searchTerm] as const
+
 export interface AdminEventsPageParams {
   pageSize?: number
   cursor?: string | null
+  searchTerm?: string
 }
 
 export interface AdminEventsPage {
@@ -22,15 +33,23 @@ export interface AdminEventsPage {
 export function useAdminEventsQuery(params?: AdminEventsPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminEventsPageSize
   const cursor = params?.cursor ?? null
+  const searchTerm = params?.searchTerm?.trim() ?? ''
   const offset = decodeOffsetCursor(cursor)
 
   return useQuery({
-    queryKey: [...ADMIN_EVENTS_QUERY_KEY, pageSize, cursor] as const,
+    queryKey: adminEventsPageQueryKey(pageSize, cursor, searchTerm),
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<AdminEventsPage> => {
-      const { data, error, count } = await supabase
-        .from('events')
-        .select('*', { count: 'exact' })
+      let eventsQuery = supabase.from('events').select('*', { count: 'exact' })
+
+      if (searchTerm.length > 0) {
+        const escapedSearchTerm = escapeOrFilterValue(searchTerm)
+        eventsQuery = eventsQuery.or(
+          `title.ilike.%${escapedSearchTerm}%,slug.ilike.%${escapedSearchTerm}%`,
+        )
+      }
+
+      const { data, error, count } = await eventsQuery
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + pageSize - 1)
