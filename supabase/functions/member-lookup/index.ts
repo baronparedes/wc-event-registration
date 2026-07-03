@@ -11,12 +11,20 @@ import {
   successResponse as sharedSuccessResponse,
 } from '@/shared/http.ts'
 import { tryConvertRfidInput } from '@/shared/rfid.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface MemberLookupRequest {
-  memberId?: string
-  name?: string
-  eventSlug?: string
-}
+const memberLookupRequestSchema = z
+  .object({
+    memberId: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    eventSlug: z.string().trim().min(1).optional(),
+  })
+  .refine((value) => Boolean(value.memberId || value.name), {
+    message: 'Either memberId or name must be provided',
+    path: ['memberId'],
+  })
+
+type MemberLookupRequest = z.infer<typeof memberLookupRequestSchema>
 
 interface MemberLookupProfile {
   user_id: string
@@ -244,45 +252,26 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1.2 Validate runtime environment.
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return sharedErrorResponse(corsHeaders, 500, 'Environment not configured')
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // 1.3 Parse payload and validate request input.
-    const body = (await req.json()) as MemberLookupRequest
-    const { memberId, name, eventSlug } = body
+    const parsedBody = await parseRequestBody(req, memberLookupRequestSchema)
+    if (!parsedBody.success) {
+      return sharedErrorResponse(corsHeaders, 400, parsedBody.error, parsedBody.details)
+    }
+
+    const { memberId, name, eventSlug }: MemberLookupRequest = parsedBody.data
 
     // Infer lookup type from which field is provided
     // Prefer memberId if both are provided; otherwise use name
     const isIdLookup = Boolean(memberId?.trim())
     const isNameLookup = !isIdLookup && Boolean(name?.trim())
 
-    // Validate that at least one search field is provided
-    if (!isIdLookup && !isNameLookup) {
-      return sharedErrorResponse(
-        corsHeaders,
-        400,
-        'Invalid request: either memberId or name must be provided',
-      )
-    }
-
-    if (eventSlug !== undefined && typeof eventSlug !== 'string') {
-      return sharedErrorResponse(
-        corsHeaders,
-        400,
-        'Invalid request: eventSlug must be a string when provided',
-      )
-    }
-
-    const normalizedEventSlug = eventSlug?.trim()
-
-    if (eventSlug !== undefined && !normalizedEventSlug) {
-      return sharedErrorResponse(corsHeaders, 400, 'Invalid request: eventSlug cannot be blank')
-    }
+    const normalizedEventSlug = eventSlug
 
     // 1.4 Create Supabase service-role client.
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {

@@ -7,13 +7,16 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface SubmitRegistrationRequest {
-  event_slug: string
-  member_id: string
-  responses: Record<string, unknown>
-  idempotency_key: string
-}
+const submitRegistrationRequestSchema = z.object({
+  event_slug: z.string().trim().min(1, 'event_slug is required'),
+  member_id: z.string().trim().min(1, 'member_id is required'),
+  responses: z.record(z.string(), z.unknown()),
+  idempotency_key: z.string().trim().min(1, 'idempotency_key is required'),
+})
+
+type SubmitRegistrationRequest = z.infer<typeof submitRegistrationRequestSchema>
 
 interface SubmitRegistrationSuccess {
   success: true
@@ -387,11 +390,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate environment
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -403,26 +404,15 @@ Deno.serve(async (req) => {
         },
       )
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse and validate request
-    const body = (await req.json()) as SubmitRegistrationRequest
-    const { event_slug, member_id, responses, idempotency_key } = body
-
-    // Validate required fields
-    if (
-      !event_slug ||
-      typeof event_slug !== 'string' ||
-      !member_id ||
-      typeof member_id !== 'string' ||
-      !responses ||
-      typeof responses !== 'object' ||
-      !idempotency_key ||
-      typeof idempotency_key !== 'string'
-    ) {
+    const parsedBody = await parseRequestBody(req, submitRegistrationRequestSchema)
+    if (!parsedBody.success) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Invalid request: missing or invalid required fields',
+          error: parsedBody.error,
+          detail: parsedBody.details,
           error_code: 'INVALID_REQUEST',
         }),
         {
@@ -431,6 +421,9 @@ Deno.serve(async (req) => {
         },
       )
     }
+
+    const { event_slug, member_id, responses, idempotency_key }: SubmitRegistrationRequest =
+      parsedBody.data
 
     // Create authenticated client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {

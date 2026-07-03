@@ -8,11 +8,14 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { errorResponse, jsonResponse } from '@/shared/http.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface CancelPublicRegistrationRequest {
-  registration_id: string
-  reason?: string
-}
+const cancelPublicRegistrationRequestSchema = z.object({
+  registration_id: z.string().uuid('registration_id must be a valid UUID'),
+  reason: z.string().trim().min(1).max(500).optional(),
+})
+
+type CancelPublicRegistrationRequest = z.infer<typeof cancelPublicRegistrationRequestSchema>
 
 interface CancelPublicRegistrationSuccess {
   success: true
@@ -63,26 +66,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
     const authHeader = req.headers.get('authorization')
 
     console.log('[cancel-public-registration] env/auth check', {
       requestId,
-      hasSupabaseUrl: Boolean(supabaseUrl),
-      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasSupabaseUrl: Boolean(env?.supabaseUrl),
+      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
       hasAuthHeader: Boolean(authHeader),
       authHeaderPrefix: authHeader?.split(' ')[0] ?? null,
       authHeaderLength: authHeader?.length ?? 0,
     })
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse and validate request
-    const body = (await req.json()) as CancelPublicRegistrationRequest
-    const { registration_id, reason } = body
+    const parsedBody = await parseRequestBody(req, cancelPublicRegistrationRequestSchema)
+    if (!parsedBody.success) {
+      return jsonResponse(
+        corsHeaders,
+        {
+          success: false,
+          error: parsedBody.error,
+          detail: parsedBody.details,
+          error_code: 'INVALID_REQUEST',
+        } as CancelPublicRegistrationError,
+        400,
+      )
+    }
+
+    const { registration_id, reason }: CancelPublicRegistrationRequest = parsedBody.data
 
     console.log('[cancel-public-registration] parsed body', {
       requestId,
@@ -90,17 +105,6 @@ Deno.serve(async (req) => {
       registrationId: maskValue(registration_id ?? null),
       hasReason: Boolean(reason),
     })
-
-    if (!registration_id) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Missing registration_id',
-        } as CancelPublicRegistrationError,
-        400,
-      )
-    }
 
     const adminAccess = await requireAdminAccess({
       requestId,

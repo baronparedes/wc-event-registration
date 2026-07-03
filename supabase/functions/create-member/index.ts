@@ -9,18 +9,21 @@ import {
 } from '@/shared/security.ts'
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
 import { errorResponse, jsonResponse } from '@/shared/http.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface CreateMemberRequest {
-  member_id: string
-  first_name: string
-  last_name: string
-  nickname?: string | null
-  email?: string | null
-  phone?: string | null
-  date_of_birth?: string | null
-  role: string
-  category: string
-}
+const createMemberRequestSchema = z.object({
+  member_id: z.string().trim().min(1, 'Member ID is required'),
+  first_name: z.string().trim().min(1, 'First name is required'),
+  last_name: z.string().trim().min(1, 'Last name is required'),
+  nickname: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  date_of_birth: z.string().optional().nullable(),
+  role: z.string().trim().min(1, 'Role is required'),
+  category: z.string().trim().min(1, 'Category is required'),
+})
+
+type CreateMemberRequest = z.infer<typeof createMemberRequestSchema>
 
 interface CreateMemberSuccess {
   success: true
@@ -73,24 +76,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate environment
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
     const authHeader = req.headers.get('authorization')
 
     console.log('[create-member] env/auth check', {
       requestId,
-      hasSupabaseUrl: Boolean(supabaseUrl),
-      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasSupabaseUrl: Boolean(env?.supabaseUrl),
+      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
       hasAuthHeader: Boolean(authHeader),
     })
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse and validate request
-    const body = (await req.json()) as CreateMemberRequest
+    const parsedBody = await parseRequestBody(req, createMemberRequestSchema)
+    if (!parsedBody.success) {
+      return jsonResponse(
+        corsHeaders,
+        {
+          success: false,
+          error: parsedBody.error,
+          detail: parsedBody.details,
+          error_code: 'INVALID_REQUEST',
+        } as CreateMemberError,
+        400,
+      )
+    }
+
+    const body: CreateMemberRequest = parsedBody.data
     const {
       member_id,
       first_name,
@@ -114,67 +129,6 @@ Deno.serve(async (req) => {
       hasRole: Boolean(role),
       hasCategory: Boolean(category),
     })
-
-    // Validate required fields
-    if (!member_id || !member_id.trim()) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Member ID is required',
-          error_code: 'INVALID_REQUEST',
-        } as CreateMemberError,
-        400,
-      )
-    }
-
-    if (!first_name || !first_name.trim()) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'First name is required',
-          error_code: 'INVALID_REQUEST',
-        } as CreateMemberError,
-        400,
-      )
-    }
-
-    if (!last_name || !last_name.trim()) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Last name is required',
-          error_code: 'INVALID_REQUEST',
-        } as CreateMemberError,
-        400,
-      )
-    }
-
-    if (!role || !role.trim()) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Role is required',
-          error_code: 'INVALID_REQUEST',
-        } as CreateMemberError,
-        400,
-      )
-    }
-
-    if (!category || !category.trim()) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Category is required',
-          error_code: 'INVALID_REQUEST',
-        } as CreateMemberError,
-        400,
-      )
-    }
 
     const normalizedFirstName = first_name.trim()
     const normalizedLastName = last_name.trim()

@@ -8,10 +8,13 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { errorResponse, jsonResponse } from '@/shared/http.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface ReactivateRegistrationRequest {
-  registration_id: string
-}
+const reactivateRegistrationRequestSchema = z.object({
+  registration_id: z.string().uuid('registration_id must be a valid UUID'),
+})
+
+type ReactivateRegistrationRequest = z.infer<typeof reactivateRegistrationRequestSchema>
 
 interface ReactivateRegistrationSuccess {
   success: true
@@ -55,34 +58,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
     const authHeader = req.headers.get('authorization')
 
     console.log('[reactivate-registration] env/auth check', {
       requestId,
-      hasSupabaseUrl: Boolean(supabaseUrl),
-      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasSupabaseUrl: Boolean(env?.supabaseUrl),
+      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
       hasAuthHeader: Boolean(authHeader),
     })
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    const body = (await req.json()) as ReactivateRegistrationRequest
-    const { registration_id } = body
-
-    if (!registration_id) {
+    const parsedBody = await parseRequestBody(req, reactivateRegistrationRequestSchema)
+    if (!parsedBody.success) {
       return jsonResponse(
         corsHeaders,
         {
           success: false,
-          error: 'Missing registration_id',
+          error: parsedBody.error,
+          detail: parsedBody.details,
+          error_code: 'INVALID_REQUEST',
         },
         400,
       )
     }
+
+    const { registration_id }: ReactivateRegistrationRequest = parsedBody.data
 
     const adminAccess = await requireAdminAccess({
       requestId,

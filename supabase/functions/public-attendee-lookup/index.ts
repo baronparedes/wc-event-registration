@@ -7,11 +7,14 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface PublicRegistrationCheckRequest {
-  email: string
-  event_slug: string
-}
+const publicRegistrationCheckRequestSchema = z.object({
+  email: z.string().trim().email('Invalid email address'),
+  event_slug: z.string().trim().min(1, 'Event slug is required'),
+})
+
+type PublicRegistrationCheckRequest = z.infer<typeof publicRegistrationCheckRequestSchema>
 
 interface PublicRegistrationCheckSuccess {
   success: true
@@ -31,13 +34,6 @@ interface PublicRegistrationCheckError {
   success: false
   reason: 'validation_error' | 'internal_error'
   message: string
-}
-
-/**
- * Simple email validation.
- */
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 const allowedOrigins = readAllowedOrigins()
@@ -80,11 +76,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate environment
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -97,18 +91,15 @@ Deno.serve(async (req) => {
         },
       )
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse request
-    const body = (await req.json()) as PublicRegistrationCheckRequest
-    const { email, event_slug } = body
-
-    // Validate required fields
-    if (!email || typeof email !== 'string') {
+    const parsedBody = await parseRequestBody(req, publicRegistrationCheckRequestSchema)
+    if (!parsedBody.success) {
       return new Response(
         JSON.stringify({
           success: false,
           reason: 'validation_error',
-          message: 'Email is required',
+          message: parsedBody.details ?? parsedBody.error,
         } as PublicRegistrationCheckError),
         {
           status: 400,
@@ -117,34 +108,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!event_slug || typeof event_slug !== 'string') {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          reason: 'validation_error',
-          message: 'Event slug is required',
-        } as PublicRegistrationCheckError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
-
-    // Validate email format
-    if (!isValidEmail(email)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          reason: 'validation_error',
-          message: 'Invalid email address',
-        } as PublicRegistrationCheckError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
+    const { email, event_slug }: PublicRegistrationCheckRequest = parsedBody.data
 
     // Create authenticated client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {

@@ -7,11 +7,14 @@ import {
   requireAdminAccess,
   readAllowedOrigins,
 } from '@/shared/security.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface ExportRegistrationsRequest {
-  event_id: string
-  response_mode?: 'csv' | 'names_json'
-}
+const exportRegistrationsRequestSchema = z.object({
+  event_id: z.string().uuid('event_id must be a valid UUID'),
+  response_mode: z.enum(['csv', 'names_json']).optional(),
+})
+
+type ExportRegistrationsRequest = z.infer<typeof exportRegistrationsRequestSchema>
 
 type UserMetadata = {
   role?: unknown
@@ -152,21 +155,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate environment
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
     const authHeader = req.headers.get('authorization')
 
     console.log('[export-registrations-csv] env/auth check', {
       requestId,
-      hasSupabaseUrl: Boolean(supabaseUrl),
-      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasSupabaseUrl: Boolean(env?.supabaseUrl),
+      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
       hasAuthHeader: Boolean(authHeader),
       authHeaderPrefix: authHeader?.split(' ')[0] ?? null,
       authHeaderLength: authHeader?.length ?? 0,
     })
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -178,22 +179,16 @@ Deno.serve(async (req) => {
         },
       )
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse and validate request
-    const body = (await req.json()) as ExportRegistrationsRequest
-    const { event_id, response_mode } = body
-
-    console.log('[export-registrations-csv] parsed body', {
-      requestId,
-      hasEventId: Boolean(event_id),
-      eventId: maskValue(event_id ?? null),
-    })
-
-    if (!event_id) {
+    const parsedBody = await parseRequestBody(req, exportRegistrationsRequestSchema)
+    if (!parsedBody.success) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Missing event_id',
+          error: parsedBody.error,
+          detail: parsedBody.details,
+          error_code: 'INVALID_REQUEST',
         }),
         {
           status: 400,
@@ -201,6 +196,14 @@ Deno.serve(async (req) => {
         },
       )
     }
+
+    const { event_id, response_mode }: ExportRegistrationsRequest = parsedBody.data
+
+    console.log('[export-registrations-csv] parsed body', {
+      requestId,
+      hasEventId: Boolean(event_id),
+      eventId: maskValue(event_id ?? null),
+    })
 
     const adminAccess = await requireAdminAccess({
       requestId,

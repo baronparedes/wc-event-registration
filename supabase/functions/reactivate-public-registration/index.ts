@@ -8,6 +8,20 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { errorResponse, jsonResponse } from '@/shared/http.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
+
+const reactivatePublicRegistrationRequestSchema = z.object({
+  registration_id: z.string().uuid('registration_id must be a valid UUID'),
+})
+
+type AdminReactivatePublicRegistrationRequest = z.infer<
+  typeof reactivatePublicRegistrationRequestSchema
+>
+
+type AdminReactivatePublicRegistrationSuccess = {
+  success: true
+  registration_id: string
+}
 
 const allowedOrigins = readAllowedOrigins()
 
@@ -47,43 +61,44 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
     const authHeader = req.headers.get('authorization')
 
     console.log('[reactivate-public-registration] env/auth check', {
       requestId,
-      hasSupabaseUrl: Boolean(supabaseUrl),
-      hasServiceRoleKey: Boolean(supabaseServiceKey),
+      hasSupabaseUrl: Boolean(env?.supabaseUrl),
+      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
       hasAuthHeader: Boolean(authHeader),
       authHeaderPrefix: authHeader?.split(' ')[0] ?? null,
       authHeaderLength: authHeader?.length ?? 0,
     })
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse and validate request
-    const body = (await req.json()) as AdminReactivatePublicRegistrationRequest
-    const { registration_id } = body
+    const parsedBody = await parseRequestBody(req, reactivatePublicRegistrationRequestSchema)
+    if (!parsedBody.success) {
+      return jsonResponse(
+        corsHeaders,
+        {
+          success: false,
+          error: parsedBody.error,
+          detail: parsedBody.details,
+          error_code: 'INVALID_REQUEST',
+        },
+        400,
+      )
+    }
+
+    const { registration_id }: AdminReactivatePublicRegistrationRequest = parsedBody.data
 
     console.log('[reactivate-public-registration] parsed body', {
       requestId,
       hasRegistrationId: Boolean(registration_id),
       registrationId: maskValue(registration_id ?? null),
     })
-
-    if (!registration_id) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Missing registration_id',
-        },
-        400,
-      )
-    }
 
     const adminAccess = await requireAdminAccess({
       requestId,

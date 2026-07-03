@@ -1,4 +1,3 @@
-import { z } from 'https://esm.sh/zod@3.25.76'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 import {
   buildCorsHeaders,
@@ -8,6 +7,7 @@ import {
   requireAdminAccess,
 } from '@/shared/security.ts'
 import { errorResponse, jsonResponse } from '@/shared/http.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
 const allowedOrigins = readAllowedOrigins()
 
@@ -93,13 +93,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
     const authHeader = req.headers.get('authorization')
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return errorResponse(corsHeaders, 500, 'Environment not configured')
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
     const adminAccess = await requireAdminAccess({
       requestId,
@@ -119,21 +119,21 @@ Deno.serve(async (req) => {
       return adminAccess.response
     }
 
-    const parsed = updateAttendanceSettingsSchema.safeParse(await req.json())
-    if (!parsed.success) {
+    const parsedBody = await parseRequestBody(req, updateAttendanceSettingsSchema)
+    if (!parsedBody.success) {
       return jsonResponse(
         corsHeaders,
         {
           success: false,
-          error: 'Invalid request payload.',
-          detail: parsed.error.issues.map((issue) => issue.message).join(' '),
+          error: parsedBody.error,
+          detail: parsedBody.details,
           error_code: 'INVALID_REQUEST',
         },
         400,
       )
     }
 
-    const payload = parsed.data
+    const payload = parsedBody.data
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {

@@ -7,19 +7,22 @@ import {
   readAllowedOrigins,
 } from '@/shared/security.ts'
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts'
+import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts'
 
-interface SubmitPublicRegistrationRequest {
-  event_slug: string
-  attendee: {
-    first_name: string
-    last_name: string
-    nickname?: string | null
-    email: string
-    phone?: string | null
-  }
-  responses: Record<string, unknown>
-  idempotency_key: string
-}
+const submitPublicRegistrationRequestSchema = z.object({
+  event_slug: z.string().trim().min(1, 'event_slug is required'),
+  attendee: z.object({
+    first_name: z.string().trim().min(1, 'attendee.first_name is required'),
+    last_name: z.string().trim().min(1, 'attendee.last_name is required'),
+    nickname: z.string().optional().nullable(),
+    email: z.string().trim().email('attendee.email must be a valid email address'),
+    phone: z.string().optional().nullable(),
+  }),
+  responses: z.record(z.string(), z.unknown()),
+  idempotency_key: z.string().trim().min(1, 'idempotency_key is required'),
+})
+
+type SubmitPublicRegistrationRequest = z.infer<typeof submitPublicRegistrationRequestSchema>
 
 interface SubmitPublicRegistrationSuccess {
   success: true
@@ -394,11 +397,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate environment
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const env = parseFunctionEnvironment()
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!env) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -410,26 +411,15 @@ Deno.serve(async (req) => {
         },
       )
     }
+    const { supabaseUrl, supabaseServiceKey } = env
 
-    // Parse and validate request
-    const body = (await req.json()) as SubmitPublicRegistrationRequest
-    const { event_slug, attendee, responses, idempotency_key } = body
-
-    // Validate required fields
-    if (
-      !event_slug ||
-      typeof event_slug !== 'string' ||
-      !attendee ||
-      typeof attendee !== 'object' ||
-      !responses ||
-      typeof responses !== 'object' ||
-      !idempotency_key ||
-      typeof idempotency_key !== 'string'
-    ) {
+    const parsedBody = await parseRequestBody(req, submitPublicRegistrationRequestSchema)
+    if (!parsedBody.success) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Invalid request: missing or invalid required fields',
+          error: parsedBody.error,
+          detail: parsedBody.details,
           error_code: 'INVALID_REQUEST',
         } as SubmitPublicRegistrationError),
         {
@@ -439,29 +429,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { first_name, last_name, nickname, email, phone } = attendee as Record<string, unknown>
+    const { event_slug, attendee, responses, idempotency_key }: SubmitPublicRegistrationRequest =
+      parsedBody.data
 
-    // Validate attendee fields
-    if (
-      !first_name ||
-      typeof first_name !== 'string' ||
-      !last_name ||
-      typeof last_name !== 'string' ||
-      !email ||
-      typeof email !== 'string'
-    ) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Invalid request: attendee info is incomplete',
-          error_code: 'INVALID_ATTENDEE_INFO',
-        } as SubmitPublicRegistrationError),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
+    const { first_name, last_name, nickname, email, phone } = attendee
 
     // Create authenticated client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
