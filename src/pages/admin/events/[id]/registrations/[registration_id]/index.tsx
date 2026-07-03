@@ -2,10 +2,18 @@ import { useState } from 'react';
 
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { AdminPageShell } from '@/components/layout';
+import { ActionLink, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { TOAST_MESSAGES, UI_MESSAGES, toAdminEventRegistrations } from '@/config/constants';
+import {
+  ROUTE_PATHS,
+  TOAST_MESSAGES,
+  UI_MESSAGES,
+  toAdminEventDetail,
+  toAdminEventRegistrations,
+} from '@/config/constants';
+import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
   useCancelRegistrationMutation,
   useReactivateRegistrationMutation,
@@ -103,6 +111,7 @@ export function AdminRegistrationDetailPage() {
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
   const detailQuery = useRegistrationDetailQuery(registrationId ?? '');
+  const eventQuery = useAdminEventQuery(eventId ?? '');
   const cancelMutation = useCancelRegistrationMutation(eventId ?? '');
   const reactivateMutation = useReactivateRegistrationMutation(eventId ?? '');
 
@@ -164,8 +173,8 @@ export function AdminRegistrationDetailPage() {
         registration_id: registrationId,
       });
       setShowCancelDialog(false);
-      // Navigate back to registrations list after successful cancel
-      navigate(toAdminEventRegistrations(eventId));
+      // Refetch to update registration status
+      detailQuery.refetch();
     } catch (error) {
       showError(error instanceof Error ? error.message : TOAST_MESSAGES.registration.cancelFailed);
     }
@@ -179,7 +188,8 @@ export function AdminRegistrationDetailPage() {
         registration_id: registrationId,
       });
       setShowReactivateDialog(false);
-      navigate(toAdminEventRegistrations(eventId));
+      // Refetch to update registration status
+      detailQuery.refetch();
     } catch (error) {
       showError(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.reactivateFailed,
@@ -187,117 +197,129 @@ export function AdminRegistrationDetailPage() {
     }
   };
 
+  const pageActions = canCancel ? (
+    <Button size="sm" variant="destructive" onClick={() => setShowCancelDialog(true)}>
+      Cancel Registration
+    </Button>
+  ) : (
+    <Button size="sm" variant="default" onClick={() => setShowReactivateDialog(true)}>
+      Reactivate Registration
+    </Button>
+  );
+
   return (
     <>
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            ← Back to Registrations
-          </Button>
-          {canCancel ? (
-            <button
-              onClick={() => setShowCancelDialog(true)}
-              className="text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Cancel Registration
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowReactivateDialog(true)}
-              className="text-sm font-medium text-green-700 hover:text-green-800"
-            >
-              Reactivate Registration
-            </button>
-          )}
-        </div>
-
-        {/* Member Card */}
-        <SectionCard title="Member Information">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-sm font-medium text-muted">Member ID</p>
-                <p className="mt-1 text-base text-text">{member.member_id}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted">Full Name</p>
-                <p className="mt-1 text-base text-text">{member.full_name}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted">Email</p>
-                <p className="mt-1 text-base text-text">{member.email}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted">Phone</p>
-                <p className="mt-1 text-base text-text">{member.phone ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted">Role</p>
-                <p className="mt-1 text-base text-text">{member.role}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted">Category</p>
-                <p className="mt-1 text-base text-text">{member.category}</p>
-              </div>
-              {member.nickname && (
-                <div>
-                  <p className="text-sm font-medium text-muted">Nickname</p>
-                  <p className="mt-1 text-base text-text">{member.nickname}</p>
+      <AdminPageShell>
+        <AdminPageShell.Header
+          breadcrumbs={[
+            { label: 'Events', to: ROUTE_PATHS.adminEvents },
+            { label: eventQuery.data?.title ?? 'Event', to: toAdminEventDetail(eventId) },
+            { label: 'Registrations', to: toAdminEventRegistrations(eventId) },
+            { label: member.full_name },
+          ]}
+          title="Registration"
+          navLinks={
+            <ActionLink to={toAdminEventRegistrations(eventId)}>Back to Registrations</ActionLink>
+          }
+          actions={pageActions}
+        />
+        <AdminPageShell.Content>
+          <section className="space-y-4">
+            {/* Member Card */}
+            <SectionCard title="Member Information">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted">Member ID</p>
+                    <p className="mt-1 text-base text-text">{member.member_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Full Name</p>
+                    <p className="mt-1 text-base text-text">{member.full_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Email</p>
+                    <p className="mt-1 text-base text-text">{member.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Phone</p>
+                    <p className="mt-1 text-base text-text">{member.phone ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Role</p>
+                    <p className="mt-1 text-base text-text">{member.role}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Category</p>
+                    <p className="mt-1 text-base text-text">{member.category}</p>
+                  </div>
+                  {member.nickname && (
+                    <div>
+                      <p className="text-sm font-medium text-muted">Nickname</p>
+                      <p className="mt-1 text-base text-text">{member.nickname}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Registration Metadata */}
-        <SectionCard title="Registration Details">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-sm font-medium text-muted">Status</p>
-                <p className="mt-1">{getStatusBadge(registration.status)}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-muted">Submitted</p>
-                <p className="mt-1 text-base text-text">{formatDate(registration.submitted_at)}</p>
-              </div>
-              {registration.updated_at && (
-                <div>
-                  <p className="text-sm font-medium text-muted">Last Updated</p>
-                  <p className="mt-1 text-base text-text">{formatDate(registration.updated_at)}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </SectionCard>
+            </SectionCard>
 
-        {/* Field Responses */}
-        {fieldResponses.length > 0 && (
-          <SectionCard title="Responses">
-            <div className="space-y-4">
-              <div className="space-y-3">
-                {fieldResponses.map((response: (typeof fieldResponses)[number]) => (
-                  <div
-                    key={response.field_id}
-                    className="border-b border-gray-100 pb-3 last:border-0"
-                  >
-                    <p className="text-sm font-medium text-muted">{response.field_label}</p>
+            {/* Registration Metadata */}
+            <SectionCard title="Registration Details">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted">Status</p>
+                    <p className="mt-1">{getStatusBadge(registration.status)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted">Submitted</p>
                     <p className="mt-1 text-base text-text">
-                      {formatAnswer(response.answer, response.field_type)}
+                      {formatDate(registration.submitted_at)}
                     </p>
                   </div>
-                ))}
+                  {registration.updated_at && (
+                    <div>
+                      <p className="text-sm font-medium text-muted">Last Updated</p>
+                      <p className="mt-1 text-base text-text">
+                        {formatDate(registration.updated_at)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </SectionCard>
-        )}
+            </SectionCard>
 
-        {fieldResponses.length === 0 && (
-          <SectionCard title="Responses">
-            <p className="text-sm text-muted">No field responses recorded for this registration.</p>
-          </SectionCard>
-        )}
-      </section>
+            {/* Field Responses */}
+            {fieldResponses.length > 0 && (
+              <SectionCard title="Responses">
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    {fieldResponses.map((response: (typeof fieldResponses)[number]) => (
+                      <div
+                        key={response.field_id}
+                        className="border-b border-gray-100 pb-3 last:border-0"
+                      >
+                        <p className="text-sm font-medium text-muted">{response.field_label}</p>
+                        <p className="mt-1 text-base text-text">
+                          {formatAnswer(response.answer, response.field_type)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </SectionCard>
+            )}
+
+            {fieldResponses.length === 0 && (
+              <SectionCard title="Responses">
+                <p className="text-sm text-muted">
+                  No field responses recorded for this registration.
+                </p>
+              </SectionCard>
+            )}
+          </section>
+        </AdminPageShell.Content>
+      </AdminPageShell>
 
       <ConfirmDialog
         isOpen={showCancelDialog}

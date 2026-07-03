@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import { EmptyState } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
@@ -76,6 +77,7 @@ export function RegistrationsList({
   isEventArchived,
   searchTerm,
 }: RegistrationsListProps) {
+  const navigate = useNavigate();
   const [selectedRegistration, setSelectedRegistration] =
     useState<AdminRegistrationWithMember | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -150,7 +152,11 @@ export function RegistrationsList({
         </ListTableHead>
         <ListTableBody divider="none">
           {registrations.map((registration) => (
-            <ListTableRow key={registration.id} className="border-b border-gray-100">
+            <ListTableRow
+              key={registration.id}
+              className="cursor-pointer border-b border-gray-100 transition-colors hover:bg-gray-50"
+              onClick={() => navigate(toAdminRegistrationDetail(eventId, registration.id))}
+            >
               <ListTableCell className="text-gray-900">{registration.member_id}</ListTableCell>
               <ListTableCell className="text-gray-900">{registration.full_name}</ListTableCell>
               <ListTableCell className="text-gray-600">{registration.email}</ListTableCell>

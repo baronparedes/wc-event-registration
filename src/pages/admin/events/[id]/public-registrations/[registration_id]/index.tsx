@@ -1,11 +1,18 @@
 import { useState } from 'react';
 
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
+import { AdminPageShell } from '@/components/layout';
+import { ActionLink, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { UI_MESSAGES, toAdminEventPublicRegistrations } from '@/config/constants';
+import {
+  ROUTE_PATHS,
+  UI_MESSAGES,
+  toAdminEventDetail,
+  toAdminEventPublicRegistrations,
+} from '@/config/constants';
+import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
   useCancelPublicRegistrationMutation,
   usePublicRegistrationDetailQuery,
@@ -89,68 +96,77 @@ export function AdminPublicRegistrationDetailPage() {
     id: string;
     registration_id: string;
   }>();
-  const navigate = useNavigate();
   const { showError } = useErrorWithFadeout();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
   const detailQuery = usePublicRegistrationDetailQuery(registrationId ?? '');
+  const eventQuery = useAdminEventQuery(eventId ?? '');
   const cancelMutation = useCancelPublicRegistrationMutation(eventId ?? '');
   const reactivateMutation = useReactivatePublicRegistrationMutation(eventId ?? '');
 
   if (!eventId || !registrationId) {
-    return <div>Invalid public registration ID</div>;
+    return (
+      <AdminPageShell>
+        <AdminPageShell.Header title="Public Registration" />
+        <AdminPageShell.Content>
+          <p className="text-sm text-red-600">Invalid public registration ID</p>
+        </AdminPageShell.Content>
+      </AdminPageShell>
+    );
   }
 
   if (detailQuery.error) {
     return (
-      <section className="space-y-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
-        >
-          ← Back to Public Registrations
-        </Button>
-        <SectionCard title="Error">
+      <AdminPageShell>
+        <AdminPageShell.Header
+          title="Public Registration"
+          navLinks={
+            <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+              Back to Public Registrations
+            </ActionLink>
+          }
+        />
+        <AdminPageShell.Content>
           <p className="text-sm text-red-600">
             Error loading public registration:{' '}
             {detailQuery.error instanceof Error ? detailQuery.error.message : 'Unknown error'}
           </p>
-        </SectionCard>
-      </section>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     );
   }
 
   if (detailQuery.isLoading) {
     return (
-      <section className="space-y-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
+      <AdminPageShell>
+        <AdminPageShell.Header title="Public Registration" />
+        <AdminPageShell.Content
+          isLoading={true}
+          loadingMessage={UI_MESSAGES.loading.registrationDetails}
         >
-          ← Back to Public Registrations
-        </Button>
-        <SectionCard title="Loading">
-          <p className="text-sm text-muted">{UI_MESSAGES.loading.registrationDetails}</p>
-        </SectionCard>
-      </section>
+          {null}
+        </AdminPageShell.Content>
+      </AdminPageShell>
     );
   }
 
   const data = detailQuery.data;
   if (!data) {
     return (
-      <section className="space-y-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
-        >
-          ← Back to Public Registrations
-        </Button>
-        <SectionCard title="Not Found">
-          <p className="text-sm text-muted">Public registration not found.</p>
-        </SectionCard>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header
+          title="Public Registration"
+          navLinks={
+            <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+              Back to Public Registrations
+            </ActionLink>
+          }
+        />
+        <AdminPageShell.Content>
+          <p className="text-sm text-red-600">Public registration not found.</p>
+        </AdminPageShell.Content>
+      </AdminPageShell>
     );
   }
 
@@ -161,7 +177,8 @@ export function AdminPublicRegistrationDetailPage() {
     try {
       await cancelMutation.mutateAsync({ registration_id: registrationId });
       setShowCancelDialog(false);
-      navigate(toAdminEventPublicRegistrations(eventId));
+      // Refetch to update registration status
+      detailQuery.refetch();
     } catch (error) {
       showError(error instanceof Error ? error.message : 'Failed to cancel public registration');
     }
@@ -171,7 +188,8 @@ export function AdminPublicRegistrationDetailPage() {
     try {
       await reactivateMutation.mutateAsync({ registration_id: registrationId });
       setShowReactivateDialog(false);
-      navigate(toAdminEventPublicRegistrations(eventId));
+      // Refetch to update registration status
+      detailQuery.refetch();
     } catch (error) {
       showError(
         error instanceof Error ? error.message : 'Failed to reactivate public registration',
@@ -179,94 +197,102 @@ export function AdminPublicRegistrationDetailPage() {
     }
   };
 
+  const pageActions = canCancel ? (
+    <Button size="sm" variant="destructive" onClick={() => setShowCancelDialog(true)}>
+      Cancel Registration
+    </Button>
+  ) : (
+    <Button size="sm" variant="default" onClick={() => setShowReactivateDialog(true)}>
+      Reactivate Registration
+    </Button>
+  );
+
   return (
     <>
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
-          >
-            ← Back to Public Registrations
-          </Button>
-          {canCancel ? (
-            <button
-              onClick={() => setShowCancelDialog(true)}
-              className="text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Cancel Registration
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowReactivateDialog(true)}
-              className="text-sm font-medium text-green-700 hover:text-green-800"
-            >
-              Reactivate Registration
-            </button>
-          )}
-        </div>
-
-        <SectionCard title="Attendee Information">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-muted">Full Name</p>
-              <p className="mt-1 text-base text-text">
-                {registration.first_name} {registration.last_name}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted">Email</p>
-              <p className="mt-1 text-base text-text">{registration.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted">Phone</p>
-              <p className="mt-1 text-base text-text">{registration.phone ?? '—'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted">Nickname</p>
-              <p className="mt-1 text-base text-text">{registration.nickname ?? '—'}</p>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Registration Details">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-muted">Status</p>
-              <p className="mt-1">{getStatusBadge(registration.status)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted">Submitted</p>
-              <p className="mt-1 text-base text-text">{formatDate(registration.submitted_at)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted">Last Updated</p>
-              <p className="mt-1 text-base text-text">{formatDate(registration.updated_at)}</p>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Responses">
-          {fieldResponses.length === 0 ? (
-            <p className="text-sm text-muted">No field responses recorded for this registration.</p>
-          ) : (
-            <div className="space-y-3">
-              {fieldResponses.map((response) => (
-                <div
-                  key={response.field_id}
-                  className="border-b border-gray-100 pb-3 last:border-0"
-                >
-                  <p className="text-sm font-medium text-muted">{response.field_label}</p>
+      <AdminPageShell>
+        <AdminPageShell.Header
+          breadcrumbs={[
+            { label: 'Events', to: ROUTE_PATHS.adminEvents },
+            { label: eventQuery.data?.title ?? 'Event', to: toAdminEventDetail(eventId) },
+            { label: 'Public Registrations', to: toAdminEventPublicRegistrations(eventId) },
+            { label: `${registration.first_name} ${registration.last_name}` },
+          ]}
+          title="Public Registration"
+          navLinks={
+            <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+              Back to Public Registrations
+            </ActionLink>
+          }
+          actions={pageActions}
+        />
+        <AdminPageShell.Content>
+          <section className="space-y-4">
+            <SectionCard title="Attendee Information">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium text-muted">Full Name</p>
                   <p className="mt-1 text-base text-text">
-                    {formatAnswer(response.answer, response.field_type)}
+                    {registration.first_name} {registration.last_name}
                   </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-      </section>
+                <div>
+                  <p className="text-sm font-medium text-muted">Email</p>
+                  <p className="mt-1 text-base text-text">{registration.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">Phone</p>
+                  <p className="mt-1 text-base text-text">{registration.phone ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">Nickname</p>
+                  <p className="mt-1 text-base text-text">{registration.nickname ?? '—'}</p>
+                </div>
+              </div>
+            </SectionCard>
 
+            <SectionCard title="Registration Details">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium text-muted">Status</p>
+                  <p className="mt-1">{getStatusBadge(registration.status)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">Submitted</p>
+                  <p className="mt-1 text-base text-text">
+                    {formatDate(registration.submitted_at)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">Last Updated</p>
+                  <p className="mt-1 text-base text-text">{formatDate(registration.updated_at)}</p>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Responses">
+              {fieldResponses.length === 0 ? (
+                <p className="text-sm text-muted">
+                  No field responses recorded for this registration.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {fieldResponses.map((response) => (
+                    <div
+                      key={response.field_id}
+                      className="border-b border-gray-100 pb-3 last:border-0"
+                    >
+                      <p className="text-sm font-medium text-muted">{response.field_label}</p>
+                      <p className="mt-1 text-base text-text">
+                        {formatAnswer(response.answer, response.field_type)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+          </section>
+        </AdminPageShell.Content>
+      </AdminPageShell>
       <ConfirmDialog
         isOpen={showCancelDialog}
         onCancel={() => setShowCancelDialog(false)}

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdminRegistrationDetailPage } from '@/pages/admin/events/[id]/registrations/[registration_id]';
@@ -6,6 +7,7 @@ import { AdminRegistrationDetailPage } from '@/pages/admin/events/[id]/registrat
 const {
   mockUseParams,
   mockNavigate,
+  mockUseAdminEventQuery,
   mockUseRegistrationDetailQuery,
   mockCancelMutateAsync,
   mockReactivateMutateAsync,
@@ -13,6 +15,7 @@ const {
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
+  mockUseAdminEventQuery: vi.fn(),
   mockUseRegistrationDetailQuery: vi.fn(),
   mockCancelMutateAsync: vi.fn(),
   mockReactivateMutateAsync: vi.fn(),
@@ -25,6 +28,15 @@ vi.mock('react-router-dom', async () => {
     ...actual,
     useParams: () => mockUseParams(),
     useNavigate: () => mockNavigate,
+  };
+});
+
+vi.mock('@/hooks/domain/events', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/hooks/domain/events')>('@/hooks/domain/events');
+  return {
+    ...actual,
+    useAdminEventQuery: (...args: unknown[]) => mockUseAdminEventQuery(...args),
   };
 });
 
@@ -76,11 +88,25 @@ describe('AdminRegistrationDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: 'event-1', registration_id: 'reg-1' });
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: 'event-1', name: 'Test Event' },
+      isLoading: false,
+      error: null,
+    });
     mockCancelMutateAsync.mockResolvedValue(undefined);
     mockReactivateMutateAsync.mockResolvedValue(undefined);
   });
 
+  function renderWithRouter() {
+    return render(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
+  }
+
   it('renders registration details and cancels active registrations', async () => {
+    const mockRefetch = vi.fn().mockResolvedValue(undefined);
     mockUseRegistrationDetailQuery.mockReturnValue({
       data: {
         registration: {
@@ -102,11 +128,13 @@ describe('AdminRegistrationDetailPage', () => {
       },
       isLoading: false,
       error: null,
+      refetch: mockRefetch,
     });
 
-    render(<AdminRegistrationDetailPage />);
+    renderWithRouter();
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByText('Member Information')).toBeInTheDocument();
+    expect(screen.getByText('jane@example.com')).toBeInTheDocument();
     expect(
       screen.getByText('No field responses recorded for this registration.'),
     ).toBeInTheDocument();
@@ -116,8 +144,8 @@ describe('AdminRegistrationDetailPage', () => {
 
     await waitFor(() => {
       expect(mockCancelMutateAsync).toHaveBeenCalledWith({ registration_id: 'reg-1' });
+      expect(mockRefetch).toHaveBeenCalled();
     });
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/events/event-1/registrations');
   });
 
   it('shows reactivate action for cancelled registrations', async () => {
@@ -151,7 +179,7 @@ describe('AdminRegistrationDetailPage', () => {
       error: null,
     });
 
-    render(<AdminRegistrationDetailPage />);
+    renderWithRouter();
 
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }));
@@ -164,7 +192,7 @@ describe('AdminRegistrationDetailPage', () => {
 
   it('renders invalid param, loading, and not-found states', () => {
     mockUseParams.mockReturnValueOnce({ id: undefined, registration_id: undefined });
-    const { rerender } = render(<AdminRegistrationDetailPage />);
+    const { rerender } = renderWithRouter();
     expect(screen.getByText('Invalid registration ID')).toBeInTheDocument();
 
     mockUseParams.mockReturnValue({ id: 'event-1', registration_id: 'reg-1' });
@@ -173,7 +201,11 @@ describe('AdminRegistrationDetailPage', () => {
       isLoading: true,
       error: null,
     });
-    rerender(<AdminRegistrationDetailPage />);
+    rerender(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
     expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(screen.getByText('Loading registration details...')).toBeInTheDocument();
 
@@ -182,7 +214,11 @@ describe('AdminRegistrationDetailPage', () => {
       isLoading: false,
       error: null,
     });
-    rerender(<AdminRegistrationDetailPage />);
+    rerender(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
     expect(screen.getByText('Not Found')).toBeInTheDocument();
   });
 
@@ -192,7 +228,7 @@ describe('AdminRegistrationDetailPage', () => {
       isLoading: false,
       error: new Error('boom'),
     });
-    const { rerender } = render(<AdminRegistrationDetailPage />);
+    const { rerender } = renderWithRouter();
     expect(screen.getByText(/Error loading registration: boom/)).toBeInTheDocument();
 
     mockUseRegistrationDetailQuery.mockReturnValueOnce({
@@ -200,7 +236,11 @@ describe('AdminRegistrationDetailPage', () => {
       isLoading: false,
       error: 'bad value',
     });
-    rerender(<AdminRegistrationDetailPage />);
+    rerender(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
     expect(screen.getByText(/Error loading registration: Unknown error/)).toBeInTheDocument();
   });
 
@@ -283,7 +323,7 @@ describe('AdminRegistrationDetailPage', () => {
       error: null,
     });
 
-    render(<AdminRegistrationDetailPage />);
+    renderWithRouter();
 
     expect(screen.getByText('pending_review')).toBeInTheDocument();
     expect(screen.getByText('JD')).toBeInTheDocument();
@@ -321,7 +361,7 @@ describe('AdminRegistrationDetailPage', () => {
     });
     mockCancelMutateAsync.mockRejectedValueOnce('cancel failed');
 
-    const { rerender } = render(<AdminRegistrationDetailPage />);
+    const { rerender } = renderWithRouter();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Cancel Registration' })[1]);
 
@@ -353,7 +393,11 @@ describe('AdminRegistrationDetailPage', () => {
     });
     mockReactivateMutateAsync.mockRejectedValueOnce('reactivate failed');
 
-    rerender(<AdminRegistrationDetailPage />);
+    rerender(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Reactivate Registration' })[1]);
 
@@ -362,7 +406,7 @@ describe('AdminRegistrationDetailPage', () => {
     });
   });
 
-  it('navigates back when using the back button', () => {
+  it('renders the back to registrations link', () => {
     mockUseRegistrationDetailQuery.mockReturnValue({
       data: {
         registration: {
@@ -386,10 +430,10 @@ describe('AdminRegistrationDetailPage', () => {
       error: null,
     });
 
-    render(<AdminRegistrationDetailPage />);
-    fireEvent.click(screen.getByRole('button', { name: /Back to Registrations/i }));
-
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
+    renderWithRouter();
+    const link = screen.getByRole('link', { name: /Back to Registrations/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', '/admin/events/event-1/registrations');
   });
 
   it('surfaces error.message for Error objects from cancel/reactivate', async () => {
@@ -417,7 +461,7 @@ describe('AdminRegistrationDetailPage', () => {
     });
     mockCancelMutateAsync.mockRejectedValueOnce(new Error('cancel message'));
 
-    const { rerender } = render(<AdminRegistrationDetailPage />);
+    const { rerender } = renderWithRouter();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Cancel Registration' })[1]);
 
@@ -449,7 +493,11 @@ describe('AdminRegistrationDetailPage', () => {
     });
     mockReactivateMutateAsync.mockRejectedValueOnce(new Error('reactivate message'));
 
-    rerender(<AdminRegistrationDetailPage />);
+    rerender(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Reactivate Registration' })[1]);
 
@@ -482,7 +530,7 @@ describe('AdminRegistrationDetailPage', () => {
       error: null,
     });
 
-    const { rerender } = render(<AdminRegistrationDetailPage />);
+    const { rerender } = renderWithRouter();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }));
     expect(screen.getByRole('button', { name: 'Cancel Dialog' })).toBeInTheDocument();
@@ -512,7 +560,11 @@ describe('AdminRegistrationDetailPage', () => {
       error: null,
     });
 
-    rerender(<AdminRegistrationDetailPage />);
+    rerender(
+      <MemoryRouter>
+        <AdminRegistrationDetailPage />
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel Dialog' }));
