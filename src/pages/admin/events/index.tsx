@@ -8,6 +8,7 @@ import {
   ROUTE_PATHS,
   TOAST_MESSAGES,
   UI_MESSAGES,
+  toAdminEventAttendance,
   toAdminEventDetail,
   toAdminEventFields,
   toAdminEventRegistrations,
@@ -168,6 +169,7 @@ export function AdminEventsPage() {
                     <ListTableCell>
                       <div className="flex items-center gap-3">
                         <ActionLink to={toAdminEventDetail(event.id)}>Edit</ActionLink>
+                        <ActionLink to={toAdminEventAttendance(event.id)}>Attendance</ActionLink>
                         <ActionLink to={toAdminEventFields(event.id)}>Fields</ActionLink>
                         <ActionLink to={toAdminEventRegistrations(event.id)}>
                           Registrations

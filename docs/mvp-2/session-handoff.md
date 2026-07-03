@@ -61,7 +61,7 @@ Validation gate:
 
 - [x] npm run build passes
 - [x] npm run format:check passes
-- [ ] supabase test db passes
+- [x] supabase test db passes
 
 Exit criteria:
 
@@ -75,11 +75,11 @@ Goal:
 
 Checklist:
 
-- [ ] Add settings query hook and mutation hook
-- [ ] Add admin event settings UI section for Attendance Tracking, Walk-In Mode, Timeslot Attendance
-- [ ] Implement update-attendance-settings Edge Function
-- [ ] Enforce dependency rule: walk-in and timeslot cannot be enabled if attendance is disabled
-- [ ] Add confirmation and persistence feedback
+- [x] Add settings query hook and mutation hook
+- [x] Add admin event settings UI section for Attendance Tracking, Walk-In Mode, Timeslot Attendance
+- [x] Implement update-attendance-settings Edge Function
+- [x] Enforce dependency rule: walk-in and timeslot cannot be enabled if attendance is disabled
+- [x] Add confirmation and persistence feedback
 
 Expected file touch zones:
 
@@ -90,8 +90,8 @@ Expected file touch zones:
 
 Validation gate:
 
-- [ ] Feature 8.1 scenarios pass in local QA
-- [ ] Reload preserves settings
+- [x] Feature 8.1 scenarios pass in local QA
+- [x] Reload preserves settings
 
 Exit criteria:
 

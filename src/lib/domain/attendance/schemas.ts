@@ -13,50 +13,64 @@ function coerceOptionalString(value: unknown): unknown {
   return trimmed.length === 0 ? undefined : trimmed
 }
 
-export const attendanceSettingsSchema = z
-  .object({
-    event_id: z.string().uuid('Invalid event ID'),
-    attendance_enabled: z.boolean(),
-    walk_in_mode_enabled: z.boolean(),
-    timeslot_enabled: z.boolean(),
-    timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
-    updated_at: z.string().optional(),
-  })
-  .superRefine((value, context) => {
-    if (!value.attendance_enabled && value.walk_in_mode_enabled) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Walk-In Mode cannot be enabled when attendance tracking is disabled.',
-        path: ['walk_in_mode_enabled'],
-      })
-    }
+const attendanceSettingsBaseSchema = z.object({
+  event_id: z.string().uuid('Invalid event ID'),
+  attendance_enabled: z.boolean(),
+  walk_in_mode_enabled: z.boolean(),
+  timeslot_enabled: z.boolean(),
+  timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
+  updated_at: z.string().optional(),
+})
 
-    if (!value.attendance_enabled && value.timeslot_enabled) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Timeslot Attendance cannot be enabled when attendance tracking is disabled.',
-        path: ['timeslot_enabled'],
-      })
-    }
+function applyAttendanceSettingsRules(
+  value: {
+    attendance_enabled: boolean
+    walk_in_mode_enabled: boolean
+    timeslot_enabled: boolean
+    timeslots: string[]
+  },
+  context: z.RefinementCtx,
+) {
+  if (!value.attendance_enabled && value.walk_in_mode_enabled) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Walk-In Mode cannot be enabled when attendance tracking is disabled.',
+      path: ['walk_in_mode_enabled'],
+    })
+  }
 
-    if (value.timeslot_enabled && value.timeslots.length === 0) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'At least one timeslot is required when timeslot attendance is enabled.',
-        path: ['timeslots'],
-      })
-    }
-  })
+  if (!value.attendance_enabled && value.timeslot_enabled) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Timeslot Attendance cannot be enabled when attendance tracking is disabled.',
+      path: ['timeslot_enabled'],
+    })
+  }
+
+  if (value.timeslot_enabled && value.timeslots.length === 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'At least one timeslot is required when timeslot attendance is enabled.',
+      path: ['timeslots'],
+    })
+  }
+}
+
+export const attendanceSettingsSchema = attendanceSettingsBaseSchema.superRefine(
+  applyAttendanceSettingsRules,
+)
 
 export type AttendanceSettingsInput = z.infer<typeof attendanceSettingsSchema>
 
-export const updateAttendanceSettingsSchema = attendanceSettingsSchema.pick({
-  event_id: true,
-  attendance_enabled: true,
-  walk_in_mode_enabled: true,
-  timeslot_enabled: true,
-  timeslots: true,
-})
+export const updateAttendanceSettingsSchema = attendanceSettingsBaseSchema
+  .pick({
+    event_id: true,
+    attendance_enabled: true,
+    walk_in_mode_enabled: true,
+    timeslot_enabled: true,
+    timeslots: true,
+  })
+  .superRefine(applyAttendanceSettingsRules)
 
 export type UpdateAttendanceSettingsInput = z.infer<typeof updateAttendanceSettingsSchema>
 

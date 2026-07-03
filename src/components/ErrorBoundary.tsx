@@ -72,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <summary className="cursor-pointer font-medium hover:text-text">
                   Error details
                 </summary>
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted p-2 text-xs">
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted p-2 text-xs text-white">
                   {`Request ID: ${this.state.requestId}\n\n${this.state.error.message}\n\n${this.state.error.stack || 'No stack trace'}`}
                 </pre>
               </details>
