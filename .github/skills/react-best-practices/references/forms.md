@@ -33,9 +33,9 @@ const { register, handleSubmit, formState: { errors, isDirty, isValid }, reset }
 
 ## Field Registration Modes
 
-| Mode | When to use | Pattern |
-|---|---|---|
-| Registered | Simple fields (text, select, textarea) | `registration={register('fieldName')}` |
+| Mode       | When to use                                      | Pattern                                     |
+| ---------- | ------------------------------------------------ | ------------------------------------------- |
+| Registered | Simple fields (text, select, textarea)           | `registration={register('fieldName')}`      |
 | Controlled | Dynamic fields, conditional rendering, custom UI | `value={watch('fieldName')} onChange={...}` |
 
 Prefer registered mode. Use controlled only when `watch()` is needed for conditional UI.
@@ -44,10 +44,10 @@ Prefer registered mode. Use controlled only when `watch()` is needed for conditi
 
 ```tsx
 // ✅ Preferred for render subscriptions
-const category = useWatch({ control: form.control, name: 'category' });
+const category = useWatch({ control: form.control, name: 'category' })
 
 // ⚠️ Use sparingly — triggers re-render on every watched field change
-const category = form.watch('category');
+const category = form.watch('category')
 ```
 
 ## Edit Mode Pattern
@@ -55,11 +55,11 @@ const category = form.watch('category');
 ```tsx
 // Load existing data into the form
 useEffect(() => {
-  if (data) reset(data);  // reset sets defaultValues and clears dirty state
-}, [data, reset]);
+  if (data) reset(data) // reset sets defaultValues and clears dirty state
+}, [data, reset])
 
 // Gate save button on dirty state
-<Button disabled={!isDirty || isSubmitting}>Save Changes</Button>
+;<Button disabled={!isDirty || isSubmitting}>Save Changes</Button>
 ```
 
 ## Dirty State and Change Detection
@@ -69,10 +69,12 @@ useEffect(() => {
 - Never duplicate change detection logic — RHF is the single source of truth.
 
 ```tsx
-const { formState: { isDirty, dirtyFields } } = form;
+const {
+  formState: { isDirty, dirtyFields },
+} = form
 
 // Show confirmation only if name changed
-const nameChanged = !!dirtyFields.name;
+const nameChanged = !!dirtyFields.name
 ```
 
 ## Cross-Field Validation
@@ -80,27 +82,29 @@ const nameChanged = !!dirtyFields.name;
 Use Zod `superRefine` — do not add manual validation inside the component.
 
 ```ts
-const schema = z.object({
-  startDate: z.string(),
-  endDate: z.string(),
-}).superRefine((data, ctx) => {
-  if (data.endDate <= data.startDate) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'End date must be after start date',
-      path: ['endDate'],
-    });
-  }
-});
+const schema = z
+  .object({
+    startDate: z.string(),
+    endDate: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.endDate <= data.startDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be after start date',
+        path: ['endDate'],
+      })
+    }
+  })
 ```
 
 ## Common Mistakes
 
-| Mistake | Fix |
-|---|---|
-| `useState` for field values | Use `register()` from RHF |
-| `watch()` for all form subscriptions | Prefer `useWatch()` for scoped subscriptions |
-| Validation logic in component | Move to Zod schema with `superRefine` |
-| Not calling `reset()` in edit mode | Call `reset(serverData)` when data loads |
-| Not gating save on `isDirty` | Add `disabled={!isDirty}` to save button in edit mode |
-| Reading `formState` inside effects | Extract at top level, read the captured value |
+| Mistake                              | Fix                                                   |
+| ------------------------------------ | ----------------------------------------------------- |
+| `useState` for field values          | Use `register()` from RHF                             |
+| `watch()` for all form subscriptions | Prefer `useWatch()` for scoped subscriptions          |
+| Validation logic in component        | Move to Zod schema with `superRefine`                 |
+| Not calling `reset()` in edit mode   | Call `reset(serverData)` when data loads              |
+| Not gating save on `isDirty`         | Add `disabled={!isDirty}` to save button in edit mode |
+| Reading `formState` inside effects   | Extract at top level, read the captured value         |

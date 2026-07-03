@@ -21,6 +21,7 @@
   - Edge Function registration required in supabase/config.toml
 
 Term alignment note:
+
 - Feature 8.3 uses RFID scan language. Canonical term is Member ID. This design treats RFID as one form of Member ID input token without changing glossary semantics.
 
 ## Architecture Scope
@@ -64,18 +65,21 @@ Term alignment note:
 ### Data-flow and control-flow outline
 
 1. Attendance settings
+
 - Admin toggles attendance option in event settings.
 - UI confirms action and calls attendance settings mutation.
 - Edge Function validates admin auth and event access; persists setting.
 - Query invalidation refreshes event settings and attendance entry points.
 
 2. Pre-event assignments
+
 - Admin opens assignment list for one event.
 - Query returns registrants plus current assignment details and missing-assignment indicators.
 - Admin edits assignment values and submits.
 - Mutation upserts assignment row and invalidates assignment queries.
 
 3. Check-in (registered)
+
 - Staff searches by Member ID token, name fragment, or email.
 - Search query returns candidate attendees with disambiguation fields.
 - Staff selects attendee and submits check-in action.
@@ -84,16 +88,19 @@ Term alignment note:
   - If present, keep official timestamp unchanged and return already_checked_in status.
 
 4. Walk-in check-in
+
 - If attendee not found and Walk-In Mode enabled, walk-in form appears.
 - Form requires full name and at least one contact method.
 - Mutation creates walk-in attendee entity and check-in atomically; returns checked-in result.
 
 5. Timeslot attendance
+
 - If Timeslot Attendance enabled, check-in requires configured slot selection for slot tracking operations.
 - Mutation records slot attendance additively while preserving official first check-in timestamp.
 - Slot counts and attendee lists are queryable separately from overall totals.
 
 6. Attendance export
+
 - Admin triggers attendance CSV export from attendance-enabled event context.
 - Export function assembles dedicated attendance dataset and streams CSV.
 - If no attendance rows, headers-only CSV is returned.
@@ -111,6 +118,7 @@ Term alignment note:
 ### Domain types and schema changes
 
 Create domain package:
+
 - src/lib/domain/attendance/types.ts
 - src/lib/domain/attendance/schemas.ts
 - src/lib/domain/attendance/metadata.ts
@@ -118,6 +126,7 @@ Create domain package:
 - src/lib/domain/attendance/index.ts
 
 Core contract shapes:
+
 - AttendanceSettings
   - eventId: string
   - attendanceEnabled: boolean
@@ -151,6 +160,7 @@ Core contract shapes:
   - recordedAt: string
 
 Validation rules (Zod):
+
 - Walk-in requires fullName and at least one of email or phone.
 - Slot selection must belong to event-configured timeslots when timeslotEnabled is true.
 - Assignment values are optional strings with bounded length.
@@ -160,6 +170,7 @@ Validation rules (Zod):
 ### API and Edge Function request-response shapes
 
 1. update-attendance-settings
+
 - Request:
   - eventId
   - attendanceEnabled
@@ -174,6 +185,7 @@ Validation rules (Zod):
   - message
 
 2. upsert-attendance-assignment
+
 - Request:
   - eventId
   - registrationId
@@ -186,6 +198,7 @@ Validation rules (Zod):
   - message
 
 3. check-in-attendee
+
 - Request:
   - eventId
   - attendeeLocator (memberId | registrationId)
@@ -198,6 +211,7 @@ Validation rules (Zod):
   - message
 
 4. create-walk-in-check-in
+
 - Request:
   - eventId
   - walkInIdentity
@@ -211,6 +225,7 @@ Validation rules (Zod):
   - message
 
 5. export-attendance-csv
+
 - Request:
   - eventId
 - Response:
@@ -220,6 +235,7 @@ Validation rules (Zod):
 ### Database and migration impacts
 
 Recommended data model (validated decision):
+
 - attendance_settings
   - event_id primary key references events
   - attendance_enabled boolean default false
@@ -260,6 +276,7 @@ Recommended data model (validated decision):
   - unique(check_in_id, slot)
 
 Migration strategy:
+
 - Add tables and constraints only (no destructive migration).
 - Backfill attendance_settings rows lazily on first read/write or via one-time insert for existing events.
 

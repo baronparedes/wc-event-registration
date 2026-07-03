@@ -4,16 +4,17 @@
 
 Each component should have exactly one UI concern. The most common split is:
 
-| Type | Responsibility |
-|---|---|
-| **Page** | Route-level composition, query coordination, loading/empty/error state |
-| **UI Component** | Rendering and interaction only — no data fetching |
-| **Action Dialog** | Owns local open/close state and trigger wiring; data-only prop API |
-| **Form Section** | Composes shared field primitives; no form state ownership (page owns the form) |
+| Type              | Responsibility                                                                 |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **Page**          | Route-level composition, query coordination, loading/empty/error state         |
+| **UI Component**  | Rendering and interaction only — no data fetching                              |
+| **Action Dialog** | Owns local open/close state and trigger wiring; data-only prop API             |
+| **Form Section**  | Composes shared field primitives; no form state ownership (page owns the form) |
 
 ## When to Extract
 
 Extract a component when:
+
 - A JSX block exceeds ~30 lines and has a clear, repeatable shape
 - The same structure appears in 2+ places
 - A block has its own distinct interaction or internal state
@@ -24,6 +25,7 @@ Extract a component when:
 Prefer composable components over prop-explosion or heavily branched components.
 
 **Prefer:**
+
 ```tsx
 <Card>
   <CardHeader>{title}</CardHeader>
@@ -32,6 +34,7 @@ Prefer composable components over prop-explosion or heavily branched components.
 ```
 
 **Avoid:**
+
 ```tsx
 <Card title={title} showHeader={true} headerVariant="large" bodyContent={children} />
 ```
@@ -40,13 +43,19 @@ Prefer composable components over prop-explosion or heavily branched components.
 
 ```tsx
 // Single-branch: use &&
-{isLoggedIn && <UserMenu />}
+{
+  isLoggedIn && <UserMenu />
+}
 
 // Two-branch: use ternary only when both branches render something
-{isLoading ? <Spinner /> : <Content />}
+{
+  isLoading ? <Spinner /> : <Content />
+}
 
 // Avoid: ternary where one side is null
-{isLoggedIn ? <UserMenu /> : null}  // ❌ use && instead
+{
+  isLoggedIn ? <UserMenu /> : null
+} // ❌ use && instead
 ```
 
 ## Props
