@@ -5,16 +5,11 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils'
 import { ADMIN_MEMBER_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMemberQuery'
 import { ADMIN_MEMBERS_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMembersQuery'
 
-const { mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
-  const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-    update: vi.fn(),
-    eq: vi.fn(),
-  }
-  updateBuilder.update.mockReturnValue(updateBuilder)
-
+const { mockUpdateMemberIdCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const updateMemberIdCaller = vi.fn()
   return {
-    mockUpdateBuilder: updateBuilder,
-    mockFrom: vi.fn(() => updateBuilder),
+    mockUpdateMemberIdCaller: updateMemberIdCaller,
+    mockCreateEdgeFunctionCaller: vi.fn(() => updateMemberIdCaller),
   }
 })
 
@@ -23,9 +18,7 @@ vi.mock('@/lib/infrastructure', async () => {
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure')
   return {
     ...actual,
-    supabase: {
-      from: mockFrom,
-    },
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
   }
 })
 
@@ -34,11 +27,16 @@ import { useUpdateMemberIdMutation } from '@/hooks/domain/members/mutations/useU
 describe('useUpdateMemberIdMutation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUpdateBuilder.eq.mockResolvedValue({ error: null })
   })
 
   it('trims and updates member id, then invalidates list/detail queries', async () => {
     const userId = faker.string.uuid()
+    mockUpdateMemberIdCaller.mockResolvedValueOnce({
+      success: true,
+      id: userId,
+      member_id: 'WC-002',
+    })
+
     const { result, queryClient } = renderHookWithClient(() => useUpdateMemberIdMutation())
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -46,14 +44,20 @@ describe('useUpdateMemberIdMutation', () => {
       await result.current.mutateAsync({ id: userId, newMemberId: '  WC-002  ' })
     })
 
-    expect(mockUpdateBuilder.update).toHaveBeenCalledWith({ member_id: 'WC-002' })
+    expect(mockUpdateMemberIdCaller).toHaveBeenCalledWith({
+      id: userId,
+      member_id: 'WC-002',
+    })
+
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBERS_QUERY_KEY() })
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBER_QUERY_KEY(userId) })
     })
   })
 
-  it('rejects empty member id input', async () => {
+  it('throws error from edge function when member id is empty', async () => {
+    mockUpdateMemberIdCaller.mockRejectedValueOnce(new Error('Member ID cannot be empty'))
+
     const { result } = renderHookWithClient(() => useUpdateMemberIdMutation())
 
     await expect(
@@ -62,7 +66,7 @@ describe('useUpdateMemberIdMutation', () => {
   })
 
   it('throws when updating member id fails', async () => {
-    mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') })
+    mockUpdateMemberIdCaller.mockRejectedValueOnce(new Error('update failed'))
 
     const { result } = renderHookWithClient(() => useUpdateMemberIdMutation())
 

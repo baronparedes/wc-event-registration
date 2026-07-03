@@ -1,25 +1,42 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/infrastructure'
+import { createEdgeFunctionCaller } from '@/lib/infrastructure'
 import { ADMIN_MEMBERS_QUERY_KEY } from '../queries/useAdminMembersQuery'
 import { ADMIN_MEMBER_QUERY_KEY } from '../queries/useAdminMemberQuery'
 
-/** Updates only the member_id field with extra confirmation. */
+interface UpdateMemberIdRequest {
+  id: string
+  member_id: string
+}
+
+interface UpdateMemberIdResponse {
+  success: true
+  id: string
+  member_id: string
+}
+
+const callUpdateMemberId = createEdgeFunctionCaller<UpdateMemberIdRequest, UpdateMemberIdResponse>(
+  'update-member-id',
+)
+
+/**
+ * Updates a member's ID with admin verification via Edge Function.
+ * Invalidates admin members and specific member query cache on success.
+ */
 export function useUpdateMemberIdMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, newMemberId }: { id: string; newMemberId: string }): Promise<void> => {
-      const trimmedId = newMemberId.trim()
-      if (!trimmedId) {
-        throw new Error('Member ID cannot be empty')
-      }
-
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ member_id: trimmedId })
-        .eq('id', id)
-
-      if (updateError) throw updateError
+    mutationFn: async ({
+      id,
+      newMemberId,
+    }: {
+      id: string
+      newMemberId: string
+    }): Promise<UpdateMemberIdResponse> => {
+      return callUpdateMemberId({
+        id,
+        member_id: newMemberId.trim(),
+      })
     },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBERS_QUERY_KEY() })
