@@ -122,6 +122,7 @@ export function AddMemberDialog() {
                   label="Nickname"
                   registration={register('nickname')}
                   error={errors.nickname?.message}
+                  required
                 />
                 <FormInputField
                   id="date-of-birth"

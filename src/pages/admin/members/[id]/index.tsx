@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -52,11 +52,19 @@ export function AdminMemberDetailPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isDirty },
   } = useForm<UpdateMemberInput>({
     resolver: zodResolver(updateMemberSchema),
     defaultValues: DEFAULT_VALUES,
   });
+
+  const firstName = useWatch({ control, name: 'first_name' });
+  const lastName = useWatch({ control, name: 'last_name' });
+  const derivedFullName = [firstName ?? '', lastName ?? '']
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' ');
 
   useEffect(() => {
     if (memberQuery.data) {
@@ -123,11 +131,11 @@ export function AdminMemberDetailPage() {
       />
 
       <AdminPageShell.Content>
-        <SectionCard
-          title="Member Profile"
-          subtitle="Member ID stays read-only because it is used for lookup and registration linking."
-        >
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <SectionCard
+            title="Member Profile"
+            subtitle="Member ID stays read-only because it is used for lookup and registration linking."
+          >
             <div className="grid gap-4 md:grid-cols-2">
               <FormInputField
                 id="member-id"
@@ -140,27 +148,33 @@ export function AdminMemberDetailPage() {
               <FormInputField
                 id="full-name"
                 label="Full Name"
-                registration={register('full_name')}
+                value={derivedFullName}
+                onChange={() => undefined}
                 error={errors.full_name?.message}
-                required
+                readOnly
+                disabled
+                helperText="Auto-generated from First Name + Last Name"
               />
               <FormInputField
                 id="first-name"
                 label="First Name"
                 registration={register('first_name')}
                 error={errors.first_name?.message}
+                required
               />
               <FormInputField
                 id="last-name"
                 label="Last Name"
                 registration={register('last_name')}
                 error={errors.last_name?.message}
+                required
               />
               <FormInputField
                 id="nickname"
                 label="Nickname"
                 registration={register('nickname')}
                 error={errors.nickname?.message}
+                required
               />
               <FormInputField
                 id="date-of-birth"
@@ -187,29 +201,31 @@ export function AdminMemberDetailPage() {
                 label="Role"
                 registration={register('role')}
                 error={errors.role?.message}
+                required
               />
               <FormInputField
                 id="category"
                 label="Category"
                 registration={register('category')}
                 error={errors.category?.message}
+                required
               />
             </div>
+          </SectionCard>
 
-            <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(ROUTE_PATHS.adminMembers)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!isDirty || updateMemberMutation.isPending}>
-                {updateMemberMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </form>
-        </SectionCard>
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(ROUTE_PATHS.adminMembers)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!isDirty || updateMemberMutation.isPending}>
+              {updateMemberMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
       </AdminPageShell.Content>
     </AdminPageShell>
   );

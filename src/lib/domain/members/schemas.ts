@@ -9,6 +9,17 @@ function optionalText(maxLength: number, message: string) {
   return z.string().trim().max(maxLength, message);
 }
 
+function requiredText(maxLength: number, requiredMessage: string, maxLengthMessage: string) {
+  return z.string().trim().min(1, requiredMessage).max(maxLength, maxLengthMessage);
+}
+
+function buildFullName(firstName: string, lastName: string) {
+  return [firstName, lastName]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' ');
+}
+
 function optionalEmail() {
   return z
     .string()
@@ -28,21 +39,39 @@ function optionalDate() {
     );
 }
 
-export const updateMemberSchema = z.object({
-  full_name: z
-    .string()
-    .trim()
-    .min(1, 'Full name is required')
-    .max(200, 'Full name must be 200 characters or less'),
-  first_name: optionalText(100, 'First name must be 100 characters or less'),
-  last_name: optionalText(100, 'Last name must be 100 characters or less'),
-  nickname: optionalText(100, 'Nickname must be 100 characters or less'),
-  email: optionalEmail(),
-  phone: optionalText(50, 'Phone must be 50 characters or less'),
-  date_of_birth: optionalDate(),
-  role: optionalText(100, 'Role must be 100 characters or less'),
-  category: optionalText(100, 'Category must be 100 characters or less'),
-});
+export const updateMemberSchema = z
+  .object({
+    full_name: z.string().trim().max(200, 'Full name must be 200 characters or less'),
+    first_name: requiredText(
+      100,
+      'First name is required',
+      'First name must be 100 characters or less',
+    ),
+    last_name: requiredText(
+      100,
+      'Last name is required',
+      'Last name must be 100 characters or less',
+    ),
+    nickname: requiredText(100, 'Nickname is required', 'Nickname must be 100 characters or less'),
+    email: optionalEmail(),
+    phone: optionalText(50, 'Phone must be 50 characters or less'),
+    date_of_birth: optionalDate(),
+    role: requiredText(100, 'Role is required', 'Role must be 100 characters or less'),
+    category: requiredText(100, 'Category is required', 'Category must be 100 characters or less'),
+  })
+  .superRefine((value, context) => {
+    if (buildFullName(value.first_name, value.last_name).length > 200) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['full_name'],
+        message: 'Full name must be 200 characters or less',
+      });
+    }
+  })
+  .transform((value) => ({
+    ...value,
+    full_name: buildFullName(value.first_name, value.last_name),
+  }));
 
 export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
 
@@ -62,7 +91,11 @@ export const createMemberSchema = z.object({
     .trim()
     .min(1, 'Last name is required')
     .max(100, 'Last name must be 100 characters or less'),
-  nickname: optionalText(100, 'Nickname must be 100 characters or less'),
+  nickname: z
+    .string()
+    .trim()
+    .min(1, 'Nickname is required')
+    .max(100, 'Nickname must be 100 characters or less'),
   email: optionalEmail(),
   phone: optionalText(50, 'Phone must be 50 characters or less'),
   date_of_birth: optionalDate(),

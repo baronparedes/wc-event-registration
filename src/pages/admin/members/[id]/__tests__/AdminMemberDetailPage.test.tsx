@@ -71,7 +71,7 @@ describe('AdminMemberDetailPage', () => {
         full_name: 'Jane Doe',
         first_name: 'Jane',
         last_name: 'Doe',
-        nickname: '',
+        nickname: 'Janie',
         email: 'jane@example.com',
         phone: '',
         date_of_birth: '',
@@ -129,15 +129,21 @@ describe('AdminMemberDetailPage', () => {
   it('enables save when dirty and submits updated member data', async () => {
     renderWithRouter();
 
+    expect(screen.getByLabelText('Full Name')).toHaveValue('Jane Doe');
+
     const saveButton = await screen.findByRole('button', { name: 'Save Changes' });
     expect(saveButton).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('Full Name *'), {
-      target: { value: 'Jane Updated' },
+    fireEvent.change(screen.getByLabelText('First Name *'), {
+      target: { value: 'Janet' },
+    });
+    fireEvent.change(screen.getByLabelText('Last Name *'), {
+      target: { value: 'Updated' },
     });
 
     await waitFor(() => {
       expect(saveButton).toBeEnabled();
+      expect(screen.getByLabelText('Full Name')).toHaveValue('Janet Updated');
     });
 
     fireEvent.click(saveButton);
@@ -145,10 +151,10 @@ describe('AdminMemberDetailPage', () => {
     await waitFor(() => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
         id: 'user-1',
-        full_name: 'Jane Updated',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: '',
+        full_name: 'Janet Updated',
+        first_name: 'Janet',
+        last_name: 'Updated',
+        nickname: 'Janie',
         email: 'jane@example.com',
         phone: '',
         date_of_birth: '',
@@ -166,8 +172,8 @@ describe('AdminMemberDetailPage', () => {
 
     renderWithRouter();
 
-    fireEvent.change(screen.getByLabelText('Full Name *'), {
-      target: { value: 'Jane Updated' },
+    fireEvent.change(screen.getByLabelText('First Name *'), {
+      target: { value: 'Janet' },
     });
 
     fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }));
@@ -182,8 +188,8 @@ describe('AdminMemberDetailPage', () => {
 
     renderWithRouter();
 
-    fireEvent.change(screen.getByLabelText('Full Name *'), {
-      target: { value: 'Jane Updated' },
+    fireEvent.change(screen.getByLabelText('First Name *'), {
+      target: { value: 'Janet' },
     });
 
     fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }));
@@ -225,8 +231,8 @@ describe('AdminMemberDetailPage', () => {
 
     renderWithRouter();
 
-    fireEvent.change(screen.getByLabelText('Full Name *'), {
-      target: { value: 'Jane Dirty' },
+    fireEvent.change(screen.getByLabelText('First Name *'), {
+      target: { value: 'Janet' },
     });
 
     await waitFor(() => {
@@ -242,7 +248,7 @@ describe('AdminMemberDetailPage', () => {
         full_name: 'Jane Doe',
         first_name: null,
         last_name: null,
-        nickname: null,
+        nickname: 'Janie',
         email: null,
         phone: null,
         date_of_birth: null,
@@ -256,9 +262,9 @@ describe('AdminMemberDetailPage', () => {
     renderWithRouter();
 
     await waitFor(() => {
-      expect(screen.getByLabelText('First Name')).toHaveValue('');
-      expect(screen.getByLabelText('Last Name')).toHaveValue('');
-      expect(screen.getByLabelText('Nickname')).toHaveValue('');
+      expect(screen.getByLabelText('First Name *')).toHaveValue('');
+      expect(screen.getByLabelText('Last Name *')).toHaveValue('');
+      expect(screen.getByLabelText('Nickname *')).toHaveValue('Janie');
       expect(screen.getByLabelText('Email')).toHaveValue('');
       expect(screen.getByLabelText('Phone')).toHaveValue('');
       expect(screen.getByLabelText('Date of Birth')).toHaveValue('');
