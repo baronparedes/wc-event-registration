@@ -1,0 +1,277 @@
+# MVP2 Session Handoff
+
+Last updated: 2026-07-03
+Owner baseline: 1 dev-agent, sequential execution
+Scope: EPIC-8 Event-Day Attendance (8.1 through 8.6)
+
+## Execution Baseline
+
+- This handoff converts technical design into implementation sessions.
+- Each session is sized for approximately one day.
+- Sessions are ordered by hard dependencies.
+- Do not change MVP scope during execution unless explicitly approved.
+
+## Open Decisions To Resolve Before Session 1
+
+1. DEC-004: Read path for check-in search
+
+- Option A: direct Supabase reads with strict admin RLS
+- Option B: edge-mediated read endpoints
+- Recommended default: Option B if RLS surface is uncertain, otherwise Option A for lower latency
+
+2. ASM-003: Assignment field max lengths
+
+- Confirm max length for table, area, team color, area leader
+- Recommended temporary defaults if not decided before coding: 80, 80, 40, 120
+
+## Session Plan
+
+## Session 1 - EPIC-8-S1 Attendance Foundation
+
+Goal:
+
+- Create attendance domain contracts, schema, migration, and security baseline.
+
+Checklist:
+
+- [ ] Add attendance domain module under src/lib/domain/attendance
+- [ ] Add Zod schemas for settings, assignment payload, walk-in payload, slot payload
+- [ ] Add additive migration for attendance tables and constraints
+- [ ] Add deny-by-default RLS and explicit service_role grants
+- [ ] Register planned attendance functions in supabase/config.toml
+- [ ] Ensure no behavior change to existing registration flows
+
+Expected file touch zones:
+
+- src/lib/domain/attendance/
+- supabase/migrations/
+- supabase/config.toml
+
+Validation gate:
+
+- [ ] npm run build passes
+- [ ] npm run format:check passes
+- [ ] supabase test db passes
+
+Exit criteria:
+
+- Storage model and contracts compile and are ready for UI/mutation slices.
+
+## Session 2 - EPIC-8-S2 Event Attendance Settings
+
+Goal:
+
+- Deliver attendance settings with dependency enforcement.
+
+Checklist:
+
+- [ ] Add settings query hook and mutation hook
+- [ ] Add admin event settings UI section for Attendance Tracking, Walk-In Mode, Timeslot Attendance
+- [ ] Implement update-attendance-settings Edge Function
+- [ ] Enforce dependency rule: walk-in and timeslot cannot be enabled if attendance is disabled
+- [ ] Add confirmation and persistence feedback
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/
+- src/hooks/domain/attendance/queries/
+- src/hooks/domain/attendance/mutations/
+- supabase/functions/update-attendance-settings/
+
+Validation gate:
+
+- [ ] Feature 8.1 scenarios pass in local QA
+- [ ] Reload preserves settings
+
+Exit criteria:
+
+- Attendance settings are persisted and enforce dependency rules.
+
+## Session 3 - EPIC-8-S3 Pre-Event Assignments
+
+Goal:
+
+- Deliver assignment list and assignment upsert for registered attendees.
+
+Checklist:
+
+- [ ] Add assignment list query and missing-assignment indicator
+- [ ] Add assignment form and save action
+- [ ] Implement upsert-attendance-assignment Edge Function
+- [ ] Block assignment edits when attendance is disabled
+- [ ] Keep assignment data separate from registration answers
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/attendance/assignments/
+- src/hooks/domain/attendance/queries/
+- src/hooks/domain/attendance/mutations/
+- supabase/functions/upsert-attendance-assignment/
+
+Validation gate:
+
+- [ ] Feature 8.2 scenarios pass in local QA
+- [ ] Assignment updates visible in downstream check-in context read
+
+Exit criteria:
+
+- Assignment management is operational and isolated from registration answer storage.
+
+## Session 4 - EPIC-8-S4 Registered Check-In
+
+Goal:
+
+- Deliver check-in by Member ID, name, and email with First Check-In Rule.
+
+Checklist:
+
+- [ ] Add attendee search by Member ID token, name fragment, and email
+- [ ] Add disambiguation result list for multi-match names
+- [ ] Add check-in action flow and success/duplicate states
+- [ ] Implement check-in-attendee Edge Function with idempotent first check-in behavior
+- [ ] Ensure official first check-in timestamp is never overwritten
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/attendance/check-in/
+- src/hooks/domain/attendance/queries/
+- src/hooks/domain/attendance/mutations/
+- supabase/functions/check-in-attendee/
+
+Validation gate:
+
+- [ ] Feature 8.3 scenarios pass in local QA
+- [ ] Repeat check-in keeps original timestamp
+
+Exit criteria:
+
+- Registered attendee check-in is stable and race-safe.
+
+## Session 5 - EPIC-8-S5 Walk-In Check-In
+
+Goal:
+
+- Deliver walk-in create-and-check-in flow behind Walk-In Mode toggle.
+
+Checklist:
+
+- [ ] Add walk-in form in check-in flow for not-found cases
+- [ ] Validate full name and at least one contact method
+- [ ] Implement create-walk-in-check-in Edge Function
+- [ ] Mark walk-in attendees clearly in UI response states
+- [ ] Return to ready-for-next-attendee state immediately after completion
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/attendance/check-in/
+- src/lib/domain/attendance/schemas.ts
+- src/hooks/domain/attendance/mutations/
+- supabase/functions/create-walk-in-check-in/
+
+Validation gate:
+
+- [ ] Feature 8.4 scenarios pass in local QA
+- [ ] Walk-in blocked when mode disabled
+
+Exit criteria:
+
+- Walk-in policy is enforced and flow remains operationally fast.
+
+## Session 6 - EPIC-8-S6 Timeslot Attendance
+
+Goal:
+
+- Add additive slot tracking without changing overall attendance semantics.
+
+Checklist:
+
+- [ ] Add timeslot configuration persistence support from settings
+- [ ] Add slot selection in check-in path when timeslot mode is enabled
+- [ ] Validate slot is in event-configured slot set
+- [ ] Record slot attendance separately from official first check-in
+- [ ] Add slot-level summaries separate from overall totals
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/attendance/check-in/
+- src/hooks/domain/attendance/queries/
+- src/hooks/domain/attendance/mutations/
+- supabase/functions/check-in-attendee/
+
+Validation gate:
+
+- [ ] Feature 8.5 scenarios pass in local QA
+- [ ] Repeated slot actions do not change first-check-in timestamp
+
+Exit criteria:
+
+- Slot mode works and remains additive.
+
+## Session 7 - EPIC-8-S7 Attendance CSV Export
+
+Goal:
+
+- Deliver dedicated attendance export independent from registration export.
+
+Checklist:
+
+- [ ] Add export action entry point for attendance-enabled events
+- [ ] Implement export-attendance-csv Edge Function
+- [ ] Include required columns: identity, status, official check-in time, assignment details, walk-in marker
+- [ ] Return headers-only CSV for no-record events
+- [ ] Ensure registration export behavior remains unchanged
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/attendance/
+- src/hooks/domain/attendance/mutations/
+- supabase/functions/export-attendance-csv/
+
+Validation gate:
+
+- [ ] Feature 8.6 scenarios pass in local QA
+- [ ] Golden-file CSV checks for populated and empty exports
+
+Exit criteria:
+
+- Attendance export is stable, scoped, and isolated from registration export.
+
+## Cross-Session Quality Gates
+
+Run at end of every session:
+
+- [ ] npm run build
+- [ ] npm run format:check
+- [ ] Relevant unit tests for changed hooks, schemas, and transforms
+- [ ] Relevant Edge Function tests or local invocation checks
+
+Run at end of Session 7:
+
+- [ ] End-to-end scenario pass for 8.1 to 8.6
+- [ ] Regression check: registration export unchanged
+- [ ] Regression check: ID-first registration flow unchanged
+- [ ] Regression check: no new public direct write paths
+
+## Risk Watchlist During Implementation
+
+1. Scope creep into non-admin staffing model
+
+- Mitigation: keep admin-only boundary explicit in PR scope
+
+2. Race conditions on repeated scan/search actions
+
+- Mitigation: DB uniqueness plus idempotent function logic
+
+3. Coupling attendance data with registration answers
+
+- Mitigation: enforce dedicated attendance tables and contracts
+
+4. Export regressions impacting registration CSV
+
+- Mitigation: keep separate function and formatter path
+
+## Start-Next Session Prompt
+
+Use this prompt for the next dev-agent execution session:
+
+Implement Session 1 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S1 only, complete migration and domain contracts end-to-end, and run build plus format plus supabase policy tests before handoff.
