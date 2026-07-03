@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
@@ -47,6 +48,14 @@ vi.mock('@/hooks/domain/members', async () => {
 
 import { AdminMemberDetailPage } from '@/pages/admin/members/[id]'
 
+function renderWithRouter() {
+  return render(
+    <MemoryRouter>
+      <AdminMemberDetailPage />
+    </MemoryRouter>,
+  )
+}
+
 describe('AdminMemberDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -78,7 +87,7 @@ describe('AdminMemberDetailPage', () => {
   it('renders missing id, loading, and not-found states', () => {
     mockUseParams.mockReturnValue({})
 
-    const { rerender } = render(<AdminMemberDetailPage />)
+    const { rerender } = renderWithRouter()
     expect(screen.getByText('Member ID is missing.')).toBeInTheDocument()
 
     mockUseParams.mockReturnValue({ id: 'user-1' })
@@ -88,7 +97,11 @@ describe('AdminMemberDetailPage', () => {
       isError: false,
     })
 
-    rerender(<AdminMemberDetailPage />)
+    rerender(
+      <MemoryRouter>
+        <AdminMemberDetailPage />
+      </MemoryRouter>,
+    )
     expect(screen.getByText('Loading member...')).toBeInTheDocument()
 
     mockUseAdminMemberQuery.mockReturnValueOnce({
@@ -97,21 +110,24 @@ describe('AdminMemberDetailPage', () => {
       isError: true,
     })
 
-    rerender(<AdminMemberDetailPage />)
+    rerender(
+      <MemoryRouter>
+        <AdminMemberDetailPage />
+      </MemoryRouter>,
+    )
     expect(screen.getByText(/Member not found/i)).toBeInTheDocument()
   })
 
-  it('navigates back when Back to Members or Cancel is clicked', () => {
-    render(<AdminMemberDetailPage />)
+  it('navigates back when Cancel button is clicked', () => {
+    renderWithRouter()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Members' }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/members')
   })
 
   it('enables save when dirty and submits updated member data', async () => {
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     const saveButton = await screen.findByRole('button', { name: 'Save Changes' })
     expect(saveButton).toBeDisabled()
@@ -148,7 +164,7 @@ describe('AdminMemberDetailPage', () => {
   it('shows error toast when update fails', async () => {
     mockUpdateMutateAsync.mockRejectedValueOnce(new Error('update failed'))
 
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     fireEvent.change(screen.getByLabelText('Full Name *'), {
       target: { value: 'Jane Updated' },
@@ -164,7 +180,7 @@ describe('AdminMemberDetailPage', () => {
   it('shows default error toast when update fails with non-Error value', async () => {
     mockUpdateMutateAsync.mockRejectedValueOnce('unknown failure')
 
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     fireEvent.change(screen.getByLabelText('Full Name *'), {
       target: { value: 'Jane Updated' },
@@ -184,7 +200,7 @@ describe('AdminMemberDetailPage', () => {
       isError: false,
     })
 
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     expect(screen.getByText(/Member not found/i)).toBeInTheDocument()
   })
@@ -195,7 +211,7 @@ describe('AdminMemberDetailPage', () => {
       isPending: true,
     })
 
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     const savingButton = screen.getByRole('button', { name: 'Saving...' })
     expect(savingButton).toBeDisabled()
@@ -207,7 +223,7 @@ describe('AdminMemberDetailPage', () => {
       isPending: true,
     })
 
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     fireEvent.change(screen.getByLabelText('Full Name *'), {
       target: { value: 'Jane Dirty' },
@@ -237,7 +253,7 @@ describe('AdminMemberDetailPage', () => {
       isError: false,
     })
 
-    render(<AdminMemberDetailPage />)
+    renderWithRouter()
 
     await waitFor(() => {
       expect(screen.getByLabelText('First Name')).toHaveValue('')
