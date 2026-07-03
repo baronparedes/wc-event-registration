@@ -130,6 +130,36 @@ verify_jwt = false
 [functions.reactivate-public-registration]
 verify_jwt = true
 
+[functions.update-attendance-settings]
+verify_jwt = true
+
+[functions.create-attendance-field]
+verify_jwt = true
+
+[functions.update-attendance-field]
+verify_jwt = true
+
+[functions.delete-attendance-field]
+verify_jwt = true
+
+[functions.reorder-attendance-fields]
+verify_jwt = true
+
+[functions.upsert-attendance-answers]
+verify_jwt = true
+
+[functions.search-attendees]
+verify_jwt = true
+
+[functions.check-in-attendee]
+verify_jwt = true
+
+[functions.create-walk-in-check-in]
+verify_jwt = true
+
+[functions.export-attendance-csv]
+verify_jwt = true
+
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
 [inbucket]
