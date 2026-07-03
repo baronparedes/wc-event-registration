@@ -4,6 +4,15 @@ Last updated: 2026-07-03
 Owner baseline: 1 dev-agent, sequential execution
 Scope: EPIC-8 Event-Day Attendance (8.1 through 8.6)
 
+## Pause Snapshot
+
+- Current state: Paused after completing Session 1 (EPIC-8-S1).
+- Next session to start: Session 2 (EPIC-8-S2 Event Attendance Settings).
+- Latest validation at pause:
+  - `npm run ci:gate` passed.
+  - `npm run supabase:db:reset` passed.
+- Naming decision now enforced in implementation: use "attendance fields" and "attendance answers" (no "assignment" naming in attendance domain artifacts).
+
 ## Execution Baseline
 
 - This handoff converts technical design into implementation sessions.
@@ -32,14 +41,14 @@ Goal:
 
 Checklist:
 
-- [ ] Add attendance domain module under src/lib/domain/attendance
-- [ ] Add attendance-fields domain module under src/lib/domain/attendance-fields
-- [ ] Add Zod schemas for settings (dependency enforcement), walk-in payload (superRefine contact check), slot payload
-- [ ] Add Zod schemas for assignment field CRUD and buildDynamicAssignmentResponseSchema factory
-- [ ] Add additive migration for attendance tables and constraints
-- [ ] Add deny-by-default RLS and explicit service_role grants
-- [ ] Register planned attendance functions in supabase/config.toml
-- [ ] Ensure no behavior change to existing registration flows
+- [x] Add attendance domain module under src/lib/domain/attendance
+- [x] Add attendance-fields domain module under src/lib/domain/attendance-fields
+- [x] Add Zod schemas for settings (dependency enforcement), walk-in payload (superRefine contact check), slot payload
+- [x] Add Zod schemas for attendance field CRUD and dynamic attendance response schema factory
+- [x] Add additive migration for attendance tables and constraints
+- [x] Add deny-by-default RLS and explicit service_role grants
+- [x] Register planned attendance functions in supabase/config.toml
+- [x] Ensure no behavior change to existing registration flows
 
 Expected file touch zones:
 
@@ -50,13 +59,13 @@ Expected file touch zones:
 
 Validation gate:
 
-- [ ] npm run build passes
-- [ ] npm run format:check passes
+- [x] npm run build passes
+- [x] npm run format:check passes
 - [ ] supabase test db passes
 
 Exit criteria:
 
-- Storage model and contracts compile and are ready for UI/mutation slices.
+- [x] Storage model and contracts compile and are ready for UI/mutation slices.
 
 ## Session 2 - EPIC-8-S2 Event Attendance Settings
 
@@ -102,21 +111,21 @@ Checklist:
 - [ ] Add data entry list (per-registrant fill-in) under same page section
 - [ ] Implement create-attendance-field, update-attendance-field, delete-attendance-field, reorder-attendance-fields Edge Functions
 - [ ] Implement upsert-attendance-answers Edge Function
-- [ ] Block assignment field edits when attendance is disabled
-- [ ] Keep assignment data separate from registration answers
+- [ ] Block attendance field edits when attendance is disabled
+- [ ] Keep attendance data separate from registration answers
 
 Expected file touch zones:
 
-- src/pages/admin/events/[id]/attendance/assignments/
+- src/pages/admin/events/[id]/attendance/fields/
 - src/hooks/domain/attendance-fields/queries/
 - src/hooks/domain/attendance-fields/mutations/
-- src/hooks/domain/attendance/queries/ (assignment answers query)
+- src/hooks/domain/attendance/queries/ (attendance answers query)
 - src/hooks/domain/attendance/mutations/ (upsert answers mutation)
-- supabase/functions/create-assignment-field/
-- supabase/functions/update-assignment-field/
-- supabase/functions/delete-assignment-field/
-- supabase/functions/reorder-assignment-fields/
-- supabase/functions/upsert-assignment-answers/
+- supabase/functions/create-attendance-field/
+- supabase/functions/update-attendance-field/
+- supabase/functions/delete-attendance-field/
+- supabase/functions/reorder-attendance-fields/
+- supabase/functions/upsert-attendance-answers/
 
 Validation gate:
 
@@ -229,7 +238,7 @@ Checklist:
 
 - [ ] Add export action entry point for attendance-enabled events
 - [ ] Implement export-attendance-csv Edge Function
-- [ ] Include required columns: identity, status, official check-in time, assignment details, walk-in marker
+- [ ] Include required columns: identity, status, official check-in time, attendance field details, walk-in marker
 - [ ] Return headers-only CSV for no-record events
 - [ ] Ensure registration export behavior remains unchanged
 
@@ -286,4 +295,4 @@ Run at end of Session 7:
 
 Use this prompt for the next dev-agent execution session:
 
-Implement Session 1 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S1 only, complete migration and domain contracts end-to-end, and run build plus format plus supabase policy tests before handoff.
+Implement Session 2 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S2 only, deliver attendance settings end-to-end (query, mutation, UI section, and update-attendance-settings Edge Function), and run build plus format plus local QA checks for feature 8.1 before handoff.
