@@ -23,6 +23,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+.venv
 
 members_info.csv
 supabase/seeds/*.local.sql
