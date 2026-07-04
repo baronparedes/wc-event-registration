@@ -35,3 +35,21 @@ export type TimeslotAttendanceRecord = {
   slot: string;
   recorded_at: string;
 };
+
+export type AttendanceAnswer = {
+  id: string;
+  registration_id: string;
+  attendance_field_id: string;
+  answer_text: string | null;
+  answer_number: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RegistrantAttendanceRow = {
+  registration_id: string;
+  member_id: string;
+  full_name: string;
+  email: string | null;
+  answers: AttendanceAnswer[];
+};

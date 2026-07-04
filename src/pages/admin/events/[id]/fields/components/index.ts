@@ -14,4 +14,3 @@ export { OptionsSection } from './OptionsSection';
 export { ValidationRulesSection } from './ValidationRulesSection';
 export { PanelFooter } from './PanelFooter';
 export { RuleInput } from './RuleInput';
-export { CheckboxField } from './CheckboxField';

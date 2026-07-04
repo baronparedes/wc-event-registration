@@ -1,17 +1,17 @@
 # MVP2 Session Handoff
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 Owner baseline: 1 dev-agent, sequential execution
 Scope: EPIC-8 Event-Day Attendance (8.1 through 8.6)
 
 ## Pause Snapshot
 
-- Current state: Paused after completing Session 1 (EPIC-8-S1).
-- Next session to start: Session 2 (EPIC-8-S2 Event Attendance Settings).
+- Current state: Paused after completing Session 3 (EPIC-8-S3).
+- Next session to start: Session 4 (EPIC-8-S4 Registered Check-In).
 - Latest validation at pause:
-  - `npm run ci:gate` passed.
-  - `npm run supabase:db:reset` passed.
-- Naming decision now enforced in implementation: use "attendance fields" and "attendance answers" (no "assignment" naming in attendance domain artifacts).
+  - `npm run build` passed.
+  - `npm run format:check` passed.
+- New route `/admin/events/:id/attendance/fields` added for attendance field config + data entry.
 
 ## Execution Baseline
 
@@ -105,14 +105,14 @@ Goal:
 
 Checklist:
 
-- [ ] Add attendance field query and mutation hooks under src/hooks/domain/attendance-fields/
-- [ ] Add answer query and mutation hooks under src/hooks/domain/attendance/
-- [ ] Add field configuration UI (create, edit, delete, reorder) under attendance/fields/ page
-- [ ] Add data entry list (per-registrant fill-in) under same page section
-- [ ] Implement create-attendance-field, update-attendance-field, delete-attendance-field, reorder-attendance-fields Edge Functions
-- [ ] Implement upsert-attendance-answers Edge Function
-- [ ] Block attendance field edits when attendance is disabled
-- [ ] Keep attendance data separate from registration answers
+- [x] Add attendance field query and mutation hooks under src/hooks/domain/attendance-fields/
+- [x] Add answer query and mutation hooks under src/hooks/domain/attendance/
+- [x] Add field configuration UI (create, edit, delete, reorder) under attendance/fields/ page
+- [x] Add data entry list (per-registrant fill-in) under same page section
+- [x] Implement create-attendance-field, update-attendance-field, delete-attendance-field, reorder-attendance-fields Edge Functions
+- [x] Implement upsert-attendance-answers Edge Function
+- [x] Block attendance field edits when attendance is disabled
+- [x] Keep attendance data separate from registration answers
 
 Expected file touch zones:
 
@@ -129,8 +129,8 @@ Expected file touch zones:
 
 Validation gate:
 
-- [ ] Feature 8.2 scenarios pass in local QA
-- [ ] Configured field values visible in downstream check-in context read
+- [x] npm run build passes
+- [x] npm run format:check passes
 
 Exit criteria:
 

@@ -21,6 +21,8 @@ export {
   attendanceFieldTypeHasOptions,
   attendanceFieldTypeHasTextValidation,
   attendanceFieldTypeHasNumberValidation,
+  attendanceFieldTypeHasMultiSelectValidation,
+  attendanceFieldTypeHasDateValidation,
 } from './metadata';
 
 export {

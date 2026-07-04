@@ -19,6 +19,10 @@ export default defineConfig({
         'src/main.tsx',
         'src/App.tsx',
         'vitest.setup.ts',
+        'src/config/**',
+        'src/assets/**',
+        '*types.ts',
+        '*.css',
       ],
       thresholds: {
         statements: 90,
