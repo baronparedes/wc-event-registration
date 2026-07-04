@@ -1,6 +1,7 @@
 export * from './auth';
 export * from './events';
 export * from './attendance';
+export * from './attendance-fields';
 export * from './event-fields';
 export * from './members';
 export * from './registrations';

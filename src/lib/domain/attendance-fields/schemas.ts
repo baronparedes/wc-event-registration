@@ -66,6 +66,7 @@ export const updateAttendanceFieldSchema = z.object({
     .optional(),
   field_type: z.enum(ATTENDANCE_FIELD_TYPES).optional(),
   is_required: z.boolean().optional(),
+  is_active: z.boolean().optional(),
   display_order: z.number().int().min(0).optional(),
   options: z.array(attendanceFieldOptionSchema).optional(),
   validation_rules: attendanceValidationRulesSchema.optional(),

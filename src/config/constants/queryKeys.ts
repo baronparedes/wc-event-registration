@@ -4,4 +4,8 @@ export const QUERY_KEYS = {
   publicEventFields: (eventId: string | undefined) => ['public-event-fields', eventId] as const,
   adminAttendanceSettings: (eventId: string | undefined) =>
     ['admin-attendance-settings', eventId] as const,
+  adminAttendanceFields: (eventId: string | undefined) =>
+    ['admin-attendance-fields', eventId] as const,
+  adminAttendanceAnswers: (eventId: string | undefined) =>
+    ['admin-attendance-answers', eventId] as const,
 } as const;

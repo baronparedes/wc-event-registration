@@ -1,4 +1,5 @@
 export { Button } from './Button';
+export { CheckboxField } from './CheckboxField';
 export { FormInputField } from './FormInputField';
 export { FormSelectField } from './FormSelectField';
 export { FormTextareaField } from './FormTextareaField';
@@ -21,3 +22,4 @@ export { Badge } from './Badge';
 export { EmptyState } from './EmptyState';
 export { Grid } from './Grid';
 export { Col } from './Grid';
+export { Switch } from './Switch';

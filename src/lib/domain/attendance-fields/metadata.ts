@@ -37,3 +37,13 @@ export function attendanceFieldTypeHasTextValidation(fieldType: AttendanceFieldT
 export function attendanceFieldTypeHasNumberValidation(fieldType: AttendanceFieldType): boolean {
   return fieldType === 'number';
 }
+
+export function attendanceFieldTypeHasMultiSelectValidation(
+  fieldType: AttendanceFieldType,
+): boolean {
+  return fieldType === 'multi_select' || fieldType === 'multi_select_toggle';
+}
+
+export function attendanceFieldTypeHasDateValidation(fieldType: AttendanceFieldType): boolean {
+  return fieldType === 'date' || fieldType === 'datetime';
+}

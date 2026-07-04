@@ -109,4 +109,115 @@ describe('useAttendanceSettingsQuery', () => {
     expect(result.current.isSuccess).toBe(false);
     expect(mockFrom).not.toHaveBeenCalled();
   });
+
+  it('includes all attendance settings fields in the response', async () => {
+    const settingsData = {
+      event_id: 'event-1',
+      attendance_enabled: true,
+      walk_in_mode_enabled: true,
+      timeslot_enabled: true,
+      timeslots: ['2026-07-10T09:00+08:00', '2026-07-10T14:00+08:00'],
+      updated_at: '2026-07-02T12:00:00.000Z',
+    };
+
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: settingsData,
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useAttendanceSettingsQuery('event-1'));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(settingsData);
+  });
+
+  it('uses correct query key for cache management', async () => {
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        event_id: 'event-1',
+        attendance_enabled: false,
+        walk_in_mode_enabled: false,
+        timeslot_enabled: false,
+        timeslots: [],
+        updated_at: '2026-07-01T00:00:00Z',
+      },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useAttendanceSettingsQuery('event-1'));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockQueryBuilder.eq).toHaveBeenCalledWith('event_id', 'event-1');
+  });
+
+  it('selects all required columns', async () => {
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    renderHookWithClient(() => useAttendanceSettingsQuery('event-1'));
+
+    await waitFor(() => {
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith(
+        'event_id, attendance_enabled, walk_in_mode_enabled, timeslot_enabled, timeslots, updated_at',
+      );
+    });
+  });
+
+  it('handles empty timeslots array correctly', async () => {
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        event_id: 'event-1',
+        attendance_enabled: true,
+        walk_in_mode_enabled: false,
+        timeslot_enabled: false,
+        timeslots: [],
+        updated_at: '2026-07-01T00:00:00Z',
+      },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useAttendanceSettingsQuery('event-1'));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.timeslots).toEqual([]);
+  });
+
+  it('handles multiple timeslots correctly', async () => {
+    const timeslots = [
+      '2026-07-10T09:00+08:00',
+      '2026-07-10T13:00+08:00',
+      '2026-07-10T17:00+08:00',
+    ];
+
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        event_id: 'event-1',
+        attendance_enabled: true,
+        walk_in_mode_enabled: false,
+        timeslot_enabled: true,
+        timeslots,
+        updated_at: '2026-07-01T00:00:00Z',
+      },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useAttendanceSettingsQuery('event-1'));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.timeslots).toEqual(timeslots);
+  });
 });

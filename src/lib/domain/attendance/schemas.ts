@@ -149,3 +149,19 @@ export function buildTimeslotSelectionSchema(configuredSlots: string[]) {
     path: ['slot'],
   });
 }
+
+const attendanceAnswerEntrySchema = z.object({
+  attendance_field_id: z.string().uuid('Invalid attendance field ID'),
+  answer_text: z.string().nullable().optional(),
+  answer_number: z.number().nullable().optional(),
+});
+
+export type AttendanceAnswerEntry = z.infer<typeof attendanceAnswerEntrySchema>;
+
+export const upsertAttendanceAnswersSchema = z.object({
+  event_id: z.string().uuid('Invalid event ID'),
+  registration_id: z.string().uuid('Invalid registration ID'),
+  answers: z.array(attendanceAnswerEntrySchema),
+});
+
+export type UpsertAttendanceAnswersInput = z.infer<typeof upsertAttendanceAnswersSchema>;

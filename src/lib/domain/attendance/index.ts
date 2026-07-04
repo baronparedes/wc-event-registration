@@ -6,6 +6,8 @@ export type {
   WalkInPayload,
   AttendanceSlotPayload,
   TimeslotAttendanceRecord,
+  AttendanceAnswer,
+  RegistrantAttendanceRow,
 } from './types';
 
 export type {
@@ -13,6 +15,8 @@ export type {
   UpdateAttendanceSettingsInput,
   WalkInPayloadInput,
   AttendanceSlotPayloadInput,
+  AttendanceAnswerEntry,
+  UpsertAttendanceAnswersInput,
 } from './schemas';
 
 export { ATTENDEE_KINDS, CHECK_IN_STATUSES, CHECK_IN_STATUS_LABELS } from './metadata';
@@ -22,4 +26,5 @@ export {
   walkInPayloadSchema,
   attendanceSlotPayloadSchema,
   buildTimeslotSelectionSchema,
+  upsertAttendanceAnswersSchema,
 } from './schemas';

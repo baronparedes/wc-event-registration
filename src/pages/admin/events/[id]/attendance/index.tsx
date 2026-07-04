@@ -9,7 +9,12 @@ import { z } from 'zod';
 import { AdminPageShell } from '@/components/layout';
 import { Button, SectionCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
-import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
+import {
+  ROUTE_PATHS,
+  toAdminEventAttendanceData,
+  toAdminEventAttendanceFields,
+  toAdminEventDetail,
+} from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useUpdateAttendanceSettingsMutation,
@@ -240,7 +245,15 @@ export function AdminEventAttendancePage() {
           { label: activeEvent.title, to: toAdminEventDetail(resolvedEventId) },
           { label: 'Attendance' },
         ]}
-        navLinks={<ActionLink to={toAdminEventDetail(resolvedEventId)}>Back to Event</ActionLink>}
+        navLinks={
+          <>
+            <ActionLink to={toAdminEventAttendanceFields(resolvedEventId)}>Fields</ActionLink>
+            <ActionLink to={toAdminEventAttendanceData(resolvedEventId)}>
+              Attendee Details
+            </ActionLink>
+            <ActionLink to={toAdminEventDetail(resolvedEventId)}>Back to Event</ActionLink>
+          </>
+        }
         title="Attendance Settings"
         description="Configure event-day attendance tracking, walk-ins, and timeslot attendance behavior."
       />

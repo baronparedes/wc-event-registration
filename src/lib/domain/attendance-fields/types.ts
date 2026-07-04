@@ -39,6 +39,7 @@ export type AttendanceField = {
   label: string;
   field_type: AttendanceFieldType;
   is_required: boolean;
+  is_active: boolean;
   display_order: number;
   options: AttendanceFieldOption[];
   validation_rules: AttendanceFieldValidationRules;

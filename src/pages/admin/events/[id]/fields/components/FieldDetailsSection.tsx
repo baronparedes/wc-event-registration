@@ -1,10 +1,7 @@
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
-import { FormInputField } from '@/components/ui/FormInputField';
-import { SectionCard } from '@/components/ui/SectionCard';
+import { CheckboxField, FormInputField, SectionCard } from '@/components/ui';
 import type { AdminEventField } from '@/lib/domain/event-fields';
-
-import { CheckboxField } from './CheckboxField';
 
 type FieldDetailsSectionProps = {
   isEditing: boolean;
