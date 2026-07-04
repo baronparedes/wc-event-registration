@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Users } from 'lucide-react';
+import { ExternalLink, Users } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
@@ -37,6 +37,13 @@ function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField
     const answer = answers.find((a) => a.attendance_field_id === f.id);
     return answer && (answer.answer_text !== null || answer.answer_number !== null);
   }).length;
+}
+
+function getRegistrationDetailsUrl(eventId: string, registrant: RegistrantAttendanceRow): string {
+  if (registrant.attendee_kind === 'public') {
+    return `/admin/events/${eventId}/public-registrations/${registrant.public_registration_id}`;
+  }
+  return `/admin/events/${eventId}/registrations/${registrant.registration_id}`;
 }
 
 /** List of registrants with their attendance field answers and per-registrant edit actions. */
@@ -92,10 +99,24 @@ export function AttendanceDataEntryList({
                   onClick={() => setEditingRegistrant(registrant)}
                 >
                   <ListTableCell className="px-6">
-                    <span className="font-medium text-text">{registrant.full_name}</span>
-                    {registrant.email && (
-                      <span className="ml-2 text-xs text-muted">{registrant.email}</span>
-                    )}
+                    <div className="flex items-start gap-2">
+                      <a
+                        href={getRegistrationDetailsUrl(eventId, registrant)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 text-primary hover:text-primary/80 transition-colors mt-0.5"
+                        title="View registration details"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                      <div>
+                        <span className="font-medium text-text">{registrant.full_name}</span>
+                        {registrant.email && (
+                          <span className="ml-2 text-xs text-muted">{registrant.email}</span>
+                        )}
+                      </div>
+                    </div>
                   </ListTableCell>
                   <ListTableCell>
                     <span className="font-mono text-xs text-muted">
