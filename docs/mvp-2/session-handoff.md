@@ -1,6 +1,6 @@
 # MVP2 Session Handoff
 
-Last updated: 2026-07-04
+Last updated: 2026-07-05
 Owner baseline: 1 dev-agent, sequential execution
 Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 
@@ -12,6 +12,14 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
   - `npm run build` passed.
   - `npm run format:check` passed.
 - New route `/admin/events/:id/attendance/fields` added for attendance field config + data entry.
+
+## 2026-07-05 Doc Addendum - Public Attendee Details
+
+- Pre-event attendee details now support both registered and public self-registered attendees in the same admin attendee-details workflow.
+- Public attendee pre-event details are stored separately from registration answers and separately from registered attendee attendance answers.
+- New storage table: `public_attendance_answers` keyed by `public_registration_id` and attendance field.
+- Query behavior: attendee details list loads registered attendees and public attendees together, excluding cancelled public registrations.
+- Save behavior: updates route by attendee kind (`registration_id` for registered, `public_registration_id` for public).
 
 ## Execution Baseline
 

@@ -77,13 +77,17 @@ export function AttendanceDataEntryList({
           </ListTableHead>
           <ListTableBody>
             {registrants.map((registrant) => {
+              const rowKey =
+                registrant.attendee_kind === 'public'
+                  ? `public-${registrant.public_registration_id}`
+                  : `registered-${registrant.registration_id}`;
               const filled = countFilledAnswers(registrant.answers, fields);
               const total = fields.length;
               const isComplete = total > 0 && filled === total;
 
               return (
                 <ListTableRow
-                  key={registrant.registration_id}
+                  key={rowKey}
                   className="cursor-pointer"
                   onClick={() => setEditingRegistrant(registrant)}
                 >
@@ -94,7 +98,9 @@ export function AttendanceDataEntryList({
                     )}
                   </ListTableCell>
                   <ListTableCell>
-                    <span className="font-mono text-xs text-muted">{registrant.member_id}</span>
+                    <span className="font-mono text-xs text-muted">
+                      {registrant.member_id ?? 'Guest'}
+                    </span>
                   </ListTableCell>
                   {fields.slice(0, 3).map((field) => (
                     <ListTableCell key={field.id}>

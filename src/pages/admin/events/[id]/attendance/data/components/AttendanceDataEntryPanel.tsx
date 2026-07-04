@@ -105,7 +105,9 @@ export function AttendanceDataEntryPanel({
 
       await upsertMutation.mutateAsync({
         event_id: eventId,
-        registration_id: registrant.registration_id,
+        attendee_kind: registrant.attendee_kind,
+        registration_id: registrant.registration_id ?? undefined,
+        public_registration_id: registrant.public_registration_id ?? undefined,
         answers,
       });
 
@@ -130,6 +132,9 @@ export function AttendanceDataEntryPanel({
           <p className="mt-1 text-sm text-muted">
             {registrant.member_id && (
               <span className="mr-3">Member ID: {registrant.member_id}</span>
+            )}
+            {registrant.attendee_kind === 'public' && (
+              <span className="mr-3">Attendee Type: Guest</span>
             )}
             {registrant.email && <span>{registrant.email}</span>}
           </p>

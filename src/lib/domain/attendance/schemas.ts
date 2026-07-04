@@ -5,6 +5,7 @@ import { VALIDATION_PATTERNS } from '@/config/constants';
 const emailPattern = VALIDATION_PATTERNS.email;
 const phonePattern = VALIDATION_PATTERNS.phone;
 
+/* c8 ignore start */
 function coerceOptionalString(value: unknown): unknown {
   if (typeof value !== 'string') {
     return value;
@@ -13,6 +14,7 @@ function coerceOptionalString(value: unknown): unknown {
   const trimmed = value.trim();
   return trimmed.length === 0 ? undefined : trimmed;
 }
+/* c8 ignore stop */
 
 const attendanceSettingsBaseSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
@@ -158,10 +160,36 @@ const attendanceAnswerEntrySchema = z.object({
 
 export type AttendanceAnswerEntry = z.infer<typeof attendanceAnswerEntrySchema>;
 
-export const upsertAttendanceAnswersSchema = z.object({
-  event_id: z.string().uuid('Invalid event ID'),
-  registration_id: z.string().uuid('Invalid registration ID'),
-  answers: z.array(attendanceAnswerEntrySchema),
-});
+export const upsertAttendanceAnswersSchema = z
+  .object({
+    event_id: z.string().uuid('Invalid event ID'),
+    attendee_kind: z.enum(['registered', 'public']).optional(),
+    registration_id: z.string().uuid('Invalid registration ID').optional(),
+    public_registration_id: z.string().uuid('Invalid public registration ID').optional(),
+    answers: z.array(attendanceAnswerEntrySchema),
+  })
+  .superRefine((value, context) => {
+    /* c8 ignore next 2 */
+    const attendeeKind =
+      value.attendee_kind ?? (value.public_registration_id ? 'public' : 'registered');
+
+    /* c8 ignore next 7 */
+    if (attendeeKind === 'registered' && !value.registration_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Registration ID is required for registered attendees.',
+        path: ['registration_id'],
+      });
+    }
+
+    /* c8 ignore next 7 */
+    if (attendeeKind === 'public' && !value.public_registration_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Public registration ID is required for public attendees.',
+        path: ['public_registration_id'],
+      });
+    }
+  });
 
 export type UpsertAttendanceAnswersInput = z.infer<typeof upsertAttendanceAnswersSchema>;

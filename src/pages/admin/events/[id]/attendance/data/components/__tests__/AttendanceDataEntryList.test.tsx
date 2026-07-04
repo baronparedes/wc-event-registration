@@ -83,7 +83,9 @@ describe('AttendanceDataEntryList', () => {
   it('renders field columns, ellipsis column, and answer/progress values', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
+        attendee_kind: 'registered',
         registration_id: 'reg-1',
+        public_registration_id: null,
         member_id: 'MID-001',
         full_name: 'Jane Doe',
         email: 'jane@example.com',
@@ -91,6 +93,7 @@ describe('AttendanceDataEntryList', () => {
           {
             id: 'ans-1',
             registration_id: 'reg-1',
+            public_registration_id: null,
             attendance_field_id: 'field-1',
             answer_text: '50',
             answer_number: null,
@@ -100,6 +103,7 @@ describe('AttendanceDataEntryList', () => {
           {
             id: 'ans-2',
             registration_id: 'reg-1',
+            public_registration_id: null,
             attendance_field_id: 'field-2',
             answer_text: null,
             answer_number: 2,
@@ -130,7 +134,9 @@ describe('AttendanceDataEntryList', () => {
   it('shows N/A progress for zero fields and opens panel on row click', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
+        attendee_kind: 'registered',
         registration_id: 'reg-2',
+        public_registration_id: null,
         member_id: 'MID-002',
         full_name: 'John Smith',
         email: null,

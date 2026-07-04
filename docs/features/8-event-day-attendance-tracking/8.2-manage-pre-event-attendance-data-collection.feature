@@ -8,7 +8,7 @@ Feature: Manage Pre-Event Attendance Data Collection
     - Attendance fields are available only when attendance tracking is enabled
     - Admins can define custom fields (text, text area, select, number) per event
     - Field configuration includes: label, type, required/optional, display order
-    - Field data is collected per registrant (separate from registration answers)
+    - Field data is collected per attendee (registered or public self-registration), separate from registration answers
     - Changes to field data are visible during check-in
 
   Scenario: Create a custom attendance field
@@ -47,6 +47,22 @@ Feature: Manage Pre-Event Attendance Data Collection
     And I save the data
     Then the data is stored for that attendee
     And the attendee appears with this data in event-day check-in tools
+
+  Scenario: Fill in attendance data for a public self-registered attendee
+    Given attendance tracking is enabled for an event
+    And custom attendance fields are configured
+    And public self-registered attendees exist
+    When I open the attendee data entry form
+    And I fill in values for configured fields for a public attendee
+    And I save the data
+    Then the data is stored for that public attendee
+    And the attendee appears with this data in attendee details and check-in tools
+
+  Scenario: Public attendee cancellation removes them from attendee details list
+    Given attendance tracking is enabled for an event
+    And a public self-registered attendee is cancelled
+    When I open the attendee data entry list view
+    Then cancelled public attendees are not shown in the list
 
   Scenario: Update attendance data before event day
     Given an attendee already has saved attendance data

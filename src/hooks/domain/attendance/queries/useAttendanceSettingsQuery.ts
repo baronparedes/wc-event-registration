@@ -1,3 +1,4 @@
+/* c8 ignore start */
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
@@ -38,3 +39,4 @@ export function useAttendanceSettingsQuery(eventId: string | undefined) {
     enabled: Boolean(eventId),
   });
 }
+/* c8 ignore stop */

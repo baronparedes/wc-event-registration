@@ -66,7 +66,7 @@ Features are organized into 8 epic folders:
 ### 8. Event-Day Attendance Tracking (7 features)
 
 - **Configure Attendance Settings**: Admins enable attendance tracking and set policies per event
-- **Manage Pre-Event Attendance Data Collection**: Admins design and fill custom attendance fields before event day
+- **Manage Pre-Event Attendance Data Collection**: Admins design and fill custom attendance fields before event day for registered and public self-registered attendees
 - **Check-In Registered Attendees**: Admins check in registered attendees by name, email, or ID scan
 - **Handle Walk-In Check-In**: Admins register and check in walk-in attendees on event day
 - **Track Timeslot Attendance**: Admins record which timeslot each attendee occupies during event

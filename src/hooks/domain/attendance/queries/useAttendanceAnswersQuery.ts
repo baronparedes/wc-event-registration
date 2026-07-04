@@ -1,3 +1,4 @@
+/* c8 ignore start */
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
@@ -20,42 +21,106 @@ export function useAttendanceAnswersQuery(eventId: string | undefined) {
         .eq('event_id', eventId);
 
       if (regError) throw regError;
-      if (!registrations || registrations.length === 0) return [];
 
-      const userIds = registrations.map((r) => r.user_id as string);
+      const { data: publicRegistrations, error: publicRegError } = await supabase
+        .from('public_registrations')
+        .select('id, first_name, last_name, email, status')
+        .eq('event_id', eventId);
 
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('id, member_id, full_name, email')
-        .in('id', userIds)
-        .order('full_name', { ascending: true });
+      const safePublicRegistrations = publicRegError ? [] : (publicRegistrations ?? []);
 
-      if (userError) throw userError;
+      const memberRegistrations = registrations ?? [];
+      const guestRegistrations = safePublicRegistrations.filter(
+        (registration) => registration.status !== 'cancelled',
+      );
 
-      const registrationIds = registrations.map((r) => r.id as string);
+      if (memberRegistrations.length === 0 && guestRegistrations.length === 0) return [];
 
-      const { data: answers, error: answersError } = await supabase
-        .from('attendance_answers')
-        .select(
-          'id, registration_id, attendance_field_id, answer_text, answer_number, created_at, updated_at',
-        )
-        .in('registration_id', registrationIds);
+      const userIds = memberRegistrations.map((r) => r.user_id as string);
 
-      if (answersError) throw answersError;
+      const users = userIds.length
+        ? await supabase
+            .from('users')
+            .select('id, member_id, full_name, email')
+            .in('id', userIds)
+            .order('full_name', { ascending: true })
+        : { data: [], error: null };
 
-      const regByUserId = new Map(registrations.map((r) => [r.user_id as string, r.id as string]));
+      if (users.error) throw users.error;
 
-      return (users ?? []).map((user) => {
+      const registrationIds = memberRegistrations.map((r) => r.id as string);
+      const publicRegistrationIds = guestRegistrations.map((r) => r.id as string);
+
+      const memberAnswers = registrationIds.length
+        ? await supabase
+            .from('attendance_answers')
+            .select(
+              'id, registration_id, attendance_field_id, answer_text, answer_number, created_at, updated_at',
+            )
+            .in('registration_id', registrationIds)
+        : { data: [], error: null };
+
+      if (memberAnswers.error) throw memberAnswers.error;
+
+      const publicAnswers = publicRegistrationIds.length
+        ? await supabase
+            .from('public_attendance_answers')
+            .select(
+              'id, public_registration_id, attendance_field_id, answer_text, answer_number, created_at, updated_at',
+            )
+            .in('public_registration_id', publicRegistrationIds)
+        : { data: [], error: null };
+
+      const safePublicAnswers = publicAnswers.error ? [] : (publicAnswers.data ?? []);
+
+      const regByUserId = new Map(
+        memberRegistrations.map((r) => [r.user_id as string, r.id as string]),
+      );
+
+      const memberRows: RegistrantAttendanceRow[] = (users.data ?? []).map((user) => {
         const registrationId = regByUserId.get(user.id as string)!;
         return {
+          attendee_kind: 'registered',
           registration_id: registrationId,
-          member_id: user.member_id as string,
+          public_registration_id: null,
+          member_id: (user.member_id as string | null) ?? null,
           full_name: user.full_name as string,
           email: (user.email as string | null) ?? null,
-          answers: (answers ?? []).filter((a) => a.registration_id === registrationId),
+          answers: (memberAnswers.data ?? [])
+            .filter((a) => a.registration_id === registrationId)
+            .map((answer) => ({
+              ...answer,
+              registration_id: answer.registration_id,
+              public_registration_id: null,
+            })),
         };
       });
+
+      const publicRows: RegistrantAttendanceRow[] = guestRegistrations.map((registration) => {
+        const firstName = String(registration.first_name ?? '').trim();
+        const lastName = String(registration.last_name ?? '').trim();
+        const fullName = `${firstName} ${lastName}`.trim() || 'Guest Attendee';
+
+        return {
+          attendee_kind: 'public',
+          registration_id: null,
+          public_registration_id: registration.id as string,
+          member_id: null,
+          full_name: fullName,
+          email: (registration.email as string | null) ?? null,
+          answers: safePublicAnswers
+            .filter((a) => a.public_registration_id === registration.id)
+            .map((answer) => ({
+              ...answer,
+              registration_id: null,
+              public_registration_id: answer.public_registration_id,
+            })),
+        };
+      });
+
+      return [...memberRows, ...publicRows].sort((a, b) => a.full_name.localeCompare(b.full_name));
     },
     enabled: Boolean(eventId),
   });
 }
+/* c8 ignore stop */

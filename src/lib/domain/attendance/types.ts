@@ -1,4 +1,4 @@
-export type AttendeeKind = 'registered' | 'walk_in';
+export type AttendeeKind = 'registered' | 'public' | 'walk_in';
 
 export type CheckInStatus = 'checked_in' | 'already_checked_in' | 'rejected';
 
@@ -38,7 +38,8 @@ export type TimeslotAttendanceRecord = {
 
 export type AttendanceAnswer = {
   id: string;
-  registration_id: string;
+  registration_id: string | null;
+  public_registration_id: string | null;
   attendance_field_id: string;
   answer_text: string | null;
   answer_number: number | null;
@@ -47,8 +48,10 @@ export type AttendanceAnswer = {
 };
 
 export type RegistrantAttendanceRow = {
-  registration_id: string;
-  member_id: string;
+  attendee_kind: 'registered' | 'public';
+  registration_id: string | null;
+  public_registration_id: string | null;
+  member_id: string | null;
   full_name: string;
   email: string | null;
   answers: AttendanceAnswer[];

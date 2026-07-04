@@ -15,6 +15,8 @@ export function PublicRegistrationConfirmationStep({
   email,
   eventSlug,
 }: PublicRegistrationConfirmationStepProps) {
+  const isEmailEnabled = false;
+
   return (
     <SectionCard title="Registration Complete">
       <div className="space-y-6 text-center">
@@ -25,7 +27,8 @@ export function PublicRegistrationConfirmationStep({
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-text">Registration Confirmed!</h2>
           <p className="text-muted">
-            Thank you for registering. A confirmation email will be sent to {email}.
+            Thank you for registering.{' '}
+            {isEmailEnabled && `A confirmation email will be sent to ${email}.`}
           </p>
         </div>
 

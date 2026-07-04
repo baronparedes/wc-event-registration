@@ -29,7 +29,9 @@ vi.mock('sonner', () => ({
 
 describe('AttendanceDataEntryPanel', () => {
   const registrant: RegistrantAttendanceRow = {
+    attendee_kind: 'registered',
     registration_id: 'reg-1',
+    public_registration_id: null,
     member_id: 'member-1',
     full_name: 'Jane Doe',
     email: 'jane@example.com',
@@ -37,6 +39,7 @@ describe('AttendanceDataEntryPanel', () => {
       {
         id: 'ans-1',
         registration_id: 'reg-1',
+        public_registration_id: null,
         attendance_field_id: 'field-multi',
         answer_text: '["veg","vip"]',
         answer_number: null,
@@ -123,7 +126,9 @@ describe('AttendanceDataEntryPanel', () => {
 
     const payload = mockMutateAsync.mock.calls[0]?.[0];
     expect(payload.event_id).toBe('event-1');
+    expect(payload.attendee_kind).toBe('registered');
     expect(payload.registration_id).toBe('reg-1');
+    expect(payload.public_registration_id).toBeUndefined();
     expect(payload.answers).toHaveLength(1);
     expect(payload.answers[0].attendance_field_id).toBe('field-multi');
     expect(payload.answers[0].answer_number).toBeNull();
@@ -138,7 +143,9 @@ describe('AttendanceDataEntryPanel', () => {
     const onClose = vi.fn();
 
     const mixedRegistrant: RegistrantAttendanceRow = {
+      attendee_kind: 'registered',
       registration_id: 'reg-2',
+      public_registration_id: null,
       member_id: '',
       full_name: 'John Smith',
       email: null,
@@ -146,6 +153,7 @@ describe('AttendanceDataEntryPanel', () => {
         {
           id: 'ans-multi-invalid',
           registration_id: 'reg-2',
+          public_registration_id: null,
           attendance_field_id: 'field-multi-bad',
           answer_text: 'not-json',
           answer_number: null,
@@ -155,6 +163,7 @@ describe('AttendanceDataEntryPanel', () => {
         {
           id: 'ans-number',
           registration_id: 'reg-2',
+          public_registration_id: null,
           attendance_field_id: 'field-number',
           answer_text: null,
           answer_number: 42,
@@ -352,7 +361,9 @@ describe('AttendanceDataEntryPanel', () => {
     const onClose = vi.fn();
 
     const registrantForFormTypes: RegistrantAttendanceRow = {
+      attendee_kind: 'registered',
       registration_id: 'reg-3',
+      public_registration_id: null,
       member_id: 'member-3',
       full_name: 'Sam Lee',
       email: 'sam@example.com',
@@ -515,7 +526,9 @@ describe('AttendanceDataEntryPanel', () => {
 
   it('falls back to empty defaults for invalid parsed arrays and null text answers', () => {
     const defaultRegistrant: RegistrantAttendanceRow = {
+      attendee_kind: 'registered',
       registration_id: 'reg-4',
+      public_registration_id: null,
       member_id: '',
       full_name: 'Default Case',
       email: null,
@@ -523,6 +536,7 @@ describe('AttendanceDataEntryPanel', () => {
         {
           id: 'ans-invalid-array',
           registration_id: 'reg-4',
+          public_registration_id: null,
           attendance_field_id: 'field-multi-invalid-shape',
           answer_text: '[1,2,3]',
           answer_number: null,
@@ -532,6 +546,7 @@ describe('AttendanceDataEntryPanel', () => {
         {
           id: 'ans-null-text',
           registration_id: 'reg-4',
+          public_registration_id: null,
           attendance_field_id: 'field-null-text',
           answer_text: null,
           answer_number: null,

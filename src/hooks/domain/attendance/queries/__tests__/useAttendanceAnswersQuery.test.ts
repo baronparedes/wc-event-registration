@@ -5,40 +5,55 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useAttendanceAnswersQuery } from '@/hooks/domain/attendance/queries/useAttendanceAnswersQuery';
 import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
 
-const { mockRegistrationsBuilder, mockUsersBuilder, mockAnswersBuilder, mockFrom } = vi.hoisted(
-  () => {
-    const makeBuilder = () => {
-      const builder: Record<string, ReturnType<typeof vi.fn>> = {
-        select: vi.fn(),
-        eq: vi.fn(),
-        order: vi.fn(),
-        in: vi.fn(),
-      };
-      builder.select.mockReturnValue(builder);
-      builder.eq.mockReturnValue(builder);
-      builder.order.mockReturnValue(builder);
-      builder.in.mockReturnValue(builder);
-      return builder;
+const {
+  mockRegistrationsBuilder,
+  mockUsersBuilder,
+  mockAnswersBuilder,
+  mockPublicRegistrationsBuilder,
+  mockPublicAnswersBuilder,
+  mockFrom,
+} = vi.hoisted(() => {
+  const makeBuilder = () => {
+    const builder: Record<string, ReturnType<typeof vi.fn>> = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      neq: vi.fn(),
+      order: vi.fn(),
+      in: vi.fn(),
     };
+    builder.select.mockReturnValue(builder);
+    builder.eq.mockReturnValue(builder);
+    builder.neq.mockReturnValue(builder);
+    builder.order.mockReturnValue(builder);
+    builder.in.mockReturnValue(builder);
+    return builder;
+  };
 
-    const registrationsBuilder = makeBuilder();
-    const usersBuilder = makeBuilder();
-    const answersBuilder = makeBuilder();
+  const registrationsBuilder = makeBuilder();
+  const usersBuilder = makeBuilder();
+  const answersBuilder = makeBuilder();
 
-    const mockFrom = vi.fn((table: string) => {
-      if (table === 'registrations') return registrationsBuilder;
-      if (table === 'users') return usersBuilder;
-      return answersBuilder;
-    });
+  const publicRegistrationsBuilder = makeBuilder();
+  const publicAnswersBuilder = makeBuilder();
 
-    return {
-      mockRegistrationsBuilder: registrationsBuilder,
-      mockUsersBuilder: usersBuilder,
-      mockAnswersBuilder: answersBuilder,
-      mockFrom,
-    };
-  },
-);
+  const mockFrom = vi.fn((table: string) => {
+    if (table === 'registrations') return registrationsBuilder;
+    if (table === 'users') return usersBuilder;
+    if (table === 'attendance_answers') return answersBuilder;
+    if (table === 'public_registrations') return publicRegistrationsBuilder;
+    if (table === 'public_attendance_answers') return publicAnswersBuilder;
+    return makeBuilder();
+  });
+
+  return {
+    mockRegistrationsBuilder: registrationsBuilder,
+    mockUsersBuilder: usersBuilder,
+    mockAnswersBuilder: answersBuilder,
+    mockPublicRegistrationsBuilder: publicRegistrationsBuilder,
+    mockPublicAnswersBuilder: publicAnswersBuilder,
+    mockFrom,
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
@@ -67,9 +82,20 @@ describe('useAttendanceAnswersQuery', () => {
     mockAnswersBuilder.eq.mockReturnValue(mockAnswersBuilder);
     mockAnswersBuilder.order.mockReturnValue(mockAnswersBuilder);
     mockAnswersBuilder.in.mockReturnValue(mockAnswersBuilder);
+    mockPublicRegistrationsBuilder.select.mockReturnValue(mockPublicRegistrationsBuilder);
+    mockPublicRegistrationsBuilder.eq.mockReturnValue(mockPublicRegistrationsBuilder);
+    mockPublicRegistrationsBuilder.order.mockReturnValue(mockPublicRegistrationsBuilder);
+    mockPublicRegistrationsBuilder.in.mockReturnValue(mockPublicRegistrationsBuilder);
+    mockPublicAnswersBuilder.select.mockReturnValue(mockPublicAnswersBuilder);
+    mockPublicAnswersBuilder.eq.mockReturnValue(mockPublicAnswersBuilder);
+    mockPublicAnswersBuilder.order.mockReturnValue(mockPublicAnswersBuilder);
+    mockPublicAnswersBuilder.in.mockReturnValue(mockPublicAnswersBuilder);
     mockFrom.mockImplementation((table: string) => {
       if (table === 'registrations') return mockRegistrationsBuilder;
       if (table === 'users') return mockUsersBuilder;
+      if (table === 'attendance_answers') return mockAnswersBuilder;
+      if (table === 'public_registrations') return mockPublicRegistrationsBuilder;
+      if (table === 'public_attendance_answers') return mockPublicAnswersBuilder;
       return mockAnswersBuilder;
     });
   });
@@ -90,6 +116,7 @@ describe('useAttendanceAnswersQuery', () => {
 
   it('returns empty array when no registrations found', async () => {
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -131,6 +158,7 @@ describe('useAttendanceAnswersQuery', () => {
     ];
 
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
     mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
     mockAnswersBuilder.in.mockResolvedValueOnce({ data: mockAnswers, error: null });
 
@@ -142,18 +170,22 @@ describe('useAttendanceAnswersQuery', () => {
 
     expect(result.current.data).toEqual([
       {
+        attendee_kind: 'registered',
         registration_id: 'reg-1',
+        public_registration_id: null,
         member_id: 'mem-1',
         full_name: 'Alice',
         email: 'alice@test.com',
-        answers: [mockAnswers[0]],
+        answers: [{ ...mockAnswers[0], public_registration_id: null }],
       },
       {
+        attendee_kind: 'registered',
         registration_id: 'reg-2',
+        public_registration_id: null,
         member_id: 'mem-2',
         full_name: 'Bob',
         email: 'bob@test.com',
-        answers: [mockAnswers[1]],
+        answers: [{ ...mockAnswers[1], public_registration_id: null }],
       },
     ]);
   });
@@ -163,6 +195,7 @@ describe('useAttendanceAnswersQuery', () => {
     const mockUsers = [{ id: 'user-1', member_id: 'mem-1', full_name: 'Charlie', email: null }];
 
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
     mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
     mockAnswersBuilder.in.mockResolvedValueOnce({ data: [], error: null });
 
@@ -175,7 +208,9 @@ describe('useAttendanceAnswersQuery', () => {
     expect(result.current.data?.[0]).toEqual(
       expect.objectContaining({
         registration_id: 'reg-1',
+        public_registration_id: null,
         member_id: 'mem-1',
+        attendee_kind: 'registered',
         full_name: 'Charlie',
         email: null,
       }),
@@ -187,6 +222,7 @@ describe('useAttendanceAnswersQuery', () => {
       data: null,
       error: new Error('Registration query failed'),
     });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -201,6 +237,7 @@ describe('useAttendanceAnswersQuery', () => {
     const mockRegistrations = [{ id: 'reg-1', user_id: 'user-1' }];
 
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
     mockUsersBuilder.order.mockResolvedValueOnce({
       data: null,
       error: new Error('Users query failed'),
@@ -222,6 +259,7 @@ describe('useAttendanceAnswersQuery', () => {
     ];
 
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
     mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
     mockAnswersBuilder.in.mockResolvedValueOnce({
       data: null,
@@ -277,6 +315,7 @@ describe('useAttendanceAnswersQuery', () => {
     ];
 
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
     mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
     mockAnswersBuilder.in.mockResolvedValueOnce({ data: mockAnswers, error: null });
 
@@ -293,6 +332,7 @@ describe('useAttendanceAnswersQuery', () => {
 
   it('orders users by full_name ascending', async () => {
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
 
     renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -308,6 +348,7 @@ describe('useAttendanceAnswersQuery', () => {
     ];
 
     mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockPublicRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
     mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
     mockAnswersBuilder.in.mockResolvedValueOnce({ data: null, error: null });
 

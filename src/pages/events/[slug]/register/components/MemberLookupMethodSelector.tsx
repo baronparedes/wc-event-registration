@@ -44,7 +44,9 @@ export function MemberLookupMethodSelector({
           >
             <span className="font-semibold text-lg">Search by my name</span>
             <br />
-            <span className="mt-1 text-sm font-normal opacity-90">Use your full name instead</span>
+            <span className="mt-1 text-sm font-normal opacity-90">
+              Find your profile using your registered full name
+            </span>
           </Button>
         )}
       </div>

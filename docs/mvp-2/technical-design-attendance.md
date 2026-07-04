@@ -4,11 +4,27 @@
 
 - Gherkin feature files reviewed:
   - docs/features/8-event-day-attendance-tracking/8.1-configure-attendance-settings.feature
-  - docs/features/8-event-day-attendance-tracking/8.2-manage-pre-event-assignments.feature
+  - docs/features/8-event-day-attendance-tracking/8.2-manage-pre-event-attendance-data-collection.feature
   - docs/features/8-event-day-attendance-tracking/8.3-check-in-registered-attendees.feature
   - docs/features/8-event-day-attendance-tracking/8.4-handle-walk-in-check-in.feature
   - docs/features/8-event-day-attendance-tracking/8.5-track-timeslot-attendance.feature
   - docs/features/8-event-day-attendance-tracking/8.6-export-attendance-csv.feature
+
+## 2026-07-05 Addendum: Public Attendee Pre-Event Details
+
+- Pre-event attendee details are now supported for both attendee cohorts:
+  - registered attendees (member registration flow)
+  - public self-registered attendees (guest flow)
+- Data separation remains explicit:
+  - registration answers remain in registration answer storage
+  - registered attendee pre-event details remain in attendance answer storage
+  - public attendee pre-event details are stored in `public_attendance_answers`
+- Attendee details list behavior:
+  - list merges registered and public attendees in one admin view
+  - cancelled public registrations are excluded from the data-entry list
+- Mutation routing behavior:
+  - registered writes keyed by `registration_id`
+  - public writes keyed by `public_registration_id`
 - Planning input reviewed:
   - docs/mvp-2/implementation-plan.md
 - Glossary reviewed:
