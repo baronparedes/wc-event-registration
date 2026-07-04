@@ -16,13 +16,21 @@ export function useAttendanceAnswersQuery(eventId: string | undefined) {
 
       const { data: registrations, error: regError } = await supabase
         .from('registrations')
-        .select('id, member_id, full_name, email')
-        .eq('event_id', eventId)
-        .eq('status', 'registered')
-        .order('full_name', { ascending: true });
+        .select('id, user_id')
+        .eq('event_id', eventId);
 
       if (regError) throw regError;
       if (!registrations || registrations.length === 0) return [];
+
+      const userIds = registrations.map((r) => r.user_id as string);
+
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, member_id, full_name, email')
+        .in('id', userIds)
+        .order('full_name', { ascending: true });
+
+      if (userError) throw userError;
 
       const registrationIds = registrations.map((r) => r.id as string);
 
@@ -35,13 +43,18 @@ export function useAttendanceAnswersQuery(eventId: string | undefined) {
 
       if (answersError) throw answersError;
 
-      return registrations.map((reg) => ({
-        registration_id: reg.id as string,
-        member_id: reg.member_id as string,
-        full_name: reg.full_name as string,
-        email: (reg.email as string | null) ?? null,
-        answers: (answers ?? []).filter((a) => a.registration_id === reg.id),
-      }));
+      const regByUserId = new Map(registrations.map((r) => [r.user_id as string, r.id as string]));
+
+      return (users ?? []).map((user) => {
+        const registrationId = regByUserId.get(user.id as string)!;
+        return {
+          registration_id: registrationId,
+          member_id: user.member_id as string,
+          full_name: user.full_name as string,
+          email: (user.email as string | null) ?? null,
+          answers: (answers ?? []).filter((a) => a.registration_id === registrationId),
+        };
+      });
     },
     enabled: Boolean(eventId),
   });

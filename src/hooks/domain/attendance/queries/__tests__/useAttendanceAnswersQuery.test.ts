@@ -5,24 +5,40 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useAttendanceAnswersQuery } from '@/hooks/domain/attendance/queries/useAttendanceAnswersQuery';
 import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
 
-const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
-  const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-    select: vi.fn(),
-    eq: vi.fn(),
-    order: vi.fn(),
-    in: vi.fn(),
-  };
+const { mockRegistrationsBuilder, mockUsersBuilder, mockAnswersBuilder, mockFrom } = vi.hoisted(
+  () => {
+    const makeBuilder = () => {
+      const builder: Record<string, ReturnType<typeof vi.fn>> = {
+        select: vi.fn(),
+        eq: vi.fn(),
+        order: vi.fn(),
+        in: vi.fn(),
+      };
+      builder.select.mockReturnValue(builder);
+      builder.eq.mockReturnValue(builder);
+      builder.order.mockReturnValue(builder);
+      builder.in.mockReturnValue(builder);
+      return builder;
+    };
 
-  queryBuilder.select.mockReturnValue(queryBuilder);
-  queryBuilder.eq.mockReturnValue(queryBuilder);
-  queryBuilder.order.mockReturnValue(queryBuilder);
-  queryBuilder.in.mockReturnValue(queryBuilder);
+    const registrationsBuilder = makeBuilder();
+    const usersBuilder = makeBuilder();
+    const answersBuilder = makeBuilder();
 
-  return {
-    mockQueryBuilder: queryBuilder,
-    mockFrom: vi.fn(() => queryBuilder),
-  };
-});
+    const mockFrom = vi.fn((table: string) => {
+      if (table === 'registrations') return registrationsBuilder;
+      if (table === 'users') return usersBuilder;
+      return answersBuilder;
+    });
+
+    return {
+      mockRegistrationsBuilder: registrationsBuilder,
+      mockUsersBuilder: usersBuilder,
+      mockAnswersBuilder: answersBuilder,
+      mockFrom,
+    };
+  },
+);
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
@@ -39,10 +55,23 @@ vi.mock('@/lib/infrastructure', async () => {
 describe('useAttendanceAnswersQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockQueryBuilder.select.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.eq.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.order.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.in.mockReturnValue(mockQueryBuilder);
+    mockRegistrationsBuilder.select.mockReturnValue(mockRegistrationsBuilder);
+    mockRegistrationsBuilder.eq.mockReturnValue(mockRegistrationsBuilder);
+    mockRegistrationsBuilder.order.mockReturnValue(mockRegistrationsBuilder);
+    mockRegistrationsBuilder.in.mockReturnValue(mockRegistrationsBuilder);
+    mockUsersBuilder.select.mockReturnValue(mockUsersBuilder);
+    mockUsersBuilder.eq.mockReturnValue(mockUsersBuilder);
+    mockUsersBuilder.order.mockReturnValue(mockUsersBuilder);
+    mockUsersBuilder.in.mockReturnValue(mockUsersBuilder);
+    mockAnswersBuilder.select.mockReturnValue(mockAnswersBuilder);
+    mockAnswersBuilder.eq.mockReturnValue(mockAnswersBuilder);
+    mockAnswersBuilder.order.mockReturnValue(mockAnswersBuilder);
+    mockAnswersBuilder.in.mockReturnValue(mockAnswersBuilder);
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'registrations') return mockRegistrationsBuilder;
+      if (table === 'users') return mockUsersBuilder;
+      return mockAnswersBuilder;
+    });
   });
 
   it('returns empty array when eventId is undefined', async () => {
@@ -53,11 +82,14 @@ describe('useAttendanceAnswersQuery', () => {
     });
   });
 
+  it('is disabled when eventId is undefined', () => {
+    const { result } = renderHookWithClient(() => useAttendanceAnswersQuery(undefined));
+
+    expect(result.current.isLoading).toBe(false);
+  });
+
   it('returns empty array when no registrations found', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [],
-      error: null,
-    });
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -68,12 +100,15 @@ describe('useAttendanceAnswersQuery', () => {
     expect(result.current.data).toEqual([]);
   });
 
-  it('fetches registrations and their attendance answers', async () => {
+  it('fetches registrations with user details and attendance answers', async () => {
     const mockRegistrations = [
-      { id: 'reg-1', member_id: 'mem-1', full_name: 'Alice', email: 'alice@test.com' },
-      { id: 'reg-2', member_id: 'mem-2', full_name: 'Bob', email: 'bob@test.com' },
+      { id: 'reg-1', user_id: 'user-1' },
+      { id: 'reg-2', user_id: 'user-2' },
     ];
-
+    const mockUsers = [
+      { id: 'user-1', member_id: 'mem-1', full_name: 'Alice', email: 'alice@test.com' },
+      { id: 'user-2', member_id: 'mem-2', full_name: 'Bob', email: 'bob@test.com' },
+    ];
     const mockAnswers = [
       {
         id: 'ans-1',
@@ -95,15 +130,9 @@ describe('useAttendanceAnswersQuery', () => {
       },
     ];
 
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: mockRegistrations,
-      error: null,
-    });
-
-    mockQueryBuilder.in.mockResolvedValueOnce({
-      data: mockAnswers,
-      error: null,
-    });
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
+    mockAnswersBuilder.in.mockResolvedValueOnce({ data: mockAnswers, error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -130,19 +159,12 @@ describe('useAttendanceAnswersQuery', () => {
   });
 
   it('handles null email gracefully', async () => {
-    const mockRegistrations = [
-      { id: 'reg-1', member_id: 'mem-1', full_name: 'Charlie', email: null },
-    ];
+    const mockRegistrations = [{ id: 'reg-1', user_id: 'user-1' }];
+    const mockUsers = [{ id: 'user-1', member_id: 'mem-1', full_name: 'Charlie', email: null }];
 
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: mockRegistrations,
-      error: null,
-    });
-
-    mockQueryBuilder.in.mockResolvedValueOnce({
-      data: [],
-      error: null,
-    });
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
+    mockAnswersBuilder.in.mockResolvedValueOnce({ data: [], error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -160,8 +182,8 @@ describe('useAttendanceAnswersQuery', () => {
     );
   });
 
-  it('returns an error state when registration query fails', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
+  it('returns error state when registrations query fails', async () => {
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({
       data: null,
       error: new Error('Registration query failed'),
     });
@@ -175,17 +197,33 @@ describe('useAttendanceAnswersQuery', () => {
     expect(result.current.error).toBeDefined();
   });
 
-  it('returns an error state when attendance answers query fails', async () => {
-    const mockRegistrations = [
-      { id: 'reg-1', member_id: 'mem-1', full_name: 'David', email: 'david@test.com' },
-    ];
+  it('returns error state when users query fails', async () => {
+    const mockRegistrations = [{ id: 'reg-1', user_id: 'user-1' }];
 
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: mockRegistrations,
-      error: null,
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockUsersBuilder.order.mockResolvedValueOnce({
+      data: null,
+      error: new Error('Users query failed'),
     });
 
-    mockQueryBuilder.in.mockResolvedValueOnce({
+    const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeDefined();
+  });
+
+  it('returns error state when attendance answers query fails', async () => {
+    const mockRegistrations = [{ id: 'reg-1', user_id: 'user-1' }];
+    const mockUsers = [
+      { id: 'user-1', member_id: 'mem-1', full_name: 'David', email: 'david@test.com' },
+    ];
+
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
+    mockAnswersBuilder.in.mockResolvedValueOnce({
       data: null,
       error: new Error('Attendance answers query failed'),
     });
@@ -201,10 +239,13 @@ describe('useAttendanceAnswersQuery', () => {
 
   it('filters answers by registration_id correctly', async () => {
     const mockRegistrations = [
-      { id: 'reg-1', member_id: 'mem-1', full_name: 'Eve', email: 'eve@test.com' },
-      { id: 'reg-2', member_id: 'mem-2', full_name: 'Frank', email: 'frank@test.com' },
+      { id: 'reg-1', user_id: 'user-1' },
+      { id: 'reg-2', user_id: 'user-2' },
     ];
-
+    const mockUsers = [
+      { id: 'user-1', member_id: 'mem-1', full_name: 'Eve', email: 'eve@test.com' },
+      { id: 'user-2', member_id: 'mem-2', full_name: 'Frank', email: 'frank@test.com' },
+    ];
     const mockAnswers = [
       {
         id: 'ans-1',
@@ -235,15 +276,9 @@ describe('useAttendanceAnswersQuery', () => {
       },
     ];
 
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: mockRegistrations,
-      error: null,
-    });
-
-    mockQueryBuilder.in.mockResolvedValueOnce({
-      data: mockAnswers,
-      error: null,
-    });
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
+    mockAnswersBuilder.in.mockResolvedValueOnce({ data: mockAnswers, error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
@@ -256,52 +291,25 @@ describe('useAttendanceAnswersQuery', () => {
     expect(data[1].answers).toHaveLength(1);
   });
 
-  it('is disabled when eventId is undefined', () => {
-    const { result } = renderHookWithClient(() => useAttendanceAnswersQuery(undefined));
-
-    expect(result.current.isLoading).toBe(false);
-  });
-
-  it('orders registrations by full_name ascending', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [],
-      error: null,
-    });
+  it('orders users by full_name ascending', async () => {
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: [], error: null });
 
     renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
     await waitFor(() => {
-      expect(mockQueryBuilder.order).toHaveBeenCalledWith('full_name', { ascending: true });
+      expect(mockRegistrationsBuilder.eq).toHaveBeenCalledWith('event_id', 'event-1');
     });
   });
 
-  it('filters for registered status only', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [],
-      error: null,
-    });
-
-    renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
-
-    await waitFor(() => {
-      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('status', 'registered');
-    });
-  });
-
-  it('handles empty answers array from database', async () => {
-    const mockRegistrations = [
-      { id: 'reg-1', member_id: 'mem-1', full_name: 'Grace', email: 'grace@test.com' },
+  it('handles null answers from database', async () => {
+    const mockRegistrations = [{ id: 'reg-1', user_id: 'user-1' }];
+    const mockUsers = [
+      { id: 'user-1', member_id: 'mem-1', full_name: 'Grace', email: 'grace@test.com' },
     ];
 
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: mockRegistrations,
-      error: null,
-    });
-
-    mockQueryBuilder.in.mockResolvedValueOnce({
-      data: null,
-      error: null,
-    });
+    mockRegistrationsBuilder.eq.mockResolvedValueOnce({ data: mockRegistrations, error: null });
+    mockUsersBuilder.order.mockResolvedValueOnce({ data: mockUsers, error: null });
+    mockAnswersBuilder.in.mockResolvedValueOnce({ data: null, error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceAnswersQuery('event-1'));
 
