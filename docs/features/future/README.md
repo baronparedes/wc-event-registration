@@ -106,6 +106,25 @@ Configure registration fields to show/hide based on member role. Different membe
 
 ---
 
+### 8.7 Combined Registrations View
+
+**Priority**: Low | **Complexity**: Medium | **Effort**: 2-3 hours  
+**Depends on**: Current separate registration pages (complete)
+
+Unified registration list combining member registrations and public guest registrations on a single admin page.
+
+**Business value**: Reduces navigation friction; single source of truth for total event attendance; simplifies search/filtering across registration types.
+
+**Key scenarios**:
+
+- Admin navigates to Registrations page and sees all attendees sorted by name
+- Can search across all attendees (members and guests)
+- Clicking a row opens the appropriate detail page based on type
+- Pagination works correctly across combined dataset
+- Export includes both registration types with type indicators
+
+---
+
 ## Prioritization Framework
 
 Priorities assigned based on:
