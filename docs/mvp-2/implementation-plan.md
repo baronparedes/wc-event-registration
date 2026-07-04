@@ -22,6 +22,7 @@ Deliver a complete design and delivery plan for attendance tracking that can be 
 - Walk-in policy toggle per event
 - Optional timeslot attendance behavior
 - Separate attendance export (not merged into registrations export)
+- Bulk CSV edit of attendance field answers
 - Out of scope (deferred):
 - Non-admin assigned-staff authorization model
 - Advanced timeslot UX beyond baseline functionality
@@ -119,12 +120,36 @@ Exit criteria:
 2. Risk register and mitigations accepted.
 3. Implementation kickoff checklist approved.
 
+#### Phase 4.5: Bulk CSV Edit Feature
+
+Goal:
+Plan CSV bulk edit workflow for efficient large-scale attendance data updates.
+
+Planning tasks:
+
+1. Confirm bulk edit scope: attendance answers only (no registration or walk-in data).
+2. Define CSV format: columns (registration_id, full_name, email, member_id, attendance_fields...).
+3. Define import validation strategy: atomic failure (reject all if any row invalid).
+4. Define merge strategy: overwrite (replace all answers, not merge).
+5. Plan Edge Function contract for bulk upsert with row-level validation.
+6. Plan download/upload UI components and integration with attendance data page.
+
+Exit criteria:
+
+1. CSV format finalized and documented.
+2. Validation error handling strategy defined.
+3. Edge Function contract approved.
+4. UI/UX mockups or flow diagrams completed.
+
 ### Dependencies
 
 - Existing event metadata structure and mutation patterns.
 - Existing admin auth and protected route boundaries.
 - Existing registration read models used for attendee context.
 - Existing CSV export patterns for consistency.
+- CSV export patterns from existing registrations export feature.
+- Attendance field schema and validation from attendance-fields domain.
+- Bulk file upload/download patterns (currently only single-row modal editing exists).
 
 ### Key Risks and Mitigations
 

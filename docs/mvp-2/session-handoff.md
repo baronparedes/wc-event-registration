@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-04
 Owner baseline: 1 dev-agent, sequential execution
-Scope: EPIC-8 Event-Day Attendance (8.1 through 8.6)
+Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 
 ## Pause Snapshot
 
@@ -257,6 +257,50 @@ Exit criteria:
 
 - Attendance export is stable, scoped, and isolated from registration export.
 
+## Session 8 - EPIC-8-S8 Bulk CSV Edit Attendance Data
+
+Goal:
+
+- Deliver bulk attendee data updates via CSV download-edit-upload workflow.
+
+Checklist:
+
+- [ ] Add download-attendance-csv Edge Function to generate template with all attendees + attendance fields
+- [ ] Add bulk-upsert-attendance-answers Edge Function for server-side row validation and atomic upsert
+- [ ] Create csv-parser utility to parse and structure CSV text into rows
+- [ ] Create Zod row validator schema reusing existing field type validators
+- [ ] Add useDownloadAttendanceCSVMutation hook calling new Edge Function
+- [ ] Add useBulkUpsertAttendanceAnswersMutation hook with atomic failure handling
+- [ ] Create BulkUploadModal component with file input, preview, and error display
+- [ ] Add download and upload buttons to attendance data page
+- [ ] Ensure atomic validation: reject entire import if any row invalid
+- [ ] Ensure overwrite strategy: replace all answers for rows in CSV (not merge)
+- [ ] Block bulk operations when attendance is disabled
+
+Expected file touch zones:
+
+- src/pages/admin/events/[id]/attendance/data/
+- src/pages/admin/events/[id]/attendance/data/components/BulkUploadModal.tsx
+- src/hooks/domain/attendance/mutations/useDownloadAttendanceCSVMutation.ts
+- src/hooks/domain/attendance/mutations/useBulkUpsertAttendanceAnswersMutation.ts
+- src/hooks/domain/attendance/mutations/index.ts (barrel export)
+- src/lib/domain/attendance/csv-parser.ts
+- src/lib/domain/attendance/schemas.ts (add bulk row validator)
+- supabase/functions/download-attendance-csv/
+- supabase/functions/bulk-upsert-attendance-answers/
+- supabase/config.toml
+
+Validation gate:
+
+- [ ] Feature 8.7 scenarios pass in local QA
+- [ ] CSV parsing handles quote/escape edge cases
+- [ ] Atomic validation correctly rejects entire batch on single row error
+- [ ] Large CSV (100s of rows) completes without timeout
+
+Exit criteria:
+
+- Bulk CSV edit workflow is operational; attendance data bulk updates are atomic and safe.
+
 ## Cross-Session Quality Gates
 
 Run at end of every session:
@@ -272,6 +316,13 @@ Run at end of Session 7:
 - [ ] Regression check: registration export unchanged
 - [ ] Regression check: ID-first registration flow unchanged
 - [ ] Regression check: no new public direct write paths
+
+Run at end of Session 8:
+
+- [ ] Feature 8.7 scenarios pass in local QA
+- [ ] Bulk import atomic validation working (entire batch rejected on single row error)
+- [ ] CSV parsing handles quote/escape edge cases correctly
+- [ ] Large CSV (100+ rows) completes without timeout
 
 ## Risk Watchlist During Implementation
 

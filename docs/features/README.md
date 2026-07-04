@@ -10,7 +10,7 @@ Each `.feature` file describes one user-facing capability of the platform in pla
 
 ## How to Navigate
 
-Features are organized into 7 epic folders:
+Features are organized into 8 epic folders:
 
 ### 1. Public Registration (5 features)
 
@@ -63,7 +63,17 @@ Features are organized into 7 epic folders:
 - **Error Handling**: System shows clear error messages to users
 - **Pagination**: System handles large lists with cursor-based pagination
 
-### 8. Future/Planned (5 features in `future/` subfolder)
+### 8. Event-Day Attendance Tracking (7 features)
+
+- **Configure Attendance Settings**: Admins enable attendance tracking and set policies per event
+- **Manage Pre-Event Attendance Data Collection**: Admins design and fill custom attendance fields before event day
+- **Check-In Registered Attendees**: Admins check in registered attendees by name, email, or ID scan
+- **Handle Walk-In Check-In**: Admins register and check in walk-in attendees on event day
+- **Track Timeslot Attendance**: Admins record which timeslot each attendee occupies during event
+- **Export Attendance CSV**: Admins download attendance data and status for post-event reporting
+- **Bulk Edit Attendance Data via CSV**: Admins download template, bulk edit locally, and upload to update 100s of attendees at once
+
+### 9. Future/Planned (5 features in `future/` subfolder)
 
 - **Event Scoping**: Admins limited to their own events
 - **Async CSV Export**: For large registration volumes
