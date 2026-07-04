@@ -17,7 +17,9 @@ export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(id);
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(id);
-  const { data: fields = [], isLoading: fieldsLoading } = useAttendanceFieldsQuery(id);
+  const { data: fields = [], isLoading: fieldsLoading } = useAttendanceFieldsQuery(id, {
+    activeOnly: true,
+  });
   const { data: registrants = [], isLoading: registrantsLoading } = useAttendanceAnswersQuery(id);
 
   const isLoading = eventLoading || settingsLoading || fieldsLoading || registrantsLoading;

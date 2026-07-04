@@ -73,6 +73,30 @@ describe('useAttendanceFieldsQuery', () => {
     expect(mockQueryBuilder.eq).toHaveBeenCalledWith('event_id', 'event-xyz');
   });
 
+  it('filters by is_active when activeOnly is true', () => {
+    mockQueryBuilder.order.mockReturnValueOnce(mockQueryBuilder).mockResolvedValueOnce({
+      data: [],
+      error: null,
+    });
+
+    renderHookWithClient(() => useAttendanceFieldsQuery('event-xyz', { activeOnly: true }));
+
+    expect(mockQueryBuilder.eq).toHaveBeenCalledWith('event_id', 'event-xyz');
+    expect(mockQueryBuilder.eq).toHaveBeenCalledWith('is_active', true);
+  });
+
+  it('does not filter by is_active when activeOnly is false', () => {
+    mockQueryBuilder.order.mockReturnValueOnce(mockQueryBuilder).mockResolvedValueOnce({
+      data: [],
+      error: null,
+    });
+
+    renderHookWithClient(() => useAttendanceFieldsQuery('event-xyz', { activeOnly: false }));
+
+    expect(mockQueryBuilder.eq).toHaveBeenCalledWith('event_id', 'event-xyz');
+    expect(mockQueryBuilder.eq).not.toHaveBeenCalledWith('is_active', true);
+  });
+
   it('orders by display_order then created_at ascending', () => {
     const resolvedValue = { data: [], error: null };
     mockQueryBuilder.order

@@ -6,6 +6,8 @@ export const QUERY_KEYS = {
     ['admin-attendance-settings', eventId] as const,
   adminAttendanceFields: (eventId: string | undefined) =>
     ['admin-attendance-fields', eventId] as const,
+  adminAttendanceFieldsByActivity: (eventId: string | undefined, activeOnly: boolean) =>
+    [...QUERY_KEYS.adminAttendanceFields(eventId), { activeOnly }] as const,
   adminAttendanceAnswers: (eventId: string | undefined) =>
     ['admin-attendance-answers', eventId] as const,
 } as const;
