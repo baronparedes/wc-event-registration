@@ -1,6 +1,5 @@
 import { Button, SectionCard } from '@/components/ui';
 import { useFieldAnswerTextFormatter } from '@/hooks/utils';
-import type { AnswerDisplayModel } from '@/hooks/utils/useFieldAnswerTextFormatter';
 import type { AttendeeSearchResult, CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -25,40 +24,6 @@ function getAnswerCardsItemClass(cardCount: number): string {
   return 'w-full md:w-[calc(50%-0.375rem)] xl:w-[calc(33.333%-0.5rem)]';
 }
 
-type AnswerCardItemProps = {
-  itemKey: string;
-  answerLabel: string;
-  answerDisplay: AnswerDisplayModel;
-  answerCount: number;
-  borderClassName: string;
-};
-
-function AnswerCardItem(props: AnswerCardItemProps) {
-  const { itemKey, answerLabel, answerDisplay, answerCount, borderClassName } = props;
-
-  return (
-    <li
-      key={itemKey}
-      className={`${getAnswerCardsItemClass(answerCount)} rounded-xl border ${borderClassName} bg-surface p-4 shadow-xs`}
-    >
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{answerLabel}</p>
-      {answerDisplay.kind === 'toggle' ? (
-        <p className="mt-2 break-words text-lg font-semibold text-text">
-          {answerDisplay.entries.map((entry, index, list) => (
-            <span key={entry.label}>
-              <span>{entry.label}</span>{' '}
-              <span className="text-sm italic text-muted">({entry.valueLabel})</span>
-              {index < list.length - 1 ? ', ' : ''}
-            </span>
-          ))}
-        </p>
-      ) : (
-        <p className="mt-2 break-words text-xl font-semibold text-text">{answerDisplay.text}</p>
-      )}
-    </li>
-  );
-}
-
 export function CheckInCard(props: CheckInCardProps) {
   const {
     attendee,
@@ -68,7 +33,7 @@ export function CheckInCard(props: CheckInCardProps) {
     onCheckIn,
     onReadyForNext,
   } = props;
-  const { getAnswerDisplayModel } = useFieldAnswerTextFormatter();
+  const { getAnswerText } = useFieldAnswerTextFormatter();
 
   const shouldShowReadyForNext =
     Boolean(checkInResult) || attendee?.check_in_status === 'checked_in';
@@ -99,9 +64,9 @@ export function CheckInCard(props: CheckInCardProps) {
 
           <div className="space-y-2 rounded-xl border border-border bg-background p-4">
             <h3 className="text-2xl font-semibold text-text">{attendee.full_name}</h3>
-            <p className="text-base text-muted">Member ID: {attendee.member_id ?? '—'}</p>
-            <p className="text-base text-muted">Role: {attendee.role ?? 'If applicable'}</p>
-            <p className="text-base text-muted">Category: {attendee.category ?? 'If applicable'}</p>
+            <p className="text-base text-muted">Member ID: {attendee.member_id ?? 'Guest'}</p>
+            <p className="text-base text-muted">Role: {attendee.role ?? 'N/A'}</p>
+            <p className="text-base text-muted">Category: {attendee.category ?? 'N/A'}</p>
             <p className="text-base text-muted">
               Registered: {formatDateTime(attendee.submitted_at)}
             </p>
@@ -119,19 +84,20 @@ export function CheckInCard(props: CheckInCardProps) {
             ) : (
               <ul className="mt-4 flex flex-wrap gap-3">
                 {attendee.registration_answers.map((answer) => {
-                  const answerDisplay = getAnswerDisplayModel(answer.field_type, {
-                    answer_text: answer.answer_text,
-                    answer_number: answer.answer_number,
-                  });
+                  const answerText = getAnswerText(answer.field_type, answer);
 
                   return (
-                    <AnswerCardItem
-                      itemKey={answer.event_field_id}
-                      answerLabel={answer.label}
-                      answerDisplay={answerDisplay}
-                      answerCount={attendee.registration_answers.length}
-                      borderClassName="border-secondary/20"
-                    />
+                    <li
+                      key={answer.event_field_id}
+                      className={`${getAnswerCardsItemClass(attendee.registration_answers.length)} rounded-xl border border-secondary/20 bg-surface p-4 shadow-xs`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                        {answer.label}
+                      </p>
+                      <p className="mt-2 break-words text-xl font-semibold text-text">
+                        {answerText}
+                      </p>
+                    </li>
                   );
                 })}
               </ul>
@@ -145,19 +111,20 @@ export function CheckInCard(props: CheckInCardProps) {
             ) : (
               <ul className="mt-4 flex flex-wrap gap-3">
                 {attendee.attendance_answers.map((answer) => {
-                  const answerDisplay = getAnswerDisplayModel(answer.field_type, {
-                    answer_text: answer.answer_text,
-                    answer_number: answer.answer_number,
-                  });
+                  const answerText = getAnswerText(answer.field_type, answer);
 
                   return (
-                    <AnswerCardItem
-                      itemKey={answer.attendance_field_id}
-                      answerLabel={answer.label}
-                      answerDisplay={answerDisplay}
-                      answerCount={attendee.attendance_answers.length}
-                      borderClassName="border-primary/20"
-                    />
+                    <li
+                      key={answer.attendance_field_id}
+                      className={`${getAnswerCardsItemClass(attendee.attendance_answers.length)} rounded-xl border border-primary/20 bg-surface p-4 shadow-xs`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                        {answer.label}
+                      </p>
+                      <p className="mt-2 break-words text-xl font-semibold text-text">
+                        {answerText}
+                      </p>
+                    </li>
                   );
                 })}
               </ul>

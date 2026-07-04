@@ -5,73 +5,114 @@ import type { EventFieldType } from '@/lib/domain/event-fields';
 export type FieldAnswerValue = {
   answer_text: string | null;
   answer_number: number | null;
+  answer_boolean?: boolean | null;
+  answer_date?: string | null;
+  answer_json?: unknown;
 };
-
-export type AnswerDisplayModel =
-  | {
-      kind: 'text';
-      text: string;
-    }
-  | {
-      kind: 'toggle';
-      entries: Array<{
-        label: string;
-        valueLabel: 'Yes' | 'No';
-      }>;
-    };
 
 /**
  * Provides shared helpers to render stored field answers as readable plain text.
  */
 export function useFieldAnswerTextFormatter() {
-  const readStoredValue = useCallback((answer: FieldAnswerValue): unknown => {
-    const rawValue = answer.answer_text ?? answer.answer_number;
-
-    if (rawValue === null || rawValue === undefined) {
-      return null;
+  const formatDisplayValue = useCallback((value: unknown): string => {
+    if (value === null || value === undefined) {
+      return '—';
     }
 
-    if (typeof rawValue !== 'string') {
-      return rawValue;
+    if (typeof value === 'string') {
+      return value;
     }
 
-    const normalized = rawValue.trim();
-    if (!normalized.startsWith('{') && !normalized.startsWith('[')) {
-      return rawValue;
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
     }
 
     try {
-      return JSON.parse(normalized) as unknown;
+      return JSON.stringify(value);
     } catch {
-      return rawValue;
+      return String(value);
     }
   }, []);
 
-  const parseToggleBooleanEntries = useCallback(
-    (fieldType: EventFieldType, answer: FieldAnswerValue): Array<[string, boolean]> | null => {
-      if (fieldType !== 'multi_select_toggle') {
+  const tryParseJsonLikeString = useCallback((value: string): unknown => {
+    let candidate = value.trim();
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (candidate.length === 0) {
         return null;
       }
 
-      const parsed = readStoredValue(answer);
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      try {
+        const parsed = JSON.parse(candidate) as unknown;
+        if (typeof parsed !== 'string') {
+          return parsed;
+        }
+
+        candidate = parsed.trim();
+        continue;
+      } catch {
+        const unescapedCandidate = candidate.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        if (unescapedCandidate !== candidate) {
+          candidate = unescapedCandidate;
+          continue;
+        }
+
+        return value;
+      }
+    }
+
+    return candidate;
+  }, []);
+
+  const readStoredValue = useCallback(
+    (answer: FieldAnswerValue): unknown => {
+      const rawValue =
+        answer.answer_text ??
+        answer.answer_number ??
+        answer.answer_boolean ??
+        answer.answer_date ??
+        answer.answer_json;
+
+      if (rawValue === null || rawValue === undefined) {
         return null;
       }
 
-      const entries = Object.entries(parsed as Record<string, unknown>);
-      const hasOnlyBooleanValues =
-        entries.length > 0 && entries.every(([, value]) => typeof value === 'boolean');
+      if (typeof rawValue !== 'string') {
+        return rawValue;
+      }
 
-      if (!hasOnlyBooleanValues) {
+      const normalized = rawValue.trim();
+      if (normalized.length === 0) {
         return null;
       }
 
-      return entries.map(([key, value]) => [key, value as boolean]);
+      return tryParseJsonLikeString(normalized);
     },
-    [readStoredValue],
+    [tryParseJsonLikeString],
   );
 
-  const formatAnswerValue = useCallback(
+  const readBooleanMapEntries = useCallback((value: unknown): Array<[string, boolean]> | null => {
+    const normalizedValue =
+      Array.isArray(value) && value.length === 1 && typeof value[0] === 'object' && value[0]
+        ? value[0]
+        : value;
+
+    if (!normalizedValue || typeof normalizedValue !== 'object' || Array.isArray(normalizedValue)) {
+      return null;
+    }
+
+    const entries = Object.entries(normalizedValue as Record<string, unknown>);
+    const hasOnlyBooleanValues =
+      entries.length > 0 && entries.every(([, entryValue]) => typeof entryValue === 'boolean');
+
+    if (!hasOnlyBooleanValues) {
+      return null;
+    }
+
+    return entries.map(([key, entryValue]) => [key, entryValue as boolean]);
+  }, []);
+
+  const getAnswerText = useCallback(
     (fieldType: EventFieldType, answer: FieldAnswerValue): string => {
       const parsed = readStoredValue(answer);
 
@@ -93,7 +134,7 @@ export function useFieldAnswerTextFormatter() {
         }
 
         case 'multi_select_toggle': {
-          const toggleEntries = parseToggleBooleanEntries(fieldType, answer);
+          const toggleEntries = readBooleanMapEntries(parsed);
           if (toggleEntries) {
             return toggleEntries
               .map(([key, value]) => `${key} (${value === true ? 'Yes' : 'No'})`)
@@ -103,13 +144,27 @@ export function useFieldAnswerTextFormatter() {
           break;
         }
 
-        case 'multi_select': {
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            const entries = Object.entries(parsed as Record<string, unknown>);
-            const selectedKeys = entries.filter(([, value]) => value === true).map(([key]) => key);
+        case 'radio':
+        case 'multi_select':
+        case 'checkbox': {
+          const booleanMapEntries = readBooleanMapEntries(parsed);
+          if (booleanMapEntries) {
+            const selectedKeys = booleanMapEntries
+              .filter(([, value]) => value === true)
+              .map(([key]) => key);
             if (selectedKeys.length > 0) {
               return selectedKeys.join(', ');
             }
+          }
+
+          if (Array.isArray(parsed)) {
+            return parsed.length > 0
+              ? parsed.map((value) => formatDisplayValue(value)).join(', ')
+              : '—';
+          }
+
+          if (typeof parsed === 'string') {
+            return parsed.trim().length > 0 ? parsed : '—';
           }
 
           break;
@@ -120,11 +175,22 @@ export function useFieldAnswerTextFormatter() {
       }
 
       if (Array.isArray(parsed)) {
-        return parsed.length > 0 ? parsed.map((value) => String(value)).join(', ') : '—';
+        return parsed.length > 0
+          ? parsed.map((value) => formatDisplayValue(value)).join(', ')
+          : '—';
       }
 
       if (parsed && typeof parsed === 'object') {
+        const booleanMapEntries = readBooleanMapEntries(parsed);
+        if (booleanMapEntries) {
+          const selectedKeys = booleanMapEntries
+            .filter(([, value]) => value === true)
+            .map(([key]) => key);
+          return selectedKeys.length > 0 ? selectedKeys.join(', ') : '—';
+        }
+
         const entries = Object.entries(parsed as Record<string, unknown>);
+
         const nonEmptyEntries = entries.filter(([, value]) => {
           if (value === null || value === false) {
             return false;
@@ -136,7 +202,9 @@ export function useFieldAnswerTextFormatter() {
         });
 
         if (nonEmptyEntries.length > 0) {
-          return nonEmptyEntries.map(([key, value]) => `${key}: ${String(value)}`).join(', ');
+          return nonEmptyEntries
+            .map(([key, value]) => `${key}: ${formatDisplayValue(value)}`)
+            .join(', ');
         }
 
         return '—';
@@ -148,32 +216,10 @@ export function useFieldAnswerTextFormatter() {
 
       return String(parsed);
     },
-    [parseToggleBooleanEntries, readStoredValue],
-  );
-
-  const getAnswerDisplayModel = useCallback(
-    (fieldType: EventFieldType, answer: FieldAnswerValue): AnswerDisplayModel => {
-      const toggleEntries = parseToggleBooleanEntries(fieldType, answer);
-
-      if (toggleEntries) {
-        return {
-          kind: 'toggle',
-          entries: toggleEntries.map(([label, value]) => ({
-            label,
-            valueLabel: value ? 'Yes' : 'No',
-          })),
-        };
-      }
-
-      return {
-        kind: 'text',
-        text: formatAnswerValue(fieldType, answer),
-      };
-    },
-    [formatAnswerValue, parseToggleBooleanEntries],
+    [formatDisplayValue, readBooleanMapEntries, readStoredValue],
   );
 
   return {
-    getAnswerDisplayModel,
+    getAnswerText,
   };
 }

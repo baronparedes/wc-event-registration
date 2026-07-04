@@ -44,6 +44,7 @@ describe('useCheckInAttendeeMutation', () => {
 
     const payload = {
       event_id: 'event-1',
+      attendee_kind: 'registered' as const,
       registration_id: 'registration-1',
     };
 
@@ -81,6 +82,7 @@ describe('useCheckInAttendeeMutation', () => {
     await expect(
       result.current.mutateAsync({
         event_id: 'event-2',
+        attendee_kind: 'registered',
         registration_id: 'registration-2',
       }),
     ).rejects.toThrow('Unable to check in attendee');
@@ -94,6 +96,7 @@ describe('useCheckInAttendeeMutation', () => {
     await expect(
       result.current.mutateAsync({
         event_id: 'event-3',
+        attendee_kind: 'registered',
         registration_id: 'registration-3',
       }),
     ).rejects.toThrow('Failed to check in attendee.');

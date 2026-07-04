@@ -79,8 +79,10 @@ export type RegistrationAnswerSummary = {
 };
 
 export type AttendeeSearchResult = {
+  attendee_kind: 'registered' | 'public';
   registration_id: string;
-  user_id: string;
+  public_registration_id: string | null;
+  user_id: string | null;
   member_id: string | null;
   full_name: string;
   email: string | null;
@@ -101,5 +103,7 @@ export type SearchAttendeesInput = {
 
 export type CheckInAttendeeInput = {
   event_id: string;
-  registration_id: string;
+  attendee_kind: 'registered' | 'public';
+  registration_id?: string;
+  public_registration_id?: string;
 };

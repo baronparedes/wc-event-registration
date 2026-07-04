@@ -28,7 +28,7 @@ export function ResultsList(props: ResultsListProps) {
         <EmptyState
           icon={<Users className="h-6 w-6" />}
           title="No attendees found"
-          description="Try a member ID, name fragment, or email from an active registration."
+          description="Try a member ID, name fragment, or email from a registered or public attendee."
         />
       </div>
     );

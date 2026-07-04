@@ -145,7 +145,15 @@ export function AdminAttendanceCheckInPage() {
     try {
       const result = await checkInMutation.mutateAsync({
         event_id: eventId,
-        registration_id: confirmedAttendee.registration_id,
+        attendee_kind: confirmedAttendee.attendee_kind,
+        registration_id:
+          confirmedAttendee.attendee_kind === 'registered'
+            ? confirmedAttendee.registration_id
+            : undefined,
+        public_registration_id:
+          confirmedAttendee.attendee_kind === 'public'
+            ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
+            : undefined,
       });
 
       setCheckInResult(result);
@@ -154,7 +162,7 @@ export function AdminAttendanceCheckInPage() {
         toast.success('Attendee checked in successfully.');
         setTimeout(() => {
           handleReadyForNext();
-        }, 1200);
+        }, TIMING.registrationWizardStepThreeTimeoutMs);
       } else if (result.status === 'already_checked_in') {
         toast.info('Attendee was already checked in.');
       } else {

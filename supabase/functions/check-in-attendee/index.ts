@@ -15,7 +15,9 @@ const allowedOrigins = readAllowedOrigins();
 
 const checkInAttendeeRequestSchema = z.object({
   event_id: z.string().uuid('Invalid event ID.'),
-  registration_id: z.string().uuid('Invalid registration ID.'),
+  attendee_kind: z.enum(['registered', 'public']).optional(),
+  registration_id: z.string().uuid('Invalid registration ID.').optional(),
+  public_registration_id: z.string().uuid('Invalid public registration ID.').optional(),
 });
 
 type CheckInAttendeeRequest = z.infer<typeof checkInAttendeeRequestSchema>;
@@ -83,7 +85,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { event_id, registration_id }: CheckInAttendeeRequest = parsedBody.data;
+    const {
+      event_id,
+      attendee_kind,
+      registration_id,
+      public_registration_id,
+    }: CheckInAttendeeRequest = parsedBody.data;
+
+    const resolvedAttendeeKind: 'registered' | 'public' =
+      attendee_kind ?? (public_registration_id ? 'public' : 'registered');
+    const targetRegistrationId =
+      resolvedAttendeeKind === 'public' ? public_registration_id : registration_id;
+
+    if (!targetRegistrationId) {
+      return jsonResponse(
+        corsHeaders,
+        {
+          success: false,
+          error:
+            resolvedAttendeeKind === 'public'
+              ? 'Public registration ID is required.'
+              : 'Registration ID is required.',
+          error_code: 'INVALID_REQUEST',
+        },
+        400,
+      );
+    }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -116,48 +143,90 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: registration, error: registrationError } = await adminClient
-      .from('registrations')
-      .select('id, status')
-      .eq('id', registration_id)
-      .eq('event_id', event_id)
-      .maybeSingle();
+    if (resolvedAttendeeKind === 'registered') {
+      const { data: registration, error: registrationError } = await adminClient
+        .from('registrations')
+        .select('id, status')
+        .eq('id', targetRegistrationId)
+        .eq('event_id', event_id)
+        .maybeSingle();
 
-    if (registrationError) {
-      return errorResponse(corsHeaders, 500, 'Failed to verify registration', undefined, {
-        error_code: 'REGISTRATION_LOOKUP_FAILED',
-      });
-    }
+      if (registrationError) {
+        return errorResponse(corsHeaders, 500, 'Failed to verify registration', undefined, {
+          error_code: 'REGISTRATION_LOOKUP_FAILED',
+        });
+      }
 
-    if (!registration) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Registration not found for this event.',
-          error_code: 'REGISTRATION_NOT_FOUND',
-        },
-        404,
-      );
-    }
+      if (!registration) {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Registration not found for this event.',
+            error_code: 'REGISTRATION_NOT_FOUND',
+          },
+          404,
+        );
+      }
 
-    if (registration.status === 'cancelled') {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: 'Cancelled registrations cannot be checked in.',
-          error_code: 'REGISTRATION_CANCELLED',
-        },
-        400,
-      );
+      if (registration.status === 'cancelled') {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Cancelled registrations cannot be checked in.',
+            error_code: 'REGISTRATION_CANCELLED',
+          },
+          400,
+        );
+      }
+    } else {
+      const { data: publicRegistration, error: publicRegistrationError } = await adminClient
+        .from('public_registrations')
+        .select('id, status')
+        .eq('id', targetRegistrationId)
+        .eq('event_id', event_id)
+        .maybeSingle();
+
+      if (publicRegistrationError) {
+        return errorResponse(corsHeaders, 500, 'Failed to verify public registration', undefined, {
+          error_code: 'PUBLIC_REGISTRATION_LOOKUP_FAILED',
+        });
+      }
+
+      if (!publicRegistration) {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Public registration not found for this event.',
+            error_code: 'PUBLIC_REGISTRATION_NOT_FOUND',
+          },
+          404,
+        );
+      }
+
+      if (publicRegistration.status === 'cancelled') {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Cancelled public registrations cannot be checked in.',
+            error_code: 'PUBLIC_REGISTRATION_CANCELLED',
+          },
+          400,
+        );
+      }
     }
 
     const { data: existingCheckIn, error: existingCheckInError } = await adminClient
       .from('attendance_check_ins')
       .select('first_checked_in_at')
       .eq('event_id', event_id)
-      .eq('registration_id', registration_id)
+      .eq(
+        resolvedAttendeeKind === 'public' ? 'public_registration_id' : 'registration_id',
+        targetRegistrationId,
+      )
       .maybeSingle();
 
     if (existingCheckInError) {
@@ -175,7 +244,7 @@ Deno.serve(async (req) => {
             success: true,
             status: 'already_checked_in',
             official_check_in_time: existingCheckIn.first_checked_in_at,
-            attendee_kind: 'registered',
+            attendee_kind: resolvedAttendeeKind,
             message: 'Attendee is already checked in.',
           },
         },
@@ -188,8 +257,9 @@ Deno.serve(async (req) => {
       .from('attendance_check_ins')
       .insert({
         event_id,
-        attendee_kind: 'registered',
-        registration_id,
+        attendee_kind: resolvedAttendeeKind,
+        registration_id: resolvedAttendeeKind === 'registered' ? targetRegistrationId : null,
+        public_registration_id: resolvedAttendeeKind === 'public' ? targetRegistrationId : null,
         first_checked_in_at: nowIso,
       })
       .select('first_checked_in_at')
@@ -201,7 +271,10 @@ Deno.serve(async (req) => {
           .from('attendance_check_ins')
           .select('first_checked_in_at')
           .eq('event_id', event_id)
-          .eq('registration_id', registration_id)
+          .eq(
+            resolvedAttendeeKind === 'public' ? 'public_registration_id' : 'registration_id',
+            targetRegistrationId,
+          )
           .maybeSingle();
 
         return jsonResponse(
@@ -212,7 +285,7 @@ Deno.serve(async (req) => {
               success: true,
               status: 'already_checked_in',
               official_check_in_time: raceWinnerCheckIn?.first_checked_in_at ?? nowIso,
-              attendee_kind: 'registered',
+              attendee_kind: resolvedAttendeeKind,
               message: 'Attendee is already checked in.',
             },
           },
@@ -233,7 +306,7 @@ Deno.serve(async (req) => {
           success: true,
           status: 'checked_in',
           official_check_in_time: createdCheckIn.first_checked_in_at,
-          attendee_kind: 'registered',
+          attendee_kind: resolvedAttendeeKind,
           message: 'Check-in completed successfully.',
         },
       },

@@ -17,7 +17,7 @@ type SearchAttendeesError = {
   detail?: string;
 };
 
-/** Searches registered attendees by member ID, name fragment, or email token. */
+/** Searches registered and public attendees by member ID, name fragment, or email token. */
 export function useSearchAttendeesQuery(eventId: string | undefined, searchToken: string) {
   const normalizedSearchToken = searchToken.trim();
 
