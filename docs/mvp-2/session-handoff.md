@@ -6,8 +6,8 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 
 ## Pause Snapshot
 
-- Current state: Paused after completing Session 3 (EPIC-8-S3).
-- Next session to start: Session 4 (EPIC-8-S4 Registered Check-In).
+- Current state: Paused after completing Session 4 (EPIC-8-S4).
+- Next session to start: Session 5 (EPIC-8-S5 Walk-In Check-In).
 - Latest validation at pause:
   - `npm run build` passed.
   - `npm run format:check` passed.
@@ -35,7 +35,7 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 - **Resolved**: Option B selected — edge-mediated reads via search-attendees Edge Function.
 - Rationale: simpler RLS surface; avoids direct authenticated reads on attendance tables.
 
-2. ASM-003: Assignment field max lengths
+1. ASM-003: Assignment field max lengths
 
 - **Resolved**: Superseded by design change. Assignment fields are now dynamic (admin-configured), matching the event-fields pattern. Field-level validation_rules control any max length constraints per field definition.
 
@@ -152,12 +152,12 @@ Goal:
 
 Checklist:
 
-- [ ] Add attendee search by Member ID token, name fragment, and email (via search-attendees Edge Function)
-- [ ] Add disambiguation result list for multi-match names
-- [ ] Add check-in action flow and success/duplicate states
-- [ ] Implement search-attendees Edge Function (edge-mediated read, DEC-004 Option B)
-- [ ] Implement check-in-attendee Edge Function with idempotent first check-in behavior
-- [ ] Ensure official first check-in timestamp is never overwritten
+- [x] Add attendee search by Member ID token, name fragment, and email (via search-attendees Edge Function)
+- [x] Add disambiguation result list for multi-match names
+- [x] Add check-in action flow and success/duplicate states
+- [x] Implement search-attendees Edge Function (edge-mediated read, DEC-004 Option B)
+- [x] Implement check-in-attendee Edge Function with idempotent first check-in behavior
+- [x] Ensure official first check-in timestamp is never overwritten
 
 Expected file touch zones:
 
@@ -338,15 +338,15 @@ Run at end of Session 8:
 
 - Mitigation: keep admin-only boundary explicit in PR scope
 
-2. Race conditions on repeated scan/search actions
+1. Race conditions on repeated scan/search actions
 
 - Mitigation: DB uniqueness plus idempotent function logic
 
-3. Coupling attendance data with registration answers
+1. Coupling attendance data with registration answers
 
 - Mitigation: enforce dedicated attendance tables and contracts
 
-4. Export regressions impacting registration CSV
+1. Export regressions impacting registration CSV
 
 - Mitigation: keep separate function and formatter path
 
@@ -354,4 +354,4 @@ Run at end of Session 8:
 
 Use this prompt for the next dev-agent execution session:
 
-Implement Session 2 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S2 only, deliver attendance settings end-to-end (query, mutation, UI section, and update-attendance-settings Edge Function), and run build plus format plus local QA checks for feature 8.1 before handoff.
+Implement Session 5 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S5 only, deliver walk-in create-and-check-in end-to-end (UI flow, validation, mutation hook, and create-walk-in-check-in Edge Function), and run build plus format plus local QA checks for feature 8.4 before handoff.

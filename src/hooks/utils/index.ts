@@ -5,3 +5,4 @@ export { useSaveConfirmation, type SaveConfirmationState } from './useSaveConfir
 export { useScanBuffer } from './useScanBuffer';
 export { useKioskInactivityReset } from './useKioskInactivityReset';
 export { useIsMobileViewport } from './useIsMobileViewport';
+export { useFieldAnswerTextFormatter } from './useFieldAnswerTextFormatter';

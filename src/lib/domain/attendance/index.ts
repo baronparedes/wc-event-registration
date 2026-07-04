@@ -8,6 +8,11 @@ export type {
   TimeslotAttendanceRecord,
   AttendanceAnswer,
   RegistrantAttendanceRow,
+  AttendanceAnswerSummary,
+  RegistrationAnswerSummary,
+  AttendeeSearchResult,
+  SearchAttendeesInput,
+  CheckInAttendeeInput,
 } from './types';
 
 export type {

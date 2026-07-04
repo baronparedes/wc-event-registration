@@ -11,6 +11,7 @@ import { Button, SectionCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import {
   ROUTE_PATHS,
+  toAdminEventAttendanceCheckIn,
   toAdminEventAttendanceData,
   toAdminEventAttendanceFields,
   toAdminEventDetail,
@@ -247,6 +248,7 @@ export function AdminEventAttendancePage() {
         ]}
         navLinks={
           <>
+            <ActionLink to={toAdminEventAttendanceCheckIn(resolvedEventId)}>Check-In</ActionLink>
             <ActionLink to={toAdminEventAttendanceFields(resolvedEventId)}>Fields</ActionLink>
             <ActionLink to={toAdminEventAttendanceData(resolvedEventId)}>
               Attendee Details

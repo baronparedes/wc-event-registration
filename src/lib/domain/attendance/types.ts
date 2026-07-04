@@ -1,3 +1,6 @@
+import type { AttendanceFieldType } from '@/lib/domain/attendance-fields';
+import type { EventFieldType } from '@/lib/domain/event-fields';
+
 export type AttendeeKind = 'registered' | 'public' | 'walk_in';
 
 export type CheckInStatus = 'checked_in' | 'already_checked_in' | 'rejected';
@@ -55,4 +58,48 @@ export type RegistrantAttendanceRow = {
   full_name: string;
   email: string | null;
   answers: AttendanceAnswer[];
+};
+
+export type AttendanceAnswerSummary = {
+  attendance_field_id: string;
+  field_type: AttendanceFieldType;
+  field_key: string;
+  label: string;
+  answer_text: string | null;
+  answer_number: number | null;
+};
+
+export type RegistrationAnswerSummary = {
+  event_field_id: string;
+  field_type: EventFieldType;
+  field_key: string;
+  label: string;
+  answer_text: string | null;
+  answer_number: number | null;
+};
+
+export type AttendeeSearchResult = {
+  registration_id: string;
+  user_id: string;
+  member_id: string | null;
+  full_name: string;
+  email: string | null;
+  role: string | null;
+  category: string | null;
+  registration_status: 'submitted' | 'updated' | 'cancelled';
+  submitted_at: string;
+  check_in_status: 'checked_in' | 'not_checked_in';
+  official_check_in_time: string | null;
+  registration_answers: RegistrationAnswerSummary[];
+  attendance_answers: AttendanceAnswerSummary[];
+};
+
+export type SearchAttendeesInput = {
+  event_id: string;
+  search_token: string;
+};
+
+export type CheckInAttendeeInput = {
+  event_id: string;
+  registration_id: string;
 };
