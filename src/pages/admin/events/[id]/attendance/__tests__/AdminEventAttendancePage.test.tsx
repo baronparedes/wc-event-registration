@@ -246,10 +246,10 @@ describe('AdminEventAttendancePage', () => {
     });
   });
 
-  it('renders a top back link to event detail', () => {
+  it('renders breadcrumb link to event detail', () => {
     renderPage();
 
-    expect(screen.getAllByRole('link', { name: 'Back to Event' })[0]).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Event Alpha' })).toHaveAttribute(
       'href',
       `/admin/events/${EVENT_ID}`,
     );

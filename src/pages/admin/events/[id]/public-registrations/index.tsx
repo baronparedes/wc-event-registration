@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { Button } from '@/components/ui/Button';
 import {
@@ -19,6 +18,7 @@ import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registra
 import type { AdminPublicRegistrationsPage } from '@/hooks/domain/public-registrations/queries/useAdminPublicRegistrationsQuery';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { PublicRegistrationsList } from '../registrations/components';
 
@@ -53,7 +53,7 @@ export function AdminPublicRegistrationsPage() {
   if (!eventId) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Public Registrations" />
+        <AdminPageShell.Header title="Manage Public Registrations" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Invalid event ID</p>
         </AdminPageShell.Content>
@@ -106,7 +106,7 @@ export function AdminPublicRegistrationsPage() {
   if (error) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Public Registrations" />
+        <AdminPageShell.Header title="Manage Public Registrations" />
         <AdminPageShell.Content>
           <div className="rounded-2xl border border-border bg-surface p-4">
             <p className="text-sm text-red-600">
@@ -137,8 +137,8 @@ export function AdminPublicRegistrationsPage() {
           { label: event?.title ?? 'Event', to: toAdminEventDetail(eventId) },
           { label: 'Public Registrations' },
         ]}
-        navLinks={<ActionLink to={toAdminEventDetail(eventId)}>Back to Event</ActionLink>}
-        title="Public Registrations"
+        navLinks={<EventNavigationLinks eventId={eventId} currentSection="public-registrations" />}
+        title="Manage Public Registrations"
         description={`Page ${currentPage} of ${totalPages} • ${registrations.length} registrations on this page`}
         actions={navActions}
       />

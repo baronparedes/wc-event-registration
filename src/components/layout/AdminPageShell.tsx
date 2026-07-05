@@ -54,7 +54,11 @@ function AdminPageHeader({
               ))}
             </nav>
           )}
-          {navLinks && <div className="flex items-center gap-3">{navLinks}</div>}
+          {navLinks && (
+            <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+              {navLinks}
+            </div>
+          )}
         </div>
       )}
 

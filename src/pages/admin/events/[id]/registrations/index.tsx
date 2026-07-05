@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { Button } from '@/components/ui/Button';
 import {
@@ -17,6 +16,7 @@ import {
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { CopyNamesButton, ExportButton, RegistrationsList } from './components';
 
@@ -50,7 +50,7 @@ export function AdminRegistrationsPage() {
   if (!eventId) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Registrations" />
+        <AdminPageShell.Header title="Manage Registrations" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Invalid event ID</p>
         </AdminPageShell.Content>
@@ -73,7 +73,7 @@ export function AdminRegistrationsPage() {
   if (error) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Registrations" />
+        <AdminPageShell.Header title="Manage Registrations" />
         <AdminPageShell.Content>
           <div className="rounded-2xl border border-border bg-surface p-4">
             <p className="text-sm text-red-600">Error loading registrations: {String(error)}</p>
@@ -144,8 +144,8 @@ export function AdminRegistrationsPage() {
           { label: event?.title ?? 'Event', to: toAdminEventDetail(eventId) },
           { label: 'Registrations' },
         ]}
-        navLinks={<ActionLink to={toAdminEventDetail(eventId)}>Back to Event</ActionLink>}
-        title="Registrations"
+        navLinks={<EventNavigationLinks eventId={eventId} currentSection="registrations" />}
+        title="Manage Registrations"
         description={`Page ${currentPage} of ${totalPages} • ${registrations.length} member registrations on this page`}
         actions={navActions}
       />

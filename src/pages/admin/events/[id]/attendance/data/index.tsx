@@ -6,10 +6,12 @@ import {
   ROUTE_PATHS,
   toAdminEventAttendance,
   toAdminEventAttendanceFields,
+  toAdminEventDetail,
 } from '@/config/constants';
 import { useAttendanceAnswersQuery, useAttendanceSettingsQuery } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendanceDataEntryList } from './components';
 
@@ -30,15 +32,14 @@ export function AdminAttendanceDataPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventAttendance(id) : undefined },
+          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
+          { label: 'Attendance', to: id ? toAdminEventAttendance(id) : undefined },
           { label: 'Attendee Details' },
         ]}
         navLinks={
-          id ? (
-            <ActionLink to={toAdminEventAttendance(id)}>Back to Attendance</ActionLink>
-          ) : undefined
+          id ? <EventNavigationLinks eventId={id} currentSection="attendance-data" /> : undefined
         }
-        title="Attendee Details"
+        title="Manage Attendee Details"
         description={
           event
             ? `Fill in pre-event details for registered attendees of ${event.title}`
