@@ -437,6 +437,19 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
 
       if (!result.success) {
         logger.error('Registration submission failed:', result);
+        if (result.error_code === 'VALIDATION_FAILED' && Array.isArray(result.errors)) {
+          result.errors.forEach((error) => {
+            dynamicForm.setError(error.fieldKey, {
+              type: 'manual',
+              message: error.message,
+            });
+          });
+
+          setSubmitErrorMessage('Some answers need attention. Please review highlighted fields.');
+          toast.error('Some answers need attention. Please review highlighted fields.');
+          return;
+        }
+
         if (result.error_code === 'duplicate_blocked') {
           setSubmitErrorMessage('You have already registered for this event.');
           toast.error(TOAST_MESSAGES.registration.alreadyRegistered);

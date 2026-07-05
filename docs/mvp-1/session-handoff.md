@@ -1,6 +1,41 @@
 # Session Handoff
 
-Last updated: 2026-06-30
+Last updated: 2026-07-05
+
+## Current Session Work (2026-07-05)
+
+### Scope Completed This Session
+
+- Added role-allotment-first option capacity behavior for registration flows.
+- Updated option capacity behavior so role allotments can be configured without manually setting max slots first.
+- Set effective option capacity to derive from the total of configured role allotments.
+- Removed no-cap role allotment variant from admin field configuration.
+- Removed visible max slots input from the admin options editor and kept role allotments as the primary capacity control.
+- Updated public registration capacity handling to remain role-neutral (public attendees have no member role context).
+- Refactored repeated slot validation logic into shared helpers used by both submit functions.
+
+### Business Rules Now Enforced
+
+- Role matching for allotments is case-insensitive.
+- For member registrations, an option with role allotments consumes slots only when the member role matches a configured role.
+- Member roles not listed in an option's role allotments do not consume a slot for that option.
+- For options without role allotments, one active registration consumes one slot.
+- For public registrations, role-allotted options are excluded from role-based slot validation; non-role option caps are still enforced.
+- If no option capacity is configured for a selected option, registration remains open for that option.
+
+### Files Added/Updated
+
+- Updated [src/pages/admin/events/[id]/fields/components/FieldOptionsEditor.tsx](src/pages/admin/events/[id]/fields/components/FieldOptionsEditor.tsx)
+- Updated [src/lib/domain/event-fields/schemas.ts](src/lib/domain/event-fields/schemas.ts)
+- Updated [src/lib/domain/event-fields/transforms.ts](src/lib/domain/event-fields/transforms.ts)
+- Updated [supabase/functions/submit-registration/index.ts](supabase/functions/submit-registration/index.ts)
+- Updated [supabase/functions/submit-public-registration/index.ts](supabase/functions/submit-public-registration/index.ts)
+- Updated [supabase/functions/\_shared/validation.ts](supabase/functions/_shared/validation.ts)
+
+### Notes
+
+- Event-level global capacity is still deferred and not implemented in this session.
+- Option capacity logic is now centralized through shared validation helpers to reduce behavior drift between member and public flows.
 
 ## Current Session Work (2026-06-30)
 

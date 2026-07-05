@@ -134,6 +134,8 @@ describe('event-fields schemas', () => {
           value: '9am',
           toggle_label: '',
           toggle_default: false,
+          max_slots: '',
+          role_allotments: [],
         },
       ],
       val_min_length: '',
@@ -167,6 +169,40 @@ describe('event-fields schemas', () => {
           label: '9AM',
           value: '9am',
           toggle_label: 'With breakfast?',
+          max_slots: '',
+          role_allotments: [],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('accepts role allotments without explicitly configured max slots', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [{ role: 'Prayer Coach', alloted_slots: '10' }],
         },
       ],
       val_min_length: '',

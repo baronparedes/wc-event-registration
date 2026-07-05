@@ -26,6 +26,10 @@ export interface SubmitRegistrationError {
   error: string;
   error_code?: string;
   error_detail?: string;
+  errors?: Array<{
+    fieldKey: string;
+    message: string;
+  }>;
 }
 
 export type SubmitRegistrationResult = SubmitRegistrationSuccess | SubmitRegistrationError;

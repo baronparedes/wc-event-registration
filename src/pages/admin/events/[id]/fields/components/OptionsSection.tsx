@@ -1,4 +1,10 @@
-import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form';
+import type {
+  Control,
+  FieldArrayWithId,
+  UseFieldArrayReturn,
+  UseFormRegister,
+  UseFormSetValue,
+} from 'react-hook-form';
 
 import { SectionCard } from '@/components/ui/SectionCard';
 import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields';
@@ -9,6 +15,8 @@ type OptionsSectionProps = {
   isStructurallyLocked: boolean;
   optionFields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[];
   register: UseFormRegister<EventFieldFormValues>;
+  control: Control<EventFieldFormValues>;
+  setValue: UseFormSetValue<EventFieldFormValues>;
   errors: Record<string, unknown>;
   append: UseFieldArrayReturn<EventFieldFormValues>['append'];
   remove: UseFieldArrayReturn<EventFieldFormValues>['remove'];
@@ -20,6 +28,8 @@ export function OptionsSection({
   isStructurallyLocked,
   optionFields,
   register,
+  control,
+  setValue,
   errors,
   append,
   remove,
@@ -37,6 +47,8 @@ export function OptionsSection({
       <FieldOptionsEditor
         fields={optionFields}
         register={register}
+        control={control}
+        setValue={setValue}
         errors={errors}
         remove={remove}
         append={append}

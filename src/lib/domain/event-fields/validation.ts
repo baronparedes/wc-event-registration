@@ -162,6 +162,101 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
     rules.max_selections = maxSelections;
   }
 
+  const maxSlots = field.validation_rules.max_slots;
+  if (isRecord(maxSlots)) {
+    const parsedMaxSlots = Object.entries(maxSlots).reduce<Record<string, number>>(
+      (acc, [optionValue, rawMaxSlots]) => {
+        if (
+          typeof rawMaxSlots === 'number' &&
+          Number.isFinite(rawMaxSlots) &&
+          Number.isInteger(rawMaxSlots) &&
+          rawMaxSlots > 0
+        ) {
+          acc[optionValue] = rawMaxSlots;
+        }
+
+        return acc;
+      },
+      {},
+    );
+
+    if (Object.keys(parsedMaxSlots).length > 0) {
+      rules.max_slots = parsedMaxSlots;
+    }
+  }
+
+  const maxSlotsRoleAllotments = field.validation_rules.max_slots_role_allotments;
+  if (isRecord(maxSlotsRoleAllotments)) {
+    const parsedRoleAllotments = Object.entries(maxSlotsRoleAllotments).reduce<
+      Record<string, Array<{ role: string; alloted_slots: number }>>
+    >((acc, [optionValue, rawEntries]) => {
+      if (Array.isArray(rawEntries)) {
+        const dedupedEntries = new Map<string, { role: string; alloted_slots: number }>();
+
+        for (const entry of rawEntries) {
+          if (!isRecord(entry)) {
+            continue;
+          }
+
+          const role = typeof entry.role === 'string' ? entry.role.trim() : '';
+          if (role.length === 0) {
+            continue;
+          }
+
+          const rawLimit = entry.alloted_slots;
+          if (
+            typeof rawLimit === 'number' &&
+            Number.isFinite(rawLimit) &&
+            Number.isInteger(rawLimit) &&
+            rawLimit > 0
+          ) {
+            dedupedEntries.set(role.toLowerCase(), { role, alloted_slots: rawLimit });
+          }
+        }
+
+        const sanitizedEntries = Array.from(dedupedEntries.values());
+        if (sanitizedEntries.length > 0) {
+          acc[optionValue] = sanitizedEntries;
+        }
+
+        return acc;
+      }
+
+      // Backward compatibility for legacy role-keyed object shape.
+      if (!isRecord(rawEntries)) {
+        return acc;
+      }
+
+      const dedupedEntries = new Map<string, { role: string; alloted_slots: number }>();
+      for (const [roleKey, rawLimit] of Object.entries(rawEntries)) {
+        const role = roleKey.trim();
+        if (role.length === 0) {
+          continue;
+        }
+
+        if (
+          typeof rawLimit === 'number' &&
+          Number.isFinite(rawLimit) &&
+          Number.isInteger(rawLimit) &&
+          rawLimit > 0
+        ) {
+          dedupedEntries.set(role.toLowerCase(), { role, alloted_slots: rawLimit });
+        }
+      }
+
+      const sanitizedEntries = Array.from(dedupedEntries.values());
+      if (sanitizedEntries.length > 0) {
+        acc[optionValue] = sanitizedEntries;
+      }
+
+      return acc;
+    }, {});
+
+    if (Object.keys(parsedRoleAllotments).length > 0) {
+      rules.max_slots_role_allotments = parsedRoleAllotments;
+    }
+  }
+
   const minDate = field.validation_rules.min_date;
   if (typeof minDate === 'string' && minDate.trim().length > 0) {
     rules.min_date = minDate;

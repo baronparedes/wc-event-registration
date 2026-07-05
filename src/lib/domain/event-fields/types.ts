@@ -35,6 +35,14 @@ export type PublicEventFieldValidationRules = {
   max?: number;
   min_selections?: number;
   max_selections?: number;
+  max_slots?: Record<string, number>;
+  max_slots_role_allotments?: Record<
+    string,
+    Array<{
+      role: string;
+      alloted_slots: number;
+    }>
+  >;
   min_date?: string;
   max_date?: string;
 };
@@ -47,6 +55,14 @@ export type AdminEventFieldValidationRules = {
   max?: number;
   min_selections?: number;
   max_selections?: number;
+  max_slots?: Record<string, number>;
+  max_slots_role_allotments?: Record<
+    string,
+    Array<{
+      role: string;
+      alloted_slots: number;
+    }>
+  >;
   min_date?: string;
   max_date?: string;
 };

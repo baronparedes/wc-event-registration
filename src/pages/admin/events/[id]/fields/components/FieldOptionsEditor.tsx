@@ -1,10 +1,13 @@
 import type {
+  Control,
   FieldArrayWithId,
   FieldErrors,
   UseFieldArrayAppend,
   UseFieldArrayRemove,
   UseFormRegister,
+  UseFormSetValue,
 } from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
 import type { EventFieldFormValues } from '@/lib/domain/event-fields';
@@ -13,6 +16,8 @@ import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
 type FieldOptionsEditorProps = {
   fields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[];
   register: UseFormRegister<EventFieldFormValues>;
+  control: Control<EventFieldFormValues>;
+  setValue: UseFormSetValue<EventFieldFormValues>;
   errors: FieldErrors<EventFieldFormValues>;
   remove: UseFieldArrayRemove;
   append: UseFieldArrayAppend<EventFieldFormValues, 'options'>;
@@ -23,17 +28,29 @@ type FieldOptionsEditorProps = {
 const inputClass =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600';
 
+const ROLE_ALLOTMENTS_TOOLTIP =
+  'Role matching is case-insensitive. Each matched registration consumes one slot. When role allotments are set, max slots are derived from their total.';
+
 /** Manages the options list for select, radio, and multi_select field types. */
 export function FieldOptionsEditor({
   fields,
   register,
+  control,
+  setValue,
   errors,
   remove,
   append,
   isLocked,
   selectedFieldType,
 }: FieldOptionsEditorProps) {
+  const watchedOptions = useWatch({ control, name: 'options' }) ?? [];
+
   const showToggleLabel = selectedFieldType === 'multi_select_toggle';
+  const showCapacity =
+    selectedFieldType === 'select' ||
+    selectedFieldType === 'radio' ||
+    selectedFieldType === 'multi_select' ||
+    selectedFieldType === 'multi_select_toggle';
 
   return (
     <div className="space-y-3">
@@ -44,6 +61,30 @@ export function FieldOptionsEditor({
         const labelError = errors.options?.[index]?.label?.message;
         const valueError = errors.options?.[index]?.value?.message;
         const toggleLabelError = errors.options?.[index]?.toggle_label?.message;
+        const optionRoleAllotments = watchedOptions[index]?.role_allotments ?? [];
+        const canAddRoleAllotments = !isLocked;
+        const derivedSlotsTotal = optionRoleAllotments.reduce((sum, entry) => {
+          const parsed = Number(entry.alloted_slots.trim());
+          return Number.isInteger(parsed) && parsed > 0 ? sum + parsed : sum;
+        }, 0);
+        const hasRoleAllotments = optionRoleAllotments.length > 0;
+
+        const addRoleAllotment = () => {
+          const nextAllotments = [...optionRoleAllotments, { role: '', alloted_slots: '' }];
+          setValue(`options.${index}.role_allotments`, nextAllotments, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        };
+
+        const removeRoleAllotment = (allotmentIndex: number) => {
+          const nextAllotments = optionRoleAllotments.filter((_, idx) => idx !== allotmentIndex);
+          setValue(`options.${index}.role_allotments`, nextAllotments, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        };
+
         return (
           <div
             key={field.id}
@@ -81,7 +122,9 @@ export function FieldOptionsEditor({
                     aria-label={`Option ${index + 1} label`}
                     className={`${inputClass} ${labelError ? 'border-red-400' : ''}`}
                   />
-                  {labelError && <p className="text-xs text-red-600">{labelError}</p>}
+                  <p className={`min-h-4 text-xs ${labelError ? 'text-red-600' : 'invisible'}`}>
+                    {labelError ?? '.'}
+                  </p>
                 </label>
 
                 <label className="space-y-1 text-sm text-text">
@@ -93,7 +136,9 @@ export function FieldOptionsEditor({
                     aria-label={`Option ${index + 1} value`}
                     className={`${inputClass} ${valueError ? 'border-red-400' : ''}`}
                   />
-                  {valueError && <p className="text-xs text-red-600">{valueError}</p>}
+                  <p className={`min-h-4 text-xs ${valueError ? 'text-red-600' : 'invisible'}`}>
+                    {valueError ?? '.'}
+                  </p>
                 </label>
               </div>
 
@@ -112,9 +157,11 @@ export function FieldOptionsEditor({
                         aria-label={`Option ${index + 1} toggle label`}
                         className={`${inputClass} ${toggleLabelError ? 'border-red-400' : ''}`}
                       />
-                      {toggleLabelError && (
-                        <p className="text-xs text-red-600">{toggleLabelError}</p>
-                      )}
+                      <p
+                        className={`min-h-4 text-xs ${toggleLabelError ? 'text-red-600' : 'invisible'}`}
+                      >
+                        {toggleLabelError ?? '.'}
+                      </p>
                     </label>
 
                     <label className="space-y-1 text-sm text-text">
@@ -141,16 +188,151 @@ export function FieldOptionsEditor({
                   </div>
                 </div>
               )}
+
+              {showCapacity && (
+                <div className="rounded-lg border border-border/70 bg-surface p-3">
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
+                    Capacity
+                  </p>
+                  <p className="mb-3 text-xs text-muted">
+                    {hasRoleAllotments
+                      ? `Derived total from role allotments: ${derivedSlotsTotal}`
+                      : 'No role allotments configured. Capacity remains open.'}
+                  </p>
+
+                  <div className="mt-3 space-y-2 text-sm text-text">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1 text-xs text-muted">
+                        Role allotments
+                        <span className="group relative inline-flex">
+                          <span
+                            tabIndex={0}
+                            role="img"
+                            className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-border text-[10px] font-semibold leading-none text-muted transition-colors hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            aria-label="Role allotments help"
+                          >
+                            ?
+                          </span>
+                          <span
+                            role="tooltip"
+                            className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 rounded-md border border-border bg-surface p-2 text-left text-[11px] leading-4 text-text opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                          >
+                            {ROLE_ALLOTMENTS_TOOLTIP}
+                          </span>
+                        </span>
+                      </span>
+                      {!isLocked && (
+                        <button
+                          type="button"
+                          onClick={addRoleAllotment}
+                          disabled={!canAddRoleAllotments}
+                          className="text-xs font-medium text-primary hover:text-primary/80 disabled:cursor-not-allowed disabled:text-muted"
+                        >
+                          + Add role
+                        </button>
+                      )}
+                    </div>
+
+                    {!hasRoleAllotments && (
+                      <p className="text-xs text-muted">No role allotments yet.</p>
+                    )}
+
+                    {optionRoleAllotments.map((_, allotmentIndex) => {
+                      const roleError =
+                        errors.options?.[index]?.role_allotments?.[allotmentIndex]?.role?.message;
+                      const slotsError =
+                        errors.options?.[index]?.role_allotments?.[allotmentIndex]?.alloted_slots
+                          ?.message;
+                      const allotedSlotsPath =
+                        `options.${index}.role_allotments.${allotmentIndex}.alloted_slots` as const;
+
+                      return (
+                        <div
+                          key={`${field.id}-allotment-${allotmentIndex}`}
+                          className="grid gap-2 rounded-md border border-border/70 p-3 sm:grid-cols-[minmax(0,1fr)_170px_auto] sm:items-start"
+                        >
+                          <label className="space-y-1">
+                            <span className="block text-xs text-muted">Role</span>
+                            <input
+                              {...register(
+                                `options.${index}.role_allotments.${allotmentIndex}.role`,
+                                {
+                                  validate: (value) =>
+                                    value.trim().length > 0 || 'Role is required.',
+                                },
+                              )}
+                              disabled={isLocked}
+                              placeholder="e.g., Prayer Coach"
+                              className={`${inputClass} ${roleError ? 'border-red-400' : ''}`}
+                            />
+                            <p
+                              className={`min-h-8 text-xs ${roleError ? 'text-red-600' : 'invisible'}`}
+                            >
+                              {roleError ?? '.'}
+                            </p>
+                          </label>
+
+                          <label className="space-y-1">
+                            <span className="block text-xs text-muted">Allotted slots</span>
+                            <input
+                              {...register(allotedSlotsPath, {
+                                validate: (value) => {
+                                  const trimmed = value.trim();
+                                  const parsed = Number(trimmed);
+                                  if (!trimmed || !Number.isInteger(parsed) || parsed <= 0) {
+                                    return 'Enter a whole number greater than 0.';
+                                  }
+
+                                  return true;
+                                },
+                              })}
+                              disabled={isLocked}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="e.g., 10"
+                              className={`${inputClass} ${slotsError ? 'border-red-400' : ''}`}
+                            />
+                            <p
+                              className={`min-h-8 text-xs ${slotsError ? 'text-red-600' : 'invisible'}`}
+                            >
+                              {slotsError ?? '.'}
+                            </p>
+                          </label>
+
+                          {!isLocked && (
+                            <button
+                              type="button"
+                              onClick={() => removeRoleAllotment(allotmentIndex)}
+                              className="mt-6 text-xs text-red-500 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
       })}
+
       {!isLocked && (
         <Button
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ label: '', value: '', toggle_label: '' })}
+          onClick={() =>
+            append({
+              label: '',
+              value: '',
+              toggle_label: '',
+              max_slots: '',
+              role_allotments: [],
+            })
+          }
         >
           + Add Option
         </Button>
