@@ -12,6 +12,7 @@ const {
   mockUseParams,
   mockUsePublicEventQuery,
   mockUsePublicEventFieldsQuery,
+  mockUseEventSlotAvailabilityQuery,
   mockUseSubmitRegistrationMutation,
   mockUseMemberLookupState,
   mockUseRfidAutoFocus,
@@ -61,6 +62,7 @@ const {
     mockUseParams: vi.fn(),
     mockUsePublicEventQuery: vi.fn(),
     mockUsePublicEventFieldsQuery: vi.fn(),
+    mockUseEventSlotAvailabilityQuery: vi.fn(),
     mockUseSubmitRegistrationMutation: vi.fn(),
     mockUseMemberLookupState: vi.fn(),
     mockUseRfidAutoFocus: vi.fn(),
@@ -100,6 +102,7 @@ vi.mock('@/hooks/domain/events', () => ({
 
 vi.mock('@/hooks/domain/event-fields', () => ({
   usePublicEventFieldsQuery: (...args: unknown[]) => mockUsePublicEventFieldsQuery(...args),
+  useEventSlotAvailabilityQuery: (...args: unknown[]) => mockUseEventSlotAvailabilityQuery(...args),
 }));
 
 vi.mock('@/hooks/domain/registrations', () => ({
@@ -159,6 +162,15 @@ describe('useEventRegistrationPageState', () => {
       isLoading: false,
       isError: false,
     });
+    mockUseEventSlotAvailabilityQuery.mockReturnValue({
+      data: {
+        success: true,
+        event_id: 'event-1',
+        fields: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
     mockSubmitMutateAsync.mockReset();
     mockToastError.mockReset();
     mockToastSuccess.mockReset();
@@ -199,7 +211,7 @@ describe('useEventRegistrationPageState', () => {
     };
     memberLookupState.isRegistrationBlocked = false;
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     expect(result.current.activeWizardStep).toBe(3);
     expect(result.current.wizardStepSecondsRemaining).toBe(
@@ -214,7 +226,7 @@ describe('useEventRegistrationPageState', () => {
       reason: 'already_registered',
     });
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleLookupSubmit({ memberId: 'WC-1' });
@@ -240,7 +252,7 @@ describe('useEventRegistrationPageState', () => {
     };
     memberLookupState.verifiedMemberId = 'WC-001';
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});
@@ -250,42 +262,35 @@ describe('useEventRegistrationPageState', () => {
     expect(mockSubmitMutateAsync).not.toHaveBeenCalled();
   });
 
-  it('handles classic lookup success update path by scrolling to dynamic fields step', async () => {
+  it('handles lookup success by entering wizard confirm step', async () => {
     memberLookupState.handleLookupSubmit.mockResolvedValue({
       success: true,
       mode: 'update_registration',
     });
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('classic'));
-    const scrollIntoView = vi.fn();
-
-    act(() => {
-      result.current.dynamicFieldsStepRef.current = {
-        scrollIntoView,
-      } as unknown as HTMLDivElement;
-    });
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleLookupSubmit({ memberId: 'WC-1' });
     });
 
-    expect(scrollIntoView).toHaveBeenCalled();
+    expect(result.current.activeWizardStep).toBe(2);
     expect(mockFocusMemberIdInput).not.toHaveBeenCalled();
   });
 
-  it('handles classic lookup success new registration path by refocusing input', async () => {
+  it('handles new registration lookup success by entering wizard confirm step', async () => {
     memberLookupState.handleLookupSubmit.mockResolvedValue({
       success: true,
       mode: 'new_registration',
     });
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('classic'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleLookupSubmit({ memberId: 'WC-1' });
     });
 
-    expect(mockFocusMemberIdInput).toHaveBeenCalled();
+    expect(result.current.activeWizardStep).toBe(2);
   });
 
   it('handles non-blocking lookup failure by returning to step 1 in wizard', async () => {
@@ -295,7 +300,7 @@ describe('useEventRegistrationPageState', () => {
       reason: 'not_found',
     });
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     act(() => {
       result.current.setWizardStep(3);
@@ -310,22 +315,8 @@ describe('useEventRegistrationPageState', () => {
     expect(mockShowLookupError).toHaveBeenCalledWith('Not found', { autoFadeOut: false });
   });
 
-  it('runs the kiosk reset callback and clears wizard/member state', () => {
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('classic'));
-    const [kioskResetCallback] = mockUseKioskInactivityReset.mock.calls.at(-1) as [() => void];
-
-    act(() => {
-      result.current.setWizardStep(3);
-      kioskResetCallback();
-    });
-
-    expect(memberLookupState.clearMember).toHaveBeenCalled();
-    expect(memberLookupState.lookupForm.reset).toHaveBeenCalledWith({ memberId: '' });
-    expect(result.current.activeWizardStep).toBe(1);
-  });
-
   it('sets submit errors for missing member context and unavailable event', async () => {
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});
@@ -346,7 +337,7 @@ describe('useEventRegistrationPageState', () => {
       isError: false,
     });
 
-    const rerendered = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const rerendered = renderHookWithClient(() => useEventRegistrationPageState());
     await act(async () => {
       await rerendered.result.current.handleSubmitRegistration({});
     });
@@ -378,7 +369,7 @@ describe('useEventRegistrationPageState', () => {
     titleAnchor.scrollIntoView = vi.fn();
     document.body.appendChild(titleAnchor);
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});
@@ -417,7 +408,7 @@ describe('useEventRegistrationPageState', () => {
       error: 'ignored',
     });
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});
@@ -425,6 +416,36 @@ describe('useEventRegistrationPageState', () => {
 
     expect(result.current.submitErrorMessage).toBe('You have already registered for this event.');
     expect(mockToastError).toHaveBeenCalledWith(TOAST_MESSAGES.registration.alreadyRegistered);
+  });
+
+  it('maps validation failed responses to field errors and generic submit message', async () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    };
+    memberLookupState.verifiedMemberId = 'WC-001';
+    mockSubmitMutateAsync.mockResolvedValueOnce({
+      success: false,
+      error_code: 'VALIDATION_FAILED',
+      errors: [{ fieldKey: 'team_name', message: 'Team name is required' }],
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    await act(async () => {
+      await result.current.handleSubmitRegistration({ team_name: '' });
+    });
+
+    expect(result.current.submitErrorMessage).toBe(
+      'Some answers need attention. Please review highlighted fields.',
+    );
+    expect(result.current.fieldErrorMessage('team_name')).toBe('Team name is required');
+    expect(mockToastError).toHaveBeenCalledWith(
+      'Some answers need attention. Please review highlighted fields.',
+    );
   });
 
   it('scrolls to title after successful update-mode submission', async () => {
@@ -447,7 +468,7 @@ describe('useEventRegistrationPageState', () => {
     titleAnchor.scrollIntoView = vi.fn();
     document.body.appendChild(titleAnchor);
 
-    const { result } = renderHookWithClient(() => useEventRegistrationPageState('wizard'));
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});

@@ -9,6 +9,7 @@ const {
   mockToastError,
   mockUsePublicEventQuery,
   mockUsePublicEventFieldsQuery,
+  mockUseEventSlotAvailabilityQuery,
   mockSubmitMutateAsync,
   mockUseSubmitRegistrationMutation,
   mockUseMemberLookupState,
@@ -59,6 +60,7 @@ const {
     mockToastError: vi.fn(),
     mockUsePublicEventQuery: vi.fn(),
     mockUsePublicEventFieldsQuery: vi.fn(),
+    mockUseEventSlotAvailabilityQuery: vi.fn(),
     mockSubmitMutateAsync: vi.fn(),
     mockUseSubmitRegistrationMutation: vi.fn(),
     mockUseMemberLookupState: vi.fn(),
@@ -95,11 +97,8 @@ vi.mock('@/config/env', () => ({
   env: {
     supabaseUrl: 'http://127.0.0.1:54321',
     supabaseAnonKey: 'anon-key',
-    registrationWizardEnabled: true,
   },
 }));
-
-const envMock = vi.mocked(await import('@/config/env')).env;
 
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
@@ -119,6 +118,8 @@ vi.mock('@/hooks/domain/event-fields', async () => {
   return {
     ...actual,
     usePublicEventFieldsQuery: (...args: unknown[]) => mockUsePublicEventFieldsQuery(...args),
+    useEventSlotAvailabilityQuery: (...args: unknown[]) =>
+      mockUseEventSlotAvailabilityQuery(...args),
   };
 });
 
@@ -256,6 +257,15 @@ describe('EventRegistrationPage', () => {
       isLoading: false,
       isError: false,
     });
+    mockUseEventSlotAvailabilityQuery.mockReturnValue({
+      data: {
+        success: true,
+        event_id: 'event-1',
+        fields: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -264,7 +274,6 @@ describe('EventRegistrationPage', () => {
     vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue(
       '11111111-1111-1111-1111-111111111111',
     );
-    envMock.registrationWizardEnabled = true;
   });
 
   it('renders locked gate when event is unavailable', () => {
@@ -715,36 +724,5 @@ describe('EventRegistrationPage', () => {
     });
 
     expect(screen.getByText('Member Lookup')).toBeInTheDocument();
-  });
-
-  it('shows the classic kiosk timer on the profile and registration cards', async () => {
-    envMock.registrationWizardEnabled = false;
-
-    mockUsePublicEventQuery.mockReturnValue({
-      data: {
-        status: 'available',
-        event: {
-          id: 'event-1',
-          slug: 'sample-event',
-          title: 'Sample Event',
-          description: null,
-          location: null,
-          starts_at: null,
-          ends_at: null,
-          registration_opens_at: null,
-          registration_closes_at: null,
-          registration_mode: 'open',
-        },
-        registration_count: 5,
-      },
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<EventRegistrationPage />);
-
-    expect(screen.getByText('Profile Step')).toBeInTheDocument();
-    expect(screen.getByText('Step 2 reset in 180s')).toBeInTheDocument();
-    expect(screen.getByText('Step 3 reset in 180s')).toBeInTheDocument();
   });
 });

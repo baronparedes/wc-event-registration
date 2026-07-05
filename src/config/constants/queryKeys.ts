@@ -2,6 +2,8 @@ export const QUERY_KEYS = {
   publicEventBySlug: (slug: string | null | undefined) => ['public-event-by-slug', slug] as const,
   publicEventListing: () => ['public-event-listing'] as const,
   publicEventFields: (eventId: string | undefined) => ['public-event-fields', eventId] as const,
+  eventSlotAvailability: (eventId: string | undefined) =>
+    ['event-slot-availability', eventId] as const,
   adminAttendanceSettings: (eventId: string | undefined) =>
     ['admin-attendance-settings', eventId] as const,
   adminAttendanceFields: (eventId: string | undefined) =>

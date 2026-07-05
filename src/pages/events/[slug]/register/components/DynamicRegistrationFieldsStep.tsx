@@ -26,8 +26,10 @@ import {
 function DynamicFieldInput(props: {
   field: PublicEventField;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+  remainingSlotsByOption?: Record<string, number>;
+  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
 }) {
-  const { field, dynamicForm } = props;
+  const { field, dynamicForm, remainingSlotsByOption, remainingSlotsByRoleByOption } = props;
 
   switch (field.field_type) {
     case 'textarea':
@@ -43,13 +45,41 @@ function DynamicFieldInput(props: {
     case 'datetime':
       return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'select':
-      return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
+      return (
+        <SelectFieldRenderer
+          field={field}
+          dynamicForm={dynamicForm}
+          remainingSlotsByOption={remainingSlotsByOption}
+          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+        />
+      );
     case 'radio':
-      return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />;
+      return (
+        <RadioFieldRenderer
+          field={field}
+          dynamicForm={dynamicForm}
+          remainingSlotsByOption={remainingSlotsByOption}
+          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+        />
+      );
     case 'multi_select':
-      return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
+      return (
+        <MultiSelectFieldRenderer
+          field={field}
+          dynamicForm={dynamicForm}
+          remainingSlotsByOption={remainingSlotsByOption}
+          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+        />
+      );
     case 'multi_select_toggle':
-      return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />;
+      return (
+        <MultiSelectToggleFieldRenderer
+          field={field}
+          dynamicForm={dynamicForm}
+          remainingSlotsByOption={remainingSlotsByOption}
+          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+        />
+      );
     case 'checkbox':
     case 'boolean':
       return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />;
@@ -69,6 +99,8 @@ type DynamicFieldsStepCardProps = {
   isFieldsError: boolean;
   fieldConfigIssues: string[];
   activeFields: PublicEventField[];
+  remainingSlotsByFieldOption?: Record<string, Record<string, number>>;
+  remainingSlotsByRoleByFieldOption?: Record<string, Record<string, Record<string, number>>>;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
   onSubmit: SubmitHandler<DynamicFieldResponseValues>;
   fieldErrorMessage: (fieldKey: string) => string | undefined;
@@ -90,6 +122,8 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     isFieldsError,
     fieldConfigIssues,
     activeFields,
+    remainingSlotsByFieldOption,
+    remainingSlotsByRoleByFieldOption,
     dynamicForm,
     onSubmit,
     fieldErrorMessage,
@@ -200,7 +234,14 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
                   {field.help_text && (
                     <p className="registration-field-help text-xs text-muted">{field.help_text}</p>
                   )}
-                  <DynamicFieldInput field={field} dynamicForm={dynamicForm} />
+                  <DynamicFieldInput
+                    field={field}
+                    dynamicForm={dynamicForm}
+                    remainingSlotsByOption={remainingSlotsByFieldOption?.[field.field_key]}
+                    remainingSlotsByRoleByOption={
+                      remainingSlotsByRoleByFieldOption?.[field.field_key]
+                    }
+                  />
                   {errorMessage && (
                     <p className="registration-field-error text-sm text-danger">{errorMessage}</p>
                   )}

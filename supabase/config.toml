@@ -142,6 +142,9 @@ verify_jwt = true
 [functions.check-in-attendee]
 verify_jwt = true
 
+[functions.event-slot-availability]
+verify_jwt = false
+
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
 [inbucket]

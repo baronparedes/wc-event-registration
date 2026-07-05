@@ -109,4 +109,26 @@ export type EventFieldConfigValidationResult = {
   issues: string[];
 };
 
+export type EventSlotAvailabilityOption = {
+  value: string;
+  label: string;
+  allotted_slots: number;
+  used_slots: number;
+  remaining_slots: number;
+  remaining_slots_by_role?: Record<string, number>;
+};
+
+export type EventSlotAvailabilityField = {
+  field_id: string;
+  field_key: string;
+  field_label: string;
+  options: EventSlotAvailabilityOption[];
+};
+
+export type EventSlotAvailabilityResponse = {
+  success: boolean;
+  event_id: string;
+  fields: EventSlotAvailabilityField[];
+};
+
 export type DynamicFieldResponseValues = Record<string, unknown>;
