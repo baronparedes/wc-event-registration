@@ -5,6 +5,97 @@ import type { AdminEventField, DynamicFieldResponseValues, PublicEventField } fr
 
 export type { EventFieldFormValues } from './schemas';
 
+type RoleAllotmentEntry = {
+  role: string;
+  alloted_slots: number;
+};
+
+type RoleAllotmentFormEntry = {
+  role: string;
+  alloted_slots: string;
+};
+
+function parseRoleAllotments(roleAllotments: RoleAllotmentFormEntry[]): RoleAllotmentEntry[] {
+  const dedupedByRole = new Map<string, RoleAllotmentEntry>();
+
+  for (const entry of roleAllotments) {
+    const role = entry.role.trim();
+    if (role.length === 0) {
+      continue;
+    }
+
+    const rawLimit = entry.alloted_slots.trim();
+    const parsed = parseInt(rawLimit, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      dedupedByRole.set(role.toLowerCase(), { role, alloted_slots: parsed });
+    }
+  }
+
+  return Array.from(dedupedByRole.values());
+}
+
+function formatRoleAllotments(allotments: unknown): RoleAllotmentFormEntry[] {
+  if (Array.isArray(allotments)) {
+    const parsedEntries = allotments
+      .map((entry) => {
+        if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+          return null;
+        }
+
+        const role =
+          typeof (entry as { role?: unknown }).role === 'string'
+            ? (entry as { role: string }).role.trim()
+            : '';
+        const limit = (entry as { alloted_slots?: unknown }).alloted_slots;
+
+        if (role.length === 0) {
+          return null;
+        }
+
+        if (
+          typeof limit === 'number' &&
+          Number.isFinite(limit) &&
+          Number.isInteger(limit) &&
+          limit > 0
+        ) {
+          return { role, alloted_slots: String(limit) };
+        }
+
+        return null;
+      })
+      .filter((entry): entry is RoleAllotmentFormEntry => Boolean(entry));
+
+    return parsedEntries;
+  }
+
+  // Backward compatibility for legacy role-keyed object shape.
+  if (typeof allotments === 'object' && allotments !== null) {
+    const parsedEntries = Object.entries(allotments as Record<string, unknown>)
+      .map(([role, limit]) => {
+        const trimmedRole = role.trim();
+        if (trimmedRole.length === 0) {
+          return null;
+        }
+
+        if (
+          typeof limit === 'number' &&
+          Number.isFinite(limit) &&
+          Number.isInteger(limit) &&
+          limit > 0
+        ) {
+          return { role: trimmedRole, alloted_slots: String(limit) };
+        }
+
+        return null;
+      })
+      .filter((entry): entry is RoleAllotmentFormEntry => Boolean(entry));
+
+    return parsedEntries;
+  }
+
+  return [];
+}
+
 export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   field_key: '',
   label: '',
@@ -28,6 +119,12 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
 /** Convert a saved AdminEventField to form default values for pre-filling the edit panel. */
 export function fieldToFormValues(field: AdminEventField): EventFieldFormValues {
   const rules = field.validation_rules ?? {};
+  const slotLimitsByOptionValue =
+    typeof rules.max_slots === 'object' && rules.max_slots !== null ? rules.max_slots : {};
+  const roleAllotmentsByOptionValue =
+    typeof rules.max_slots_role_allotments === 'object' && rules.max_slots_role_allotments !== null
+      ? rules.max_slots_role_allotments
+      : {};
   return {
     field_key: field.field_key,
     label: field.label,
@@ -41,6 +138,11 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
       value: option.value,
       toggle_label: option.toggle_label ?? '',
       ...(option.toggle_default !== undefined ? { toggle_default: option.toggle_default } : {}),
+      max_slots:
+        typeof slotLimitsByOptionValue[option.value] === 'number'
+          ? String(slotLimitsByOptionValue[option.value])
+          : '',
+      role_allotments: formatRoleAllotments(roleAllotmentsByOptionValue[option.value]),
     })),
     val_min_length: rules.min_length != null ? String(rules.min_length) : '',
     val_max_length: rules.max_length != null ? String(rules.max_length) : '',
@@ -70,6 +172,57 @@ export function toValidationRules(values: EventFieldFormValues): Record<string, 
   }
   if (values.val_min_date !== '') rules.min_date = values.val_min_date;
   if (values.val_max_date !== '') rules.max_date = values.val_max_date;
+
+  const maxSlots = values.options.reduce<Record<string, number>>((acc, option) => {
+    const trimmedSlotCount = option.max_slots.trim();
+    const optionValue = option.value.trim();
+
+    // Empty slot values mean unlimited/open capacity for that option.
+    if (trimmedSlotCount.length === 0 || optionValue.length === 0) {
+      return acc;
+    }
+
+    const parsed = parseInt(trimmedSlotCount, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      acc[optionValue] = parsed;
+    }
+
+    return acc;
+  }, {});
+
+  const maxSlotsRoleAllotments = values.options.reduce<Record<string, RoleAllotmentEntry[]>>(
+    (acc, option) => {
+      const optionValue = option.value.trim();
+      if (optionValue.length === 0) {
+        return acc;
+      }
+
+      const parsedRoleAllotments = parseRoleAllotments(option.role_allotments);
+      if (parsedRoleAllotments.length > 0) {
+        acc[optionValue] = parsedRoleAllotments;
+      }
+
+      return acc;
+    },
+    {},
+  );
+
+  if (Object.keys(maxSlotsRoleAllotments).length > 0) {
+    // If role allotments are configured, derive option max slots from role totals.
+    for (const [optionValue, roleAllotments] of Object.entries(maxSlotsRoleAllotments)) {
+      const derivedSlots = roleAllotments.reduce((sum, entry) => sum + entry.alloted_slots, 0);
+      if (derivedSlots > 0) {
+        maxSlots[optionValue] = derivedSlots;
+      }
+    }
+
+    rules.max_slots_role_allotments = maxSlotsRoleAllotments;
+  }
+
+  if (Object.keys(maxSlots).length > 0) {
+    rules.max_slots = maxSlots;
+  }
+
   return rules;
 }
 

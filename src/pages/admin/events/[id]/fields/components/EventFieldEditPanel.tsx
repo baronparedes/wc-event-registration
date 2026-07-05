@@ -96,6 +96,16 @@ export function EventFieldEditPanel({
   async function onSubmit(values: EventFieldFormValues) {
     try {
       const validationRules = toValidationRules(values);
+      const normalizedOptions = showOptions
+        ? values.options.map((option) => ({
+            label: option.label,
+            value: option.value,
+            toggle_label: option.toggle_label,
+            ...(option.toggle_default !== undefined
+              ? { toggle_default: option.toggle_default }
+              : {}),
+          }))
+        : [];
 
       if (isEditing && field) {
         const updatePayload = isPublished
@@ -116,7 +126,7 @@ export function EventFieldEditPanel({
               is_active: values.is_active,
               placeholder: values.placeholder || null,
               help_text: values.help_text || null,
-              options: showOptions ? values.options : [],
+              options: normalizedOptions,
               validation_rules: validationRules,
             };
 
@@ -132,7 +142,7 @@ export function EventFieldEditPanel({
           is_active: values.is_active,
           placeholder: values.placeholder || null,
           help_text: values.help_text || null,
-          options: showOptions ? values.options : [],
+          options: normalizedOptions,
           validation_rules: validationRules,
           display_order: 0,
         });
@@ -208,6 +218,8 @@ export function EventFieldEditPanel({
               isStructurallyLocked={isStructurallyLocked}
               optionFields={optionFields}
               register={register}
+              control={control}
+              setValue={setValue}
               errors={errors}
               append={append}
               remove={remove}

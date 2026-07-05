@@ -176,13 +176,283 @@ describe('event-fields transforms', () => {
         value: 'meal_a',
         toggle_label: 'Enable Meal A',
         toggle_default: true,
+        max_slots: '',
+        role_allotments: [],
       },
       {
         label: 'Meal B',
         value: 'meal_b',
         toggle_label: '',
+        max_slots: '',
+        role_allotments: [],
       },
     ]);
+  });
+
+  it('maps per-option max_slots rules from validation rules into form values', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        field_type: 'multi_select',
+        options: [
+          { label: 'Morning', value: 'morning' },
+          { label: 'Evening', value: 'evening' },
+        ],
+        validation_rules: {
+          max_slots: {
+            morning: 25,
+          },
+        },
+      }),
+    );
+
+    expect(values.options).toEqual([
+      {
+        label: 'Morning',
+        value: 'morning',
+        toggle_label: '',
+        max_slots: '25',
+        role_allotments: [],
+      },
+      {
+        label: 'Evening',
+        value: 'evening',
+        toggle_label: '',
+        max_slots: '',
+        role_allotments: [],
+      },
+    ]);
+  });
+
+  it('maps per-option role allotments into form values', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: [{ role: 'Volunteer', alloted_slots: 3 }],
+          },
+        },
+      }),
+    );
+
+    expect(values.options).toEqual([
+      {
+        label: 'Morning',
+        value: 'morning',
+        toggle_label: '',
+        max_slots: '',
+        role_allotments: [{ role: 'Volunteer', alloted_slots: '3' }],
+      },
+    ]);
+  });
+
+  it('maps legacy role-keyed object allotments into form values', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: {
+              ' Prayer Coach ': 5,
+              Invalid: 0,
+            },
+          },
+        } as unknown as AdminEventField['validation_rules'],
+      }),
+    );
+
+    expect(values.options[0]?.role_allotments).toEqual([
+      { role: 'Prayer Coach', alloted_slots: '5' },
+    ]);
+  });
+
+  it('builds max_slots validation rule only for positive configured option values', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '30',
+          role_allotments: [],
+        },
+        {
+          label: 'Afternoon',
+          value: 'afternoon',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [],
+        },
+        {
+          label: 'Evening',
+          value: 'evening',
+          toggle_label: '',
+          max_slots: '0',
+          role_allotments: [],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    };
+
+    const rules = toValidationRules(values);
+
+    expect(rules).toEqual({
+      max_slots: {
+        morning: 30,
+      },
+    });
+  });
+
+  it('builds role-based slot allotments and derives max slots from role totals', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [
+            { role: 'Prayer Coach', alloted_slots: '50' },
+            { role: 'Invalid', alloted_slots: '0' },
+          ],
+        },
+        {
+          label: 'Evening',
+          value: 'evening',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [{ role: 'Backroom', alloted_slots: '10' }],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    };
+
+    const rules = toValidationRules(values);
+
+    expect(rules).toEqual({
+      max_slots: {
+        morning: 50,
+        evening: 10,
+      },
+      max_slots_role_allotments: {
+        morning: [{ role: 'Prayer Coach', alloted_slots: 50 }],
+        evening: [{ role: 'Backroom', alloted_slots: 10 }],
+      },
+    });
+  });
+
+  it('persists role allotments without explicit max slots and derives max slots', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [{ role: 'Prayer Coach', alloted_slots: '10' }],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    };
+
+    const rules = toValidationRules(values);
+
+    expect(rules).toEqual({
+      max_slots: {
+        morning: 10,
+      },
+      max_slots_role_allotments: {
+        morning: [{ role: 'Prayer Coach', alloted_slots: 10 }],
+      },
+    });
+  });
+
+  it('prefers derived max slots over manually entered max slots when role allotments exist', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '999',
+          role_allotments: [{ role: 'Prayer Coach', alloted_slots: '10' }],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    };
+
+    const rules = toValidationRules(values);
+
+    expect(rules).toEqual({
+      max_slots: {
+        morning: 10,
+      },
+      max_slots_role_allotments: {
+        morning: [{ role: 'Prayer Coach', alloted_slots: 10 }],
+      },
+    });
   });
 
   it('normalizes dynamic answer payloads into preview records', () => {

@@ -11,6 +11,11 @@ import {
 import {
   EventFieldWithValidation,
   FieldValidationError,
+  buildFieldOptionCapacityWorkItems,
+  buildFullCapacityValidationErrors,
+  createOptionUsageCounter,
+  extractSelectedOptionValuesFromStoredAnswer,
+  incrementOptionUsageFromSelection,
   parseFunctionEnvironment,
   parseRequestBody,
   validateFieldValue,
@@ -62,6 +67,15 @@ interface PostgrestErrorLike {
   message?: string | null;
   details?: string | null;
   hint?: string | null;
+}
+
+interface PublicRegistrationAnswerRow {
+  answer_text: string | null;
+  answer_json: unknown;
+  public_registration_id: string;
+  public_registrations: {
+    status: string;
+  } | null;
 }
 
 const REGISTRATION_EVENT_EMAIL_UNIQUE_CONSTRAINT = 'public_registrations_event_email_unique_idx';
@@ -270,6 +284,75 @@ Deno.serve(async (req) => {
       if (error) {
         validationErrors.push(error);
       }
+    }
+
+    // Enforce option slot limits for constrained option values.
+    const capacityWorkItems = buildFieldOptionCapacityWorkItems(fields, responses);
+
+    for (const workItem of capacityWorkItems) {
+      const {
+        field,
+        maxSlotsByOption,
+        slotConsumingSelectionsWithoutRole: slotConsumingSelections,
+      } = workItem;
+
+      // When role allotments are configured for an option, unmatched roles should not consume slots.
+      // Public registrations do not have member roles, so those options are excluded from slot usage.
+      if (slotConsumingSelections.length === 0) {
+        continue;
+      }
+
+      let answerQuery = supabase
+        .from('public_registration_answers')
+        .select(
+          'answer_text, answer_json, public_registration_id, public_registrations!inner(status)',
+        )
+        .eq('event_field_id', field.id)
+        .neq('public_registrations.status', 'cancelled');
+
+      if (!isNew) {
+        answerQuery = answerQuery.neq('public_registration_id', registrationId);
+      }
+
+      const { data: existingAnswers, error: slotLookupError } =
+        await answerQuery.returns<PublicRegistrationAnswerRow[]>();
+
+      if (slotLookupError) {
+        console.error('Public slot capacity lookup error:', slotLookupError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to process registration',
+            error_code: 'SLOT_LOOKUP_FAILED',
+          } as SubmitPublicRegistrationError),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      const usageByOption = createOptionUsageCounter(slotConsumingSelections);
+
+      for (const answer of existingAnswers ?? []) {
+        const usedOptions = extractSelectedOptionValuesFromStoredAnswer(field.field_type, {
+          answer_text: answer.answer_text,
+          answer_json: answer.answer_json,
+        });
+
+        incrementOptionUsageFromSelection(usageByOption, slotConsumingSelections, usedOptions);
+      }
+
+      validationErrors.push(
+        ...buildFullCapacityValidationErrors({
+          fieldKey: field.field_key,
+          fieldLabel: field.label,
+          optionValues: slotConsumingSelections,
+          options: field.options,
+          maxSlotsByOption,
+          usageByOption,
+        }),
+      );
     }
 
     if (validationErrors.length > 0) {
@@ -489,7 +572,12 @@ Deno.serve(async (req) => {
             field.field_type === 'multi_select' ||
             field.field_type === 'multi_select_toggle'
           ) {
-            answerJson = Array.isArray(value) ? value : [value];
+            answerJson =
+              field.field_type === 'multi_select_toggle'
+                ? value
+                : Array.isArray(value)
+                  ? value
+                  : [value];
           } else {
             answerText = String(value);
           }

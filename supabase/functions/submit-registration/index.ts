@@ -11,6 +11,12 @@ import {
 import {
   EventFieldWithValidation,
   FieldValidationError,
+  buildFieldOptionCapacityWorkItems,
+  buildFullCapacityValidationErrors,
+  createOptionUsageCounter,
+  extractSelectedOptionValuesFromStoredAnswer,
+  incrementOptionUsageFromSelection,
+  normalizePrimaryRoleValue,
   parseFunctionEnvironment,
   parseRequestBody,
   validateFieldValue,
@@ -46,6 +52,34 @@ interface PostgrestErrorLike {
   message?: string | null;
   details?: string | null;
   hint?: string | null;
+}
+
+interface RegistrationAnswerRow {
+  answer_text: string | null;
+  registration_id: string;
+  registrations: {
+    status: string;
+    user_id: string;
+  } | null;
+}
+
+interface UserRoleRow {
+  id: string;
+  metadata: unknown;
+}
+
+interface UserLookupRow {
+  id: string;
+  metadata: unknown;
+}
+
+function extractMemberRole(metadata: unknown): string | null {
+  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const roleValue = (metadata as Record<string, unknown>).role;
+  return typeof roleValue === 'string' ? normalizePrimaryRoleValue(roleValue) : null;
 }
 
 const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx';
@@ -190,9 +224,9 @@ Deno.serve(async (req) => {
     // Step 2: Look up user by member_id
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, metadata')
       .eq('member_id', member_id)
-      .maybeSingle();
+      .maybeSingle<UserLookupRow>();
 
     if (userError) {
       console.error('User lookup error:', userError);
@@ -224,6 +258,7 @@ Deno.serve(async (req) => {
     }
 
     const userId = userData.id;
+    const memberRole = extractMemberRole(userData.metadata);
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
 
@@ -466,6 +501,163 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Enforce option slot limits for constrained option values.
+    const capacityWorkItems = buildFieldOptionCapacityWorkItems(
+      Array.from(fieldMap.values()),
+      responses,
+    );
+
+    for (const workItem of capacityWorkItems) {
+      const { field, fieldKey, maxSlotsByOption, roleAllotmentsByOption, constrainedSelections } =
+        workItem;
+
+      let answerQuery = supabase
+        .from('registration_answers')
+        .select('answer_text, registration_id, registrations!inner(status,user_id)')
+        .eq('event_field_id', field.id)
+        .neq('registrations.status', 'cancelled');
+
+      if (!isNew) {
+        answerQuery = answerQuery.neq('registration_id', registrationId);
+      }
+
+      const { data: existingAnswers, error: slotLookupError } =
+        await answerQuery.returns<RegistrationAnswerRow[]>();
+
+      if (slotLookupError) {
+        console.error('Slot capacity lookup error:', slotLookupError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to process registration',
+            error_code: 'SLOT_LOOKUP_FAILED',
+          } as SubmitRegistrationError),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      const registrationUserIds = Array.from(
+        new Set(
+          (existingAnswers ?? [])
+            .map((answer) => answer.registrations?.user_id)
+            .filter((userId): userId is string => Boolean(userId)),
+        ),
+      );
+
+      const userRoleMap = new Map<string, string | null>();
+      if (registrationUserIds.length > 0) {
+        const { data: usersWithRole, error: roleLookupError } = await supabase
+          .from('users')
+          .select('id, metadata')
+          .in('id', registrationUserIds)
+          .returns<UserRoleRow[]>();
+
+        if (roleLookupError) {
+          console.error('Role lookup error during slot validation:', roleLookupError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'ROLE_LOOKUP_FAILED',
+            } as SubmitRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        for (const user of usersWithRole ?? []) {
+          userRoleMap.set(user.id, extractMemberRole(user.metadata));
+        }
+      }
+
+      const usageByOption = createOptionUsageCounter(constrainedSelections);
+      const usageByOptionAndRole = constrainedSelections.reduce<
+        Record<string, Record<string, number>>
+      >((acc, option) => {
+        acc[option] = {};
+        return acc;
+      }, {});
+
+      for (const answer of existingAnswers ?? []) {
+        const usedOptions = extractSelectedOptionValuesFromStoredAnswer(field.field_type, {
+          answer_text: answer.answer_text,
+        });
+
+        for (const option of constrainedSelections) {
+          if (usedOptions.includes(option)) {
+            const roleAllotmentsForOption = roleAllotmentsByOption[option] ?? {};
+            const hasRoleAllotments = Object.keys(roleAllotmentsForOption).length > 0;
+
+            if (!hasRoleAllotments) {
+              // Max-slots-only mode: each registration consumes one slot.
+              incrementOptionUsageFromSelection(usageByOption, [option], usedOptions);
+              continue;
+            }
+
+            const answerUserId = answer.registrations?.user_id;
+            const existingRole = answerUserId ? userRoleMap.get(answerUserId) : null;
+
+            if (!existingRole || roleAllotmentsForOption[existingRole] === undefined) {
+              // Roles not found in configured allotments do not consume slots.
+              continue;
+            }
+
+            incrementOptionUsageFromSelection(usageByOption, [option], usedOptions);
+            const perRoleUsage = usageByOptionAndRole[option] ?? {};
+            perRoleUsage[existingRole] = (perRoleUsage[existingRole] ?? 0) + 1;
+            usageByOptionAndRole[option] = perRoleUsage;
+          }
+        }
+      }
+
+      const optionsEligibleForGlobalCap: string[] = [];
+
+      for (const option of constrainedSelections) {
+        const roleAllotmentsForOption = roleAllotmentsByOption[option] ?? {};
+        const hasRoleAllotments = Object.keys(roleAllotmentsForOption).length > 0;
+        const roleCapForMember = memberRole ? roleAllotmentsForOption[memberRole] : undefined;
+
+        if (hasRoleAllotments) {
+          // Unconfigured roles do not consume slots and are not blocked by slot caps.
+          if (roleCapForMember === undefined) {
+            continue;
+          }
+
+          const usedSlotsForRole = memberRole
+            ? (usageByOptionAndRole[option]?.[memberRole] ?? 0)
+            : 0;
+
+          if (typeof roleCapForMember === 'number' && usedSlotsForRole >= roleCapForMember) {
+            const optionLabel =
+              field.options.find((entry) => entry.value === option)?.label ?? option;
+            validationErrors.push({
+              fieldKey,
+              message: `${field.label} option "${optionLabel}" already reached the allotted slots for role "${memberRole}".`,
+            });
+            continue;
+          }
+        }
+
+        optionsEligibleForGlobalCap.push(option);
+      }
+
+      validationErrors.push(
+        ...buildFullCapacityValidationErrors({
+          fieldKey,
+          fieldLabel: field.label,
+          optionValues: optionsEligibleForGlobalCap,
+          options: field.options,
+          maxSlotsByOption,
+          usageByOption,
+        }),
+      );
+    }
+
     if (validationErrors.length > 0) {
       console.warn('Registration validation failed:', validationErrors);
       return new Response(
@@ -476,7 +668,7 @@ Deno.serve(async (req) => {
           errors: validationErrors,
         }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       );

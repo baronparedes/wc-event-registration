@@ -12,13 +12,14 @@ Each `.feature` file describes one user-facing capability of the platform in pla
 
 Features are organized into 8 epic folders:
 
-### 1. Public Registration (5 features)
+### 1. Public Registration (6 features)
 
 - **Browse Events**: Users view available events on the homepage
 - **ID-First Lookup**: Users enter their member ID before registering
 - **Register with Dynamic Fields**: Users complete event-specific registration form
 - **Registration Wizard**: Alternative step-based UI for registration
 - **Public Self-Registration**: Email-based public registration with duplicate guard and kiosk confirmation timeout
+- **Public Capacity Rules**: Public registrations follow non-role option caps while role-allotted options remain role-neutral in public flow
 
 ### 2. Admin Authentication (1 feature)
 
@@ -32,9 +33,10 @@ Features are organized into 8 epic folders:
 - **Publish Event**: Admins publish events to make them public
 - **Archive Event**: Admins archive completed events
 
-### 4. Admin Fields (1 feature)
+### 4. Admin Fields (2 features)
 
 - **Configure Event Fields**: Admins design registration form fields for each event
+- **Configure Option Capacity by Role**: Admins define per-option role allotments with derived option totals
 
 ### 5. Admin Registrations (10 features)
 
@@ -203,6 +205,6 @@ If a feature is unclear or a scenario is ambiguous:
 
 ---
 
-**Last updated**: 2026-07-02  
+**Last updated**: 2026-07-05  
 **Created for**: Event Registration Platform  
 **Audience**: Product, QA, Development, Business Stakeholders

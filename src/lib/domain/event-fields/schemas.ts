@@ -110,6 +110,13 @@ export const eventFieldFormSchema = z
         value: z.string().min(1, 'Option value is required'),
         toggle_label: z.string(),
         toggle_default: z.boolean().optional(),
+        max_slots: z.string(),
+        role_allotments: z.array(
+          z.object({
+            role: z.string(),
+            alloted_slots: z.string(),
+          }),
+        ),
       }),
     ),
     val_min_length: z.string(),
@@ -123,6 +130,27 @@ export const eventFieldFormSchema = z
     val_max_date: z.string(),
   })
   .superRefine((values, context) => {
+    const hasOptionCapacity =
+      values.field_type === 'select' ||
+      values.field_type === 'radio' ||
+      values.field_type === 'multi_select' ||
+      values.field_type === 'multi_select_toggle';
+
+    if (hasOptionCapacity) {
+      values.options.forEach((option, index) => {
+        option.role_allotments.forEach((allotment, allotmentIndex) => {
+          const parsedSlots = Number(allotment.alloted_slots.trim());
+          if (!Number.isInteger(parsedSlots) || parsedSlots <= 0) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Allotted slots must be a whole number greater than 0.',
+              path: ['options', index, 'role_allotments', allotmentIndex, 'alloted_slots'],
+            });
+          }
+        });
+      });
+    }
+
     if (values.field_type !== 'multi_select_toggle') {
       return;
     }

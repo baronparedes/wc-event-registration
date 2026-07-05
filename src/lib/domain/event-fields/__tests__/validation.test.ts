@@ -153,4 +153,75 @@ describe('validatePublicEventFieldConfig', () => {
       validation_rules: {},
     });
   });
+
+  it('keeps only positive integer max_slots entries and ignores unset or invalid ones', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'timeslot',
+        field_type: 'multi_select',
+        options: [
+          { label: 'Morning', value: 'morning' },
+          { label: 'Afternoon', value: 'afternoon' },
+        ],
+        validation_rules: {
+          max_slots: {
+            morning: 20,
+            afternoon: 0,
+            invalid_string: '30',
+          },
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.max_slots).toEqual({
+      morning: 20,
+    });
+  });
+
+  it('parses role-based slot allotments with valid role text and valid limits', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'timeslot',
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: [
+              { role: ' volunteer ', alloted_slots: 4 },
+              { role: 'Invalid', alloted_slots: 0 },
+            ],
+          },
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.max_slots_role_allotments).toEqual({
+      morning: [{ role: 'volunteer', alloted_slots: 4 }],
+    });
+  });
+
+  it('keeps backward compatibility for legacy role-keyed allotment object shape', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'timeslot',
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: {
+              volunteer: 4,
+              OIC: null,
+            },
+          },
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.max_slots_role_allotments).toEqual({
+      morning: [{ role: 'volunteer', alloted_slots: 4 }],
+    });
+  });
 });
