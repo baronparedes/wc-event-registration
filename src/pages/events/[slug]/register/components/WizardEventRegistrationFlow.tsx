@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import { Button } from '@/components/ui/Button';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import {
@@ -12,6 +14,9 @@ import { useEventRegistrationPageState } from '../hooks';
 import './WizardEventRegistrationFlow.css';
 
 export function WizardEventRegistrationFlow() {
+  const stepOneRef = useRef<HTMLDivElement | null>(null);
+  const stepTwoRef = useRef<HTMLDivElement | null>(null);
+
   const {
     slug,
     eventQuery,
@@ -42,6 +47,23 @@ export function WizardEventRegistrationFlow() {
     isEffectiveRegistrationBlocked,
   } = useEventRegistrationPageState('wizard');
 
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+    if (activeWizardStep === 1) {
+      stepOneRef.current?.scrollIntoView({ behavior, block: 'start' });
+      return;
+    }
+
+    if (activeWizardStep === 2) {
+      stepTwoRef.current?.scrollIntoView({ behavior, block: 'start' });
+      return;
+    }
+
+    dynamicFieldsStepRef.current?.scrollIntoView({ behavior, block: 'start' });
+  }, [activeWizardStep, dynamicFieldsStepRef]);
+
   return (
     <section className="wizard-registration-flow mx-auto max-w-3xl space-y-6">
       <EventHeaderCard
@@ -62,31 +84,33 @@ export function WizardEventRegistrationFlow() {
           />
 
           {activeWizardStep === 1 && (
-            <MemberLookupStepCard
-              slug={slug}
-              lookupForm={memberLookup.lookupForm}
-              onLookupSubmit={handleLookupSubmit}
-              isLookupPending={memberLookup.isLookupPending}
-              lookupErrorMessage={lookupErrorMessage}
-              suppressLookupWarning={memberLookup.isRegistrationBlocked}
-              memberIdInputRef={memberIdInputRef}
-              shouldHighlightInput={memberLookup.memberIdHighlight}
-              onDismissLookupError={clearLookupError}
-              allowNameLookup={
-                availability?.status === 'available' && availability.event
-                  ? Boolean(availability.event.metadata?.allow_name_lookup)
-                  : false
-              }
-              allowPublicRegistration={
-                availability?.status === 'available' && availability.event
-                  ? Boolean(availability.event.allow_public_registrations)
-                  : false
-              }
-            />
+            <div ref={stepOneRef} className="scroll-mt-24">
+              <MemberLookupStepCard
+                slug={slug}
+                lookupForm={memberLookup.lookupForm}
+                onLookupSubmit={handleLookupSubmit}
+                isLookupPending={memberLookup.isLookupPending}
+                lookupErrorMessage={lookupErrorMessage}
+                suppressLookupWarning={memberLookup.isRegistrationBlocked}
+                memberIdInputRef={memberIdInputRef}
+                shouldHighlightInput={memberLookup.memberIdHighlight}
+                onDismissLookupError={clearLookupError}
+                allowNameLookup={
+                  availability?.status === 'available' && availability.event
+                    ? Boolean(availability.event.metadata?.allow_name_lookup)
+                    : false
+                }
+                allowPublicRegistration={
+                  availability?.status === 'available' && availability.event
+                    ? Boolean(availability.event.allow_public_registrations)
+                    : false
+                }
+              />
+            </div>
           )}
 
           {activeWizardStep === 2 && (
-            <div className="space-y-4">
+            <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
               <ProfileStepCard
                 matchedMember={memberLookup.matchedMember}
                 isUpdateMode={memberLookup.isUpdateMode}
@@ -99,7 +123,7 @@ export function WizardEventRegistrationFlow() {
               />
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={resetToStepOne} size="md" type="button" variant="outline">
+                <Button onClick={resetToStepOne} size="lg" type="button" variant="outline">
                   Scan Another Member
                 </Button>
               </div>
@@ -107,7 +131,7 @@ export function WizardEventRegistrationFlow() {
           )}
 
           {activeWizardStep === 3 && (
-            <div ref={dynamicFieldsStepRef} className="space-y-4">
+            <div ref={dynamicFieldsStepRef} className="space-y-4 scroll-mt-24">
               <DynamicFieldsStepCard
                 matchedMember={memberLookup.matchedMember}
                 isLocked={memberLookup.isRegistrationBlocked}
@@ -131,7 +155,7 @@ export function WizardEventRegistrationFlow() {
               <Button
                 className="hover:bg-surface"
                 onClick={enterWizardConfirmStep}
-                size="md"
+                size="lg"
                 type="button"
                 variant="outline"
               >

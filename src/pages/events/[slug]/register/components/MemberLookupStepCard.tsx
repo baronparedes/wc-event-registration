@@ -118,9 +118,17 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
               )}
             </div>
 
-            <Button disabled={isLookupPending} size="md" type="submit" variant="default">
-              {isLookupPending ? 'Checking...' : 'Continue'}
-            </Button>
+            <div className="pt-2">
+              <Button
+                className="w-full"
+                disabled={isLookupPending}
+                size="lg"
+                type="submit"
+                variant="default"
+              >
+                {isLookupPending ? 'Checking...' : 'Continue'}
+              </Button>
+            </div>
           </form>
         )}
 

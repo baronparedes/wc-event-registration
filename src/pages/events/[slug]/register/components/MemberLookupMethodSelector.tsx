@@ -23,7 +23,7 @@ export function MemberLookupMethodSelector({
           onClick={() => onSelectMethod('id')}
           disabled={isLookupPending}
           variant="default"
-          size="md"
+          size="lg"
           className="h-auto flex-col py-4 !bg-primary/75"
         >
           <span className="font-semibold text-lg">Scan via RFID reader</span>
@@ -39,7 +39,7 @@ export function MemberLookupMethodSelector({
             onClick={() => onSelectMethod('name')}
             disabled={isLookupPending}
             variant="default"
-            size="md"
+            size="lg"
             className="h-auto flex-col py-4 !bg-primary/75"
           >
             <span className="font-semibold text-lg">Search by my name</span>
