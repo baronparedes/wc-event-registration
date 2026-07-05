@@ -8,6 +8,9 @@ export type {
   PublicEventFieldRow,
   PublicEventFieldValidationRules,
   EventFieldConfigValidationResult,
+  EventSlotAvailabilityField,
+  EventSlotAvailabilityOption,
+  EventSlotAvailabilityResponse,
   DynamicFieldResponseValues,
 } from './types';
 

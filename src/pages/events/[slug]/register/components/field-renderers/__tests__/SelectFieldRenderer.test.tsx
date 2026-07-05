@@ -14,6 +14,8 @@ type RendererHarnessProps = {
   field: PublicEventField;
   renderer: 'select' | 'radio' | 'multi' | 'toggle';
   defaultValues?: DynamicFieldResponseValues;
+  remainingSlotsByOption?: Record<string, number>;
+  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
 };
 
 function createField(overrides: Partial<PublicEventField>): PublicEventField {
@@ -37,24 +39,58 @@ function createField(overrides: Partial<PublicEventField>): PublicEventField {
   };
 }
 
-function Harness({ field, renderer, defaultValues }: RendererHarnessProps) {
+function Harness({
+  field,
+  renderer,
+  defaultValues,
+  remainingSlotsByOption,
+  remainingSlotsByRoleByOption,
+}: RendererHarnessProps) {
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     defaultValues: defaultValues ?? {},
   });
 
   if (renderer === 'radio') {
-    return <RadioFieldRenderer field={field} dynamicForm={dynamicForm} />;
+    return (
+      <RadioFieldRenderer
+        field={field}
+        dynamicForm={dynamicForm}
+        remainingSlotsByOption={remainingSlotsByOption}
+        remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+      />
+    );
   }
 
   if (renderer === 'multi') {
-    return <MultiSelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
+    return (
+      <MultiSelectFieldRenderer
+        field={field}
+        dynamicForm={dynamicForm}
+        remainingSlotsByOption={remainingSlotsByOption}
+        remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+      />
+    );
   }
 
   if (renderer === 'toggle') {
-    return <MultiSelectToggleFieldRenderer field={field} dynamicForm={dynamicForm} />;
+    return (
+      <MultiSelectToggleFieldRenderer
+        field={field}
+        dynamicForm={dynamicForm}
+        remainingSlotsByOption={remainingSlotsByOption}
+        remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+      />
+    );
   }
 
-  return <SelectFieldRenderer field={field} dynamicForm={dynamicForm} />;
+  return (
+    <SelectFieldRenderer
+      field={field}
+      dynamicForm={dynamicForm}
+      remainingSlotsByOption={remainingSlotsByOption}
+      remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+    />
+  );
 }
 
 describe('SelectFieldRenderer family', () => {
@@ -66,6 +102,98 @@ describe('SelectFieldRenderer family', () => {
     expect(screen.getByRole('option', { name: 'Select an option' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Vegetarian' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toBeInTheDocument();
+  });
+
+  it('shows configured role allotment breakdown when role remaining data is unavailable', () => {
+    const field = createField({
+      field_key: 'meal_type',
+      validation_rules: {
+        max_slots: {
+          veg: 10,
+          nonveg: 5,
+        },
+        max_slots_role_allotments: {
+          nonveg: [
+            { role: 'Leader', alloted_slots: 2 },
+            { role: 'Member', alloted_slots: 3 },
+          ],
+        },
+      },
+    });
+
+    render(<Harness field={field} renderer="select" />);
+
+    expect(screen.getByRole('option', { name: 'Vegetarian' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', {
+        name: 'Non-Vegetarian (Leader: 2 left, Member: 3 left)',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('prefers remaining slot copy when remaining usage data is available', () => {
+    const field = createField({
+      field_key: 'meal_type_remaining',
+      validation_rules: {
+        max_slots: {
+          veg: 10,
+        },
+      },
+    });
+
+    render(
+      <Harness field={field} renderer="select" remainingSlotsByOption={{ veg: 3, nonveg: 2 }} />,
+    );
+
+    expect(screen.getByRole('option', { name: 'Vegetarian (3 left)' })).toBeInTheDocument();
+  });
+
+  it('shows role-level remaining breakdown when role allotments are configured', () => {
+    const field = createField({
+      field_key: 'meal_role_breakdown',
+      field_type: 'radio',
+      validation_rules: {
+        max_slots_role_allotments: {
+          nonveg: [
+            { role: 'Leader', alloted_slots: 2 },
+            { role: 'Member', alloted_slots: 3 },
+          ],
+        },
+      },
+    });
+
+    render(
+      <Harness
+        field={field}
+        renderer="radio"
+        remainingSlotsByRoleByOption={{
+          nonveg: {
+            leader: 1,
+            member: 2,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Leader: 1 left, Member: 2 left')).toBeInTheDocument();
+  });
+
+  it('renders remaining slots as muted sub-label for card-style options', () => {
+    const radioField = createField({
+      field_key: 'meal_radio_remaining',
+      field_type: 'radio',
+      validation_rules: {
+        max_slots: {
+          veg: 10,
+        },
+      },
+    });
+
+    render(<Harness field={radioField} renderer="radio" remainingSlotsByOption={{ veg: 4 }} />);
+
+    const remainingLabel = screen.getByText('4 left');
+    expect(remainingLabel).toHaveClass('text-xs');
+    expect(remainingLabel).toHaveClass('text-muted');
   });
 
   it('renders radio and multi-select option controls', () => {
@@ -133,5 +261,72 @@ describe('SelectFieldRenderer family', () => {
 
     fireEvent.click(breakfastCheckbox);
     expect(breakfastYes).toBeDisabled();
+  });
+
+  it('checks the toggle option when clicking the card area outside controls', () => {
+    const toggleField = createField({
+      field_key: 'meal_slots_card_click',
+      field_type: 'multi_select_toggle',
+      options: [{ value: 'breakfast', label: 'Breakfast Slot' }],
+    });
+
+    render(<Harness field={toggleField} renderer="toggle" />);
+
+    const breakfastLabel = screen.getByText('Breakfast Slot');
+    const breakfastCard = breakfastLabel.closest('[data-slot-option-card="true"]');
+    const breakfastYes = screen.getByRole('button', { name: 'Breakfast Slot - Yes' });
+
+    expect(breakfastCard).toBeTruthy();
+    expect(breakfastYes).toBeDisabled();
+
+    if (breakfastCard) {
+      fireEvent.click(breakfastCard);
+    }
+
+    expect(breakfastYes).toBeEnabled();
+  });
+
+  it('does not double-toggle when clicking the option label text', () => {
+    const toggleField = createField({
+      field_key: 'meal_slots_label_click',
+      field_type: 'multi_select_toggle',
+      options: [{ value: 'breakfast', label: 'Breakfast Slot' }],
+    });
+
+    render(<Harness field={toggleField} renderer="toggle" />);
+
+    const breakfastLabel = screen.getByText('Breakfast Slot');
+    const breakfastYes = screen.getByRole('button', { name: 'Breakfast Slot - Yes' });
+
+    expect(breakfastYes).toBeDisabled();
+
+    fireEvent.click(breakfastLabel);
+    expect(breakfastYes).toBeEnabled();
+
+    fireEvent.click(breakfastLabel);
+    expect(breakfastYes).toBeDisabled();
+  });
+
+  it('keeps selection when clicking yes/no buttons (card click handler ignored)', () => {
+    const toggleField = createField({
+      field_key: 'meal_slots_button_click',
+      field_type: 'multi_select_toggle',
+      options: [{ value: 'breakfast', label: 'Breakfast Slot' }],
+    });
+
+    render(<Harness field={toggleField} renderer="toggle" />);
+
+    const breakfastLabel = screen.getByText('Breakfast Slot');
+    const breakfastCard = breakfastLabel.closest('[data-slot-option-card="true"]');
+    const breakfastYes = screen.getByRole('button', { name: 'Breakfast Slot - Yes' });
+
+    if (breakfastCard) {
+      fireEvent.click(breakfastCard);
+    }
+
+    expect(breakfastYes).toBeEnabled();
+
+    fireEvent.click(breakfastYes);
+    expect(breakfastYes).toBeEnabled();
   });
 });

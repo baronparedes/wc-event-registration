@@ -72,6 +72,31 @@ describe('useMemberLookupQuery', () => {
     });
   });
 
+  it('supports name-based lookup when member id is missing', async () => {
+    const profile = makeMemberLookupProfile();
+    mockLookupCaller.mockResolvedValueOnce({
+      success: true,
+      profile: { user_id: profile.user_id, member_id: profile.member_id },
+      existing_registration: null,
+    });
+
+    const { result } = renderHookWithClient(() => useMemberLookupQuery());
+
+    const response = await act(async () =>
+      result.current.mutateAsync({ name: '  Juan Dela Cruz  ', eventSlug: 'sunday-service' }),
+    );
+
+    expect(mockLookupCaller).toHaveBeenCalledWith({
+      memberId: undefined,
+      name: 'Juan Dela Cruz',
+      eventSlug: 'sunday-service',
+    });
+    expect(response).toEqual({
+      profile: { user_id: profile.user_id, member_id: profile.member_id },
+      existing_registration: null,
+    });
+  });
+
   it('surfaces error state when edge function throws', async () => {
     mockLookupCaller.mockRejectedValueOnce(new Error('lookup failed'));
 

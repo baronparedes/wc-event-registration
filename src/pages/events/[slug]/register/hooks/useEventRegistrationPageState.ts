@@ -6,16 +6,14 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { FORM_MESSAGES, TIMING, TOAST_MESSAGES } from '@/config/constants';
-import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields';
+import {
+  useEventSlotAvailabilityQuery,
+  usePublicEventFieldsQuery,
+} from '@/hooks/domain/event-fields';
 import { usePublicEventQuery } from '@/hooks/domain/events';
 import { useMemberLookupState } from '@/hooks/domain/members';
 import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations';
-import {
-  useErrorWithFadeout,
-  useKioskInactivityReset,
-  useRfidAutoFocus,
-  useScanBuffer,
-} from '@/hooks/utils';
+import { useErrorWithFadeout, useRfidAutoFocus, useScanBuffer } from '@/hooks/utils';
 import {
   type DynamicFieldResponseValues,
   buildDynamicFieldResponseSchema,
@@ -23,7 +21,6 @@ import {
 } from '@/lib/domain/event-fields';
 import { logger } from '@/lib/infrastructure';
 
-export type RegistrationLayoutVariant = 'classic' | 'wizard';
 export type WizardStep = 1 | 2 | 3;
 
 function formatUtcDateTime(value: string | null): string {
@@ -63,7 +60,7 @@ function getWizardStepTimeoutMs(step: WizardStep): number | null {
   }
 }
 
-export function useEventRegistrationPageState(variant: RegistrationLayoutVariant) {
+export function useEventRegistrationPageState() {
   const { slug } = useParams<{ slug: string }>();
   const memberIdInputRef = useRef<HTMLInputElement | null>(null);
   const dynamicFieldsStepRef = useRef<HTMLDivElement | null>(null);
@@ -83,37 +80,28 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   const { clearMember, lookupForm, handleLookupSubmit: runMemberLookupSubmit } = memberLookup;
 
   const activeWizardStep = useMemo<WizardStep>(() => {
-    if (variant !== 'wizard') {
-      return 1;
-    }
-
     if (wizardStep === 1 && memberLookup.matchedMember) {
       return memberLookup.isRegistrationBlocked ? 2 : 3;
     }
 
     return wizardStep;
-  }, [variant, wizardStep, memberLookup.matchedMember, memberLookup.isRegistrationBlocked]);
+  }, [wizardStep, memberLookup.matchedMember, memberLookup.isRegistrationBlocked]);
 
   const isEffectiveRegistrationBlocked = useMemo(
     () => memberLookup.isRegistrationBlocked || isWizardBlockedResult,
     [memberLookup.isRegistrationBlocked, isWizardBlockedResult],
   );
-  const isRegistrationBlockedForCurrentFlow = useMemo(
-    () =>
-      variant === 'wizard' ? isEffectiveRegistrationBlocked : memberLookup.isRegistrationBlocked,
-    [variant, isEffectiveRegistrationBlocked, memberLookup.isRegistrationBlocked],
-  );
   const activeWizardStepTimeoutMs = useMemo(
-    () => (variant === 'wizard' ? getWizardStepTimeoutMs(activeWizardStep) : null),
-    [variant, activeWizardStep],
+    () => getWizardStepTimeoutMs(activeWizardStep),
+    [activeWizardStep],
   );
   const displayedWizardStepSecondsRemaining = useMemo(() => {
-    if (variant !== 'wizard' || activeWizardStepTimeoutMs === null) {
+    if (activeWizardStepTimeoutMs === null) {
       return wizardStepSecondsRemaining;
     }
 
     return wizardStepSecondsRemaining ?? Math.ceil(activeWizardStepTimeoutMs / 1000);
-  }, [variant, activeWizardStepTimeoutMs, wizardStepSecondsRemaining]);
+  }, [activeWizardStepTimeoutMs, wizardStepSecondsRemaining]);
 
   const availability = eventQuery.data;
   const isGateReady = availability?.status === 'available';
@@ -133,7 +121,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
 
   const isRfidCaptureActive =
     isGateReady &&
-    (variant === 'classic' || activeWizardStep === 1) &&
+    activeWizardStep === 1 &&
     memberLookup.matchedMember === null &&
     !memberLookup.isLookupPending;
   const focusMemberIdInput = useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive);
@@ -161,11 +149,6 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
       clearMember();
     },
   });
-  const shouldFadeBlockedRegistrationState = useMemo(
-    () => variant === 'classic' && isRegistrationBlockedForCurrentFlow && lookupErrorFadeOut,
-    [variant, isRegistrationBlockedForCurrentFlow, lookupErrorFadeOut],
-  );
-
   const scrollToTitleAnchor = useCallback(() => {
     const scrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
@@ -211,19 +194,10 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
 
   const handleLookupSuccess = useCallback(
     (mode: 'new_registration' | 'update_registration') => {
-      if (variant === 'wizard') {
-        enterWizardConfirmStep();
-        return;
-      }
-
-      if (mode === 'update_registration') {
-        scrollToDynamicFieldsStep();
-        return;
-      }
-
-      focusMemberIdInput();
+      void mode;
+      enterWizardConfirmStep();
     },
-    [variant, enterWizardConfirmStep, scrollToDynamicFieldsStep, focusMemberIdInput],
+    [enterWizardConfirmStep],
   );
 
   const handleLookupFailure = useCallback(
@@ -232,7 +206,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
       autoFadeOut: boolean,
       reason?: 'not_found' | 'already_registered' | 'lookup_unavailable',
     ) => {
-      const shouldUseWizardBlockedStep = variant === 'wizard' && reason === 'already_registered';
+      const shouldUseWizardBlockedStep = reason === 'already_registered';
 
       if (shouldUseWizardBlockedStep) {
         setIsWizardBlockedResult(true);
@@ -245,7 +219,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
       focusMemberIdInput();
       showLookupError(error, { autoFadeOut: shouldUseWizardBlockedStep ? false : autoFadeOut });
     },
-    [variant, focusMemberIdInput, showLookupError],
+    [focusMemberIdInput, showLookupError],
   );
 
   const handleScan = useCallback(
@@ -270,31 +244,49 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   );
   useScanBuffer(handleScan, isRfidCaptureActive, memberIdInputRef);
 
-  const handleKioskReset = useCallback(() => {
-    clearMember();
-    lookupForm.reset({ memberId: '' });
-    dynamicForm.reset({});
-    setSubmitErrorMessage(null);
-    setSubmitSuccessMessage(null);
-    setIsWizardBlockedResult(false);
-    setWizardStepSecondsRemaining(null);
-    clearLookupError();
-    setWizardStep(1);
-  }, [clearMember, lookupForm, dynamicForm, clearLookupError]);
-  const { secondsRemaining: kioskIdleSecondsRemaining } = useKioskInactivityReset(
-    handleKioskReset,
-    TIMING.kioskInactivityResetMs,
-    variant === 'classic' && isGateReady,
-  );
-
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event.id : undefined,
+  );
+  const slotAvailabilityQuery = useEventSlotAvailabilityQuery(
+    availability?.status === 'available' ? availability.event.id : undefined,
   );
 
   const activeFields = useMemo(
     () => eventFieldsQuery.data?.validFields ?? [],
     [eventFieldsQuery.data?.validFields],
   );
+  const remainingSlotsByFieldOption = useMemo(() => {
+    const slotFields = slotAvailabilityQuery.data?.fields ?? [];
+
+    return slotFields.reduce<Record<string, Record<string, number>>>((fieldAcc, fieldEntry) => {
+      fieldAcc[fieldEntry.field_key] = fieldEntry.options.reduce<Record<string, number>>(
+        (optionAcc, optionEntry) => {
+          optionAcc[optionEntry.value] = optionEntry.remaining_slots;
+          return optionAcc;
+        },
+        {},
+      );
+
+      return fieldAcc;
+    }, {});
+  }, [slotAvailabilityQuery.data?.fields]);
+  const remainingSlotsByRoleByFieldOption = useMemo(() => {
+    const slotFields = slotAvailabilityQuery.data?.fields ?? [];
+
+    return slotFields.reduce<Record<string, Record<string, Record<string, number>>>>(
+      (fieldAcc, fieldEntry) => {
+        fieldAcc[fieldEntry.field_key] = fieldEntry.options.reduce<
+          Record<string, Record<string, number>>
+        >((optionAcc, optionEntry) => {
+          optionAcc[optionEntry.value] = optionEntry.remaining_slots_by_role ?? {};
+          return optionAcc;
+        }, {});
+
+        return fieldAcc;
+      },
+      {},
+    );
+  }, [slotAvailabilityQuery.data?.fields]);
   const responseSchema = useMemo(
     () => buildDynamicFieldResponseSchema(activeFields),
     [activeFields],
@@ -318,7 +310,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
   }, [dynamicForm, isDynamicFieldGateReady]);
 
   useEffect(() => {
-    if (variant !== 'wizard' || activeWizardStepTimeoutMs === null) {
+    if (activeWizardStepTimeoutMs === null) {
       return;
     }
 
@@ -334,14 +326,10 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
       window.clearTimeout(initializeCountdownId);
       window.clearTimeout(timeoutId);
     };
-  }, [variant, activeWizardStepTimeoutMs, resetToStepOne]);
+  }, [activeWizardStepTimeoutMs, resetToStepOne]);
 
   useEffect(() => {
-    if (
-      variant !== 'wizard' ||
-      activeWizardStepTimeoutMs === null ||
-      wizardStepSecondsRemaining === null
-    ) {
+    if (activeWizardStepTimeoutMs === null || wizardStepSecondsRemaining === null) {
       return;
     }
 
@@ -358,7 +346,7 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [variant, activeWizardStepTimeoutMs, wizardStepSecondsRemaining]);
+  }, [activeWizardStepTimeoutMs, wizardStepSecondsRemaining]);
 
   const handleLookupSubmit = useCallback(
     async (values: Parameters<typeof runMemberLookupSubmit>[0]) => {
@@ -533,8 +521,9 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     lookupErrorFadeOut,
     clearLookupError,
     activeFields,
+    remainingSlotsByFieldOption,
+    remainingSlotsByRoleByFieldOption,
     eventFieldsQuery,
-    kioskIdleSecondsRemaining,
     dynamicForm,
     submitMutation,
     submitErrorMessage,
@@ -546,8 +535,6 @@ export function useEventRegistrationPageState(variant: RegistrationLayoutVariant
     resetToStepOne,
     activeWizardStep,
     isEffectiveRegistrationBlocked,
-    isRegistrationBlockedForCurrentFlow,
-    shouldFadeBlockedRegistrationState,
     wizardStepSecondsRemaining: displayedWizardStepSecondsRemaining,
     enterWizardConfirmStep,
     enterWizardCompleteStep,

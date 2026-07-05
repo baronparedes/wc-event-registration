@@ -8,9 +8,80 @@ const baseInputClassName =
 type SelectFieldRendererProps = {
   field: PublicEventField;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+  remainingSlotsByOption?: Record<string, number>;
+  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
 };
 
-export function SelectFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
+function formatAllottedSlotsLabel(
+  optionValue: string,
+  remainingSlotsByOption?: Record<string, number>,
+): string | null {
+  const remainingCount = remainingSlotsByOption?.[optionValue];
+  if (typeof remainingCount !== 'number') {
+    return null;
+  }
+
+  return `${Math.max(0, remainingCount)} left`;
+}
+
+function getOptionRemainingLabel(
+  option: { value: string; label: string },
+  remainingSlotsByOption?: Record<string, number>,
+): string | null {
+  return formatAllottedSlotsLabel(option.value, remainingSlotsByOption);
+}
+
+function getOptionRoleRemainingLabel(
+  field: PublicEventField,
+  option: { value: string; label: string },
+  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
+): string | null {
+  const configuredRoleAllotments =
+    field.validation_rules.max_slots_role_allotments?.[option.value] ?? [];
+  if (configuredRoleAllotments.length === 0) {
+    return null;
+  }
+
+  const remainingByRole = remainingSlotsByRoleByOption?.[option.value] ?? {};
+  const roleSegments = configuredRoleAllotments.map((entry) => {
+    const normalizedRole = entry.role.trim().toLowerCase();
+    const remaining = remainingByRole[normalizedRole];
+    const safeRemaining =
+      typeof remaining === 'number' ? Math.max(0, remaining) : entry.alloted_slots;
+    return `${entry.role}: ${safeRemaining} left`;
+  });
+
+  return roleSegments.join(', ');
+}
+
+function getOptionSlotMetadata(
+  field: PublicEventField,
+  option: { value: string; label: string },
+  remainingSlotsByOption?: Record<string, number>,
+  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
+) {
+  const remainingLabel = getOptionRemainingLabel(option, remainingSlotsByOption);
+  const roleRemainingLabel = getOptionRoleRemainingLabel(
+    field,
+    option,
+    remainingSlotsByRoleByOption,
+  );
+
+  return {
+    remainingLabel,
+    roleRemainingLabel,
+    combinedInlineLabel: [remainingLabel, roleRemainingLabel]
+      .filter((entry): entry is string => Boolean(entry))
+      .join(' - '),
+  };
+}
+
+export function SelectFieldRenderer({
+  field,
+  dynamicForm,
+  remainingSlotsByOption,
+  remainingSlotsByRoleByOption,
+}: SelectFieldRendererProps) {
   return (
     <select
       id={`field-${field.field_key}`}
@@ -18,43 +89,96 @@ export function SelectFieldRenderer({ field, dynamicForm }: SelectFieldRendererP
       {...dynamicForm.register(field.field_key)}
     >
       <option value="">Select an option</option>
-      {field.options.map((option: { value: string; label: string }) => (
-        <option key={`${field.id}-${option.value}`} value={option.value}>
-          {option.label}
-        </option>
-      ))}
+      {field.options.map((option: { value: string; label: string }) => {
+        const { combinedInlineLabel } = getOptionSlotMetadata(
+          field,
+          option,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+
+        return (
+          <option key={`${field.id}-${option.value}`} value={option.value}>
+            {combinedInlineLabel ? `${option.label} (${combinedInlineLabel})` : option.label}
+          </option>
+        );
+      })}
     </select>
   );
 }
 
-export function RadioFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
+export function RadioFieldRenderer({
+  field,
+  dynamicForm,
+  remainingSlotsByOption,
+  remainingSlotsByRoleByOption,
+}: SelectFieldRendererProps) {
   return (
     <div className="space-y-2">
-      {field.options.map((option: { value: string; label: string }) => (
-        <label
-          key={`${field.id}-${option.value}`}
-          className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
-        >
-          <input type="radio" value={option.value} {...dynamicForm.register(field.field_key)} />
-          <span>{option.label}</span>
-        </label>
-      ))}
+      {field.options.map((option: { value: string; label: string }) => {
+        const { remainingLabel, roleRemainingLabel } = getOptionSlotMetadata(
+          field,
+          option,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+
+        return (
+          <label
+            key={`${field.id}-${option.value}`}
+            className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
+          >
+            <input type="radio" value={option.value} {...dynamicForm.register(field.field_key)} />
+            <span className="flex flex-col">
+              <span>{option.label}</span>
+              {remainingLabel && <span className="text-xs text-muted">{remainingLabel}</span>}
+              {roleRemainingLabel && (
+                <span className="text-xs text-muted">{roleRemainingLabel}</span>
+              )}
+            </span>
+          </label>
+        );
+      })}
     </div>
   );
 }
 
-export function MultiSelectFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
+export function MultiSelectFieldRenderer({
+  field,
+  dynamicForm,
+  remainingSlotsByOption,
+  remainingSlotsByRoleByOption,
+}: SelectFieldRendererProps) {
   return (
     <div className="space-y-2">
-      {field.options.map((option: { value: string; label: string }) => (
-        <label
-          key={`${field.id}-${option.value}`}
-          className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
-        >
-          <input type="checkbox" value={option.value} {...dynamicForm.register(field.field_key)} />
-          <span>{option.label}</span>
-        </label>
-      ))}
+      {field.options.map((option: { value: string; label: string }) => {
+        const { remainingLabel, roleRemainingLabel } = getOptionSlotMetadata(
+          field,
+          option,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+
+        return (
+          <label
+            key={`${field.id}-${option.value}`}
+            className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
+          >
+            <input
+              type="checkbox"
+              value={option.value}
+              {...dynamicForm.register(field.field_key)}
+            />
+            <span className="flex flex-col">
+              <span>{option.label}</span>
+              {remainingLabel && <span className="text-xs text-muted">{remainingLabel}</span>}
+              {roleRemainingLabel && (
+                <span className="text-xs text-muted">{roleRemainingLabel}</span>
+              )}
+            </span>
+          </label>
+        );
+      })}
     </div>
   );
 }
@@ -67,7 +191,12 @@ function isBooleanOrNullRecord(value: unknown): value is Record<string, boolean 
   return Object.values(value).every((entry) => typeof entry === 'boolean' || entry === null);
 }
 
-export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFieldRendererProps) {
+export function MultiSelectToggleFieldRenderer({
+  field,
+  dynamicForm,
+  remainingSlotsByOption,
+  remainingSlotsByRoleByOption,
+}: SelectFieldRendererProps) {
   const rawValue = useWatch({ control: dynamicForm.control, name: field.field_key });
   const selectedValues = isBooleanOrNullRecord(rawValue) ? rawValue : {};
 
@@ -121,27 +250,52 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
           const isToggleChoicePending = isSelected && toggleValue === null;
           const isYesSelected = toggleValue === true;
           const isNoSelected = toggleValue === false;
+          const {
+            remainingLabel: optionRemainingLabel,
+            roleRemainingLabel: optionRoleRemainingLabel,
+          } = getOptionSlotMetadata(
+            field,
+            option,
+            remainingSlotsByOption,
+            remainingSlotsByRoleByOption,
+          );
 
           return (
             <div
               key={`${field.id}-${option.value}`}
-              className={`rounded-md border px-3 py-2 text-sm text-text transition-colors ${
-                isToggleChoicePending
-                  ? 'border-accent/60 bg-accent/5'
-                  : 'border-border/70 bg-transparent'
+              data-slot-option-card="true"
+              className={`cursor-pointer rounded-[14px] border px-4 py-3 text-sm text-text transition-all ${
+                isSelected
+                  ? 'border-primary/50 bg-primary/5 shadow-xs'
+                  : isToggleChoicePending
+                    ? 'border-accent/60 bg-accent/5'
+                    : 'border-border/70 bg-transparent'
               }`}
+              onClick={(event) => {
+                const target = event.target as HTMLElement;
+
+                if (
+                  target.closest('button') ||
+                  target.closest('label') ||
+                  target.closest('input')
+                ) {
+                  return;
+                }
+
+                handleSelectionChange(option.value, !isSelected, configuredDefault);
+              }}
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex items-start justify-between gap-3">
+                <label className="flex min-w-0 flex-1 items-center gap-3">
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    className="h-5 w-5 accent-primary"
+                    className="h-6 w-6 accent-primary"
                     onChange={(event) =>
                       handleSelectionChange(option.value, event.target.checked, configuredDefault)
                     }
                   />
-                  <span>{option.label}</span>
+                  <span className="text-base font-semibold leading-tight">{option.label}</span>
                 </label>
 
                 <div className="flex flex-col items-end gap-1">
@@ -156,7 +310,7 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                       aria-label={`${option.label} - Yes`}
                       disabled={!isSelected}
                       onClick={() => handleToggleChange(option.value, true)}
-                      className={`min-w-16 rounded-md border px-3 py-1 text-xs font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                      className={`min-w-[74px] rounded-md border px-3 py-2 text-sm font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                         isYesSelected
                           ? 'border-4 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
                           : 'border-border bg-background text-text hover:bg-primary/5'
@@ -169,7 +323,7 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                       aria-label={`${option.label} - No`}
                       disabled={!isSelected}
                       onClick={() => handleToggleChange(option.value, false)}
-                      className={`min-w-16 rounded-md border px-3 py-1 text-xs font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                      className={`min-w-[74px] rounded-md border px-3 py-2 text-sm font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                         isNoSelected
                           ? 'border-4 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
                           : 'border-border bg-background text-text hover:bg-primary/5'
@@ -183,6 +337,17 @@ export function MultiSelectToggleFieldRenderer({ field, dynamicForm }: SelectFie
                   )}
                 </div>
               </div>
+
+              {(optionRemainingLabel || optionRoleRemainingLabel) && (
+                <div className="mt-3 space-y-1 border-t border-border/50 pt-2">
+                  {optionRemainingLabel && (
+                    <p className="text-sm text-muted">{optionRemainingLabel}</p>
+                  )}
+                  {optionRoleRemainingLabel && (
+                    <p className="text-xs text-muted">{optionRoleRemainingLabel}</p>
+                  )}
+                </div>
+              )}
             </div>
           );
         },

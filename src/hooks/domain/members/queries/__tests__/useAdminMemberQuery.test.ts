@@ -148,4 +148,14 @@ describe('useAdminMemberQuery', () => {
     expect(result.current.fetchStatus).toBe('idle');
     expect(mockFrom).not.toHaveBeenCalled();
   });
+
+  it('returns an error when refetch is called without member ID', async () => {
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(undefined));
+
+    const response = await result.current.refetch();
+
+    expect(response.error).toBeInstanceOf(Error);
+    expect(response.error?.message).toBe('Member ID is required');
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
 });

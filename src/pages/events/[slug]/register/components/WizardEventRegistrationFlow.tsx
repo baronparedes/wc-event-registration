@@ -36,6 +36,8 @@ export function WizardEventRegistrationFlow() {
     dynamicFieldsStepRef,
     eventFieldsQuery,
     activeFields,
+    remainingSlotsByFieldOption,
+    remainingSlotsByRoleByFieldOption,
     dynamicForm,
     handleSubmitRegistration,
     fieldErrorMessage,
@@ -45,7 +47,7 @@ export function WizardEventRegistrationFlow() {
     handleCancelUpdate,
     enterWizardConfirmStep,
     isEffectiveRegistrationBlocked,
-  } = useEventRegistrationPageState('wizard');
+  } = useEventRegistrationPageState();
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -142,6 +144,8 @@ export function WizardEventRegistrationFlow() {
                 isFieldsError={eventFieldsQuery.isError}
                 fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
                 activeFields={activeFields}
+                remainingSlotsByFieldOption={remainingSlotsByFieldOption}
+                remainingSlotsByRoleByFieldOption={remainingSlotsByRoleByFieldOption}
                 dynamicForm={dynamicForm}
                 onSubmit={handleSubmitRegistration}
                 fieldErrorMessage={fieldErrorMessage}
