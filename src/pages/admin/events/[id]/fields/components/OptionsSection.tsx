@@ -12,7 +12,8 @@ import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/even
 import { FieldOptionsEditor } from './FieldOptionsEditor';
 
 type OptionsSectionProps = {
-  isStructurallyLocked: boolean;
+  isOptionStructureLocked: boolean;
+  isCapacityLocked: boolean;
   optionFields: FieldArrayWithId<EventFieldFormValues, 'options', 'id'>[];
   register: UseFormRegister<EventFieldFormValues>;
   control: Control<EventFieldFormValues>;
@@ -25,7 +26,8 @@ type OptionsSectionProps = {
 
 /** Section for choice field options (select, radio, multi-select). */
 export function OptionsSection({
-  isStructurallyLocked,
+  isOptionStructureLocked,
+  isCapacityLocked,
   optionFields,
   register,
   control,
@@ -39,8 +41,10 @@ export function OptionsSection({
     <SectionCard
       title="Options"
       subtitle={
-        isStructurallyLocked
-          ? 'Options are locked on published and archived events.'
+        isOptionStructureLocked
+          ? isCapacityLocked
+            ? 'Options and capacity are locked on archived events.'
+            : 'Option labels/values are locked on published events, but capacity can still be adjusted.'
           : 'Define the choices available to registrants.'
       }
     >
@@ -52,7 +56,8 @@ export function OptionsSection({
         errors={errors}
         remove={remove}
         append={append}
-        isLocked={isStructurallyLocked}
+        isOptionStructureLocked={isOptionStructureLocked}
+        isCapacityLocked={isCapacityLocked}
         selectedFieldType={selectedFieldType}
       />
     </SectionCard>

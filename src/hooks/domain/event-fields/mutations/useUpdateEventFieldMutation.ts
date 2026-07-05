@@ -9,7 +9,7 @@ import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 /**
  * Updates an existing event field.
  * On draft events: all properties can be changed.
- * On published events: only label, placeholder, and help_text can be changed.
+ * On published events: only label, placeholder, help_text, and option capacity rules can be changed.
  * On archived events: no changes are permitted.
  */
 export function useUpdateEventFieldMutation() {
@@ -32,13 +32,32 @@ export function useUpdateEventFieldMutation() {
       const { id, ...updates } = input;
 
       if (event.status === 'published') {
-        const lockedKeys = Object.keys(updates).filter(
-          (k) => k !== 'label' && k !== 'placeholder' && k !== 'help_text',
-        );
+        const allowedPublishedKeys = new Set([
+          'event_id',
+          'label',
+          'placeholder',
+          'help_text',
+          'validation_rules',
+        ]);
+        const lockedKeys = Object.keys(updates).filter((k) => !allowedPublishedKeys.has(k));
         if (lockedKeys.length > 0) {
           throw new Error(
-            'Published events can only have field labels, placeholders, and help text edited. To change field types or validation rules, archive this event and create a new one.',
+            'Published events can only have field labels, placeholders, help text, and option capacity edited. To change field types or validation rules, archive this event and create a new one.',
           );
+        }
+
+        if (updates.validation_rules) {
+          const rules = updates.validation_rules as Record<string, unknown>;
+          const allowedCapacityRuleKeys = new Set(['max_slots', 'max_slots_role_allotments']);
+          const disallowedRuleKeys = Object.keys(rules).filter(
+            (ruleKey) => !allowedCapacityRuleKeys.has(ruleKey),
+          );
+
+          if (disallowedRuleKeys.length > 0) {
+            throw new Error(
+              'Published events can only update option capacity rules (max_slots and max_slots_role_allotments).',
+            );
+          }
         }
       }
 

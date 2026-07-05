@@ -50,6 +50,8 @@ export function EventFieldEditPanel({
   const isArchived = eventStatus === 'archived';
   const isFullyLocked = isArchived;
   const isStructurallyLocked = isPublished || isArchived;
+  const isOptionStructureLocked = isPublished || isArchived;
+  const isCapacityLocked = isArchived;
 
   const createMutation = useCreateEventFieldMutation();
   const updateMutation = useUpdateEventFieldMutation();
@@ -108,14 +110,24 @@ export function EventFieldEditPanel({
         : [];
 
       if (isEditing && field) {
+        const publishedCapacityRules: Record<string, unknown> = {};
+        if (validationRules.max_slots !== undefined) {
+          publishedCapacityRules.max_slots = validationRules.max_slots;
+        }
+        if (validationRules.max_slots_role_allotments !== undefined) {
+          publishedCapacityRules.max_slots_role_allotments =
+            validationRules.max_slots_role_allotments;
+        }
+
         const updatePayload = isPublished
-          ? // Published: only cosmetic fields
+          ? // Published: cosmetic fields + option capacity
             {
               id: field.id,
               event_id: eventId,
               label: values.label,
               placeholder: values.placeholder || null,
               help_text: values.help_text || null,
+              validation_rules: publishedCapacityRules,
             }
           : // Draft: all fields
             {
@@ -215,7 +227,8 @@ export function EventFieldEditPanel({
 
           {showOptions && (
             <OptionsSection
-              isStructurallyLocked={isStructurallyLocked}
+              isOptionStructureLocked={isOptionStructureLocked}
+              isCapacityLocked={isCapacityLocked}
               optionFields={optionFields}
               register={register}
               control={control}

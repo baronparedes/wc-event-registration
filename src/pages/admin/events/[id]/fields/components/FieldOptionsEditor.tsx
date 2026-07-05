@@ -21,7 +21,8 @@ type FieldOptionsEditorProps = {
   errors: FieldErrors<EventFieldFormValues>;
   remove: UseFieldArrayRemove;
   append: UseFieldArrayAppend<EventFieldFormValues, 'options'>;
-  isLocked: boolean;
+  isOptionStructureLocked: boolean;
+  isCapacityLocked: boolean;
   selectedFieldType: EventFieldTypeEnum;
 };
 
@@ -40,7 +41,8 @@ export function FieldOptionsEditor({
   errors,
   remove,
   append,
-  isLocked,
+  isOptionStructureLocked,
+  isCapacityLocked,
   selectedFieldType,
 }: FieldOptionsEditorProps) {
   const watchedOptions = useWatch({ control, name: 'options' }) ?? [];
@@ -62,7 +64,7 @@ export function FieldOptionsEditor({
         const valueError = errors.options?.[index]?.value?.message;
         const toggleLabelError = errors.options?.[index]?.toggle_label?.message;
         const optionRoleAllotments = watchedOptions[index]?.role_allotments ?? [];
-        const canAddRoleAllotments = !isLocked;
+        const canAddRoleAllotments = !isCapacityLocked;
         const derivedSlotsTotal = optionRoleAllotments.reduce((sum, entry) => {
           const parsed = Number(entry.alloted_slots.trim());
           return Number.isInteger(parsed) && parsed > 0 ? sum + parsed : sum;
@@ -99,7 +101,7 @@ export function FieldOptionsEditor({
                     : 'Configure the display text and stored value.'}
                 </p>
               </div>
-              {!isLocked && (
+              {!isOptionStructureLocked && (
                 <button
                   type="button"
                   onClick={() => remove(index)}
@@ -117,7 +119,7 @@ export function FieldOptionsEditor({
                   <span className="block text-xs text-muted">Display label</span>
                   <input
                     {...register(`options.${index}.label`)}
-                    disabled={isLocked}
+                    disabled={isOptionStructureLocked}
                     placeholder="Display label (e.g., 9AM)"
                     aria-label={`Option ${index + 1} label`}
                     className={`${inputClass} ${labelError ? 'border-red-400' : ''}`}
@@ -131,7 +133,7 @@ export function FieldOptionsEditor({
                   <span className="block text-xs text-muted">Stored value</span>
                   <input
                     {...register(`options.${index}.value`)}
-                    disabled={isLocked}
+                    disabled={isOptionStructureLocked}
                     placeholder="Stored value (e.g., 9am)"
                     aria-label={`Option ${index + 1} value`}
                     className={`${inputClass} ${valueError ? 'border-red-400' : ''}`}
@@ -152,7 +154,7 @@ export function FieldOptionsEditor({
                       <span className="block text-xs text-muted">Default toggle label</span>
                       <input
                         {...register(`options.${index}.toggle_label`)}
-                        disabled={isLocked}
+                        disabled={isOptionStructureLocked}
                         placeholder="Toggle label (e.g., with Breakfast)"
                         aria-label={`Option ${index + 1} toggle label`}
                         className={`${inputClass} ${toggleLabelError ? 'border-red-400' : ''}`}
@@ -176,7 +178,7 @@ export function FieldOptionsEditor({
                             return value === 'true';
                           },
                         })}
-                        disabled={isLocked}
+                        disabled={isOptionStructureLocked}
                         aria-label={`Option ${index + 1} toggle default`}
                         className={inputClass}
                       >
@@ -221,7 +223,7 @@ export function FieldOptionsEditor({
                           </span>
                         </span>
                       </span>
-                      {!isLocked && (
+                      {!isCapacityLocked && (
                         <button
                           type="button"
                           onClick={addRoleAllotment}
@@ -261,7 +263,7 @@ export function FieldOptionsEditor({
                                     value.trim().length > 0 || 'Role is required.',
                                 },
                               )}
-                              disabled={isLocked}
+                              disabled={isCapacityLocked}
                               placeholder="e.g., Prayer Coach"
                               className={`${inputClass} ${roleError ? 'border-red-400' : ''}`}
                             />
@@ -286,7 +288,7 @@ export function FieldOptionsEditor({
                                   return true;
                                 },
                               })}
-                              disabled={isLocked}
+                              disabled={isCapacityLocked}
                               inputMode="numeric"
                               pattern="[0-9]*"
                               placeholder="e.g., 10"
@@ -299,7 +301,7 @@ export function FieldOptionsEditor({
                             </p>
                           </label>
 
-                          {!isLocked && (
+                          {!isCapacityLocked && (
                             <button
                               type="button"
                               onClick={() => removeRoleAllotment(allotmentIndex)}
@@ -319,7 +321,7 @@ export function FieldOptionsEditor({
         );
       })}
 
-      {!isLocked && (
+      {!isOptionStructureLocked && (
         <Button
           type="button"
           variant="outline"

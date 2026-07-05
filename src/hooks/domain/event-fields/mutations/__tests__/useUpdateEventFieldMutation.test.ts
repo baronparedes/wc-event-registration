@@ -100,8 +100,62 @@ describe('useUpdateEventFieldMutation', () => {
         label: 'New Label',
         field_type: field.field_type,
       }),
+    ).rejects.toThrow('Published events can only have field labels, placeholders, help text');
+  });
+
+  it('allows capacity-only validation updates on published events', async () => {
+    const field = makeAdminEventField({ field_type: 'select' });
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'published' }, error: null });
+    mockUpdateBuilder.single.mockResolvedValueOnce({
+      data: { id: field.id, label: field.label },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useUpdateEventFieldMutation());
+
+    const updated = await act(async () =>
+      result.current.mutateAsync({
+        id: field.id,
+        event_id: field.event_id,
+        label: field.label,
+        validation_rules: {
+          max_slots: { option_a: 10 },
+          max_slots_role_allotments: {
+            option_a: [{ role: 'Coach', alloted_slots: 10 }],
+          },
+        },
+      }),
+    );
+
+    expect(updated).toEqual({ id: field.id, label: field.label });
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith({
+      event_id: field.event_id,
+      label: field.label,
+      validation_rules: {
+        max_slots: { option_a: 10 },
+        max_slots_role_allotments: {
+          option_a: [{ role: 'Coach', alloted_slots: 10 }],
+        },
+      },
+    });
+  });
+
+  it('rejects non-capacity validation updates on published events', async () => {
+    const field = makeAdminEventField({ field_type: 'number' });
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'published' }, error: null });
+
+    const { result } = renderHookWithClient(() => useUpdateEventFieldMutation());
+
+    await expect(
+      result.current.mutateAsync({
+        id: field.id,
+        event_id: field.event_id,
+        validation_rules: {
+          min: 1,
+        },
+      }),
     ).rejects.toThrow(
-      'Published events can only have field labels, placeholders, and help text edited',
+      'Published events can only update option capacity rules (max_slots and max_slots_role_allotments).',
     );
   });
 

@@ -11,8 +11,8 @@ export function StatusBanners({ eventStatus }: StatusBannersProps) {
       <div className="mx-6 mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
         <p className="text-sm font-medium text-blue-800">Published event</p>
         <p className="mt-1 text-xs text-blue-700">
-          You can edit field labels and help text only. To change field types or validation rules,
-          archive this event and create a new one.
+          You can edit labels, placeholder/help text, and option capacity. To change field types,
+          options, or other validation rules, archive this event and create a new one.
         </p>
       </div>
     );

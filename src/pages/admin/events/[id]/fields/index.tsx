@@ -75,7 +75,7 @@ export function AdminEventFieldsPage() {
           </p>
           <p className="mt-1 text-xs text-blue-700">
             {isPublished
-              ? 'You can edit field labels and help text only. To change field types, options, or validation rules, archive this event and create a new one.'
+              ? 'You can edit labels, placeholder/help text, and option capacity. To change field types, options, or other validation rules, archive this event and create a new one.'
               : 'Field edits are disabled on archived events.'}
           </p>
         </div>
