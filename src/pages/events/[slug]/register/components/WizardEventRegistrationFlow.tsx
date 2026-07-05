@@ -76,6 +76,7 @@ export function WizardEventRegistrationFlow() {
         availability={availability}
         isGateReady={isGateReady}
         eventWindowText={eventWindowText}
+        defaultExpanded={false}
       />
 
       {isGateReady ? (

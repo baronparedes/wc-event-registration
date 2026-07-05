@@ -14,10 +14,12 @@ type EventHeaderCardProps = {
   availability?: EventAvailability;
   isGateReady: boolean;
   eventWindowText: { opens: string; closes: string } | null;
+  defaultExpanded?: boolean;
 };
 
 export function EventHeaderCard(props: EventHeaderCardProps) {
-  const { slug, isLoading, isError, availability, isGateReady, eventWindowText } = props;
+  const { slug, isLoading, isError, availability, isGateReady, eventWindowText, defaultExpanded } =
+    props;
 
   const event =
     availability?.status === 'available' ||
@@ -41,6 +43,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
 
   return (
     <CollapsibleSectionCard
+      defaultExpanded={defaultExpanded}
       collapseLabel="Collapse event registration info"
       expandLabel="Expand event registration info"
       title={title}
@@ -48,6 +51,11 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
         event ? (
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
+            {availability?.status === 'available' && (
+              <span className="text-xs font-medium text-muted">
+                Registered: <span className="text-text">{availability.registration_count}</span>
+              </span>
+            )}
             {event.allow_public_registrations && (
               <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
                 Open to Guests
@@ -109,12 +117,6 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
           <p>
             Ends: <span className="font-medium text-text">{formatDateTime(event.ends_at)}</span>
           </p>
-          {availability?.status === 'available' && (
-            <p className="sm:col-span-2">
-              Registered:{' '}
-              <span className="font-medium text-text">{availability.registration_count}</span>
-            </p>
-          )}
         </div>
       )}
 
