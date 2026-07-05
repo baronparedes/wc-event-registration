@@ -97,6 +97,8 @@ function DynamicFieldInput(props: {
 
 type DynamicFieldsStepCardProps = {
   matchedMember: MemberLookupProfile | null;
+  isRegistrationConfirmed?: boolean;
+  onConfirmAcknowledged?: () => void;
   isLocked?: boolean;
   shouldFadeLockedState?: boolean;
   lockedMessage?: string | null;
@@ -120,6 +122,8 @@ type DynamicFieldsStepCardProps = {
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
   const {
     matchedMember,
+    isRegistrationConfirmed = false,
+    onConfirmAcknowledged,
     isLocked = false,
     shouldFadeLockedState = false,
     lockedMessage,
@@ -203,7 +207,48 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </div>
       )}
 
-      {matchedMember && !isLocked && !isLoadingFields && (
+      {isRegistrationConfirmed && submitSuccessMessage && (
+        <div className="mt-4 space-y-3">
+          <div
+            aria-live="polite"
+            className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md"
+          >
+            <span
+              aria-hidden="true"
+              className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-green-700 text-sm font-bold text-white ring-1 ring-green-800/30"
+            >
+              !
+            </span>
+            <div className="space-y-1">
+              <p className="registration-status-title text-base font-semibold leading-6">
+                Registration Confirmed
+              </p>
+              <p className="registration-status-message text-sm font-medium text-green-900">
+                {submitSuccessMessage}
+              </p>
+              {stepTimeoutSecondsRemaining && (
+                <p className="registration-status-message text-sm font-medium text-green-900">
+                  Returning to Step 1 in {stepTimeoutSecondsRemaining}s.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {onConfirmAcknowledged && (
+            <Button
+              className="w-full"
+              onClick={onConfirmAcknowledged}
+              size="lg"
+              type="button"
+              variant="default"
+            >
+              Ok
+            </Button>
+          )}
+        </div>
+      )}
+
+      {matchedMember && !isLocked && !isLoadingFields && !isRegistrationConfirmed && (
         <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
           {activeFields.length === 0 && (
             <div
@@ -296,7 +341,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
         </div>
       )}
 
-      {matchedMember && submitSuccessMessage && (
+      {matchedMember && submitSuccessMessage && !isRegistrationConfirmed && (
         <div className="registration-status-panel mt-4 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
           <p className="font-semibold">You are all set!</p>
           <p className="mt-1">{submitSuccessMessage}</p>

@@ -369,6 +369,30 @@ describe('DynamicFieldsStepCard', () => {
     expect(screen.getByText('Registration submitted successfully.')).toBeInTheDocument();
   });
 
+  it('renders confirmed state summary and hides submit controls after success', () => {
+    const onConfirmAcknowledged = vi.fn();
+
+    renderCard({
+      isRegistrationConfirmed: true,
+      submitSuccessMessage: 'Registration submitted successfully. ID: reg-1',
+      stepTimeoutSecondsRemaining: 7,
+      onConfirmAcknowledged,
+    });
+
+    expect(screen.getByText('Registration Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Registration submitted successfully. ID: reg-1')).toBeInTheDocument();
+    expect(screen.getByText('Returning to Step 1 in 7s.')).toBeInTheDocument();
+    expect(
+      screen.queryByText('A confirmation toast was also sent. You can now scan the next attendee.'),
+    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Ok' })).toHaveClass('w-full');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ok' }));
+    expect(onConfirmAcknowledged).toHaveBeenCalledTimes(1);
+
+    expect(screen.queryByRole('button', { name: 'Submit Registration' })).toBeNull();
+  });
+
   it('disables role-full options while keeping already-selected update values available', () => {
     const roleAwareFields: PublicEventField[] = [
       {

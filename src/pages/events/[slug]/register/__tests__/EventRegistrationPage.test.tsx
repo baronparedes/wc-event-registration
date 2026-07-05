@@ -194,6 +194,8 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
     submitButtonLabel?: string;
     submitErrorMessage: string | null;
     submitSuccessMessage: string | null;
+    isRegistrationConfirmed?: boolean;
+    onConfirmAcknowledged?: () => void;
     onSubmit: (values: Record<string, unknown>) => void | Promise<void>;
     stepTimeoutSecondsRemaining?: number | null;
   }) => {
@@ -342,6 +344,10 @@ describe('EventRegistrationPage', () => {
       expect(
         screen.getByText('Registration submitted successfully. ID: reg-1'),
       ).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Step 3 reset in 7s')).toBeInTheDocument();
     });
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Registration submitted successfully!');

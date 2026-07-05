@@ -381,7 +381,12 @@ describe('useEventRegistrationPageState', () => {
       await result.current.handleSubmitRegistration({});
     });
     expect(result.current.submitSuccessMessage).toContain('reg-1');
-    expect(mockFocusMemberIdInput).toHaveBeenCalled();
+    expect(result.current.isRegistrationConfirmed).toBe(true);
+    expect(result.current.activeWizardStep).toBe(3);
+    expect(result.current.wizardStepSecondsRemaining).toBe(
+      Math.ceil(TIMING.registrationWizardConfirmedResetMs / 1000),
+    );
+    expect(mockFocusMemberIdInput).not.toHaveBeenCalled();
     expect(result.current.fieldErrorMessage('unknown')).toBeUndefined();
 
     act(() => {
@@ -448,7 +453,7 @@ describe('useEventRegistrationPageState', () => {
     );
   });
 
-  it('scrolls to title after successful update-mode submission', async () => {
+  it('keeps update-mode users on Step 3 confirmed state after successful submission', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
       full_name: 'Jane Doe',
@@ -474,7 +479,12 @@ describe('useEventRegistrationPageState', () => {
       await result.current.handleSubmitRegistration({});
     });
 
-    expect(titleAnchor.scrollIntoView).toHaveBeenCalled();
+    expect(result.current.isRegistrationConfirmed).toBe(true);
+    expect(result.current.activeWizardStep).toBe(3);
+    expect(result.current.wizardStepSecondsRemaining).toBe(
+      Math.ceil(TIMING.registrationWizardConfirmedResetMs / 1000),
+    );
+    expect(titleAnchor.scrollIntoView).not.toHaveBeenCalled();
     expect(mockFocusMemberIdInput).not.toHaveBeenCalled();
 
     titleAnchor.remove();

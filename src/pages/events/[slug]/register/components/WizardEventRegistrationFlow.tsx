@@ -44,6 +44,7 @@ export function WizardEventRegistrationFlow() {
     submitMutation,
     submitErrorMessage,
     submitSuccessMessage,
+    isRegistrationConfirmed,
     handleCancelUpdate,
     enterWizardConfirmStep,
     isEffectiveRegistrationBlocked,
@@ -153,18 +154,22 @@ export function WizardEventRegistrationFlow() {
                 submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
                 submitErrorMessage={submitErrorMessage}
                 submitSuccessMessage={submitSuccessMessage}
+                isRegistrationConfirmed={isRegistrationConfirmed}
+                onConfirmAcknowledged={resetToStepOne}
                 stepTimeoutSecondsRemaining={wizardStepSecondsRemaining}
               />
 
-              <Button
-                className="hover:bg-surface"
-                onClick={enterWizardConfirmStep}
-                size="lg"
-                type="button"
-                variant="outline"
-              >
-                Back to Step 2
-              </Button>
+              {!isRegistrationConfirmed && (
+                <Button
+                  className="hover:bg-surface"
+                  onClick={enterWizardConfirmStep}
+                  size="lg"
+                  type="button"
+                  variant="outline"
+                >
+                  Back to Step 2
+                </Button>
+              )}
             </div>
           )}
         </div>

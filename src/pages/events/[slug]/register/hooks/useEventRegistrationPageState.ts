@@ -48,11 +48,15 @@ export function stepBadgeClassName(currentStep: WizardStep, badgeStep: WizardSte
   return 'bg-surface text-muted border border-border';
 }
 
-function getWizardStepTimeoutMs(step: WizardStep): number | null {
+function getWizardStepTimeoutMs(step: WizardStep, isRegistrationConfirmed: boolean): number | null {
   switch (step) {
     case 2:
       return TIMING.registrationWizardConfirmTimeoutMs;
     case 3:
+      if (isRegistrationConfirmed) {
+        return TIMING.registrationWizardConfirmedResetMs;
+      }
+
       return TIMING.kioskInactivityResetMs;
     case 1:
     default:
@@ -66,6 +70,7 @@ export function useEventRegistrationPageState() {
   const dynamicFieldsStepRef = useRef<HTMLDivElement | null>(null);
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null);
+  const [isRegistrationConfirmed, setIsRegistrationConfirmed] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false);
   const [wizardStepSecondsRemaining, setWizardStepSecondsRemaining] = useState<number | null>(null);
@@ -94,8 +99,8 @@ export function useEventRegistrationPageState() {
     [memberLookup.isRegistrationBlocked, isWizardBlockedResult],
   );
   const activeWizardStepTimeoutMs = useMemo(
-    () => getWizardStepTimeoutMs(activeWizardStep),
-    [activeWizardStep],
+    () => getWizardStepTimeoutMs(activeWizardStep, isRegistrationConfirmed),
+    [activeWizardStep, isRegistrationConfirmed],
   );
   const displayedWizardStepSecondsRemaining = useMemo(() => {
     if (activeWizardStepTimeoutMs === null) {
@@ -187,6 +192,7 @@ export function useEventRegistrationPageState() {
     lookupForm.reset({ memberId: '' });
     setSubmitErrorMessage(null);
     setSubmitSuccessMessage(null);
+    setIsRegistrationConfirmed(false);
     setIsWizardBlockedResult(false);
     setWizardStepSecondsRemaining(null);
     clearLookupError();
@@ -228,6 +234,7 @@ export function useEventRegistrationPageState() {
     async (scannedMemberId: string) => {
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
+      setIsRegistrationConfirmed(false);
       clearLookupError();
       const result = await runMemberLookupSubmit({ memberId: scannedMemberId });
 
@@ -354,6 +361,7 @@ export function useEventRegistrationPageState() {
     async (values: Parameters<typeof runMemberLookupSubmit>[0]) => {
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
+      setIsRegistrationConfirmed(false);
       clearLookupError();
       const result = await runMemberLookupSubmit(values);
 
@@ -375,6 +383,7 @@ export function useEventRegistrationPageState() {
     async (values: DynamicFieldResponseValues) => {
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
+      setIsRegistrationConfirmed(false);
       dynamicForm.clearErrors();
 
       const parsed = responseSchema.safeParse(values);
@@ -451,23 +460,14 @@ export function useEventRegistrationPageState() {
       }
 
       setSubmitSuccessMessage(`Registration submitted successfully. ID: ${result.registration_id}`);
+      setIsRegistrationConfirmed(true);
       toast.success(TOAST_MESSAGES.registration.submitted);
       logger.info('Registration submission successful:', result);
-
-      const wasUpdateMode = memberLookup.isUpdateMode;
-
-      memberLookup.reset();
       dynamicForm.reset(createDynamicFieldDefaultValues(activeFields));
       setIsWizardBlockedResult(false);
       setWizardStepSecondsRemaining(null);
-      setWizardStep(1);
-
-      if (wasUpdateMode) {
-        scrollToTitleAnchor();
-        return;
-      }
-
-      focusMemberIdInput();
+      setWizardStep(3);
+      scrollToDynamicFieldsStep();
     },
     [
       responseSchema,
@@ -477,8 +477,7 @@ export function useEventRegistrationPageState() {
       submitMutation,
       activeFields,
       dynamicForm,
-      scrollToTitleAnchor,
-      focusMemberIdInput,
+      scrollToDynamicFieldsStep,
     ],
   );
 
@@ -504,6 +503,7 @@ export function useEventRegistrationPageState() {
     clearLookupError();
     setSubmitErrorMessage(null);
     setSubmitSuccessMessage(null);
+    setIsRegistrationConfirmed(false);
     setIsWizardBlockedResult(false);
     setWizardStepSecondsRemaining(null);
     setWizardStep(1);
@@ -530,6 +530,7 @@ export function useEventRegistrationPageState() {
     submitMutation,
     submitErrorMessage,
     submitSuccessMessage,
+    isRegistrationConfirmed,
     handleLookupSubmit,
     handleSubmitRegistration,
     fieldErrorMessage,
