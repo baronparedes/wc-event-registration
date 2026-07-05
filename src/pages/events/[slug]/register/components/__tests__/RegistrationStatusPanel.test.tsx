@@ -32,9 +32,11 @@ describe('RegistrationStatusPanel', () => {
       />,
     );
 
-    expect(screen.getByText('Review your details below.')).toBeInTheDocument();
+    expect(screen.getByText('You are already registered for this event.')).toBeInTheDocument();
     expect(
-      screen.getByText('Tap "Yes, I confirm" to continue to Step 3 and update your registration.'),
+      screen.getByText(
+        'Tap "Yes, I confirm" to continue to Step 3 if you want to update your registration.',
+      ),
     ).toBeInTheDocument();
   });
 

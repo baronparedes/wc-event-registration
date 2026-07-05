@@ -76,6 +76,7 @@ describe('useSubmitRegistrationMutation', () => {
 
   it('invalidates the public event query on success', async () => {
     const registrationId = faker.string.uuid();
+    const eventId = faker.string.uuid();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
     const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase();
     const idempotencyKey = faker.string.uuid();
@@ -87,7 +88,9 @@ describe('useSubmitRegistrationMutation', () => {
       message: 'Updated',
     });
 
-    const { result, queryClient } = renderHookWithClient(() => useSubmitRegistrationMutation());
+    const { result, queryClient } = renderHookWithClient(() =>
+      useSubmitRegistrationMutation(eventId),
+    );
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await act(async () => {
@@ -103,7 +106,35 @@ describe('useSubmitRegistrationMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: ['public-event-by-slug', eventSlug],
       });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['event-slot-availability', eventId],
+      });
     });
+  });
+
+  it('does not invalidate caches when the edge function returns a handled failure payload', async () => {
+    const eventId = faker.string.uuid();
+    mockSubmitCaller.mockResolvedValueOnce({
+      success: false,
+      error: 'Slots are full',
+      error_code: 'slot_unavailable',
+    });
+
+    const { result, queryClient } = renderHookWithClient(() =>
+      useSubmitRegistrationMutation(eventId),
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        event_slug: faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
+        member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
+        responses: {},
+        idempotency_key: faker.string.uuid(),
+      });
+    });
+
+    expect(invalidateSpy).not.toHaveBeenCalled();
   });
 
   it('shows a toast when the mutation throws an error', async () => {

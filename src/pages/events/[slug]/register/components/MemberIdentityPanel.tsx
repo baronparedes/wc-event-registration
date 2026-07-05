@@ -7,11 +7,14 @@ type MemberIdentityPanelProps = {
 type MemberDetailRowProps = {
   label: string;
   value: string | null;
+  className?: string;
 };
 
-function MemberDetailRow({ label, value }: MemberDetailRowProps) {
+function MemberDetailRow({ label, value, className }: MemberDetailRowProps) {
   return (
-    <div className="rounded-lg border border-border/70 bg-background/60 px-3 py-2">
+    <div
+      className={`rounded-lg border border-border/70 bg-background/60 px-3 py-2 ${className ?? ''}`}
+    >
       <dt className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted/80">{label}</dt>
       <dd className="mt-1 truncate text-base font-semibold leading-tight text-text">
         {value ? value : 'Not set'}
@@ -23,7 +26,10 @@ function MemberDetailRow({ label, value }: MemberDetailRowProps) {
 export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps) {
   return (
     <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      <MemberDetailRow label="Name" value={matchedMember.full_name} />
+      <MemberDetailRow label="Name" value={matchedMember.full_name} className="sm:col-span-2" />
+      <MemberDetailRow label="Member ID" value={matchedMember.member_id} />
+      <MemberDetailRow label="Role" value={matchedMember.role} />
+      <MemberDetailRow label="Category" value={matchedMember.category} />
       <MemberDetailRow label="Nickname" value={matchedMember.nickname} />
       <MemberDetailRow label="First name" value={matchedMember.first_name} />
       <MemberDetailRow label="Last name" value={matchedMember.last_name} />

@@ -39,7 +39,12 @@ describe('useMemberLookupQuery', () => {
     const profile = makeMemberLookupProfile();
     mockLookupCaller.mockResolvedValueOnce({
       success: true,
-      profile: { user_id: profile.user_id, member_id: profile.member_id },
+      profile: {
+        user_id: profile.user_id,
+        member_id: profile.member_id,
+        role: profile.role,
+        category: profile.category,
+      },
       existing_registration: null,
     });
 
@@ -55,7 +60,12 @@ describe('useMemberLookupQuery', () => {
       eventSlug: slug,
     });
     expect(response).toEqual({
-      profile: { user_id: profile.user_id, member_id: profile.member_id },
+      profile: {
+        user_id: profile.user_id,
+        member_id: profile.member_id,
+        role: profile.role,
+        category: profile.category,
+      },
       existing_registration: null,
     });
   });
@@ -76,7 +86,12 @@ describe('useMemberLookupQuery', () => {
     const profile = makeMemberLookupProfile();
     mockLookupCaller.mockResolvedValueOnce({
       success: true,
-      profile: { user_id: profile.user_id, member_id: profile.member_id },
+      profile: {
+        user_id: profile.user_id,
+        member_id: profile.member_id,
+        role: profile.role,
+        category: profile.category,
+      },
       existing_registration: null,
     });
 
@@ -92,7 +107,12 @@ describe('useMemberLookupQuery', () => {
       eventSlug: 'sunday-service',
     });
     expect(response).toEqual({
-      profile: { user_id: profile.user_id, member_id: profile.member_id },
+      profile: {
+        user_id: profile.user_id,
+        member_id: profile.member_id,
+        role: profile.role,
+        category: profile.category,
+      },
       existing_registration: null,
     });
   });

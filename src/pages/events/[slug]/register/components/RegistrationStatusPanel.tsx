@@ -25,13 +25,13 @@ export function RegistrationStatusPanel(props: RegistrationStatusPanelProps) {
 
   const titleByVariant = {
     blocked: 'You are already registered. No further actions are needed at the moment.',
-    update: 'Review your details below.',
+    update: 'You are already registered for this event.',
     new: 'Review your details below.',
   } as const;
 
   const messageByVariant = {
     blocked: 'Your registration is already complete for this event.',
-    update: 'Tap "Yes, I confirm" to continue to Step 3 and update your registration.',
+    update: 'Tap "Yes, I confirm" to continue to Step 3 if you want to update your registration.',
     new: 'Tap "Yes, I confirm" to continue to Step 3.',
   } as const;
 

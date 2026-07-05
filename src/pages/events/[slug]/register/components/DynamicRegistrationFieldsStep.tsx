@@ -26,10 +26,12 @@ import {
 function DynamicFieldInput(props: {
   field: PublicEventField;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+  memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
 }) {
-  const { field, dynamicForm, remainingSlotsByOption, remainingSlotsByRoleByOption } = props;
+  const { field, dynamicForm, memberRole, remainingSlotsByOption, remainingSlotsByRoleByOption } =
+    props;
 
   switch (field.field_type) {
     case 'textarea':
@@ -49,6 +51,7 @@ function DynamicFieldInput(props: {
         <SelectFieldRenderer
           field={field}
           dynamicForm={dynamicForm}
+          memberRole={memberRole}
           remainingSlotsByOption={remainingSlotsByOption}
           remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
         />
@@ -58,6 +61,7 @@ function DynamicFieldInput(props: {
         <RadioFieldRenderer
           field={field}
           dynamicForm={dynamicForm}
+          memberRole={memberRole}
           remainingSlotsByOption={remainingSlotsByOption}
           remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
         />
@@ -67,6 +71,7 @@ function DynamicFieldInput(props: {
         <MultiSelectFieldRenderer
           field={field}
           dynamicForm={dynamicForm}
+          memberRole={memberRole}
           remainingSlotsByOption={remainingSlotsByOption}
           remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
         />
@@ -76,6 +81,7 @@ function DynamicFieldInput(props: {
         <MultiSelectToggleFieldRenderer
           field={field}
           dynamicForm={dynamicForm}
+          memberRole={memberRole}
           remainingSlotsByOption={remainingSlotsByOption}
           remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
         />
@@ -237,6 +243,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
                   <DynamicFieldInput
                     field={field}
                     dynamicForm={dynamicForm}
+                    memberRole={matchedMember.role}
                     remainingSlotsByOption={remainingSlotsByFieldOption?.[field.field_key]}
                     remainingSlotsByRoleByOption={
                       remainingSlotsByRoleByFieldOption?.[field.field_key]

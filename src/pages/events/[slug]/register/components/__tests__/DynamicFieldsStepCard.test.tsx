@@ -10,6 +10,8 @@ import { DynamicFieldsStepCard } from '../index';
 const matchedMember: MemberLookupProfile = {
   user_id: 'user-1',
   member_id: 'member-1',
+  role: 'usher',
+  category: 'regular',
   full_name: 'Jane Doe',
   nickname: null,
   first_name: 'Jane',
@@ -365,6 +367,236 @@ describe('DynamicFieldsStepCard', () => {
     expect(screen.getByText('Server error')).toBeInTheDocument();
     expect(screen.getByText('You are all set!')).toBeInTheDocument();
     expect(screen.getByText('Registration submitted successfully.')).toBeInTheDocument();
+  });
+
+  it('disables role-full options while keeping already-selected update values available', () => {
+    const roleAwareFields: PublicEventField[] = [
+      {
+        id: 'field-role-select',
+        event_id: 'event-1',
+        field_key: 'meal_choice',
+        label: 'Meal Choice',
+        field_type: 'select',
+        is_required: false,
+        is_active: true,
+        placeholder: null,
+        help_text: null,
+        options: [
+          { label: 'Vegan', value: 'vegan' },
+          { label: 'Vegetarian', value: 'vegetarian' },
+        ],
+        validation_rules: {
+          max_slots_role_allotments: {
+            vegan: [{ role: 'usher', alloted_slots: 1 }],
+            vegetarian: [{ role: 'usher', alloted_slots: 1 }],
+          },
+        },
+        display_order: 0,
+      },
+      {
+        id: 'field-role-radio',
+        event_id: 'event-1',
+        field_key: 'shirt_size',
+        label: 'Shirt Size',
+        field_type: 'radio',
+        is_required: false,
+        is_active: true,
+        placeholder: null,
+        help_text: null,
+        options: [
+          { label: 'Small', value: 's' },
+          { label: 'Large', value: 'l' },
+        ],
+        validation_rules: {
+          max_slots_role_allotments: {
+            s: [{ role: 'usher', alloted_slots: 1 }],
+            l: [{ role: 'usher', alloted_slots: 1 }],
+          },
+        },
+        display_order: 1,
+      },
+      {
+        id: 'field-role-multi',
+        event_id: 'event-1',
+        field_key: 'activities',
+        label: 'Activities',
+        field_type: 'multi_select',
+        is_required: false,
+        is_active: true,
+        placeholder: null,
+        help_text: null,
+        options: [
+          { label: 'Run', value: 'run' },
+          { label: 'Swim', value: 'swim' },
+        ],
+        validation_rules: {
+          max_slots_role_allotments: {
+            run: [{ role: 'usher', alloted_slots: 1 }],
+            swim: [{ role: 'usher', alloted_slots: 1 }],
+          },
+        },
+        display_order: 2,
+      },
+      {
+        id: 'field-role-toggle',
+        event_id: 'event-1',
+        field_key: 'meal_slots',
+        label: 'Meal Slots',
+        field_type: 'multi_select_toggle',
+        is_required: false,
+        is_active: true,
+        placeholder: null,
+        help_text: null,
+        options: [
+          { label: '9AM, with Breakfast', value: '9am' },
+          { label: '12NN, with Lunch', value: '12nn' },
+        ],
+        validation_rules: {
+          max_slots_role_allotments: {
+            '9am': [{ role: 'usher', alloted_slots: 1 }],
+            '12nn': [{ role: 'usher', alloted_slots: 1 }],
+          },
+        },
+        display_order: 3,
+      },
+    ];
+
+    renderCard({
+      activeFields: roleAwareFields,
+      remainingSlotsByRoleByFieldOption: {
+        meal_choice: {
+          vegan: { usher: 1 },
+          vegetarian: { usher: 0 },
+        },
+        shirt_size: {
+          s: { usher: 0 },
+          l: { usher: 1 },
+        },
+        activities: {
+          run: { usher: 1 },
+          swim: { usher: 0 },
+        },
+        meal_slots: {
+          '9am': { usher: 1 },
+          '12nn': { usher: 0 },
+        },
+      },
+    });
+
+    expect(screen.getByRole('option', { name: 'Vegetarian (usher: 0 left)' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Small usher: 0 left' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Swim usher: 0 left' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: '12NN, with Lunch' })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Meal Choice'), { target: { value: 'vegan' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Run usher: 1 left' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: '9AM, with Breakfast' }));
+
+    expect(screen.getByRole('option', { name: 'Vegan (usher: 1 left)' })).not.toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Run usher: 1 left' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: '9AM, with Breakfast' })).toBeChecked();
+  });
+
+  it('does not disable options just because the member role is not explicitly allotted', () => {
+    const roleAwareField: PublicEventField = {
+      id: 'field-role-select-fallback',
+      event_id: 'event-1',
+      field_key: 'meal_choice',
+      label: 'Meal Choice',
+      field_type: 'select',
+      is_required: false,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        { label: 'Vegan', value: 'vegan' },
+        { label: 'Vegetarian', value: 'vegetarian' },
+      ],
+      validation_rules: {
+        max_slots_role_allotments: {
+          vegan: [{ role: 'usher', alloted_slots: 1 }],
+          vegetarian: [{ role: 'usher', alloted_slots: 1 }],
+        },
+        max_slots: {
+          vegan: 2,
+          vegetarian: 2,
+        },
+      },
+      display_order: 0,
+    };
+
+    renderCard({
+      matchedMember: {
+        ...matchedMember,
+        role: 'Backroom Support / PC',
+      },
+      activeFields: [roleAwareField],
+      remainingSlotsByFieldOption: {
+        meal_choice: {
+          vegan: 1,
+          vegetarian: 1,
+        },
+      },
+      remainingSlotsByRoleByFieldOption: {
+        meal_choice: {
+          vegan: { usher: 1 },
+          vegetarian: { usher: 1 },
+        },
+      },
+    });
+
+    expect(
+      screen.getByRole('option', { name: 'Vegan (1 left - usher: 1 left)' }),
+    ).not.toBeDisabled();
+    expect(
+      screen.getByRole('option', { name: 'Vegetarian (1 left - usher: 1 left)' }),
+    ).not.toBeDisabled();
+  });
+
+  it('matches slash-delimited member roles against the primary role segment', () => {
+    const roleAwareField: PublicEventField = {
+      id: 'field-role-select-primary-role',
+      event_id: 'event-1',
+      field_key: 'meal_choice',
+      label: 'Meal Choice',
+      field_type: 'select',
+      is_required: false,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        { label: 'Vegan', value: 'vegan' },
+        { label: 'Vegetarian', value: 'vegetarian' },
+      ],
+      validation_rules: {
+        max_slots_role_allotments: {
+          vegan: [{ role: 'Backroom Support', alloted_slots: 1 }],
+          vegetarian: [{ role: 'Backroom Support', alloted_slots: 1 }],
+        },
+      },
+      display_order: 0,
+    };
+
+    renderCard({
+      matchedMember: {
+        ...matchedMember,
+        role: 'Backroom Support / PC',
+      },
+      activeFields: [roleAwareField],
+      remainingSlotsByRoleByFieldOption: {
+        meal_choice: {
+          vegan: { 'backroom support': 1 },
+          vegetarian: { 'backroom support': 0 },
+        },
+      },
+    });
+
+    expect(
+      screen.getByRole('option', { name: 'Vegan (Backroom Support: 1 left)' }),
+    ).not.toBeDisabled();
+    expect(
+      screen.getByRole('option', { name: 'Vegetarian (Backroom Support: 0 left)' }),
+    ).toBeDisabled();
   });
 
   it('allows submission when there are no dynamic fields', async () => {

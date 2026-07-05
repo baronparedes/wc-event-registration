@@ -45,7 +45,7 @@ const callSubmitRegistration = createEdgeFunctionCaller<
  *
  * @returns React Query mutation for submitting registration
  */
-export function useSubmitRegistrationMutation() {
+export function useSubmitRegistrationMutation(eventId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<SubmitRegistrationResult, Error, SubmitRegistrationRequest>({
@@ -53,10 +53,20 @@ export function useSubmitRegistrationMutation() {
       logger.debug('Submitting registration via Edge Function:', data);
       return callSubmitRegistration(data);
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (result, variables) => {
+      if (!result.success) {
+        return;
+      }
+
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.publicEventBySlug(variables.event_slug),
       });
+
+      if (eventId) {
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.eventSlotAvailability(eventId),
+        });
+      }
     },
     onError: (error) => {
       logger.error('Registration mutation error:', error);

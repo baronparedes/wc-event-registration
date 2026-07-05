@@ -172,6 +172,8 @@ export function makeMemberLookupProfile(
   return {
     user_id: faker.string.uuid(),
     member_id: `WC-${faker.string.numeric(3)}`,
+    role: 'member',
+    category: 'regular',
     full_name: `${firstName} ${lastName}`,
     nickname: faker.helpers.maybe(() => faker.internet.username(), { probability: 0.4 }) ?? null,
     first_name: firstName,

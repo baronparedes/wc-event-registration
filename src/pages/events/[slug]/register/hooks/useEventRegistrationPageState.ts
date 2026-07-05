@@ -70,8 +70,10 @@ export function useEventRegistrationPageState() {
   const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false);
   const [wizardStepSecondsRemaining, setWizardStepSecondsRemaining] = useState<number | null>(null);
 
-  const submitMutation = useSubmitRegistrationMutation();
   const eventQuery = usePublicEventQuery(slug ?? null);
+  const submitMutation = useSubmitRegistrationMutation(
+    eventQuery.data?.status === 'available' ? eventQuery.data.event.id : undefined,
+  );
   const memberLookup = useMemberLookupState(slug);
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     defaultValues: {},

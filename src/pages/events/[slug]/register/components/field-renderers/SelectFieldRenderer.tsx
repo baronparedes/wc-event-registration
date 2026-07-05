@@ -8,9 +8,52 @@ const baseInputClassName =
 type SelectFieldRendererProps = {
   field: PublicEventField;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+  memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
 };
+
+function normalizeRole(role: string | undefined): string | null {
+  const primaryRole = role?.split('/')[0]?.trim();
+  const normalizedRole = primaryRole?.toLowerCase();
+  return normalizedRole ? normalizedRole : null;
+}
+
+function isOptionUnavailableForRole(
+  field: PublicEventField,
+  optionValue: string,
+  memberRole: string | undefined,
+  remainingSlotsByOption?: Record<string, number>,
+  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
+): boolean {
+  const configuredRoleAllotments = field.validation_rules.max_slots_role_allotments?.[optionValue];
+
+  if (configuredRoleAllotments && configuredRoleAllotments.length > 0) {
+    const normalizedRole = normalizeRole(memberRole);
+
+    if (!normalizedRole) {
+      return false;
+    }
+
+    const matchingRoleEntry = configuredRoleAllotments.find(
+      (entry) => entry.role.trim().toLowerCase() === normalizedRole,
+    );
+
+    if (!matchingRoleEntry) {
+      const remainingForOption = remainingSlotsByOption?.[optionValue];
+      return typeof remainingForOption === 'number' ? remainingForOption <= 0 : false;
+    }
+
+    const remainingForRole = remainingSlotsByRoleByOption?.[optionValue]?.[normalizedRole];
+    const effectiveRemaining =
+      typeof remainingForRole === 'number' ? remainingForRole : matchingRoleEntry.alloted_slots;
+
+    return effectiveRemaining <= 0;
+  }
+
+  const remainingForOption = remainingSlotsByOption?.[optionValue];
+  return typeof remainingForOption === 'number' ? remainingForOption <= 0 : false;
+}
 
 function formatAllottedSlotsLabel(
   optionValue: string,
@@ -79,9 +122,12 @@ function getOptionSlotMetadata(
 export function SelectFieldRenderer({
   field,
   dynamicForm,
+  memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
 }: SelectFieldRendererProps) {
+  const selectedValue = useWatch({ control: dynamicForm.control, name: field.field_key });
+
   return (
     <select
       id={`field-${field.field_key}`}
@@ -90,6 +136,14 @@ export function SelectFieldRenderer({
     >
       <option value="">Select an option</option>
       {field.options.map((option: { value: string; label: string }) => {
+        const isUnavailable = isOptionUnavailableForRole(
+          field,
+          option.value,
+          memberRole,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+
         const { combinedInlineLabel } = getOptionSlotMetadata(
           field,
           option,
@@ -98,7 +152,11 @@ export function SelectFieldRenderer({
         );
 
         return (
-          <option key={`${field.id}-${option.value}`} value={option.value}>
+          <option
+            key={`${field.id}-${option.value}`}
+            value={option.value}
+            disabled={isUnavailable && selectedValue !== option.value}
+          >
             {combinedInlineLabel ? `${option.label} (${combinedInlineLabel})` : option.label}
           </option>
         );
@@ -110,12 +168,24 @@ export function SelectFieldRenderer({
 export function RadioFieldRenderer({
   field,
   dynamicForm,
+  memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
 }: SelectFieldRendererProps) {
+  const selectedValue = useWatch({ control: dynamicForm.control, name: field.field_key });
+
   return (
     <div className="space-y-2">
       {field.options.map((option: { value: string; label: string }) => {
+        const isUnavailable = isOptionUnavailableForRole(
+          field,
+          option.value,
+          memberRole,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+        const isDisabled = isUnavailable && selectedValue !== option.value;
+
         const { remainingLabel, roleRemainingLabel } = getOptionSlotMetadata(
           field,
           option,
@@ -126,9 +196,17 @@ export function RadioFieldRenderer({
         return (
           <label
             key={`${field.id}-${option.value}`}
-            className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
+            className={`flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text ${
+              isDisabled ? 'cursor-not-allowed opacity-60' : ''
+            }`}
           >
-            <input type="radio" value={option.value} {...dynamicForm.register(field.field_key)} />
+            <input
+              type="radio"
+              value={option.value}
+              disabled={isDisabled}
+              {...dynamicForm.register(field.field_key)}
+            />
+
             <span className="flex flex-col">
               <span>{option.label}</span>
               {remainingLabel && <span className="text-xs text-muted">{remainingLabel}</span>}
@@ -146,12 +224,25 @@ export function RadioFieldRenderer({
 export function MultiSelectFieldRenderer({
   field,
   dynamicForm,
+  memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
 }: SelectFieldRendererProps) {
+  const selectedValues = useWatch({ control: dynamicForm.control, name: field.field_key });
+  const normalizedSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
+
   return (
     <div className="space-y-2">
       {field.options.map((option: { value: string; label: string }) => {
+        const isUnavailable = isOptionUnavailableForRole(
+          field,
+          option.value,
+          memberRole,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+        const isDisabled = isUnavailable && !normalizedSelectedValues.includes(option.value);
+
         const { remainingLabel, roleRemainingLabel } = getOptionSlotMetadata(
           field,
           option,
@@ -162,11 +253,14 @@ export function MultiSelectFieldRenderer({
         return (
           <label
             key={`${field.id}-${option.value}`}
-            className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text"
+            className={`flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm text-text ${
+              isDisabled ? 'cursor-not-allowed opacity-60' : ''
+            }`}
           >
             <input
               type="checkbox"
               value={option.value}
+              disabled={isDisabled}
               {...dynamicForm.register(field.field_key)}
             />
             <span className="flex flex-col">
@@ -194,6 +288,7 @@ function isBooleanOrNullRecord(value: unknown): value is Record<string, boolean 
 export function MultiSelectToggleFieldRenderer({
   field,
   dynamicForm,
+  memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
 }: SelectFieldRendererProps) {
@@ -245,6 +340,14 @@ export function MultiSelectToggleFieldRenderer({
           toggle_default?: boolean;
         }) => {
           const isSelected = option.value in selectedValues;
+          const isUnavailable = isOptionUnavailableForRole(
+            field,
+            option.value,
+            memberRole,
+            remainingSlotsByOption,
+            remainingSlotsByRoleByOption,
+          );
+          const isDisabled = isUnavailable && !isSelected;
           const configuredDefault = option.toggle_default;
           const toggleValue = selectedValues[option.value];
           const isToggleChoicePending = isSelected && toggleValue === null;
@@ -264,7 +367,9 @@ export function MultiSelectToggleFieldRenderer({
             <div
               key={`${field.id}-${option.value}`}
               data-slot-option-card="true"
-              className={`cursor-pointer rounded-[14px] border px-4 py-3 text-sm text-text transition-all ${
+              className={`rounded-[14px] border px-4 py-3 text-sm text-text transition-all ${
+                isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+              } ${
                 isSelected
                   ? 'border-primary/50 bg-primary/5 shadow-xs'
                   : isToggleChoicePending
@@ -275,6 +380,7 @@ export function MultiSelectToggleFieldRenderer({
                 const target = event.target as HTMLElement;
 
                 if (
+                  isDisabled ||
                   target.closest('button') ||
                   target.closest('label') ||
                   target.closest('input')
@@ -290,6 +396,7 @@ export function MultiSelectToggleFieldRenderer({
                   <input
                     type="checkbox"
                     checked={isSelected}
+                    disabled={isDisabled}
                     className="h-6 w-6 accent-primary"
                     onChange={(event) =>
                       handleSelectionChange(option.value, event.target.checked, configuredDefault)

@@ -30,6 +30,8 @@ type MemberLookupRequest = z.infer<typeof memberLookupRequestSchema>;
 interface MemberLookupProfile {
   user_id: string;
   member_id: string;
+  role: string;
+  category: string;
   full_name: string;
   nickname: string | null;
   first_name: string | null;
@@ -55,6 +57,7 @@ type AnswerRow = {
 type UserLookupRow = {
   id: string;
   member_id: string;
+  metadata: unknown;
   full_name: string;
   nickname: string | null;
   first_name: string | null;
@@ -76,11 +79,31 @@ function normalizeName(value: string | null | undefined) {
   return (value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+function getRoleFromMetadata(metadata: unknown): string {
+  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
+    return '';
+  }
+
+  const role = (metadata as Record<string, unknown>).role;
+  return typeof role === 'string' ? role : '';
+}
+
+function getCategoryFromMetadata(metadata: unknown): string {
+  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
+    return '';
+  }
+
+  const category = (metadata as Record<string, unknown>).category;
+  return typeof category === 'string' ? category : '';
+}
+
 function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
   if (!row) return null;
   return {
     user_id: row.id,
     member_id: row.member_id,
+    role: getRoleFromMetadata(row.metadata),
+    category: getCategoryFromMetadata(row.metadata),
     full_name: row.full_name,
     nickname: row.nickname,
     first_name: row.first_name,
@@ -322,7 +345,7 @@ Deno.serve(async (req) => {
     const searchValue = isIdLookup ? tryConvertRfidInput(memberId!.trim()) : name!.trim();
     const baseQuery = supabase
       .from('users')
-      .select('id, member_id, full_name, nickname, first_name, last_name');
+      .select('id, member_id, metadata, full_name, nickname, first_name, last_name');
     let filteredData: UserLookupRow | null = null;
 
     if (isIdLookup) {
