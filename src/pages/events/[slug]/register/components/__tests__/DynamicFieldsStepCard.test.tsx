@@ -507,17 +507,17 @@ describe('DynamicFieldsStepCard', () => {
       },
     });
 
-    expect(screen.getByRole('option', { name: 'Vegetarian (usher: 0 left)' })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: 'Small usher: 0 left' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'Swim usher: 0 left' })).toBeDisabled();
+    expect(screen.getByRole('option', { name: 'Vegetarian (usher: 0 slots left)' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Small usher: 0 slots left' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Swim usher: 0 slots left' })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: '12NN, with Lunch' })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Meal Choice'), { target: { value: 'vegan' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Run usher: 1 left' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Run usher: 1 slots left' }));
     fireEvent.click(screen.getByRole('checkbox', { name: '9AM, with Breakfast' }));
 
-    expect(screen.getByRole('option', { name: 'Vegan (usher: 1 left)' })).not.toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'Run usher: 1 left' })).toBeChecked();
+    expect(screen.getByRole('option', { name: 'Vegan (usher: 1 slots left)' })).not.toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Run usher: 1 slots left' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: '9AM, with Breakfast' })).toBeChecked();
   });
 
@@ -570,10 +570,10 @@ describe('DynamicFieldsStepCard', () => {
     });
 
     expect(
-      screen.getByRole('option', { name: 'Vegan (1 left - usher: 1 left)' }),
+      screen.getByRole('option', { name: 'Vegan (1 slots left - usher: 1 slots left)' }),
     ).not.toBeDisabled();
     expect(
-      screen.getByRole('option', { name: 'Vegetarian (1 left - usher: 1 left)' }),
+      screen.getByRole('option', { name: 'Vegetarian (1 slots left - usher: 1 slots left)' }),
     ).not.toBeDisabled();
   });
 
@@ -616,10 +616,10 @@ describe('DynamicFieldsStepCard', () => {
     });
 
     expect(
-      screen.getByRole('option', { name: 'Vegan (Backroom Support: 1 left)' }),
+      screen.getByRole('option', { name: 'Vegan (Backroom Support: 1 slots left)' }),
     ).not.toBeDisabled();
     expect(
-      screen.getByRole('option', { name: 'Vegetarian (Backroom Support: 0 left)' }),
+      screen.getByRole('option', { name: 'Vegetarian (Backroom Support: 0 slots left)' }),
     ).toBeDisabled();
   });
 

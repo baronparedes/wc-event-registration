@@ -28,9 +28,6 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
   const shouldShowPlaceholder = !matchedMember || shouldFadeDetails;
   const registrationStatusRef = useRef<HTMLDivElement | null>(null);
   const canContinueToStepThree = !isRegistrationBlocked && Boolean(onContinueToStepThree);
-  const detailsTransitionClassName = shouldFadeDetails
-    ? 'max-h-0 opacity-0 -translate-y-1'
-    : 'max-h-[32rem] opacity-100 translate-y-0';
   const placeholderTransitionClassName = shouldShowPlaceholder
     ? 'max-h-16 opacity-100 translate-y-0'
     : 'max-h-0 opacity-0 -translate-y-1';
@@ -57,10 +54,8 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
       titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
       contentClassName="registration-step-card__content mt-2"
     >
-      {matchedMember && (
-        <div
-          className={`overflow-hidden transition-all duration-500 ${detailsTransitionClassName}`}
-        >
+      {matchedMember && !shouldFadeDetails && (
+        <div className="transition-all duration-500 opacity-100 translate-y-0">
           <div className="registration-details-copy space-y-2 pb-0.5 text-sm text-muted">
             <MemberIdentityPanel matchedMember={matchedMember} />
             <RegistrationStatusPanel

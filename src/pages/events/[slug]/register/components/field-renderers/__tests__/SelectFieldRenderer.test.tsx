@@ -126,7 +126,7 @@ describe('SelectFieldRenderer family', () => {
     expect(screen.getByRole('option', { name: 'Vegetarian' })).toBeInTheDocument();
     expect(
       screen.getByRole('option', {
-        name: 'Non-Vegetarian (Leader: 2 left, Member: 3 left)',
+        name: 'Non-Vegetarian (Leader: 2 slots left, Member: 3 slots left)',
       }),
     ).toBeInTheDocument();
   });
@@ -145,7 +145,7 @@ describe('SelectFieldRenderer family', () => {
       <Harness field={field} renderer="select" remainingSlotsByOption={{ veg: 3, nonveg: 2 }} />,
     );
 
-    expect(screen.getByRole('option', { name: 'Vegetarian (3 left)' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Vegetarian (3 slots left)' })).toBeInTheDocument();
   });
 
   it('shows role-level remaining breakdown when role allotments are configured', () => {
@@ -175,7 +175,7 @@ describe('SelectFieldRenderer family', () => {
       />,
     );
 
-    expect(screen.getByText('Leader: 1 left, Member: 2 left')).toBeInTheDocument();
+    expect(screen.getByText('Leader: 1 slots left, Member: 2 slots left')).toBeInTheDocument();
   });
 
   it('renders remaining slots as muted sub-label for card-style options', () => {
@@ -191,7 +191,7 @@ describe('SelectFieldRenderer family', () => {
 
     render(<Harness field={radioField} renderer="radio" remainingSlotsByOption={{ veg: 4 }} />);
 
-    const remainingLabel = screen.getByText('4 left');
+    const remainingLabel = screen.getByText('4 slots left');
     expect(remainingLabel).toHaveClass('text-xs');
     expect(remainingLabel).toHaveClass('text-muted');
   });
@@ -249,15 +249,15 @@ describe('SelectFieldRenderer family', () => {
     expect(breakfastYes).toBeEnabled();
     expect(breakfastNo).toBeEnabled();
     expect(screen.getByText('Choose Yes or No to continue.')).toBeInTheDocument();
-    expect(breakfastYes.className).not.toContain('border-4 border-primary');
-    expect(breakfastNo.className).not.toContain('border-4 border-primary');
+    expect(breakfastYes.className).not.toContain('border-2 border-primary');
+    expect(breakfastNo.className).not.toContain('border-2 border-primary');
 
     fireEvent.click(breakfastNo);
-    expect(breakfastNo.className).toContain('border-4 border-primary');
+    expect(breakfastNo.className).toContain('border-2 border-primary');
     expect(screen.queryByText('Choose Yes or No to continue.')).not.toBeInTheDocument();
 
     fireEvent.click(lunchCheckbox);
-    expect(lunchYes.className).toContain('border-4 border-primary');
+    expect(lunchYes.className).toContain('border-2 border-primary');
 
     fireEvent.click(breakfastCheckbox);
     expect(breakfastYes).toBeDisabled();
@@ -328,5 +328,54 @@ describe('SelectFieldRenderer family', () => {
 
     fireEvent.click(breakfastYes);
     expect(breakfastYes).toBeEnabled();
+  });
+
+  it('renders danger styling for zero-slot totals and role breakdown in toggle metadata', () => {
+    const toggleField = createField({
+      field_key: 'meal_slots_zero_metadata',
+      field_type: 'multi_select_toggle',
+      options: [{ value: 'breakfast', label: 'Breakfast Slot' }],
+      validation_rules: {
+        max_slots_role_allotments: {
+          breakfast: [{ role: 'Leader', alloted_slots: 1 }],
+        },
+      },
+    });
+
+    const { container } = render(
+      <Harness
+        field={toggleField}
+        renderer="toggle"
+        remainingSlotsByOption={{ breakfast: 0 }}
+        remainingSlotsByRoleByOption={{ breakfast: { leader: 0 } }}
+      />,
+    );
+
+    const totalLabel = screen.getByText('0 slots left');
+    expect(totalLabel).toHaveClass('text-danger');
+    expect(screen.getByText('Leader:')).toBeInTheDocument();
+
+    const zeroCountLabel = Array.from(container.querySelectorAll('span')).find(
+      (node) => node.textContent === '0' && node.className.includes('text-danger'),
+    );
+    expect(zeroCountLabel).toBeTruthy();
+  });
+
+  it('ignores forced yes/no clicks when option is not selected', () => {
+    const toggleField = createField({
+      field_key: 'meal_slots_toggle_guard',
+      field_type: 'multi_select_toggle',
+      options: [{ value: 'breakfast', label: 'Breakfast Slot' }],
+    });
+
+    render(<Harness field={toggleField} renderer="toggle" />);
+
+    const breakfastYes = screen.getByRole('button', { name: 'Breakfast Slot - Yes' });
+
+    breakfastYes.removeAttribute('disabled');
+    fireEvent.click(breakfastYes);
+
+    expect(screen.queryByText('Choose Yes or No to continue.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Breakfast Slot - Yes' })).toBeEnabled();
   });
 });
