@@ -6,7 +6,6 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
-  logAdminAction,
   readAllowedOrigins,
   requireAdminAccess,
 } from '@/shared/security.ts';
@@ -239,19 +238,6 @@ Deno.serve(async (req) => {
         { error_code: 'RETRIEVE_FAILED' },
       );
     }
-
-    // Log the action
-    await logAdminAction({
-      supabaseUrl,
-      supabaseServiceKey,
-      action: 'create_member',
-      adminId: adminAccess.adminId,
-      details: {
-        memberId: newMember.member_id,
-        fullName: newMember.full_name,
-      },
-      requestId,
-    });
 
     console.log('[create-member] success', {
       requestId,

@@ -7,7 +7,6 @@ import {
   buildCorsHeaders,
   createObscuredDenyResponse,
   isOriginAllowed,
-  logAdminAction,
   readAllowedOrigins,
   requireAdminAccess,
 } from '@/shared/security.ts';
@@ -184,20 +183,6 @@ Deno.serve(async (req) => {
         404,
       );
     }
-
-    // Log the admin action
-    await logAdminAction({
-      supabaseUrl,
-      supabaseServiceKey,
-      adminId: adminAccess.userId,
-      action: 'update_member_id',
-      targetTable: 'users',
-      targetId: id,
-      details: {
-        oldMemberId: null,
-        newMemberId: trimmedMemberId,
-      },
-    });
 
     console.log('[update-member-id] success', {
       requestId,
