@@ -82,7 +82,7 @@ export function NameLookupModal({
           onClick={handleOpen}
           disabled={isLookupPending}
           variant="outline"
-          size="md"
+          size="lg"
           className="w-full justify-center"
         >
           {isLookupPending ? 'Searching...' : 'Search by name'}
@@ -161,13 +161,13 @@ export function NameLookupModal({
                   <Button
                     disabled={isLoading}
                     onClick={handleClose}
-                    size="md"
+                    size="lg"
                     type="button"
                     variant="outline"
                   >
                     Cancel
                   </Button>
-                  <Button disabled={isLoading} size="md" type="submit" variant="default">
+                  <Button disabled={isLoading} size="lg" type="submit" variant="default">
                     {isLoading ? 'Searching...' : 'Search'}
                   </Button>
                 </div>

@@ -19,6 +19,7 @@ import {
   useReactivatePublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -217,11 +218,17 @@ export function AdminPublicRegistrationDetailPage() {
             { label: 'Public Registrations', to: toAdminEventPublicRegistrations(eventId) },
             { label: `${registration.first_name} ${registration.last_name}` },
           ]}
-          title="Public Registration"
+          title="Manage Public Registration"
           navLinks={
-            <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
-              Back to Public Registrations
-            </ActionLink>
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <EventNavigationLinks
+                eventId={eventId}
+                currentSection="public-registrations-detail"
+              />
+              <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+                Back to Public Registrations
+              </ActionLink>
+            </div>
           }
           actions={pageActions}
         />

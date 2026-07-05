@@ -208,17 +208,23 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               );
             })}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button disabled={isSubmitPending} size="md" type="submit" variant="default">
+          <div className="flex w-full flex-col gap-2">
+            <Button
+              className="w-full"
+              disabled={isSubmitPending}
+              size="lg"
+              type="submit"
+              variant="default"
+            >
               {isSubmitPending ? `${submitButtonLabel}...` : submitButtonLabel}
             </Button>
 
             {onCancelUpdate && (
               <Button
-                className="hover:bg-surface"
+                className="w-full hover:bg-surface"
                 disabled={isSubmitPending}
                 onClick={onCancelUpdate}
-                size="md"
+                size="lg"
                 type="button"
                 variant="outline"
               >

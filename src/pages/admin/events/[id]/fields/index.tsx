@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
 import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import type { AdminEventField } from '@/lib/domain/event-fields';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { EventFieldEditPanel, EventFieldsList } from './components';
 
@@ -46,12 +46,10 @@ export function AdminEventFieldsPage() {
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
           { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
-          { label: 'Fields' },
+          { label: 'Registration Fields' },
         ]}
-        navLinks={
-          id ? <ActionLink to={toAdminEventDetail(id)}>Back to Event</ActionLink> : undefined
-        }
-        title="Registration Fields"
+        navLinks={id ? <EventNavigationLinks eventId={id} currentSection="fields" /> : undefined}
+        title="Manage Registration Fields"
         description={
           event
             ? `Manage the registration form fields for ${event.title}`

@@ -44,7 +44,13 @@ export function ProfileStepFooter(props: ProfileStepFooterProps) {
   if (canContinueToStepThree) {
     return (
       <div className="pt-3">
-        <Button onClick={onContinueToStepThree} size="md" type="button" variant="default">
+        <Button
+          className="w-full"
+          onClick={onContinueToStepThree}
+          size="lg"
+          type="button"
+          variant="default"
+        >
           Yes, I confirm
         </Button>
         {timeoutMessage && (

@@ -8,14 +8,7 @@ import { z } from 'zod';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, SectionCard } from '@/components/ui';
-import { ActionLink } from '@/components/ui/ActionLink';
-import {
-  ROUTE_PATHS,
-  toAdminEventAttendanceCheckIn,
-  toAdminEventAttendanceData,
-  toAdminEventAttendanceFields,
-  toAdminEventDetail,
-} from '@/config/constants';
+import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useUpdateAttendanceSettingsMutation,
@@ -26,6 +19,7 @@ import {
   updateAttendanceSettingsSchema,
 } from '@/lib/domain/attendance';
 import { formatDateTime, localDateTimeToUTC8ISO } from '@/lib/infrastructure';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 const ATTENDANCE_TOAST_MESSAGES = {
   updated: 'Attendance settings updated successfully.',
@@ -118,7 +112,7 @@ export function AdminEventAttendancePage() {
   if (!eventId) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Attendance Settings" />
+        <AdminPageShell.Header title="Manage Attendance" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Invalid event ID.</p>
         </AdminPageShell.Content>
@@ -141,7 +135,7 @@ export function AdminEventAttendancePage() {
   if (!event) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Attendance Settings" />
+        <AdminPageShell.Header title="Manage Attendance" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Event not found.</p>
         </AdminPageShell.Content>
@@ -152,7 +146,7 @@ export function AdminEventAttendancePage() {
   if (settingsError) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Attendance Settings" />
+        <AdminPageShell.Header title="Manage Attendance" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Failed to load attendance settings.</p>
         </AdminPageShell.Content>
@@ -246,17 +240,8 @@ export function AdminEventAttendancePage() {
           { label: activeEvent.title, to: toAdminEventDetail(resolvedEventId) },
           { label: 'Attendance' },
         ]}
-        navLinks={
-          <>
-            <ActionLink to={toAdminEventAttendanceCheckIn(resolvedEventId)}>Check-In</ActionLink>
-            <ActionLink to={toAdminEventAttendanceFields(resolvedEventId)}>Fields</ActionLink>
-            <ActionLink to={toAdminEventAttendanceData(resolvedEventId)}>
-              Attendee Details
-            </ActionLink>
-            <ActionLink to={toAdminEventDetail(resolvedEventId)}>Back to Event</ActionLink>
-          </>
-        }
-        title="Attendance Settings"
+        navLinks={<EventNavigationLinks eventId={resolvedEventId} currentSection="attendance" />}
+        title="Manage Attendance"
         description="Configure event-day attendance tracking, walk-ins, and timeslot attendance behavior."
       />
 

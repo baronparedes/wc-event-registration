@@ -205,22 +205,11 @@ describe('AdminEventFormPage', () => {
     expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument();
   });
 
-  it('shows quick links to attendance, fields, and registrations in edit mode', () => {
+  it('shows event breadcrumb context in edit mode', () => {
     renderWithRouter('edit');
 
     expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', '/admin/events');
-    expect(screen.getByRole('link', { name: 'Attendance' })).toHaveAttribute(
-      'href',
-      '/admin/events/event-1/attendance',
-    );
-    expect(screen.getByRole('link', { name: 'Fields' })).toHaveAttribute(
-      'href',
-      '/admin/events/event-1/fields',
-    );
-    expect(screen.getByRole('link', { name: 'Registrations' })).toHaveAttribute(
-      'href',
-      '/admin/events/event-1/registrations',
-    );
+    expect(screen.getByRole('heading', { level: 1, name: 'Manage Event' })).toBeInTheDocument();
   });
 
   it('shows error toast when save fails', async () => {

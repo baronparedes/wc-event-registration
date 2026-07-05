@@ -6,15 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
-import {
-  ROUTE_PATHS,
-  TOAST_MESSAGES,
-  UI_MESSAGES,
-  toAdminEventAttendance,
-  toAdminEventFields,
-  toAdminEventRegistrations,
-} from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
 import {
   useAdminEventQuery,
   useCreateEventMutation,
@@ -24,6 +16,7 @@ import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
 import { createEventSchema } from '@/lib/domain/events';
 import type { CreateEventInput } from '@/lib/domain/events';
 
+import { EventNavigationLinks } from '../components';
 import {
   EventDateRangeSection,
   EventDetailsSection,
@@ -169,7 +162,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     );
   }
 
-  const title = isEditMode ? 'Edit Event' : 'Create Event';
+  const title = isEditMode ? 'Manage Event' : 'Create Event';
   const isArchivedEvent = isEditMode && existingEvent?.status === 'archived';
 
   const breadcrumbs = isEditMode
@@ -181,11 +174,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     : undefined;
 
   const navLinks = isEditMode ? (
-    <div className="flex items-center gap-4">
-      <ActionLink to={toAdminEventAttendance(id!)}>Attendance</ActionLink>
-      <ActionLink to={toAdminEventFields(id!)}>Fields</ActionLink>
-      <ActionLink to={toAdminEventRegistrations(id!)}>Registrations</ActionLink>
-    </div>
+    <EventNavigationLinks eventId={id!} currentSection="event" />
   ) : undefined;
 
   return (

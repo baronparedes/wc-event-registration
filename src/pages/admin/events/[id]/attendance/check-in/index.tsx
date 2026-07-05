@@ -12,20 +12,19 @@ import {
   ROUTE_PATHS,
   TIMING,
   toAdminEventAttendance,
-  toAdminEventAttendanceData,
-  toAdminEventAttendanceFields,
   toAdminEventDetail,
 } from '@/config/constants';
+import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
   useAttendanceSettingsQuery,
-  useCheckInAttendeeMutation,
   useSearchAttendeesQuery,
-} from '@/hooks/domain/attendance';
+} from '@/hooks/domain/attendance/queries';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { useKioskInactivityReset, useRfidAutoFocus } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { CheckInCard, ResultsList, SearchForm } from './components';
 
@@ -220,14 +219,8 @@ export function AdminAttendanceCheckInPage() {
           { label: 'Attendance', to: toAdminEventAttendance(eventId) },
           { label: 'Check-In' },
         ]}
-        navLinks={
-          <>
-            <ActionLink to={toAdminEventAttendanceFields(eventId)}>Fields</ActionLink>
-            <ActionLink to={toAdminEventAttendanceData(eventId)}>Attendee Details</ActionLink>
-            <ActionLink to={toAdminEventAttendance(eventId)}>Back to Attendance</ActionLink>
-          </>
-        }
-        title="Check-In"
+        navLinks={<EventNavigationLinks eventId={eventId} currentSection="attendance-check-in" />}
+        title="Manage Check-In"
         description="Scan RFID or search attendee by name or email, confirm check-in, then continue to the next person."
       />
 

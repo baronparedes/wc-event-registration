@@ -160,11 +160,9 @@ describe('AdminRegistrationsPage', () => {
       'href',
       `/admin/events/${testEventId}`,
     );
-    expect(screen.getByRole('link', { name: 'Back to Event' })).toHaveAttribute(
-      'href',
-      `/admin/events/${testEventId}`,
-    );
-    expect(screen.getByRole('heading', { level: 1, name: 'Registrations' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Manage Registrations' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('This event is published. All registrations are visible.'),
     ).toBeInTheDocument();
@@ -187,7 +185,7 @@ describe('AdminRegistrationsPage', () => {
 
     renderWithRouter();
 
-    expect(screen.getByText('Registrations')).toBeInTheDocument();
+    expect(screen.getByText('Manage Registrations')).toBeInTheDocument();
     expect(screen.getByText(/Error loading registrations:/)).toBeInTheDocument();
   });
 

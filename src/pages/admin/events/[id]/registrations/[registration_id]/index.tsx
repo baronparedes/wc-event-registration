@@ -20,6 +20,7 @@ import {
   useRegistrationDetailQuery,
 } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -217,9 +218,12 @@ export function AdminRegistrationDetailPage() {
             { label: 'Registrations', to: toAdminEventRegistrations(eventId) },
             { label: member.full_name },
           ]}
-          title="Registration"
+          title="Manage Registration"
           navLinks={
-            <ActionLink to={toAdminEventRegistrations(eventId)}>Back to Registrations</ActionLink>
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <EventNavigationLinks eventId={eventId} currentSection="registrations-detail" />
+              <ActionLink to={toAdminEventRegistrations(eventId)}>Back to Registrations</ActionLink>
+            </div>
           }
           actions={pageActions}
         />

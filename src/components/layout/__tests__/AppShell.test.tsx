@@ -27,6 +27,40 @@ vi.mock('@/hooks/domain/auth', () => ({
   useAdminLogoutMutation: () => ({ mutateAsync: mockMutateAsync }),
 }));
 
+vi.mock('../AppDrawerNavigation', () => ({
+  AppDrawerNavigation: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    isAuthenticated: boolean;
+    onLogout: () => Promise<void>;
+  }) =>
+    props.isOpen ? (
+      <div>
+        {props.isAuthenticated ? (
+          <>
+            <a href={ROUTE_PATHS.adminEvents}>Manage Events</a>
+            <a href={ROUTE_PATHS.adminMembers}>Manage Members</a>
+            <button
+              onClick={() => {
+                void props.onLogout();
+              }}
+              type="button"
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <>
+            <a href={ROUTE_PATHS.adminLogin}>Sign In</a>
+            <button onClick={props.onClose} type="button">
+              Close
+            </button>
+          </>
+        )}
+      </div>
+    ) : null,
+}));
+
 function renderShell(initialPath = '/') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
@@ -45,41 +79,33 @@ describe('AppShell', () => {
     mockMutateAsync.mockResolvedValue(undefined);
   });
 
-  it('renders sign in menu for unauthenticated users', () => {
+  it('renders sign in navigation for unauthenticated users', () => {
     mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: false } });
 
     renderShell('/');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Admin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
     const signInLink = screen.getByRole('link', { name: 'Sign In' });
     expect(signInLink).toHaveAttribute('href', ROUTE_PATHS.adminLogin);
-    fireEvent.click(signInLink);
-
-    expect(screen.queryByRole('link', { name: 'Sign In' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
   });
 
-  it('renders admin links for authenticated users and highlights admin path', () => {
+  it('renders admin links for authenticated users', () => {
     mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
 
     renderShell('/admin/events');
 
-    const adminButton = screen.getByRole('button', { name: 'Admin' });
-    expect(adminButton.className).toContain('bg-primary/10');
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
-    fireEvent.click(adminButton);
-
-    const eventsLinks = screen.getAllByRole('link', { name: 'Events' });
-    expect(eventsLinks[1]).toHaveAttribute('href', ROUTE_PATHS.adminEvents);
-    const membersLink = screen.getByRole('link', { name: 'Members' });
-    expect(membersLink).toHaveAttribute('href', ROUTE_PATHS.adminMembers);
-
-    fireEvent.click(eventsLinks[1]);
-    fireEvent.click(adminButton);
-    fireEvent.click(screen.getByRole('link', { name: 'Members' }));
-
-    expect(screen.queryByRole('link', { name: 'Members' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Manage Events' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminEvents,
+    );
+    expect(screen.getByRole('link', { name: 'Manage Members' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminMembers,
+    );
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 
@@ -88,6 +114,7 @@ describe('AppShell', () => {
 
     renderShell('/');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
 
     await waitFor(() => {
@@ -102,10 +129,25 @@ describe('AppShell', () => {
 
     renderShell('/');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('logout failed');
+    });
+  });
+
+  it('uses fallback sign-out error message for non-Error failures', async () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
+    mockMutateAsync.mockRejectedValue('unknown');
+
+    renderShell('/');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith(TOAST_MESSAGES.adminSignOutFailure);
     });
   });
 });

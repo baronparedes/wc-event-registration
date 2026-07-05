@@ -6,22 +6,14 @@ import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
 
 import { AppMobileShell } from '../AppMobileShell';
 
-const { mockUseAdminAuthQuery, mockMutateAsync, mockToastSuccess, mockToastError, mockNavigate } =
-  vi.hoisted(() => ({
+const { mockUseAdminAuthQuery, mockMutateAsync, mockToastSuccess, mockToastError } = vi.hoisted(
+  () => ({
     mockUseAdminAuthQuery: vi.fn(),
     mockMutateAsync: vi.fn(),
     mockToastSuccess: vi.fn(),
     mockToastError: vi.fn(),
-    mockNavigate: vi.fn(),
-  }));
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
+  }),
+);
 
 vi.mock('sonner', () => ({
   toast: {
@@ -33,6 +25,36 @@ vi.mock('sonner', () => ({
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => mockUseAdminAuthQuery(),
   useAdminLogoutMutation: () => ({ mutateAsync: mockMutateAsync }),
+}));
+
+vi.mock('../AppDrawerNavigation', () => ({
+  AppDrawerNavigation: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    isAuthenticated: boolean;
+    onLogout: () => Promise<void>;
+  }) =>
+    props.isOpen ? (
+      <div>
+        <a href={ROUTE_PATHS.home}>Events</a>
+        {props.isAuthenticated ? (
+          <>
+            <a href={ROUTE_PATHS.adminEvents}>Manage Events</a>
+            <a href={ROUTE_PATHS.adminMembers}>Manage Members</a>
+            <button
+              onClick={() => {
+                void props.onLogout();
+              }}
+              type="button"
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <a href={ROUTE_PATHS.adminLogin}>Sign In</a>
+        )}
+      </div>
+    ) : null,
 }));
 
 function renderShell(initialPath = '/') {
@@ -53,27 +75,27 @@ describe('AppMobileShell', () => {
     mockMutateAsync.mockResolvedValue(undefined);
   });
 
-  it('shows mobile menu actions for unauthenticated users', () => {
+  it('shows drawer actions for unauthenticated users', () => {
     mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: false } });
 
     renderShell('/admin/events');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Admin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminLogin);
+    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminLogin,
+    );
   });
 
-  it('navigates from mobile events button', () => {
+  it('shows events entry in drawer', () => {
     mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
 
     renderShell('/');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Events' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.home);
+    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', ROUTE_PATHS.home);
   });
 
   it('handles successful mobile sign out', async () => {
@@ -81,7 +103,7 @@ describe('AppMobileShell', () => {
 
     renderShell('/');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
 
     await waitFor(() => {
@@ -96,11 +118,25 @@ describe('AppMobileShell', () => {
 
     renderShell('/');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('mobile logout failed');
+    });
+  });
+
+  it('uses fallback sign-out error message for non-Error failures', async () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
+    mockMutateAsync.mockRejectedValue('unknown');
+
+    renderShell('/');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith(TOAST_MESSAGES.adminSignOutFailure);
     });
   });
 });

@@ -5,11 +5,12 @@ import { Link, useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
-import { ROUTE_PATHS, toAdminEventAttendance } from '@/config/constants';
+import { ROUTE_PATHS, toAdminEventAttendance, toAdminEventDetail } from '@/config/constants';
 import { useAttendanceSettingsQuery } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
+import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendanceFieldEditPanel, AttendanceFieldsList } from './components';
 
@@ -46,15 +47,14 @@ export function AdminAttendanceFieldsPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventAttendance(id) : undefined },
+          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
+          { label: 'Attendance', to: id ? toAdminEventAttendance(id) : undefined },
           { label: 'Attendance Fields' },
         ]}
         navLinks={
-          id ? (
-            <ActionLink to={toAdminEventAttendance(id)}>Back to Attendance</ActionLink>
-          ) : undefined
+          id ? <EventNavigationLinks eventId={id} currentSection="attendance-fields" /> : undefined
         }
-        title="Attendance Fields"
+        title="Manage Attendance Fields"
         description={
           event
             ? `Manage the attendance data fields for ${event.title}`
