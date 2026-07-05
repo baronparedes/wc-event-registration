@@ -145,6 +145,20 @@ export function normalizeRoleValue(value: string | null | undefined): string | n
   return normalized.length > 0 ? normalized : null;
 }
 
+export function normalizePrimaryRoleValue(value: string | null | undefined): string | null {
+  const raw = (value ?? '').trim();
+  if (!raw) {
+    return null;
+  }
+
+  const primaryRole = raw
+    .split('/')
+    .map((segment) => segment.trim())
+    .find((segment) => segment.length > 0);
+
+  return normalizeRoleValue(primaryRole);
+}
+
 export function parseMaxSlotRoleAllotmentsByOption(
   validationRules: Record<string, unknown> | null | undefined,
 ): Record<string, Record<string, number>> {

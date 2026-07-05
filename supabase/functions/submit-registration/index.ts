@@ -16,7 +16,7 @@ import {
   createOptionUsageCounter,
   extractSelectedOptionValuesFromStoredAnswer,
   incrementOptionUsageFromSelection,
-  normalizeRoleValue,
+  normalizePrimaryRoleValue,
   parseFunctionEnvironment,
   parseRequestBody,
   validateFieldValue,
@@ -79,7 +79,7 @@ function extractMemberRole(metadata: unknown): string | null {
   }
 
   const roleValue = (metadata as Record<string, unknown>).role;
-  return typeof roleValue === 'string' ? normalizeRoleValue(roleValue) : null;
+  return typeof roleValue === 'string' ? normalizePrimaryRoleValue(roleValue) : null;
 }
 
 const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx';
