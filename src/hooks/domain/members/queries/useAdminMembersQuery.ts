@@ -23,12 +23,14 @@ export const adminMembersPageQueryKey = (
   pageSize: number,
   cursor: string | null,
   searchTerm: string,
-) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm] as const;
+  statusFilter: 'active' | 'deleted' | 'all',
+) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm, statusFilter] as const;
 
 export interface AdminMembersPageParams {
   pageSize?: number;
   cursor?: string | null;
   searchTerm?: string;
+  statusFilter?: 'active' | 'deleted' | 'all';
 }
 
 export interface AdminMembersPage {
@@ -47,19 +49,28 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize;
   const cursor = params?.cursor ?? null;
   const searchTerm = params?.searchTerm?.trim() ?? '';
+  const statusFilter = params?.statusFilter ?? 'active';
   const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0);
   const offset = decodeOffsetCursor(cursor);
 
   return useQuery({
-    queryKey: adminMembersPageQueryKey(pageSize, cursor, searchTerm),
+    queryKey: adminMembersPageQueryKey(pageSize, cursor, searchTerm, statusFilter),
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<AdminMembersPage> => {
       let query = supabase
         .from('users')
         .select(
-          'id, member_id, full_name, first_name, last_name, nickname, email, phone, date_of_birth, metadata, created_at, updated_at',
+          'id, member_id, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, metadata, created_at, updated_at',
           { count: 'exact' },
-        )
+        );
+
+      if (statusFilter === 'active') {
+        query = query.eq('is_active', true);
+      } else if (statusFilter === 'deleted') {
+        query = query.eq('is_active', false);
+      }
+
+      query = query
         .order('full_name', { ascending: true })
         .order('member_id', { ascending: true })
         .range(offset, offset + pageSize - 1);
@@ -96,6 +107,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         return {
           id: member.id,
           member_id: member.member_id,
+          is_active: member.is_active,
           full_name: member.full_name,
           first_name: member.first_name,
           last_name: member.last_name,

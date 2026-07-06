@@ -93,6 +93,7 @@ describe('AdminMembersPage', () => {
           {
             id: 'user-1',
             member_id: 'WC-001',
+            is_active: true,
             full_name: 'Jane Doe',
             nickname: 'J',
             email: 'jane@example.com',
@@ -225,6 +226,7 @@ describe('AdminMembersPage', () => {
           {
             id: 'user-1',
             member_id: 'WC-001',
+            is_active: true,
             full_name: 'Jane Doe',
             nickname: null,
             email: null,
@@ -258,5 +260,30 @@ describe('AdminMembersPage', () => {
     expect(mockGetPageCursor).toHaveBeenCalledWith(1, expect.any(Number));
     expect(mockGetPageCursor).toHaveBeenCalledWith(4, expect.any(Number));
     expect(mockGetPageCursor).toHaveBeenCalledWith(3, expect.any(Number));
+  });
+
+  it('allows filtering by deleted members', () => {
+    mockUseAdminMembersQuery.mockReturnValue({
+      data: {
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'deleted' } });
+
+    expect(mockUseAdminMembersQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({ statusFilter: 'deleted' }),
+    );
   });
 });

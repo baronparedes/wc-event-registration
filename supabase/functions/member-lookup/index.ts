@@ -345,7 +345,8 @@ Deno.serve(async (req) => {
     const searchValue = isIdLookup ? tryConvertRfidInput(memberId!.trim()) : name!.trim();
     const baseQuery = supabase
       .from('users')
-      .select('id, member_id, metadata, full_name, nickname, first_name, last_name');
+      .select('id, member_id, metadata, full_name, nickname, first_name, last_name')
+      .eq('is_active', true);
     let filteredData: UserLookupRow | null = null;
 
     if (isIdLookup) {

@@ -24,6 +24,7 @@ export type MemberLookupResult = {
 export type AdminMember = {
   id: string;
   member_id: string;
+  is_active: boolean;
   full_name: string;
   first_name: string | null;
   last_name: string | null;

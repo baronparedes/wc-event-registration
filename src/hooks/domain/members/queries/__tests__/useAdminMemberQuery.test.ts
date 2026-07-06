@@ -55,6 +55,7 @@ describe('useAdminMemberQuery', () => {
       data: {
         id: member.id,
         member_id: member.member_id,
+        is_active: true,
         full_name: member.full_name,
         first_name: member.first_name,
         last_name: member.last_name,
@@ -101,6 +102,7 @@ describe('useAdminMemberQuery', () => {
       data: {
         id: member.id,
         member_id: member.member_id,
+        is_active: true,
         full_name: member.full_name,
         first_name: member.first_name,
         last_name: member.last_name,
@@ -157,5 +159,38 @@ describe('useAdminMemberQuery', () => {
     expect(response.error).toBeInstanceOf(Error);
     expect(response.error?.message).toBe('Member ID is required');
     expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('does not filter by is_active when includeInactive is true', async () => {
+    const member = makeAdminMember();
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: member.id,
+        member_id: member.member_id,
+        is_active: false,
+        full_name: member.full_name,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        nickname: member.nickname,
+        email: member.email,
+        phone: member.phone,
+        date_of_birth: member.date_of_birth,
+        metadata: { role: member.role, category: member.category },
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+      },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() =>
+      useAdminMemberQuery(member.id, { includeInactive: true }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockQueryBuilder.eq).not.toHaveBeenCalledWith('is_active', true);
+    expect(result.current.data?.is_active).toBe(false);
   });
 });

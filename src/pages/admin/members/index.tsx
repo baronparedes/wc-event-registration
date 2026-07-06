@@ -34,6 +34,7 @@ export function AdminMembersPage() {
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize);
   const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'deleted' | 'all'>('active');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
 
@@ -51,6 +52,7 @@ export function AdminMembersPage() {
     pageSize,
     cursor,
     searchTerm: normalizedSearchTerm,
+    statusFilter,
   });
   const members = membersQuery.data?.items ?? [];
   const hasMore = membersQuery.data?.hasMore ?? false;
@@ -68,6 +70,11 @@ export function AdminMembersPage() {
 
   function handlePageSizeChange(nextPageSize: number) {
     setPageSize(nextPageSize);
+    setCursor(null);
+  }
+
+  function handleStatusFilterChange(nextStatusFilter: 'active' | 'deleted' | 'all') {
+    setStatusFilter(nextStatusFilter);
     setCursor(null);
   }
 
@@ -102,7 +109,7 @@ export function AdminMembersPage() {
       />
 
       <AdminPageShell.Filters>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
             Search members
             <input
@@ -112,6 +119,21 @@ export function AdminMembersPage() {
               placeholder="Search by first name, last name, nickname, or member ID"
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
             />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-muted sm:min-w-48">
+            Status
+            <select
+              value={statusFilter}
+              onChange={(event) =>
+                handleStatusFilterChange(event.target.value as 'active' | 'deleted' | 'all')
+              }
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+            >
+              <option value="active">Active</option>
+              <option value="deleted">Deleted</option>
+              <option value="all">All</option>
+            </select>
           </label>
 
           <Button
@@ -151,6 +173,7 @@ export function AdminMembersPage() {
                   <ListTableHeaderRow>
                     <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                     <ListTableHeaderCell>Full Name</ListTableHeaderCell>
+                    <ListTableHeaderCell>Status</ListTableHeaderCell>
                     <ListTableHeaderCell>Email</ListTableHeaderCell>
                     <ListTableHeaderCell>Phone</ListTableHeaderCell>
                     <ListTableHeaderCell>Role</ListTableHeaderCell>
@@ -163,7 +186,7 @@ export function AdminMembersPage() {
                   {members.map((member) => (
                     <ListTableRow
                       key={member.id}
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${member.is_active ? '' : 'opacity-70'}`}
                       onClick={() => navigate(toAdminMemberDetail(member.id))}
                     >
                       <ListTableCell className="px-6">
@@ -174,6 +197,17 @@ export function AdminMembersPage() {
                         {member.nickname && (
                           <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
                         )}
+                      </ListTableCell>
+                      <ListTableCell>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                            member.is_active
+                              ? 'bg-secondary/15 text-secondary'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {member.is_active ? 'Active' : 'Deleted'}
+                        </span>
                       </ListTableCell>
                       <ListTableCell>
                         <p className="text-sm text-text">{member.email || '—'}</p>
@@ -192,12 +226,16 @@ export function AdminMembersPage() {
                       </ListTableCell>
                       <ListTableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-3">
-                          <ActionLink to={toAdminMemberDetail(member.id)}>Edit</ActionLink>
-                          <UpdateMemberIdDialog
-                            memberId={member.id}
-                            memberName={member.full_name}
-                            currentMemberId={member.member_id}
-                          />
+                          <ActionLink to={toAdminMemberDetail(member.id)}>
+                            {member.is_active ? 'Edit' : 'View'}
+                          </ActionLink>
+                          {member.is_active && (
+                            <UpdateMemberIdDialog
+                              memberId={member.id}
+                              memberName={member.full_name}
+                              currentMemberId={member.member_id}
+                            />
+                          )}
                         </div>
                       </ListTableCell>
                     </ListTableRow>
@@ -208,8 +246,8 @@ export function AdminMembersPage() {
               <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <p className="hidden text-xs text-muted sm:block">
                   {normalizedSearchTerm.length > 0
-                    ? `Showing up to ${pageSize} matching members per page`
-                    : `Showing up to ${pageSize} members per page`}
+                    ? `Showing up to ${pageSize} matching ${statusFilter} members per page`
+                    : `Showing up to ${pageSize} ${statusFilter} members per page`}
                 </p>
                 <AdminPaginationControls
                   currentPage={currentPage}

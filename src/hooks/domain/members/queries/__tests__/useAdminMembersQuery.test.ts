@@ -8,12 +8,14 @@ import { useAdminMembersQuery } from '@/hooks/domain/members/queries/useAdminMem
 const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
+    eq: vi.fn(),
     order: vi.fn(),
     range: vi.fn(),
     or: vi.fn(),
   };
 
   queryBuilder.select.mockReturnValue(queryBuilder);
+  queryBuilder.eq.mockReturnValue(queryBuilder);
   queryBuilder.order.mockReturnValue(queryBuilder);
   queryBuilder.range.mockReturnValue(queryBuilder);
   queryBuilder.or.mockReturnValue(queryBuilder);
@@ -56,6 +58,7 @@ describe('useAdminMembersQuery', () => {
     const dbRow = {
       id: member.id,
       member_id: member.member_id,
+      is_active: true,
       full_name: member.full_name,
       first_name: member.first_name,
       last_name: member.last_name,
@@ -136,6 +139,7 @@ describe('useAdminMembersQuery', () => {
         {
           id: 'user-9',
           member_id: 'WC-009',
+          is_active: true,
           full_name: 'A_B,Name%Here',
           first_name: 'A_B',
           last_name: 'Name',
@@ -168,5 +172,42 @@ describe('useAdminMembersQuery', () => {
     expect(result.current.data?.hasMore).toBe(true);
     expect(result.current.data?.nextCursor).toBe('1');
     expect(result.current.data?.totalPages).toBe(3);
+  });
+
+  it('applies deleted status filter when requested', async () => {
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const { result } = renderHookWithClient(() =>
+      useAdminMembersQuery({ pageSize: 10, statusFilter: 'deleted' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockQueryBuilder.eq).toHaveBeenCalledWith('is_active', false);
+  });
+
+  it('does not apply is_active filter when status filter is all', async () => {
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const { result } = renderHookWithClient(() =>
+      useAdminMembersQuery({ pageSize: 10, statusFilter: 'all' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockQueryBuilder.eq).not.toHaveBeenCalledWith('is_active', true);
+    expect(mockQueryBuilder.eq).not.toHaveBeenCalledWith('is_active', false);
   });
 });

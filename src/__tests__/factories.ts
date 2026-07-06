@@ -189,6 +189,7 @@ export function makeAdminMember(overrides: Partial<AdminMember> = {}): AdminMemb
   return {
     id: faker.string.uuid(),
     member_id: `WC-${faker.string.numeric(3)}`,
+    is_active: true,
     full_name: `${firstName} ${lastName}`,
     first_name: firstName,
     last_name: lastName,

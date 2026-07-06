@@ -11,9 +11,16 @@ import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
-import { useAdminMemberQuery, useUpdateMemberMutation } from '@/hooks/domain/members';
+import {
+  useAdminMemberQuery,
+  useRestoreMemberMutation,
+  useSoftDeleteMemberMutation,
+  useUpdateMemberMutation,
+} from '@/hooks/domain/members';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
+
+import { MemberLifecycleActions } from './components/MemberLifecycleActions';
 
 const DEFAULT_VALUES: UpdateMemberInput = {
   full_name: '',
@@ -45,8 +52,10 @@ export function AdminMemberDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  const memberQuery = useAdminMemberQuery(id);
+  const memberQuery = useAdminMemberQuery(id, { includeInactive: true });
   const updateMemberMutation = useUpdateMemberMutation();
+  const deleteMemberMutation = useSoftDeleteMemberMutation();
+  const restoreMemberMutation = useRestoreMemberMutation();
 
   const {
     register,
@@ -84,6 +93,30 @@ export function AdminMemberDetailPage() {
     }
   }
 
+  async function onDeleteMember() {
+    if (!id) return;
+
+    try {
+      await deleteMemberMutation.mutateAsync({ id });
+      toast.success(TOAST_MESSAGES.member.deleted);
+      navigate(ROUTE_PATHS.adminMembers);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : TOAST_MESSAGES.member.deleteFailed);
+    }
+  }
+
+  async function onRestoreMember() {
+    if (!id) return;
+
+    try {
+      await restoreMemberMutation.mutateAsync({ id });
+      toast.success(TOAST_MESSAGES.member.restored);
+      memberQuery.refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : TOAST_MESSAGES.member.restoreFailed);
+    }
+  }
+
   if (!id) {
     return (
       <AdminPageShell>
@@ -117,6 +150,7 @@ export function AdminMemberDetailPage() {
   }
 
   const member = memberQuery.data;
+  const isDeletedMember = !member.is_active;
 
   return (
     <AdminPageShell>
@@ -131,6 +165,11 @@ export function AdminMemberDetailPage() {
       />
 
       <AdminPageShell.Content>
+        {isDeletedMember && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            This member is soft deleted and excluded from registration member lookup.
+          </div>
+        )}
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <SectionCard
             title="Member Profile"
@@ -161,6 +200,7 @@ export function AdminMemberDetailPage() {
                 registration={register('first_name')}
                 error={errors.first_name?.message}
                 required
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="last-name"
@@ -168,6 +208,7 @@ export function AdminMemberDetailPage() {
                 registration={register('last_name')}
                 error={errors.last_name?.message}
                 required
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="nickname"
@@ -175,6 +216,7 @@ export function AdminMemberDetailPage() {
                 registration={register('nickname')}
                 error={errors.nickname?.message}
                 required
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="date-of-birth"
@@ -182,6 +224,7 @@ export function AdminMemberDetailPage() {
                 registration={register('date_of_birth')}
                 error={errors.date_of_birth?.message}
                 type="date"
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="email"
@@ -189,12 +232,14 @@ export function AdminMemberDetailPage() {
                 registration={register('email')}
                 error={errors.email?.message}
                 type="email"
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="phone"
                 label="Phone"
                 registration={register('phone')}
                 error={errors.phone?.message}
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="role"
@@ -202,6 +247,7 @@ export function AdminMemberDetailPage() {
                 registration={register('role')}
                 error={errors.role?.message}
                 required
+                disabled={isDeletedMember}
               />
               <FormInputField
                 id="category"
@@ -209,11 +255,20 @@ export function AdminMemberDetailPage() {
                 registration={register('category')}
                 error={errors.category?.message}
                 required
+                disabled={isDeletedMember}
               />
             </div>
           </SectionCard>
 
           <div className="flex items-center justify-end gap-3">
+            <MemberLifecycleActions
+              isDeletedMember={isDeletedMember}
+              memberFullName={member.full_name}
+              isDeleting={deleteMemberMutation.isPending}
+              isRestoring={restoreMemberMutation.isPending}
+              onDeleteMember={onDeleteMember}
+              onRestoreMember={onRestoreMember}
+            />
             <Button
               type="button"
               variant="outline"
@@ -221,7 +276,10 @@ export function AdminMemberDetailPage() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isDirty || updateMemberMutation.isPending}>
+            <Button
+              type="submit"
+              disabled={isDeletedMember || !isDirty || updateMemberMutation.isPending}
+            >
               {updateMemberMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>

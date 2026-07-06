@@ -14,23 +14,38 @@ function readMetadataString(value: unknown): string {
 
 export const ADMIN_MEMBER_QUERY_KEY = (memberId: string) => ['admin-member', memberId] as const;
 
+export const adminMemberQueryKey = (memberId: string, includeInactive: boolean) =>
+  ['admin-member', memberId, includeInactive] as const;
+
 /** Fetches a single member record for the admin edit page. */
-export function useAdminMemberQuery(memberId: string | undefined) {
+export function useAdminMemberQuery(
+  memberId: string | undefined,
+  options?: { includeInactive?: boolean },
+) {
+  const includeInactive = options?.includeInactive ?? false;
+
   return useQuery({
-    queryKey: memberId ? ADMIN_MEMBER_QUERY_KEY(memberId) : ['admin-member', 'missing'],
+    queryKey: memberId
+      ? adminMemberQueryKey(memberId, includeInactive)
+      : ['admin-member', 'missing'],
     enabled: Boolean(memberId),
     queryFn: async (): Promise<AdminMember> => {
       if (!memberId) {
         throw new Error('Member ID is required');
       }
 
-      const { data: member, error } = await supabase
+      let query = supabase
         .from('users')
         .select(
-          'id, member_id, full_name, first_name, last_name, nickname, email, phone, date_of_birth, metadata, created_at, updated_at',
+          'id, member_id, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, metadata, created_at, updated_at',
         )
-        .eq('id', memberId)
-        .maybeSingle();
+        .eq('id', memberId);
+
+      if (!includeInactive) {
+        query = query.eq('is_active', true);
+      }
+
+      const { data: member, error } = await query.maybeSingle();
 
       if (error) throw error;
       if (!member) throw new Error('Member not found');
@@ -40,6 +55,7 @@ export function useAdminMemberQuery(memberId: string | undefined) {
       return {
         id: member.id,
         member_id: member.member_id,
+        is_active: member.is_active,
         full_name: member.full_name,
         first_name: member.first_name,
         last_name: member.last_name,
