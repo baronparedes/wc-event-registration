@@ -35,6 +35,16 @@ const rows: RegistrationSharePayloadRow[] = [
 ];
 
 describe('formatRegistrationShareText', () => {
+  it('sorts rows by full name before formatting output', () => {
+    const output = formatRegistrationShareText({
+      rows: [rows[1], rows[0]],
+      selectedFields: ['full_name'],
+      includeHeader: false,
+    });
+
+    expect(output).toBe('1. Alice Santos\n2. Bob Reyes');
+  });
+
   it('includes header and selected fields in deterministic order', () => {
     const output = formatRegistrationShareText({
       rows,

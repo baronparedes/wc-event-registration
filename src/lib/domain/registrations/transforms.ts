@@ -8,6 +8,16 @@ import {
 
 const DEFAULT_SHARE_FIELDS: RegistrationShareField[] = ['full_name'];
 
+function compareRowsByFullName(
+  leftRow: RegistrationSharePayloadRow,
+  rightRow: RegistrationSharePayloadRow,
+): number {
+  const leftName = leftRow.full_name.trim();
+  const rightName = rightRow.full_name.trim();
+
+  return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+}
+
 function normalizeSelectedFields(fields: RegistrationShareField[]): RegistrationShareField[] {
   const selectedSet = new Set(fields);
   const normalized = REGISTRATION_SHARE_FIELDS.filter((field) => selectedSet.has(field));
@@ -37,6 +47,7 @@ export function formatRegistrationShareText({
 }: FormatRegistrationShareTextParams): string {
   const normalizedFields = normalizeSelectedFields(selectedFields);
   const answerFieldMap = new Map(answerFields.map((field) => [field.field_id, field.label]));
+  const sortedRows = [...rows].sort(compareRowsByFullName);
   const lines: string[] = [];
 
   if (includeHeader) {
@@ -45,7 +56,7 @@ export function formatRegistrationShareText({
     lines.push('');
   }
 
-  rows.forEach((row, index) => {
+  sortedRows.forEach((row, index) => {
     const staticSegments = normalizedFields
       .map((field): string => {
         const fieldValue = row[field].trim();
