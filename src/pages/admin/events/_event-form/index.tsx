@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
@@ -6,17 +6,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
 import {
   useAdminEventQuery,
+  useArchiveEventMutation,
   useCreateEventMutation,
+  usePublishEventMutation,
+  useRestoreEventToDraftMutation,
   useUpdateEventMutation,
 } from '@/hooks/domain/events';
 import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
 import { createEventSchema } from '@/lib/domain/events';
 import type { CreateEventInput } from '@/lib/domain/events';
 
-import { EventNavigationLinks } from '../components';
+import { EventNavigationLinks, PublishActionButton } from '../components';
 import {
   EventDateRangeSection,
   EventDetailsSection,
@@ -66,7 +71,12 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   );
   const createMutation = useCreateEventMutation();
   const updateMutation = useUpdateEventMutation();
+  const publishMutation = usePublishEventMutation();
+  const archiveMutation = useArchiveEventMutation();
+  const restoreToDraftMutation = useRestoreEventToDraftMutation();
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
+  const [isRestoreToDraftConfirmOpen, setIsRestoreToDraftConfirmOpen] = useState(false);
 
   // Extract save confirmation logic
   const { showDialog, pendingFormData, requestConfirmation, confirmSave, cancelSave } =
@@ -139,6 +149,35 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     }
   }
 
+  async function handlePublish(eventId: string, eventTitle: string) {
+    try {
+      await publishMutation.mutateAsync(eventId);
+      toast.success(TOAST_MESSAGES.eventSaved.published(eventTitle));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.publishFailed;
+      toast.error(message);
+    }
+  }
+
+  async function handleArchive(eventId: string, eventTitle: string) {
+    try {
+      await archiveMutation.mutateAsync(eventId);
+      toast.success(TOAST_MESSAGES.eventSaved.archived(eventTitle));
+    } catch {
+      toast.error(TOAST_MESSAGES.eventSaved.archiveFailed);
+    }
+  }
+
+  async function handleRestoreToDraft(eventId: string, eventTitle: string) {
+    try {
+      await restoreToDraftMutation.mutateAsync(eventId);
+      toast.success(`"${eventTitle}" has been moved to draft.`);
+    } catch {
+      toast.error('Failed to move event to draft. Please try again.');
+    }
+  }
+
   const formValues = useWatch({ control }) as CreateEventInput;
 
   if (isEditMode && isLoadingEvent) {
@@ -177,6 +216,91 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     <EventNavigationLinks eventId={id!} currentSection="event" />
   ) : undefined;
 
+  const headerActions =
+    isEditMode && existingEvent ? (
+      <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center md:w-auto md:justify-end">
+        {existingEvent.status !== 'published' && (
+          <>
+            {existingEvent.status === 'archived' ? (
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={restoreToDraftMutation.isPending}
+                onClick={() => setIsRestoreToDraftConfirmOpen(true)}
+              >
+                Move to Draft
+              </Button>
+            ) : (
+              <PublishActionButton
+                event={existingEvent}
+                isPending={publishMutation.isPending}
+                onPublish={handlePublish}
+                triggerStyle="button"
+              />
+            )}
+          </>
+        )}
+        {existingEvent.status !== 'archived' && (
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={archiveMutation.isPending}
+            onClick={() => setIsArchiveConfirmOpen(true)}
+          >
+            Archive
+          </Button>
+        )}
+
+        {existingEvent.status !== 'archived' && (
+          <ConfirmDialog
+            isOpen={isArchiveConfirmOpen}
+            title="Archive Event"
+            description={
+              <>
+                Are you sure you want to archive{' '}
+                <span className="font-medium text-text">"{existingEvent.title}"</span>? Archived
+                events are no longer visible to the public. You can publish the event again to
+                restore it.
+              </>
+            }
+            confirmLabel="Archive"
+            confirmLoadingLabel="Archiving..."
+            confirmVariant="destructive"
+            isPending={archiveMutation.isPending}
+            onConfirm={async () => {
+              await handleArchive(existingEvent.id, existingEvent.title);
+              setIsArchiveConfirmOpen(false);
+            }}
+            onCancel={() => setIsArchiveConfirmOpen(false)}
+          />
+        )}
+
+        {existingEvent.status === 'archived' && (
+          <ConfirmDialog
+            isOpen={isRestoreToDraftConfirmOpen}
+            title="Move Event to Draft"
+            description={
+              <>
+                Move <span className="font-medium text-text">"{existingEvent.title}"</span> back to
+                draft? This will keep it hidden from the public until it is published again.
+              </>
+            }
+            confirmLabel="Move to Draft"
+            confirmLoadingLabel="Updating..."
+            confirmVariant="default"
+            isPending={restoreToDraftMutation.isPending}
+            onConfirm={async () => {
+              await handleRestoreToDraft(existingEvent.id, existingEvent.title);
+              setIsRestoreToDraftConfirmOpen(false);
+            }}
+            onCancel={() => setIsRestoreToDraftConfirmOpen(false)}
+          />
+        )}
+      </div>
+    ) : undefined;
+
   return (
     <AdminPageShell>
       <AdminPageShell.Header
@@ -186,6 +310,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         description={
           isEditMode ? 'Update event details below.' : 'Fill in the details for your new event.'
         }
+        actions={headerActions}
       />
 
       {existingEvent && <EventStatusWarning status={existingEvent.status} />}

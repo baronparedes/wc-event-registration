@@ -592,10 +592,19 @@ Deno.serve(async (req) => {
           if (usedOptions.includes(option)) {
             const roleAllotmentsForOption = roleAllotmentsByOption[option] ?? {};
             const hasRoleAllotments = Object.keys(roleAllotmentsForOption).length > 0;
+            const wildcardCap = roleAllotmentsForOption['*'];
 
             if (!hasRoleAllotments) {
               // Max-slots-only mode: each registration consumes one slot.
               incrementOptionUsageFromSelection(usageByOption, [option], usedOptions);
+              continue;
+            }
+
+            if (typeof wildcardCap === 'number') {
+              incrementOptionUsageFromSelection(usageByOption, [option], usedOptions);
+              const perRoleUsage = usageByOptionAndRole[option] ?? {};
+              perRoleUsage['*'] = (perRoleUsage['*'] ?? 0) + 1;
+              usageByOptionAndRole[option] = perRoleUsage;
               continue;
             }
 
@@ -620,9 +629,24 @@ Deno.serve(async (req) => {
       for (const option of constrainedSelections) {
         const roleAllotmentsForOption = roleAllotmentsByOption[option] ?? {};
         const hasRoleAllotments = Object.keys(roleAllotmentsForOption).length > 0;
+        const wildcardCap = roleAllotmentsForOption['*'];
         const roleCapForMember = memberRole ? roleAllotmentsForOption[memberRole] : undefined;
 
         if (hasRoleAllotments) {
+          if (typeof wildcardCap === 'number') {
+            const usedWildcardSlots = usageByOptionAndRole[option]?.['*'] ?? 0;
+            if (usedWildcardSlots >= wildcardCap) {
+              const optionLabel =
+                field.options.find((entry) => entry.value === option)?.label ?? option;
+              validationErrors.push({
+                fieldKey,
+                message: `${field.label} option "${optionLabel}" already reached the allotted slots for all roles.`,
+              });
+            }
+
+            continue;
+          }
+
           // Unconfigured roles do not consume slots and are not blocked by slot caps.
           if (roleCapForMember === undefined) {
             continue;

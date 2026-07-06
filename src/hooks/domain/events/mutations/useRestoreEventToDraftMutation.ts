@@ -6,8 +6,8 @@ import { supabase } from '@/lib/infrastructure';
 import { adminEventQueryKey } from '../queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
 
-/** Archives an event (soft-delete) by setting its status to 'archived'. */
-export function useArchiveEventMutation() {
+/** Moves an archived event back to draft status. */
+export function useRestoreEventToDraftMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -18,17 +18,17 @@ export function useArchiveEventMutation() {
         .eq('id', id)
         .maybeSingle();
 
-      const { error } = await supabase.from('events').update({ status: 'archived' }).eq('id', id);
+      const { error } = await supabase.from('events').update({ status: 'draft' }).eq('id', id);
 
       if (error) throw error;
 
       await writeAdminAuditLogSafely({
-        action: 'archive_event',
+        action: 'update_event',
         resourceType: 'event',
         resourceId: id,
         metadata: {
           previous_status: event?.status ?? null,
-          next_status: 'archived',
+          next_status: 'draft',
         },
       });
     },

@@ -219,6 +219,78 @@ describe('event-fields schemas', () => {
     expect(parsed.success).toBe(true);
   });
 
+  it('accepts wildcard role allotment when it is the only role for an option', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [{ role: '*', alloted_slots: '10' }],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects wildcard role allotment when other roles are configured for the same option', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [
+            { role: '*', alloted_slots: '10' },
+            { role: 'Prayer Coach', alloted_slots: '5' },
+          ],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    });
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(
+        parsed.error.issues.some((issue) => issue.path.join('.') === 'options.0.role_allotments'),
+      ).toBe(true);
+    }
+  });
+
   it('accepts valid update event field input', () => {
     const parsed = updateEventFieldSchema.parse({
       id: 'c9707ebf-a95d-4f42-ba04-bde679f92ed8',

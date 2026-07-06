@@ -3,7 +3,7 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
-import { useArchiveEventMutation } from '@/hooks/domain/events/mutations/useArchiveEventMutation';
+import { useRestoreEventToDraftMutation } from '@/hooks/domain/events/mutations/useRestoreEventToDraftMutation';
 import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
@@ -58,31 +58,31 @@ vi.mock('@/lib/domain/admin-audit', async () => {
   };
 });
 
-describe('useArchiveEventMutation', () => {
+describe('useRestoreEventToDraftMutation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdateBuilder.eq.mockResolvedValue({ error: null });
   });
 
-  it('archives an event, writes audit log, and invalidates events list', async () => {
+  it('restores an event to draft, writes audit log, and invalidates related queries', async () => {
     const eventId = faker.string.uuid();
-    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'published' } });
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'archived' } });
 
-    const { result, queryClient } = renderHookWithClient(() => useArchiveEventMutation());
+    const { result, queryClient } = renderHookWithClient(() => useRestoreEventToDraftMutation());
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await act(async () => {
       await result.current.mutateAsync(eventId);
     });
 
-    expect(mockUpdateBuilder.update).toHaveBeenCalledWith({ status: 'archived' });
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith({ status: 'draft' });
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
-      action: 'archive_event',
+      action: 'update_event',
       resourceType: 'event',
       resourceId: eventId,
       metadata: {
-        previous_status: 'published',
-        next_status: 'archived',
+        previous_status: 'archived',
+        next_status: 'draft',
       },
     });
 
@@ -96,7 +96,7 @@ describe('useArchiveEventMutation', () => {
     const eventId = faker.string.uuid();
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: null });
 
-    const { result } = renderHookWithClient(() => useArchiveEventMutation());
+    const { result } = renderHookWithClient(() => useRestoreEventToDraftMutation());
 
     await act(async () => {
       await result.current.mutateAsync(eventId);
@@ -106,18 +106,18 @@ describe('useArchiveEventMutation', () => {
       expect.objectContaining({
         metadata: {
           previous_status: null,
-          next_status: 'archived',
+          next_status: 'draft',
         },
       }),
     );
   });
 
-  it('throws when archive update fails', async () => {
+  it('throws when update fails and does not write audit log', async () => {
     const eventId = faker.string.uuid();
-    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'open' } });
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({ data: { status: 'archived' } });
     mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') });
 
-    const { result, queryClient } = renderHookWithClient(() => useArchiveEventMutation());
+    const { result, queryClient } = renderHookWithClient(() => useRestoreEventToDraftMutation());
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await expect(result.current.mutateAsync(eventId)).rejects.toThrow('update failed');

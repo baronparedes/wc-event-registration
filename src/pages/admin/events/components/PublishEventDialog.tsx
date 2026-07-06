@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
+import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { areAllRequirementsMet, getPublishRequirements } from '@/lib/domain/events';
 import type { AdminEvent } from '@/lib/domain/events';
@@ -84,20 +85,38 @@ type PublishActionButtonProps = {
   event: AdminEvent;
   isPending: boolean;
   onPublish: (eventId: string, eventTitle: string) => void;
+  triggerStyle?: 'action' | 'button';
 };
 
 /**
  * Publish button that opens a dialog showing requirements checklist.
  * Manages both button rendering and dialog state internally.
  */
-export function PublishActionButton({ event, isPending, onPublish }: PublishActionButtonProps) {
+export function PublishActionButton({
+  event,
+  isPending,
+  onPublish,
+  triggerStyle = 'action',
+}: PublishActionButtonProps) {
   const [selectedEvent, setSelectedEvent] = useState<AdminEvent | null>(null);
 
   return (
     <>
-      <ActionButton variant="default" onClick={() => setSelectedEvent(event)}>
-        Publish
-      </ActionButton>
+      {triggerStyle === 'button' ? (
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          disabled={isPending}
+          onClick={() => setSelectedEvent(event)}
+        >
+          Publish
+        </Button>
+      ) : (
+        <ActionButton variant="default" onClick={() => setSelectedEvent(event)}>
+          Publish
+        </ActionButton>
+      )}
       <PublishEventModal
         eventData={selectedEvent}
         isPending={isPending}

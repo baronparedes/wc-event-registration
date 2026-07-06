@@ -192,6 +192,14 @@ export function parseMaxSlotRoleAllotmentsByOption(
             Number.isInteger(rawLimit) &&
             rawLimit > 0
           ) {
+            if (normalizedRole === '*') {
+              return { '*': rawLimit };
+            }
+
+            if (roleAcc['*'] !== undefined) {
+              return roleAcc;
+            }
+
             roleAcc[normalizedRole] = rawLimit;
           }
 
@@ -223,6 +231,14 @@ export function parseMaxSlotRoleAllotmentsByOption(
             Number.isInteger(rawLimit) &&
             rawLimit > 0
           ) {
+            if (normalizedRole === '*') {
+              return { '*': rawLimit };
+            }
+
+            if (roleAcc['*'] !== undefined) {
+              return roleAcc;
+            }
+
             roleAcc[normalizedRole] = rawLimit;
           }
 
@@ -323,7 +339,8 @@ export function getSlotConsumingSelectionsWithoutRole(
 ): string[] {
   return constrainedSelections.filter((optionValue) => {
     const roleAllotmentsForOption = roleAllotmentsByOption[optionValue] ?? {};
-    return Object.keys(roleAllotmentsForOption).length === 0;
+    const wildcardAllotment = roleAllotmentsForOption['*'];
+    return Object.keys(roleAllotmentsForOption).length === 0 || wildcardAllotment !== undefined;
   });
 }
 

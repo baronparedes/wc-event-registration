@@ -14,6 +14,7 @@ type RendererHarnessProps = {
   field: PublicEventField;
   renderer: 'select' | 'radio' | 'multi' | 'toggle';
   defaultValues?: DynamicFieldResponseValues;
+  memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
 };
@@ -43,6 +44,7 @@ function Harness({
   field,
   renderer,
   defaultValues,
+  memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
 }: RendererHarnessProps) {
@@ -55,6 +57,7 @@ function Harness({
       <RadioFieldRenderer
         field={field}
         dynamicForm={dynamicForm}
+        memberRole={memberRole}
         remainingSlotsByOption={remainingSlotsByOption}
         remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
       />
@@ -66,6 +69,7 @@ function Harness({
       <MultiSelectFieldRenderer
         field={field}
         dynamicForm={dynamicForm}
+        memberRole={memberRole}
         remainingSlotsByOption={remainingSlotsByOption}
         remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
       />
@@ -77,6 +81,7 @@ function Harness({
       <MultiSelectToggleFieldRenderer
         field={field}
         dynamicForm={dynamicForm}
+        memberRole={memberRole}
         remainingSlotsByOption={remainingSlotsByOption}
         remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
       />
@@ -87,6 +92,7 @@ function Harness({
     <SelectFieldRenderer
       field={field}
       dynamicForm={dynamicForm}
+      memberRole={memberRole}
       remainingSlotsByOption={remainingSlotsByOption}
       remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
     />
@@ -176,6 +182,81 @@ describe('SelectFieldRenderer family', () => {
     );
 
     expect(screen.getByText('Leader: 1 slots left, Member: 2 slots left')).toBeInTheDocument();
+  });
+
+  it('uses wildcard remaining slots for labels and does not render role breakdown text', () => {
+    const field = createField({
+      field_key: 'meal_wildcard_label',
+      validation_rules: {
+        max_slots: {
+          nonveg: 4,
+        },
+        max_slots_role_allotments: {
+          nonveg: [{ role: '*', alloted_slots: 4 }],
+        },
+      },
+    });
+
+    render(
+      <Harness
+        field={field}
+        renderer="select"
+        remainingSlotsByOption={{ nonveg: 1 }}
+        remainingSlotsByRoleByOption={{ nonveg: { '*': 1 } }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('option', { name: 'Non-Vegetarian (1 slots left)' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\*:/)).not.toBeInTheDocument();
+  });
+
+  it('disables wildcard option when wildcard slots are exhausted', () => {
+    const field = createField({
+      field_key: 'meal_wildcard_disable',
+      validation_rules: {
+        max_slots_role_allotments: {
+          nonveg: [{ role: '*', alloted_slots: 2 }],
+        },
+      },
+    });
+
+    render(
+      <Harness
+        field={field}
+        renderer="select"
+        remainingSlotsByRoleByOption={{ nonveg: { '*': 0 } }}
+      />,
+    );
+
+    expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toBeDisabled();
+  });
+
+  it('keeps role-allotted option enabled when member role does not match configured roles', () => {
+    const field = createField({
+      field_key: 'meal_role_mismatch',
+      validation_rules: {
+        max_slots: {
+          nonveg: 1,
+        },
+        max_slots_role_allotments: {
+          nonveg: [{ role: 'Leader', alloted_slots: 1 }],
+        },
+      },
+    });
+
+    render(
+      <Harness
+        field={field}
+        renderer="select"
+        memberRole="Member"
+        remainingSlotsByOption={{ nonveg: 0 }}
+        remainingSlotsByRoleByOption={{ nonveg: { leader: 0 } }}
+      />,
+    );
+
+    expect(screen.getByRole('option', { name: /Non-Vegetarian/i })).not.toBeDisabled();
   });
 
   it('renders remaining slots as muted sub-label for card-style options', () => {

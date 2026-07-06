@@ -224,4 +224,52 @@ describe('validatePublicEventFieldConfig', () => {
       morning: [{ role: 'volunteer', alloted_slots: 4 }],
     });
   });
+
+  it('auto-resolves mixed role allotments by keeping wildcard only', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'timeslot',
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: [
+              { role: 'volunteer', alloted_slots: 4 },
+              { role: '*', alloted_slots: 2 },
+              { role: 'usher', alloted_slots: 3 },
+            ],
+          },
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.max_slots_role_allotments).toEqual({
+      morning: [{ role: '*', alloted_slots: 2 }],
+    });
+  });
+
+  it('prefers wildcard when legacy role-keyed object includes wildcard and named roles', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'timeslot',
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: {
+              volunteer: 4,
+              '*': 3,
+              usher: 2,
+            },
+          },
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.max_slots_role_allotments).toEqual({
+      morning: [{ role: '*', alloted_slots: 3 }],
+    });
+  });
 });

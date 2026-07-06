@@ -19,6 +19,16 @@ function normalizeRole(role: string | undefined): string | null {
   return normalizedRole ? normalizedRole : null;
 }
 
+function getConfiguredRoleAllotments(field: PublicEventField, optionValue: string) {
+  return field.validation_rules.max_slots_role_allotments?.[optionValue] ?? [];
+}
+
+function hasWildcardRoleAllotment(field: PublicEventField, optionValue: string): boolean {
+  return getConfiguredRoleAllotments(field, optionValue).some(
+    (entry) => entry.role.trim().toLowerCase() === '*',
+  );
+}
+
 function isOptionUnavailableForRole(
   field: PublicEventField,
   optionValue: string,
@@ -26,9 +36,23 @@ function isOptionUnavailableForRole(
   remainingSlotsByOption?: Record<string, number>,
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
 ): boolean {
-  const configuredRoleAllotments = field.validation_rules.max_slots_role_allotments?.[optionValue];
+  const configuredRoleAllotments = getConfiguredRoleAllotments(field, optionValue);
 
   if (configuredRoleAllotments && configuredRoleAllotments.length > 0) {
+    const wildcardEntry = configuredRoleAllotments.find(
+      (entry) => entry.role.trim().toLowerCase() === '*',
+    );
+
+    if (wildcardEntry) {
+      const remainingForWildcard = remainingSlotsByRoleByOption?.[optionValue]?.['*'];
+      const effectiveRemaining =
+        typeof remainingForWildcard === 'number'
+          ? remainingForWildcard
+          : wildcardEntry.alloted_slots;
+
+      return effectiveRemaining <= 0;
+    }
+
     const normalizedRole = normalizeRole(memberRole);
 
     if (!normalizedRole) {
@@ -40,8 +64,7 @@ function isOptionUnavailableForRole(
     );
 
     if (!matchingRoleEntry) {
-      const remainingForOption = remainingSlotsByOption?.[optionValue];
-      return typeof remainingForOption === 'number' ? remainingForOption <= 0 : false;
+      return false;
     }
 
     const remainingForRole = remainingSlotsByRoleByOption?.[optionValue]?.[normalizedRole];
@@ -79,9 +102,12 @@ function getOptionRoleRemainingLabel(
   option: { value: string; label: string },
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
 ): string | null {
-  const configuredRoleAllotments =
-    field.validation_rules.max_slots_role_allotments?.[option.value] ?? [];
+  const configuredRoleAllotments = getConfiguredRoleAllotments(field, option.value);
   if (configuredRoleAllotments.length === 0) {
+    return null;
+  }
+
+  if (hasWildcardRoleAllotment(field, option.value)) {
     return null;
   }
 

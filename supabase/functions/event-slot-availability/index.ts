@@ -244,9 +244,17 @@ Deno.serve(async (req) => {
         if (usedOptions.includes(optionValue)) {
           const roleAllotments = roleAllotmentsByOption[optionValue] ?? {};
           const hasRoleAllotments = Object.keys(roleAllotments).length > 0;
+          const wildcardCap = roleAllotments['*'];
 
           if (!hasRoleAllotments) {
             usageByOption[optionValue] = (usageByOption[optionValue] ?? 0) + 1;
+            continue;
+          }
+
+          if (typeof wildcardCap === 'number') {
+            usageByOption[optionValue] = (usageByOption[optionValue] ?? 0) + 1;
+            usageByOptionAndRole[optionValue]['*'] =
+              (usageByOptionAndRole[optionValue]['*'] ?? 0) + 1;
             continue;
           }
 
@@ -270,11 +278,17 @@ Deno.serve(async (req) => {
       for (const optionValue of constrainedOptionValues) {
         if (usedOptions.includes(optionValue)) {
           const roleAllotments = roleAllotmentsByOption[optionValue] ?? {};
-          if (Object.keys(roleAllotments).length > 0) {
+          const wildcardCap = roleAllotments['*'];
+
+          if (Object.keys(roleAllotments).length > 0 && typeof wildcardCap !== 'number') {
             continue;
           }
 
           usageByOption[optionValue] = (usageByOption[optionValue] ?? 0) + 1;
+          if (typeof wildcardCap === 'number') {
+            usageByOptionAndRole[optionValue]['*'] =
+              (usageByOptionAndRole[optionValue]['*'] ?? 0) + 1;
+          }
         }
       }
     }

@@ -242,6 +242,10 @@ Deno.serve(async (req) => {
 
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
+    let registrationId: string | null = null;
+    let status: 'submitted' | 'updated' = 'submitted';
+    let isNew = true;
+    let shouldWriteAnswers = true;
 
     // Step 2: Fetch event fields for validation
     const { data: fieldsData, error: fieldsError } = await supabase
@@ -296,8 +300,7 @@ Deno.serve(async (req) => {
         slotConsumingSelectionsWithoutRole: slotConsumingSelections,
       } = workItem;
 
-      // When role allotments are configured for an option, unmatched roles should not consume slots.
-      // Public registrations do not have member roles, so those options are excluded from slot usage.
+      // Public registrations consume slots for global-cap options and wildcard-role options.
       if (slotConsumingSelections.length === 0) {
         continue;
       }
@@ -371,10 +374,6 @@ Deno.serve(async (req) => {
     }
 
     // Step 4: Insert or update registration
-    let registrationId: string | null = null;
-    let status: 'submitted' | 'updated' = 'submitted';
-    let isNew = true;
-    let shouldWriteAnswers = true;
 
     const { data: newReg, error: createError } = await supabase
       .from('public_registrations')

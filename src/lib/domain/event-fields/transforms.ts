@@ -15,23 +15,52 @@ type RoleAllotmentFormEntry = {
   alloted_slots: string;
 };
 
-function parseRoleAllotments(roleAllotments: RoleAllotmentFormEntry[]): RoleAllotmentEntry[] {
-  const dedupedByRole = new Map<string, RoleAllotmentEntry>();
+const WILDCARD_ROLE = '*';
 
-  for (const entry of roleAllotments) {
+function normalizeRoleAllotmentFormEntries(
+  entries: RoleAllotmentFormEntry[],
+): RoleAllotmentFormEntry[] {
+  const dedupedByRole = new Map<string, RoleAllotmentFormEntry>();
+
+  for (const entry of entries) {
     const role = entry.role.trim();
     if (role.length === 0) {
       continue;
     }
 
-    const rawLimit = entry.alloted_slots.trim();
-    const parsed = parseInt(rawLimit, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      dedupedByRole.set(role.toLowerCase(), { role, alloted_slots: parsed });
+    const parsedSlots = parseInt(entry.alloted_slots.trim(), 10);
+    if (!Number.isFinite(parsedSlots) || parsedSlots <= 0) {
+      continue;
     }
+
+    const normalizedRole = role === WILDCARD_ROLE ? WILDCARD_ROLE : role.toLowerCase();
+    if (normalizedRole === WILDCARD_ROLE) {
+      dedupedByRole.clear();
+      dedupedByRole.set(WILDCARD_ROLE, {
+        role: WILDCARD_ROLE,
+        alloted_slots: String(parsedSlots),
+      });
+      continue;
+    }
+
+    if (dedupedByRole.has(WILDCARD_ROLE)) {
+      continue;
+    }
+
+    dedupedByRole.set(normalizedRole, {
+      role,
+      alloted_slots: String(parsedSlots),
+    });
   }
 
   return Array.from(dedupedByRole.values());
+}
+
+function parseRoleAllotments(roleAllotments: RoleAllotmentFormEntry[]): RoleAllotmentEntry[] {
+  return normalizeRoleAllotmentFormEntries(roleAllotments).map((entry) => ({
+    role: entry.role,
+    alloted_slots: parseInt(entry.alloted_slots, 10),
+  }));
 }
 
 function formatRoleAllotments(allotments: unknown): RoleAllotmentFormEntry[] {
@@ -65,7 +94,7 @@ function formatRoleAllotments(allotments: unknown): RoleAllotmentFormEntry[] {
       })
       .filter((entry): entry is RoleAllotmentFormEntry => Boolean(entry));
 
-    return parsedEntries;
+    return normalizeRoleAllotmentFormEntries(parsedEntries);
   }
 
   // Backward compatibility for legacy role-keyed object shape.
@@ -90,7 +119,7 @@ function formatRoleAllotments(allotments: unknown): RoleAllotmentFormEntry[] {
       })
       .filter((entry): entry is RoleAllotmentFormEntry => Boolean(entry));
 
-    return parsedEntries;
+    return normalizeRoleAllotmentFormEntries(parsedEntries);
   }
 
   return [];

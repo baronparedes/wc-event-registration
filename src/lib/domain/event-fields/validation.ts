@@ -187,11 +187,39 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
 
   const maxSlotsRoleAllotments = field.validation_rules.max_slots_role_allotments;
   if (isRecord(maxSlotsRoleAllotments)) {
+    const normalizeRoleAllotments = (
+      entries: Array<{ role: string; alloted_slots: number }>,
+    ): Array<{ role: string; alloted_slots: number }> => {
+      const dedupedEntries = new Map<string, { role: string; alloted_slots: number }>();
+
+      for (const entry of entries) {
+        const role = entry.role.trim();
+        if (role.length === 0) {
+          continue;
+        }
+
+        const normalizedRole = role === '*' ? '*' : role.toLowerCase();
+        if (normalizedRole === '*') {
+          dedupedEntries.clear();
+          dedupedEntries.set('*', { role: '*', alloted_slots: entry.alloted_slots });
+          continue;
+        }
+
+        if (dedupedEntries.has('*')) {
+          continue;
+        }
+
+        dedupedEntries.set(normalizedRole, { role, alloted_slots: entry.alloted_slots });
+      }
+
+      return Array.from(dedupedEntries.values());
+    };
+
     const parsedRoleAllotments = Object.entries(maxSlotsRoleAllotments).reduce<
       Record<string, Array<{ role: string; alloted_slots: number }>>
     >((acc, [optionValue, rawEntries]) => {
       if (Array.isArray(rawEntries)) {
-        const dedupedEntries = new Map<string, { role: string; alloted_slots: number }>();
+        const normalizedEntries: Array<{ role: string; alloted_slots: number }> = [];
 
         for (const entry of rawEntries) {
           if (!isRecord(entry)) {
@@ -210,11 +238,11 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
             Number.isInteger(rawLimit) &&
             rawLimit > 0
           ) {
-            dedupedEntries.set(role.toLowerCase(), { role, alloted_slots: rawLimit });
+            normalizedEntries.push({ role, alloted_slots: rawLimit });
           }
         }
 
-        const sanitizedEntries = Array.from(dedupedEntries.values());
+        const sanitizedEntries = normalizeRoleAllotments(normalizedEntries);
         if (sanitizedEntries.length > 0) {
           acc[optionValue] = sanitizedEntries;
         }
@@ -227,7 +255,7 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
         return acc;
       }
 
-      const dedupedEntries = new Map<string, { role: string; alloted_slots: number }>();
+      const normalizedEntries: Array<{ role: string; alloted_slots: number }> = [];
       for (const [roleKey, rawLimit] of Object.entries(rawEntries)) {
         const role = roleKey.trim();
         if (role.length === 0) {
@@ -240,11 +268,11 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
           Number.isInteger(rawLimit) &&
           rawLimit > 0
         ) {
-          dedupedEntries.set(role.toLowerCase(), { role, alloted_slots: rawLimit });
+          normalizedEntries.push({ role, alloted_slots: rawLimit });
         }
       }
 
-      const sanitizedEntries = Array.from(dedupedEntries.values());
+      const sanitizedEntries = normalizeRoleAllotments(normalizedEntries);
       if (sanitizedEntries.length > 0) {
         acc[optionValue] = sanitizedEntries;
       }

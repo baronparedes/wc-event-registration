@@ -4,6 +4,7 @@ import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
 import { publishEventSchema } from '@/lib/domain/events';
 import { supabase } from '@/lib/infrastructure';
 
+import { adminEventQueryKey } from '../queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
 
 export interface PublishValidationError {
@@ -73,8 +74,9 @@ export function usePublishEventMutation() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: adminEventQueryKey(id) });
     },
   });
 }

@@ -148,6 +148,22 @@ export const eventFieldFormSchema = z
             });
           }
         });
+
+        const normalizedRoles = option.role_allotments
+          .map((allotment) => allotment.role.trim().toLowerCase())
+          .filter((role) => role.length > 0);
+
+        const hasWildcardRole = normalizedRoles.includes('*');
+        const hasNonWildcardRoles = normalizedRoles.some((role) => role !== '*');
+
+        if (hasWildcardRole && hasNonWildcardRoles) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Wildcard role (*) is universal. Remove other role allotments for this option.',
+            path: ['options', index, 'role_allotments'],
+          });
+        }
       });
     }
 

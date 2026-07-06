@@ -247,6 +247,25 @@ describe('event-fields transforms', () => {
     ]);
   });
 
+  it('auto-resolves mixed role allotments to wildcard only in form values', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        field_type: 'multi_select',
+        options: [{ label: 'Morning', value: 'morning' }],
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: [
+              { role: 'Volunteer', alloted_slots: 3 },
+              { role: '*', alloted_slots: 7 },
+            ],
+          },
+        },
+      }),
+    );
+
+    expect(values.options[0]?.role_allotments).toEqual([{ role: '*', alloted_slots: '7' }]);
+  });
+
   it('maps legacy role-keyed object allotments into form values', () => {
     const values = fieldToFormValues(
       makeAdminField({
@@ -369,6 +388,50 @@ describe('event-fields transforms', () => {
       max_slots_role_allotments: {
         morning: [{ role: 'Prayer Coach', alloted_slots: 50 }],
         evening: [{ role: 'Backroom', alloted_slots: 10 }],
+      },
+    });
+  });
+
+  it('keeps wildcard role allotment as the single role and derives max slots from wildcard', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'timeslot',
+      label: 'Timeslot',
+      field_type: 'multi_select',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [
+        {
+          label: 'Morning',
+          value: 'morning',
+          toggle_label: '',
+          max_slots: '',
+          role_allotments: [
+            { role: 'Prayer Coach', alloted_slots: '20' },
+            { role: '*', alloted_slots: '8' },
+          ],
+        },
+      ],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+    };
+
+    const rules = toValidationRules(values);
+
+    expect(rules).toEqual({
+      max_slots: {
+        morning: 8,
+      },
+      max_slots_role_allotments: {
+        morning: [{ role: '*', alloted_slots: 8 }],
       },
     });
   });

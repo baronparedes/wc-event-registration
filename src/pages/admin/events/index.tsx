@@ -2,11 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, EmptyState } from '@/components/ui';
-import { ActionConfirmButton } from '@/components/ui/ActionConfirmButton';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import {
@@ -23,21 +21,16 @@ import {
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
-  TOAST_MESSAGES,
   UI_MESSAGES,
   toAdminEventAttendance,
   toAdminEventDetail,
   toAdminEventFields,
   toAdminEventRegistrations,
 } from '@/config/constants';
-import {
-  useAdminEventsQuery,
-  useArchiveEventMutation,
-  usePublishEventMutation,
-} from '@/hooks/domain/events';
+import { useAdminEventsQuery } from '@/hooks/domain/events';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
-import { DuplicatePolicyLabel, EventStatusBadge, PublishActionButton } from './components';
+import { DuplicatePolicyLabel, EventStatusBadge } from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
@@ -66,28 +59,6 @@ export function AdminEventsPage() {
 
   const isLoading = eventsQuery.isLoading;
   const error = eventsQuery.error;
-  const publishMutation = usePublishEventMutation();
-  const archiveMutation = useArchiveEventMutation();
-
-  async function handlePublish(eventId: string, eventTitle: string) {
-    try {
-      await publishMutation.mutateAsync(eventId);
-      toast.success(TOAST_MESSAGES.eventSaved.published(eventTitle));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.publishFailed;
-      toast.error(message);
-    }
-  }
-
-  async function handleArchive(eventId: string, eventTitle: string) {
-    try {
-      await archiveMutation.mutateAsync(eventId);
-      toast.success(TOAST_MESSAGES.eventSaved.archived(eventTitle));
-    } catch {
-      toast.error(TOAST_MESSAGES.eventSaved.archiveFailed);
-    }
-  }
 
   function handleNextPage() {
     if (!nextCursor) return;
@@ -231,33 +202,6 @@ export function AdminEventsPage() {
                         <ActionLink to={toAdminEventRegistrations(event.id)}>
                           Registrations
                         </ActionLink>
-                        {event.status === 'draft' && (
-                          <PublishActionButton
-                            event={event}
-                            isPending={publishMutation.isPending}
-                            onPublish={handlePublish}
-                          />
-                        )}
-                        {event.status !== 'archived' && (
-                          <ActionConfirmButton
-                            variant="destructive"
-                            title="Archive Event"
-                            description={
-                              <>
-                                Are you sure you want to archive{' '}
-                                <span className="font-medium text-text">"{event.title}"</span>?
-                                Archived events are no longer visible to the public. You can publish
-                                the event again to restore it.
-                              </>
-                            }
-                            confirmLabel="Archive"
-                            confirmLoadingLabel="Archiving..."
-                            isPending={archiveMutation.isPending}
-                            onConfirm={() => handleArchive(event.id, event.title)}
-                          >
-                            Archive
-                          </ActionConfirmButton>
-                        )}
                       </div>
                     </ListTableCell>
                   </ListTableRow>

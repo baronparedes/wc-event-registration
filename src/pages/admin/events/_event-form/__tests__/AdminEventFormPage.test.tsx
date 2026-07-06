@@ -10,6 +10,9 @@ const {
   mockUseAdminEventQuery,
   mockCreateMutateAsync,
   mockUpdateMutateAsync,
+  mockPublishMutateAsync,
+  mockArchiveMutateAsync,
+  mockRestoreToDraftMutateAsync,
   mockToastSuccess,
   mockToastError,
 } = vi.hoisted(() => ({
@@ -18,6 +21,9 @@ const {
   mockUseAdminEventQuery: vi.fn(),
   mockCreateMutateAsync: vi.fn(),
   mockUpdateMutateAsync: vi.fn(),
+  mockPublishMutateAsync: vi.fn(),
+  mockArchiveMutateAsync: vi.fn(),
+  mockRestoreToDraftMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
@@ -54,6 +60,18 @@ vi.mock('@/hooks/domain/events', async () => {
       mutateAsync: mockUpdateMutateAsync,
       isPending: false,
     }),
+    usePublishEventMutation: () => ({
+      mutateAsync: mockPublishMutateAsync,
+      isPending: false,
+    }),
+    useArchiveEventMutation: () => ({
+      mutateAsync: mockArchiveMutateAsync,
+      isPending: false,
+    }),
+    useRestoreEventToDraftMutation: () => ({
+      mutateAsync: mockRestoreToDraftMutateAsync,
+      isPending: false,
+    }),
   };
 });
 
@@ -88,6 +106,9 @@ describe('AdminEventFormPage', () => {
     });
     mockUpdateMutateAsync.mockResolvedValue(undefined);
     mockCreateMutateAsync.mockResolvedValue(undefined);
+    mockPublishMutateAsync.mockResolvedValue(undefined);
+    mockArchiveMutateAsync.mockResolvedValue(undefined);
+    mockRestoreToDraftMutateAsync.mockResolvedValue(undefined);
   });
 
   it('renders loading and not-found states for edit mode', () => {
@@ -265,5 +286,113 @@ describe('AdminEventFormPage', () => {
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Event updated successfully.');
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events');
+  });
+
+  it('shows Publish action in edit mode for draft events and publishes successfully', async () => {
+    renderWithRouter('edit');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(await screen.findByRole('heading', { name: 'Publish Event' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publish Event' }));
+
+    await waitFor(() => {
+      expect(mockPublishMutateAsync).toHaveBeenCalledWith('event-1');
+    });
+    expect(mockToastSuccess).toHaveBeenCalledWith('"Original Event" has been published.');
+  });
+
+  it('shows Archive action in edit mode and archives successfully', async () => {
+    renderWithRouter('edit');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Archive' }))[1]);
+
+    await waitFor(() => {
+      expect(mockArchiveMutateAsync).toHaveBeenCalledWith('event-1');
+    });
+    expect(mockToastSuccess).toHaveBeenCalledWith('"Original Event" has been archived.');
+  });
+
+  it('hides Publish action for published and archived events', () => {
+    mockUseAdminEventQuery.mockReturnValue({
+      data: {
+        id: 'event-1',
+        title: 'Published Event',
+        slug: 'published-event',
+        description: 'Existing description',
+        location: 'Main Hall',
+        starts_at: '2026-07-01T10:00:00.000Z',
+        ends_at: '2026-07-01T12:00:00.000Z',
+        registration_opens_at: '2026-06-01T10:00:00.000Z',
+        registration_closes_at: '2026-06-30T10:00:00.000Z',
+        status: 'published',
+        duplicate_policy: 'block',
+        registration_mode: 'open',
+      },
+      isLoading: false,
+    });
+
+    const { rerender } = renderWithRouter('edit');
+    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument();
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: {
+        id: 'event-1',
+        title: 'Archived Event',
+        slug: 'archived-event',
+        description: 'Existing description',
+        location: 'Main Hall',
+        starts_at: '2026-07-01T10:00:00.000Z',
+        ends_at: '2026-07-01T12:00:00.000Z',
+        registration_opens_at: '2026-06-01T10:00:00.000Z',
+        registration_closes_at: '2026-06-30T10:00:00.000Z',
+        status: 'archived',
+        duplicate_policy: 'block',
+        registration_mode: 'open',
+      },
+      isLoading: false,
+    });
+
+    rerender(
+      <MemoryRouter>
+        <AdminEventFormPage mode="edit" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move to Draft' })).toBeInTheDocument();
+  });
+
+  it('moves archived event back to draft', async () => {
+    mockUseAdminEventQuery.mockReturnValue({
+      data: {
+        id: 'event-1',
+        title: 'Archived Event',
+        slug: 'archived-event',
+        description: 'Existing description',
+        location: 'Main Hall',
+        starts_at: '2026-07-01T10:00:00.000Z',
+        ends_at: '2026-07-01T12:00:00.000Z',
+        registration_opens_at: '2026-06-01T10:00:00.000Z',
+        registration_closes_at: '2026-06-30T10:00:00.000Z',
+        status: 'archived',
+        duplicate_policy: 'block',
+        registration_mode: 'open',
+      },
+      isLoading: false,
+    });
+
+    renderWithRouter('edit');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move to Draft' }));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Move to Draft' }))[1]);
+
+    await waitFor(() => {
+      expect(mockRestoreToDraftMutateAsync).toHaveBeenCalledWith('event-1');
+    });
+    expect(mockToastSuccess).toHaveBeenCalledWith('"Archived Event" has been moved to draft.');
   });
 });

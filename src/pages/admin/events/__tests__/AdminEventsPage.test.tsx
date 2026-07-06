@@ -6,29 +6,14 @@ import { AdminEventsPage } from '@/pages/admin/events';
 
 const {
   mockUseAdminEventsQuery,
-  mockPublishMutateAsync,
-  mockArchiveMutateAsync,
-  mockToastSuccess,
-  mockToastError,
   mockGetCurrentPageFromCursor,
   mockGetPageCursor,
   mockPaginationProps,
 } = vi.hoisted(() => ({
   mockUseAdminEventsQuery: vi.fn(),
-  mockPublishMutateAsync: vi.fn(),
-  mockArchiveMutateAsync: vi.fn(),
-  mockToastSuccess: vi.fn(),
-  mockToastError: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
   mockGetPageCursor: vi.fn(),
   mockPaginationProps: vi.fn(),
-}));
-
-vi.mock('sonner', () => ({
-  toast: {
-    success: mockToastSuccess,
-    error: mockToastError,
-  },
 }));
 
 vi.mock('@/hooks/domain/events', async () => {
@@ -37,8 +22,6 @@ vi.mock('@/hooks/domain/events', async () => {
   return {
     ...actual,
     useAdminEventsQuery: (...args: unknown[]) => mockUseAdminEventsQuery(...args),
-    usePublishEventMutation: () => ({ mutateAsync: mockPublishMutateAsync, isPending: false }),
-    useArchiveEventMutation: () => ({ mutateAsync: mockArchiveMutateAsync, isPending: false }),
   };
 });
 
@@ -91,22 +74,6 @@ vi.mock('@/components/ui/AdminPaginationControls', () => ({
 vi.mock('@/pages/admin/events/components', () => ({
   EventStatusBadge: (props: { status: string }) => <div>{props.status}</div>,
   DuplicatePolicyLabel: (props: { policy: string }) => <div>{props.policy}</div>,
-  PublishActionButton: (props: {
-    event: { id: string; title: string };
-    onPublish: (id: string, title: string) => void;
-  }) => (
-    <button type="button" onClick={() => props.onPublish(props.event.id, props.event.title)}>
-      Publish
-    </button>
-  ),
-}));
-
-vi.mock('@/components/ui/ActionConfirmButton', () => ({
-  ActionConfirmButton: (props: { onConfirm: () => void; children: string }) => (
-    <button type="button" onClick={props.onConfirm}>
-      {props.children}
-    </button>
-  ),
 }));
 
 describe('AdminEventsPage', () => {
@@ -134,11 +101,9 @@ describe('AdminEventsPage', () => {
       isLoading: false,
       error: null,
     });
-    mockPublishMutateAsync.mockResolvedValue(undefined);
-    mockArchiveMutateAsync.mockResolvedValue(undefined);
   });
 
-  it('renders event rows and handles publish/archive actions', async () => {
+  it('renders event rows without publish/archive actions', () => {
     render(
       <MemoryRouter>
         <AdminEventsPage />
@@ -147,17 +112,8 @@ describe('AdminEventsPage', () => {
 
     expect(screen.getByText('Sample Event')).toBeInTheDocument();
     expect(screen.getByText('sample-event')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
-
-    await waitFor(() => {
-      expect(mockPublishMutateAsync).toHaveBeenCalledWith('event-1');
-      expect(mockArchiveMutateAsync).toHaveBeenCalledWith('event-1');
-    });
-
-    expect(mockToastSuccess).toHaveBeenCalledWith('"Sample Event" has been published.');
-    expect(mockToastSuccess).toHaveBeenCalledWith('"Sample Event" has been archived.');
+    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument();
   });
 
   it('renders loading, error, and empty states', () => {
@@ -208,25 +164,6 @@ describe('AdminEventsPage', () => {
 
     expect(screen.getByText('No events yet')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create Event' })).toBeInTheDocument();
-  });
-
-  it('shows publish and archive error toasts when mutations fail', async () => {
-    mockPublishMutateAsync.mockRejectedValueOnce(new Error('publish failed'));
-    mockArchiveMutateAsync.mockRejectedValueOnce(new Error('archive failed'));
-
-    render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
-
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('publish failed');
-      expect(mockToastError).toHaveBeenCalledWith('Failed to archive event. Please try again.');
-    });
   });
 
   it('wires pagination handlers to cursor helper functions', () => {
@@ -286,5 +223,43 @@ describe('AdminEventsPage', () => {
         expect.objectContaining({ searchTerm: 'sample' }),
       );
     });
+  });
+
+  it('keeps clear disabled when search is empty and resets search when clicked', async () => {
+    render(
+      <MemoryRouter>
+        <AdminEventsPage />
+      </MemoryRouter>,
+    );
+
+    const clearButton = screen.getByRole('button', { name: 'Clear' });
+    expect(clearButton).toBeDisabled();
+
+    const searchInput = screen.getByPlaceholderText('Search by event title or slug');
+    fireEvent.change(searchInput, { target: { value: 'sample' } });
+
+    await waitFor(() => {
+      expect(clearButton).toBeEnabled();
+    });
+
+    fireEvent.click(clearButton);
+
+    await waitFor(() => {
+      expect(mockUseAdminEventsQuery).toHaveBeenLastCalledWith(
+        expect.objectContaining({ searchTerm: '' }),
+      );
+    });
+  });
+
+  it('does not advance page when next cursor is missing', () => {
+    render(
+      <MemoryRouter>
+        <AdminEventsPage />
+      </MemoryRouter>,
+    );
+
+    const beforeCalls = mockUseAdminEventsQuery.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(mockUseAdminEventsQuery.mock.calls.length).toBe(beforeCalls);
   });
 });

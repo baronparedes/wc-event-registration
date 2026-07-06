@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeAdminEvent } from '@/__tests__/factories';
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { usePublishEventMutation } from '@/hooks/domain/events/mutations/usePublishEventMutation';
+import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
 const { mockSelectBuilder, mockUpdateBuilder, mockFrom, mockWriteAdminAuditLogSafely } = vi.hoisted(
@@ -102,6 +103,7 @@ describe('usePublishEventMutation', () => {
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventQueryKey(event.id) });
     });
   });
 
