@@ -15,6 +15,7 @@ export const ROUTE_PATHS = {
   adminEventAttendanceDataPattern: '/admin/events/:id/attendance/data',
   adminEventFieldsPattern: '/admin/events/:id/fields',
   adminEventRegistrationsPattern: '/admin/events/:id/registrations',
+  adminRegistrationNamesPattern: '/admin/events/:id/registrations/names',
   adminEventPublicRegistrationsPattern: '/admin/events/:id/public-registrations',
   adminRegistrationDetailPattern: '/admin/events/:id/registrations/:registration_id',
   adminPublicRegistrationDetailPattern: '/admin/events/:id/public-registrations/:registration_id',
@@ -62,6 +63,18 @@ export function toAdminEventAttendanceData(eventId: string): string {
 
 export function toAdminEventRegistrations(eventId: string): string {
   return `/admin/events/${eventId}/registrations`;
+}
+
+export function toAdminRegistrationNames(
+  eventId: string,
+  params: { fields: string[]; answerFields: string[] },
+): string {
+  const searchParams = new URLSearchParams();
+  searchParams.set('fields', params.fields.join(','));
+  if (params.answerFields.length > 0) {
+    searchParams.set('answerFields', params.answerFields.join(','));
+  }
+  return `/admin/events/${eventId}/registrations/names?${searchParams.toString()}`;
 }
 
 export function toAdminEventPublicRegistrations(eventId: string): string {

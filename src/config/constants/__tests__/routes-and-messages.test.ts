@@ -9,6 +9,7 @@ import {
   toAdminEventRegistrations,
   toAdminMemberDetail,
   toAdminRegistrationDetail,
+  toAdminRegistrationNames,
   toEventRegistration,
 } from '@/config/constants/routes';
 
@@ -19,6 +20,7 @@ describe('route constants and builders', () => {
     expect(ROUTE_PATHS.adminRegistrationDetailPattern).toBe(
       '/admin/events/:id/registrations/:registration_id',
     );
+    expect(ROUTE_PATHS.adminRegistrationNamesPattern).toBe('/admin/events/:id/registrations/names');
     expect(ROUTE_PREFIXES.admin).toBe('/admin/');
   });
 
@@ -31,6 +33,33 @@ describe('route constants and builders', () => {
     expect(toAdminRegistrationDetail('event-1', 'reg-1')).toBe(
       '/admin/events/event-1/registrations/reg-1',
     );
+  });
+
+  describe('toAdminRegistrationNames', () => {
+    it('builds URL with only core fields', () => {
+      const url = toAdminRegistrationNames('event-1', {
+        fields: ['full_name', 'member_id'],
+        answerFields: [],
+      });
+      expect(url).toBe('/admin/events/event-1/registrations/names?fields=full_name%2Cmember_id');
+    });
+
+    it('includes answerFields param when provided', () => {
+      const url = toAdminRegistrationNames('event-1', {
+        fields: ['full_name'],
+        answerFields: ['field-uuid-1', 'field-uuid-2'],
+      });
+      expect(url).toContain('fields=full_name');
+      expect(url).toContain('answerFields=field-uuid-1%2Cfield-uuid-2');
+    });
+
+    it('omits answerFields param when empty', () => {
+      const url = toAdminRegistrationNames('event-1', {
+        fields: ['full_name'],
+        answerFields: [],
+      });
+      expect(url).not.toContain('answerFields');
+    });
   });
 });
 

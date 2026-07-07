@@ -18,7 +18,7 @@ import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-import { CopyNamesButton, ExportButton, RegistrationsList } from './components';
+import { CopyNamesButton, ExportButton, RegistrationsList, ViewNamesButton } from './components';
 
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
@@ -132,6 +132,7 @@ export function AdminRegistrationsPage() {
         eventTitle={event?.title}
         disabled={isLoading || !hasRegistrations}
       />
+      <ViewNamesButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
       <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
     </div>
   );

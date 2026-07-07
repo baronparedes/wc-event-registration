@@ -33,6 +33,8 @@ export const TOAST_MESSAGES = {
     namesCopied: (count: number) =>
       `Copied ${count} registration${count === 1 ? '' : 's'} to clipboard.`,
     copyNamesFailed: 'Failed to copy registration names',
+    viewNamesFailed: 'Failed to load registration names',
+    viewNamesEmpty: 'No registrations found for this event',
   },
 } as const;
 

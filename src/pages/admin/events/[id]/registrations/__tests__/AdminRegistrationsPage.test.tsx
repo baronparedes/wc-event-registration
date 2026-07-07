@@ -105,6 +105,11 @@ vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
       Copy Names
     </button>
   ),
+  ViewNamesButton: (props: { disabled?: boolean }) => (
+    <button type="button" disabled={props.disabled}>
+      View Names
+    </button>
+  ),
   ExportButton: (props: { disabled?: boolean }) => (
     <button type="button" disabled={props.disabled}>
       Export as CSV

@@ -87,6 +87,11 @@ const AdminRegistrationDetailPage = lazy(() =>
     default: module.AdminRegistrationDetailPage,
   })),
 );
+const AdminRegistrationNamesPage = lazy(() =>
+  import('../pages/admin/events/[id]/registrations/names').then((module) => ({
+    default: module.AdminRegistrationNamesPage,
+  })),
+);
 const NotFoundPage = lazy(() =>
   import('../pages/not-found').then((module) => ({ default: module.NotFoundPage })),
 );
@@ -319,6 +324,17 @@ export function AppRouter() {
           }
         />
       </Route>
+
+      <Route
+        path={ROUTE_PATHS.adminRegistrationNamesPattern}
+        element={
+          <RequireAdminAuth>
+            <LazyRoute>
+              <AdminRegistrationNamesPage />
+            </LazyRoute>
+          </RequireAdminAuth>
+        }
+      />
 
       <Route
         path={ROUTE_PATHS.notFound}
