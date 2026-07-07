@@ -2,17 +2,13 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Col } from '@/components/ui/Grid';
-import { Grid } from '@/components/ui/Grid';
 import { TOAST_MESSAGES } from '@/config/constants';
 import { toAdminRegistrationNames } from '@/config/constants';
 import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
-import {
-  REGISTRATION_SHARE_FIELDS,
-  REGISTRATION_SHARE_FIELD_LABELS,
-  type RegistrationShareField,
-} from '@/lib/domain/registrations';
+import { type RegistrationShareField } from '@/lib/domain/registrations';
+
+import { RegistrationFieldSelector } from './RegistrationFieldSelector';
 
 interface ViewNamesButtonProps {
   eventId: string;
@@ -114,87 +110,19 @@ export function ViewNamesButton({ eventId, disabled = false }: ViewNamesButtonPr
         title="View Registration Names"
         maxWidthClass="max-w-md sm:max-w-5xl"
         description={
-          <div className="space-y-3">
-            <p>Select fields to include in the printable view.</p>
-
-            <div className="space-y-3">
-              <div className="space-y-2 rounded-xl border border-border p-3">
-                <p className="text-sm font-semibold text-text">Core fields</p>
-                <Grid base={1} md={3} gapClassName="gap-x-2 gap-y-3">
-                  {REGISTRATION_SHARE_FIELDS.map((field) => (
-                    <Col key={field}>
-                      <label className="flex min-w-0 items-center gap-2 text-sm text-text">
-                        <input
-                          type="checkbox"
-                          checked={selectedFields.includes(field)}
-                          onChange={() => handleToggleField(field)}
-                          className="!h-4 !w-4 min-h-0 shrink-0 self-start rounded border-border p-0 m-0 text-primary focus:ring-primary/40"
-                        />
-                        <span className="min-w-0 break-words leading-4">
-                          {REGISTRATION_SHARE_FIELD_LABELS[field]}
-                        </span>
-                      </label>
-                    </Col>
-                  ))}
-                </Grid>
-              </div>
-
-              {answerFieldOptions.length > 0 ? (
-                <div className="space-y-2 rounded-xl border border-border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-text">Dynamic fields</p>
-                    <span className="text-xs text-muted">
-                      {selectedAnswerFieldIds.length} selected
-                    </span>
-                  </div>
-
-                  <input
-                    type="search"
-                    value={dynamicFieldSearch}
-                    onChange={(event) => setDynamicFieldSearch(event.target.value)}
-                    placeholder="Search dynamic fields"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-                  />
-
-                  <div className="max-h-64 overflow-y-auto pr-1">
-                    {filteredAnswerFieldOptions.length > 0 ? (
-                      <Grid base={1} md={3} gapClassName="gap-x-2 gap-y-3">
-                        {filteredAnswerFieldOptions.map((field) => (
-                          <Col key={field.field_id}>
-                            <label className="flex min-w-0 items-center gap-2 text-sm text-text">
-                              <input
-                                type="checkbox"
-                                checked={selectedAnswerFieldIds.includes(field.field_id)}
-                                onChange={() => handleToggleAnswerField(field.field_id)}
-                                className="!h-4 !w-4 min-h-0 shrink-0 self-start rounded border-border p-0 m-0 text-primary focus:ring-primary/40"
-                              />
-                              <span className="min-w-0 break-words leading-4">{field.label}</span>
-                            </label>
-                          </Col>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <p className="text-xs text-muted">No dynamic fields match your search.</p>
-                    )}
-                  </div>
-                </div>
-              ) : registrationNamesQuery.isFetching ? (
-                <div className="rounded-xl border border-border p-3">
-                  <p className="text-xs text-muted">Loading event answer fields...</p>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-border p-3">
-                  <p className="text-xs text-muted">
-                    No event answer fields are available for this event.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <p className="text-xs text-muted">
-              All registrations for this event will be included, sorted by full name.
-            </p>
-          </div>
+          <RegistrationFieldSelector
+            introText="Select fields to include in the printable view."
+            footerText="All registrations for this event will be included, sorted by full name."
+            selectedFields={selectedFields}
+            selectedAnswerFieldIds={selectedAnswerFieldIds}
+            dynamicFieldSearch={dynamicFieldSearch}
+            answerFieldOptions={answerFieldOptions}
+            filteredAnswerFieldOptions={filteredAnswerFieldOptions}
+            isFetching={registrationNamesQuery.isFetching}
+            onToggleField={handleToggleField}
+            onToggleAnswerField={handleToggleAnswerField}
+            onDynamicFieldSearchChange={setDynamicFieldSearch}
+          />
         }
         confirmLabel="Open in New Tab"
         confirmLoadingLabel="Loading..."
