@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 
 import { useIsMobileViewport } from '@/hooks/utils';
 
+import './App.css';
 import { AppProviders } from './app/providers/AppProviders';
 import { AppRouter } from './app/router';
 import { ErrorBoundary } from './components/ErrorBoundary';

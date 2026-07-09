@@ -375,13 +375,11 @@ describe('DynamicFieldsStepCard', () => {
     renderCard({
       isRegistrationConfirmed: true,
       submitSuccessMessage: 'Registration submitted successfully. ID: reg-1',
-      stepTimeoutSecondsRemaining: 7,
       onConfirmAcknowledged,
     });
 
     expect(screen.getByText('Registration Confirmed')).toBeInTheDocument();
     expect(screen.getByText('Registration submitted successfully. ID: reg-1')).toBeInTheDocument();
-    expect(screen.getByText('Returning to Step 1 in 7s.')).toBeInTheDocument();
     expect(
       screen.queryByText('A confirmation toast was also sent. You can now scan the next attendee.'),
     ).toBeNull();

@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { Info } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { Badge, Button, CollapsibleSectionCard, SectionCard } from '@/components/ui';
+import { Button, EventHeaderCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import {
@@ -21,12 +20,11 @@ import {
 } from '@/hooks/domain/attendance/queries';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
-import { useKioskInactivityReset, useRfidAutoFocus } from '@/hooks/utils';
+import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
-import { formatDateTime } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-import { CheckInCard, ResultsList, SearchForm } from './components';
+import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
 
 export function AdminAttendanceCheckInPage() {
   const { id: eventId } = useParams<{ id: string }>();
@@ -36,7 +34,10 @@ export function AdminAttendanceCheckInPage() {
   const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null);
   const [confirmedRegistrationId, setConfirmedRegistrationId] = useState<string | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  const searchStepRef = useRef<HTMLDivElement | null>(null);
+  const selectStepRef = useRef<HTMLDivElement | null>(null);
+  const confirmStepRef = useRef<HTMLDivElement | null>(null);
 
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
@@ -72,16 +73,19 @@ export function AdminAttendanceCheckInPage() {
       return 3;
     }
 
+    // Stay on step 1 if search submitted but no results found
+    if (submittedSearchToken.trim().length > 0 && results.length === 0) {
+      return 1;
+    }
+
     if (submittedSearchToken.trim().length > 0) {
       return 2;
     }
 
     return 1;
-  }, [confirmedAttendee, submittedSearchToken]);
+  }, [confirmedAttendee, submittedSearchToken, results.length]);
 
-  const isRfidCaptureActive = attendanceEnabled && activeStep === 1;
-
-  useRfidAutoFocus(searchInputRef, isRfidCaptureActive);
+  useWizardStepScroll(activeStep, [searchStepRef, selectStepRef, confirmStepRef]);
 
   function handleSubmitSearch() {
     const normalized = searchToken.trim();
@@ -107,18 +111,6 @@ export function AdminAttendanceCheckInPage() {
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
   }, []);
-
-  const { secondsRemaining: stepTwoSecondsRemaining } = useKioskInactivityReset(
-    handleBackToLookup,
-    TIMING.registrationWizardConfirmTimeoutMs,
-    attendanceEnabled && activeStep === 2,
-  );
-
-  const { secondsRemaining: stepThreeSecondsRemaining } = useKioskInactivityReset(
-    handleBackToLookup,
-    TIMING.registrationWizardStepThreeTimeoutMs,
-    attendanceEnabled && activeStep === 3,
-  );
 
   function handleReadyForNext() {
     handleClearSearch();
@@ -224,62 +216,18 @@ export function AdminAttendanceCheckInPage() {
         description="Scan RFID or search attendee by name or email, confirm check-in, then continue to the next person."
       />
 
-      <CollapsibleSectionCard
-        title={event.title}
-        subtitle={
-          <Badge
-            variant={
-              event.status === 'published'
-                ? 'open'
-                : event.status === 'draft'
-                  ? 'upcoming'
-                  : 'closed'
-            }
-          >
-            {event.status === 'published'
-              ? 'Open'
-              : event.status === 'draft'
-                ? 'Draft'
-                : 'Archived'}
-          </Badge>
-        }
-        collapseLabel="Collapse event details"
-        expandLabel="Expand event details"
-      >
-        {event.description && <p className="mt-3 text-sm text-muted">{event.description}</p>}
-
-        <div className="mt-4 grid gap-2 rounded-lg border border-border bg-background/70 p-3 text-sm text-muted sm:grid-cols-2">
-          {event.location && (
-            <p className="sm:col-span-2">
-              Location: <span className="font-medium text-text">{event.location}</span>
-            </p>
-          )}
-          <p>
-            Starts: <span className="font-medium text-text">{formatDateTime(event.starts_at)}</span>
-          </p>
-          <p>
-            Ends: <span className="font-medium text-text">{formatDateTime(event.ends_at)}</span>
-          </p>
-          <p className="sm:col-span-2">
-            Registered: <span className="font-medium text-text">{registeredCount}</span>
-          </p>
-        </div>
-
-        <div className="mt-4 grid gap-2 rounded-lg border border-border bg-background/70 p-3 text-sm text-muted sm:grid-cols-2">
-          <p>
-            Registration opens:{' '}
-            <span className="font-medium text-text">
-              {formatDateTime(event.registration_opens_at)}
-            </span>
-          </p>
-          <p>
-            Registration closes:{' '}
-            <span className="font-medium text-text">
-              {formatDateTime(event.registration_closes_at)}
-            </span>
-          </p>
-        </div>
-      </CollapsibleSectionCard>
+      <EventHeaderCard
+        defaultExpanded={false}
+        isLoading={false}
+        isError={false}
+        isGateReady={false}
+        eventWindowText={null}
+        availability={{
+          status: 'available',
+          event,
+          registration_count: registeredCount,
+        }}
+      />
 
       {!attendanceEnabled && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -302,76 +250,36 @@ export function AdminAttendanceCheckInPage() {
 
       <AdminPageShell.Content>
         {attendanceEnabled && activeStep === 1 && (
-          <div className="space-y-4">
-            <SearchForm
-              inputRef={searchInputRef}
+          <div ref={searchStepRef} className="space-y-4 scroll-mt-24">
+            <AttendeeSearchStep
               searchToken={searchToken}
+              submittedSearchToken={submittedSearchToken}
               isSearching={searchQuery.isFetching}
               disabled={!attendanceEnabled}
+              results={results}
+              isSearchError={searchQuery.isError}
               onSearchTokenChange={setSearchToken}
               onSubmit={handleSubmitSearch}
             />
-
-            <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
-              <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-700" />
-              <p>Start by scanning an RFID/member ID or enter a name/email, then tap Search.</p>
-            </div>
           </div>
         )}
 
         {attendanceEnabled && activeStep === 2 && (
-          <div className="space-y-4">
-            <SectionCard
-              title="Step 2: Select Matching Attendee"
-              subtitle="Choose the correct attendee from the results before check-in."
-              titleClassName="font-heading text-2xl font-semibold text-text"
-              subtitleClassName="mt-2 text-lg text-muted"
-            >
-              <div className="space-y-4">
-                {searchQuery.error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {searchQuery.error instanceof Error
-                      ? searchQuery.error.message
-                      : 'Failed to search attendees.'}
-                  </div>
-                )}
-
-                <ResultsList
-                  results={results}
-                  selectedRegistrationId={selectedResultId}
-                  onSelect={(registrationId) => {
-                    setSelectedRegistrationId(registrationId);
-                    setConfirmedRegistrationId(null);
-                    setCheckInResult(null);
-                  }}
-                />
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    fullWidth={true}
-                    size="lg"
-                    onClick={handleConfirmSelection}
-                    disabled={!selectedResultId}
-                  >
-                    {selectedAttendee ? (
-                      <span className="flex flex-col items-center leading-tight">
-                        <span>Confirm Selection</span>
-                        <span>({selectedAttendee.full_name})</span>
-                      </span>
-                    ) : (
-                      'Confirm Selection'
-                    )}
-                  </Button>
-                </div>
-
-                {stepTwoSecondsRemaining !== null && (
-                  <p className="text-base text-muted">
-                    Returning to Step 1 in {stepTwoSecondsRemaining}s if this step is not completed.
-                  </p>
-                )}
-              </div>
-            </SectionCard>
+          <div ref={selectStepRef} className="space-y-4 scroll-mt-24">
+            <AttendeeSelectStep
+              results={results}
+              selectedResultId={selectedResultId}
+              selectedAttendee={selectedAttendee}
+              searchError={searchQuery.error}
+              onSelect={(registrationId) => {
+                setSelectedRegistrationId(registrationId);
+                setConfirmedRegistrationId(null);
+                setCheckInResult(null);
+              }}
+              onConfirmSelection={handleConfirmSelection}
+              inactivityTimeoutMs={TIMING.registrationWizardConfirmTimeoutMs}
+              onInactivityTimeout={handleBackToLookup}
+            />
 
             <Button type="button" size="lg" variant="outline" onClick={handleBackToLookup}>
               Back to Lookup
@@ -380,14 +288,15 @@ export function AdminAttendanceCheckInPage() {
         )}
 
         {attendanceEnabled && activeStep === 3 && (
-          <div className="space-y-4">
-            <CheckInCard
+          <div ref={confirmStepRef} className="space-y-4 scroll-mt-24">
+            <AttendeeConfirmStep
               attendee={confirmedAttendee}
               checkInResult={checkInResult}
               isSubmitting={checkInMutation.isPending}
-              inactivitySecondsRemaining={stepThreeSecondsRemaining}
               onCheckIn={handleCheckIn}
               onReadyForNext={handleReadyForNext}
+              inactivityTimeoutMs={TIMING.registrationWizardStepThreeTimeoutMs}
+              onInactivityTimeout={handleBackToLookup}
             />
 
             <div className="flex flex-wrap gap-2">

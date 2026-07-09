@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/ui/EmptyState';
+import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { TIMING, TOAST_MESSAGES, toEventRegistration } from '@/config/constants';
@@ -14,13 +15,12 @@ import {
   fetchPublicAttendeeCheck,
   useSubmitPublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
-import { useKioskInactivityReset } from '@/hooks/utils';
+import { useWizardStepScroll } from '@/hooks/utils';
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
 import { buildSubmitPublicRegistrationSchema } from '@/lib/domain/public-registrations';
 import { formatDateTime } from '@/lib/infrastructure';
 
-import { EventHeaderCard } from '../register/components/EventHeaderCard';
 import {
   PublicAttendeeInfoStep,
   PublicEventFieldsStep,
@@ -38,6 +38,10 @@ export function PublicEventRegistrationPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<Step>('attendee-info');
 
+  const stepOneRef = useRef<HTMLDivElement | null>(null);
+  const stepTwoRef = useRef<HTMLDivElement | null>(null);
+  const stepThreeRef = useRef<HTMLDivElement | null>(null);
+
   // Auto-redirect to member registration after 3 minutes of inactivity
   const handleInactivityReset = useCallback(() => {
     if (slug) {
@@ -45,17 +49,6 @@ export function PublicEventRegistrationPage() {
     }
   }, [slug, navigate]);
 
-  const isGuestRegistrationActive = currentStep !== 'confirmation';
-  const { secondsRemaining } = useKioskInactivityReset(
-    handleInactivityReset,
-    TIMING.kioskInactivityResetMs,
-    isGuestRegistrationActive,
-  );
-  const { secondsRemaining: confirmationSecondsRemaining } = useKioskInactivityReset(
-    handleInactivityReset,
-    TIMING.publicRegistrationConfirmationTimeoutMs,
-    currentStep === 'confirmation',
-  );
   const [attendeeInfo, setAttendeeInfo] = useState<PublicAttendeeInfoInput | null>(null);
   const [attendeeEmailErrorMessage, setAttendeeEmailErrorMessage] = useState<string | null>(null);
   const [isCheckingAttendee, setIsCheckingAttendee] = useState(false);
@@ -89,6 +82,15 @@ export function PublicEventRegistrationPage() {
     }
   }, [currentStep, fieldsQuery.isError]);
 
+  // Define step number before hook call
+  const getStepNumber = (): number => {
+    if (currentStep === 'attendee-info') return 1;
+    if (currentStep === 'event-fields') return 2;
+    return 3;
+  };
+
+  useWizardStepScroll(getStepNumber(), [stepOneRef, stepTwoRef, stepThreeRef]);
+
   const handleAttendeeInfoSubmit = useCallback(
     async (data: PublicAttendeeInfoInput) => {
       if (!slug) {
@@ -117,9 +119,6 @@ export function PublicEventRegistrationPage() {
     },
     [slug],
   );
-
-  const displayedSecondsRemaining =
-    currentStep === 'confirmation' ? confirmationSecondsRemaining : secondsRemaining;
 
   const handleFieldsSubmit = useCallback(
     async (responses: DynamicFieldResponseValues) => {
@@ -232,12 +231,6 @@ export function PublicEventRegistrationPage() {
     );
   }
 
-  const getStepNumber = (): number => {
-    if (currentStep === 'attendee-info') return 1;
-    if (currentStep === 'event-fields') return 2;
-    return 3;
-  };
-
   return (
     <section className="mx-auto max-w-3xl space-y-6">
       {(() => {
@@ -249,6 +242,7 @@ export function PublicEventRegistrationPage() {
 
         return (
           <EventHeaderCard
+            defaultExpanded={false}
             slug={slug}
             isLoading={eventQuery.isLoading}
             isError={eventQuery.isError}
@@ -274,12 +268,14 @@ export function PublicEventRegistrationPage() {
       />
 
       {currentStep === 'attendee-info' && (
-        <>
+        <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
           <PublicAttendeeInfoStep
             onSubmit={handleAttendeeInfoSubmit}
             isSubmitting={isCheckingAttendee}
             emailErrorMessage={attendeeEmailErrorMessage || undefined}
             defaultValues={attendeeInfo || undefined}
+            inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+            onInactivityTimeout={handleInactivityReset}
           />
           <div className="flex items-center justify-start">
             <button
@@ -290,11 +286,11 @@ export function PublicEventRegistrationPage() {
               ← Back to member registration
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {currentStep === 'event-fields' && (
-        <>
+        <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
           {fieldsQuery.isLoading && (
             <SectionCard title="Step 2: Event Details">
               <div className="animate-pulse space-y-4">
@@ -312,25 +308,22 @@ export function PublicEventRegistrationPage() {
               onBack={handleBackToAttendeeInfo}
               isSubmitting={submitMutation.isPending}
               defaultValues={fieldResponses}
+              inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+              onInactivityTimeout={handleInactivityReset}
             />
           )}
-        </>
+        </div>
       )}
 
       {currentStep === 'confirmation' && confirmationData && (
-        <PublicRegistrationConfirmationStep
-          registrationId={confirmationData.registrationId}
-          email={confirmationData.email}
-          eventSlug={slug}
-        />
-      )}
-
-      {/* Inactivity timer */}
-      {displayedSecondsRemaining && (
-        <div className="mt-6 flex items-center justify-center">
-          <p className="text-sm text-muted" aria-live="polite">
-            Returning to member registration in {displayedSecondsRemaining}s if no one continues.
-          </p>
+        <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
+          <PublicRegistrationConfirmationStep
+            registrationId={confirmationData.registrationId}
+            email={confirmationData.email}
+            eventSlug={slug}
+            inactivityTimeoutMs={TIMING.publicRegistrationConfirmationTimeoutMs}
+            onInactivityTimeout={handleInactivityReset}
+          />
         </div>
       )}
     </section>

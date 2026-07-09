@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-import { SectionCard } from '@/components/ui/SectionCard';
+import { Button } from '@/components/ui/Button';
+import { WizardStep } from '@/components/ui/WizardStep';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
 import { MemberIdentityPanel } from './MemberIdentityPanel';
-import { ProfileStepFooter } from './ProfileStepFooter';
 import { RegistrationStatusPanel } from './RegistrationStatusPanel';
 
 type ProfileStepCardProps = {
@@ -13,7 +13,10 @@ type ProfileStepCardProps = {
   isRegistrationBlocked?: boolean;
   shouldFadeDetails?: boolean;
   onContinueToStepThree?: () => void;
-  stepTimeoutSecondsRemaining?: number | null;
+  /** Duration in ms for the fixed step countdown. Requires onTimeout. */
+  countdownMs?: number;
+  /** Called when the step countdown expires — use to go back to step 1. */
+  onTimeout?: () => void;
 };
 
 export function ProfileStepCard(props: ProfileStepCardProps) {
@@ -23,11 +26,18 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
     isRegistrationBlocked = false,
     shouldFadeDetails = false,
     onContinueToStepThree,
-    stepTimeoutSecondsRemaining = null,
+    countdownMs,
+    onTimeout,
   } = props;
   const shouldShowPlaceholder = !matchedMember || shouldFadeDetails;
   const registrationStatusRef = useRef<HTMLDivElement | null>(null);
   const canContinueToStepThree = !isRegistrationBlocked && Boolean(onContinueToStepThree);
+
+  const countdownTimerMessage = (s: number): string => {
+    if (isRegistrationBlocked) return `Returning to Step 1 in ${s}s.`;
+    if (canContinueToStepThree) return `Returning to Step 1 in ${s}s if no one continues.`;
+    return `Returning to Step 1 in ${s}s if this registration is not completed.`;
+  };
   const placeholderTransitionClassName = shouldShowPlaceholder
     ? 'max-h-16 opacity-100 translate-y-0'
     : 'max-h-0 opacity-0 -translate-y-1';
@@ -48,11 +58,11 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
   }, [matchedMember, isRegistrationBlocked, shouldFadeDetails]);
 
   return (
-    <SectionCard
+    <WizardStep
       title="Step 2: Confirm Your Details"
-      wrapperClassName="registration-step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
-      titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
-      contentClassName="registration-step-card__content mt-2"
+      countdownMs={countdownMs}
+      onCountdownTimeout={onTimeout}
+      countdownTimerMessage={countdownTimerMessage}
     >
       {matchedMember && !shouldFadeDetails && (
         <div className="transition-all duration-500 opacity-100 translate-y-0">
@@ -64,12 +74,19 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
               registrationStatusRef={registrationStatusRef}
             />
 
-            <ProfileStepFooter
-              canContinueToStepThree={canContinueToStepThree}
-              isRegistrationBlocked={isRegistrationBlocked}
-              onContinueToStepThree={onContinueToStepThree}
-              stepTimeoutSecondsRemaining={stepTimeoutSecondsRemaining}
-            />
+            {canContinueToStepThree && (
+              <div className="pt-3">
+                <Button
+                  className="w-full"
+                  onClick={onContinueToStepThree}
+                  size="lg"
+                  type="button"
+                  variant="default"
+                >
+                  Yes, I confirm
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -81,6 +98,6 @@ export function ProfileStepCard(props: ProfileStepCardProps) {
           Your details will appear here after Step 1.
         </p>
       </div>
-    </SectionCard>
+    </WizardStep>
   );
 }

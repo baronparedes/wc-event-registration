@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
-import { SectionCard } from '@/components/ui/SectionCard';
+import { WizardStep } from '@/components/ui/WizardStep';
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
@@ -14,6 +14,8 @@ type PublicEventFieldsStepProps = {
   isSubmitting?: boolean;
   errorMessage?: string;
   defaultValues?: DynamicFieldResponseValues;
+  inactivityTimeoutMs?: number;
+  onInactivityTimeout?: () => void;
 };
 
 export function PublicEventFieldsStep({
@@ -23,6 +25,8 @@ export function PublicEventFieldsStep({
   isSubmitting = false,
   errorMessage,
   defaultValues,
+  inactivityTimeoutMs,
+  onInactivityTimeout,
 }: PublicEventFieldsStepProps) {
   const schema = buildDynamicFieldResponseSchema(fields);
   const dynamicForm = useForm<DynamicFieldResponseValues>({
@@ -32,7 +36,14 @@ export function PublicEventFieldsStep({
   });
 
   return (
-    <SectionCard title="Step 2: Event Details">
+    <WizardStep
+      title="Step 2: Event Details"
+      inactivityTimeoutMs={inactivityTimeoutMs}
+      onInactivityTimeout={onInactivityTimeout}
+      inactivityTimerMessage={(s) =>
+        `Returning to member registration in ${s}s if no one continues.`
+      }
+    >
       <form onSubmit={dynamicForm.handleSubmit(onSubmit)} className="space-y-4">
         {errorMessage && (
           <div className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger">
@@ -67,6 +78,6 @@ export function PublicEventFieldsStep({
           </Button>
         </div>
       </form>
-    </SectionCard>
+    </WizardStep>
   );
 }

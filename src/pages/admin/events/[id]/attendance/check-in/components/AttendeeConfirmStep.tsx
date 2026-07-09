@@ -1,16 +1,8 @@
-import { Button, SectionCard } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { WizardStep } from '@/components/ui/WizardStep';
 import { useFieldAnswerTextFormatter } from '@/hooks/utils';
 import type { AttendeeSearchResult, CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
-
-type CheckInCardProps = {
-  attendee: AttendeeSearchResult | null;
-  checkInResult: CheckInResult | null;
-  isSubmitting: boolean;
-  inactivitySecondsRemaining: number | null;
-  onCheckIn: () => void;
-  onReadyForNext: () => void;
-};
 
 function getAnswerCardsItemClass(cardCount: number): string {
   if (cardCount <= 1) {
@@ -24,26 +16,39 @@ function getAnswerCardsItemClass(cardCount: number): string {
   return 'w-full md:w-[calc(50%-0.375rem)] xl:w-[calc(33.333%-0.5rem)]';
 }
 
-export function CheckInCard(props: CheckInCardProps) {
+type AttendeeConfirmStepProps = {
+  attendee: AttendeeSearchResult | null;
+  checkInResult: CheckInResult | null;
+  isSubmitting: boolean;
+  onCheckIn: () => void;
+  onReadyForNext: () => void;
+  inactivityTimeoutMs?: number;
+  onInactivityTimeout?: () => void;
+};
+
+export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
   const {
     attendee,
     checkInResult,
     isSubmitting,
-    inactivitySecondsRemaining,
     onCheckIn,
     onReadyForNext,
+    inactivityTimeoutMs,
+    onInactivityTimeout,
   } = props;
+
   const { getAnswerText } = useFieldAnswerTextFormatter();
 
   const shouldShowReadyForNext =
     Boolean(checkInResult) || attendee?.check_in_status === 'checked_in';
 
   return (
-    <SectionCard
+    <WizardStep
       title="Step 3: Confirm Check-In"
-      titleClassName="font-heading text-2xl font-semibold text-text"
       subtitle="Review attendee details, then confirm the official check-in timestamp."
-      subtitleClassName="mt-2 text-lg text-muted"
+      inactivityTimeoutMs={inactivityTimeoutMs}
+      onInactivityTimeout={onInactivityTimeout}
+      inactivityTimerMessage={(s) => `Returning to Step 1 in ${s}s due to inactivity.`}
     >
       {!attendee && (
         <p className="text-base text-muted">Select an attendee from search results to continue.</p>
@@ -85,7 +90,6 @@ export function CheckInCard(props: CheckInCardProps) {
               <ul className="mt-4 flex flex-wrap gap-3">
                 {attendee.registration_answers.map((answer) => {
                   const answerText = getAnswerText(answer.field_type, answer);
-
                   return (
                     <li
                       key={answer.event_field_id}
@@ -112,7 +116,6 @@ export function CheckInCard(props: CheckInCardProps) {
               <ul className="mt-4 flex flex-wrap gap-3">
                 {attendee.attendance_answers.map((answer) => {
                   const answerText = getAnswerText(answer.field_type, answer);
-
                   return (
                     <li
                       key={answer.attendance_field_id}
@@ -166,14 +169,9 @@ export function CheckInCard(props: CheckInCardProps) {
                 {isSubmitting ? 'Checking In...' : 'Confirm Check-In'}
               </Button>
             )}
-            {inactivitySecondsRemaining !== null && (
-              <p className="text-center text-base text-muted">
-                Returning to Step 1 in {inactivitySecondsRemaining}s due to inactivity.
-              </p>
-            )}
           </div>
         </div>
       )}
-    </SectionCard>
+    </WizardStep>
   );
 }

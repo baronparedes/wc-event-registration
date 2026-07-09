@@ -1,8 +1,11 @@
 export { useErrorWithFadeout, type ErrorWithFadeoutOptions } from './useErrorWithFadeout';
+export { useErrorAutoDismiss } from './useErrorAutoDismiss';
 export { useRfidAutoFocus } from './useRfidAutoFocus';
 export { useSlugGeneration } from './useSlugGeneration';
 export { useSaveConfirmation, type SaveConfirmationState } from './useSaveConfirmation';
 export { useScanBuffer } from './useScanBuffer';
 export { useKioskInactivityReset } from './useKioskInactivityReset';
+export { useStepCountdown } from './useStepCountdown';
 export { useIsMobileViewport } from './useIsMobileViewport';
 export { useFieldAnswerTextFormatter } from './useFieldAnswerTextFormatter';
+export { useWizardStepScroll } from './useWizardStepScroll';

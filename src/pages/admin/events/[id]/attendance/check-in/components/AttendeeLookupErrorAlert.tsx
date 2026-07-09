@@ -2,17 +2,17 @@ import { useEffect, useRef } from 'react';
 
 import { useErrorAutoDismiss } from '@/hooks/utils';
 
-type MemberLookupErrorAlertProps = {
+type AttendeeLookupErrorAlertProps = {
   message: string | null;
   suppress?: boolean;
   onDismiss?: () => void;
 };
 
-export function MemberLookupErrorAlert({
+export function AttendeeLookupErrorAlert({
   message,
   suppress = false,
   onDismiss,
-}: MemberLookupErrorAlertProps) {
+}: AttendeeLookupErrorAlertProps) {
   const alertRef = useRef<HTMLDivElement | null>(null);
   const { shouldFade, errorCountdown } = useErrorAutoDismiss(message, suppress, onDismiss);
 
@@ -62,10 +62,8 @@ export function MemberLookupErrorAlert({
         </span>
         <div className="flex w-full items-start justify-between gap-3">
           <div className="space-y-1">
-            <p className="registration-alert-title text-sm font-semibold text-orange-950">
-              Please check your entry
-            </p>
-            <p className="registration-alert-message text-sm text-orange-900">{message}</p>
+            <p className="text-sm font-semibold text-orange-950">Attendee not found</p>
+            <p className="text-sm text-orange-900">{message}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {errorCountdown > 0 && (
@@ -77,7 +75,7 @@ export function MemberLookupErrorAlert({
               type="button"
               onClick={handleDismiss}
               className="rounded-md border border-orange-700/40 px-2 py-1 text-xs font-medium text-orange-950 transition hover:bg-orange-300/60 focus:outline-none focus:ring-2 focus:ring-orange-700/60"
-              aria-label="Dismiss member lookup warning"
+              aria-label="Dismiss attendee lookup warning"
             >
               Dismiss
             </button>

@@ -48,22 +48,6 @@ export function stepBadgeClassName(currentStep: WizardStep, badgeStep: WizardSte
   return 'bg-surface text-muted border border-border';
 }
 
-function getWizardStepTimeoutMs(step: WizardStep, isRegistrationConfirmed: boolean): number | null {
-  switch (step) {
-    case 2:
-      return TIMING.registrationWizardConfirmTimeoutMs;
-    case 3:
-      if (isRegistrationConfirmed) {
-        return TIMING.registrationWizardConfirmedResetMs;
-      }
-
-      return TIMING.kioskInactivityResetMs;
-    case 1:
-    default:
-      return null;
-  }
-}
-
 export function useEventRegistrationPageState() {
   const { slug } = useParams<{ slug: string }>();
   const memberIdInputRef = useRef<HTMLInputElement | null>(null);
@@ -73,7 +57,6 @@ export function useEventRegistrationPageState() {
   const [isRegistrationConfirmed, setIsRegistrationConfirmed] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false);
-  const [wizardStepSecondsRemaining, setWizardStepSecondsRemaining] = useState<number | null>(null);
 
   const eventQuery = usePublicEventQuery(slug ?? null);
   const submitMutation = useSubmitRegistrationMutation(
@@ -98,17 +81,6 @@ export function useEventRegistrationPageState() {
     () => memberLookup.isRegistrationBlocked || isWizardBlockedResult,
     [memberLookup.isRegistrationBlocked, isWizardBlockedResult],
   );
-  const activeWizardStepTimeoutMs = useMemo(
-    () => getWizardStepTimeoutMs(activeWizardStep, isRegistrationConfirmed),
-    [activeWizardStep, isRegistrationConfirmed],
-  );
-  const displayedWizardStepSecondsRemaining = useMemo(() => {
-    if (activeWizardStepTimeoutMs === null) {
-      return wizardStepSecondsRemaining;
-    }
-
-    return wizardStepSecondsRemaining ?? Math.ceil(activeWizardStepTimeoutMs / 1000);
-  }, [activeWizardStepTimeoutMs, wizardStepSecondsRemaining]);
 
   const availability = eventQuery.data;
   const isGateReady = availability?.status === 'available';
@@ -194,7 +166,6 @@ export function useEventRegistrationPageState() {
     setSubmitSuccessMessage(null);
     setIsRegistrationConfirmed(false);
     setIsWizardBlockedResult(false);
-    setWizardStepSecondsRemaining(null);
     clearLookupError();
     setWizardStep(1);
     focusMemberIdInput();
@@ -318,45 +289,6 @@ export function useEventRegistrationPageState() {
     }
   }, [dynamicForm, isDynamicFieldGateReady]);
 
-  useEffect(() => {
-    if (activeWizardStepTimeoutMs === null) {
-      return;
-    }
-
-    const initializeCountdownId = window.setTimeout(() => {
-      setWizardStepSecondsRemaining(Math.ceil(activeWizardStepTimeoutMs / 1000));
-    }, 0);
-
-    const timeoutId = window.setTimeout(() => {
-      resetToStepOne();
-    }, activeWizardStepTimeoutMs);
-
-    return () => {
-      window.clearTimeout(initializeCountdownId);
-      window.clearTimeout(timeoutId);
-    };
-  }, [activeWizardStepTimeoutMs, resetToStepOne]);
-
-  useEffect(() => {
-    if (activeWizardStepTimeoutMs === null || wizardStepSecondsRemaining === null) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setWizardStepSecondsRemaining((value) => {
-        if (value === null) {
-          return null;
-        }
-
-        return value > 1 ? value - 1 : 1;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [activeWizardStepTimeoutMs, wizardStepSecondsRemaining]);
-
   const handleLookupSubmit = useCallback(
     async (values: Parameters<typeof runMemberLookupSubmit>[0]) => {
       setSubmitErrorMessage(null);
@@ -465,7 +397,6 @@ export function useEventRegistrationPageState() {
       logger.info('Registration submission successful:', result);
       dynamicForm.reset(createDynamicFieldDefaultValues(activeFields));
       setIsWizardBlockedResult(false);
-      setWizardStepSecondsRemaining(null);
       setWizardStep(3);
       scrollToDynamicFieldsStep();
     },
@@ -505,7 +436,6 @@ export function useEventRegistrationPageState() {
     setSubmitSuccessMessage(null);
     setIsRegistrationConfirmed(false);
     setIsWizardBlockedResult(false);
-    setWizardStepSecondsRemaining(null);
     setWizardStep(1);
     scrollToTitleAnchor();
   }, [dynamicForm, activeFields, memberLookup, clearLookupError, scrollToTitleAnchor]);
@@ -538,7 +468,6 @@ export function useEventRegistrationPageState() {
     resetToStepOne,
     activeWizardStep,
     isEffectiveRegistrationBlocked,
-    wizardStepSecondsRemaining: displayedWizardStepSecondsRemaining,
     enterWizardConfirmStep,
     enterWizardCompleteStep,
     setWizardStep,

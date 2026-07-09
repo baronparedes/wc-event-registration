@@ -1,3 +1,4 @@
-export { SearchForm } from './SearchForm';
-export { ResultsList } from './ResultsList';
-export { CheckInCard } from './CheckInCard';
+export { AttendeeSearchStep } from './AttendeeSearchStep';
+export { AttendeeSelectStep } from './AttendeeSelectStep';
+export { AttendeeConfirmStep } from './AttendeeConfirmStep';
+export { AttendeeLookupErrorAlert } from './AttendeeLookupErrorAlert';

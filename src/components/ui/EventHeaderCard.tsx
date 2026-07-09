@@ -51,15 +51,15 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
         event ? (
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
-            {availability?.status === 'available' && (
-              <span className="text-xs font-medium text-muted">
-                Registered: <span className="text-text">{availability.registration_count}</span>
-              </span>
-            )}
             {event.allow_public_registrations && (
               <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
                 Open to Guests
               </Badge>
+            )}
+            {availability?.status === 'available' && (
+              <span className="text-xs font-medium text-muted">
+                Registered: <span className="text-text">{availability.registration_count}</span>
+              </span>
             )}
           </div>
         ) : (

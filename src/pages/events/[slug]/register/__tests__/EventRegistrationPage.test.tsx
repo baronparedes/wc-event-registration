@@ -21,7 +21,6 @@ const {
   mockScanBufferHandler,
   mockDynamicFieldsStepCard,
   mockProfileStepCard,
-  mockLockedGateCard,
   memberLookupState,
 } = vi.hoisted(() => {
   const lookupState = {
@@ -72,7 +71,6 @@ const {
     mockScanBufferHandler: { current: null as null | ((scanValue: string) => void) },
     mockDynamicFieldsStepCard: vi.fn(),
     mockProfileStepCard: vi.fn(),
-    mockLockedGateCard: vi.fn(),
     memberLookupState: lookupState,
   };
 });
@@ -164,32 +162,35 @@ vi.mock('@/hooks/utils', async () => {
   };
 });
 
-vi.mock('@/pages/events/[slug]/register/components', () => ({
+vi.mock('@/components/ui/EventHeaderCard', () => ({
   EventHeaderCard: () => <div>Event Header</div>,
+}));
+
+vi.mock('@/pages/events/[slug]/register/components', () => ({
   MemberLookupStepCard: () => <div>Member Lookup</div>,
   ProfileStepCard: (props: {
-    stepTimeoutSecondsRemaining?: number | null;
     onContinueToStepThree?: () => void;
+    onTimeout?: () => void;
+    countdownMs?: number;
   }) => {
     mockProfileStepCard(props);
     return (
       <div>
         <div>Profile Step</div>
-        {props.stepTimeoutSecondsRemaining && (
-          <div>Step 2 reset in {props.stepTimeoutSecondsRemaining}s</div>
-        )}
         {props.onContinueToStepThree && (
           <button onClick={props.onContinueToStepThree} type="button">
             Continue to Step 3
           </button>
         )}
+        {props.onTimeout && (
+          <button onClick={props.onTimeout} type="button">
+            Trigger Step 2 Timeout
+          </button>
+        )}
       </div>
     );
   },
-  LockedGateCard: () => {
-    mockLockedGateCard();
-    return <div>Locked Gate</div>;
-  },
+  LockedGateCard: () => <div>Locked Gate</div>,
   DynamicFieldsStepCard: (props: {
     submitButtonLabel?: string;
     submitErrorMessage: string | null;
@@ -197,21 +198,29 @@ vi.mock('@/pages/events/[slug]/register/components', () => ({
     isRegistrationConfirmed?: boolean;
     onConfirmAcknowledged?: () => void;
     onSubmit: (values: Record<string, unknown>) => void | Promise<void>;
-    stepTimeoutSecondsRemaining?: number | null;
+    onCountdownTimeout?: () => void;
+    onInactivityTimeout?: () => void;
   }) => {
     mockDynamicFieldsStepCard(props);
 
     return (
       <div>
         <div>{props.submitButtonLabel}</div>
-        {props.stepTimeoutSecondsRemaining && (
-          <div>Step 3 reset in {props.stepTimeoutSecondsRemaining}s</div>
-        )}
         {props.submitErrorMessage && <div>{props.submitErrorMessage}</div>}
         {props.submitSuccessMessage && <div>{props.submitSuccessMessage}</div>}
         <button onClick={() => void props.onSubmit({ team_name: 'A-Team' })} type="button">
           Trigger Submit
         </button>
+        {props.onCountdownTimeout && (
+          <button onClick={props.onCountdownTimeout} type="button">
+            Trigger Step 3 Countdown
+          </button>
+        )}
+        {props.onInactivityTimeout && (
+          <button onClick={props.onInactivityTimeout} type="button">
+            Trigger Step 3 Inactivity
+          </button>
+        )}
       </div>
     );
   },
@@ -287,8 +296,7 @@ describe('EventRegistrationPage', () => {
 
     render(<EventRegistrationPage />);
 
-    expect(screen.getByText('Locked Gate')).toBeInTheDocument();
-    expect(mockLockedGateCard).toHaveBeenCalled();
+    expect(screen.getByText('Registration Is Not Open Yet')).toBeInTheDocument();
   });
 
   it('submits registration successfully in update mode and surfaces success message', async () => {
@@ -344,10 +352,6 @@ describe('EventRegistrationPage', () => {
       expect(
         screen.getByText('Registration submitted successfully. ID: reg-1'),
       ).toBeInTheDocument();
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Step 3 reset in 7s')).toBeInTheDocument();
     });
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Registration submitted successfully!');
@@ -437,7 +441,7 @@ describe('EventRegistrationPage', () => {
 
     render(<EventRegistrationPage />);
 
-    expect(screen.getByText('Locked Gate')).toBeInTheDocument();
+    expect(screen.getByText('Registration Is Not Open Yet')).toBeInTheDocument();
     expect(mockDynamicFieldsStepCard).not.toHaveBeenCalled();
   });
 
@@ -528,8 +532,6 @@ describe('EventRegistrationPage', () => {
   });
 
   it('keeps blocked lookup results on wizard step 2 with the shared 15 second reset', async () => {
-    vi.useFakeTimers();
-
     const runMemberLookupSubmit = vi.fn().mockResolvedValue({
       success: false,
       error: 'You are already registered for this event.',
@@ -571,12 +573,9 @@ describe('EventRegistrationPage', () => {
     });
 
     expect(screen.getByText('Profile Step')).toBeInTheDocument();
-    expect(screen.getByText('Step 2 reset in 15s')).toBeInTheDocument();
     expect(screen.queryByText('Member Lookup')).toBeNull();
 
-    await act(async () => {
-      vi.advanceTimersByTime(15_000);
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Step 2 Timeout' }));
 
     expect(screen.getByText('Member Lookup')).toBeInTheDocument();
   });
@@ -629,8 +628,6 @@ describe('EventRegistrationPage', () => {
   });
 
   it('returns wizard users to step 1 if they stop on step 2 too long', async () => {
-    vi.useFakeTimers();
-
     const runMemberLookupSubmit = vi.fn().mockResolvedValue({
       success: true,
       mode: 'new_registration',
@@ -670,18 +667,13 @@ describe('EventRegistrationPage', () => {
     });
 
     expect(screen.getByText('Profile Step')).toBeInTheDocument();
-    expect(screen.getByText('Step 2 reset in 15s')).toBeInTheDocument();
 
-    await act(async () => {
-      vi.advanceTimersByTime(15_000);
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Step 2 Timeout' }));
 
     expect(screen.getByText('Member Lookup')).toBeInTheDocument();
   });
 
   it('returns wizard users to step 1 if they stop on step 3 for three minutes', async () => {
-    vi.useFakeTimers();
-
     const runMemberLookupSubmit = vi.fn().mockResolvedValue({
       success: true,
       mode: 'new_registration',
@@ -723,11 +715,8 @@ describe('EventRegistrationPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }));
 
     expect(screen.getByText('Submit Registration')).toBeInTheDocument();
-    expect(screen.getByText('Step 3 reset in 180s')).toBeInTheDocument();
 
-    await act(async () => {
-      vi.advanceTimersByTime(180_000);
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Step 3 Inactivity' }));
 
     expect(screen.getByText('Member Lookup')).toBeInTheDocument();
   });

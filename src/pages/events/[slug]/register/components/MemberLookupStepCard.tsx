@@ -4,7 +4,7 @@ import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
-import { SectionCard } from '@/components/ui/SectionCard';
+import { WizardStep } from '@/components/ui/WizardStep';
 
 import { MemberLookupErrorAlert } from './MemberLookupErrorAlert';
 import { MemberLookupMethodSelector } from './MemberLookupMethodSelector';
@@ -54,13 +54,9 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
 
   return (
     <>
-      <SectionCard
+      <WizardStep
         title="Step 1: Find Your Profile"
         subtitle="How do you want to search your profile?"
-        wrapperClassName="registration-step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
-        titleClassName="registration-step-card__title font-heading text-2xl font-semibold text-text"
-        subtitleClassName="registration-step-card__subtitle mt-3 text-base text-muted"
-        contentClassName="registration-step-card__content mt-3"
       >
         {/* Step 1: Choose lookup method */}
         {lookupMethod === null && (
@@ -160,7 +156,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
           suppress={suppressLookupWarning}
           onDismiss={onDismissLookupError}
         />
-      </SectionCard>
+      </WizardStep>
 
       {/* Guest/non-member registration option */}
       {slug && allowPublicRegistration && (

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
-import { SectionCard } from '@/components/ui/SectionCard';
+import { WizardStep } from '@/components/ui/WizardStep';
 import { publicAttendeeInfoSchema } from '@/lib/domain/public-registrations';
 import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
 
@@ -12,6 +12,8 @@ type PublicAttendeeInfoStepProps = {
   isSubmitting?: boolean;
   emailErrorMessage?: string;
   defaultValues?: PublicAttendeeInfoInput;
+  inactivityTimeoutMs?: number;
+  onInactivityTimeout?: () => void;
 };
 
 export function PublicAttendeeInfoStep({
@@ -19,6 +21,8 @@ export function PublicAttendeeInfoStep({
   isSubmitting = false,
   emailErrorMessage,
   defaultValues,
+  inactivityTimeoutMs,
+  onInactivityTimeout,
 }: PublicAttendeeInfoStepProps) {
   const {
     register,
@@ -31,7 +35,14 @@ export function PublicAttendeeInfoStep({
   });
 
   return (
-    <SectionCard title="Step 1: Your Information">
+    <WizardStep
+      title="Step 1: Your Information"
+      inactivityTimeoutMs={inactivityTimeoutMs}
+      onInactivityTimeout={onInactivityTimeout}
+      inactivityTimerMessage={(s) =>
+        `Returning to member registration in ${s}s if no one continues.`
+      }
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormInputField
@@ -91,6 +102,6 @@ export function PublicAttendeeInfoStep({
           </Button>
         </div>
       </form>
-    </SectionCard>
+    </WizardStep>
   );
 }

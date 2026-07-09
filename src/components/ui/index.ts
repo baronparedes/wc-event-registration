@@ -23,3 +23,6 @@ export { EmptyState } from './EmptyState';
 export { Grid } from './Grid';
 export { Col } from './Grid';
 export { Switch } from './Switch';
+export { WizardStep } from './WizardStep';
+export type { WizardStepProps } from './WizardStep';
+export { EventHeaderCard } from './EventHeaderCard';

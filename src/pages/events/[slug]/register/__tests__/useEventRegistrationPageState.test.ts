@@ -2,7 +2,7 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
-import { FORM_MESSAGES, TIMING, TOAST_MESSAGES } from '@/config/constants';
+import { FORM_MESSAGES, TOAST_MESSAGES } from '@/config/constants';
 import {
   stepBadgeClassName,
   useEventRegistrationPageState,
@@ -214,9 +214,6 @@ describe('useEventRegistrationPageState', () => {
     const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
     expect(result.current.activeWizardStep).toBe(3);
-    expect(result.current.wizardStepSecondsRemaining).toBe(
-      Math.ceil(TIMING.kioskInactivityResetMs / 1000),
-    );
   });
 
   it('moves to blocked confirm step on already registered lookup failure', async () => {
@@ -383,9 +380,6 @@ describe('useEventRegistrationPageState', () => {
     expect(result.current.submitSuccessMessage).toContain('reg-1');
     expect(result.current.isRegistrationConfirmed).toBe(true);
     expect(result.current.activeWizardStep).toBe(3);
-    expect(result.current.wizardStepSecondsRemaining).toBe(
-      Math.ceil(TIMING.registrationWizardConfirmedResetMs / 1000),
-    );
     expect(mockFocusMemberIdInput).not.toHaveBeenCalled();
     expect(result.current.fieldErrorMessage('unknown')).toBeUndefined();
 
@@ -481,9 +475,6 @@ describe('useEventRegistrationPageState', () => {
 
     expect(result.current.isRegistrationConfirmed).toBe(true);
     expect(result.current.activeWizardStep).toBe(3);
-    expect(result.current.wizardStepSecondsRemaining).toBe(
-      Math.ceil(TIMING.registrationWizardConfirmedResetMs / 1000),
-    );
     expect(titleAnchor.scrollIntoView).not.toHaveBeenCalled();
     expect(mockFocusMemberIdInput).not.toHaveBeenCalled();
 

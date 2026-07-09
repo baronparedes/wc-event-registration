@@ -1,24 +1,35 @@
 import { CheckCircle2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
-import { SectionCard } from '@/components/ui/SectionCard';
+import { WizardStep } from '@/components/ui/WizardStep';
 import { toEventRegistration } from '@/config/constants';
 
 type PublicRegistrationConfirmationStepProps = {
   registrationId: string;
   email: string;
   eventSlug: string;
+  inactivityTimeoutMs?: number;
+  onInactivityTimeout?: () => void;
 };
 
 export function PublicRegistrationConfirmationStep({
   registrationId,
   email,
   eventSlug,
+  inactivityTimeoutMs,
+  onInactivityTimeout,
 }: PublicRegistrationConfirmationStepProps) {
   const isEmailEnabled = false;
 
   return (
-    <SectionCard title="Registration Complete">
+    <WizardStep
+      title="Registration Complete"
+      inactivityTimeoutMs={inactivityTimeoutMs}
+      onInactivityTimeout={onInactivityTimeout}
+      inactivityTimerMessage={(s) =>
+        `Returning to member registration in ${s}s if no one continues.`
+      }
+    >
       <div className="space-y-6 text-center">
         <div className="flex justify-center">
           <CheckCircle2 className="h-16 w-16 text-primary" />
@@ -58,6 +69,6 @@ export function PublicRegistrationConfirmationStep({
           </Button>
         </div>
       </div>
-    </SectionCard>
+    </WizardStep>
   );
 }

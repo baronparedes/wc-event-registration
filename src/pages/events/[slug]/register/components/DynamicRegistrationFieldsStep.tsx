@@ -2,8 +2,8 @@ import { Info } from 'lucide-react';
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
-import { SectionCard } from '@/components/ui/SectionCard';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { WizardStep } from '@/components/ui/WizardStep';
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
@@ -116,7 +116,14 @@ type DynamicFieldsStepCardProps = {
   submitButtonLabel?: string;
   submitErrorMessage: string | null;
   submitSuccessMessage: string | null;
-  stepTimeoutSecondsRemaining?: number | null;
+  /** Duration in ms for the fixed countdown after registration is confirmed. Requires onCountdownTimeout. */
+  countdownMs?: number;
+  /** Called when the post-confirm countdown expires. */
+  onCountdownTimeout?: () => void;
+  /** Duration in ms for the inactivity reset during form filling. Requires onInactivityTimeout. */
+  inactivityTimeoutMs?: number;
+  /** Called when the form inactivity timer expires. */
+  onInactivityTimeout?: () => void;
 };
 
 export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
@@ -141,18 +148,26 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     submitButtonLabel = 'Submit Registration',
     submitErrorMessage,
     submitSuccessMessage,
-    stepTimeoutSecondsRemaining = null,
+    countdownMs,
+    onCountdownTimeout,
+    inactivityTimeoutMs,
+    onInactivityTimeout,
   } = props;
 
   const shouldShowDefaultLockedMessage = !matchedMember || shouldFadeLockedState;
   const shouldShowBlockedLockedMessage = matchedMember && isLocked && !shouldFadeLockedState;
 
   return (
-    <SectionCard
+    <WizardStep
       title="Step 3: Complete Your Registration"
-      wrapperClassName="registration-step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
-      titleClassName="registration-step-card__title font-heading text-xl font-semibold text-text"
-      contentClassName="registration-step-card__content mt-2"
+      countdownMs={countdownMs}
+      onCountdownTimeout={onCountdownTimeout}
+      isCountdownActive={isRegistrationConfirmed}
+      countdownTimerMessage={(s) => `Returning to Step 1 in ${s}s.`}
+      inactivityTimeoutMs={inactivityTimeoutMs}
+      onInactivityTimeout={onInactivityTimeout}
+      isInactivityTimerActive={Boolean(matchedMember && !isLocked && !isRegistrationConfirmed)}
+      inactivityTimerMessage={(s) => `Returning to Step 1 in ${s}s if this step is not completed.`}
     >
       <div className="space-y-2">
         <div
@@ -226,11 +241,6 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               <p className="registration-status-message text-sm font-medium text-green-900">
                 {submitSuccessMessage}
               </p>
-              {stepTimeoutSecondsRemaining && (
-                <p className="registration-status-message text-sm font-medium text-green-900">
-                  Returning to Step 1 in {stepTimeoutSecondsRemaining}s.
-                </p>
-              )}
             </div>
           </div>
 
@@ -325,12 +335,6 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               </Button>
             )}
           </div>
-
-          {stepTimeoutSecondsRemaining && (
-            <p className="registration-timeout-copy text-sm text-muted" aria-live="polite">
-              Returning to Step 1 in {stepTimeoutSecondsRemaining}s if this step is not completed.
-            </p>
-          )}
         </form>
       )}
 
@@ -347,6 +351,6 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
           <p className="mt-1">{submitSuccessMessage}</p>
         </div>
       )}
-    </SectionCard>
+    </WizardStep>
   );
 }
