@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
 import { Info, Search } from 'lucide-react';
 
@@ -17,6 +17,7 @@ type SearchResult = {
 type AttendeeSearchStepProps = {
   searchToken: string;
   submittedSearchToken: string;
+  notFoundActions?: ReactNode;
   disabled?: boolean;
   isSearching?: boolean;
   results?: SearchResult[];
@@ -29,6 +30,7 @@ export function AttendeeSearchStep(props: AttendeeSearchStepProps) {
   const {
     searchToken,
     submittedSearchToken,
+    notFoundActions,
     disabled = false,
     isSearching = false,
     results = [],
@@ -50,7 +52,7 @@ export function AttendeeSearchStep(props: AttendeeSearchStepProps) {
     !isSearching &&
     results.length === 0 &&
     !isSearchError
-      ? `No attendees found matching "${submittedSearchToken}"`
+      ? `No attendees found matching "${submittedSearchToken}". Unregistered attendees must complete registration first.`
       : null;
 
   const handleSearchTokenChange = (nextValue: string) => {
@@ -66,7 +68,7 @@ export function AttendeeSearchStep(props: AttendeeSearchStepProps) {
   return (
     <WizardStep
       title="Step 1: Find Attendee"
-      subtitle="Scan RFID or search by name, last name, or email."
+      subtitle="Scan member ID or search by name, last name, or email."
     >
       <div className="space-y-4">
         <div className="space-y-3">
@@ -111,6 +113,7 @@ export function AttendeeSearchStep(props: AttendeeSearchStepProps) {
 
         <AttendeeLookupErrorAlert
           message={lookupErrorMessage}
+          actions={notFoundActions}
           onDismiss={() => setIsDismissed(true)}
         />
 

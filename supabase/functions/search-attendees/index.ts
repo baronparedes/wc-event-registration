@@ -33,6 +33,7 @@ type RegistrationSearchRow = {
   user_id: string;
   status: 'submitted' | 'updated' | 'cancelled';
   submitted_at: string;
+  users: UserSearchRow;
 };
 
 type PublicRegistrationSearchRow = {
@@ -181,6 +182,84 @@ function buildPublicRegistrationFullName(registration: PublicRegistrationSearchR
   return `${registration.first_name} ${registration.last_name}`.trim();
 }
 
+function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function matchesNicknameLastNameAggregate(
+  registration: PublicRegistrationSearchRow,
+  normalizedToken: string,
+): boolean {
+  if (!registration.nickname) {
+    return false;
+  }
+
+  const nickname = normalizeSearchText(registration.nickname);
+  const lastName = normalizeSearchText(registration.last_name);
+  const aggregate = normalizeSearchText(`${registration.nickname} ${registration.last_name}`);
+
+  if (aggregate.includes(normalizedToken)) {
+    return true;
+  }
+
+  const tokenParts = normalizedToken.split(' ').filter(Boolean);
+  if (tokenParts.length < 2) {
+    return false;
+  }
+
+  const [firstPart, ...remainingParts] = tokenParts;
+  if (!nickname.includes(firstPart)) {
+    return false;
+  }
+
+  // Allow partial tail-token matching in the last name so combined searches still resolve
+  // when users type incomplete or slightly off trailing terms.
+  return remainingParts.some((part) => lastName.includes(part));
+}
+
+function matchesUserNicknameLastNameAggregate(
+  user: UserSearchRow,
+  normalizedToken: string,
+): boolean {
+  const nickname = normalizeSearchText(readMetadataText(user.metadata, 'nickname') ?? '');
+  if (!nickname) {
+    return false;
+  }
+
+  const lastName = normalizeSearchText(user.last_name ?? '');
+  const aggregate = normalizeSearchText(`${nickname} ${lastName}`);
+
+  if (aggregate.includes(normalizedToken)) {
+    return true;
+  }
+
+  const tokenParts = normalizedToken.split(' ').filter(Boolean);
+  if (tokenParts.length < 2) {
+    return false;
+  }
+
+  const [firstPart, ...remainingParts] = tokenParts;
+  if (!nickname.includes(firstPart)) {
+    return false;
+  }
+
+  return remainingParts.some((part) => lastName.includes(part));
+}
+
+function matchesDirectUserSearch(user: UserSearchRow, normalizedToken: string): boolean {
+  const memberId = normalizeSearchText(user.member_id ?? '');
+  const fullName = normalizeSearchText(user.full_name);
+  const lastName = normalizeSearchText(user.last_name ?? '');
+  const email = normalizeSearchText(user.email ?? '');
+
+  return (
+    memberId.includes(normalizedToken) ||
+    fullName.includes(normalizedToken) ||
+    lastName.includes(normalizedToken) ||
+    email.includes(normalizedToken)
+  );
+}
+
 function isMissingPublicRegistrationColumnError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
     return false;
@@ -295,84 +374,63 @@ Deno.serve(async (req) => {
     }
 
     const normalizedToken = search_token.trim();
+    const normalizedTokenForAggregate = normalizeSearchText(search_token);
     const tokenPattern = `%${normalizedToken}%`;
+    const aggregateSeedToken = normalizedTokenForAggregate.split(' ').find(Boolean) ?? '';
 
-    const [memberMatch, nameMatch, lastNameMatch, emailMatch] = await Promise.all([
-      adminClient
-        .from('users')
-        .select('id, member_id, last_name, full_name, email, metadata')
-        .ilike('member_id', tokenPattern)
-        .limit(25),
-      adminClient
-        .from('users')
-        .select('id, member_id, last_name, full_name, email, metadata')
-        .ilike('full_name', tokenPattern)
-        .limit(25),
-      adminClient
-        .from('users')
-        .select('id, member_id, last_name, full_name, email, metadata')
-        .ilike('last_name', tokenPattern)
-        .limit(25),
-      adminClient
-        .from('users')
-        .select('id, member_id, last_name, full_name, email, metadata')
-        .ilike('email', tokenPattern)
-        .limit(25),
+    const registrationsQuery = adminClient
+      .from('registrations')
+      .select(
+        'id, user_id, status, submitted_at, users!inner(id, member_id, last_name, full_name, email, metadata)',
+      )
+      .eq('event_id', event_id)
+      .neq('status', 'cancelled')
+      .or(
+        normalizedTokenForAggregate.includes(' ')
+          ? `member_id.ilike.${tokenPattern},full_name.ilike.${tokenPattern},last_name.ilike.${tokenPattern},email.ilike.${tokenPattern},full_name.ilike.%${aggregateSeedToken}%,last_name.ilike.%${aggregateSeedToken}%`
+          : `member_id.ilike.${tokenPattern},full_name.ilike.${tokenPattern},last_name.ilike.${tokenPattern},email.ilike.${tokenPattern}`,
+        { foreignTable: 'users' },
+      )
+      .limit(100);
+
+    const publicSearchResult = await adminClient
+      .from('public_registrations')
+      .select('id, first_name, last_name, nickname, email, status, submitted_at')
+      .eq('event_id', event_id)
+      .neq('status', 'cancelled')
+      .or(
+        normalizedTokenForAggregate.includes(' ')
+          ? `first_name.ilike.${tokenPattern},last_name.ilike.${tokenPattern},nickname.ilike.${tokenPattern},email.ilike.${tokenPattern},nickname.ilike.%${aggregateSeedToken}%,last_name.ilike.%${aggregateSeedToken}%`
+          : `first_name.ilike.${tokenPattern},last_name.ilike.${tokenPattern},nickname.ilike.${tokenPattern},email.ilike.${tokenPattern}`,
+      )
+      .limit(100);
+
+    const [registrationsResult, publicSearchQueryResult] = await Promise.all([
+      registrationsQuery,
+      publicSearchResult,
     ]);
 
-    if (memberMatch.error || nameMatch.error || lastNameMatch.error || emailMatch.error) {
-      return errorResponse(corsHeaders, 500, 'Failed to search users', undefined, {
-        error_code: 'USER_SEARCH_FAILED',
-      });
-    }
-
-    const matchingUsers = uniqueById([
-      ...((memberMatch.data ?? []) as UserSearchRow[]),
-      ...((nameMatch.data ?? []) as UserSearchRow[]),
-      ...((lastNameMatch.data ?? []) as UserSearchRow[]),
-      ...((emailMatch.data ?? []) as UserSearchRow[]),
-    ]);
-
-    const userIds = matchingUsers.map((user) => user.id);
-
-    const registrationsQuery =
-      userIds.length > 0
-        ? adminClient
-            .from('registrations')
-            .select('id, user_id, status, submitted_at')
-            .eq('event_id', event_id)
-            .in('user_id', userIds)
-            .neq('status', 'cancelled')
-            .limit(100)
-        : Promise.resolve({ data: [], error: null });
-
-    const publicSearchFields = ['first_name', 'last_name', 'nickname', 'email'] as const;
-    const publicSearchResults = await Promise.all(
-      publicSearchFields.map((field) =>
-        adminClient
-          .from('public_registrations')
-          .select('id, first_name, last_name, nickname, email, status, submitted_at')
-          .eq('event_id', event_id)
-          .neq('status', 'cancelled')
-          .ilike(field, tokenPattern)
-          .limit(100),
-      ),
-    );
-
-    const registrationsResult = await registrationsQuery;
-
-    if (registrationsResult.error || publicSearchResults.some((result) => result.error)) {
+    if (registrationsResult.error || publicSearchQueryResult.error) {
       return errorResponse(corsHeaders, 500, 'Failed to search registrations', undefined, {
         error_code: 'REGISTRATION_SEARCH_FAILED',
       });
     }
 
     const registrationRows = (registrationsResult.data ?? []) as RegistrationSearchRow[];
-    const publicRegistrationRows = uniqueById(
-      publicSearchResults.flatMap((result) => (result.data ?? []) as PublicRegistrationSearchRow[]),
+    const filteredRegistrationRows = registrationRows.filter((registration) => {
+      const user = registration.users;
+      return (
+        matchesDirectUserSearch(user, normalizedTokenForAggregate) ||
+        matchesUserNicknameLastNameAggregate(user, normalizedTokenForAggregate)
+      );
+    });
+    const publicSearchRows = (publicSearchQueryResult.data ?? []) as PublicRegistrationSearchRow[];
+    const nicknameAggregateRows = publicSearchRows.filter((registration) =>
+      matchesNicknameLastNameAggregate(registration, normalizedTokenForAggregate),
     );
+    const publicRegistrationRows = uniqueById([...publicSearchRows, ...nicknameAggregateRows]);
 
-    if (registrationRows.length === 0 && publicRegistrationRows.length === 0) {
+    if (filteredRegistrationRows.length === 0 && publicRegistrationRows.length === 0) {
       return jsonResponse(
         corsHeaders,
         {
@@ -383,7 +441,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const registrationIds = registrationRows.map((registration) => registration.id);
+    const registrationIds = filteredRegistrationRows.map((registration) => registration.id);
     const publicRegistrationIds = publicRegistrationRows.map((registration) => registration.id);
     const allRegistrationRefIds = Array.from(
       new Set([...registrationIds, ...publicRegistrationIds]),
@@ -497,7 +555,6 @@ Deno.serve(async (req) => {
     const publicRegistrationAnswers = (publicRegistrationAnswersResult.data ??
       []) as PublicRegistrationAnswerRow[];
 
-    const userById = new Map(matchingUsers.map((user) => [user.id, user]));
     const checkInByAttendeeRef = new Map<string, string>();
     for (const checkIn of checkIns) {
       if (checkIn.registration_id && registeredIdSet.has(checkIn.registration_id)) {
@@ -554,12 +611,9 @@ Deno.serve(async (req) => {
       publicRegistrationAnswersByRegistrationId.set(answer.public_registration_id, current);
     }
 
-    const registeredResults = registrationRows
+    const registeredResults = filteredRegistrationRows
       .map((registration) => {
-        const user = userById.get(registration.user_id);
-        if (!user) {
-          return null;
-        }
+        const user = registration.users;
 
         const checkInTime = checkInByAttendeeRef.get(`registered:${registration.id}`) ?? null;
         const attendanceAnswerSummaries = (
@@ -610,7 +664,7 @@ Deno.serve(async (req) => {
           attendance_answers: attendanceAnswerSummaries,
         };
       })
-      .filter((value) => value !== null);
+      .filter(Boolean);
 
     const publicResults = publicRegistrationRows.map((registration) => {
       const checkInTime = checkInByAttendeeRef.get(`public:${registration.id}`) ?? null;

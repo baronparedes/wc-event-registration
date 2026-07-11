@@ -88,7 +88,6 @@ describe('AdminAttendanceDataPage', () => {
       data: {
         event_id: EVENT_ID,
         attendance_enabled: true,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-04T00:00:00Z',
@@ -155,7 +154,6 @@ describe('AdminAttendanceDataPage', () => {
       data: {
         event_id: EVENT_ID,
         attendance_enabled: false,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-04T00:00:00Z',
@@ -183,7 +181,6 @@ describe('AdminAttendanceDataPage', () => {
       data: {
         event_id: EVENT_ID,
         attendance_enabled: false,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-04T00:00:00Z',

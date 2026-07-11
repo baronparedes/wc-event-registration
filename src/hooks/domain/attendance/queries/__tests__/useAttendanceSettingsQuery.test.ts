@@ -42,7 +42,6 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: true,
-        walk_in_mode_enabled: false,
         timeslot_enabled: true,
         timeslots: ['2026-07-10T10:30+08:00'],
         updated_at: '2026-07-01T01:00:00.000Z',
@@ -59,7 +58,6 @@ describe('useAttendanceSettingsQuery', () => {
     expect(result.current.data).toEqual({
       event_id: 'event-1',
       attendance_enabled: true,
-      walk_in_mode_enabled: false,
       timeslot_enabled: true,
       timeslots: ['2026-07-10T10:30+08:00'],
       updated_at: '2026-07-01T01:00:00.000Z',
@@ -79,7 +77,6 @@ describe('useAttendanceSettingsQuery', () => {
       expect.objectContaining({
         event_id: 'event-2',
         attendance_enabled: false,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
       }),
@@ -114,7 +111,6 @@ describe('useAttendanceSettingsQuery', () => {
     const settingsData = {
       event_id: 'event-1',
       attendance_enabled: true,
-      walk_in_mode_enabled: true,
       timeslot_enabled: true,
       timeslots: ['2026-07-10T09:00+08:00', '2026-07-10T14:00+08:00'],
       updated_at: '2026-07-02T12:00:00.000Z',
@@ -139,7 +135,6 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: false,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-01T00:00:00Z',
@@ -166,7 +161,7 @@ describe('useAttendanceSettingsQuery', () => {
 
     await waitFor(() => {
       expect(mockQueryBuilder.select).toHaveBeenCalledWith(
-        'event_id, attendance_enabled, walk_in_mode_enabled, timeslot_enabled, timeslots, updated_at',
+        'event_id, attendance_enabled, timeslot_enabled, timeslots, updated_at',
       );
     });
   });
@@ -176,7 +171,6 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: true,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-01T00:00:00Z',
@@ -204,7 +198,6 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: true,
-        walk_in_mode_enabled: false,
         timeslot_enabled: true,
         timeslots,
         updated_at: '2026-07-01T00:00:00Z',

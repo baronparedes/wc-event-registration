@@ -73,7 +73,6 @@ export function AdminEventAttendancePage() {
     defaultValues: {
       event_id: eventId ?? '',
       attendance_enabled: false,
-      walk_in_mode_enabled: false,
       timeslot_enabled: false,
       timeslots: [],
     },
@@ -98,7 +97,6 @@ export function AdminEventAttendancePage() {
   useEffect(() => {
     if (attendanceEnabled !== false) return;
 
-    setValue('walk_in_mode_enabled', false, { shouldDirty: true, shouldValidate: true });
     setValue('timeslot_enabled', false, { shouldDirty: true, shouldValidate: true });
     setValue('timeslots', [], { shouldDirty: true, shouldValidate: true });
   }, [attendanceEnabled, setValue]);
@@ -198,7 +196,6 @@ export function AdminEventAttendancePage() {
     const payload: UpdateAttendanceSettingsInput = {
       ...formValues,
       event_id: requiredEventId,
-      walk_in_mode_enabled: formValues.attendance_enabled ? formValues.walk_in_mode_enabled : false,
       timeslot_enabled: formValues.attendance_enabled ? formValues.timeslot_enabled : false,
       timeslots:
         formValues.attendance_enabled && formValues.timeslot_enabled
@@ -242,7 +239,7 @@ export function AdminEventAttendancePage() {
         ]}
         navLinks={<EventNavigationLinks eventId={resolvedEventId} currentSection="attendance" />}
         title="Manage Attendance"
-        description="Configure event-day attendance tracking, walk-ins, and timeslot attendance behavior."
+        description="Configure event-day attendance tracking and timeslot attendance behavior."
       />
 
       {isArchived && (
@@ -272,24 +269,6 @@ export function AdminEventAttendancePage() {
                     </span>
                     <span className="text-xs text-muted">
                       Allows check-in operations and attendance export for this event.
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              <div className="rounded-lg border border-border bg-background p-4">
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    disabled={isArchived || !attendanceEnabled}
-                    {...register('walk_in_mode_enabled')}
-                    className="h-4 w-4 cursor-pointer rounded border-border"
-                  />
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-text">Enable walk-in mode</span>
-                    <span className="text-xs text-muted">
-                      Allows staff to add and check in walk-in attendees when no registration
-                      exists.
                     </span>
                   </div>
                 </label>

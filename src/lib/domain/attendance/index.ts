@@ -3,7 +3,6 @@ export type {
   CheckInStatus,
   AttendanceSettings,
   CheckInResult,
-  WalkInPayload,
   AttendanceSlotPayload,
   TimeslotAttendanceRecord,
   AttendanceAnswer,
@@ -18,7 +17,6 @@ export type {
 export type {
   AttendanceSettingsInput,
   UpdateAttendanceSettingsInput,
-  WalkInPayloadInput,
   AttendanceSlotPayloadInput,
   AttendanceAnswerEntry,
   UpsertAttendanceAnswersInput,
@@ -28,7 +26,6 @@ export { ATTENDEE_KINDS, CHECK_IN_STATUSES, CHECK_IN_STATUS_LABELS } from './met
 export {
   attendanceSettingsSchema,
   updateAttendanceSettingsSchema,
-  walkInPayloadSchema,
   attendanceSlotPayloadSchema,
   buildTimeslotSelectionSchema,
   upsertAttendanceAnswersSchema,

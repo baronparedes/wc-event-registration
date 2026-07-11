@@ -1,15 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 import { useErrorAutoDismiss } from '@/hooks/utils';
 
 type AttendeeLookupErrorAlertProps = {
   message: string | null;
+  actions?: ReactNode;
   suppress?: boolean;
   onDismiss?: () => void;
 };
 
 export function AttendeeLookupErrorAlert({
   message,
+  actions,
   suppress = false,
   onDismiss,
 }: AttendeeLookupErrorAlertProps) {
@@ -46,7 +48,7 @@ export function AttendeeLookupErrorAlert({
       className={`overflow-hidden transition-all duration-500 ${
         shouldFade
           ? 'mt-0 max-h-0 opacity-0 -translate-y-1'
-          : 'mt-4 max-h-40 opacity-100 translate-y-0'
+          : 'mt-4 max-h-80 opacity-100 translate-y-0'
       }`}
     >
       <div
@@ -64,6 +66,7 @@ export function AttendeeLookupErrorAlert({
           <div className="space-y-1">
             <p className="text-sm font-semibold text-orange-950">Attendee not found</p>
             <p className="text-sm text-orange-900">{message}</p>
+            {actions ? <div className="pt-2">{actions}</div> : null}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {errorCountdown > 0 && (

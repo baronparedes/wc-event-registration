@@ -1,17 +1,28 @@
 # MVP2 Session Handoff
 
-Last updated: 2026-07-05
+Last updated: 2026-07-11
 Owner baseline: 1 dev-agent, sequential execution
 Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 
 ## Pause Snapshot
 
-- Current state: Paused after completing Session 4 (EPIC-8-S4).
-- Next session to start: Session 5 (EPIC-8-S5 Walk-In Check-In).
+- Current state: Paused after implementing Session 5 (EPIC-8-S5).
+- Next session to start: Session 6 (EPIC-8-S6 Timeslot Attendance).
 - Latest validation at pause:
   - `npm run build` passed.
   - `npm run format:check` passed.
+  - `npm run ci:gate` passed.
 - New route `/admin/events/:id/attendance/fields` added for attendance field config + data entry.
+
+## 2026-07-11 Session 5 Implementation Addendum
+
+- Walk-in-mode implementation scope removed from attendance settings, contracts, and check-in behavior.
+- Check-in not-found handling is now registration-first, with quick action(s) placed inside dismissible error info.
+- Direct "Retry Search" quick action was removed from the dismissible error info per UX refinement.
+- Event-day admin registration reopen operation is wired into the check-in not-found flow.
+- `search-attendees` was optimized to keep two primary search queries (registered and public).
+- Nickname + last_name aggregate matching now applies to both public registrations and registered-member search paths.
+- Registered search now uses a joined registrations-to-users query instead of a pre-query users lookup.
 
 ## 2026-07-05 Doc Addendum - Public Attendee Details
 
@@ -51,7 +62,7 @@ Checklist:
 
 - [x] Add attendance domain module under src/lib/domain/attendance
 - [x] Add attendance-fields domain module under src/lib/domain/attendance-fields
-- [x] Add Zod schemas for settings (dependency enforcement), walk-in payload (superRefine contact check), slot payload
+- [x] Add Zod schemas for settings (dependency enforcement) and slot payload
 - [x] Add Zod schemas for attendance field CRUD and dynamic attendance response schema factory
 - [x] Add additive migration for attendance tables and constraints
 - [x] Add deny-by-default RLS and explicit service_role grants
@@ -84,9 +95,9 @@ Goal:
 Checklist:
 
 - [x] Add settings query hook and mutation hook
-- [x] Add admin event settings UI section for Attendance Tracking, Walk-In Mode, Timeslot Attendance
+- [x] Add admin event settings UI section for Attendance Tracking and Timeslot Attendance
 - [x] Implement update-attendance-settings Edge Function
-- [x] Enforce dependency rule: walk-in and timeslot cannot be enabled if attendance is disabled
+- [x] Enforce dependency rule: timeslot cannot be enabled if attendance is disabled
 - [x] Add confirmation and persistence feedback
 
 Expected file touch zones:
@@ -176,35 +187,35 @@ Exit criteria:
 
 - Registered attendee check-in is stable and race-safe.
 
-## Session 5 - EPIC-8-S5 Walk-In Check-In
+## Session 5 - EPIC-8-S5 Unregistered Attendee Registration Reopen Policy
 
 Goal:
 
-- Deliver walk-in create-and-check-in flow behind Walk-In Mode toggle.
+- Replace direct walk-in check-in with an operational path: reopen registration on event day when allowed, then use normal check-in.
 
 Checklist:
 
-- [ ] Add walk-in form in check-in flow for not-found cases
-- [ ] Validate full name and at least one contact method
-- [ ] Implement create-walk-in-check-in Edge Function
-- [ ] Mark walk-in attendees clearly in UI response states
-- [ ] Return to ready-for-next-attendee state immediately after completion
+- [x] Remove walk-in create-and-check-in implementation scope from check-in flow
+- [x] Add clear not-found guidance in check-in UI to complete registration first
+- [x] Document and implement admin event-day registration reopen operational path
+- [x] Verify newly registered attendees are discoverable immediately in standard check-in flow
+- [x] Keep first-check-in behavior unchanged after same-day registration
 
 Expected file touch zones:
 
 - src/pages/admin/events/[id]/attendance/check-in/
-- src/lib/domain/attendance/schemas.ts
-- src/hooks/domain/attendance/mutations/
-- supabase/functions/create-walk-in-check-in/
+- src/pages/admin/events/[id]/
+- src/hooks/domain/attendance/queries/
+- docs/features/8-event-day-attendance-tracking/
 
 Validation gate:
 
-- [ ] Feature 8.4 scenarios pass in local QA
-- [ ] Walk-in blocked when mode disabled
+- [x] Feature 8.4 scenarios pass in local QA
+- [x] Unregistered attendee path requires registration-first behavior
 
 Exit criteria:
 
-- Walk-in policy is enforced and flow remains operationally fast.
+- [x] Unregistered attendee handling is registration-first and uses existing standard check-in semantics.
 
 ## Session 6 - EPIC-8-S6 Timeslot Attendance
 
@@ -246,7 +257,7 @@ Checklist:
 
 - [ ] Add export action entry point for attendance-enabled events
 - [ ] Implement export-attendance-csv Edge Function
-- [ ] Include required columns: identity, status, official check-in time, attendance field details, walk-in marker
+- [ ] Include required columns: identity, status, official check-in time, attendance field details
 - [ ] Return headers-only CSV for no-record events
 - [ ] Ensure registration export behavior remains unchanged
 
@@ -354,4 +365,4 @@ Run at end of Session 8:
 
 Use this prompt for the next dev-agent execution session:
 
-Implement Session 5 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S5 only, deliver walk-in create-and-check-in end-to-end (UI flow, validation, mutation hook, and create-walk-in-check-in Edge Function), and run build plus format plus local QA checks for feature 8.4 before handoff.
+Implement Session 6 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S6 only: add timeslot attendance behavior as additive to official check-in semantics, validate slot values against configured event slots, and preserve First Check-In Rule while adding slot-level summaries. Run build, format, and local QA checks for feature 8.5 before handoff.

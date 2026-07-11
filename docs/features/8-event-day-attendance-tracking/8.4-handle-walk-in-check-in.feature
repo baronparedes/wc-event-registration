@@ -1,44 +1,36 @@
-Feature: Handle Walk-In Check-In
+Feature: Handle Unregistered Attendees via Same-Day Registration Reopen
   As admin check-in staff
-  I want to process unregistered attendees based on event policy
-  So that door operations stay controlled and consistent
+  I want to route unregistered attendees through the normal registration flow
+  So that event-day operations stay simple and attendance data stays consistent
 
   Context: Business Rules
-    - Walk-in mode is disabled by default
-    - Walk-in processing is only available when walk-in mode is enabled for the event
-    - Required walk-in identity includes full name and at least one contact method
-    - Approved walk-ins are marked as checked in immediately
+    - Unregistered attendees are not checked in directly from the admin check-in screen
+    - Admin can temporarily reopen registration for event day when policy allows additional attendees
+    - Unregistered attendees must complete normal registration first
+    - Once registration is completed, attendee uses the same standard check-in process as everyone else
 
-  Scenario: Block walk-in when walk-in mode is disabled
+  Scenario: Guide unregistered attendee to registration flow
     Given attendance tracking is enabled for an event
-    And walk-in mode is disabled
-    When I cannot find a registration for a person
-    Then walk-in check-in is denied
-    And I see guidance to complete standard registration first
+    And I cannot find a registration for a person
+    Then direct check-in is denied
+    And I see guidance to complete registration first
 
-  Scenario: Create and check in walk-in when walk-in mode is enabled
-    Given attendance tracking is enabled for an event
-    And walk-in mode is enabled
-    When I cannot find a registration for a person
-    And I enter required walk-in identity details
-    Then a walk-in attendee record is created
-    And the person is marked as checked in immediately
+  Scenario: Temporarily reopen registration on event day
+    Given registration is currently closed for an event
+    And event policy allows additional attendees
+    When I reopen registration for event day
+    Then the normal registration flow becomes available again
+    And unregistered attendees can submit registration using standard rules
 
-  Scenario: Validate required walk-in identity details
-    Given walk-in mode is enabled
-    When I submit a walk-in without full name
-    Or I submit without any contact method
-    Then the walk-in is not created
-    And I see which required details are missing
+  Scenario: Process attendee with standard check-in after same-day registration
+    Given an attendee completed registration after event-day reopening
+    When I search and check in that attendee in admin
+    Then the attendee is checked in through the normal check-in flow
+    And first check-in time follows the official first-check-in rule
 
-  Scenario: Mark walk-ins clearly in attendance records
-    Given a person was checked in as a walk-in
-    When I view attendance details
-    Then the attendee is clearly labeled as walk-in
-    And staff can distinguish walk-ins from registered attendees
-
-  Scenario: Continue normal check-in after walk-in processing
-    Given I completed a walk-in check-in
-    When I return to the check-in screen
-    Then I can immediately process the next attendee
-    And the previous walk-in result remains saved
+  Scenario: Keep registration closed when policy does not allow event-day additions
+    Given registration is currently closed for an event
+    And event policy does not allow additional attendees
+    When I attempt to process an unregistered person
+    Then I cannot reopen registration for that purpose
+    And the person is not checked in

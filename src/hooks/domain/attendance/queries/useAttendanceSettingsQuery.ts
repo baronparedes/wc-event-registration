@@ -9,7 +9,6 @@ function buildDefaultSettings(eventId: string): AttendanceSettings {
   return {
     event_id: eventId,
     attendance_enabled: false,
-    walk_in_mode_enabled: false,
     timeslot_enabled: false,
     timeslots: [],
     updated_at: new Date().toISOString(),
@@ -27,9 +26,7 @@ export function useAttendanceSettingsQuery(eventId: string | undefined) {
 
       const { data, error } = await supabase
         .from('attendance_settings')
-        .select(
-          'event_id, attendance_enabled, walk_in_mode_enabled, timeslot_enabled, timeslots, updated_at',
-        )
+        .select('event_id, attendance_enabled, timeslot_enabled, timeslots, updated_at')
         .eq('event_id', eventId)
         .maybeSingle();
 

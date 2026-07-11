@@ -16,19 +16,10 @@ const updateAttendanceSettingsSchema = z
   .object({
     event_id: z.string().uuid('Invalid event ID.'),
     attendance_enabled: z.boolean(),
-    walk_in_mode_enabled: z.boolean(),
     timeslot_enabled: z.boolean(),
     timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
   })
   .superRefine((value, context) => {
-    if (!value.attendance_enabled && value.walk_in_mode_enabled) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Walk-In Mode cannot be enabled when attendance tracking is disabled.',
-        path: ['walk_in_mode_enabled'],
-      });
-    }
-
     if (!value.attendance_enabled && value.timeslot_enabled) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -210,15 +201,12 @@ Deno.serve(async (req) => {
         {
           event_id: payload.event_id,
           attendance_enabled: payload.attendance_enabled,
-          walk_in_mode_enabled: payload.attendance_enabled ? payload.walk_in_mode_enabled : false,
           timeslot_enabled: payload.attendance_enabled ? payload.timeslot_enabled : false,
           timeslots: normalizedTimeslots,
         },
         { onConflict: 'event_id' },
       )
-      .select(
-        'event_id, attendance_enabled, walk_in_mode_enabled, timeslot_enabled, timeslots, updated_at',
-      )
+      .select('event_id, attendance_enabled, timeslot_enabled, timeslots, updated_at')
       .single();
 
     if (upsertError) {

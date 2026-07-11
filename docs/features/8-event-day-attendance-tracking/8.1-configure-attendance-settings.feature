@@ -6,7 +6,6 @@ Feature: Configure Attendance Settings Per Event
   Context: Business Rules
     - Attendance tracking is disabled by default for new events
     - Attendance settings are managed per event
-    - Walk-in mode is optional and can be toggled per event
     - Timeslot attendance is optional and can be toggled per event
     - Event settings changes are saved immediately when confirmed
 
@@ -17,13 +16,6 @@ Feature: Configure Attendance Settings Per Event
     Then attendance tools become available for that event
     And I see confirmation that attendance is enabled
 
-  Scenario: Enable walk-in mode for an attendance-enabled event
-    Given attendance tracking is enabled for an event
-    And walk-in mode is currently disabled
-    When I enable walk-in mode
-    Then walk-in check-in is allowed for that event
-    And I see confirmation that walk-ins are enabled
-
   Scenario: Enable timeslot attendance for an attendance-enabled event
     Given attendance tracking is enabled for an event
     And timeslot attendance is currently disabled
@@ -31,11 +23,11 @@ Feature: Configure Attendance Settings Per Event
     Then timeslot attendance options become available
     And I see confirmation that timeslot tracking is enabled
 
-  Scenario: Prevent walk-in and timeslot toggles when attendance is disabled
+  Scenario: Prevent timeslot toggle when attendance is disabled
     Given attendance tracking is disabled for an event
-    When I try to enable walk-in mode or timeslot attendance
+    When I try to enable timeslot attendance
     Then I am prompted to enable attendance tracking first
-    And the dependent toggles are not applied
+    And the dependent toggle is not applied
 
   Scenario: Save updated attendance settings
     Given I changed one or more attendance settings

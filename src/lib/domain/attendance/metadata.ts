@@ -1,6 +1,6 @@
 import type { AttendeeKind, CheckInStatus } from './types';
 
-export const ATTENDEE_KINDS: AttendeeKind[] = ['registered', 'public', 'walk_in'];
+export const ATTENDEE_KINDS: AttendeeKind[] = ['registered', 'public'];
 
 export const CHECK_IN_STATUSES: CheckInStatus[] = ['checked_in', 'already_checked_in', 'rejected'];
 

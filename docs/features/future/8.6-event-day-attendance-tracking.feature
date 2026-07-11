@@ -14,8 +14,8 @@ Feature: Event Day Attendance Tracking and Enrichment
     - During event day, check-in can be done by RFID, name search, or email search
     - Check-in view shows original registration details, assignment details, and key attendee details
     - If a person is checked in more than once, first check-in time remains the official attendance time
-    - Walk-in check-in is controlled per event and is disabled by default
-    - When enabled, walk-in attendees can be added and checked in immediately
+    - Unregistered attendees are handled by reopening registration when policy allows
+    - Unregistered attendees must complete normal registration before check-in
     - Attendance export is separate from registration export
     - Optional timeslot attendance can be enabled per event to track attendance by service slot (for example: 9AM, 12NN, 3PM)
 
@@ -54,20 +54,20 @@ Feature: Event Day Attendance Tracking and Enrichment
     Then the system shows "Already checked in"
     And the official check-in time remains 8:57 AM
 
-  Scenario: Handle unregistered person when walk-ins are disabled
+  Scenario: Handle unregistered person when registration remains closed
     Given attendance tracking is enabled for an event
-    And walk-ins are disabled for this event
+    And registration is closed for this event
     When staff attempts to check in a person with no registration
     Then check-in is denied
     And staff sees guidance to complete registration first
 
-  Scenario: Handle unregistered person when walk-ins are enabled
+  Scenario: Handle unregistered person by reopening registration
     Given attendance tracking is enabled for an event
-    And walk-ins are enabled for this event
-    When staff cannot find a registration for a person
-    And staff records required walk-in details
-    Then a walk-in attendee record is created
-    And the person is marked as checked in immediately
+    And registration is currently closed
+    When admin reopens registration for event day
+    And staff cannot find a registration for a person
+    Then staff directs the person to complete normal registration
+    And after registration, the attendee can be checked in through standard flow
 
   Scenario: Track attendance by service timeslot when enabled
     Given attendance tracking is enabled for an event
@@ -81,7 +81,7 @@ Feature: Event Day Attendance Tracking and Enrichment
     When I export attendance data
     Then I receive a separate attendance CSV file
     And each row includes attendee identity, attendance status, check-in time, and assignment details
-    And walk-in attendees are clearly marked
+    And only registered attendees are included
 
   Scenario: Attendance tools remain hidden when feature is disabled
     Given attendance tracking is disabled for an event

@@ -5,6 +5,13 @@
 - This document is planning-only for MVP2.
 - No coding or implementation execution is in scope for this session.
 
+### Status Update (2026-07-11)
+
+- MVP2 has moved from planning into implementation execution.
+- Sessions 1 through 5 have been implemented in sequence.
+- Current next execution target is Session 6 (EPIC-8-S6 Timeslot Attendance).
+- The detailed execution checkpoint source of truth is docs/mvp-2/session-handoff.md.
+
 ### Context
 
 - MVP1 plan has been completed and moved to `mvp-1`.
@@ -19,7 +26,7 @@ Deliver a complete design and delivery plan for attendance tracking that can be 
 - In scope:
 - Admin-only check-in in MVP2
 - Attendance enablement per event
-- Walk-in policy toggle per event
+- Same-day registration reopen policy per event
 - Optional timeslot attendance behavior
 - Separate attendance export (not merged into registrations export)
 - Bulk CSV edit of attendance field answers
@@ -31,7 +38,7 @@ Deliver a complete design and delivery plan for attendance tracking that can be 
 
 1. Finalized phased delivery plan with dependencies and exit criteria.
 2. Data model decision record for attendance entities and timeslot strategy.
-3. API contract outline for check-in, walk-in, and attendance export functions.
+3. API contract outline for check-in, same-day registration reopen, and attendance export functions.
 4. UI flow map for assignments, check-in, and reporting screens.
 5. QA strategy and acceptance matrix tied to feature scenarios.
 
@@ -74,7 +81,7 @@ Planning tasks:
 2. Define RLS and permission strategy at table level.
 3. Draft API contracts for:
 4. Check-in by RFID/name/email
-5. Walk-in create-and-check-in
+5. Same-day registration reopen for unregistered attendees
 6. Attendance CSV export
 7. Define metadata contract changes for event-level attendance toggles.
 
@@ -92,7 +99,7 @@ Define admin user flow and screen orchestration.
 Planning tasks:
 
 1. Define information architecture for attendance routes.
-2. Define check-in flow states (success, duplicate, not found, walk-in allowed/blocked).
+2. Define check-in flow states (success, duplicate, not found, registration required, registration reopened/closed).
 3. Define assignment management flow and editable field strategy.
 4. Define export flow expectations and output column mapping.
 
@@ -127,7 +134,7 @@ Plan CSV bulk edit workflow for efficient large-scale attendance data updates.
 
 Planning tasks:
 
-1. Confirm bulk edit scope: attendance answers only (no registration or walk-in data).
+1. Confirm bulk edit scope: attendance answers only (no registration base data edits).
 2. Define CSV format: columns (registration_id, full_name, email, member_id, attendance_fields...).
 3. Define import validation strategy: atomic failure (reject all if any row invalid).
 4. Define merge strategy: overwrite (replace all answers, not merge).
@@ -157,8 +164,8 @@ Exit criteria:
    Mitigation: Keep explicit MVP2 admin-only boundary in acceptance criteria.
 2. Risk: Ambiguity in timeslot model choice.
    Mitigation: Make a hard decision checkpoint before implementation kickoff.
-3. Risk: Unclear walk-in identity requirements at door.
-   Mitigation: Define minimum required walk-in fields in contract phase.
+3. Risk: Unclear event-day reopening policy for unregistered attendees.
+   Mitigation: Define clear reopening guardrails and staff guidance in contract phase.
 4. Risk: Regression risk to current registration/export behavior.
    Mitigation: Treat compatibility as a non-negotiable release gate.
 
@@ -170,9 +177,9 @@ Exit criteria:
 1. Assignment model choice:
 1. Hybrid fixed columns plus JSON extras
 1. Fully dynamic JSON-only assignments
-1. Walk-in identity policy:
-1. Minimal required fields
-1. Full profile at check-in
+1. Same-day registration reopen policy:
+1. Allowed only within admin-controlled event-day window
+1. Not allowed, registration remains closed
 
 ### Implementation Readiness Gate (Planning Complete)
 

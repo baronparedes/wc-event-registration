@@ -7,7 +7,6 @@ Feature: Export Attendance Data As CSV
     - Attendance export is a separate report from registration export
     - Export is available only for events with attendance tracking enabled
     - CSV includes attendee identity, attendance status, official check-in time, and assignment details
-    - Walk-in attendees are clearly marked in the exported file
     - Export supports events with no attendance records by returning headers
 
   Scenario: Export attendance CSV for an attendance-enabled event
@@ -23,7 +22,6 @@ Feature: Export Attendance Data As CSV
     Then I see attendee identity columns
     And I see attendance status and official check-in time columns
     And I see assignment detail columns
-    And walk-in attendees are clearly marked
 
   Scenario: Export with no attendance records
     Given attendance tracking is enabled for an event

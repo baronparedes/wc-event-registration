@@ -1,14 +1,13 @@
 import type { AttendanceFieldType } from '@/lib/domain/attendance-fields';
 import type { EventFieldType } from '@/lib/domain/event-fields';
 
-export type AttendeeKind = 'registered' | 'public' | 'walk_in';
+export type AttendeeKind = 'registered' | 'public';
 
 export type CheckInStatus = 'checked_in' | 'already_checked_in' | 'rejected';
 
 export type AttendanceSettings = {
   event_id: string;
   attendance_enabled: boolean;
-  walk_in_mode_enabled: boolean;
   timeslot_enabled: boolean;
   timeslots: string[];
   updated_at: string;
@@ -20,12 +19,6 @@ export type CheckInResult = {
   official_check_in_time: string | null;
   attendee_kind: AttendeeKind;
   message: string;
-};
-
-export type WalkInPayload = {
-  full_name: string;
-  email: string | null;
-  phone: string | null;
 };
 
 export type AttendanceSlotPayload = {

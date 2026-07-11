@@ -12,19 +12,51 @@ import {
   TIMING,
   toAdminEventAttendance,
   toAdminEventDetail,
+  toEventRegistration,
 } from '@/config/constants';
 import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
   useAttendanceSettingsQuery,
   useSearchAttendeesQuery,
 } from '@/hooks/domain/attendance/queries';
-import { useAdminEventQuery } from '@/hooks/domain/events';
+import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
+
+function toDatetimeLocal(value: string | null | undefined): string {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T');
+}
+
+function isRegistrationOpenNow(event: {
+  registration_mode: 'open' | 'closed';
+  registration_opens_at: string | null;
+  registration_closes_at: string | null;
+}): boolean {
+  if (event.registration_mode !== 'open') {
+    return false;
+  }
+
+  const now = Date.now();
+  const opensAt = event.registration_opens_at ? Date.parse(event.registration_opens_at) : null;
+  const closesAt = event.registration_closes_at ? Date.parse(event.registration_closes_at) : null;
+
+  if (opensAt !== null && Number.isFinite(opensAt) && now < opensAt) {
+    return false;
+  }
+
+  if (closesAt !== null && Number.isFinite(closesAt) && now >= closesAt) {
+    return false;
+  }
+
+  return true;
+}
 
 export function AdminAttendanceCheckInPage() {
   const { id: eventId } = useParams<{ id: string }>();
@@ -44,12 +76,14 @@ export function AdminAttendanceCheckInPage() {
   const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', { pageSize: 1 });
   const searchQuery = useSearchAttendeesQuery(eventId, submittedSearchToken);
   const checkInMutation = useCheckInAttendeeMutation();
+  const updateEventMutation = useUpdateEventMutation();
 
   const isLoading = eventLoading || settingsLoading;
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const registeredCount = registrationsQuery.data?.totalCount ?? 0;
 
   const results = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
+  const registrationOpen = event ? isRegistrationOpenNow(event) : false;
   const selectedResultId = useMemo(() => {
     if (selectedRegistrationId) {
       return results.some((result) => result.registration_id === selectedRegistrationId)
@@ -165,6 +199,40 @@ export function AdminAttendanceCheckInPage() {
     }
   }
 
+  async function handleReopenRegistration() {
+    if (!eventId || !event) {
+      return;
+    }
+
+    const eventEndMs = event.ends_at ? Date.parse(event.ends_at) : Number.NaN;
+    const hasFutureEventEnd = Number.isFinite(eventEndMs) && eventEndMs > Date.now();
+    const reopenCloseValue = hasFutureEventEnd ? toDatetimeLocal(event.ends_at) : '';
+
+    try {
+      await updateEventMutation.mutateAsync({
+        id: eventId,
+        title: event.title,
+        description: event.description ?? '',
+        location: event.location ?? '',
+        starts_at: toDatetimeLocal(event.starts_at),
+        ends_at: toDatetimeLocal(event.ends_at),
+        registration_opens_at: '',
+        registration_closes_at: reopenCloseValue,
+        status: event.status,
+        duplicate_policy: event.duplicate_policy,
+        registration_mode: 'open',
+        allow_public_registrations: event.allow_public_registrations,
+        allow_name_lookup: Boolean(event.metadata?.allow_name_lookup),
+      });
+      toast.success(
+        'Registration reopened for event day. Ask attendee to complete registration, then retry lookup.',
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to reopen registration.';
+      toast.error(message);
+    }
+  }
+
   if (!eventId) {
     return (
       <AdminPageShell>
@@ -260,6 +328,39 @@ export function AdminAttendanceCheckInPage() {
               isSearchError={searchQuery.isError}
               onSearchTokenChange={setSearchToken}
               onSubmit={handleSubmitSearch}
+              notFoundActions={
+                <div className="flex flex-wrap gap-2">
+                  {registrationOpen ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (event) {
+                          window.open(
+                            toEventRegistration(event.slug),
+                            '_blank',
+                            'noopener,noreferrer',
+                          );
+                        }
+                      }}
+                    >
+                      Open Registration Page
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleReopenRegistration}
+                      disabled={updateEventMutation.isPending}
+                    >
+                      {updateEventMutation.isPending
+                        ? 'Reopening Registration...'
+                        : 'Reopen Registration (Admin)'}
+                    </Button>
+                  )}
+                </div>
+              }
             />
           </div>
         )}

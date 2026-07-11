@@ -33,7 +33,6 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       settings: {
         event_id: 'event-1',
         attendance_enabled: true,
-        walk_in_mode_enabled: true,
         timeslot_enabled: true,
         timeslots: ['2026-07-10T10:30+08:00'],
         updated_at: '2026-07-01T01:00:00.000Z',
@@ -48,7 +47,6 @@ describe('useUpdateAttendanceSettingsMutation', () => {
     const payload = {
       event_id: 'event-1',
       attendance_enabled: true,
-      walk_in_mode_enabled: true,
       timeslot_enabled: true,
       timeslots: ['2026-07-10T10:30+08:00'],
     };
@@ -60,7 +58,6 @@ describe('useUpdateAttendanceSettingsMutation', () => {
     expect(response).toEqual({
       event_id: 'event-1',
       attendance_enabled: true,
-      walk_in_mode_enabled: true,
       timeslot_enabled: true,
       timeslots: ['2026-07-10T10:30+08:00'],
       updated_at: '2026-07-01T01:00:00.000Z',
@@ -86,7 +83,6 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       result.current.mutateAsync({
         event_id: 'event-2',
         attendance_enabled: true,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
       }),
@@ -102,7 +98,6 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       result.current.mutateAsync({
         event_id: 'event-3',
         attendance_enabled: false,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
       }),

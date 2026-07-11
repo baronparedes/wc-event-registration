@@ -109,7 +109,6 @@ function makeDefaultSettings(overrides?: Record<string, unknown>) {
   return {
     event_id: EVENT_ID,
     attendance_enabled: false,
-    walk_in_mode_enabled: false,
     timeslot_enabled: false,
     timeslots: [],
     updated_at: '2026-07-01T00:00:00+08:00',
@@ -230,18 +229,15 @@ describe('AdminEventAttendancePage', () => {
     expect(screen.getByText('Failed to load attendance settings.')).toBeInTheDocument();
   });
 
-  it('enables dependent toggles only after attendance tracking is enabled', async () => {
+  it('enables timeslot toggle only after attendance tracking is enabled', async () => {
     renderPage();
 
-    const walkInToggle = getToggleInputByText('Enable walk-in mode');
     const timeslotToggle = getToggleInputByText('Enable timeslot attendance');
-    expect(walkInToggle).toBeDisabled();
     expect(timeslotToggle).toBeDisabled();
 
     fireEvent.click(getToggleInputByText('Enable attendance tracking'));
 
     await waitFor(() => {
-      expect(walkInToggle).not.toBeDisabled();
       expect(timeslotToggle).not.toBeDisabled();
     });
   });
@@ -271,7 +267,6 @@ describe('AdminEventAttendancePage', () => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
         event_id: EVENT_ID,
         attendance_enabled: true,
-        walk_in_mode_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
       });

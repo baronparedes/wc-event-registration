@@ -10,7 +10,7 @@ Feature: Bulk Edit Attendance Data via CSV
     - CSV template includes all configured attendance fields as columns
     - Bulk upload validates all rows atomically: if any row has errors, entire import is rejected
     - Bulk upload overwrites existing answers for all rows in the file (not merge/partial)
-    - Only registered attendees can be bulk edited; walk-ins are not included
+    - Only registered attendees can be bulk edited
     - Bulk upload is available only for events with attendance tracking enabled
 
   Scenario: Download attendance CSV template for an event

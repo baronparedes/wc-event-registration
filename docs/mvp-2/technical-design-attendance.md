@@ -51,10 +51,10 @@ Term alignment note:
   - Epic 8 full scope (8.1 through 8.6)
   - Umbrella chunk ID: EPIC-8
 - In-scope technical surfaces:
-  - Admin event settings UI for Attendance Tracking, Walk-In Mode, Timeslot Attendance
+  - Admin event settings UI for Attendance Tracking and Timeslot Attendance
   - Assignment management UI and persistence for registered attendees
   - Admin check-in UI and APIs (Member ID scan, name search, email search)
-  - Walk-in create-and-check-in flow when Walk-In Mode is enabled
+  - Registration-first handling for unregistered attendees via event-day registration reopen policy
   - Optional timeslot attendance recording and reporting
   - Attendance CSV export action and server-side generation
   - Schema, migrations, RLS, grants, and Edge Function registrations for attendance domain
@@ -73,7 +73,7 @@ Term alignment note:
   - New attendance pages under admin event route segments orchestrate query/mutation hooks and state
 - Hooks:
   - Queries for attendance settings, assignment list, attendee search results, attendance summaries
-  - Mutations for settings updates, assignment field CRUD, assignment answer upsert, check-in, walk-in check-in, CSV export trigger
+  - Mutations for settings updates, assignment field CRUD, assignment answer upsert, check-in, and CSV export trigger
 - Domain modules:
   - src/lib/domain/attendance for core check-in schemas, contracts, transforms, metadata constants
   - src/lib/domain/attendance-fields for dynamic assignment field definitions, answer schemas, and field builder contracts
@@ -110,11 +110,11 @@ Term alignment note:
   - If first check-in absent, set first_checked_in_at.
   - If present, keep official timestamp unchanged and return already_checked_in status.
 
-4. Walk-in check-in
+4. Unregistered attendee handling
 
-- If attendee not found and Walk-In Mode enabled, walk-in form appears.
-- Form requires full name and at least one contact method.
-- Mutation creates walk-in attendee entity and check-in atomically; returns checked-in result.
+- If attendee is not found, check-in remains blocked until registration exists.
+- Admin can apply event-day registration reopen policy when additional attendees are allowed.
+- After registration succeeds, attendee is processed through the same standard check-in flow.
 
 5. Timeslot attendance
 
@@ -157,7 +157,6 @@ Core contract shapes (attendance):
 - AttendanceSettings
   - eventId: string
   - attendanceEnabled: boolean
-  - walkInModeEnabled: boolean
   - timeslotEnabled: boolean
   - timeslots: string[]
   - updatedAt: string
@@ -165,12 +164,8 @@ Core contract shapes (attendance):
   - success: boolean
   - status: checked_in | already_checked_in | rejected
   - officialCheckInTime: string | null
-  - attendeeKind: registered | walk_in
+  - attendeeKind: registered
   - message: string
-- WalkInPayload
-  - fullName: string
-  - email: string | null
-  - phone: string | null
 - TimeslotAttendanceRecord
   - eventId: string
   - attendeeRef: string
@@ -195,12 +190,11 @@ Core contract shapes (attendance-fields):
 
 Validation rules (Zod):
 
-- Walk-in requires fullName and at least one of email or phone (superRefine).
 - Slot selection must belong to event-configured timeslots when timeslotEnabled is true.
 - Assignment field answers are all optional (partial fill is valid for assignments).
 - buildDynamicAssignmentResponseSchema(fields) generates a Zod object schema from AssignmentField[] — mirrors buildDynamicFieldResponseSchema from event-fields.
 - Settings dependency validation:
-  - walkInModeEnabled and timeslotEnabled cannot be true when attendanceEnabled is false.
+  - timeslotEnabled cannot be true when attendanceEnabled is false.
 
 ### API and Edge Function request-response shapes
 
@@ -209,7 +203,6 @@ Validation rules (Zod):
 - Request:
   - eventId
   - attendanceEnabled
-  - walkInModeEnabled
   - timeslotEnabled
   - timeslots
 - Response:
@@ -263,16 +256,14 @@ Validation rules (Zod):
   - errorCode
   - message
 
-4. create-walk-in-check-in
+4. Event-day registration reopen policy
 
 - Request:
   - eventId
-  - walkInIdentity
-  - slot (optional)
+  - registrationReopenEnabled
 - Response:
   - success: true
-  - result: CheckInResult
-  - walkInLabel: true
+  - registrationReopenEnabled: boolean
   - success: false
   - errorCode
   - message
@@ -290,12 +281,10 @@ Validation rules (Zod):
 Revised data model (decisions finalized):
 
 - attendance_field_type enum: text, textarea, select, number
-- attendee_kind enum: registered, walk_in
 
 - attendance_settings
   - event_id primary key references events
   - attendance_enabled boolean NOT NULL DEFAULT false
-  - walk_in_mode_enabled boolean NOT NULL DEFAULT false
   - timeslot_enabled boolean NOT NULL DEFAULT false
   - timeslots text[] NOT NULL DEFAULT '{}'
   - updated_at timestamptz NOT NULL DEFAULT now()
@@ -325,25 +314,13 @@ Revised data model (decisions finalized):
   - unique(registration_id, assignment_field_id)
   - CHECK: at least one of answer_text or answer_number is not null
 
-- attendance_walk_ins
-  - id uuid primary key
-  - event_id references events ON DELETE CASCADE
-  - full_name text NOT NULL
-  - email text
-  - phone text
-  - created_at timestamptz NOT NULL DEFAULT now()
-
 - attendance_check_ins
   - id uuid primary key
   - event_id references events ON DELETE CASCADE
-  - attendee_kind attendee_kind NOT NULL
-  - registration_id nullable references registrations ON DELETE CASCADE
-  - walk_in_id nullable references attendance_walk_ins ON DELETE CASCADE
+  - registration_id references registrations ON DELETE CASCADE
   - first_checked_in_at timestamptz NOT NULL
   - created_at timestamptz NOT NULL DEFAULT now()
-  - unique(event_id, registration_id) WHERE registration_id IS NOT NULL
-  - unique(event_id, walk_in_id) WHERE walk_in_id IS NOT NULL
-  - CHECK: exactly one of registration_id or walk_in_id is not null
+  - unique(event_id, registration_id)
 
 - attendance_slot_records
   - id uuid primary key
@@ -360,7 +337,7 @@ Migration strategy:
 
 ### RLS, grants, authorization implications
 
-- attendance_settings, attendance_assignment_fields, attendance_assignment_answers, attendance_check_ins, attendance_walk_ins, attendance_slot_records:
+- attendance_settings, attendance_assignment_fields, attendance_assignment_answers, attendance_check_ins, attendance_slot_records:
   - deny anon by default for write and read
   - authenticated direct writes disallowed
   - service_role granted SELECT, INSERT, UPDATE, DELETE for Edge Functions
@@ -385,7 +362,7 @@ Migration strategy:
   - supabase/migrations/
   - supabase/config.toml
 - Contract and validation requirements:
-  - Zod schemas for settings (with dependency enforcement), walk-in payload (superRefine contact check), slot payload.
+  - Zod schemas for settings (with dependency enforcement) and slot payload.
   - Zod schemas for assignment field CRUD (createAssignmentFieldSchema, updateAssignmentFieldSchema).
   - buildDynamicAssignmentResponseSchema factory for dynamic answer validation.
 - Dependency type:
@@ -418,7 +395,7 @@ Migration strategy:
   - src/hooks/domain/attendance/mutations/
   - supabase/functions/update-attendance-settings/
 - Contract and validation requirements:
-  - Reject enabling walk-in or timeslot when attendance is disabled.
+  - Reject enabling timeslot when attendance is disabled.
 - Dependency type:
   - Hard prerequisite after S1.
 - Dependency gates:
@@ -506,37 +483,36 @@ Migration strategy:
 - Definition of done:
   - 8.3 scenarios pass and first-check-in rule enforced.
 
-### Slice EPIC-8-S5: Walk-In Create-and-Check-In
+### Slice EPIC-8-S5: Unregistered Attendee Registration Reopen Policy
 
 - Vertical slice scope:
-  - Staff can process walk-ins only when Walk-In Mode is enabled, with required identity validation.
+  - Staff do not create walk-ins in check-in; unregistered attendees are directed to normal registration, optionally enabled by event-day registration reopen policy.
 - Estimated effort:
   - Approximately one day for one dev-agent.
 - Technical objective:
-  - Deliver 8.4 behavior with explicit walk-in labeling.
+  - Deliver 8.4 behavior using registration-first handling and standard check-in semantics.
 - Implementation surfaces:
-  - Walk-in panel/form within check-in flow, create-walk-in-check-in function, walk-in tagging in attendance views.
+  - Check-in not-found guidance, event-day registration reopen control, and re-check flow after successful registration.
 - Files/folders expected to change:
   - src/pages/admin/events/[id]/attendance/check-in/
-  - src/lib/domain/attendance/schemas.ts
-  - src/hooks/domain/attendance/mutations/
-  - supabase/functions/create-walk-in-check-in/
+  - src/pages/admin/events/[id]/
+  - src/hooks/domain/attendance/queries/
 - Contract and validation requirements:
-  - full_name required and at least one contact method.
-  - Immediate checked-in result on successful walk-in creation.
+  - Direct check-in of unregistered attendees remains blocked.
+  - Newly registered attendees are handled through the existing check-in mutation.
 - Dependency type:
   - Hard prerequisite after S4.
 - Dependency gates:
-  - Walk-In Mode toggle and check-in baseline stable.
+  - Registration reopen policy and check-in baseline stable.
 - Key risks and mitigations:
-  - Risk: duplicate walk-ins for same person.
-  - Mitigation: soft de-dup warning based on normalized name plus contact before create.
+  - Risk: queue delays while attendees complete registration.
+  - Mitigation: clear guidance UX and fast retry search path after registration completion.
 - Verification and test expectations:
-  - Validation tests for required fields; UI flow test for blocked versus enabled mode.
+  - UI flow test for registration-first guidance and successful check-in after registration completion.
 - Definition of ready:
-  - Walk-in required fields confirmed from business rules.
+  - Event-day registration reopen policy confirmed from business rules.
 - Definition of done:
-  - 8.4 scenarios pass and flow returns immediately to next-attendee state.
+  - 8.4 scenarios pass without introducing separate walk-in entities.
 
 ### Slice EPIC-8-S6: Timeslot Attendance Add-On
 
@@ -585,7 +561,7 @@ Migration strategy:
   - src/hooks/domain/attendance/mutations/
   - supabase/functions/export-attendance-csv/
 - Contract and validation requirements:
-  - Include identity, attendance status, official check-in time, assignment fields, walk-in marker.
+  - Include identity, attendance status, official check-in time, and assignment fields.
   - Return headers-only CSV when no rows exist.
 - Dependency type:
   - Hard prerequisite after S3 and S4; parallel-safe with S6 once base attendance records exist.
@@ -633,7 +609,7 @@ Migration strategy:
 2. EPIC-8-S2 Attendance settings
 3. EPIC-8-S3 Assignment management
 4. EPIC-8-S4 Registered check-in
-5. EPIC-8-S5 Walk-in check-in
+5. EPIC-8-S5 Unregistered attendee registration reopen policy
 6. EPIC-8-S6 Timeslot attendance
 7. EPIC-8-S7 Attendance CSV export
 
