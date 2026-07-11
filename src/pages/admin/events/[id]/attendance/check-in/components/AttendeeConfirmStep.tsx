@@ -20,6 +20,10 @@ type AttendeeConfirmStepProps = {
   attendee: AttendeeSearchResult | null;
   checkInResult: CheckInResult | null;
   isSubmitting: boolean;
+  timeslotEnabled: boolean;
+  timeslots: string[];
+  suggestedSlot: string;
+  onTimeslotConfirm: (slot: string) => void;
   onCheckIn: () => void;
   onReadyForNext: () => void;
   inactivityTimeoutMs?: number;
@@ -31,6 +35,10 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
     attendee,
     checkInResult,
     isSubmitting,
+    timeslotEnabled,
+    timeslots,
+    suggestedSlot,
+    onTimeslotConfirm,
     onCheckIn,
     onReadyForNext,
     inactivityTimeoutMs,
@@ -39,8 +47,10 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
 
   const { getAnswerText } = useFieldAnswerTextFormatter();
 
+  const requiresTimeslotSelection = timeslotEnabled && timeslots.length > 0;
   const shouldShowReadyForNext =
-    Boolean(checkInResult) || attendee?.check_in_status === 'checked_in';
+    Boolean(checkInResult) ||
+    (attendee?.check_in_status === 'checked_in' && !requiresTimeslotSelection);
 
   return (
     <WizardStep
@@ -153,12 +163,47 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
             </div>
           )}
 
+          {!shouldShowReadyForNext && requiresTimeslotSelection && (
+            <div className="rounded-xl border border-border bg-background p-4">
+              <p className="text-sm font-medium text-text">Timeslot</p>
+              <p className="mt-1 text-xs text-muted">
+                Tap one timeslot to confirm attendance immediately.
+              </p>
+
+              <div className="mt-3 flex flex-col gap-2">
+                {timeslots.map((slot) => {
+                  const isSuggested = suggestedSlot === slot;
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => onTimeslotConfirm(slot)}
+                      disabled={isSubmitting}
+                      className={`min-h-12 w-full rounded-xl border-2 px-4 py-3 text-center text-base font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                        isSuggested
+                          ? 'border-primary bg-primary text-white shadow-xs hover:bg-primary/90'
+                          : 'border-text/40 bg-surface text-text hover:border-primary/70 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span className="block">{formatDateTime(slot, slot)}</span>
+                      {isSuggested && (
+                        <span className="mt-2 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                          Suggested
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="sticky bottom-2 space-y-2 rounded-xl bg-surface/95 p-2 backdrop-blur sm:static sm:bg-transparent sm:p-0">
             {shouldShowReadyForNext ? (
               <Button type="button" fullWidth={true} size="lg" onClick={onReadyForNext}>
                 Ready for Next Attendee
               </Button>
-            ) : (
+            ) : requiresTimeslotSelection ? null : (
               <Button
                 type="button"
                 fullWidth={true}

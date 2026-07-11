@@ -43,6 +43,7 @@ describe('useAttendanceSettingsQuery', () => {
         event_id: 'event-1',
         attendance_enabled: true,
         timeslot_enabled: true,
+        enforce_check_in_event_window: true,
         timeslots: ['2026-07-10T10:30+08:00'],
         updated_at: '2026-07-01T01:00:00.000Z',
       },
@@ -59,6 +60,7 @@ describe('useAttendanceSettingsQuery', () => {
       event_id: 'event-1',
       attendance_enabled: true,
       timeslot_enabled: true,
+      enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T10:30+08:00'],
       updated_at: '2026-07-01T01:00:00.000Z',
     });
@@ -78,6 +80,7 @@ describe('useAttendanceSettingsQuery', () => {
         event_id: 'event-2',
         attendance_enabled: false,
         timeslot_enabled: false,
+        enforce_check_in_event_window: true,
         timeslots: [],
       }),
     );
@@ -112,6 +115,7 @@ describe('useAttendanceSettingsQuery', () => {
       event_id: 'event-1',
       attendance_enabled: true,
       timeslot_enabled: true,
+      enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T09:00+08:00', '2026-07-10T14:00+08:00'],
       updated_at: '2026-07-02T12:00:00.000Z',
     };
@@ -136,6 +140,7 @@ describe('useAttendanceSettingsQuery', () => {
         event_id: 'event-1',
         attendance_enabled: false,
         timeslot_enabled: false,
+        enforce_check_in_event_window: true,
         timeslots: [],
         updated_at: '2026-07-01T00:00:00Z',
       },
@@ -161,7 +166,7 @@ describe('useAttendanceSettingsQuery', () => {
 
     await waitFor(() => {
       expect(mockQueryBuilder.select).toHaveBeenCalledWith(
-        'event_id, attendance_enabled, timeslot_enabled, timeslots, updated_at',
+        'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
       );
     });
   });
@@ -172,6 +177,7 @@ describe('useAttendanceSettingsQuery', () => {
         event_id: 'event-1',
         attendance_enabled: true,
         timeslot_enabled: false,
+        enforce_check_in_event_window: true,
         timeslots: [],
         updated_at: '2026-07-01T00:00:00Z',
       },
@@ -199,6 +205,7 @@ describe('useAttendanceSettingsQuery', () => {
         event_id: 'event-1',
         attendance_enabled: true,
         timeslot_enabled: true,
+        enforce_check_in_event_window: true,
         timeslots,
         updated_at: '2026-07-01T00:00:00Z',
       },

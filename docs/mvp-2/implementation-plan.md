@@ -5,18 +5,17 @@
 - This document is planning-only for MVP2.
 - No coding or implementation execution is in scope for this session.
 
-### Status Update (2026-07-11)
+### Status Update (2026-07-12)
 
 - MVP2 has moved from planning into implementation execution.
-- Sessions 1 through 5 have been implemented in sequence.
-- Current next execution target is Session 6 (EPIC-8-S8 Bulk CSV Edit Attendance Data).
+- Sessions 1 through 7 have been implemented in sequence.
+- Current next execution target is Session 8 (EPIC-8-S7 Attendance CSV Export).
+- CI coverage gate is currently passing after branch-coverage stabilization.
 - The detailed execution checkpoint source of truth is docs/mvp-2/session-handoff.md.
 
 ### Remaining Feature Priority (Pivoted)
 
-1. Bulk Update (EPIC-8-S8)
-2. Attendance Slots Check-In (EPIC-8-S6)
-3. Attendance Export (EPIC-8-S7)
+1. Attendance Export (EPIC-8-S7)
 
 ### Context
 

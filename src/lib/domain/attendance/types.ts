@@ -9,6 +9,7 @@ export type AttendanceSettings = {
   event_id: string;
   attendance_enabled: boolean;
   timeslot_enabled: boolean;
+  enforce_check_in_event_window: boolean;
   timeslots: string[];
   updated_at: string;
 };
@@ -30,6 +31,24 @@ export type TimeslotAttendanceRecord = {
   attendee_ref: string;
   slot: string;
   recorded_at: string;
+};
+
+export type AttendanceSlotAttendee = {
+  check_in_id: string;
+  attendee_kind: 'registered' | 'public';
+  registration_id: string | null;
+  public_registration_id: string | null;
+  full_name: string;
+  member_id: string | null;
+  email: string | null;
+  official_check_in_time: string | null;
+  recorded_at: string;
+};
+
+export type AttendanceSlotSummary = {
+  slot: string;
+  count: number;
+  attendees: AttendanceSlotAttendee[];
 };
 
 export type AttendanceAnswer = {
@@ -99,4 +118,5 @@ export type CheckInAttendeeInput = {
   attendee_kind: 'registered' | 'public';
   registration_id?: string;
   public_registration_id?: string;
+  slot?: string;
 };

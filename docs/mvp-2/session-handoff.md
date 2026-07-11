@@ -1,23 +1,22 @@
 # MVP2 Session Handoff
 
-Last updated: 2026-07-11
+Last updated: 2026-07-12
 Owner baseline: 1 dev-agent, sequential execution
 Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 
 ## Pause Snapshot
 
-- Current state: Paused after implementing Session 6 (EPIC-8-S8).
-- Next session to start: Session 7 (EPIC-8-S6 Timeslot Attendance).
+- Current state: Paused after implementing Session 7 (EPIC-8-S6 Timeslot Attendance) and post-session coverage stabilization.
+- Next session to start: Session 8 (EPIC-8-S7 Attendance CSV Export).
 - Latest validation at pause:
-  - `npm run build` passed.
-  - `npm run format:check` passed.
-  - Focused Session 6 unit tests passed.
+  - `npm run test:ci` passed.
+  - `npm run ci:gate` passed.
+  - Global branch coverage recovered to threshold (90.02%).
 - New route `/admin/events/:id/attendance/fields` added for attendance field config + data entry.
 
 ## Remaining Feature Priority (Pivoted)
 
-1. Attendance Slots Check-In (Session 7 / EPIC-8-S6)
-2. Attendance Export (Session 8 / EPIC-8-S7)
+1. Attendance Export (Session 8 / EPIC-8-S7)
 
 ## 2026-07-11 Session 5 Implementation Addendum
 
@@ -28,6 +27,20 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 - `search-attendees` was optimized to keep two primary search queries (registered and public).
 - Nickname + last_name aggregate matching now applies to both public registrations and registered-member search paths.
 - Registered search now uses a joined registrations-to-users query instead of a pre-query users lookup.
+
+## 2026-07-12 Session 7 Implementation Addendum
+
+- Timeslot attendance check-in flow is implemented end-to-end for configured events.
+- Check-in confirm step now supports direct timeslot action with kiosk-optimized one-per-line controls.
+- Suggested timeslot remains visible as guidance, while explicit timeslot choice remains operator-controlled.
+- Check-in page scope was intentionally kept check-in-only; slot-level summary UI was removed from this route.
+- Non-timeslot check-in flow behavior was preserved and validated after timeslot-path refactors.
+
+## 2026-07-12 Coverage Stabilization Addendum
+
+- CI branch coverage was recovered from 89.96% to 90.02%.
+- Added targeted branch tests in date-format utilities and wizard-step scroll hook behavior.
+- Current status: `npm run ci:gate` passes at pause.
 
 ## 2026-07-05 Doc Addendum - Public Attendee Details
 
@@ -185,8 +198,8 @@ Expected file touch zones:
 
 Validation gate:
 
-- [ ] Feature 8.3 scenarios pass in local QA
-- [ ] Repeat check-in keeps original timestamp
+- [x] Feature 8.3 scenarios pass in local QA
+- [x] Repeat check-in keeps original timestamp
 
 Exit criteria:
 
@@ -257,7 +270,7 @@ Expected file touch zones:
 
 Validation gate:
 
-- [ ] Feature 8.7 scenarios pass in local QA
+- [x] Feature 8.7 scenarios pass in local QA
 - [x] CSV parsing handles quote/escape edge cases
 - [x] Atomic validation correctly rejects entire batch on single row error
 - [ ] Large CSV (100s of rows) completes without timeout
@@ -274,11 +287,11 @@ Goal:
 
 Checklist:
 
-- [ ] Add timeslot configuration persistence support from settings
-- [ ] Add slot selection in check-in path when timeslot mode is enabled
-- [ ] Validate slot is in event-configured slot set
-- [ ] Record slot attendance separately from official first check-in
-- [ ] Add slot-level summaries separate from overall totals
+- [x] Add timeslot configuration persistence support from settings
+- [x] Add slot selection in check-in path when timeslot mode is enabled
+- [x] Validate slot is in event-configured slot set
+- [x] Record slot attendance separately from official first check-in
+- [x] Keep check-in route focused on check-in workflow only (slot summary intentionally out of this route scope)
 
 Expected file touch zones:
 
@@ -289,12 +302,12 @@ Expected file touch zones:
 
 Validation gate:
 
-- [ ] Feature 8.5 scenarios pass in local QA
-- [ ] Repeated slot actions do not change first-check-in timestamp
+- [x] Feature 8.5 core scenarios pass in local QA
+- [x] Repeated slot actions do not change first-check-in timestamp
 
 Exit criteria:
 
-- Slot mode works and remains additive.
+- [x] Slot mode works and remains additive.
 
 ## Session 8 - EPIC-8-S7 Attendance CSV Export
 
@@ -370,4 +383,4 @@ Run at end of Session 8:
 
 Use this prompt for the next dev-agent execution session:
 
-Implement Session 7 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S6 only: add timeslot attendance behavior as an additive mode on top of first-check-in semantics. Run build, format, and local QA checks for feature 8.5 before handoff.
+Implement Session 8 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S7 only: add dedicated attendance CSV export behavior, keep it isolated from registrations export, and validate populated and empty export outputs.

@@ -18,6 +18,7 @@ const checkInAttendeeRequestSchema = z.object({
   attendee_kind: z.enum(['registered', 'public']).optional(),
   registration_id: z.string().uuid('Invalid registration ID.').optional(),
   public_registration_id: z.string().uuid('Invalid public registration ID.').optional(),
+  slot: z.string().trim().min(1, 'Timeslot is required.').max(100).optional(),
 });
 
 type CheckInAttendeeRequest = z.infer<typeof checkInAttendeeRequestSchema>;
@@ -90,6 +91,7 @@ Deno.serve(async (req) => {
       attendee_kind,
       registration_id,
       public_registration_id,
+      slot,
     }: CheckInAttendeeRequest = parsedBody.data;
 
     const resolvedAttendeeKind: 'registered' | 'public' =
@@ -119,9 +121,33 @@ Deno.serve(async (req) => {
       },
     });
 
+    const { data: event, error: eventError } = await adminClient
+      .from('events')
+      .select('starts_at, ends_at')
+      .eq('id', event_id)
+      .maybeSingle();
+
+    if (eventError) {
+      return errorResponse(corsHeaders, 500, 'Failed to load event details', undefined, {
+        error_code: 'EVENT_LOOKUP_FAILED',
+      });
+    }
+
+    if (!event) {
+      return jsonResponse(
+        corsHeaders,
+        {
+          success: false,
+          error: 'Event not found for this check-in request.',
+          error_code: 'EVENT_NOT_FOUND',
+        },
+        404,
+      );
+    }
+
     const { data: settings, error: settingsError } = await adminClient
       .from('attendance_settings')
-      .select('attendance_enabled')
+      .select('attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots')
       .eq('event_id', event_id)
       .maybeSingle();
 
@@ -142,6 +168,97 @@ Deno.serve(async (req) => {
         400,
       );
     }
+
+    if (settings.enforce_check_in_event_window) {
+      const nowMs = Date.now();
+      const startMs = event.starts_at ? Date.parse(event.starts_at) : Number.NaN;
+      const endMs = event.ends_at ? Date.parse(event.ends_at) : Number.NaN;
+
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Event start and end date-time are required for check-in window enforcement.',
+            error_code: 'INVALID_EVENT_WINDOW',
+          },
+          400,
+        );
+      }
+
+      if (nowMs < startMs || nowMs > endMs) {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Check-ins are only allowed during the event date-time window.',
+            error_code: 'CHECK_IN_OUTSIDE_EVENT_WINDOW',
+          },
+          400,
+        );
+      }
+    }
+
+    const normalizedSlot = slot?.trim();
+    const shouldRecordSlot = Boolean(normalizedSlot);
+    const configuredSlots = (settings.timeslots ?? []).map((entry) => entry.trim()).filter(Boolean);
+    const configuredSlotSet = new Set(configuredSlots);
+
+    if (settings.timeslot_enabled) {
+      if (!normalizedSlot) {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Timeslot selection is required when timeslot attendance is enabled.',
+            error_code: 'INVALID_REQUEST',
+          },
+          400,
+        );
+      }
+
+      if (!configuredSlotSet.has(normalizedSlot)) {
+        return jsonResponse(
+          corsHeaders,
+          {
+            success: false,
+            error: 'Selected timeslot is not configured for this event.',
+            error_code: 'INVALID_REQUEST',
+          },
+          400,
+        );
+      }
+    } else if (shouldRecordSlot) {
+      return jsonResponse(
+        corsHeaders,
+        {
+          success: false,
+          error: 'Timeslot attendance is disabled for this event.',
+          error_code: 'INVALID_REQUEST',
+        },
+        400,
+      );
+    }
+
+    const recordSlot = async (checkInId: string) => {
+      if (!normalizedSlot) {
+        return null;
+      }
+
+      const { error: slotInsertError } = await adminClient.from('attendance_slot_records').insert({
+        event_id,
+        check_in_id: checkInId,
+        slot: normalizedSlot,
+      });
+
+      if (slotInsertError && slotInsertError.code !== POSTGRES_ERROR_CODES.uniqueViolation) {
+        return errorResponse(corsHeaders, 500, 'Failed to record slot attendance', undefined, {
+          error_code: 'SLOT_RECORD_INSERT_FAILED',
+        });
+      }
+
+      return null;
+    };
 
     if (resolvedAttendeeKind === 'registered') {
       const { data: registration, error: registrationError } = await adminClient
@@ -221,7 +338,7 @@ Deno.serve(async (req) => {
 
     const { data: existingCheckIn, error: existingCheckInError } = await adminClient
       .from('attendance_check_ins')
-      .select('first_checked_in_at')
+      .select('id, first_checked_in_at')
       .eq('event_id', event_id)
       .eq(
         resolvedAttendeeKind === 'public' ? 'public_registration_id' : 'registration_id',
@@ -236,6 +353,13 @@ Deno.serve(async (req) => {
     }
 
     if (existingCheckIn?.first_checked_in_at) {
+      if (shouldRecordSlot) {
+        const slotRecordErrorResponse = await recordSlot(existingCheckIn.id);
+        if (slotRecordErrorResponse) {
+          return slotRecordErrorResponse;
+        }
+      }
+
       return jsonResponse(
         corsHeaders,
         {
@@ -262,20 +386,27 @@ Deno.serve(async (req) => {
         public_registration_id: resolvedAttendeeKind === 'public' ? targetRegistrationId : null,
         first_checked_in_at: nowIso,
       })
-      .select('first_checked_in_at')
+      .select('id, first_checked_in_at')
       .single();
 
     if (insertError) {
       if (insertError.code === POSTGRES_ERROR_CODES.uniqueViolation) {
         const { data: raceWinnerCheckIn } = await adminClient
           .from('attendance_check_ins')
-          .select('first_checked_in_at')
+          .select('id, first_checked_in_at')
           .eq('event_id', event_id)
           .eq(
             resolvedAttendeeKind === 'public' ? 'public_registration_id' : 'registration_id',
             targetRegistrationId,
           )
           .maybeSingle();
+
+        if (shouldRecordSlot && raceWinnerCheckIn?.id) {
+          const slotRecordErrorResponse = await recordSlot(raceWinnerCheckIn.id);
+          if (slotRecordErrorResponse) {
+            return slotRecordErrorResponse;
+          }
+        }
 
         return jsonResponse(
           corsHeaders,
@@ -296,6 +427,13 @@ Deno.serve(async (req) => {
       return errorResponse(corsHeaders, 500, 'Failed to create check-in record', undefined, {
         error_code: 'CHECK_IN_INSERT_FAILED',
       });
+    }
+
+    if (shouldRecordSlot) {
+      const slotRecordErrorResponse = await recordSlot(createdCheckIn.id);
+      if (slotRecordErrorResponse) {
+        return slotRecordErrorResponse;
+      }
     }
 
     return jsonResponse(

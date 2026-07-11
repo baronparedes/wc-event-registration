@@ -13,6 +13,7 @@ import {
   useAttendanceSettingsQuery,
   useUpdateAttendanceSettingsMutation,
 } from '@/hooks/domain/attendance';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
   type UpdateAttendanceSettingsInput,
@@ -53,12 +54,17 @@ function isWithinEventWindow(
 
 export function AdminEventAttendancePage() {
   const { id: eventId } = useParams<{ id: string }>();
-  const { data: event, isLoading: isEventLoading } = useAdminEventQuery(eventId);
+  const { data: authState, isLoading: isAuthLoading } = useAdminAuthQuery();
+  const canLoadAdminData = !isAuthLoading && (authState?.isAuthenticated ?? false);
+
+  const { data: event, isLoading: isEventLoading } = useAdminEventQuery(
+    canLoadAdminData ? eventId : undefined,
+  );
   const {
     data: settings,
     isLoading: isSettingsLoading,
     error: settingsError,
-  } = useAttendanceSettingsQuery(eventId);
+  } = useAttendanceSettingsQuery(eventId, canLoadAdminData);
   const updateMutation = useUpdateAttendanceSettingsMutation();
 
   const {
@@ -74,6 +80,7 @@ export function AdminEventAttendancePage() {
       event_id: eventId ?? '',
       attendance_enabled: false,
       timeslot_enabled: false,
+      enforce_check_in_event_window: true,
       timeslots: [],
     },
   });
@@ -95,17 +102,18 @@ export function AdminEventAttendancePage() {
   const effectiveTimeslots = timeslots ?? [];
 
   useEffect(() => {
-    if (attendanceEnabled !== false) return;
+    if (!settings || !isDirty || attendanceEnabled !== false) return;
 
-    setValue('timeslot_enabled', false, { shouldDirty: true, shouldValidate: true });
-    setValue('timeslots', [], { shouldDirty: true, shouldValidate: true });
-  }, [attendanceEnabled, setValue]);
+    setValue('timeslot_enabled', false, { shouldDirty: false, shouldValidate: true });
+    setValue('enforce_check_in_event_window', true, { shouldDirty: false, shouldValidate: true });
+    setValue('timeslots', [], { shouldDirty: false, shouldValidate: true });
+  }, [attendanceEnabled, isDirty, settings, setValue]);
 
   useEffect(() => {
-    if (timeslotEnabled !== false) return;
+    if (!settings || !isDirty || timeslotEnabled !== false) return;
 
-    setValue('timeslots', [], { shouldDirty: true, shouldValidate: true });
-  }, [timeslotEnabled, setValue]);
+    setValue('timeslots', [], { shouldDirty: false, shouldValidate: true });
+  }, [timeslotEnabled, isDirty, settings, setValue]);
 
   if (!eventId) {
     return (
@@ -120,7 +128,7 @@ export function AdminEventAttendancePage() {
 
   const resolvedEventId = eventId ?? '';
 
-  if (isEventLoading || isSettingsLoading) {
+  if (isAuthLoading || isEventLoading || isSettingsLoading) {
     return (
       <AdminPageShell>
         <AdminPageShell.Content isLoading={true} loadingMessage="Loading attendance settings...">
@@ -197,6 +205,9 @@ export function AdminEventAttendancePage() {
       ...formValues,
       event_id: requiredEventId,
       timeslot_enabled: formValues.attendance_enabled ? formValues.timeslot_enabled : false,
+      enforce_check_in_event_window: formValues.attendance_enabled
+        ? (formValues.enforce_check_in_event_window ?? true)
+        : true,
       timeslots:
         formValues.attendance_enabled && formValues.timeslot_enabled
           ? (formValues.timeslots ?? [])
@@ -288,6 +299,26 @@ export function AdminEventAttendancePage() {
                     </span>
                     <span className="text-xs text-muted">
                       Records attendance by configured slots (for example: 9AM, 12NN, 3PM).
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="rounded-lg border border-border bg-background p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    disabled={isArchived || !attendanceEnabled}
+                    {...register('enforce_check_in_event_window')}
+                    className="h-4 w-4 cursor-pointer rounded border-border"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-text">
+                      Restrict check-ins to event date-time window
+                    </span>
+                    <span className="text-xs text-muted">
+                      When enabled, check-ins are only allowed between event start and end. Disable
+                      for test scenarios.
                     </span>
                   </div>
                 </label>

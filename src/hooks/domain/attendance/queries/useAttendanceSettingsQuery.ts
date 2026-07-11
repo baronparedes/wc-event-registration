@@ -10,13 +10,14 @@ function buildDefaultSettings(eventId: string): AttendanceSettings {
     event_id: eventId,
     attendance_enabled: false,
     timeslot_enabled: false,
+    enforce_check_in_event_window: true,
     timeslots: [],
     updated_at: new Date().toISOString(),
   };
 }
 
 /** Fetches attendance settings for an event, returning defaults if no row exists yet. */
-export function useAttendanceSettingsQuery(eventId: string | undefined) {
+export function useAttendanceSettingsQuery(eventId: string | undefined, enabled = true) {
   return useQuery({
     queryKey: QUERY_KEYS.adminAttendanceSettings(eventId),
     queryFn: async (): Promise<AttendanceSettings> => {
@@ -26,14 +27,16 @@ export function useAttendanceSettingsQuery(eventId: string | undefined) {
 
       const { data, error } = await supabase
         .from('attendance_settings')
-        .select('event_id, attendance_enabled, timeslot_enabled, timeslots, updated_at')
+        .select(
+          'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
+        )
         .eq('event_id', eventId)
         .maybeSingle();
 
       if (error) throw error;
       return (data as AttendanceSettings | null) ?? buildDefaultSettings(eventId);
     },
-    enabled: Boolean(eventId),
+    enabled: Boolean(eventId) && enabled,
   });
 }
 /* c8 ignore stop */

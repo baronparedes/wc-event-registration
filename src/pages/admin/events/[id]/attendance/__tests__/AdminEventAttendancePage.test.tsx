@@ -8,6 +8,7 @@ const EVENT_ID = '11111111-1111-4111-8111-111111111111';
 
 const {
   mockUseParams,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseAttendanceSettingsQuery,
   mockUpdateMutateAsync,
@@ -15,12 +16,22 @@ const {
   mockToastError,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAttendanceSettingsQuery: vi.fn(),
   mockUpdateMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -110,6 +121,7 @@ function makeDefaultSettings(overrides?: Record<string, unknown>) {
     event_id: EVENT_ID,
     attendance_enabled: false,
     timeslot_enabled: false,
+    enforce_check_in_event_window: true,
     timeslots: [],
     updated_at: '2026-07-01T00:00:00+08:00',
     ...overrides,
@@ -121,6 +133,10 @@ describe('AdminEventAttendancePage', () => {
     vi.clearAllMocks();
 
     mockUseParams.mockReturnValue({ id: EVENT_ID });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockUseAdminEventQuery.mockReturnValue({
       data: makeDefaultEvent(),
       isLoading: false,
@@ -268,6 +284,7 @@ describe('AdminEventAttendancePage', () => {
         event_id: EVENT_ID,
         attendance_enabled: true,
         timeslot_enabled: false,
+        enforce_check_in_event_window: true,
         timeslots: [],
       });
     });

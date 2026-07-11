@@ -34,6 +34,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
         event_id: 'event-1',
         attendance_enabled: true,
         timeslot_enabled: true,
+        enforce_check_in_event_window: true,
         timeslots: ['2026-07-10T10:30+08:00'],
         updated_at: '2026-07-01T01:00:00.000Z',
       },
@@ -48,6 +49,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       event_id: 'event-1',
       attendance_enabled: true,
       timeslot_enabled: true,
+      enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T10:30+08:00'],
     };
 
@@ -59,6 +61,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       event_id: 'event-1',
       attendance_enabled: true,
       timeslot_enabled: true,
+      enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T10:30+08:00'],
       updated_at: '2026-07-01T01:00:00.000Z',
     });
@@ -84,6 +87,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
         event_id: 'event-2',
         attendance_enabled: true,
         timeslot_enabled: false,
+        enforce_check_in_event_window: true,
         timeslots: [],
       }),
     ).rejects.toThrow('Attendance settings update failed');
@@ -99,6 +103,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
         event_id: 'event-3',
         attendance_enabled: false,
         timeslot_enabled: false,
+        enforce_check_in_event_window: true,
         timeslots: [],
       }),
     ).rejects.toThrow('Failed to update attendance settings.');

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/event
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
+import { formatDateTime } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
@@ -38,12 +39,13 @@ function isRegistrationOpenNow(event: {
   registration_mode: 'open' | 'closed';
   registration_opens_at: string | null;
   registration_closes_at: string | null;
+  nowMs: number;
 }): boolean {
   if (event.registration_mode !== 'open') {
     return false;
   }
 
-  const now = Date.now();
+  const now = event.nowMs;
   const opensAt = event.registration_opens_at ? Date.parse(event.registration_opens_at) : null;
   const closesAt = event.registration_closes_at ? Date.parse(event.registration_closes_at) : null;
 
@@ -58,6 +60,20 @@ function isRegistrationOpenNow(event: {
   return true;
 }
 
+function isWithinEventWindow(
+  event: { starts_at: string | null; ends_at: string | null },
+  nowMs: number,
+): boolean {
+  const startMs = event.starts_at ? Date.parse(event.starts_at) : Number.NaN;
+  const endMs = event.ends_at ? Date.parse(event.ends_at) : Number.NaN;
+
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+    return false;
+  }
+
+  return nowMs >= startMs && nowMs <= endMs;
+}
+
 export function AdminAttendanceCheckInPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
@@ -66,6 +82,8 @@ export function AdminAttendanceCheckInPage() {
   const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null);
   const [confirmedRegistrationId, setConfirmedRegistrationId] = useState<string | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null);
+  const [suggestedSlotNowMs, setSuggestedSlotNowMs] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const searchStepRef = useRef<HTMLDivElement | null>(null);
   const selectStepRef = useRef<HTMLDivElement | null>(null);
@@ -73,17 +91,58 @@ export function AdminAttendanceCheckInPage() {
 
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
+  const attendanceEnabled = settings?.attendance_enabled ?? false;
+  const enforceCheckInEventWindow = settings?.enforce_check_in_event_window ?? true;
+  const timeslotEnabled = settings?.timeslot_enabled ?? false;
+  const timeslots = useMemo(() => settings?.timeslots ?? [], [settings]);
   const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', { pageSize: 1 });
   const searchQuery = useSearchAttendeesQuery(eventId, submittedSearchToken);
   const checkInMutation = useCheckInAttendeeMutation();
   const updateEventMutation = useUpdateEventMutation();
 
   const isLoading = eventLoading || settingsLoading;
-  const attendanceEnabled = settings?.attendance_enabled ?? false;
   const registeredCount = registrationsQuery.data?.totalCount ?? 0;
 
   const results = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
-  const registrationOpen = event ? isRegistrationOpenNow(event) : false;
+  const registrationOpen = event
+    ? isRegistrationOpenNow({
+        registration_mode: event.registration_mode,
+        registration_opens_at: event.registration_opens_at,
+        registration_closes_at: event.registration_closes_at,
+        nowMs,
+      })
+    : false;
+  const isOutsideEventWindow = event ? !isWithinEventWindow(event, nowMs) : false;
+  const isCheckInBlockedByWindow =
+    attendanceEnabled && enforceCheckInEventWindow && isOutsideEventWindow;
+  const showCheckInWizard = attendanceEnabled && !isCheckInBlockedByWindow;
+  const suggestedSlot = useMemo(() => {
+    if (!timeslotEnabled || timeslots.length === 0) {
+      return '';
+    }
+
+    const validSlots = timeslots
+      .map((slot) => ({ slot, time: Date.parse(slot) }))
+      .filter((entry) => Number.isFinite(entry.time))
+      .sort((a, b) => a.time - b.time);
+
+    if (validSlots.length === 0) {
+      return timeslots[0] ?? '';
+    }
+
+    if (suggestedSlotNowMs === null) {
+      return validSlots[0].slot;
+    }
+
+    const latestPastOrCurrent = [...validSlots]
+      .reverse()
+      .find((entry) => entry.time <= suggestedSlotNowMs);
+    if (latestPastOrCurrent) {
+      return latestPastOrCurrent.slot;
+    }
+
+    return validSlots[0].slot;
+  }, [timeslotEnabled, timeslots, suggestedSlotNowMs]);
   const selectedResultId = useMemo(() => {
     if (selectedRegistrationId) {
       return results.some((result) => result.registration_id === selectedRegistrationId)
@@ -121,7 +180,22 @@ export function AdminAttendanceCheckInPage() {
 
   useWizardStepScroll(activeStep, [searchStepRef, selectStepRef, confirmStepRef]);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 30_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
   function handleSubmitSearch() {
+    if (isCheckInBlockedByWindow) {
+      toast.error('Check-in is currently blocked outside the event date-time window.');
+      return;
+    }
+
     const normalized = searchToken.trim();
     if (!normalized) return;
 
@@ -137,6 +211,7 @@ export function AdminAttendanceCheckInPage() {
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
+    setSuggestedSlotNowMs(null);
   }
 
   const handleBackToLookup = useCallback(() => {
@@ -144,6 +219,7 @@ export function AdminAttendanceCheckInPage() {
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
+    setSuggestedSlotNowMs(null);
   }, []);
 
   function handleReadyForNext() {
@@ -153,6 +229,7 @@ export function AdminAttendanceCheckInPage() {
   function handleBackToMatches() {
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
+    setSuggestedSlotNowMs(null);
   }
 
   function handleConfirmSelection() {
@@ -162,10 +239,18 @@ export function AdminAttendanceCheckInPage() {
 
     setConfirmedRegistrationId(selectedResultId);
     setCheckInResult(null);
+    setSuggestedSlotNowMs(Date.now());
   }
 
-  async function handleCheckIn() {
+  async function submitCheckIn(slotOverride?: string) {
     if (!eventId || !confirmedAttendee) return;
+
+    const finalSlot = slotOverride?.trim() ?? '';
+
+    if (timeslotEnabled && timeslots.length > 0 && !finalSlot) {
+      toast.error('Timeslot selection is required for this event.');
+      return;
+    }
 
     try {
       const result = await checkInMutation.mutateAsync({
@@ -179,6 +264,7 @@ export function AdminAttendanceCheckInPage() {
           confirmedAttendee.attendee_kind === 'public'
             ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
             : undefined,
+        slot: timeslotEnabled ? finalSlot || undefined : undefined,
       });
 
       setCheckInResult(result);
@@ -197,6 +283,10 @@ export function AdminAttendanceCheckInPage() {
       const message = error instanceof Error ? error.message : 'Failed to check in attendee.';
       toast.error(message);
     }
+  }
+
+  function handleCheckIn() {
+    void submitCheckIn();
   }
 
   async function handleReopenRegistration() {
@@ -308,7 +398,21 @@ export function AdminAttendanceCheckInPage() {
         </div>
       )}
 
-      {attendanceEnabled && (
+      {isCheckInBlockedByWindow && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-800">
+            Check-in is restricted to the event date-time window.
+          </p>
+          <p className="mt-1 text-xs text-amber-700">
+            Allowed window:{' '}
+            {event
+              ? `${formatDateTime(event.starts_at)} to ${formatDateTime(event.ends_at)}`
+              : 'Unavailable'}
+          </p>
+        </div>
+      )}
+
+      {showCheckInWizard && (
         <StepIndicator
           currentStep={activeStep}
           totalSteps={3}
@@ -317,13 +421,13 @@ export function AdminAttendanceCheckInPage() {
       )}
 
       <AdminPageShell.Content>
-        {attendanceEnabled && activeStep === 1 && (
+        {showCheckInWizard && activeStep === 1 && (
           <div ref={searchStepRef} className="space-y-4 scroll-mt-24">
             <AttendeeSearchStep
               searchToken={searchToken}
               submittedSearchToken={submittedSearchToken}
               isSearching={searchQuery.isFetching}
-              disabled={!attendanceEnabled}
+              disabled={!attendanceEnabled || isCheckInBlockedByWindow}
               results={results}
               isSearchError={searchQuery.isError}
               onSearchTokenChange={setSearchToken}
@@ -365,7 +469,7 @@ export function AdminAttendanceCheckInPage() {
           </div>
         )}
 
-        {attendanceEnabled && activeStep === 2 && (
+        {showCheckInWizard && activeStep === 2 && (
           <div ref={selectStepRef} className="space-y-4 scroll-mt-24">
             <AttendeeSelectStep
               results={results}
@@ -388,12 +492,18 @@ export function AdminAttendanceCheckInPage() {
           </div>
         )}
 
-        {attendanceEnabled && activeStep === 3 && (
+        {showCheckInWizard && activeStep === 3 && (
           <div ref={confirmStepRef} className="space-y-4 scroll-mt-24">
             <AttendeeConfirmStep
               attendee={confirmedAttendee}
               checkInResult={checkInResult}
               isSubmitting={checkInMutation.isPending}
+              timeslotEnabled={timeslotEnabled}
+              timeslots={timeslots}
+              suggestedSlot={suggestedSlot}
+              onTimeslotConfirm={(slot) => {
+                void submitCheckIn(slot);
+              }}
               onCheckIn={handleCheckIn}
               onReadyForNext={handleReadyForNext}
               inactivityTimeoutMs={TIMING.registrationWizardStepThreeTimeoutMs}

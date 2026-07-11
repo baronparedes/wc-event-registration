@@ -41,6 +41,9 @@ export function useCheckInAttendeeMutation() {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.adminAttendanceAnswers(variables.event_id),
       });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.adminAttendanceSlotSummaries(variables.event_id),
+      });
     },
   });
 }

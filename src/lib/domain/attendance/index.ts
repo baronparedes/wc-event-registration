@@ -5,6 +5,8 @@ export type {
   CheckInResult,
   AttendanceSlotPayload,
   TimeslotAttendanceRecord,
+  AttendanceSlotAttendee,
+  AttendanceSlotSummary,
   AttendanceAnswer,
   RegistrantAttendanceRow,
   AttendanceAnswerSummary,

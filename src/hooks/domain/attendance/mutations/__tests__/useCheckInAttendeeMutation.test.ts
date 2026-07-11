@@ -67,6 +67,9 @@ describe('useCheckInAttendeeMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: QUERY_KEYS.adminAttendanceAnswers('event-1'),
       });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: QUERY_KEYS.adminAttendanceSlotSummaries('event-1'),
+      });
     });
   });
 
@@ -100,5 +103,36 @@ describe('useCheckInAttendeeMutation', () => {
         registration_id: 'registration-3',
       }),
     ).rejects.toThrow('Failed to check in attendee.');
+  });
+
+  it('forwards optional slot payload for timeslot check-in', async () => {
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+      result: {
+        success: true,
+        status: 'already_checked_in',
+        official_check_in_time: '2026-07-05T02:00:00.000Z',
+        attendee_kind: 'registered',
+        message: 'Attendee is already checked in.',
+      },
+    });
+
+    const { result } = renderHookWithClient(() => useCheckInAttendeeMutation());
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        event_id: 'event-4',
+        attendee_kind: 'registered',
+        registration_id: 'registration-4',
+        slot: '2026-07-10T09:00+08:00',
+      });
+    });
+
+    expect(mockCaller).toHaveBeenCalledWith({
+      event_id: 'event-4',
+      attendee_kind: 'registered',
+      registration_id: 'registration-4',
+      slot: '2026-07-10T09:00+08:00',
+    });
   });
 });

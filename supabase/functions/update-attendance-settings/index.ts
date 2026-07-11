@@ -17,6 +17,7 @@ const updateAttendanceSettingsSchema = z
     event_id: z.string().uuid('Invalid event ID.'),
     attendance_enabled: z.boolean(),
     timeslot_enabled: z.boolean(),
+    enforce_check_in_event_window: z.boolean().default(true),
     timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
   })
   .superRefine((value, context) => {
@@ -202,11 +203,16 @@ Deno.serve(async (req) => {
           event_id: payload.event_id,
           attendance_enabled: payload.attendance_enabled,
           timeslot_enabled: payload.attendance_enabled ? payload.timeslot_enabled : false,
+          enforce_check_in_event_window: payload.attendance_enabled
+            ? payload.enforce_check_in_event_window
+            : true,
           timeslots: normalizedTimeslots,
         },
         { onConflict: 'event_id' },
       )
-      .select('event_id, attendance_enabled, timeslot_enabled, timeslots, updated_at')
+      .select(
+        'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
+      )
       .single();
 
     if (upsertError) {

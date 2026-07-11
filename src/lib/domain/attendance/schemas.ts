@@ -7,6 +7,7 @@ const attendanceSettingsBaseSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
   attendance_enabled: z.boolean(),
   timeslot_enabled: z.boolean(),
+  enforce_check_in_event_window: z.boolean().default(true),
   timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
   updated_at: z.string().optional(),
 });
@@ -47,6 +48,7 @@ export const updateAttendanceSettingsSchema = attendanceSettingsBaseSchema
     event_id: true,
     attendance_enabled: true,
     timeslot_enabled: true,
+    enforce_check_in_event_window: true,
     timeslots: true,
   })
   .superRefine(applyAttendanceSettingsRules);
