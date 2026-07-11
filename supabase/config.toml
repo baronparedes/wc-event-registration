@@ -142,6 +142,12 @@ verify_jwt = true
 [functions.check-in-attendee]
 verify_jwt = true
 
+[functions.download-attendance-csv]
+verify_jwt = true
+
+[functions.bulk-upsert-attendance-answers]
+verify_jwt = true
+
 [functions.event-slot-availability]
 verify_jwt = false
 

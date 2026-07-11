@@ -20,6 +20,8 @@ export type {
   AttendanceSlotPayloadInput,
   AttendanceAnswerEntry,
   UpsertAttendanceAnswersInput,
+  BulkAttendanceCsvRowInput,
+  BulkUpsertAttendanceAnswersInput,
 } from './schemas';
 
 export { ATTENDEE_KINDS, CHECK_IN_STATUSES, CHECK_IN_STATUS_LABELS } from './metadata';
@@ -29,4 +31,14 @@ export {
   attendanceSlotPayloadSchema,
   buildTimeslotSelectionSchema,
   upsertAttendanceAnswersSchema,
+  buildBulkAttendanceCsvRowSchema,
+  buildBulkAttendanceCsvRowsSchema,
+  bulkUpsertAttendanceAnswersSchema,
 } from './schemas';
+
+export {
+  parseCsvText,
+  buildBulkAttendanceRowsFromCsv,
+  type ParseCsvResult,
+  type BuildBulkRowsResult,
+} from './csv-parser';

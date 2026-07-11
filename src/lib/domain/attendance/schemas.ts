@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import type { AttendanceField } from '@/lib/domain/attendance-fields';
+import { buildDynamicAttendanceResponseSchema } from '@/lib/domain/attendance-fields';
+
 const attendanceSettingsBaseSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
   attendance_enabled: z.boolean(),
@@ -111,3 +114,72 @@ export const upsertAttendanceAnswersSchema = z
   });
 
 export type UpsertAttendanceAnswersInput = z.infer<typeof upsertAttendanceAnswersSchema>;
+
+const bulkAttendanceAttendeeRefSchema = z
+  .object({
+    attendee_kind: z.enum(['registered', 'public']),
+    registration_id: z.string().uuid('Invalid registration ID').optional(),
+    public_registration_id: z.string().uuid('Invalid public registration ID').optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.attendee_kind === 'registered' && !value.registration_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'registration_id is required for registered attendees.',
+        path: ['registration_id'],
+      });
+    }
+
+    if (value.attendee_kind === 'registered' && value.public_registration_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'public_registration_id must be empty for registered attendees.',
+        path: ['public_registration_id'],
+      });
+    }
+
+    if (value.attendee_kind === 'public' && !value.public_registration_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'public_registration_id is required for public attendees.',
+        path: ['public_registration_id'],
+      });
+    }
+
+    if (value.attendee_kind === 'public' && value.registration_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'registration_id must be empty for public attendees.',
+        path: ['registration_id'],
+      });
+    }
+  });
+
+export function buildBulkAttendanceCsvRowSchema(fields: AttendanceField[]) {
+  const optionalFields = fields.map((field) => ({
+    ...field,
+    is_required: false,
+  }));
+
+  return bulkAttendanceAttendeeRefSchema.extend({
+    answers: buildDynamicAttendanceResponseSchema(optionalFields),
+  });
+}
+
+export function buildBulkAttendanceCsvRowsSchema(fields: AttendanceField[]) {
+  return z
+    .array(buildBulkAttendanceCsvRowSchema(fields))
+    .min(1, 'At least one CSV row is required for bulk upload.');
+}
+
+export type BulkAttendanceCsvRowInput = z.infer<ReturnType<typeof buildBulkAttendanceCsvRowSchema>>;
+
+export const bulkUpsertAttendanceAnswersSchema = z.object({
+  event_id: z.string().uuid('Invalid event ID'),
+  rows: z.array(z.record(z.string(), z.unknown())).min(1, 'At least one row is required'),
+});
+
+export type BulkUpsertAttendanceAnswersInput = {
+  event_id: string;
+  rows: BulkAttendanceCsvRowInput[];
+};

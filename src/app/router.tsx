@@ -62,6 +62,11 @@ const AdminAttendanceDataPage = lazy(() =>
     default: module.AdminAttendanceDataPage,
   })),
 );
+const AdminAttendanceDataBulkUploadPage = lazy(() =>
+  import('../pages/admin/events/[id]/attendance/data/bulk-upload').then((module) => ({
+    default: module.AdminAttendanceDataBulkUploadPage,
+  })),
+);
 const AdminAttendanceCheckInPage = lazy(() =>
   import('../pages/admin/events/[id]/attendance/check-in').then((module) => ({
     default: module.AdminAttendanceCheckInPage,
@@ -269,6 +274,16 @@ export function AppRouter() {
             <RequireAdminAuth>
               <LazyRoute>
                 <AdminAttendanceDataPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.adminEventAttendanceDataBulkUploadPattern}
+          element={
+            <RequireAdminAuth>
+              <LazyRoute>
+                <AdminAttendanceDataBulkUploadPage />
               </LazyRoute>
             </RequireAdminAuth>
           }

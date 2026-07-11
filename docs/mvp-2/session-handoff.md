@@ -6,19 +6,18 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 
 ## Pause Snapshot
 
-- Current state: Paused after implementing Session 5 (EPIC-8-S5).
-- Next session to start: Session 6 (EPIC-8-S8 Bulk CSV Edit Attendance Data).
+- Current state: Paused after implementing Session 6 (EPIC-8-S8).
+- Next session to start: Session 7 (EPIC-8-S6 Timeslot Attendance).
 - Latest validation at pause:
   - `npm run build` passed.
   - `npm run format:check` passed.
-  - `npm run ci:gate` passed.
+  - Focused Session 6 unit tests passed.
 - New route `/admin/events/:id/attendance/fields` added for attendance field config + data entry.
 
 ## Remaining Feature Priority (Pivoted)
 
-1. Bulk Update (Session 6 / EPIC-8-S8)
-2. Attendance Slots Check-In (Session 7 / EPIC-8-S6)
-3. Attendance Export (Session 8 / EPIC-8-S7)
+1. Attendance Slots Check-In (Session 7 / EPIC-8-S6)
+2. Attendance Export (Session 8 / EPIC-8-S7)
 
 ## 2026-07-11 Session 5 Implementation Addendum
 
@@ -231,17 +230,17 @@ Goal:
 
 Checklist:
 
-- [ ] Add download-attendance-csv Edge Function to generate template with all attendees + attendance fields
-- [ ] Add bulk-upsert-attendance-answers Edge Function for server-side row validation and atomic upsert
-- [ ] Create csv-parser utility to parse and structure CSV text into rows
-- [ ] Create Zod row validator schema reusing existing field type validators
-- [ ] Add useDownloadAttendanceCSVMutation hook calling new Edge Function
-- [ ] Add useBulkUpsertAttendanceAnswersMutation hook with atomic failure handling
-- [ ] Create BulkUploadModal component with file input, preview, and error display
-- [ ] Add download and upload buttons to attendance data page
-- [ ] Ensure atomic validation: reject entire import if any row invalid
-- [ ] Ensure overwrite strategy: replace all answers for rows in CSV (not merge)
-- [ ] Block bulk operations when attendance is disabled
+- [x] Add download-attendance-csv Edge Function to generate template with all attendees + attendance fields
+- [x] Add bulk-upsert-attendance-answers Edge Function for server-side row validation and atomic upsert
+- [x] Create csv-parser utility to parse and structure CSV text into rows
+- [x] Create Zod row validator schema reusing existing field type validators
+- [x] Add useDownloadAttendanceCSVMutation hook calling new Edge Function
+- [x] Add useBulkUpsertAttendanceAnswersMutation hook with atomic failure handling
+- [x] Create BulkUploadModal component with file input, preview, and error display
+- [x] Add download and upload buttons to attendance data page
+- [x] Ensure atomic validation: reject entire import if any row invalid
+- [x] Ensure overwrite strategy: replace all answers for rows in CSV (not merge)
+- [x] Block bulk operations when attendance is disabled
 
 Expected file touch zones:
 
@@ -259,13 +258,13 @@ Expected file touch zones:
 Validation gate:
 
 - [ ] Feature 8.7 scenarios pass in local QA
-- [ ] CSV parsing handles quote/escape edge cases
-- [ ] Atomic validation correctly rejects entire batch on single row error
+- [x] CSV parsing handles quote/escape edge cases
+- [x] Atomic validation correctly rejects entire batch on single row error
 - [ ] Large CSV (100s of rows) completes without timeout
 
 Exit criteria:
 
-- Bulk CSV edit workflow is operational; attendance data bulk updates are atomic and safe.
+- [x] Bulk CSV edit workflow is operational; attendance data bulk updates are atomic and safe.
 
 ## Session 7 - EPIC-8-S6 Timeslot Attendance
 
@@ -330,9 +329,9 @@ Exit criteria:
 
 Run at end of every session:
 
-- [ ] npm run build
+- [x] npm run build
 - [ ] npm run format:check
-- [ ] Relevant unit tests for changed hooks, schemas, and transforms
+- [x] Relevant unit tests for changed hooks, schemas, and transforms
 - [ ] Relevant Edge Function tests or local invocation checks
 
 Run at end of Session 6:
@@ -371,4 +370,4 @@ Run at end of Session 8:
 
 Use this prompt for the next dev-agent execution session:
 
-Implement Session 6 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S8 only: deliver bulk CSV edit workflow for attendance answers with atomic validation failure behavior, overwrite semantics, and attendance-disabled guardrails. Run build, format, and local QA checks for feature 8.7 before handoff.
+Implement Session 7 from docs/mvp-2/session-handoff.md and follow docs/mvp-2/technical-design-attendance.md as contract source. Keep scope limited to EPIC-8-S6 only: add timeslot attendance behavior as an additive mode on top of first-check-in semantics. Run build, format, and local QA checks for feature 8.5 before handoff.

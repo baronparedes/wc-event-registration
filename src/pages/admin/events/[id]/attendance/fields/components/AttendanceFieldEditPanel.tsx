@@ -23,6 +23,18 @@ import type { AttendanceField, AttendanceFieldTypeEnum } from '@/lib/domain/atte
 import { AttendanceFieldTypeSelector } from './AttendanceFieldTypeSelector';
 import { RuleInput } from './RuleInput';
 
+function normalizeOptionalNumberInput(value: unknown): unknown {
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'number' && Number.isNaN(value)) {
+    return undefined;
+  }
+
+  return value;
+}
+
 const attendanceFieldPanelSchema = z.object({
   field_key: z
     .string()
@@ -42,13 +54,25 @@ const attendanceFieldPanelSchema = z.object({
       value: z.string().min(1, 'Option value is required'),
     }),
   ),
-  val_min_length: z.coerce.number().int().nonnegative().optional().or(z.literal('')),
-  val_max_length: z.coerce.number().int().nonnegative().optional().or(z.literal('')),
+  val_min_length: z.preprocess(
+    normalizeOptionalNumberInput,
+    z.number().int().nonnegative().optional(),
+  ),
+  val_max_length: z.preprocess(
+    normalizeOptionalNumberInput,
+    z.number().int().nonnegative().optional(),
+  ),
   val_pattern: z.string().optional().or(z.literal('')),
-  val_min: z.coerce.number().optional().or(z.literal('')),
-  val_max: z.coerce.number().optional().or(z.literal('')),
-  val_min_selections: z.coerce.number().int().nonnegative().optional().or(z.literal('')),
-  val_max_selections: z.coerce.number().int().nonnegative().optional().or(z.literal('')),
+  val_min: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
+  val_max: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
+  val_min_selections: z.preprocess(
+    normalizeOptionalNumberInput,
+    z.number().int().nonnegative().optional(),
+  ),
+  val_max_selections: z.preprocess(
+    normalizeOptionalNumberInput,
+    z.number().int().nonnegative().optional(),
+  ),
   val_min_date: z.string().optional().or(z.literal('')),
   val_max_date: z.string().optional().or(z.literal('')),
 });
@@ -94,13 +118,13 @@ export function AttendanceFieldEditPanel({
           is_required: field.is_required,
           is_active: field.is_active,
           options: (field.options ?? []).map((o) => ({ label: o.label, value: o.value })),
-          val_min_length: field.validation_rules?.min_length ?? '',
-          val_max_length: field.validation_rules?.max_length ?? '',
+          val_min_length: field.validation_rules?.min_length,
+          val_max_length: field.validation_rules?.max_length,
           val_pattern: field.validation_rules?.pattern ?? '',
-          val_min: field.validation_rules?.min ?? '',
-          val_max: field.validation_rules?.max ?? '',
-          val_min_selections: field.validation_rules?.min_selections ?? '',
-          val_max_selections: field.validation_rules?.max_selections ?? '',
+          val_min: field.validation_rules?.min,
+          val_max: field.validation_rules?.max,
+          val_min_selections: field.validation_rules?.min_selections,
+          val_max_selections: field.validation_rules?.max_selections,
           val_min_date: field.validation_rules?.min_date ?? '',
           val_max_date: field.validation_rules?.max_date ?? '',
         }
@@ -111,13 +135,13 @@ export function AttendanceFieldEditPanel({
           is_required: false,
           is_active: true,
           options: [],
-          val_min_length: '',
-          val_max_length: '',
+          val_min_length: undefined,
+          val_max_length: undefined,
           val_pattern: '',
-          val_min: '',
-          val_max: '',
-          val_min_selections: '',
-          val_max_selections: '',
+          val_min: undefined,
+          val_max: undefined,
+          val_min_selections: undefined,
+          val_max_selections: undefined,
           val_min_date: '',
           val_max_date: '',
         },
@@ -135,13 +159,17 @@ export function AttendanceFieldEditPanel({
   async function onSubmit(values: AttendanceFieldPanelValues) {
     try {
       const validationRules = {
-        ...(values.val_min_length !== '' && { min_length: values.val_min_length }),
-        ...(values.val_max_length !== '' && { max_length: values.val_max_length }),
+        ...(values.val_min_length !== undefined && { min_length: values.val_min_length }),
+        ...(values.val_max_length !== undefined && { max_length: values.val_max_length }),
         ...(values.val_pattern && { pattern: values.val_pattern }),
-        ...(values.val_min !== '' && { min: values.val_min }),
-        ...(values.val_max !== '' && { max: values.val_max }),
-        ...(values.val_min_selections !== '' && { min_selections: values.val_min_selections }),
-        ...(values.val_max_selections !== '' && { max_selections: values.val_max_selections }),
+        ...(values.val_min !== undefined && { min: values.val_min }),
+        ...(values.val_max !== undefined && { max: values.val_max }),
+        ...(values.val_min_selections !== undefined && {
+          min_selections: values.val_min_selections,
+        }),
+        ...(values.val_max_selections !== undefined && {
+          max_selections: values.val_max_selections,
+        }),
         ...(values.val_min_date && { min_date: values.val_min_date }),
         ...(values.val_max_date && { max_date: values.val_max_date }),
       };
@@ -382,7 +410,7 @@ export function AttendanceFieldEditPanel({
                       id="val_min_length"
                       label="Minimum Length"
                       type="number"
-                      registration={register('val_min_length')}
+                      registration={register('val_min_length', { valueAsNumber: true })}
                       placeholder="e.g., 3"
                       helperText="Minimum number of characters required."
                     />
@@ -390,7 +418,7 @@ export function AttendanceFieldEditPanel({
                       id="val_max_length"
                       label="Maximum Length"
                       type="number"
-                      registration={register('val_max_length')}
+                      registration={register('val_max_length', { valueAsNumber: true })}
                       placeholder="e.g., 100"
                       helperText="Maximum number of characters allowed."
                     />
@@ -412,14 +440,14 @@ export function AttendanceFieldEditPanel({
                       id="val_min"
                       label="Minimum Value"
                       type="number"
-                      registration={register('val_min')}
+                      registration={register('val_min', { valueAsNumber: true })}
                       placeholder="e.g., 0"
                     />
                     <RuleInput
                       id="val_max"
                       label="Maximum Value"
                       type="number"
-                      registration={register('val_max')}
+                      registration={register('val_max', { valueAsNumber: true })}
                       placeholder="e.g., 10"
                     />
                   </>
@@ -430,7 +458,7 @@ export function AttendanceFieldEditPanel({
                       id="val_min_selections"
                       label="Minimum Selections"
                       type="number"
-                      registration={register('val_min_selections')}
+                      registration={register('val_min_selections', { valueAsNumber: true })}
                       placeholder="e.g., 1"
                       helperText="Minimum number of options the user must select."
                     />
@@ -438,7 +466,7 @@ export function AttendanceFieldEditPanel({
                       id="val_max_selections"
                       label="Maximum Selections"
                       type="number"
-                      registration={register('val_max_selections')}
+                      registration={register('val_max_selections', { valueAsNumber: true })}
                       placeholder="e.g., 5"
                       helperText="Maximum number of options the user can select."
                     />

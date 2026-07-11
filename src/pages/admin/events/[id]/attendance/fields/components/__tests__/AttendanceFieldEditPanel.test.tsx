@@ -466,6 +466,33 @@ describe('AttendanceFieldEditPanel', () => {
 
       expect(screen.getByText(/Make at least one change to enable saving/i)).toBeInTheDocument();
     });
+
+    it('does not persist blank numeric validation rules as zero values on save', async () => {
+      render(<AttendanceFieldEditPanel eventId="event-1" field={null} onClose={() => {}} />);
+
+      fireEvent.change(screen.getByPlaceholderText(/e\.g\., table_number/i), {
+        target: { value: 'table_number' },
+      });
+      fireEvent.change(screen.getByPlaceholderText(/e\.g\., Table Number/i), {
+        target: { value: 'Table Number' },
+      });
+
+      const addButton = screen.getByRole('button', { name: /Add Field/i });
+
+      await waitFor(() => {
+        expect(addButton).not.toBeDisabled();
+      });
+
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        expect(mockCreateMutation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            validation_rules: {},
+          }),
+        );
+      });
+    });
   });
 
   describe('checkbox states', () => {

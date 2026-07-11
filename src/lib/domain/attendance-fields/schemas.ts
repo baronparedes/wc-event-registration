@@ -90,21 +90,43 @@ export const reorderAttendanceFieldsSchema = z.object({
 
 export type ReorderAttendanceFieldsInput = z.infer<typeof reorderAttendanceFieldsSchema>;
 
+function sanitizeAttendanceValidationRules(field: AttendanceField): AttendanceField {
+  const rules = field.validation_rules ?? {};
+
+  return {
+    ...field,
+    validation_rules: {
+      ...rules,
+      ...(typeof rules.max === 'number' && rules.max <= 0 ? { max: undefined } : {}),
+      ...(typeof rules.max_length === 'number' && rules.max_length <= 0
+        ? { max_length: undefined }
+        : {}),
+      ...(typeof rules.max_selections === 'number' && rules.max_selections <= 0
+        ? { max_selections: undefined }
+        : {}),
+    },
+  };
+}
+
 function toPublicEventFields(fields: AttendanceField[]): PublicEventField[] {
-  return fields.map((field) => ({
-    id: field.id,
-    event_id: field.event_id,
-    field_key: field.field_key,
-    label: field.label,
-    field_type: field.field_type,
-    is_required: field.is_required,
-    is_active: true,
-    placeholder: null,
-    help_text: null,
-    options: field.options,
-    validation_rules: field.validation_rules,
-    display_order: field.display_order,
-  }));
+  return fields.map((rawField) => {
+    const field = sanitizeAttendanceValidationRules(rawField);
+
+    return {
+      id: field.id,
+      event_id: field.event_id,
+      field_key: field.field_key,
+      label: field.label,
+      field_type: field.field_type,
+      is_required: field.is_required,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: field.options,
+      validation_rules: field.validation_rules,
+      display_order: field.display_order,
+    };
+  });
 }
 
 export function buildDynamicAttendanceResponseSchema(

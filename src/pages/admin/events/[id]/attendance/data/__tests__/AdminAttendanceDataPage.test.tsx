@@ -12,12 +12,14 @@ const {
   mockUseAttendanceSettingsQuery,
   mockUseAttendanceFieldsQuery,
   mockUseAttendanceAnswersQuery,
+  mockUseDownloadAttendanceCSVMutation,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAttendanceSettingsQuery: vi.fn(),
   mockUseAttendanceFieldsQuery: vi.fn(),
   mockUseAttendanceAnswersQuery: vi.fn(),
+  mockUseDownloadAttendanceCSVMutation: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -48,6 +50,8 @@ vi.mock('@/hooks/domain/attendance', async () => {
     ...actual,
     useAttendanceSettingsQuery: (...args: unknown[]) => mockUseAttendanceSettingsQuery(...args),
     useAttendanceAnswersQuery: (...args: unknown[]) => mockUseAttendanceAnswersQuery(...args),
+    useDownloadAttendanceCSVMutation: (...args: unknown[]) =>
+      mockUseDownloadAttendanceCSVMutation(...args),
   };
 });
 
@@ -106,6 +110,11 @@ describe('AdminAttendanceDataPage', () => {
         },
       ],
       isLoading: false,
+    });
+
+    mockUseDownloadAttendanceCSVMutation.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
     });
   });
 
