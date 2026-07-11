@@ -66,7 +66,7 @@ export function AttendeeLookupErrorAlert({
           <div className="space-y-1">
             <p className="text-sm font-semibold text-orange-950">Attendee not found</p>
             <p className="text-sm text-orange-900">{message}</p>
-            {actions ? <div className="pt-2">{actions}</div> : null}
+            {actions && <div className="pt-2">{actions}</div>}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {errorCountdown > 0 && (
