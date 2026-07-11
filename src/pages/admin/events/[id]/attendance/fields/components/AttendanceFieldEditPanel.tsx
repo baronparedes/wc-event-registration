@@ -385,7 +385,6 @@ export function AttendanceFieldEditPanel({
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
                   onClick={() => append({ label: '', value: '' })}
                 >
                   Add Option

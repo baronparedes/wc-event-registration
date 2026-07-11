@@ -204,7 +204,6 @@ export function FieldOptionsEditor({
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={() =>
             append({
               label: '',

@@ -106,7 +106,6 @@ export function PublishActionButton({
         <Button
           type="button"
           variant="default"
-          size="sm"
           disabled={isPending}
           onClick={() => setSelectedEvent(event)}
         >

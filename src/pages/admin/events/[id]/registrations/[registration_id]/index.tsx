@@ -199,11 +199,11 @@ export function AdminRegistrationDetailPage() {
   };
 
   const pageActions = canCancel ? (
-    <Button size="sm" variant="destructive" onClick={() => setShowCancelDialog(true)}>
+    <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
       Cancel Registration
     </Button>
   ) : (
-    <Button size="sm" variant="default" onClick={() => setShowReactivateDialog(true)}>
+    <Button variant="default" onClick={() => setShowReactivateDialog(true)}>
       Reactivate Registration
     </Button>
   );

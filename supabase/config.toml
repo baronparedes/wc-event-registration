@@ -148,6 +148,9 @@ verify_jwt = true
 [functions.bulk-upsert-attendance-answers]
 verify_jwt = true
 
+[functions.bulk-upsert-members]
+verify_jwt = true
+
 [functions.event-slot-availability]
 verify_jwt = false
 

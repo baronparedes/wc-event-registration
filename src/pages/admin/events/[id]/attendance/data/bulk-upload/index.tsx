@@ -38,7 +38,6 @@ export function AdminAttendanceDataBulkUploadPage() {
   const actions = canRunBulkOps ? (
     <Button
       variant="primaryOutline"
-      size="sm"
       disabled={downloadMutation.isPending}
       onClick={async () => {
         if (!id) return;

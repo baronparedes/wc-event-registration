@@ -225,7 +225,6 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
               <Button
                 type="button"
                 variant="default"
-                size="sm"
                 disabled={restoreToDraftMutation.isPending}
                 onClick={() => setIsRestoreToDraftConfirmOpen(true)}
               >
@@ -245,7 +244,6 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           <Button
             type="button"
             variant="destructive"
-            size="sm"
             disabled={archiveMutation.isPending}
             onClick={() => setIsArchiveConfirmOpen(true)}
           >

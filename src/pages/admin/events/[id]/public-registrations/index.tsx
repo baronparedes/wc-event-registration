@@ -122,7 +122,6 @@ export function AdminPublicRegistrationsPage() {
     <Button
       asChild
       variant="primaryOutline"
-      size="sm"
       onClick={() => navigate(toAdminEventRegistrations(eventId))}
     >
       View Member Registrations

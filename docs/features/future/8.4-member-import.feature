@@ -1,4 +1,7 @@
 Feature: Member Import - Bulk CSV Upload
+  # IMPLEMENTED: This capability has moved to Admin Members feature docs.
+  # See docs/features/6-admin-members/6.5-import-members-csv.feature
+
   As an admin
   I want to import member data from CSV
   So that I can bulk-load members into the system instead of manually creating each one

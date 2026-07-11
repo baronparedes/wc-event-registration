@@ -437,7 +437,6 @@ export function AdminAttendanceCheckInPage() {
                   {registrationOpen ? (
                     <Button
                       type="button"
-                      size="sm"
                       variant="outline"
                       onClick={() => {
                         if (event) {
@@ -454,7 +453,6 @@ export function AdminAttendanceCheckInPage() {
                   ) : (
                     <Button
                       type="button"
-                      size="sm"
                       onClick={handleReopenRegistration}
                       disabled={updateEventMutation.isPending}
                     >

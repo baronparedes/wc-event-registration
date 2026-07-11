@@ -120,6 +120,7 @@ describe('AdminMembersPage', () => {
     expect(screen.getByText('Jane Doe')).toBeInTheDocument();
     expect(screen.getByText('WC-001')).toBeInTheDocument();
     expect(screen.getByText('jane@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload CSV' })).toBeInTheDocument();
     expect(screen.getByText('Update Member ID Dialog')).toBeInTheDocument();
   });
 

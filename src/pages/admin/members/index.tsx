@@ -19,6 +19,7 @@ import {
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
+  ROUTE_PATHS,
   TIMING,
   UI_MESSAGES,
   toAdminMemberDetail,
@@ -105,7 +106,18 @@ export function AdminMembersPage() {
         breadcrumbs={[{ label: 'Members' }]}
         title="Manage Members"
         description="View and manage member profiles and details."
-        actions={<AddMemberDialog />}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
+            >
+              Upload CSV
+            </Button>
+            <AddMemberDialog />
+          </div>
+        }
       />
 
       <AdminPageShell.Filters>

@@ -28,6 +28,11 @@ const AdminLoginPage = lazy(() =>
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
 );
+const AdminMembersImportPage = lazy(() =>
+  import('../pages/admin/members/import/index').then((module) => ({
+    default: module.AdminMembersImportPage,
+  })),
+);
 const AdminMemberDetailPage = lazy(() =>
   import('../pages/admin/members/[id]').then((module) => ({
     default: module.AdminMemberDetailPage,
@@ -194,6 +199,16 @@ export function AppRouter() {
             <RequireAdminAuth>
               <LazyRoute>
                 <AdminMembersPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.adminMembersImport}
+          element={
+            <RequireAdminAuth>
+              <LazyRoute>
+                <AdminMembersImportPage />
               </LazyRoute>
             </RequireAdminAuth>
           }

@@ -69,21 +69,10 @@ Business intelligence dashboard showing registration trends, completion rates, d
 
 ### 8.4 Member Import - Bulk CSV Upload
 
-**Priority**: Medium | **Complexity**: Low-Medium | **Effort**: 2-3 weeks  
-**Depends on**: CSV export (complete) for reference format
+**Status**: Implemented  
+**Reference**: See `docs/features/6-admin-members/6.5-import-members-csv.feature`
 
-Bulk import of member data from CSV. Admins can seed the member database instead of manually creating each member.
-
-**Business value**: Faster onboarding for organizations with existing member lists; reduces data entry burden; enables integration with external member databases.
-
-**Key scenarios**:
-
-- Upload CSV with member data
-- Validation before import (required fields, uniqueness, format)
-- Preview and confirm
-- Duplicate handling (skip or update)
-- Import log and error reporting
-- CSV template download for reference
+This feature has moved from roadmap to implemented Admin Members capabilities.
 
 ---
 
@@ -141,7 +130,6 @@ Priorities assigned based on:
 
 ### Tier 2 (Medium Priority - Q4 2026 - Q1 2027)
 
-- **Member Import** (8.4): Reduces data entry; low risk, straightforward
 - **Async CSV Export** (8.2): Improves performance for large datasets; medium risk
 - **Role-Based Visibility** (8.5): Enables complex scenarios; higher complexity
 

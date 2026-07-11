@@ -347,7 +347,6 @@ export function AdminEventAttendancePage() {
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
                           disabled={isArchived}
                           onClick={() => removeTimeslot(index)}
                         >
@@ -360,7 +359,6 @@ export function AdminEventAttendancePage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     disabled={isArchived}
                     onClick={addTimeslot}
                   >

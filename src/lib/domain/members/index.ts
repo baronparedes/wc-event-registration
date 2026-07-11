@@ -10,3 +10,14 @@ export {
   type UpdateMemberInput,
   type CreateMemberInput,
 } from './schemas';
+export type {
+  ExistingMemberImportSnapshot,
+  MemberCsvPreparedRowInput,
+  MemberCsvPreviewRow,
+  MemberCsvPreviewSummary,
+} from './csv-import';
+export {
+  parseMemberCsvText,
+  buildMemberCsvPreparedRows,
+  buildMemberCsvImportPreview,
+} from './csv-import';

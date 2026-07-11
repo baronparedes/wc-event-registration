@@ -35,7 +35,7 @@ export function AdminAttendanceDataPage() {
   const actions = canRunBulkOps ? (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
       {id && (
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline">
           <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
         </Button>
       )}

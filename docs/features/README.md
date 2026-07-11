@@ -51,12 +51,13 @@ Features are organized into 8 epic folders:
 - **Cancel Public Registration**: Admins cancel an active public self-registration
 - **Reactivate Public Registration**: Admins restore a cancelled public self-registration
 
-### 6. Admin Members (4 features)
+### 6. Admin Members (5 features)
 
 - **View Members**: Admins see list of all members in the system
 - **View Member Details**: Admins view or edit individual member profiles
 - **Create Member**: Admins manually add new member to system
 - **Update Member ID**: Admins change a member's ID (RFID or identifier)
+- **Import Members via CSV**: Admins preview and atomically upsert members from CSV with fail-all validation
 
 ### 7. System Features (4 features)
 
@@ -75,12 +76,11 @@ Features are organized into 8 epic folders:
 - **Export Attendance CSV**: Admins download attendance data and status for post-event reporting
 - **Bulk Edit Attendance Data via CSV**: Admins download template, bulk edit locally, and upload to update 100s of attendees at once
 
-### 9. Future/Planned (5 features in `future/` subfolder)
+### 9. Future/Planned (4 features in `future/` subfolder)
 
 - **Event Scoping**: Admins limited to their own events
 - **Async CSV Export**: For large registration volumes
 - **Analytics Dashboard**: Registration metrics and reporting
-- **Member Import**: Bulk CSV upload for members
 - **Role-Based Field Visibility**: Show/hide fields by member role
 
 ## How to Read a Feature File
