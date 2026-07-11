@@ -9,8 +9,14 @@
 
 - MVP2 has moved from planning into implementation execution.
 - Sessions 1 through 5 have been implemented in sequence.
-- Current next execution target is Session 6 (EPIC-8-S6 Timeslot Attendance).
+- Current next execution target is Session 6 (EPIC-8-S8 Bulk CSV Edit Attendance Data).
 - The detailed execution checkpoint source of truth is docs/mvp-2/session-handoff.md.
+
+### Remaining Feature Priority (Pivoted)
+
+1. Bulk Update (EPIC-8-S8)
+2. Attendance Slots Check-In (EPIC-8-S6)
+3. Attendance Export (EPIC-8-S7)
 
 ### Context
 
@@ -194,4 +200,4 @@ Planning is considered complete when all conditions below are true:
 ### Notes
 
 - This file is the active MVP2 planning document.
-- Implementation coding begins only in a future session.
+- Execution progress and remaining-session order are tracked in docs/mvp-2/session-handoff.md.
