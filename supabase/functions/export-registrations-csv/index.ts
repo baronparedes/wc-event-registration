@@ -33,10 +33,56 @@ type RegistrationShareRow = {
   full_name: string;
   member_id: string;
   email: string;
+  phone: string;
+  metadata: string;
   role: string;
   category: string;
+  registration_status: string;
+  submitted_at: string;
+  updated_at: string;
   answer_values: Record<string, string>;
 };
+
+function formatMetadataValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value !== 'object') {
+    return String(value);
+  }
+
+  try {
+    if (Array.isArray(value)) {
+      return JSON.stringify(value);
+    }
+
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(
+        ([, entryValue]) => entryValue !== null && entryValue !== undefined && entryValue !== '',
+      )
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+    if (entries.length === 0) {
+      return '';
+    }
+
+    return entries
+      .map(([key, entryValue]) => {
+        if (typeof entryValue === 'string') {
+          return `${key}: ${entryValue}`;
+        }
+        return `${key}: ${JSON.stringify(entryValue)}`;
+      })
+      .join('; ');
+  } catch {
+    return '';
+  }
+}
 
 // Helper function to escape CSV fields
 function escapeCsvField(field: unknown): string {
@@ -266,7 +312,7 @@ Deno.serve(async (req) => {
     const userIds = registrations?.map((r) => r.user_id) ?? [];
     const { data: users, error: userError } = await adminClient
       .from('users')
-      .select('id, member_id, full_name, email, phone, role, category')
+      .select('id, member_id, full_name, email, phone, role, category, metadata')
       .in('id', userIds);
 
     if (userError) {
@@ -384,8 +430,13 @@ Deno.serve(async (req) => {
           full_name: user?.full_name ?? '',
           member_id: user?.member_id ?? '',
           email: user?.email ?? '',
+          phone: user?.phone ?? '',
+          metadata: formatMetadataValue(user?.metadata),
           role: readMetadataString(user?.role),
           category: readMetadataString(user?.category),
+          registration_status: reg.status ?? '',
+          submitted_at: reg.submitted_at ?? '',
+          updated_at: reg.updated_at ?? '',
           answer_values: answerValues,
         };
       }) ?? [];

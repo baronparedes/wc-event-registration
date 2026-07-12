@@ -126,4 +126,24 @@ describe('formatRegistrationShareText', () => {
     expect(output).toContain('Registered attendees for Event (1)');
     expect(output).toContain('1. Dana Villanueva | Answer: Needs a seat near front');
   });
+
+  it('formats registration status and datetime fields for readability', () => {
+    const output = formatRegistrationShareText({
+      rows: [
+        makeRegistrationSharePayloadRow({
+          full_name: 'Elliot Perez',
+          registration_status: 'submitted',
+          submitted_at: '2026-07-12T03:30:00.000Z',
+          updated_at: '2026-07-12T05:00:00.000Z',
+        }),
+      ],
+      selectedFields: ['full_name', 'registration_status', 'submitted_at', 'updated_at'],
+      includeHeader: false,
+    });
+
+    expect(output).toContain('1. Elliot Perez | Registration Status: Submitted');
+    expect(output).toContain('Submitted At:');
+    expect(output).toContain('Updated At:');
+    expect(output).toContain('2026');
+  });
 });

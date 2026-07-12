@@ -8,8 +8,13 @@ export const registrationShareRowSchema = z.object({
   full_name: z.string(),
   member_id: z.string(),
   email: z.string(),
+  phone: z.string(),
+  metadata: z.string(),
   role: z.string(),
   category: z.string(),
+  registration_status: z.string(),
+  submitted_at: z.string(),
+  updated_at: z.string(),
   answer_values: z.record(z.string(), z.string()),
 });
 

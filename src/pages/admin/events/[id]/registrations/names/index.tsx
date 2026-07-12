@@ -6,6 +6,7 @@ import {
   REGISTRATION_SHARE_FIELDS,
   REGISTRATION_SHARE_FIELD_LABELS,
   type RegistrationShareField,
+  formatRegistrationShareFieldValue,
 } from '@/lib/domain/registrations';
 
 export function AdminRegistrationNamesPage() {
@@ -109,7 +110,9 @@ export function AdminRegistrationNamesPage() {
                     <td className="py-2 pr-4 text-muted tabular-nums">{index + 1}</td>
                     {selectedFields.map((field) => (
                       <td key={field} className="py-2 pr-4">
-                        {row[field] || <span className="text-muted/50">—</span>}
+                        {formatRegistrationShareFieldValue(field, row[field]) || (
+                          <span className="text-muted/50">—</span>
+                        )}
                       </td>
                     ))}
                     {visibleAnswerFields.map((fieldId) => (

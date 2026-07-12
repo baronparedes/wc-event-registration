@@ -20,8 +20,13 @@ interface RegistrationNamesResponse {
     full_name: string;
     member_id: string;
     email: string;
+    phone: string;
+    metadata: string;
     role: string;
     category: string;
+    registration_status: string;
+    submitted_at: string;
+    updated_at: string;
     answer_values: Record<string, string>;
   }>;
 }

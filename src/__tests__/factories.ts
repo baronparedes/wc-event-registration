@@ -299,8 +299,15 @@ export function makeRegistrationSharePayloadRow(
     full_name: fullName,
     member_id: `WC-${faker.string.numeric(3)}`,
     email: faker.internet.email({ firstName, lastName }),
+    phone: faker.helpers.maybe(() => faker.phone.number(), { probability: 0.6 }) ?? '',
+    metadata:
+      faker.helpers.maybe(() => 'first_sunday: true; team: Alpha', { probability: 0.5 }) ?? '',
     role: faker.helpers.arrayElement(['Member', 'Volunteer', 'Coordinator']),
     category: faker.helpers.arrayElement(['Adult', 'Youth']),
+    registration_status: faker.helpers.arrayElement(['submitted', 'updated', 'cancelled']),
+    submitted_at: faker.date.past().toISOString(),
+    updated_at:
+      faker.helpers.maybe(() => faker.date.recent().toISOString(), { probability: 0.5 }) ?? '',
     answer_values: {},
     ...overrides,
   };

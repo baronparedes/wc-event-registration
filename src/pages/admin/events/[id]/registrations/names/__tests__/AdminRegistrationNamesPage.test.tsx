@@ -314,5 +314,28 @@ describe('AdminRegistrationNamesPage', () => {
         expect(dashCells.length).toBeGreaterThan(0);
       });
     });
+
+    it('formats selected status and datetime core fields for display', async () => {
+      const row = makeRegistrationSharePayloadRow({
+        full_name: 'Pat Garcia',
+        registration_status: 'updated',
+        submitted_at: '2026-07-12T03:30:00.000Z',
+        updated_at: '2026-07-12T06:00:00.000Z',
+      });
+
+      setupDefaults('full_name,registration_status,submitted_at,updated_at');
+      mocks.mockUseRegistrationNamesQuery.mockReturnValue(
+        makeQueryResult({ data: makePayload([row]) }),
+      );
+
+      render(<AdminRegistrationNamesPage />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('cell', { name: 'Updated' })).toBeInTheDocument();
+        expect(
+          screen.getAllByRole('cell').some((cell) => /2026/.test(cell.textContent || '')),
+        ).toBe(true);
+      });
+    });
   });
 });

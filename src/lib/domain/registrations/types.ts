@@ -48,8 +48,13 @@ export const REGISTRATION_SHARE_FIELDS = [
   'full_name',
   'member_id',
   'email',
+  'phone',
+  'metadata',
   'role',
   'category',
+  'registration_status',
+  'submitted_at',
+  'updated_at',
 ] as const;
 
 export type RegistrationShareField = (typeof REGISTRATION_SHARE_FIELDS)[number];
@@ -60,8 +65,13 @@ export const REGISTRATION_SHARE_FIELD_LABELS: Record<RegistrationShareField, str
   full_name: 'Full Name',
   member_id: 'Member ID',
   email: 'Email',
+  phone: 'Phone',
+  metadata: 'Metadata',
   role: 'Role',
   category: 'Category',
+  registration_status: 'Registration Status',
+  submitted_at: 'Submitted At',
+  updated_at: 'Updated At',
 };
 
 export type RegistrationShareAnswerField = {
