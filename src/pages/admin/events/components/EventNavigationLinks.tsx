@@ -8,7 +8,8 @@ type EventNavigationSection =
   | 'attendance'
   | 'attendance-check-in'
   | 'attendance-fields'
-  | 'attendance-data';
+  | 'attendance-data'
+  | 'attendance-unregistered-members';
 
 type EventNavigationLinksProps = {
   eventId: string;

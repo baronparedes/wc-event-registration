@@ -12,6 +12,8 @@ export const ROUTE_PATHS = {
   adminEventDetailPattern: '/admin/events/:id',
   adminEventAttendancePattern: '/admin/events/:id/attendance',
   adminEventAttendanceCheckInPattern: '/admin/events/:id/attendance/check-in',
+  adminEventAttendanceUnregisteredMembersPattern:
+    '/admin/events/:id/attendance/unregistered-members',
   adminEventAttendanceFieldsPattern: '/admin/events/:id/attendance/fields',
   adminEventAttendanceDataPattern: '/admin/events/:id/attendance/data',
   adminEventAttendanceDataBulkUploadPattern: '/admin/events/:id/attendance/data/bulk-upload',
@@ -57,6 +59,10 @@ export function toAdminEventAttendance(eventId: string): string {
 
 export function toAdminEventAttendanceCheckIn(eventId: string): string {
   return `/admin/events/${eventId}/attendance/check-in`;
+}
+
+export function toAdminEventAttendanceUnregisteredMembers(eventId: string): string {
+  return `/admin/events/${eventId}/attendance/unregistered-members`;
 }
 
 export function toAdminEventAttendanceFields(eventId: string): string {

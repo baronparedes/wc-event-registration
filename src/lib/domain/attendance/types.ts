@@ -120,3 +120,19 @@ export type CheckInAttendeeInput = {
   public_registration_id?: string;
   slot?: string;
 };
+
+export type UnregisteredMember = {
+  user_id: string;
+  member_id: string | null;
+  full_name: string;
+  email: string | null;
+  role: string | null;
+  category: string | null;
+};
+
+export type UnregisteredMembersReportInput = {
+  event_id: string;
+  page_size: number;
+  offset: number;
+  search_term?: string;
+};

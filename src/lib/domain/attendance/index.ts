@@ -14,6 +14,8 @@ export type {
   AttendeeSearchResult,
   SearchAttendeesInput,
   CheckInAttendeeInput,
+  UnregisteredMember,
+  UnregisteredMembersReportInput,
 } from './types';
 
 export type {

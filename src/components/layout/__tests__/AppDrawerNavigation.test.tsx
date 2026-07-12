@@ -109,6 +109,10 @@ describe('AppDrawerNavigation', () => {
       'href',
       '/admin/events/event-1/attendance/data',
     );
+    expect(screen.getByRole('link', { name: 'Unregistered Members' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/attendance/unregistered-members',
+    );
   });
 
   it('uses event id as fallback label when event title is unavailable', () => {

@@ -16,4 +16,10 @@ export const QUERY_KEYS = {
     ['admin-attendance-slot-summaries', eventId] as const,
   adminAttendanceSearchByTerm: (eventId: string | undefined, searchTerm: string) =>
     ['admin-attendance-search', eventId, searchTerm] as const,
+  adminAttendanceUnregisteredMembers: (
+    eventId: string | undefined,
+    pageSize: number,
+    cursor: string | null,
+    searchTerm: string,
+  ) => ['admin-attendance-unregistered-members', eventId, pageSize, cursor, searchTerm] as const,
 } as const;

@@ -142,6 +142,9 @@ verify_jwt = true
 [functions.search-attendees]
 verify_jwt = true
 
+[functions.list-unregistered-members]
+verify_jwt = true
+
 [functions.check-in-attendee]
 verify_jwt = true
 

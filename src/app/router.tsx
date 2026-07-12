@@ -77,6 +77,11 @@ const AdminAttendanceCheckInPage = lazy(() =>
     default: module.AdminAttendanceCheckInPage,
   })),
 );
+const AdminAttendanceUnregisteredMembersPage = lazy(() =>
+  import('../pages/admin/events/[id]/attendance/unregistered-members').then((module) => ({
+    default: module.AdminAttendanceUnregisteredMembersPage,
+  })),
+);
 const AdminRegistrationsPage = lazy(() =>
   import('../pages/admin/events/[id]/registrations').then((module) => ({
     default: module.AdminRegistrationsPage,
@@ -309,6 +314,16 @@ export function AppRouter() {
             <RequireAdminAuth>
               <LazyRoute>
                 <AdminAttendanceCheckInPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.adminEventAttendanceUnregisteredMembersPattern}
+          element={
+            <RequireAdminAuth>
+              <LazyRoute>
+                <AdminAttendanceUnregisteredMembersPage />
               </LazyRoute>
             </RequireAdminAuth>
           }

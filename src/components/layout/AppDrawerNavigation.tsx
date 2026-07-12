@@ -7,6 +7,7 @@ import {
   toAdminEventAttendanceCheckIn,
   toAdminEventAttendanceData,
   toAdminEventAttendanceFields,
+  toAdminEventAttendanceUnregisteredMembers,
   toAdminEventDetail,
   toAdminEventFields,
   toAdminEventPublicRegistrations,
@@ -171,6 +172,11 @@ export function AppDrawerNavigation({
                 <DrawerNavLink
                   to={toAdminEventAttendanceData(eventId)}
                   label="Attendee Details"
+                  onClose={onClose}
+                />
+                <DrawerNavLink
+                  to={toAdminEventAttendanceUnregisteredMembers(eventId)}
+                  label="Unregistered Members"
                   onClose={onClose}
                 />
               </div>
