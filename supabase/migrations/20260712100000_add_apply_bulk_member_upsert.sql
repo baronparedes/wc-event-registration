@@ -49,6 +49,86 @@ begin
       v_metadata := '{}'::jsonb;
     end if;
 
+    if v_metadata ? 'isoic' and not (v_metadata ? 'is_oic') then
+      v_metadata := jsonb_set(v_metadata, '{is_oic}', v_metadata -> 'isoic', true);
+    end if;
+
+    if v_metadata ? '1st_sunday' and not (v_metadata ? 'first_sunday') then
+      v_metadata := jsonb_set(v_metadata, '{first_sunday}', v_metadata -> '1st_sunday', true);
+    end if;
+
+    if v_metadata ? '2nd_sunday' and not (v_metadata ? 'second_sunday') then
+      v_metadata := jsonb_set(v_metadata, '{second_sunday}', v_metadata -> '2nd_sunday', true);
+    end if;
+
+    if v_metadata ? '3rd_sunday' and not (v_metadata ? 'third_sunday') then
+      v_metadata := jsonb_set(v_metadata, '{third_sunday}', v_metadata -> '3rd_sunday', true);
+    end if;
+
+    if v_metadata ? '4th_sunday' and not (v_metadata ? 'fourth_sunday') then
+      v_metadata := jsonb_set(v_metadata, '{fourth_sunday}', v_metadata -> '4th_sunday', true);
+    end if;
+
+    if v_metadata ? '5th_sunday' and not (v_metadata ? 'fifth_sunday') then
+      v_metadata := jsonb_set(v_metadata, '{fifth_sunday}', v_metadata -> '5th_sunday', true);
+    end if;
+
+    if jsonb_typeof(v_metadata -> 'availability') = 'object' then
+      if (v_metadata -> 'availability') ? 'first_sunday' and not (v_metadata ? 'first_sunday') then
+        v_metadata := jsonb_set(
+          v_metadata,
+          '{first_sunday}',
+          v_metadata -> 'availability' -> 'first_sunday',
+          true
+        );
+      end if;
+
+      if (v_metadata -> 'availability') ? 'second_sunday' and not (v_metadata ? 'second_sunday') then
+        v_metadata := jsonb_set(
+          v_metadata,
+          '{second_sunday}',
+          v_metadata -> 'availability' -> 'second_sunday',
+          true
+        );
+      end if;
+
+      if (v_metadata -> 'availability') ? 'third_sunday' and not (v_metadata ? 'third_sunday') then
+        v_metadata := jsonb_set(
+          v_metadata,
+          '{third_sunday}',
+          v_metadata -> 'availability' -> 'third_sunday',
+          true
+        );
+      end if;
+
+      if (v_metadata -> 'availability') ? 'fourth_sunday' and not (v_metadata ? 'fourth_sunday') then
+        v_metadata := jsonb_set(
+          v_metadata,
+          '{fourth_sunday}',
+          v_metadata -> 'availability' -> 'fourth_sunday',
+          true
+        );
+      end if;
+
+      if (v_metadata -> 'availability') ? 'fifth_sunday' and not (v_metadata ? 'fifth_sunday') then
+        v_metadata := jsonb_set(
+          v_metadata,
+          '{fifth_sunday}',
+          v_metadata -> 'availability' -> 'fifth_sunday',
+          true
+        );
+      end if;
+    end if;
+
+    v_metadata := v_metadata
+      - 'availability'
+      - 'isoic'
+      - '1st_sunday'
+      - '2nd_sunday'
+      - '3rd_sunday'
+      - '4th_sunday'
+      - '5th_sunday';
+
     if v_operation not in ('insert', 'update') then
       raise exception 'Unsupported operation: %', v_operation;
     end if;
@@ -103,7 +183,25 @@ begin
         email = v_email,
         phone = v_phone,
         date_of_birth = case when v_date_of_birth is null then null else v_date_of_birth::date end,
-        metadata = coalesce(public.users.metadata, '{}'::jsonb) || v_metadata,
+        metadata = (
+          coalesce(public.users.metadata, '{}'::jsonb)
+          - 'role'
+          - 'category'
+          - 'sr_pwd'
+          - 'is_oic'
+          - 'isoic'
+          - 'availability'
+          - '1st_sunday'
+          - '2nd_sunday'
+          - '3rd_sunday'
+          - '4th_sunday'
+          - '5th_sunday'
+          - 'first_sunday'
+          - 'second_sunday'
+          - 'third_sunday'
+          - 'fourth_sunday'
+          - 'fifth_sunday'
+        ) || v_metadata,
         updated_at = now()
       where id = v_target_id;
 

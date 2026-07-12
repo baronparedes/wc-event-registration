@@ -96,6 +96,30 @@ function normalizeMetadataHeaderKey(value: string): string {
     .replace(/_+/g, '_');
 }
 
+function canonicalizeMetadataHeaderKey(value: string): string {
+  switch (value) {
+    case 'isoic':
+      return 'is_oic';
+    case '1st_sunday':
+    case '1stsunday':
+      return 'first_sunday';
+    case '2nd_sunday':
+    case '2ndsunday':
+      return 'second_sunday';
+    case '3rd_sunday':
+    case '3rdsunday':
+      return 'third_sunday';
+    case '4th_sunday':
+    case '4thsunday':
+      return 'fourth_sunday';
+    case '5th_sunday':
+    case '5thsunday':
+      return 'fifth_sunday';
+    default:
+      return value;
+  }
+}
+
 function normalizeText(value: string | null | undefined): string {
   return (value ?? '').trim();
 }
@@ -224,7 +248,9 @@ export function parseMemberCsvText(csvText: string): ParseMemberCsvResult {
   }
 
   const headers = parsedRows[0];
-  const normalizedHeaders = headers.map((header) => normalizeMetadataHeaderKey(header));
+  const normalizedHeaders = headers.map((header) =>
+    canonicalizeMetadataHeaderKey(normalizeMetadataHeaderKey(header)),
+  );
   const duplicateHeaders = normalizedHeaders.filter(
     (header, index) => header.length > 0 && normalizedHeaders.indexOf(header) !== index,
   );
@@ -290,7 +316,7 @@ export function buildMemberCsvPreparedRows(
         continue;
       }
 
-      const metadataKey = normalizeMetadataHeaderKey(header);
+      const metadataKey = canonicalizeMetadataHeaderKey(normalizeMetadataHeaderKey(header));
       if (!metadataKey || CORE_FIELDS.has(metadataKey)) {
         continue;
       }

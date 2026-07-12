@@ -73,6 +73,19 @@ describe('parseMemberCsvText', () => {
     }
   });
 
+  it('returns error when headers collide after canonicalization', () => {
+    const csv = [
+      'RFID,Firstname,Surname,Nickname,1st Sunday,first_sunday',
+      '1,John,Doe,JD,9AM,12NN',
+    ].join('\n');
+    const result = parseMemberCsvText(csv);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain('duplicate header');
+      expect(result.error).toContain('first_sunday');
+    }
+  });
+
   it('returns error for mismatched column count', () => {
     const csv = ['RFID,Firstname,Surname,Nickname', '1,John,Doe'].join('\n');
     const result = parseMemberCsvText(csv);
@@ -153,8 +166,8 @@ describe('buildMemberCsvPreparedRows', () => {
     expect(result.rows[0].metadata).toMatchObject({
       role: 'Prayer Coach',
       sr_pwd: true,
-      isoic: false,
-      '1st_sunday': '9AM, 12NN',
+      is_oic: false,
+      first_sunday: '9AM, 12NN',
     });
   });
 
@@ -215,6 +228,47 @@ describe('buildMemberCsvPreparedRows', () => {
 
     expect(result.errors).toEqual([]);
     expect(result.rows[0].metadata).toEqual({});
+  });
+
+  it('canonicalizes sunday and is_oic metadata aliases', () => {
+    const result = buildMemberCsvPreparedRows([
+      {
+        RFID: 'A-3',
+        Firstname: 'Nina',
+        Surname: 'Roe',
+        Nickname: 'NR',
+        IsOIC: '1',
+        '2nd Sunday': '12NN',
+        '3rd Sunday': '3PM',
+        '4th Sunday': '9AM',
+        '5th Sunday': '12NN, 3PM',
+      },
+      {
+        RFID: 'A-4',
+        Firstname: 'Jake',
+        Surname: 'Poe',
+        Nickname: 'JP',
+        '2ndSunday': '9AM',
+        '3rdSunday': '12NN',
+        '4thSunday': '3PM',
+        '5thSunday': '9AM, 12NN',
+      },
+    ]);
+
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].metadata).toMatchObject({
+      is_oic: true,
+      second_sunday: '12NN',
+      third_sunday: '3PM',
+      fourth_sunday: '9AM',
+      fifth_sunday: '12NN, 3PM',
+    });
+    expect(result.rows[1].metadata).toMatchObject({
+      second_sunday: '9AM',
+      third_sunday: '12NN',
+      fourth_sunday: '3PM',
+      fifth_sunday: '9AM, 12NN',
+    });
   });
 });
 

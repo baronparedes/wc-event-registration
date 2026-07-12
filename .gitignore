@@ -26,7 +26,7 @@ coverage_*
 *.sw?
 .venv
 
-members_info.csv
+members_info*.csv
 supabase/seeds/*.local.sql
 
 # Environment files
