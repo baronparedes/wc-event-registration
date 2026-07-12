@@ -6,6 +6,7 @@ import { QUERY_KEYS } from '@/config/constants';
 import {
   useBulkUpsertAttendanceAnswersMutation,
   useDownloadAttendanceCSVMutation,
+  useExportAttendanceCSVMutation,
 } from '@/hooks/domain/attendance';
 
 const {
@@ -51,6 +52,19 @@ describe('attendance bulk csv mutations', () => {
     expect(mockCreateEdgeFunctionTextCaller).toHaveBeenCalledWith('download-attendance-csv');
     expect(mockTextCaller).toHaveBeenCalledWith({ event_id: eventId });
     expect(response).toEqual({ text: 'csv,data', filename: 'attendance.csv' });
+  });
+
+  it('exports attendance csv from dedicated export edge function', async () => {
+    const eventId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+    mockTextCaller.mockResolvedValueOnce({ text: 'csv,data', filename: 'attendance-export.csv' });
+
+    const { result } = renderHookWithClient(() => useExportAttendanceCSVMutation(eventId));
+
+    const response = await act(async () => result.current.mutateAsync());
+
+    expect(mockCreateEdgeFunctionTextCaller).toHaveBeenCalledWith('export-attendance-csv');
+    expect(mockTextCaller).toHaveBeenCalledWith({ event_id: eventId });
+    expect(response).toEqual({ text: 'csv,data', filename: 'attendance-export.csv' });
   });
 
   it('bulk upserts attendance rows and invalidates attendance answers cache', async () => {

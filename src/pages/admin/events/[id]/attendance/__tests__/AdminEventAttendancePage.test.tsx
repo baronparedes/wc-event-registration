@@ -12,6 +12,7 @@ const {
   mockUseAdminEventQuery,
   mockUseAttendanceSettingsQuery,
   mockUpdateMutateAsync,
+  mockExportMutateAsync,
   mockToastSuccess,
   mockToastError,
 } = vi.hoisted(() => ({
@@ -20,6 +21,7 @@ const {
   mockUseAdminEventQuery: vi.fn(),
   mockUseAttendanceSettingsQuery: vi.fn(),
   mockUpdateMutateAsync: vi.fn(),
+  mockExportMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
@@ -69,6 +71,10 @@ vi.mock('@/hooks/domain/attendance', async () => {
     useAttendanceSettingsQuery: (...args: unknown[]) => mockUseAttendanceSettingsQuery(...args),
     useUpdateAttendanceSettingsMutation: () => ({
       mutateAsync: mockUpdateMutateAsync,
+      isPending: false,
+    }),
+    useExportAttendanceCSVMutation: () => ({
+      mutateAsync: mockExportMutateAsync,
       isPending: false,
     }),
   };
@@ -150,6 +156,19 @@ describe('AdminEventAttendancePage', () => {
 
     mockUpdateMutateAsync.mockResolvedValue({
       event_id: EVENT_ID,
+    });
+    mockExportMutateAsync.mockResolvedValue({
+      text: 'header',
+      filename: 'attendance.csv',
+    });
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      writable: true,
+      value: vi.fn(() => 'blob:mock-url'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      writable: true,
+      value: vi.fn(() => undefined),
     });
   });
 
@@ -386,5 +405,32 @@ describe('AdminEventAttendancePage', () => {
     expect(screen.getByText('Archived event')).toBeInTheDocument();
     expect(getToggleInputByText('Enable attendance tracking')).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Save Attendance Settings' })).toBeDisabled();
+  });
+
+  it('exports attendance csv when export action is clicked', async () => {
+    mockUseAttendanceSettingsQuery.mockReturnValue({
+      data: makeDefaultSettings({ attendance_enabled: true }),
+      isLoading: false,
+      error: null,
+    });
+
+    renderPage();
+
+    const exportButton = screen.getByRole('button', { name: 'Export Attendance CSV' });
+    await waitFor(() => {
+      expect(exportButton).not.toBeDisabled();
+    });
+
+    fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('keeps export action disabled when attendance tracking is disabled', () => {
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Export Attendance CSV' })).toBeDisabled();
   });
 });

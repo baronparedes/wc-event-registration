@@ -109,6 +109,9 @@ verify_jwt = false
 [functions.export-registrations-csv]
 verify_jwt = true
 
+[functions.export-attendance-csv]
+verify_jwt = true
+
 [functions.cancel-registration]
 verify_jwt = true
 
