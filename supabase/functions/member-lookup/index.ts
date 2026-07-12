@@ -79,6 +79,74 @@ function normalizeName(value: string | null | undefined) {
   return (value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+function tokenizeName(value: string): string[] {
+  return normalizeName(value)
+    .split(' ')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+}
+
+function escapeOrFilterValue(value: string): string {
+  return value.replace(/[,%_]/g, (char) => `\\${char}`);
+}
+
+function buildNameLookupFilter(tokens: string[]): string {
+  const escapedTokens = tokens.map((token) => escapeOrFilterValue(token));
+  const firstToken = escapedTokens[0] ?? '';
+  const lastToken = escapedTokens[escapedTokens.length - 1] ?? '';
+  const aggregatePattern = `%${escapedTokens.join('%')}%`;
+  const filters = new Set<string>();
+
+  if (firstToken) {
+    filters.add(`first_name.ilike.%${firstToken}%`);
+    filters.add(`nickname.ilike.%${firstToken}%`);
+  }
+
+  if (lastToken && lastToken !== firstToken) {
+    filters.add(`last_name.ilike.%${lastToken}%`);
+  }
+
+  filters.add(`full_name.ilike.${aggregatePattern}`);
+
+  if (firstToken && lastToken && tokens.length >= 2) {
+    filters.add(
+      `and(first_name.not.is.null,last_name.not.is.null,first_name.ilike.%${firstToken}%,last_name.ilike.%${lastToken}%)`,
+    );
+    filters.add(
+      `and(nickname.not.is.null,last_name.not.is.null,nickname.ilike.%${firstToken}%,last_name.ilike.%${lastToken}%)`,
+    );
+  }
+
+  return Array.from(filters).join(',');
+}
+
+function hasOrderedTokenMatch(candidate: string, search: string): boolean {
+  const candidateTokens = tokenizeName(candidate);
+  const searchTokens = tokenizeName(search);
+
+  if (searchTokens.length === 0 || candidateTokens.length === 0) {
+    return false;
+  }
+
+  let candidateIndex = 0;
+  for (const searchToken of searchTokens) {
+    while (
+      candidateIndex < candidateTokens.length &&
+      candidateTokens[candidateIndex] !== searchToken
+    ) {
+      candidateIndex += 1;
+    }
+
+    if (candidateIndex === candidateTokens.length) {
+      return false;
+    }
+
+    candidateIndex += 1;
+  }
+
+  return true;
+}
+
 function getRoleFromMetadata(metadata: unknown): string {
   if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
     return '';
@@ -149,12 +217,23 @@ function mapAnswerRowsToResponses(rows: AnswerRow[] | null | undefined): Record<
 }
 
 async function findUserByNameOrNickname(
-  baseQuery: ReturnType<ReturnType<typeof createClient>['from']>,
+  supabase: ReturnType<typeof createClient>,
   normalizedSearchValue: string,
 ) {
-  const { data: users, error } = await baseQuery
+  const searchTokens = tokenizeName(normalizedSearchValue);
+  if (searchTokens.length === 0) {
+    return { data: null as UserLookupRow | null, error: null };
+  }
+
+  const nameFilter = buildNameLookupFilter(searchTokens);
+
+  const { data: users, error } = await supabase
+    .from('users')
+    .select('id, member_id, metadata, full_name, nickname, first_name, last_name')
+    .eq('is_active', true)
     .not('last_name', 'is', null)
-    .or('first_name.not.is.null,nickname.not.is.null');
+    .or(nameFilter)
+    .limit(200);
 
   if (error) {
     return { data: null as UserLookupRow | null, error: error.message };
@@ -163,9 +242,12 @@ async function findUserByNameOrNickname(
   const matches = (users ?? []).filter((user) => {
     const firstNameWithLastName = normalizeName(`${user.first_name ?? ''} ${user.last_name ?? ''}`);
     const nicknameWithLastName = normalizeName(`${user.nickname ?? ''} ${user.last_name ?? ''}`);
+
     return (
       firstNameWithLastName.includes(normalizedSearchValue) ||
-      nicknameWithLastName.includes(normalizedSearchValue)
+      nicknameWithLastName.includes(normalizedSearchValue) ||
+      hasOrderedTokenMatch(firstNameWithLastName, normalizedSearchValue) ||
+      hasOrderedTokenMatch(nicknameWithLastName, normalizedSearchValue)
     );
   });
 
@@ -343,18 +425,19 @@ Deno.serve(async (req) => {
     // 2.1 Lookup member by member_id or name/nickname.
     // For ID lookups, automatically detect and convert Big-Endian RFID hex input to decimal.
     const searchValue = isIdLookup ? tryConvertRfidInput(memberId!.trim()) : name!.trim();
-    const baseQuery = supabase
-      .from('users')
-      .select('id, member_id, metadata, full_name, nickname, first_name, last_name')
-      .eq('is_active', true);
     let filteredData: UserLookupRow | null = null;
 
     if (isIdLookup) {
-      const { data } = await baseQuery.eq('member_id', searchValue).maybeSingle();
+      const { data } = await supabase
+        .from('users')
+        .select('id, member_id, metadata, full_name, nickname, first_name, last_name')
+        .eq('is_active', true)
+        .eq('member_id', searchValue)
+        .maybeSingle();
       filteredData = data;
     } else {
       const normalizedSearchValue = normalizeName(searchValue);
-      const lookupResult = await findUserByNameOrNickname(baseQuery, normalizedSearchValue);
+      const lookupResult = await findUserByNameOrNickname(supabase, normalizedSearchValue);
       if (lookupResult.error) {
         console.error('Query error:', lookupResult.error);
         return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup member', lookupResult.error);
