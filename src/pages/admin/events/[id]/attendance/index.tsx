@@ -79,6 +79,7 @@ export function AdminEventAttendancePage() {
     defaultValues: {
       event_id: eventId ?? '',
       attendance_enabled: false,
+      offline_check_in_queue_enabled: false,
       timeslot_enabled: false,
       enforce_check_in_event_window: true,
       timeslots: [],
@@ -104,6 +105,7 @@ export function AdminEventAttendancePage() {
   useEffect(() => {
     if (!settings || !isDirty || attendanceEnabled !== false) return;
 
+    setValue('offline_check_in_queue_enabled', false, { shouldDirty: false, shouldValidate: true });
     setValue('timeslot_enabled', false, { shouldDirty: false, shouldValidate: true });
     setValue('enforce_check_in_event_window', true, { shouldDirty: false, shouldValidate: true });
     setValue('timeslots', [], { shouldDirty: false, shouldValidate: true });
@@ -204,6 +206,9 @@ export function AdminEventAttendancePage() {
     const payload: UpdateAttendanceSettingsInput = {
       ...formValues,
       event_id: requiredEventId,
+      offline_check_in_queue_enabled: formValues.attendance_enabled
+        ? (formValues.offline_check_in_queue_enabled ?? false)
+        : false,
       timeslot_enabled: formValues.attendance_enabled ? formValues.timeslot_enabled : false,
       enforce_check_in_event_window: formValues.attendance_enabled
         ? (formValues.enforce_check_in_event_window ?? true)
@@ -280,6 +285,26 @@ export function AdminEventAttendancePage() {
                     </span>
                     <span className="text-xs text-muted">
                       Allows check-in operations and attendance export for this event.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="rounded-lg border border-border bg-background p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    disabled={isArchived || !attendanceEnabled}
+                    {...register('offline_check_in_queue_enabled')}
+                    className="h-4 w-4 cursor-pointer rounded border-border"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-text">
+                      Enable offline check-in queue
+                    </span>
+                    <span className="text-xs text-muted">
+                      Allows confirmed attendees to be queued during network loss and replayed when
+                      online.
                     </span>
                   </div>
                 </label>

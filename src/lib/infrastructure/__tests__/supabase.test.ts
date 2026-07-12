@@ -206,4 +206,58 @@ describe('supabase edge function callers', () => {
       '[export-csv] No auth token available for Edge Function call',
     );
   });
+
+  it('retries transient network failures with bounded backoff', async () => {
+    vi.useFakeTimers();
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, value: 'ok' }),
+      } as Response);
+
+    const callFunction = createEdgeFunctionCaller<
+      { value: string },
+      { success: boolean; value: string }
+    >('sample-function');
+
+    const promise = callFunction({ value: 'hello' });
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    await expect(promise).resolves.toEqual({ success: true, value: 'ok' });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+
+  it('throws timeout error after 12s for stalled requests', async () => {
+    vi.useFakeTimers();
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementation(
+      (_url, options) =>
+        new Promise((_, reject) => {
+          const signal = options?.signal as AbortSignal | undefined;
+          signal?.addEventListener('abort', () => {
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+          });
+        }),
+    );
+
+    const callFunction = createEdgeFunctionCaller<{ value: string }, { success: boolean }>(
+      'sample-function',
+    );
+
+    const promise = callFunction({ value: 'hello' });
+    const expectation = expect(promise).rejects.toThrow('Network timeout. Please try again.');
+    await vi.advanceTimersByTimeAsync(12_000);
+
+    await expectation;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
 });

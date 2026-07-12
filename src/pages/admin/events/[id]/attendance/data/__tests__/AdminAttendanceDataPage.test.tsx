@@ -92,6 +92,7 @@ describe('AdminAttendanceDataPage', () => {
       data: {
         event_id: EVENT_ID,
         attendance_enabled: true,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-04T00:00:00Z',
@@ -163,6 +164,7 @@ describe('AdminAttendanceDataPage', () => {
       data: {
         event_id: EVENT_ID,
         attendance_enabled: false,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-04T00:00:00Z',
@@ -190,6 +192,7 @@ describe('AdminAttendanceDataPage', () => {
       data: {
         event_id: EVENT_ID,
         attendance_enabled: false,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         timeslots: [],
         updated_at: '2026-07-04T00:00:00Z',

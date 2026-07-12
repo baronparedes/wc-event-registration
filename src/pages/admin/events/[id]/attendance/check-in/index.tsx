@@ -19,9 +19,10 @@ import {
   useAttendanceSettingsQuery,
   useSearchAttendeesQuery,
 } from '@/hooks/domain/attendance/queries';
+import { useCheckInQueueState } from '@/hooks/domain/attendance/state';
 import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
-import { useWizardStepScroll } from '@/hooks/utils';
+import { useNetworkStatus, useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
@@ -84,6 +85,7 @@ export function AdminAttendanceCheckInPage() {
   const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null);
   const [suggestedSlotNowMs, setSuggestedSlotNowMs] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const isOnline = useNetworkStatus();
 
   const searchStepRef = useRef<HTMLDivElement | null>(null);
   const selectStepRef = useRef<HTMLDivElement | null>(null);
@@ -92,6 +94,7 @@ export function AdminAttendanceCheckInPage() {
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
   const attendanceEnabled = settings?.attendance_enabled ?? false;
+  const isOfflineQueueEnabled = settings?.offline_check_in_queue_enabled ?? false;
   const enforceCheckInEventWindow = settings?.enforce_check_in_event_window ?? true;
   const timeslotEnabled = settings?.timeslot_enabled ?? false;
   const timeslots = useMemo(() => settings?.timeslots ?? [], [settings]);
@@ -99,6 +102,17 @@ export function AdminAttendanceCheckInPage() {
   const searchQuery = useSearchAttendeesQuery(eventId, submittedSearchToken);
   const checkInMutation = useCheckInAttendeeMutation();
   const updateEventMutation = useUpdateEventMutation();
+  const queue = useCheckInQueueState({
+    enabled: isOfflineQueueEnabled,
+    isOnline,
+    execute: async (payload) => {
+      return checkInMutation.mutateAsync(payload);
+    },
+  });
+  const replayConflictCount = useMemo(
+    () => queue.items.filter((item) => item.syncResultStatus === 'already_checked_in').length,
+    [queue.items],
+  );
 
   const isLoading = eventLoading || settingsLoading;
   const registeredCount = registrationsQuery.data?.totalCount ?? 0;
@@ -244,6 +258,7 @@ export function AdminAttendanceCheckInPage() {
 
   async function submitCheckIn(slotOverride?: string) {
     if (!eventId || !confirmedAttendee) return;
+    if (checkInMutation.isPending) return;
 
     const finalSlot = slotOverride?.trim() ?? '';
 
@@ -252,20 +267,40 @@ export function AdminAttendanceCheckInPage() {
       return;
     }
 
-    try {
-      const result = await checkInMutation.mutateAsync({
-        event_id: eventId,
+    const payload = {
+      event_id: eventId,
+      attendee_kind: confirmedAttendee.attendee_kind,
+      registration_id:
+        confirmedAttendee.attendee_kind === 'registered'
+          ? confirmedAttendee.registration_id
+          : undefined,
+      public_registration_id:
+        confirmedAttendee.attendee_kind === 'public'
+          ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
+          : undefined,
+      slot: timeslotEnabled ? finalSlot || undefined : undefined,
+    };
+
+    if (!isOnline) {
+      if (!isOfflineQueueEnabled) {
+        toast.error('Network connection is required for check-in.');
+        return;
+      }
+
+      queue.enqueue(payload);
+      setCheckInResult({
+        success: true,
+        status: 'checked_in',
         attendee_kind: confirmedAttendee.attendee_kind,
-        registration_id:
-          confirmedAttendee.attendee_kind === 'registered'
-            ? confirmedAttendee.registration_id
-            : undefined,
-        public_registration_id:
-          confirmedAttendee.attendee_kind === 'public'
-            ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
-            : undefined,
-        slot: timeslotEnabled ? finalSlot || undefined : undefined,
+        official_check_in_time: null,
+        message: 'Queued for sync. This check-in will submit automatically when back online.',
       });
+      toast.info('Check-in queued offline. It will sync when connection returns.');
+      return;
+    }
+
+    try {
+      const result = await checkInMutation.mutateAsync(payload);
 
       setCheckInResult(result);
 
@@ -286,6 +321,10 @@ export function AdminAttendanceCheckInPage() {
   }
 
   function handleCheckIn() {
+    if (checkInMutation.isPending) {
+      return;
+    }
+
     void submitCheckIn();
   }
 
@@ -387,6 +426,127 @@ export function AdminAttendanceCheckInPage() {
         }}
       />
 
+      {!isOnline && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          {isOfflineQueueEnabled ? (
+            <>
+              <p className="text-sm font-medium text-red-700">
+                Offline mode: new check-ins will be queued for sync.
+              </p>
+              <p className="mt-1 text-xs text-red-600">
+                Lookup is unavailable offline, but already-selected attendees can still be queued.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-red-700">
+                Offline: check-in requires a network connection.
+              </p>
+              <p className="mt-1 text-xs text-red-600">
+                Reconnect to continue attendee lookup and confirmation.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {isOfflineQueueEnabled && (queue.summary.total > 0 || !isOnline) && (
+        <div className="rounded-xl border border-border bg-background px-4 py-3">
+          <p className="text-sm font-medium text-text">Offline Sync Queue</p>
+          <p className="mt-1 text-xs text-muted">
+            Pending: {queue.summary.pending} · Syncing: {queue.summary.syncing} · Synced:{' '}
+            {queue.summary.synced} · Failed: {queue.summary.failed}
+          </p>
+          {replayConflictCount > 0 && (
+            <p className="mt-1 text-xs text-amber-700">
+              Conflict handled: {replayConflictCount} queued check-in(s) were already checked in.
+            </p>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                void queue.processQueue();
+              }}
+              disabled={!isOnline || queue.summary.pending === 0}
+            >
+              Sync Pending
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={queue.retryFailed}
+              disabled={queue.summary.failed === 0}
+            >
+              Retry Failed
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={queue.clearSynced}
+              disabled={queue.summary.synced === 0}
+            >
+              Clear Synced
+            </Button>
+          </div>
+
+          {queue.items.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {queue.items.map((item) => {
+                const attendeeRef =
+                  item.payload.registration_id ?? item.payload.public_registration_id ?? 'unknown';
+
+                const statusStyles =
+                  item.status === 'failed'
+                    ? 'border-red-200 bg-red-50 text-red-700'
+                    : item.status === 'synced' && item.syncResultStatus === 'already_checked_in'
+                      ? 'border-amber-200 bg-amber-50 text-amber-800'
+                      : item.status === 'synced'
+                        ? 'border-green-200 bg-green-50 text-green-800'
+                        : 'border-border bg-surface text-muted';
+
+                const statusLabel =
+                  item.status === 'failed'
+                    ? 'Failed'
+                    : item.status === 'syncing'
+                      ? 'Syncing'
+                      : item.status === 'pending'
+                        ? 'Pending'
+                        : item.syncResultStatus === 'already_checked_in'
+                          ? 'Synced (Already Checked In)'
+                          : item.syncResultStatus === 'rejected'
+                            ? 'Synced (Rejected)'
+                            : 'Synced (Checked In)';
+
+                return (
+                  <li
+                    key={item.id}
+                    className={`rounded-lg border px-3 py-2 text-xs ${statusStyles}`}
+                  >
+                    <p className="font-medium">
+                      {statusLabel} · {item.payload.attendee_kind} · {attendeeRef}
+                    </p>
+                    <p className="mt-1">
+                      Queued: {formatDateTime(item.createdAt)} · Attempts: {item.attempts}
+                    </p>
+                    {item.lastAttemptAt && (
+                      <p>Last attempt: {formatDateTime(item.lastAttemptAt)}</p>
+                    )}
+                    {item.syncResultMessage && <p>Result: {item.syncResultMessage}</p>}
+                    {item.officialCheckInTime && (
+                      <p>Official check-in: {formatDateTime(item.officialCheckInTime)}</p>
+                    )}
+                    {item.errorMessage && <p>Error: {item.errorMessage}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
       {!attendanceEnabled && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-800">Attendance tracking is disabled</p>
@@ -427,7 +587,7 @@ export function AdminAttendanceCheckInPage() {
               searchToken={searchToken}
               submittedSearchToken={submittedSearchToken}
               isSearching={searchQuery.isFetching}
-              disabled={!attendanceEnabled || isCheckInBlockedByWindow}
+              disabled={!attendanceEnabled || isCheckInBlockedByWindow || !isOnline}
               results={results}
               isSearchError={searchQuery.isError}
               onSearchTokenChange={setSearchToken}

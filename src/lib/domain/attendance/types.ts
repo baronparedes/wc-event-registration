@@ -8,6 +8,7 @@ export type CheckInStatus = 'checked_in' | 'already_checked_in' | 'rejected';
 export type AttendanceSettings = {
   event_id: string;
   attendance_enabled: boolean;
+  offline_check_in_queue_enabled: boolean;
   timeslot_enabled: boolean;
   enforce_check_in_event_window: boolean;
   timeslots: string[];

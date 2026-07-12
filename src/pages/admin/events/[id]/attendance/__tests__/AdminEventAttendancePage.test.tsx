@@ -120,6 +120,7 @@ function makeDefaultSettings(overrides?: Record<string, unknown>) {
   return {
     event_id: EVENT_ID,
     attendance_enabled: false,
+    offline_check_in_queue_enabled: false,
     timeslot_enabled: false,
     enforce_check_in_event_window: true,
     timeslots: [],
@@ -283,6 +284,7 @@ describe('AdminEventAttendancePage', () => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
         event_id: EVENT_ID,
         attendance_enabled: true,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         enforce_check_in_event_window: true,
         timeslots: [],
@@ -290,6 +292,46 @@ describe('AdminEventAttendancePage', () => {
     });
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Attendance settings updated successfully.');
+  });
+
+  it('resets queue, timeslot, and window controls when attendance is turned off', async () => {
+    renderPage();
+
+    const attendanceToggle = getToggleInputByText('Enable attendance tracking');
+    const queueToggle = getToggleInputByText('Enable offline check-in queue');
+    const timeslotToggle = getToggleInputByText('Enable timeslot attendance');
+    const windowToggle = getToggleInputByText('Restrict check-ins to event date-time window');
+
+    fireEvent.click(attendanceToggle);
+    await waitFor(() => {
+      expect(queueToggle).not.toBeDisabled();
+      expect(timeslotToggle).not.toBeDisabled();
+      expect(windowToggle).not.toBeDisabled();
+    });
+
+    fireEvent.click(queueToggle);
+    fireEvent.click(timeslotToggle);
+    fireEvent.click(windowToggle);
+
+    fireEvent.click(attendanceToggle);
+
+    const saveButton = screen.getByRole('button', { name: 'Save Attendance Settings' });
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled();
+    });
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
+        event_id: EVENT_ID,
+        attendance_enabled: false,
+        offline_check_in_queue_enabled: false,
+        timeslot_enabled: false,
+        enforce_check_in_event_window: true,
+        timeslots: [],
+      });
+    });
   });
 
   it('shows mutation error toast when save fails', async () => {

@@ -16,6 +16,7 @@ const updateAttendanceSettingsSchema = z
   .object({
     event_id: z.string().uuid('Invalid event ID.'),
     attendance_enabled: z.boolean(),
+    offline_check_in_queue_enabled: z.boolean().default(false),
     timeslot_enabled: z.boolean(),
     enforce_check_in_event_window: z.boolean().default(true),
     timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
@@ -202,6 +203,9 @@ Deno.serve(async (req) => {
         {
           event_id: payload.event_id,
           attendance_enabled: payload.attendance_enabled,
+          offline_check_in_queue_enabled: payload.attendance_enabled
+            ? payload.offline_check_in_queue_enabled
+            : false,
           timeslot_enabled: payload.attendance_enabled ? payload.timeslot_enabled : false,
           enforce_check_in_event_window: payload.attendance_enabled
             ? payload.enforce_check_in_event_window
@@ -211,7 +215,7 @@ Deno.serve(async (req) => {
         { onConflict: 'event_id' },
       )
       .select(
-        'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
+        'event_id, attendance_enabled, offline_check_in_queue_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
       )
       .single();
 

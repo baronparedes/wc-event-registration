@@ -33,6 +33,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       settings: {
         event_id: 'event-1',
         attendance_enabled: true,
+        offline_check_in_queue_enabled: true,
         timeslot_enabled: true,
         enforce_check_in_event_window: true,
         timeslots: ['2026-07-10T10:30+08:00'],
@@ -48,6 +49,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
     const payload = {
       event_id: 'event-1',
       attendance_enabled: true,
+      offline_check_in_queue_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T10:30+08:00'],
@@ -60,6 +62,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
     expect(response).toEqual({
       event_id: 'event-1',
       attendance_enabled: true,
+      offline_check_in_queue_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T10:30+08:00'],
@@ -86,6 +89,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       result.current.mutateAsync({
         event_id: 'event-2',
         attendance_enabled: true,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         enforce_check_in_event_window: true,
         timeslots: [],
@@ -102,6 +106,7 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       result.current.mutateAsync({
         event_id: 'event-3',
         attendance_enabled: false,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         enforce_check_in_event_window: true,
         timeslots: [],

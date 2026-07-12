@@ -9,6 +9,7 @@ function buildDefaultSettings(eventId: string): AttendanceSettings {
   return {
     event_id: eventId,
     attendance_enabled: false,
+    offline_check_in_queue_enabled: false,
     timeslot_enabled: false,
     enforce_check_in_event_window: true,
     timeslots: [],
@@ -28,7 +29,7 @@ export function useAttendanceSettingsQuery(eventId: string | undefined, enabled 
       const { data, error } = await supabase
         .from('attendance_settings')
         .select(
-          'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
+          'event_id, attendance_enabled, offline_check_in_queue_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
         )
         .eq('event_id', eventId)
         .maybeSingle();

@@ -42,6 +42,7 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: true,
+        offline_check_in_queue_enabled: true,
         timeslot_enabled: true,
         enforce_check_in_event_window: true,
         timeslots: ['2026-07-10T10:30+08:00'],
@@ -59,6 +60,7 @@ describe('useAttendanceSettingsQuery', () => {
     expect(result.current.data).toEqual({
       event_id: 'event-1',
       attendance_enabled: true,
+      offline_check_in_queue_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T10:30+08:00'],
@@ -79,6 +81,7 @@ describe('useAttendanceSettingsQuery', () => {
       expect.objectContaining({
         event_id: 'event-2',
         attendance_enabled: false,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         enforce_check_in_event_window: true,
         timeslots: [],
@@ -114,6 +117,7 @@ describe('useAttendanceSettingsQuery', () => {
     const settingsData = {
       event_id: 'event-1',
       attendance_enabled: true,
+      offline_check_in_queue_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
       timeslots: ['2026-07-10T09:00+08:00', '2026-07-10T14:00+08:00'],
@@ -139,6 +143,7 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: false,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         enforce_check_in_event_window: true,
         timeslots: [],
@@ -166,7 +171,7 @@ describe('useAttendanceSettingsQuery', () => {
 
     await waitFor(() => {
       expect(mockQueryBuilder.select).toHaveBeenCalledWith(
-        'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
+        'event_id, attendance_enabled, offline_check_in_queue_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
       );
     });
   });
@@ -176,6 +181,7 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: true,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: false,
         enforce_check_in_event_window: true,
         timeslots: [],
@@ -204,6 +210,7 @@ describe('useAttendanceSettingsQuery', () => {
       data: {
         event_id: 'event-1',
         attendance_enabled: true,
+        offline_check_in_queue_enabled: false,
         timeslot_enabled: true,
         enforce_check_in_event_window: true,
         timeslots,

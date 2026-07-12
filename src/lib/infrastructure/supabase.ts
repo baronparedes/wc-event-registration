@@ -5,10 +5,65 @@ import { env } from '@/config/env';
 export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey);
 
 const EDGE_FUNCTION_BASE_URL = `${env.supabaseUrl}/functions/v1`;
+const EDGE_FUNCTION_TIMEOUT_MS = 12_000;
+const EDGE_FUNCTION_RETRY_DELAYS_MS = [250, 750] as const;
+const EDGE_FUNCTION_TIMEOUT_MESSAGE = 'Network timeout. Please try again.';
 
 export interface EdgeFunctionTextResponse {
   text: string;
   filename?: string;
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
+function isTransientNetworkError(error: unknown): boolean {
+  return error instanceof TypeError || isAbortError(error);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function fetchWithTimeoutAndRetry(
+  functionName: string,
+  url: string,
+  init: Omit<RequestInit, 'signal'>,
+): Promise<Response> {
+  for (let attempt = 0; attempt <= EDGE_FUNCTION_RETRY_DELAYS_MS.length; attempt += 1) {
+    const controller = new AbortController();
+    let didTimeout = false;
+
+    const timeoutId = window.setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, EDGE_FUNCTION_TIMEOUT_MS);
+
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (didTimeout && isAbortError(error)) {
+        throw new Error(EDGE_FUNCTION_TIMEOUT_MESSAGE, { cause: error });
+      }
+
+      if (!isTransientNetworkError(error) || attempt >= EDGE_FUNCTION_RETRY_DELAYS_MS.length) {
+        throw error;
+      }
+
+      const delay = EDGE_FUNCTION_RETRY_DELAYS_MS[attempt];
+      console.warn(
+        `[${functionName}] Network error on attempt ${attempt + 1}. Retrying in ${delay}ms.`,
+      );
+      await sleep(delay);
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  throw new Error('Unexpected edge function retry exhaustion.');
 }
 
 /**
@@ -34,11 +89,15 @@ export function createEdgeFunctionCaller<TRequest, TResponse extends { success: 
       console.warn(`[${functionName}] No auth token available for Edge Function call`);
     }
 
-    const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/${functionName}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    });
+    const response = await fetchWithTimeoutAndRetry(
+      functionName,
+      `${EDGE_FUNCTION_BASE_URL}/${functionName}`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      },
+    );
 
     if (!response.ok) {
       let errorMessage = `Edge function failed: ${response.status}`;
@@ -75,11 +134,15 @@ export function createEdgeFunctionTextCaller<TRequest>(functionName: string) {
       console.warn(`[${functionName}] No auth token available for Edge Function call`);
     }
 
-    const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/${functionName}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    });
+    const response = await fetchWithTimeoutAndRetry(
+      functionName,
+      `${EDGE_FUNCTION_BASE_URL}/${functionName}`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      },
+    );
 
     if (!response.ok) {
       let errorMessage = `Edge function failed: ${response.status}`;
