@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { QUERY_KEYS } from '@/config/constants';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminEvent, EventAvailability } from '@/lib/domain/events';
 import { supabase } from '@/lib/infrastructure';
 import { logger } from '@/lib/infrastructure';
@@ -77,5 +77,7 @@ export function usePublicEventQuery(slug: string | null) {
       } as EventAvailability;
     },
     enabled: Boolean(slug),
+    staleTime: QUERY_STALE_TIME_MS.short,
+    refetchOnWindowFocus: false,
   });
 }

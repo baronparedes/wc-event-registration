@@ -101,7 +101,7 @@ describe('useAdminRegistrationsQuery', () => {
   });
 
   it('returns mapped registration rows with member and answer counts', async () => {
-    const regRow = createTestRegRow();
+    const regRow = createTestRegRow({ registration_answers: [{ count: 2 }] });
     const userRow = createTestUserRow({ id: regRow.user_id });
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
       data: [regRow],
@@ -111,11 +111,6 @@ describe('useAdminRegistrationsQuery', () => {
 
     mockUsersBuilder.in.mockResolvedValueOnce({
       data: [userRow],
-      error: null,
-    });
-
-    mockAnswersBuilder.in.mockResolvedValueOnce({
-      data: [{ registration_id: regRow.id }, { registration_id: regRow.id }],
       error: null,
     });
 
@@ -189,7 +184,7 @@ describe('useAdminRegistrationsQuery', () => {
   });
 
   it('returns hasMore with next cursor when count exceeds current page size', async () => {
-    const regRow = createTestRegRow();
+    const regRow = createTestRegRow({ registration_answers: [{ count: 1 }] });
     const userRow = createTestUserRow({
       id: regRow.user_id,
       metadata: { role: 123, category: null },
@@ -202,11 +197,6 @@ describe('useAdminRegistrationsQuery', () => {
 
     mockUsersBuilder.in.mockResolvedValueOnce({
       data: [userRow],
-      error: null,
-    });
-
-    mockAnswersBuilder.in.mockResolvedValueOnce({
-      data: [{ registration_id: regRow.id }],
       error: null,
     });
 
@@ -246,8 +236,8 @@ describe('useAdminRegistrationsQuery', () => {
     expect(result.current.error).toBeInstanceOf(Error);
   });
 
-  it('returns error state when answer count query fails', async () => {
-    const regRow = createTestRegRow();
+  it('defaults answer_count to 0 when embedded count data is missing', async () => {
+    const regRow = createTestRegRow({ registration_answers: null });
     const userRow = createTestUserRow({ id: regRow.user_id });
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
       data: [regRow],
@@ -260,23 +250,18 @@ describe('useAdminRegistrationsQuery', () => {
       error: null,
     });
 
-    mockAnswersBuilder.in.mockResolvedValueOnce({
-      data: null,
-      error: new Error('answers failed'),
-    });
-
     const { result } = renderHookWithClient(() => useAdminRegistrationsQuery(regRow.event_id));
 
     await waitFor(() => {
-      expect(result.current.isError).toBe(true);
+      expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.data?.items[0]?.answer_count).toBe(0);
   });
 
   describe('with searchTerm', () => {
     it('filters registrations by matching user IDs when searchTerm is provided', async () => {
-      const regRow = createTestRegRow();
+      const regRow = createTestRegRow({ registration_answers: [{ count: 2 }] });
       const userRow = createTestUserRow({ id: regRow.user_id });
       mockUsersBuilder.or.mockResolvedValueOnce({
         data: [{ id: userRow.id }],
@@ -291,11 +276,6 @@ describe('useAdminRegistrationsQuery', () => {
 
       mockUsersBuilder.in.mockResolvedValueOnce({
         data: [userRow],
-        error: null,
-      });
-
-      mockAnswersBuilder.in.mockResolvedValueOnce({
-        data: [{ registration_id: regRow.id }, { registration_id: regRow.id }],
         error: null,
       });
 
@@ -368,7 +348,7 @@ describe('useAdminRegistrationsQuery', () => {
     });
 
     it('trims whitespace from searchTerm before querying', async () => {
-      const regRow = createTestRegRow();
+      const regRow = createTestRegRow({ registration_answers: [] });
       const userRow = createTestUserRow({ id: regRow.user_id });
       mockUsersBuilder.or.mockResolvedValueOnce({
         data: [{ id: userRow.id }],
@@ -382,8 +362,6 @@ describe('useAdminRegistrationsQuery', () => {
       });
 
       mockUsersBuilder.in.mockResolvedValueOnce({ data: [userRow], error: null });
-      mockAnswersBuilder.in.mockResolvedValueOnce({ data: [], error: null });
-
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(regRow.event_id, {
           pageSize: 25,

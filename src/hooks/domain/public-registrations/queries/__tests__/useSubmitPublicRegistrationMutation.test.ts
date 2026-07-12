@@ -27,7 +27,7 @@ describe('useSubmitPublicRegistrationMutation', () => {
     vi.clearAllMocks();
   });
 
-  it('submits registration and invalidates attendee-check and count queries', async () => {
+  it('submits registration and invalidates attendee-check query', async () => {
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
     const email = faker.internet.email();
 
@@ -55,9 +55,6 @@ describe('useSubmitPublicRegistrationMutation', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['publicAttendeeCheck', email, eventSlug],
-    });
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['publicRegistrationCount'],
     });
   });
 

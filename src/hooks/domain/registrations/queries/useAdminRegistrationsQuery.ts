@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
+import type { RegistrationStatus } from '@/lib/domain/registrations';
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
 
 function escapeOrFilterValue(value: string): string {
@@ -13,8 +14,27 @@ type UserMetadata = {
   category?: unknown;
 };
 
+type RegistrationAnswerCount = {
+  count: number | null;
+};
+
+type RegistrationListRow = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: RegistrationStatus;
+  submitted_at: string;
+  updated_at: string | null;
+  registration_answers?: RegistrationAnswerCount[] | null;
+};
+
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function readAnswerCount(value: RegistrationAnswerCount[] | null | undefined): number {
+  const count = value?.[0]?.count;
+  return typeof count === 'number' ? count : 0;
 }
 
 export const ADMIN_REGISTRATIONS_QUERY_KEY = (eventId: string) =>
@@ -57,7 +77,10 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
     queryFn: async (): Promise<AdminRegistrationsPage> => {
       let registrationsQuery = supabase
         .from('registrations')
-        .select('id, event_id, user_id, status, submitted_at, updated_at', { count: 'exact' })
+        .select(
+          'id, event_id, user_id, status, submitted_at, updated_at, registration_answers(count)',
+          { count: 'exact' },
+        )
         .eq('event_id', eventId)
         .order('submitted_at', { ascending: false })
         .order('id', { ascending: false })
@@ -89,7 +112,9 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
 
       if (registrationError) throw registrationError;
       const totalCount = count ?? 0;
-      if (!registrations?.length) {
+      const typedRegistrations = (registrations ?? []) as RegistrationListRow[];
+
+      if (typedRegistrations.length === 0) {
         return {
           items: [],
           nextCursor: null,
@@ -100,7 +125,7 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
       }
 
       // Fetch user details for all registrations
-      const userIds = registrations.map((r) => r.user_id);
+      const userIds = [...new Set(typedRegistrations.map((r) => r.user_id))];
       const { data: users, error: userError } = await supabase
         .from('users')
         .select('id, member_id, full_name, email, phone, metadata')
@@ -108,29 +133,11 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
 
       if (userError) throw userError;
 
-      // Fetch answer counts for each registration
-      const { data: answerCounts, error: answerError } = await supabase
-        .from('registration_answers')
-        .select('registration_id')
-        .in(
-          'registration_id',
-          registrations.map((r) => r.id),
-        );
-
-      if (answerError) throw answerError;
-
-      // Build answer count map
-      const answerCountMap = new Map<string, number>();
-      answerCounts?.forEach((answer) => {
-        const count = (answerCountMap.get(answer.registration_id) ?? 0) + 1;
-        answerCountMap.set(answer.registration_id, count);
-      });
-
       // Build user map for quick lookup
       const userMap = new Map(users?.map((u) => [u.id, u]) ?? []);
 
       // Combine data
-      const items = registrations.map((r) => {
+      const items = typedRegistrations.map((r) => {
         const user = userMap.get(r.user_id);
         const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null;
 
@@ -142,7 +149,7 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
           phone: user?.phone ?? null,
           role: readMetadataString(metadata?.role),
           category: readMetadataString(metadata?.category),
-          answer_count: answerCountMap.get(r.id) ?? 0,
+          answer_count: readAnswerCount(r.registration_answers),
         };
       });
 
@@ -156,6 +163,7 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
         totalPages: getTotalPages(totalCount, pageSize),
       };
     },
-    staleTime: QUERY_STALE_TIME_MS.immediate,
+    staleTime: QUERY_STALE_TIME_MS.adminList,
+    refetchOnWindowFocus: false,
   });
 }

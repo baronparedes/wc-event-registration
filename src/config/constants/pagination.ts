@@ -12,4 +12,6 @@ export const PAGINATION_OPTIONS = {
 
 export const QUERY_STALE_TIME_MS = {
   immediate: 0,
+  adminList: 15 * 1000,
+  short: 30 * 1000,
 } as const;

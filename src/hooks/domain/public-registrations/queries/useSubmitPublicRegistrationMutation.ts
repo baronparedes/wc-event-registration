@@ -34,11 +34,6 @@ export function useSubmitPublicRegistrationMutation() {
       queryClient.invalidateQueries({
         queryKey: ['publicAttendeeCheck', variables.attendee.email, variables.event_slug],
       });
-
-      // Invalidate count queries
-      queryClient.invalidateQueries({
-        queryKey: ['publicRegistrationCount'],
-      });
     },
   });
 }
