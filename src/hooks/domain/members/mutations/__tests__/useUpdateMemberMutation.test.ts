@@ -77,6 +77,7 @@ describe('useUpdateMemberMutation', () => {
         date_of_birth: '',
         role: 'player',
         category: '',
+        metadata_entries: [{ key: 'other', value: 'keep' }],
       });
     });
 
@@ -114,6 +115,7 @@ describe('useUpdateMemberMutation', () => {
         date_of_birth: '',
         role: '',
         category: '',
+        metadata_entries: [],
       }),
     ).rejects.toThrow('Member not found');
   });
@@ -138,6 +140,7 @@ describe('useUpdateMemberMutation', () => {
         date_of_birth: '',
         role: '',
         category: '',
+        metadata_entries: [],
       }),
     ).rejects.toThrow('read failed');
   });
@@ -163,6 +166,7 @@ describe('useUpdateMemberMutation', () => {
         date_of_birth: '',
         role: 'captain',
         category: '',
+        metadata_entries: [],
       }),
     ).rejects.toThrow('update failed');
   });
@@ -187,12 +191,75 @@ describe('useUpdateMemberMutation', () => {
         date_of_birth: '',
         role: '   ',
         category: '   ',
+        metadata_entries: [{ key: 'keep', value: 'yes' }],
       });
     });
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: { keep: 'yes' },
+      }),
+    );
+  });
+
+  it('preserves non-stale extra metadata keys present in metadata_entries', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: { metadata: { role: 'player', category: 'adult', keep: 'yes' } },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useUpdateMemberMutation());
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: faker.string.uuid(),
+        full_name: faker.person.fullName(),
+        first_name: '',
+        last_name: '',
+        nickname: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        role: 'player',
+        category: 'adult',
+        metadata_entries: [{ key: 'keep', value: 'updated' }],
+      });
+    });
+
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { role: 'player', category: 'adult', keep: 'updated' },
+      }),
+    );
+  });
+
+  it('removes stale extra metadata keys not present in metadata_entries', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: { metadata: { role: 'player', category: 'adult', stale_key: 'old' } },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useUpdateMemberMutation());
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: faker.string.uuid(),
+        full_name: faker.person.fullName(),
+        first_name: '',
+        last_name: '',
+        nickname: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        role: 'player',
+        category: 'adult',
+        metadata_entries: [],
+      });
+    });
+
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { role: 'player', category: 'adult' },
       }),
     );
   });

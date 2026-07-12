@@ -199,6 +199,7 @@ export function makeAdminMember(overrides: Partial<AdminMember> = {}): AdminMemb
     date_of_birth: null,
     role: 'member',
     category: 'regular',
+    extra_metadata: {},
     created_at: createdAt,
     updated_at: createdAt,
     ...overrides,

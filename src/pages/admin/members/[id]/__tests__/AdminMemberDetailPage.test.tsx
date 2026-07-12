@@ -96,6 +96,7 @@ describe('AdminMemberDetailPage', () => {
         date_of_birth: '',
         role: 'player',
         category: 'adult',
+        extra_metadata: {},
       },
       isLoading: false,
       isError: false,
@@ -182,6 +183,7 @@ describe('AdminMemberDetailPage', () => {
         date_of_birth: '',
         role: 'player',
         category: 'adult',
+        metadata_entries: [],
       });
     });
 
@@ -277,6 +279,7 @@ describe('AdminMemberDetailPage', () => {
         date_of_birth: null,
         role: 'player',
         category: 'adult',
+        extra_metadata: {},
       },
       isLoading: false,
       isError: false,
@@ -351,6 +354,7 @@ describe('AdminMemberDetailPage', () => {
         date_of_birth: '',
         role: 'player',
         category: 'adult',
+        extra_metadata: {},
       },
       isLoading: false,
       isError: false,
@@ -390,6 +394,7 @@ describe('AdminMemberDetailPage', () => {
         date_of_birth: '',
         role: 'player',
         category: 'adult',
+        extra_metadata: {},
       },
       isLoading: false,
       isError: false,
@@ -410,5 +415,37 @@ describe('AdminMemberDetailPage', () => {
     renderWithRouter();
 
     expect(mockUseAdminMemberQuery).toHaveBeenCalledWith('user-1', { includeInactive: true });
+  });
+
+  it('loads extra_metadata entries into the Additional Metadata section', async () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: {
+        id: 'user-1',
+        member_id: 'WC-001',
+        is_active: true,
+        full_name: 'Jane Doe',
+        first_name: 'Jane',
+        last_name: 'Doe',
+        nickname: 'Janie',
+        email: 'jane@example.com',
+        phone: '',
+        date_of_birth: '',
+        role: 'player',
+        category: 'adult',
+        extra_metadata: { is_oic: 'true', first_sunday: 'yes' },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('is_oic')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('true')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('first_sunday')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('yes')).toBeInTheDocument();
+    });
   });
 });

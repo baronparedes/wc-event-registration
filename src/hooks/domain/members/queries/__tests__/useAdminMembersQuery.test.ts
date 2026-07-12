@@ -210,4 +210,36 @@ describe('useAdminMembersQuery', () => {
     expect(mockQueryBuilder.eq).not.toHaveBeenCalledWith('is_active', true);
     expect(mockQueryBuilder.eq).not.toHaveBeenCalledWith('is_active', false);
   });
+
+  it('excludes non-string extra metadata values from extra_metadata in list results', async () => {
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'user-1',
+          member_id: 'WC-001',
+          is_active: true,
+          full_name: 'Jane Doe',
+          first_name: 'Jane',
+          last_name: 'Doe',
+          nickname: null,
+          email: null,
+          phone: null,
+          date_of_birth: null,
+          metadata: { role: 'player', category: 'adult', tag: 'vip', count: 5 },
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+
+    const { result } = renderHookWithClient(() => useAdminMembersQuery({ pageSize: 10 }));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.items[0]?.extra_metadata).toEqual({ tag: 'vip' });
+  });
 });

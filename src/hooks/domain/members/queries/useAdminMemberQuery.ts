@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import type { AdminMember } from '@/lib/domain/members';
 import { supabase } from '@/lib/infrastructure';
 
-type UserMetadata = {
-  role?: unknown;
-  category?: unknown;
-};
+type UserMetadata = Record<string, unknown>;
+
+const CORE_METADATA_KEYS = new Set(['role', 'category']);
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -50,7 +49,14 @@ export function useAdminMemberQuery(
       if (error) throw error;
       if (!member) throw new Error('Member not found');
 
-      const metadata = (member.metadata as UserMetadata | null | undefined) ?? null;
+      const metadata = (member.metadata as UserMetadata | null | undefined) ?? {};
+
+      const extra_metadata: Record<string, string> = {};
+      for (const [key, value] of Object.entries(metadata)) {
+        if (!CORE_METADATA_KEYS.has(key) && typeof value === 'string') {
+          extra_metadata[key] = value;
+        }
+      }
 
       return {
         id: member.id,
@@ -63,8 +69,9 @@ export function useAdminMemberQuery(
         email: member.email,
         phone: member.phone,
         date_of_birth: member.date_of_birth,
-        role: readMetadataString(metadata?.role),
-        category: readMetadataString(metadata?.category),
+        role: readMetadataString(metadata['role']),
+        category: readMetadataString(metadata['category']),
+        extra_metadata,
         created_at: member.created_at,
         updated_at: member.updated_at,
       } satisfies AdminMember;

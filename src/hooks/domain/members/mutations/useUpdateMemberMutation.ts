@@ -15,6 +15,8 @@ function emptyToNull(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+const CORE_METADATA_KEYS = new Set(['role', 'category']);
+
 function buildMetadata(previousMetadata: Record<string, unknown> | null, input: UpdateMemberInput) {
   const nextMetadata = { ...(previousMetadata ?? {}) };
 
@@ -31,6 +33,23 @@ function buildMetadata(previousMetadata: Record<string, unknown> | null, input: 
     nextMetadata.category = category;
   } else {
     delete nextMetadata.category;
+  }
+
+  // Remove stale extra keys before writing new entries
+  const incomingKeys = new Set(
+    (input.metadata_entries ?? []).map((e) => e.key.trim()).filter(Boolean),
+  );
+  for (const key of Object.keys(nextMetadata)) {
+    if (!CORE_METADATA_KEYS.has(key) && !incomingKeys.has(key)) {
+      delete nextMetadata[key];
+    }
+  }
+
+  for (const entry of input.metadata_entries ?? []) {
+    const key = entry.key.trim();
+    if (key) {
+      nextMetadata[key] = entry.value.trim();
+    }
   }
 
   return nextMetadata;

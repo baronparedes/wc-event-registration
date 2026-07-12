@@ -63,6 +63,7 @@ describe('members schemas', () => {
       date_of_birth: '',
       role: 'player',
       category: 'adult',
+      metadata_entries: [],
     });
 
     expect(parsed.full_name).toBe('Jane Doe');

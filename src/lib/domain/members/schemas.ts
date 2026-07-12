@@ -58,6 +58,16 @@ export const updateMemberSchema = z
     date_of_birth: optionalDate(),
     role: requiredText(100, 'Role is required', 'Role must be 100 characters or less'),
     category: requiredText(100, 'Category is required', 'Category must be 100 characters or less'),
+    metadata_entries: z.array(
+      z.object({
+        key: z
+          .string()
+          .trim()
+          .min(1, 'Key is required')
+          .max(100, 'Key must be 100 characters or less'),
+        value: z.string().trim().max(500, 'Value must be 500 characters or less'),
+      }),
+    ),
   })
   .superRefine((value, context) => {
     if (buildFullName(value.first_name, value.last_name).length > 200) {

@@ -34,6 +34,7 @@ export type AdminMember = {
   date_of_birth: string | null;
   role: string;
   category: string;
+  extra_metadata: Record<string, string>;
   created_at: string;
   updated_at: string;
 };

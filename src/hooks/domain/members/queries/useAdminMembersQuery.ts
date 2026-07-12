@@ -4,10 +4,7 @@ import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminMember } from '@/lib/domain/members';
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
 
-type UserMetadata = {
-  role?: unknown;
-  category?: unknown;
-};
+type UserMetadata = Record<string, unknown>;
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -102,7 +99,14 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
 
       // Transform members data
       const items = members.map((member) => {
-        const metadata = (member.metadata as UserMetadata | null | undefined) ?? null;
+        const metadata = (member.metadata as UserMetadata | null | undefined) ?? {};
+
+        const extra_metadata: Record<string, string> = {};
+        for (const [key, value] of Object.entries(metadata)) {
+          if (key !== 'role' && key !== 'category' && typeof value === 'string') {
+            extra_metadata[key] = value;
+          }
+        }
 
         return {
           id: member.id,
@@ -115,8 +119,9 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
           email: member.email,
           phone: member.phone,
           date_of_birth: member.date_of_birth,
-          role: readMetadataString(metadata?.role),
-          category: readMetadataString(metadata?.category),
+          role: readMetadataString(metadata['role']),
+          category: readMetadataString(metadata['category']),
+          extra_metadata,
           created_at: member.created_at,
           updated_at: member.updated_at,
         } satisfies AdminMember;

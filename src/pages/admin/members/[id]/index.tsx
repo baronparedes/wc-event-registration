@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -21,6 +21,7 @@ import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
+import { MetadataEntriesEditor } from './components/MetadataEntriesEditor';
 
 const DEFAULT_VALUES: UpdateMemberInput = {
   full_name: '',
@@ -32,6 +33,7 @@ const DEFAULT_VALUES: UpdateMemberInput = {
   date_of_birth: '',
   role: '',
   category: '',
+  metadata_entries: [],
 };
 
 function toFormValues(member: AdminMember): UpdateMemberInput {
@@ -45,6 +47,10 @@ function toFormValues(member: AdminMember): UpdateMemberInput {
     date_of_birth: member.date_of_birth ?? '',
     role: member.role,
     category: member.category,
+    metadata_entries: Object.entries(member.extra_metadata).map(([key, value]) => ({
+      key,
+      value,
+    })),
   };
 }
 
@@ -67,6 +73,12 @@ export function AdminMemberDetailPage() {
     resolver: zodResolver(updateMemberSchema),
     defaultValues: DEFAULT_VALUES,
   });
+
+  const {
+    fields: metadataFields,
+    append: appendMetadata,
+    remove: removeMetadata,
+  } = useFieldArray({ control, name: 'metadata_entries' });
 
   const firstName = useWatch({ control, name: 'first_name' });
   const lastName = useWatch({ control, name: 'last_name' });
@@ -258,6 +270,20 @@ export function AdminMemberDetailPage() {
                 disabled={isDeletedMember}
               />
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Additional Metadata"
+            subtitle="Custom key-value fields stored alongside this member's profile. Keys should be unique and use snake_case."
+          >
+            <MetadataEntriesEditor
+              fields={metadataFields}
+              register={register}
+              errors={errors}
+              remove={removeMetadata}
+              append={appendMetadata}
+              disabled={isDeletedMember}
+            />
           </SectionCard>
 
           <div className="flex items-center justify-end gap-3">

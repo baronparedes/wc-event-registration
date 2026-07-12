@@ -127,6 +127,36 @@ describe('useAdminMemberQuery', () => {
     expect(result.current.data?.category).toBe('');
   });
 
+  it('excludes non-string extra metadata values from extra_metadata', async () => {
+    const member = makeAdminMember();
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: member.id,
+        member_id: member.member_id,
+        is_active: true,
+        full_name: member.full_name,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        nickname: member.nickname,
+        email: member.email,
+        phone: member.phone,
+        date_of_birth: member.date_of_birth,
+        metadata: { role: 'player', category: 'adult', tag: 'vip', count: 42 },
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+      },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.extra_metadata).toEqual({ tag: 'vip' });
+  });
+
   it('returns query error state when the users query fails', async () => {
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
       data: null,
