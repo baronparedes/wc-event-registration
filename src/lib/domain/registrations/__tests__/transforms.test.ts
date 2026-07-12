@@ -79,4 +79,51 @@ describe('formatRegistrationShareText', () => {
 
     expect(output).toBe('1. Alice Santos\n2. Bob Reyes');
   });
+
+  it('skips empty static and answer values while preserving row numbering', () => {
+    const output = formatRegistrationShareText({
+      rows: [
+        makeRegistrationSharePayloadRow({
+          full_name: 'Charlie Dela Cruz',
+          member_id: 'M-102',
+          email: '',
+          role: '',
+          category: '',
+          answer_values: {
+            [answerFieldId]: '   ',
+          },
+        }),
+      ],
+      selectedFields: ['full_name', 'email', 'role', 'category'],
+      selectedAnswerFieldIds: [answerFieldId],
+      answerFields: [{ field_id: answerFieldId, label: answerFieldLabel }],
+      includeHeader: false,
+    });
+
+    expect(output).toBe('1. Charlie Dela Cruz');
+  });
+
+  it('uses generic answer label and default header title when metadata is missing', () => {
+    const output = formatRegistrationShareText({
+      rows: [
+        makeRegistrationSharePayloadRow({
+          full_name: 'Dana Villanueva',
+          member_id: 'M-103',
+          email: 'dana@example.com',
+          role: 'Member',
+          category: 'Adult',
+          answer_values: {
+            unknown_field: 'Needs a seat near front',
+          },
+        }),
+      ],
+      selectedFields: ['full_name'],
+      selectedAnswerFieldIds: ['unknown_field'],
+      answerFields: [],
+      eventTitle: '   ',
+    });
+
+    expect(output).toContain('Registered attendees for Event (1)');
+    expect(output).toContain('1. Dana Villanueva | Answer: Needs a seat near front');
+  });
 });

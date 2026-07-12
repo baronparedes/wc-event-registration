@@ -20,6 +20,8 @@ function makePreparedRow(
     email: 'john@example.com',
     phone: '12345',
     date_of_birth: '1990-01-01',
+    role: 'Prayer Coach',
+    category: 'Adults',
     metadata: {},
     ...overrides,
   };
@@ -134,11 +136,12 @@ describe('parseMemberCsvText', () => {
 });
 
 describe('buildMemberCsvPreparedRows', () => {
-  it('maps aliases, builds metadata, and normalizes booleans', () => {
+  it('maps aliases, promotes role/category, and normalizes booleans', () => {
     const result = buildMemberCsvPreparedRows([
       {
         Surname: 'Doe',
         Role: 'Prayer Coach',
+        Category: 'Adults',
         RFID: '123',
         Nickname: 'JD',
         Firstname: 'John',
@@ -162,9 +165,10 @@ describe('buildMemberCsvPreparedRows', () => {
       email: 'john@example.com',
       phone: '0917',
       date_of_birth: '1990-01-01',
+      role: 'Prayer Coach',
+      category: 'Adults',
     });
     expect(result.rows[0].metadata).toMatchObject({
-      role: 'Prayer Coach',
       sr_pwd: true,
       is_oic: false,
       first_sunday: '9AM, 12NN',
@@ -178,6 +182,8 @@ describe('buildMemberCsvPreparedRows', () => {
         Firstname: '',
         Surname: '',
         Nickname: '',
+        Role: '',
+        Category: '',
         Email: 'not-an-email',
         DateOfBirth: '01/01/1990',
       },
@@ -190,6 +196,8 @@ describe('buildMemberCsvPreparedRows', () => {
         'Row 2: Firstname is required.',
         'Row 2: Surname is required.',
         'Row 2: Nickname is required.',
+        'Row 2: Role is required.',
+        'Row 2: Category is required.',
         'Row 2: Email is invalid.',
         'Row 2: Date of birth must use YYYY-MM-DD format.',
       ]),
@@ -203,6 +211,8 @@ describe('buildMemberCsvPreparedRows', () => {
         first_name: 'Ann',
         last_name: 'Lee',
         nickname: 'Annie',
+        role: 'Role A',
+        category: 'Category A',
         email: '   ',
         phone: '',
         date_of_birth: '',
@@ -222,6 +232,8 @@ describe('buildMemberCsvPreparedRows', () => {
         first_name: 'Bob',
         last_name: 'Lee',
         nickname: 'BL',
+        role: 'Role B',
+        category: 'Category B',
         '!!!': 'some value',
       },
     ]);
@@ -237,6 +249,8 @@ describe('buildMemberCsvPreparedRows', () => {
         Firstname: 'Nina',
         Surname: 'Roe',
         Nickname: 'NR',
+        Role: 'Prayer Coach',
+        Category: 'Women',
         IsOIC: '1',
         '2nd Sunday': '12NN',
         '3rd Sunday': '3PM',
@@ -248,6 +262,8 @@ describe('buildMemberCsvPreparedRows', () => {
         Firstname: 'Jake',
         Surname: 'Poe',
         Nickname: 'JP',
+        Role: 'Usher',
+        Category: 'Men',
         '2ndSunday': '9AM',
         '3rdSunday': '12NN',
         '4thSunday': '3PM',
@@ -256,6 +272,8 @@ describe('buildMemberCsvPreparedRows', () => {
     ]);
 
     expect(result.errors).toEqual([]);
+    expect(result.rows[0]).toMatchObject({ role: 'Prayer Coach', category: 'Women' });
+    expect(result.rows[1]).toMatchObject({ role: 'Usher', category: 'Men' });
     expect(result.rows[0].metadata).toMatchObject({
       is_oic: true,
       second_sunday: '12NN',

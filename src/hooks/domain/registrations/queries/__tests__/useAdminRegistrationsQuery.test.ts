@@ -81,7 +81,8 @@ const createTestUserRow = (overrides?: Record<string, unknown>) => ({
   full_name: faker.person.fullName(),
   email: faker.internet.email(),
   phone: faker.datatype.boolean() ? faker.phone.number() : null,
-  metadata: { role: 'player', category: 'adult' },
+  role: 'player',
+  category: 'adult',
   ...overrides,
 });
 
@@ -187,7 +188,8 @@ describe('useAdminRegistrationsQuery', () => {
     const regRow = createTestRegRow({ registration_answers: [{ count: 1 }] });
     const userRow = createTestUserRow({
       id: regRow.user_id,
-      metadata: { role: 123, category: null },
+      role: 123,
+      category: null,
     });
     mockRegistrationsBuilder.range.mockResolvedValueOnce({
       data: [regRow],

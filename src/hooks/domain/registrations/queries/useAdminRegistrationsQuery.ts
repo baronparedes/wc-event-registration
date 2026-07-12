@@ -9,11 +9,6 @@ function escapeOrFilterValue(value: string): string {
   return value.replace(/[,%_]/g, (char) => `\\${char}`);
 }
 
-type UserMetadata = {
-  role?: unknown;
-  category?: unknown;
-};
-
 type RegistrationAnswerCount = {
   count: number | null;
 };
@@ -128,7 +123,7 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
       const userIds = [...new Set(typedRegistrations.map((r) => r.user_id))];
       const { data: users, error: userError } = await supabase
         .from('users')
-        .select('id, member_id, full_name, email, phone, metadata')
+        .select('id, member_id, full_name, email, phone, role, category')
         .in('id', userIds);
 
       if (userError) throw userError;
@@ -139,7 +134,6 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
       // Combine data
       const items = typedRegistrations.map((r) => {
         const user = userMap.get(r.user_id);
-        const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null;
 
         return {
           ...r,
@@ -147,8 +141,8 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
           full_name: user?.full_name ?? '',
           email: user?.email ?? '',
           phone: user?.phone ?? null,
-          role: readMetadataString(metadata?.role),
-          category: readMetadataString(metadata?.category),
+          role: readMetadataString(user?.role),
+          category: readMetadataString(user?.category),
           answer_count: readAnswerCount(r.registration_answers),
         };
       });

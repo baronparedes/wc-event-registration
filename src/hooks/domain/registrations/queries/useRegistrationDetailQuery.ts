@@ -7,11 +7,6 @@ import type {
 } from '@/lib/domain/registrations';
 import { supabase } from '@/lib/infrastructure';
 
-type UserMetadata = {
-  role?: unknown;
-  category?: unknown;
-};
-
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
@@ -40,14 +35,12 @@ export function useRegistrationDetailQuery(registrationId: string) {
       // Fetch user details
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, member_id, full_name, email, phone, nickname, metadata')
+        .select('id, member_id, full_name, email, phone, nickname, role, category')
         .eq('id', registration.user_id)
         .single();
 
       if (userError) throw new Error('Member not found');
       if (!user) throw new Error('Member not found');
-
-      const metadata = (user.metadata as UserMetadata | null | undefined) ?? null;
 
       // Fetch field responses with field metadata
       const { data: answers, error: answerError } = await supabase
@@ -141,8 +134,8 @@ export function useRegistrationDetailQuery(registrationId: string) {
           email: user.email,
           phone: user.phone,
           nickname: user.nickname,
-          role: readMetadataString(metadata?.role),
-          category: readMetadataString(metadata?.category),
+          role: readMetadataString(user.role),
+          category: readMetadataString(user.category),
         },
         fieldResponses,
       };

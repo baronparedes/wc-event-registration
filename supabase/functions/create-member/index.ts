@@ -163,12 +163,6 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Build metadata object with role and category
-    const metadata: Record<string, unknown> = {
-      role: normalizedRole,
-      category: normalizedCategory,
-    };
-
     // Helper to normalize empty strings to null
     const toNull = (val: string | null | undefined): string | null => {
       if (!val) return null;
@@ -188,7 +182,8 @@ Deno.serve(async (req) => {
         email: toNull(email),
         phone: toNull(phone),
         date_of_birth: toNull(date_of_birth),
-        metadata,
+        role: normalizedRole,
+        category: normalizedCategory,
       })
       .select('id, member_id, full_name')
       .single();

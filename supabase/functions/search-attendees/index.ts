@@ -25,7 +25,9 @@ type UserSearchRow = {
   last_name: string | null;
   full_name: string;
   email: string | null;
-  metadata: Record<string, unknown> | null;
+  role: string | null;
+  category: string | null;
+  nickname: string | null;
 };
 
 type RegistrationSearchRow = {
@@ -168,8 +170,7 @@ function normalizeAnswerValue(answer: {
   return { answer_text: null, answer_number: null };
 }
 
-function readMetadataText(metadata: Record<string, unknown> | null, key: string): string | null {
-  const value = metadata?.[key];
+function readOptionalText(value: unknown): string | null {
   if (typeof value !== 'string') {
     return null;
   }
@@ -221,7 +222,7 @@ function matchesUserNicknameLastNameAggregate(
   user: UserSearchRow,
   normalizedToken: string,
 ): boolean {
-  const nickname = normalizeSearchText(readMetadataText(user.metadata, 'nickname') ?? '');
+  const nickname = normalizeSearchText(user.nickname ?? '');
   if (!nickname) {
     return false;
   }
@@ -381,7 +382,7 @@ Deno.serve(async (req) => {
     const registrationsQuery = adminClient
       .from('registrations')
       .select(
-        'id, user_id, status, submitted_at, users!inner(id, member_id, last_name, full_name, email, metadata)',
+        'id, user_id, status, submitted_at, users!inner(id, member_id, last_name, full_name, email, role, category, nickname)',
       )
       .eq('event_id', event_id)
       .neq('status', 'cancelled')
@@ -654,8 +655,8 @@ Deno.serve(async (req) => {
           member_id: user.member_id,
           full_name: user.full_name,
           email: user.email,
-          role: readMetadataText(user.metadata, 'role'),
-          category: readMetadataText(user.metadata, 'category'),
+          role: readOptionalText(user.role),
+          category: readOptionalText(user.category),
           registration_status: registration.status,
           submitted_at: registration.submitted_at,
           check_in_status: checkInTime ? 'checked_in' : 'not_checked_in',

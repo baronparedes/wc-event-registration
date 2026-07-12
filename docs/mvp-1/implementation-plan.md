@@ -21,7 +21,7 @@ ID lookup is required and always first in public registration. It cannot be disa
 - Admin scope: global admin v1, future event-scoped support
 - Export format v1: CSV
 - Member import contract: RFID maps to member_id
-- Member profile shape: nickname is first-class; role and category remain in metadata
+- Member profile shape: nickname, role, and category are first-class fields
 - **Hook organization**: Domain-scoped folders with operation separation (queries/mutations/state); shared utilities in /hooks/utils/; one-hook-per-file pattern; naming: `use<Entity>Query`, `use<Action><Entity>Mutation`, `use<Entity>State`
 
 ## Progress Snapshot (2026-06-28)

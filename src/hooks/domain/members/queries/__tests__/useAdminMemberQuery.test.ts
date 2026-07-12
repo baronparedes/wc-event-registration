@@ -63,7 +63,9 @@ describe('useAdminMemberQuery', () => {
         email: member.email,
         phone: member.phone,
         date_of_birth: member.date_of_birth,
-        metadata: { role: member.role, category: member.category },
+        role: member.role,
+        category: member.category,
+        metadata: {},
         created_at: member.created_at,
         updated_at: member.updated_at,
       },
@@ -91,7 +93,7 @@ describe('useAdminMemberQuery', () => {
     expect(result.current.error).toBeInstanceOf(Error);
   });
 
-  it('returns empty role/category when metadata values are not strings', async () => {
+  it('returns empty role/category when user column values are not strings', async () => {
     const member = makeAdminMember({
       phone: null,
       date_of_birth: null,
@@ -110,7 +112,9 @@ describe('useAdminMemberQuery', () => {
         email: member.email,
         phone: member.phone,
         date_of_birth: member.date_of_birth,
-        metadata: { role: 123, category: false },
+        role: 123,
+        category: false,
+        metadata: {},
         created_at: member.created_at,
         updated_at: member.updated_at,
       },
@@ -141,7 +145,9 @@ describe('useAdminMemberQuery', () => {
         email: member.email,
         phone: member.phone,
         date_of_birth: member.date_of_birth,
-        metadata: { role: 'player', category: 'adult', tag: 'vip', count: 42 },
+        role: 'player',
+        category: 'adult',
+        metadata: { tag: 'vip', count: 42 },
         created_at: member.created_at,
         updated_at: member.updated_at,
       },
@@ -205,7 +211,9 @@ describe('useAdminMemberQuery', () => {
         email: member.email,
         phone: member.phone,
         date_of_birth: member.date_of_birth,
-        metadata: { role: member.role, category: member.category },
+        role: member.role,
+        category: member.category,
+        metadata: {},
         created_at: member.created_at,
         updated_at: member.updated_at,
       },

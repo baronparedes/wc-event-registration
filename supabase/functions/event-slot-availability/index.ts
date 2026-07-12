@@ -71,7 +71,7 @@ type SlotAvailabilityField = {
 
 type UserRoleRow = {
   id: string;
-  metadata: unknown;
+  role: string;
 };
 
 function getRegistrationUserId(value: RegistrationAnswerRow['registrations']): string | null {
@@ -86,17 +86,8 @@ function getRegistrationUserId(value: RegistrationAnswerRow['registrations']): s
   return value.user_id;
 }
 
-function extractMemberRole(metadata: unknown): string | null {
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
-    return null;
-  }
-
-  const rawRole =
-    typeof (metadata as { role?: unknown }).role === 'string'
-      ? (metadata as { role: string }).role
-      : null;
-
-  return normalizePrimaryRoleValue(rawRole);
+function extractMemberRole(role: string | null): string | null {
+  return normalizePrimaryRoleValue(role);
 }
 
 const allowedOrigins = readAllowedOrigins();
@@ -217,7 +208,7 @@ Deno.serve(async (req) => {
     if (registrationUserIds.length > 0) {
       const { data: usersWithRole, error: usersWithRoleError } = await supabase
         .from('users')
-        .select('id, metadata')
+        .select('id, role')
         .in('id', registrationUserIds)
         .returns<UserRoleRow[]>();
 
@@ -227,7 +218,7 @@ Deno.serve(async (req) => {
       }
 
       for (const user of usersWithRole ?? []) {
-        userRoleMap.set(user.id, extractMemberRole(user.metadata));
+        userRoleMap.set(user.id, extractMemberRole(user.role));
       }
     }
 

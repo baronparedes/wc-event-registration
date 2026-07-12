@@ -17,11 +17,6 @@ const exportRegistrationsRequestSchema = z.object({
 
 type ExportRegistrationsRequest = z.infer<typeof exportRegistrationsRequestSchema>;
 
-type UserMetadata = {
-  role?: unknown;
-  category?: unknown;
-};
-
 const allowedOrigins = readAllowedOrigins();
 
 function maskValue(value: string | null, visible = 6): string {
@@ -271,7 +266,7 @@ Deno.serve(async (req) => {
     const userIds = registrations?.map((r) => r.user_id) ?? [];
     const { data: users, error: userError } = await adminClient
       .from('users')
-      .select('id, member_id, full_name, email, phone, metadata')
+      .select('id, member_id, full_name, email, phone, role, category')
       .in('id', userIds);
 
     if (userError) {
@@ -378,7 +373,6 @@ Deno.serve(async (req) => {
     const shareRows: RegistrationShareRow[] =
       registrations?.map((reg) => {
         const user = userMap.get(reg.user_id);
-        const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null;
         const answerValues: Record<string, string> = {};
 
         fields?.forEach((field) => {
@@ -390,8 +384,8 @@ Deno.serve(async (req) => {
           full_name: user?.full_name ?? '',
           member_id: user?.member_id ?? '',
           email: user?.email ?? '',
-          role: readMetadataString(metadata?.role),
-          category: readMetadataString(metadata?.category),
+          role: readMetadataString(user?.role),
+          category: readMetadataString(user?.category),
           answer_values: answerValues,
         };
       }) ?? [];
@@ -453,14 +447,13 @@ Deno.serve(async (req) => {
 
     registrations?.forEach((reg) => {
       const user = userMap.get(reg.user_id);
-      const metadata = (user?.metadata as UserMetadata | null | undefined) ?? null;
       const row: string[] = [
         escapeCsvField(user?.member_id ?? ''),
         escapeCsvField(user?.full_name ?? ''),
         escapeCsvField(user?.email ?? ''),
         escapeCsvField(user?.phone ?? ''),
-        escapeCsvField(readMetadataString(metadata?.role)),
-        escapeCsvField(readMetadataString(metadata?.category)),
+        escapeCsvField(readMetadataString(user?.role)),
+        escapeCsvField(readMetadataString(user?.category)),
         escapeCsvField(reg.status),
         escapeCsvField(reg.submitted_at),
         escapeCsvField(reg.updated_at),

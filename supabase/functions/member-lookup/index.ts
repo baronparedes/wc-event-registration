@@ -57,7 +57,8 @@ type AnswerRow = {
 type UserLookupRow = {
   id: string;
   member_id: string;
-  metadata: unknown;
+  role: string;
+  category: string;
   full_name: string;
   nickname: string | null;
   first_name: string | null;
@@ -147,22 +148,8 @@ function hasOrderedTokenMatch(candidate: string, search: string): boolean {
   return true;
 }
 
-function getRoleFromMetadata(metadata: unknown): string {
-  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
-    return '';
-  }
-
-  const role = (metadata as Record<string, unknown>).role;
-  return typeof role === 'string' ? role : '';
-}
-
-function getCategoryFromMetadata(metadata: unknown): string {
-  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
-    return '';
-  }
-
-  const category = (metadata as Record<string, unknown>).category;
-  return typeof category === 'string' ? category : '';
+function readString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
 }
 
 function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
@@ -170,8 +157,8 @@ function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
   return {
     user_id: row.id,
     member_id: row.member_id,
-    role: getRoleFromMetadata(row.metadata),
-    category: getCategoryFromMetadata(row.metadata),
+    role: readString(row.role),
+    category: readString(row.category),
     full_name: row.full_name,
     nickname: row.nickname,
     first_name: row.first_name,
@@ -229,7 +216,7 @@ async function findUserByNameOrNickname(
 
   const { data: users, error } = await supabase
     .from('users')
-    .select('id, member_id, metadata, full_name, nickname, first_name, last_name')
+    .select('id, member_id, role, category, full_name, nickname, first_name, last_name')
     .eq('is_active', true)
     .not('last_name', 'is', null)
     .or(nameFilter)
@@ -430,7 +417,7 @@ Deno.serve(async (req) => {
     if (isIdLookup) {
       const { data } = await supabase
         .from('users')
-        .select('id, member_id, metadata, full_name, nickname, first_name, last_name')
+        .select('id, member_id, role, category, full_name, nickname, first_name, last_name')
         .eq('is_active', true)
         .eq('member_id', searchValue)
         .maybeSingle();

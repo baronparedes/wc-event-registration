@@ -89,7 +89,9 @@ describe('useUpdateMemberMutation', () => {
       email,
       phone: null,
       date_of_birth: null,
-      metadata: { other: 'keep', role: 'player' },
+      role: 'player',
+      category: '',
+      metadata: { other: 'keep' },
     });
 
     await waitFor(() => {
@@ -171,7 +173,7 @@ describe('useUpdateMemberMutation', () => {
     ).rejects.toThrow('update failed');
   });
 
-  it('removes role and category metadata when values are blank', async () => {
+  it('removes role and category from metadata when values are stored in core columns', async () => {
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
       data: { metadata: { role: 'player', category: 'adult', keep: 'yes' } },
       error: null,
@@ -197,6 +199,8 @@ describe('useUpdateMemberMutation', () => {
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
+        role: '',
+        category: '',
         metadata: { keep: 'yes' },
       }),
     );
@@ -228,7 +232,9 @@ describe('useUpdateMemberMutation', () => {
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        metadata: { role: 'player', category: 'adult', keep: 'updated' },
+        role: 'player',
+        category: 'adult',
+        metadata: { keep: 'updated' },
       }),
     );
   });
@@ -259,7 +265,9 @@ describe('useUpdateMemberMutation', () => {
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        metadata: { role: 'player', category: 'adult' },
+        role: 'player',
+        category: 'adult',
+        metadata: {},
       }),
     );
   });

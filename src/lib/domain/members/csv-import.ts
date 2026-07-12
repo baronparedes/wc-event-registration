@@ -18,6 +18,8 @@ export interface MemberCsvPreparedRowInput {
   email: string | null;
   phone: string | null;
   date_of_birth: string | null;
+  role: string;
+  category: string;
   metadata: Record<string, unknown>;
 }
 
@@ -142,6 +144,8 @@ function resolveCoreField(
   if (EMAIL_ALIASES.includes(key)) return 'email';
   if (PHONE_ALIASES.includes(key)) return 'phone';
   if (DATE_OF_BIRTH_ALIASES.includes(key)) return 'date_of_birth';
+  if (key === 'role') return 'role';
+  if (key === 'category') return 'category';
 
   return null;
 }
@@ -300,6 +304,8 @@ export function buildMemberCsvPreparedRows(
       email: null,
       phone: null,
       date_of_birth: null,
+      role: '',
+      category: '',
       metadata: {},
     };
 
@@ -338,6 +344,12 @@ export function buildMemberCsvPreparedRows(
     }
     if (!prepared.nickname) {
       errors.push(`Row ${rowNumber}: Nickname is required.`);
+    }
+    if (!prepared.role) {
+      errors.push(`Row ${rowNumber}: Role is required.`);
+    }
+    if (!prepared.category) {
+      errors.push(`Row ${rowNumber}: Category is required.`);
     }
 
     if (prepared.email && !VALIDATION_PATTERNS.email.test(prepared.email)) {

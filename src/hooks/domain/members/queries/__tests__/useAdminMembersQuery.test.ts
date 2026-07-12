@@ -47,7 +47,7 @@ describe('useAdminMembersQuery', () => {
     vi.clearAllMocks();
   });
 
-  it('returns paginated members and transforms metadata role/category', async () => {
+  it('returns paginated members and reads role/category from user columns', async () => {
     const member = makeAdminMember({
       nickname: 'J',
       role: 'player',
@@ -66,7 +66,9 @@ describe('useAdminMembersQuery', () => {
       email: member.email,
       phone: member.phone,
       date_of_birth: member.date_of_birth,
-      metadata: { role: member.role, category: member.category },
+      role: member.role,
+      category: member.category,
+      metadata: {},
       created_at: member.created_at,
       updated_at: member.updated_at,
     };
@@ -147,7 +149,9 @@ describe('useAdminMembersQuery', () => {
           email: null,
           phone: null,
           date_of_birth: null,
-          metadata: { role: 123, category: false },
+          role: 123,
+          category: false,
+          metadata: {},
           created_at: '2026-01-01T00:00:00.000Z',
           updated_at: '2026-01-01T00:00:00.000Z',
         },
@@ -225,7 +229,9 @@ describe('useAdminMembersQuery', () => {
           email: null,
           phone: null,
           date_of_birth: null,
-          metadata: { role: 'player', category: 'adult', tag: 'vip', count: 5 },
+          role: 'player',
+          category: 'adult',
+          metadata: { tag: 'vip', count: 5 },
           created_at: '2026-01-01T00:00:00.000Z',
           updated_at: '2026-01-01T00:00:00.000Z',
         },

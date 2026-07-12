@@ -4,8 +4,6 @@ import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminMember } from '@/lib/domain/members';
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
 
-type UserMetadata = Record<string, unknown>;
-
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
@@ -57,7 +55,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
       let query = supabase
         .from('users')
         .select(
-          'id, member_id, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, metadata, created_at, updated_at',
+          'id, member_id, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
           { count: 'exact' },
         );
 
@@ -99,11 +97,11 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
 
       // Transform members data
       const items = members.map((member) => {
-        const metadata = (member.metadata as UserMetadata | null | undefined) ?? {};
+        const metadata = (member.metadata as Record<string, unknown> | null | undefined) ?? {};
 
         const extra_metadata: Record<string, string> = {};
         for (const [key, value] of Object.entries(metadata)) {
-          if (key !== 'role' && key !== 'category' && typeof value === 'string') {
+          if (typeof value === 'string') {
             extra_metadata[key] = value;
           }
         }
@@ -119,8 +117,8 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
           email: member.email,
           phone: member.phone,
           date_of_birth: member.date_of_birth,
-          role: readMetadataString(metadata['role']),
-          category: readMetadataString(metadata['category']),
+          role: readMetadataString(member.role),
+          category: readMetadataString(member.category),
           extra_metadata,
           created_at: member.created_at,
           updated_at: member.updated_at,

@@ -106,7 +106,8 @@ describe('useRegistrationDetailQuery', () => {
         email: userEmail,
         phone: null,
         nickname: userNickname,
-        metadata: { role: 'player', category: 'adult' },
+        role: 'player',
+        category: 'adult',
       },
       error: null,
     });
@@ -235,7 +236,8 @@ describe('useRegistrationDetailQuery', () => {
         email: 'jane@example.com',
         phone: null,
         nickname: null,
-        metadata: null,
+        role: '',
+        category: '',
       },
       error: null,
     });
@@ -252,7 +254,7 @@ describe('useRegistrationDetailQuery', () => {
     });
   });
 
-  it('transforms mixed answer types and metadata fallback values', async () => {
+  it('transforms mixed answer types and empty role/category fallback values', async () => {
     mockRegistrationsBuilder.single.mockResolvedValueOnce({
       data: {
         id: 'reg-2',
@@ -273,7 +275,8 @@ describe('useRegistrationDetailQuery', () => {
         email: 'john@example.com',
         phone: '123',
         nickname: null,
-        metadata: { role: 7, category: false },
+        role: 7,
+        category: false,
       },
       error: null,
     });

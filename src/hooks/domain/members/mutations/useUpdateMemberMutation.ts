@@ -15,32 +15,18 @@ function emptyToNull(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-const CORE_METADATA_KEYS = new Set(['role', 'category']);
-
 function buildMetadata(previousMetadata: Record<string, unknown> | null, input: UpdateMemberInput) {
   const nextMetadata = { ...(previousMetadata ?? {}) };
 
-  const role = input.role.trim();
-  const category = input.category.trim();
-
-  if (role) {
-    nextMetadata.role = role;
-  } else {
-    delete nextMetadata.role;
-  }
-
-  if (category) {
-    nextMetadata.category = category;
-  } else {
-    delete nextMetadata.category;
-  }
+  delete nextMetadata.role;
+  delete nextMetadata.category;
 
   // Remove stale extra keys before writing new entries
   const incomingKeys = new Set(
     (input.metadata_entries ?? []).map((e) => e.key.trim()).filter(Boolean),
   );
   for (const key of Object.keys(nextMetadata)) {
-    if (!CORE_METADATA_KEYS.has(key) && !incomingKeys.has(key)) {
+    if (!incomingKeys.has(key)) {
       delete nextMetadata[key];
     }
   }
@@ -78,6 +64,8 @@ export function useUpdateMemberMutation() {
         email: emptyToNull(input.email),
         phone: emptyToNull(input.phone),
         date_of_birth: emptyToNull(input.date_of_birth),
+        role: input.role.trim(),
+        category: input.category.trim(),
         metadata: buildMetadata((existingMember as UserRecord).metadata, input),
       };
 

@@ -65,21 +65,16 @@ interface RegistrationAnswerRow {
 
 interface UserRoleRow {
   id: string;
-  metadata: unknown;
+  role: string;
 }
 
 interface UserLookupRow {
   id: string;
-  metadata: unknown;
+  role: string;
 }
 
-function extractMemberRole(metadata: unknown): string | null {
-  if (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata)) {
-    return null;
-  }
-
-  const roleValue = (metadata as Record<string, unknown>).role;
-  return typeof roleValue === 'string' ? normalizePrimaryRoleValue(roleValue) : null;
+function extractMemberRole(role: string | null): string | null {
+  return normalizePrimaryRoleValue(role);
 }
 
 const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx';
@@ -224,7 +219,7 @@ Deno.serve(async (req) => {
     // Step 2: Look up user by member_id
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id, metadata')
+      .select('id, role')
       .eq('member_id', member_id)
       .maybeSingle<UserLookupRow>();
 
@@ -258,7 +253,7 @@ Deno.serve(async (req) => {
     }
 
     const userId = userData.id;
-    const memberRole = extractMemberRole(userData.metadata);
+    const memberRole = extractMemberRole(userData.role);
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
 
@@ -551,7 +546,7 @@ Deno.serve(async (req) => {
       if (registrationUserIds.length > 0) {
         const { data: usersWithRole, error: roleLookupError } = await supabase
           .from('users')
-          .select('id, metadata')
+          .select('id, role')
           .in('id', registrationUserIds)
           .returns<UserRoleRow[]>();
 
@@ -571,7 +566,7 @@ Deno.serve(async (req) => {
         }
 
         for (const user of usersWithRole ?? []) {
-          userRoleMap.set(user.id, extractMemberRole(user.metadata));
+          userRoleMap.set(user.id, extractMemberRole(user.role));
         }
       }
 

@@ -8,7 +8,7 @@ Feature: View and Edit Member Details
     - Member ID is immutable (cannot change through edit; requires separate "Update ID" flow)
     - Email and phone are validated for format (email is valid email, phone is valid format)
     - Date of Birth is optional
-    - Role and Category are optional metadata fields (Attendee, Volunteer, Staff, etc.)
+    - Role and Category are optional first-class member profile fields (Attendee, Volunteer, Staff, etc.)
     - Admin can save changes immediately; no publish step needed
     - Form shows dirty state indicator (unsaved changes)
     - Existing registrations link to member profile and are unaffected by profile edits

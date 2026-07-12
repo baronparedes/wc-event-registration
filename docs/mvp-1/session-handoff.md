@@ -885,7 +885,7 @@ Next planned work:
 - invalid-row behavior: fail entire batch
 - email validation strictness: lenient if email exists in future variants
 - nickname is stored in users.nickname
-- member role/category/schedule fields remain in users.metadata
+- member role/category are first-class user fields; schedule-style import data remains in users.metadata
 - local member seed file is generated into ignored supabase/seeds/members.local.sql
 
 ## Core Principles (All Chunks)
