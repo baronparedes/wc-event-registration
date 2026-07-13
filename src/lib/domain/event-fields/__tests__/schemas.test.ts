@@ -567,6 +567,40 @@ describe('event-fields schemas', () => {
     ).toBe(false);
   });
 
+  it('enforces allowed weekdays for date and datetime fields', () => {
+    const schema = buildDynamicFieldResponseSchema([
+      createField({
+        field_key: 'service_date',
+        label: 'Service Date',
+        field_type: 'date',
+        is_required: true,
+        validation_rules: { allowed_weekdays: [2, 4] },
+      }),
+      createField({
+        id: '5f8f1ce0-5186-4fdb-bf16-500be7db706f',
+        field_key: 'service_time',
+        label: 'Service Time',
+        field_type: 'datetime',
+        is_required: true,
+        validation_rules: { allowed_weekdays: [2, 4] },
+      }),
+    ]);
+
+    expect(
+      schema.safeParse({
+        service_date: '2026-07-14',
+        service_time: '2026-07-14T09:00',
+      }).success,
+    ).toBe(true);
+
+    expect(
+      schema.safeParse({
+        service_date: '2026-07-12',
+        service_time: '2026-07-12T09:00',
+      }).success,
+    ).toBe(false);
+  });
+
   it('enforces required checkboxes/booleans and allows optional booleans', () => {
     const schema = buildDynamicFieldResponseSchema([
       createField({

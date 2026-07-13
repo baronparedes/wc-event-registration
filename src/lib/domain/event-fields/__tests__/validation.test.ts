@@ -272,4 +272,19 @@ describe('validatePublicEventFieldConfig', () => {
       morning: [{ role: '*', alloted_slots: 3 }],
     });
   });
+
+  it('normalizes allowed weekdays and drops invalid weekday values', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'service_date',
+        field_type: 'date',
+        validation_rules: {
+          allowed_weekdays: [2, 4, 4, -1, 8, 0],
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.allowed_weekdays).toEqual([0, 2, 4]);
+  });
 });

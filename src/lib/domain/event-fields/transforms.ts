@@ -15,6 +15,8 @@ type RoleAllotmentFormEntry = {
   alloted_slots: string;
 };
 
+type WeekdayString = '0' | '1' | '2' | '3' | '4' | '5' | '6';
+
 const WILDCARD_ROLE = '*';
 
 function normalizeRoleAllotmentFormEntries(
@@ -143,7 +145,16 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   val_max_selections: '',
   val_min_date: '',
   val_max_date: '',
+  val_allowed_weekdays: [],
 };
+
+function toWeekdayString(value: number): WeekdayString | null {
+  if (!Number.isInteger(value) || value < 0 || value > 6) {
+    return null;
+  }
+
+  return String(value) as WeekdayString;
+}
 
 /** Convert a saved AdminEventField to form default values for pre-filling the edit panel. */
 export function fieldToFormValues(field: AdminEventField): EventFieldFormValues {
@@ -182,6 +193,11 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
     val_max_selections: rules.max_selections != null ? String(rules.max_selections) : '',
     val_min_date: typeof rules.min_date === 'string' ? rules.min_date : '',
     val_max_date: typeof rules.max_date === 'string' ? rules.max_date : '',
+    val_allowed_weekdays: Array.isArray(rules.allowed_weekdays)
+      ? rules.allowed_weekdays
+          .map((weekday) => toWeekdayString(weekday))
+          .filter((weekday): weekday is WeekdayString => weekday !== null)
+      : [],
   };
 }
 
@@ -201,6 +217,19 @@ export function toValidationRules(values: EventFieldFormValues): Record<string, 
   }
   if (values.val_min_date !== '') rules.min_date = values.val_min_date;
   if (values.val_max_date !== '') rules.max_date = values.val_max_date;
+
+  const selectedWeekdays = values.val_allowed_weekdays ?? [];
+  if (selectedWeekdays.length > 0) {
+    const allowedWeekdays = selectedWeekdays
+      .map((weekday) => Number.parseInt(weekday, 10))
+      .filter((weekday) => Number.isInteger(weekday) && weekday >= 0 && weekday <= 6)
+      .filter((weekday, index, valuesList) => valuesList.indexOf(weekday) === index)
+      .sort((a, b) => a - b);
+
+    if (allowedWeekdays.length > 0) {
+      rules.allowed_weekdays = allowedWeekdays;
+    }
+  }
 
   const maxSlots = values.options.reduce<Record<string, number>>((acc, option) => {
     const trimmedSlotCount = option.max_slots.trim();

@@ -14,6 +14,16 @@ type ValidationRulesSectionProps = {
   register: UseFormRegister<EventFieldFormValues>;
 };
 
+const WEEKDAY_OPTIONS = [
+  { value: '0', label: 'Sunday' },
+  { value: '1', label: 'Monday' },
+  { value: '2', label: 'Tuesday' },
+  { value: '3', label: 'Wednesday' },
+  { value: '4', label: 'Thursday' },
+  { value: '5', label: 'Friday' },
+  { value: '6', label: 'Saturday' },
+] as const;
+
 /** Section for all validation rule inputs (text, number, date, multi-select). */
 export function ValidationRulesSection({
   isStructurallyLocked,
@@ -124,6 +134,29 @@ export function ValidationRulesSection({
               registration={register('val_max_date')}
               disabled={isStructurallyLocked}
             />
+            <div className="sm:col-span-2">
+              <p className="text-sm font-medium text-text">Allowed Weekdays</p>
+              <p className="mt-1 text-xs text-muted">
+                Restrict date selection to specific weekdays. Leave all unchecked to allow any day.
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {WEEKDAY_OPTIONS.map((weekday) => (
+                  <label
+                    key={weekday.value}
+                    className="flex items-center gap-2 rounded-md border border-border bg-background px-2.5 py-2"
+                  >
+                    <input
+                      type="checkbox"
+                      value={weekday.value}
+                      disabled={isStructurallyLocked}
+                      {...register('val_allowed_weekdays')}
+                      className="h-4 w-4 cursor-pointer rounded border-border"
+                    />
+                    <span className="text-sm text-text">{weekday.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>

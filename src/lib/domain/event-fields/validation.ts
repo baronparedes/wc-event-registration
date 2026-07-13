@@ -295,6 +295,19 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
     rules.max_date = maxDate;
   }
 
+  const allowedWeekdays = field.validation_rules.allowed_weekdays;
+  if (Array.isArray(allowedWeekdays)) {
+    const parsedWeekdays = allowedWeekdays
+      .filter((weekday): weekday is number => typeof weekday === 'number')
+      .filter((weekday) => Number.isInteger(weekday) && weekday >= 0 && weekday <= 6)
+      .filter((weekday, index, values) => values.indexOf(weekday) === index)
+      .sort((a, b) => a - b);
+
+    if (parsedWeekdays.length > 0) {
+      rules.allowed_weekdays = parsedWeekdays;
+    }
+  }
+
   return rules;
 }
 

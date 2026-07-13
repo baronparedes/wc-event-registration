@@ -632,6 +632,25 @@ function buildFieldSchema(field: EventFieldWithValidation, label: string): z.Zod
   else if (type === 'date' || type === 'datetime') {
     const isDateOnly = type === 'date';
     const dateRegex = isDateOnly ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+    const allowedWeekdays = Array.isArray(rules.allowed_weekdays)
+      ? rules.allowed_weekdays
+          .filter((entry): entry is number => typeof entry === 'number' && entry >= 0 && entry <= 6)
+          .filter((entry, index, values) => values.indexOf(entry) === index)
+          .sort((a, b) => a - b)
+      : [];
+
+    const extractWeekday = (value: string): number | null => {
+      const [yearString, monthString, dayString] = value.slice(0, 10).split('-');
+      const year = Number(yearString);
+      const month = Number(monthString);
+      const day = Number(dayString);
+
+      if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+        return null;
+      }
+
+      return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+    };
 
     schema = z
       .string()
@@ -648,6 +667,20 @@ function buildFieldSchema(field: EventFieldWithValidation, label: string): z.Zod
     const maxDate = rules.max_date as string | undefined;
     if (maxDate) {
       schema = schema.refine((val) => val <= maxDate, `${label} must be on or before ${maxDate}.`);
+    }
+
+    if (allowedWeekdays.length > 0) {
+      const allowedLabels = allowedWeekdays
+        .map(
+          (weekday) =>
+            ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][weekday],
+        )
+        .join(', ');
+
+      schema = schema.refine((val) => {
+        const weekday = extractWeekday(val);
+        return weekday !== null && allowedWeekdays.includes(weekday);
+      }, `${label} must fall on: ${allowedLabels}.`);
     }
   } else {
     schema = z.unknown();

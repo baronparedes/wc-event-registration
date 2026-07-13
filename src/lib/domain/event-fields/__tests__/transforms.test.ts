@@ -61,6 +61,20 @@ describe('event-fields transforms', () => {
     expect(values.val_min_length).toBe('2');
     expect(values.val_max_length).toBe('50');
     expect(values.val_pattern).toBe('^[A-Za-z ]+$');
+    expect(values.val_allowed_weekdays).toEqual([]);
+  });
+
+  it('maps allowed weekdays into form values and removes invalid entries', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        field_type: 'date',
+        validation_rules: {
+          allowed_weekdays: [5, 1, 5, -1, 9],
+        },
+      }),
+    );
+
+    expect(values.val_allowed_weekdays).toEqual(['5', '1', '5']);
   });
 
   it('builds validation rules and excludes empty values', () => {
@@ -113,6 +127,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '4',
       val_min_date: '2026-01-01',
       val_max_date: '2026-12-31',
+      val_allowed_weekdays: ['4', '2', '2', '0', '7' as never],
     };
 
     const rules = toValidationRules(values);
@@ -127,6 +142,7 @@ describe('event-fields transforms', () => {
       max_selections: 4,
       min_date: '2026-01-01',
       max_date: '2026-12-31',
+      allowed_weekdays: [0, 2, 4],
     });
   });
 

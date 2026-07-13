@@ -128,6 +128,7 @@ export const eventFieldFormSchema = z
     val_max_selections: z.string(),
     val_min_date: z.string(),
     val_max_date: z.string(),
+    val_allowed_weekdays: z.array(z.enum(['0', '1', '2', '3', '4', '5', '6'])).optional(),
   })
   .superRefine((values, context) => {
     const hasOptionCapacity =
@@ -421,6 +422,13 @@ function buildMultiSelectToggleSchema(
 function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefined> {
   const rules = field.validation_rules;
   const isDateOnly = field.field_type === 'date';
+  const allowedWeekdays = Array.isArray(rules.allowed_weekdays)
+    ? rules.allowed_weekdays
+        .filter(
+          (weekday): weekday is number => Number.isInteger(weekday) && weekday >= 0 && weekday <= 6,
+        )
+        .filter((weekday, index, values) => values.indexOf(weekday) === index)
+    : [];
 
   let schema = z
     .string({ message: `${field.label} is required.` })
@@ -452,6 +460,34 @@ function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefi
       }
       return new Date(value).getTime() <= new Date(rules.max_date!).getTime();
     }, `${field.label} must be on or before ${rules.max_date}.`);
+  }
+
+  if (allowedWeekdays.length > 0) {
+    const weekdayLabels = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    const allowedLabels = allowedWeekdays.map((weekday) => weekdayLabels[weekday]).join(', ');
+
+    schema = schema.refine((value) => {
+      const dateValue = value.slice(0, 10);
+      const [yearString, monthString, dayString] = dateValue.split('-');
+      const year = Number(yearString);
+      const month = Number(monthString);
+      const day = Number(dayString);
+
+      if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+        return false;
+      }
+
+      const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+      return allowedWeekdays.includes(weekday);
+    }, `${field.label} must fall on: ${allowedLabels}.`);
   }
 
   if (field.is_required) {
