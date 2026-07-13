@@ -63,7 +63,7 @@ export function MemberLookupErrorAlert({
         <div className="flex w-full items-start justify-between gap-3">
           <div className="space-y-1">
             <p className="registration-alert-title text-sm font-semibold text-orange-950">
-              Please check your entry
+              Please check your entry, ensure you enter your registered name.
             </p>
             <p className="registration-alert-message text-sm text-orange-900">{message}</p>
           </div>

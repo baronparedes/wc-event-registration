@@ -84,7 +84,9 @@ const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
   'public_registrations_event_idempotency_unique_idx';
 
 function resolveRegistrationScopeKey(duplicatePolicy: string, idempotencyKey: string): string {
-  return duplicatePolicy === 'allow_multiple' ? idempotencyKey : 'primary';
+  return duplicatePolicy === 'allow_multiple' || duplicatePolicy === 'allow_multiple_update'
+    ? idempotencyKey
+    : 'primary';
 }
 
 /**
@@ -307,6 +309,46 @@ Deno.serve(async (req) => {
     const registrationScopeKey =
       compoundScopeResult.scopeKey ?? resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
 
+    if (duplicatePolicy === 'block') {
+      const { data: existingForBlock, error: existingForBlockError } = await supabase
+        .from('public_registrations')
+        .select('id')
+        .eq('event_id', eventId)
+        .ilike('email', email as string)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingForBlockError) {
+        console.error('Block policy precheck error:', existingForBlockError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to process registration',
+            error_code: 'REGISTRATION_CHECK_FAILED',
+          } as SubmitPublicRegistrationError),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      if (existingForBlock?.id) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'You have already registered for this event',
+            error_code: 'DUPLICATE_REGISTRATION',
+          } as SubmitPublicRegistrationError),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+    }
+
     const validationErrors: FieldValidationError[] = [];
 
     for (const field of fields) {
@@ -462,17 +504,70 @@ Deno.serve(async (req) => {
 
       if (!registrationId) {
         if (hasCompoundScope) {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'A registration with the same unique field values already exists.',
-              error_code: 'duplicate_compound_key',
-            } as SubmitPublicRegistrationError),
-            {
-              status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
+          if (duplicatePolicy === 'allow_multiple_update') {
+            const { data: existingByScope, error: scopeLookupError } = await supabase
+              .from('public_registrations')
+              .select('id, status')
+              .eq('event_id', eventId)
+              .eq('registration_scope_key', registrationScopeKey)
+              .ilike('email', email as string)
+              .maybeSingle();
+
+            if (scopeLookupError) {
+              console.error('Compound-scope conflict recovery check error:', scopeLookupError);
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'Failed to process registration',
+                  error_code: 'REGISTRATION_CHECK_FAILED',
+                } as SubmitPublicRegistrationError),
+                {
+                  status: 500,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+
+            if (!existingByScope) {
+              console.error(
+                'Compound-scope conflict recovery failed: row missing after unique conflict',
+                {
+                  eventId,
+                  email,
+                  registrationScopeKey,
+                },
+              );
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'A registration with the same unique field values already exists.',
+                  error_code: 'duplicate_compound_key',
+                } as SubmitPublicRegistrationError),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+
+            registrationId = existingByScope.id;
+            status = 'updated';
+            isNew = false;
+          }
+
+          if (!registrationId) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'A registration with the same unique field values already exists.',
+                error_code: 'duplicate_compound_key',
+              } as SubmitPublicRegistrationError),
+              {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
         }
 
         if (duplicatePolicy === 'allow_multiple') {
@@ -494,63 +589,122 @@ Deno.serve(async (req) => {
           );
         }
 
-        const { data: existingReg, error: regCheckError } = await supabase
-          .from('public_registrations')
-          .select('id, status')
-          .eq('event_id', eventId)
-          .eq('registration_scope_key', 'primary')
-          .ilike('email', email as string)
-          .maybeSingle();
+        if (duplicatePolicy === 'allow_multiple_update') {
+          const { data: existingByScopeForUpdate, error: scopeRecoveryError } = await supabase
+            .from('public_registrations')
+            .select('id, status')
+            .eq('event_id', eventId)
+            .eq('registration_scope_key', registrationScopeKey)
+            .ilike('email', email as string)
+            .maybeSingle();
 
-        if (regCheckError) {
-          console.error('Registration conflict recovery check error:', regCheckError);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to process registration',
-              error_code: 'REGISTRATION_CHECK_FAILED',
-            } as SubmitPublicRegistrationError),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
+          if (scopeRecoveryError) {
+            console.error('Allow-multiple-update scope recovery check error:', scopeRecoveryError);
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'REGISTRATION_CHECK_FAILED',
+              } as SubmitPublicRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          if (existingByScopeForUpdate?.id) {
+            registrationId = existingByScopeForUpdate.id;
+            status = 'updated';
+            isNew = false;
+          } else {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'A registration with the same unique field values already exists.',
+                error_code: 'duplicate_compound_key',
+              } as SubmitPublicRegistrationError),
+              {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
         }
 
-        if (!existingReg) {
-          console.error('Unique constraint violation but no existing registration found');
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to process registration',
-              error_code: 'DUPLICATE_REGISTRATION',
-            } as SubmitPublicRegistrationError),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
-        }
+        if (!registrationId) {
+          const { data: existingReg, error: regCheckError } = await supabase
+            .from('public_registrations')
+            .select('id, status')
+            .eq('event_id', eventId)
+            .eq('registration_scope_key', 'primary')
+            .ilike('email', email as string)
+            .maybeSingle();
 
-        // Existing registration found
-        if (duplicatePolicy === 'block') {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'You have already registered for this event',
-              error_code: 'DUPLICATE_REGISTRATION',
-            } as SubmitPublicRegistrationError),
-            {
-              status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
-        }
+          if (regCheckError) {
+            console.error('Registration conflict recovery check error:', regCheckError);
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'REGISTRATION_CHECK_FAILED',
+              } as SubmitPublicRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
 
-        // duplicatePolicy === 'allow_update'
-        registrationId = existingReg.id;
-        status = 'updated';
-        isNew = false;
+          if (!existingReg) {
+            if (duplicatePolicy === 'allow_multiple_update') {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'A registration with the same unique field values already exists.',
+                  error_code: 'duplicate_compound_key',
+                } as SubmitPublicRegistrationError),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+
+            console.error('Unique constraint violation but no existing registration found');
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'DUPLICATE_REGISTRATION',
+              } as SubmitPublicRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          // Existing registration found
+          if (duplicatePolicy === 'block') {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'You have already registered for this event',
+                error_code: 'DUPLICATE_REGISTRATION',
+              } as SubmitPublicRegistrationError),
+              {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          // duplicatePolicy === 'allow_update'
+          registrationId = existingReg.id;
+          status = 'updated';
+          isNew = false;
+        }
       }
     } else if (createError) {
       console.error('Registration insert error:', createError);

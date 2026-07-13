@@ -152,7 +152,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (eventData.duplicate_policy === 'allow_multiple') {
+    if (
+      eventData.duplicate_policy === 'allow_multiple' ||
+      eventData.duplicate_policy === 'allow_multiple_update'
+    ) {
       return new Response(JSON.stringify({ success: true } as PublicRegistrationCheckSuccess), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -160,13 +163,19 @@ Deno.serve(async (req) => {
     }
 
     // Step 2: Check for existing registration for this event + email
-    const { data: regData, error: regError } = await supabase
+    let registrationQuery = supabase
       .from('public_registrations')
       .select('id, status, submitted_at')
       .eq('event_id', eventData.id)
-      .eq('registration_scope_key', 'primary')
       .ilike('email', email)
-      .maybeSingle();
+      .order('submitted_at', { ascending: false })
+      .limit(1);
+
+    if (eventData.duplicate_policy !== 'block') {
+      registrationQuery = registrationQuery.eq('registration_scope_key', 'primary');
+    }
+
+    const { data: regData, error: regError } = await registrationQuery.maybeSingle();
 
     if (regError) {
       console.error('Registration lookup error:', regError);

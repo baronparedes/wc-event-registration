@@ -93,7 +93,9 @@ const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
   'registrations_event_idempotency_unique_idx';
 
 function resolveRegistrationScopeKey(duplicatePolicy: string, idempotencyKey: string): string {
-  return duplicatePolicy === 'allow_multiple' ? idempotencyKey : 'primary';
+  return duplicatePolicy === 'allow_multiple' || duplicatePolicy === 'allow_multiple_update'
+    ? idempotencyKey
+    : 'primary';
 }
 
 function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
@@ -327,6 +329,46 @@ Deno.serve(async (req) => {
     const registrationScopeKey =
       compoundScopeResult.scopeKey ?? resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
 
+    if (duplicatePolicy === 'block') {
+      const { data: existingForBlock, error: existingForBlockError } = await supabase
+        .from('registrations')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingForBlockError) {
+        console.error('Block policy precheck error:', existingForBlockError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to process registration',
+            error_code: 'REGISTRATION_CHECK_FAILED',
+          } as SubmitRegistrationError),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      if (existingForBlock?.id) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Already registered for this event',
+            error_code: 'duplicate_blocked',
+          } as SubmitRegistrationError),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+    }
+
     // Step 3: Insert registration first, then recover from unique conflicts.
     let registrationId: string | null = null;
     let status: 'submitted' | 'updated' = 'submitted';
@@ -387,17 +429,90 @@ Deno.serve(async (req) => {
 
       if (!registrationId) {
         if (hasCompoundScope) {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'A registration with the same unique field values already exists.',
-              error_code: 'duplicate_compound_key',
-            } as SubmitRegistrationError),
-            {
-              status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
+          if (duplicatePolicy === 'allow_multiple_update') {
+            const { data: existingByScope, error: scopeLookupError } = await supabase
+              .from('registrations')
+              .select('id, status')
+              .eq('event_id', eventId)
+              .eq('user_id', userId)
+              .eq('registration_scope_key', registrationScopeKey)
+              .maybeSingle();
+
+            if (scopeLookupError) {
+              console.error('Compound-scope conflict recovery check error:', scopeLookupError);
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'Failed to process registration',
+                  error_code: 'REGISTRATION_CHECK_FAILED',
+                } as SubmitRegistrationError),
+                {
+                  status: 500,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+
+            if (!existingByScope) {
+              console.error(
+                'Compound-scope conflict recovery failed: row missing after unique conflict',
+                {
+                  eventId,
+                  userId,
+                  registrationScopeKey,
+                },
+              );
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'A registration with the same unique field values already exists.',
+                  error_code: 'duplicate_compound_key',
+                } as SubmitRegistrationError),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+
+            registrationId = existingByScope.id;
+            status = 'updated';
+            isNew = false;
+
+            const { error: updateError } = await supabase
+              .from('registrations')
+              .update({ status: 'updated', submitted_at: new Date().toISOString() })
+              .eq('id', registrationId);
+
+            if (updateError) {
+              console.error('Registration update error:', updateError);
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'Failed to process registration',
+                  error_code: 'REGISTRATION_UPDATE_FAILED',
+                } as SubmitRegistrationError),
+                {
+                  status: 500,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+          }
+
+          if (!registrationId) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'A registration with the same unique field values already exists.',
+                error_code: 'duplicate_compound_key',
+              } as SubmitRegistrationError),
+              {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
         }
 
         if (duplicatePolicy === 'allow_multiple') {
@@ -419,87 +534,166 @@ Deno.serve(async (req) => {
           );
         }
 
-        const { data: existingReg, error: regCheckError } = await supabase
-          .from('registrations')
-          .select('id, status')
-          .eq('event_id', eventId)
-          .eq('user_id', userId)
-          .eq('registration_scope_key', 'primary')
-          .maybeSingle();
+        if (duplicatePolicy === 'allow_multiple_update') {
+          const { data: existingByScopeForUpdate, error: scopeRecoveryError } = await supabase
+            .from('registrations')
+            .select('id, status')
+            .eq('event_id', eventId)
+            .eq('user_id', userId)
+            .eq('registration_scope_key', registrationScopeKey)
+            .maybeSingle();
 
-        if (regCheckError) {
-          console.error('Registration conflict recovery check error:', regCheckError);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to process registration',
-              error_code: 'REGISTRATION_CHECK_FAILED',
-            } as SubmitRegistrationError),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
+          if (scopeRecoveryError) {
+            console.error('Allow-multiple-update scope recovery check error:', scopeRecoveryError);
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'REGISTRATION_CHECK_FAILED',
+              } as SubmitRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          if (existingByScopeForUpdate?.id) {
+            registrationId = existingByScopeForUpdate.id;
+            status = 'updated';
+            isNew = false;
+
+            const { error: updateError } = await supabase
+              .from('registrations')
+              .update({ status: 'updated', submitted_at: new Date().toISOString() })
+              .eq('id', registrationId);
+
+            if (updateError) {
+              console.error('Registration update error:', updateError);
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'Failed to process registration',
+                  error_code: 'REGISTRATION_UPDATE_FAILED',
+                } as SubmitRegistrationError),
+                {
+                  status: 500,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
+          } else {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'A registration with the same unique field values already exists.',
+                error_code: 'duplicate_compound_key',
+              } as SubmitRegistrationError),
+              {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
         }
 
-        if (!existingReg) {
-          console.error(
-            'Registration conflict recovery failed: row missing after unique conflict',
-            {
-              eventId,
-              userId,
-              idempotencyKey: idempotency_key,
-            },
-          );
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to process registration',
-              error_code: 'REGISTRATION_CONFLICT_RECOVERY_FAILED',
-            } as SubmitRegistrationError),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
-        }
+        if (!registrationId) {
+          const { data: existingReg, error: regCheckError } = await supabase
+            .from('registrations')
+            .select('id, status')
+            .eq('event_id', eventId)
+            .eq('user_id', userId)
+            .eq('registration_scope_key', 'primary')
+            .maybeSingle();
 
-        if (duplicatePolicy === 'block') {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Already registered for this event',
-              error_code: 'duplicate_blocked',
-            } as SubmitRegistrationError),
-            {
-              status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
-        }
+          if (regCheckError) {
+            console.error('Registration conflict recovery check error:', regCheckError);
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'REGISTRATION_CHECK_FAILED',
+              } as SubmitRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
 
-        registrationId = existingReg.id;
-        status = 'updated';
-        isNew = false;
+          if (!existingReg) {
+            if (duplicatePolicy === 'allow_multiple_update') {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: 'A registration with the same unique field values already exists.',
+                  error_code: 'duplicate_compound_key',
+                } as SubmitRegistrationError),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                },
+              );
+            }
 
-        const { error: updateError } = await supabase
-          .from('registrations')
-          .update({ status: 'updated', submitted_at: new Date().toISOString() })
-          .eq('id', registrationId);
+            console.error(
+              'Registration conflict recovery failed: row missing after unique conflict',
+              {
+                eventId,
+                userId,
+                idempotencyKey: idempotency_key,
+              },
+            );
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'REGISTRATION_CONFLICT_RECOVERY_FAILED',
+              } as SubmitRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
 
-        if (updateError) {
-          console.error('Registration update error:', updateError);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to process registration',
-              error_code: 'REGISTRATION_UPDATE_FAILED',
-            } as SubmitRegistrationError),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
+          if (duplicatePolicy === 'block') {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Already registered for this event',
+                error_code: 'duplicate_blocked',
+              } as SubmitRegistrationError),
+              {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          registrationId = existingReg.id;
+          status = 'updated';
+          isNew = false;
+
+          const { error: updateError } = await supabase
+            .from('registrations')
+            .update({ status: 'updated', submitted_at: new Date().toISOString() })
+            .eq('id', registrationId);
+
+          if (updateError) {
+            console.error('Registration update error:', updateError);
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Failed to process registration',
+                error_code: 'REGISTRATION_UPDATE_FAILED',
+              } as SubmitRegistrationError),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
         }
       }
     } else {

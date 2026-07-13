@@ -67,6 +67,15 @@ describe('events schemas', () => {
     expect(parsed.duplicate_policy).toBe('allow_multiple');
   });
 
+  it('accepts allow_multiple_update as a duplicate policy', () => {
+    const parsed = createEventSchema.parse({
+      ...validEventInput,
+      duplicate_policy: 'allow_multiple_update',
+    });
+
+    expect(parsed.duplicate_policy).toBe('allow_multiple_update');
+  });
+
   it('requires publish schema fields needed for publish', () => {
     const parsed = publishEventSchema.safeParse({
       title: 'Publish Ready Event',

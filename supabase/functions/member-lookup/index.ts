@@ -267,17 +267,24 @@ async function getExistingRegistrationState(
   userId: string,
   duplicatePolicy: string,
 ): Promise<ExistingRegistrationLookupResult> {
-  if (duplicatePolicy === 'allow_multiple') {
+  if (duplicatePolicy === 'allow_multiple' || duplicatePolicy === 'allow_multiple_update') {
     return { data: null, error: null };
   }
 
-  const { data: existingRegistration, error: registrationError } = await supabase
+  let registrationQuery = supabase
     .from('registrations')
     .select('id, status')
     .eq('event_id', eventId)
     .eq('user_id', userId)
-    .eq('registration_scope_key', 'primary')
-    .maybeSingle();
+    .order('submitted_at', { ascending: false })
+    .limit(1);
+
+  if (duplicatePolicy !== 'block') {
+    registrationQuery = registrationQuery.eq('registration_scope_key', 'primary');
+  }
+
+  const { data: existingRegistration, error: registrationError } =
+    await registrationQuery.maybeSingle();
 
   if (registrationError) {
     return { data: null, error: `registration_lookup:${registrationError.message}` };

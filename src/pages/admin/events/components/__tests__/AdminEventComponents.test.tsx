@@ -97,6 +97,9 @@ describe('admin event mini-components', () => {
     rerender(<DuplicatePolicyLabel policy="allow_multiple" />);
     expect(screen.getByText('Allow Multiple Registrations')).toBeInTheDocument();
 
+    rerender(<DuplicatePolicyLabel policy="allow_multiple_update" />);
+    expect(screen.getByText('Allow Multiple + Unique-Key Updates')).toBeInTheDocument();
+
     rerender(<DuplicatePolicyLabel policy="block" />);
     expect(screen.getByText('Block')).toBeInTheDocument();
   });

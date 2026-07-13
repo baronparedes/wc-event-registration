@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { VALIDATION_PATTERNS } from '@/config/constants';
 
 const slugRegex = VALIDATION_PATTERNS.eventSlug;
-const duplicatePolicySchema = z.enum(['block', 'allow_update', 'allow_multiple']);
+const duplicatePolicySchema = z.enum([
+  'block',
+  'allow_update',
+  'allow_multiple',
+  'allow_multiple_update',
+]);
 
 function applyDateRangeChecks(
   data: {

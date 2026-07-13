@@ -41,7 +41,9 @@ describe('MemberLookupErrorAlert', () => {
     render(<MemberLookupErrorAlert message="Invalid member ID" onDismiss={onDismiss} />);
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByText('Please check your entry')).toBeInTheDocument();
+    expect(
+      screen.getByText('Please check your entry, ensure you enter your registered name.'),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss member lookup warning' }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
