@@ -92,12 +92,14 @@ export async function callSubmitRegistrationFunction(
   token?: string,
 ) {
   const { supabaseUrl, anonKey } = getSupabaseConfig();
+  const requestOrigin = process.env.TEST_REQUEST_ORIGIN || 'http://127.0.0.1:54321';
 
   const response = await fetch(`${supabaseUrl}/functions/v1/submit-registration`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token || anonKey}`,
+      Origin: requestOrigin,
     },
     body: JSON.stringify(payload),
   });

@@ -25,6 +25,7 @@ export function EventRegistrationSettingsSection({
             options={[
               { value: 'block', label: 'Block (prevent re-registration)' },
               { value: 'allow_update', label: 'Allow Update (overwrite responses)' },
+              { value: 'allow_multiple', label: 'Allow Multiple Registrations' },
             ]}
             registration={register('duplicate_policy')}
             required

@@ -11,6 +11,7 @@ Feature: Register for Event with Dynamic Fields
     - Duplicate policy determines if existing registrations can be updated:
       - Block: New submission rejected if registration exists; user sees error
       - Allow Update: New submission overwrites previous responses; shows "Updated" status
+      - Allow Multiple Registrations: New submission creates another independent registration; status remains "Submitted"
     - Each submission is tracked: new registrations show "Submitted", updates show "Updated"
     - Submission includes generated idempotency key to prevent accidental duplicate submissions
     - User cannot register until all required fields are completed
@@ -66,6 +67,16 @@ Feature: Register for Event with Dynamic Fields
     Then I see an error message: "You have already registered for this event. Registration updates are not allowed."
     And my registration is not changed
     And I cannot proceed with a new submission
+
+  Scenario: Submit another registration when duplicate policy allows multiple
+    Given I previously registered for this event
+    And the event's duplicate policy is set to allow multiple registrations
+    When I look up my member ID again
+    And I submit a new set of field responses
+    Then a new registration record is created
+    And I see a success message for submission
+    And my new registration status shows "Submitted"
+    And my prior registration record remains unchanged
 
   Scenario: Submit with optional fields left blank
     Given I'm on the registration form

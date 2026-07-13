@@ -82,6 +82,10 @@ const REGISTRATION_EVENT_EMAIL_UNIQUE_CONSTRAINT = 'public_registrations_event_e
 const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
   'public_registrations_event_idempotency_unique_idx';
 
+function resolveRegistrationScopeKey(duplicatePolicy: string, idempotencyKey: string): string {
+  return duplicatePolicy === 'allow_multiple' ? idempotencyKey : 'primary';
+}
+
 /**
  * Validates a single field value against its schema and validation rules.
  * (Reuses logic from submit-registration)
@@ -242,6 +246,7 @@ Deno.serve(async (req) => {
 
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
+    const registrationScopeKey = resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
     let registrationId: string | null = null;
     let status: 'submitted' | 'updated' = 'submitted';
     let isNew = true;
@@ -379,6 +384,7 @@ Deno.serve(async (req) => {
       .from('public_registrations')
       .insert({
         event_id: eventId,
+        registration_scope_key: registrationScopeKey,
         first_name: (first_name as string).trim(),
         last_name: (last_name as string).trim(),
         nickname: typeof nickname === 'string' ? (nickname as string).trim() : null,
@@ -433,10 +439,30 @@ Deno.serve(async (req) => {
       }
 
       if (!registrationId) {
+        if (duplicatePolicy === 'allow_multiple') {
+          console.error('Allow-multiple public registration conflict without idempotency match', {
+            eventId,
+            email,
+            idempotencyKey: idempotency_key,
+          });
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_CONFLICT_RECOVERY_FAILED',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
         const { data: existingReg, error: regCheckError } = await supabase
           .from('public_registrations')
           .select('id, status')
           .eq('event_id', eventId)
+          .eq('registration_scope_key', 'primary')
           .ilike('email', email as string)
           .maybeSingle();
 

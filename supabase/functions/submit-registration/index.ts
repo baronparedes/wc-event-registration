@@ -81,6 +81,10 @@ const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_uniq
 const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
   'registrations_event_idempotency_unique_idx';
 
+function resolveRegistrationScopeKey(duplicatePolicy: string, idempotencyKey: string): string {
+  return duplicatePolicy === 'allow_multiple' ? idempotencyKey : 'primary';
+}
+
 function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
   if (!error || error.code !== POSTGRES_ERROR_CODES.uniqueViolation) {
     return false;
@@ -256,6 +260,7 @@ Deno.serve(async (req) => {
     const memberRole = extractMemberRole(userData.role);
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
+    const registrationScopeKey = resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
 
     // Step 3: Insert registration first, then recover from unique conflicts.
     let registrationId: string | null = null;
@@ -268,6 +273,7 @@ Deno.serve(async (req) => {
       .insert({
         event_id: eventId,
         user_id: userId,
+        registration_scope_key: registrationScopeKey,
         idempotency_key: idempotency_key,
         status: 'submitted',
         source: 'public',
@@ -315,11 +321,31 @@ Deno.serve(async (req) => {
       }
 
       if (!registrationId) {
+        if (duplicatePolicy === 'allow_multiple') {
+          console.error('Allow-multiple registration conflict without idempotency match', {
+            eventId,
+            userId,
+            idempotencyKey: idempotency_key,
+          });
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to process registration',
+              error_code: 'REGISTRATION_CONFLICT_RECOVERY_FAILED',
+            } as SubmitRegistrationError),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
         const { data: existingReg, error: regCheckError } = await supabase
           .from('registrations')
           .select('id, status')
           .eq('event_id', eventId)
           .eq('user_id', userId)
+          .eq('registration_scope_key', 'primary')
           .maybeSingle();
 
         if (regCheckError) {

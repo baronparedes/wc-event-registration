@@ -7,7 +7,8 @@ Feature: Public Self-Registration (Email-Based)
     - Public self-registration is a separate flow from member ID registration
     - The flow is step-based: Step 1 (Attendee Info) -> Step 2 (Event Fields) -> Step 3 (Confirmation)
     - Duplicate checks are performed on Step 1 using the attendee email and event context
-    - If the email already has a registration for the event, the duplicate message is shown inline on the Email input
+    - If duplicate policy is Block or Allow Update and the email already has a registration for the event, the duplicate message is shown inline on the Email input
+    - If duplicate policy is Allow Multiple Registrations, duplicate email does not block Step 1
     - Event-specific fields and validation rules still apply on Step 2
     - On Step 3, kiosk timeout is 30 seconds
     - When Step 3 timeout expires, the user is redirected to member registration for the same event
@@ -24,10 +25,19 @@ Feature: Public Self-Registration (Email-Based)
   Scenario: Duplicate email is blocked in Step 1
     Given I am on Step 1 of public registration
     And the email I entered is already registered for this event
+    And the event duplicate policy is Block or Allow Update
     When I click Continue
     Then I remain on Step 1
     And I see the duplicate message on the Email input
     And I do not proceed to Step 2
+
+  Scenario: Duplicate email can continue when allow-multiple is enabled
+    Given I am on Step 1 of public registration
+    And the email I entered is already registered for this event
+    And the event duplicate policy is Allow Multiple Registrations
+    When I click Continue
+    Then I proceed to Step 2
+    And I can submit another independent registration for the same email
 
   Scenario: Non-duplicate email can proceed to Step 2
     Given I am on Step 1 of public registration

@@ -1,7 +1,7 @@
 import type { EventFieldType } from '@/lib/domain/event-fields';
 
 export type EventStatus = 'draft' | 'published' | 'archived';
-export type DuplicatePolicy = 'block' | 'allow_update';
+export type DuplicatePolicy = 'block' | 'allow_update' | 'allow_multiple';
 export type RegistrationMode = 'open' | 'closed';
 
 export type AdminEvent = {

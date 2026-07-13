@@ -26,11 +26,19 @@ Feature: Member Lookup by ID or Name
 
   Scenario: Existing member with previous registration for this event
     Given I have already registered for this event
-    And the event allows duplicate registrations (updates)
+    And the event's duplicate policy is set to Allow Update
     When I look up my member ID
     Then I see my profile
     And I see a message: "You have a previous registration for this event. You can update your responses."
     And I can proceed to update my registration
+
+  Scenario: Existing member with previous registration when allow-multiple is enabled
+    Given I have already registered for this event
+    And the event's duplicate policy is set to Allow Multiple Registrations
+    When I look up my member ID
+    Then I see my profile
+    And I can proceed with a new registration submission
+    And I am not forced into update mode for prior responses
 
   Scenario: Member not found in system
     Given I enter a member ID that does not exist in the system

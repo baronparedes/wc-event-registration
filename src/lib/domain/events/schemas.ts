@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { VALIDATION_PATTERNS } from '@/config/constants';
 
 const slugRegex = VALIDATION_PATTERNS.eventSlug;
+const duplicatePolicySchema = z.enum(['block', 'allow_update', 'allow_multiple']);
 
 function applyDateRangeChecks(
   data: {
@@ -48,7 +49,7 @@ export const createEventSchema = z
     registration_opens_at: z.string().optional(),
     registration_closes_at: z.string().optional(),
     status: z.enum(['draft', 'published', 'archived']),
-    duplicate_policy: z.enum(['block', 'allow_update']),
+    duplicate_policy: duplicatePolicySchema,
     registration_mode: z.enum(['open', 'closed']),
     allow_name_lookup: z.boolean().optional(),
     allow_public_registrations: z.boolean().optional(),
@@ -67,7 +68,7 @@ export const updateEventSchema = z
     registration_opens_at: z.string().optional(),
     registration_closes_at: z.string().optional(),
     status: z.enum(['draft', 'published', 'archived']),
-    duplicate_policy: z.enum(['block', 'allow_update']),
+    duplicate_policy: duplicatePolicySchema,
     registration_mode: z.enum(['open', 'closed']),
     allow_name_lookup: z.boolean().optional(),
     allow_public_registrations: z.boolean().optional(),
@@ -99,7 +100,7 @@ export const publishEventSchema = z
       .string()
       .min(1, 'Registration close date and time are required to publish'),
     status: z.enum(['draft', 'published', 'archived']),
-    duplicate_policy: z.enum(['block', 'allow_update']),
+    duplicate_policy: duplicatePolicySchema,
     registration_mode: z.enum(['open', 'closed']),
   })
   .superRefine(applyDateRangeChecks);

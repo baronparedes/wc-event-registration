@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
     // Step 1: Look up event by slug
     const { data: eventData, error: eventError } = await supabase
       .from('events')
-      .select('id')
+      .select('id, duplicate_policy')
       .eq('slug', event_slug)
       .maybeSingle();
 
@@ -152,11 +152,19 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (eventData.duplicate_policy === 'allow_multiple') {
+      return new Response(JSON.stringify({ success: true } as PublicRegistrationCheckSuccess), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Step 2: Check for existing registration for this event + email
     const { data: regData, error: regError } = await supabase
       .from('public_registrations')
       .select('id, status, submitted_at')
       .eq('event_id', eventData.id)
+      .eq('registration_scope_key', 'primary')
       .ilike('email', email)
       .maybeSingle();
 

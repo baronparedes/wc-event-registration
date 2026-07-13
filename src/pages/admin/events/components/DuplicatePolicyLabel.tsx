@@ -9,9 +9,12 @@ type DuplicatePolicyLabelProps = {
  * Shows "Allow Update" or "Block" based on the policy setting.
  */
 export function DuplicatePolicyLabel({ policy }: DuplicatePolicyLabelProps) {
-  return (
-    <span className="text-sm text-text">
-      {policy === 'allow_update' ? 'Allow Update' : 'Block'}
-    </span>
-  );
+  const label =
+    policy === 'allow_update'
+      ? 'Allow Update'
+      : policy === 'allow_multiple'
+        ? 'Allow Multiple Registrations'
+        : 'Block';
+
+  return <span className="text-sm text-text">{label}</span>;
 }

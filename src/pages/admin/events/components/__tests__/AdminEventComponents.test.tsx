@@ -90,9 +90,12 @@ vi.mock('@/lib/domain/events', () => ({
 const event = { id: 'evt-1', title: 'Sample Event' } as unknown as AdminEvent;
 
 describe('admin event mini-components', () => {
-  it('renders duplicate policy label text for both policies', () => {
+  it('renders duplicate policy label text for all policies', () => {
     const { rerender } = render(<DuplicatePolicyLabel policy="allow_update" />);
     expect(screen.getByText('Allow Update')).toBeInTheDocument();
+
+    rerender(<DuplicatePolicyLabel policy="allow_multiple" />);
+    expect(screen.getByText('Allow Multiple Registrations')).toBeInTheDocument();
 
     rerender(<DuplicatePolicyLabel policy="block" />);
     expect(screen.getByText('Block')).toBeInTheDocument();

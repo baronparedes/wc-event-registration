@@ -18,15 +18,19 @@ const describeIntegration = hasIntegrationEnv ? describe : describe.skip;
 describeIntegration('Edge Function: submit-registration', () => {
   const BLOCK_POLICY_EVENT = 'sample-event';
   const ALLOW_UPDATE_POLICY_EVENT = 'future-event';
+  const ALLOW_MULTIPLE_POLICY_EVENT = 'multi-event';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let sampleEventData: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let futureEventData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let multiEventData: any;
 
   beforeAll(async () => {
     // Verify test events exist
     sampleEventData = await getTestEvent(BLOCK_POLICY_EVENT);
     futureEventData = await getTestEvent(ALLOW_UPDATE_POLICY_EVENT);
+    multiEventData = await getTestEvent(ALLOW_MULTIPLE_POLICY_EVENT);
 
     if (!sampleEventData) {
       throw new Error(
@@ -36,6 +40,11 @@ describeIntegration('Edge Function: submit-registration', () => {
     if (!futureEventData) {
       throw new Error(
         `Test event '${ALLOW_UPDATE_POLICY_EVENT}' not found. Did you run 'npm run supabase:db:reset'?`,
+      );
+    }
+    if (!multiEventData) {
+      throw new Error(
+        `Test event '${ALLOW_MULTIPLE_POLICY_EVENT}' not found. Did you run 'npm run supabase:db:reset'?`,
       );
     }
   });
@@ -195,6 +204,55 @@ describeIntegration('Edge Function: submit-registration', () => {
     expect(teamNameAnswer?.answer_text).toBe('Updated Team');
 
     await cleanupTestRegistrations(ALLOW_UPDATE_POLICY_EVENT, memberId);
+  });
+
+  it('should create separate registrations on allow-multiple event', async () => {
+    const memberId = generateTestMemberId();
+    await seedTestMember(memberId);
+
+    const countBefore = await getEventRegistrationCount(ALLOW_MULTIPLE_POLICY_EVENT);
+
+    const firstResult = await callSubmitRegistrationFunction({
+      event_slug: ALLOW_MULTIPLE_POLICY_EVENT,
+      member_id: memberId,
+      responses: {},
+      idempotency_key: randomUUID(),
+    });
+
+    const secondResult = await callSubmitRegistrationFunction({
+      event_slug: ALLOW_MULTIPLE_POLICY_EVENT,
+      member_id: memberId,
+      responses: {},
+      idempotency_key: randomUUID(),
+    });
+
+    expect(firstResult.success).toBe(true);
+    expect(firstResult.is_new).toBe(true);
+    expect(firstResult.status).toBe('submitted');
+
+    expect(secondResult.success).toBe(true);
+    expect(secondResult.is_new).toBe(true);
+    expect(secondResult.status).toBe('submitted');
+    expect(firstResult.registration_id).not.toBe(secondResult.registration_id);
+
+    const countAfter = await getEventRegistrationCount(ALLOW_MULTIPLE_POLICY_EVENT);
+    expect(countAfter).toBe(countBefore + 2);
+
+    const client = createTestAdminClient();
+    const { data: registrations, error } = await client
+      .from('registrations')
+      .select('id, status, registration_scope_key')
+      .eq('event_id', multiEventData.id)
+      .in('id', [firstResult.registration_id, secondResult.registration_id]);
+
+    expect(error).toBeNull();
+    expect(registrations).toHaveLength(2);
+    expect(registrations?.every((registration) => registration.status === 'submitted')).toBe(true);
+    expect(
+      new Set(registrations?.map((registration) => registration.registration_scope_key)).size,
+    ).toBe(2);
+
+    await cleanupTestRegistrations(ALLOW_MULTIPLE_POLICY_EVENT, memberId);
   });
 
   // ============================================================================

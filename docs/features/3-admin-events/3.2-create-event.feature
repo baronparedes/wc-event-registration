@@ -11,6 +11,7 @@ Feature: Create Event
     - Admin must specify duplicate policy at creation (immutable after creation):
       - Block: Prevent duplicate registrations; show error if member tries to register twice
       - Allow Update: Permit re-registration; member can update previous responses
+      - Allow Multiple Registrations: Permit multiple independent registrations for the same person/email
     - Registration mode can be set: open (accepting registrations) or closed (not accepting)
     - Event creation immediately saves to database; no additional publish step needed for save
     - Slug is auto-generated from title but can be customized; slug must be unique
@@ -59,9 +60,10 @@ Feature: Create Event
   Scenario: Set duplicate policy at creation (immutable)
     Given I'm creating an event
     When I view the duplicate policy options
-    Then I see two choices:
+    Then I see three choices:
       - "Block duplicate registrations" (members cannot register twice)
       - "Allow members to update registrations" (members can re-register to update responses)
+      - "Allow multiple registrations" (members can submit additional independent registrations)
     And I must select one before creation
     And after creation, this policy cannot be changed (decision is permanent)
 
