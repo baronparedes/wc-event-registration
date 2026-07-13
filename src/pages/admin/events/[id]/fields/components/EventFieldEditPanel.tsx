@@ -119,6 +119,9 @@ export function EventFieldEditPanel({
           publishedCapacityRules.max_slots_role_allotments =
             validationRules.max_slots_role_allotments;
         }
+        if (validationRules.unique_key_component !== undefined) {
+          publishedCapacityRules.unique_key_component = validationRules.unique_key_component;
+        }
 
         const updatePayload = isPublished
           ? // Published: cosmetic fields + option capacity
@@ -249,6 +252,7 @@ export function EventFieldEditPanel({
               showMultiSelectValidation={showMultiSelectValidation}
               showDateValidation={showDateValidation}
               register={register}
+              uniqueKeyComponentError={errors.val_unique_key_component?.message}
             />
           )}
 

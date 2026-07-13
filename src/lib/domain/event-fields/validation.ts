@@ -308,6 +308,11 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
     }
   }
 
+  const uniqueKeyComponent = field.validation_rules.unique_key_component;
+  if (uniqueKeyComponent === true) {
+    rules.unique_key_component = true;
+  }
+
   return rules;
 }
 

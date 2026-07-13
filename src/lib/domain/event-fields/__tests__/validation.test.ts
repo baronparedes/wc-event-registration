@@ -287,4 +287,19 @@ describe('validatePublicEventFieldConfig', () => {
     expect(result.issues).toEqual([]);
     expect(result.validFields[0]?.validation_rules.allowed_weekdays).toEqual([0, 2, 4]);
   });
+
+  it('preserves unique key component validation flag', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'request_date',
+        field_type: 'date',
+        validation_rules: {
+          unique_key_component: true,
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.unique_key_component).toBe(true);
+  });
 });

@@ -146,6 +146,7 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   val_min_date: '',
   val_max_date: '',
   val_allowed_weekdays: [],
+  val_unique_key_component: false,
 };
 
 function toWeekdayString(value: number): WeekdayString | null {
@@ -198,6 +199,7 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
           .map((weekday) => toWeekdayString(weekday))
           .filter((weekday): weekday is WeekdayString => weekday !== null)
       : [],
+    val_unique_key_component: rules.unique_key_component === true,
   };
 }
 
@@ -217,6 +219,9 @@ export function toValidationRules(values: EventFieldFormValues): Record<string, 
   }
   if (values.val_min_date !== '') rules.min_date = values.val_min_date;
   if (values.val_max_date !== '') rules.max_date = values.val_max_date;
+  if (values.val_unique_key_component) {
+    rules.unique_key_component = true;
+  }
 
   const selectedWeekdays = values.val_allowed_weekdays ?? [];
   if (selectedWeekdays.length > 0) {

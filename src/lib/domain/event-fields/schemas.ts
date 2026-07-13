@@ -129,8 +129,17 @@ export const eventFieldFormSchema = z
     val_min_date: z.string(),
     val_max_date: z.string(),
     val_allowed_weekdays: z.array(z.enum(['0', '1', '2', '3', '4', '5', '6'])).optional(),
+    val_unique_key_component: z.boolean().default(false),
   })
   .superRefine((values, context) => {
+    if (values.val_unique_key_component && !values.is_required) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Fields used in duplicate matching must be required.',
+        path: ['val_unique_key_component'],
+      });
+    }
+
     const hasOptionCapacity =
       values.field_type === 'select' ||
       values.field_type === 'radio' ||
@@ -183,7 +192,7 @@ export const eventFieldFormSchema = z
     });
   });
 
-export type EventFieldFormValues = z.infer<typeof eventFieldFormSchema>;
+export type EventFieldFormValues = z.input<typeof eventFieldFormSchema>;
 
 function coerceOptionalString(value: unknown): unknown {
   if (typeof value !== 'string') {

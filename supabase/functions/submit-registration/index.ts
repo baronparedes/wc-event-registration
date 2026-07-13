@@ -8,6 +8,7 @@ import {
   isOriginAllowed,
   readAllowedOrigins,
 } from '@/shared/security.ts';
+import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
 import {
   EventFieldWithValidation,
   FieldValidationError,
@@ -71,6 +72,16 @@ interface UserRoleRow {
 interface UserLookupRow {
   id: string;
   role: string;
+}
+
+interface EventFieldRow {
+  id: string;
+  field_key: string;
+  label: string;
+  field_type: string;
+  is_required: boolean;
+  options: unknown;
+  validation_rules: unknown;
 }
 
 function extractMemberRole(role: string | null): string | null {
@@ -260,7 +271,61 @@ Deno.serve(async (req) => {
     const memberRole = extractMemberRole(userData.role);
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
-    const registrationScopeKey = resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
+
+    const { data: eventFieldsData, error: fieldsError } = await supabase
+      .from('event_fields')
+      .select('id, field_key, label, field_type, is_required, options, validation_rules')
+      .eq('event_id', eventId)
+      .eq('is_active', true);
+
+    if (fieldsError) {
+      console.error('Fields lookup error:', fieldsError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to process registration',
+          error_code: 'FIELDS_LOOKUP_FAILED',
+        } as SubmitRegistrationError),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    const eventFields: EventFieldWithValidation[] = (eventFieldsData || []).map(
+      (field: EventFieldRow) => ({
+        id: field.id,
+        field_key: field.field_key,
+        label: field.label,
+        field_type: field.field_type,
+        is_required: field.is_required,
+        options: Array.isArray(field.options) ? field.options : [],
+        validation_rules: field.validation_rules || {},
+      }),
+    );
+
+    const uniquenessFields = selectUniquenessComponentFields(eventFieldsData || []);
+
+    const compoundScopeResult = resolveCompoundScopeKey(responses, uniquenessFields);
+    if (compoundScopeResult.errors.length > 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          error_code: 'VALIDATION_FAILED',
+          errors: compoundScopeResult.errors,
+        } as SubmitRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    const hasCompoundScope = Boolean(compoundScopeResult.scopeKey);
+    const registrationScopeKey =
+      compoundScopeResult.scopeKey ?? resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
 
     // Step 3: Insert registration first, then recover from unique conflicts.
     let registrationId: string | null = null;
@@ -321,6 +386,20 @@ Deno.serve(async (req) => {
       }
 
       if (!registrationId) {
+        if (hasCompoundScope) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'A registration with the same unique field values already exists.',
+              error_code: 'duplicate_compound_key',
+            } as SubmitRegistrationError),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
         if (duplicatePolicy === 'allow_multiple') {
           console.error('Allow-multiple registration conflict without idempotency match', {
             eventId,
@@ -471,32 +550,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 4: Get event fields with validation rules
-    const { data: eventFields, error: fieldsError } = await supabase
-      .from('event_fields')
-      .select('id, field_key, label, field_type, is_required, options, validation_rules')
-      .eq('event_id', eventId)
-      .eq('is_active', true);
-
-    if (fieldsError) {
-      console.error('Fields lookup error:', fieldsError);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Failed to process registration',
-          error_code: 'FIELDS_LOOKUP_FAILED',
-        } as SubmitRegistrationError),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    // Step 5: Validate all response values against field schemas
-    const fieldMap = new Map(
-      (eventFields || []).map((f) => [f.field_key, f as EventFieldWithValidation]),
-    );
+    // Step 4: Validate all response values against field schemas
+    const fieldMap = new Map(eventFields.map((f) => [f.field_key, f as EventFieldWithValidation]));
     const validationErrors: FieldValidationError[] = [];
 
     for (const [fieldKey, value] of Object.entries(responses)) {
@@ -719,7 +774,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 6: Delete existing answers if updating (clean slate)
+    // Step 5: Delete existing answers if updating (clean slate)
     if (!isNew) {
       const { error: deleteAnswersError } = await supabase
         .from('registration_answers')
@@ -732,8 +787,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 7: Insert registration answers
-    const fieldIdMap = new Map((eventFields || []).map((f) => [f.field_key, f.id]));
+    // Step 6: Insert registration answers
+    const fieldIdMap = new Map(eventFields.map((f) => [f.field_key, f.id]));
     const answersToInsert = Object.entries(responses)
       .map(([fieldKey, answer]) => {
         const fieldId = fieldIdMap.get(fieldKey);

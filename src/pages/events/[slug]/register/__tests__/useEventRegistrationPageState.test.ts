@@ -216,6 +216,52 @@ describe('useEventRegistrationPageState', () => {
     expect(result.current.activeWizardStep).toBe(3);
   });
 
+  it('builds remaining slots by role map and falls back to empty object when role allotments are missing', () => {
+    mockUseEventSlotAvailabilityQuery.mockReturnValue({
+      data: {
+        success: true,
+        event_id: 'event-1',
+        fields: [
+          {
+            field_id: 'field-1',
+            field_key: 'service_slot',
+            field_label: 'Service Slot',
+            options: [
+              {
+                value: 'morning',
+                label: 'Morning',
+                allotted_slots: 10,
+                used_slots: 2,
+                remaining_slots: 8,
+                remaining_slots_by_role: {
+                  volunteer: 5,
+                },
+              },
+              {
+                value: 'afternoon',
+                label: 'Afternoon',
+                allotted_slots: 10,
+                used_slots: 3,
+                remaining_slots: 7,
+              },
+            ],
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    expect(result.current.remainingSlotsByRoleByFieldOption).toEqual({
+      service_slot: {
+        morning: { volunteer: 5 },
+        afternoon: {},
+      },
+    });
+  });
+
   it('moves to blocked confirm step on already registered lookup failure', async () => {
     memberLookupState.handleLookupSubmit.mockResolvedValue({
       success: false,
@@ -417,6 +463,60 @@ describe('useEventRegistrationPageState', () => {
     expect(mockToastError).toHaveBeenCalledWith(TOAST_MESSAGES.registration.alreadyRegistered);
   });
 
+  it('maps duplicate compound key errors to inline unique field errors', async () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    };
+    memberLookupState.verifiedMemberId = 'WC-001';
+    mockUsePublicEventFieldsQuery.mockReturnValue({
+      data: {
+        validFields: [
+          {
+            id: 'field-1',
+            event_id: 'event-1',
+            field_key: 'request_date',
+            label: 'Request Date',
+            field_type: 'date',
+            is_required: true,
+            is_active: true,
+            placeholder: null,
+            help_text: null,
+            options: [],
+            validation_rules: {
+              unique_key_component: true,
+            },
+            display_order: 1,
+          },
+        ],
+        issues: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+    mockSubmitMutateAsync.mockResolvedValueOnce({
+      success: false,
+      error_code: 'duplicate_compound_key',
+      error: 'ignored',
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    await act(async () => {
+      await result.current.handleSubmitRegistration({ request_date: '2026-07-05' });
+    });
+
+    expect(result.current.fieldErrorMessage('request_date')).toBe(
+      'A registration with the same unique field values already exists.',
+    );
+    expect(result.current.submitErrorMessage).toBe(
+      'A registration with the same unique field values already exists.',
+    );
+  });
+
   it('maps validation failed responses to field errors and generic submit message', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
@@ -445,6 +545,19 @@ describe('useEventRegistrationPageState', () => {
     expect(mockToastError).toHaveBeenCalledWith(
       'Some answers need attention. Please review highlighted fields.',
     );
+  });
+
+  it('returns a generic fallback when field error message is not a string', () => {
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    act(() => {
+      result.current.dynamicForm.setError('request_date', {
+        type: 'manual',
+        message: { detail: 'non-string' } as unknown as string,
+      });
+    });
+
+    expect(result.current.fieldErrorMessage('request_date')).toBe('This field is invalid.');
   });
 
   it('keeps update-mode users on Step 3 confirmed state after successful submission', async () => {

@@ -235,6 +235,13 @@ export function useEventRegistrationPageState() {
     () => eventFieldsQuery.data?.validFields ?? [],
     [eventFieldsQuery.data?.validFields],
   );
+  const uniqueComponentFieldKeys = useMemo(
+    () =>
+      activeFields
+        .filter((field) => field.validation_rules.unique_key_component === true)
+        .map((field) => field.field_key),
+    [activeFields],
+  );
   const remainingSlotsByFieldOption = useMemo(() => {
     const slotFields = slotAvailabilityQuery.data?.fields ?? [];
 
@@ -384,6 +391,16 @@ export function useEventRegistrationPageState() {
         if (result.error_code === 'duplicate_blocked') {
           setSubmitErrorMessage('You have already registered for this event.');
           toast.error(TOAST_MESSAGES.registration.alreadyRegistered);
+        } else if (result.error_code === 'duplicate_compound_key') {
+          uniqueComponentFieldKeys.forEach((fieldKey) => {
+            dynamicForm.setError(fieldKey, {
+              type: 'manual',
+              message: 'A registration with the same unique field values already exists.',
+            });
+          });
+
+          setSubmitErrorMessage('A registration with the same unique field values already exists.');
+          toast.error('A registration with the same unique field values already exists.');
         } else {
           setSubmitErrorMessage(result.error || TOAST_MESSAGES.registration.submitFailed);
           toast.error(result.error || TOAST_MESSAGES.registration.submitFailed);
@@ -407,6 +424,7 @@ export function useEventRegistrationPageState() {
       availability,
       submitMutation,
       activeFields,
+      uniqueComponentFieldKeys,
       dynamicForm,
       scrollToDynamicFieldsStep,
     ],

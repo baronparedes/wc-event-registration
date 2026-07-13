@@ -12,6 +12,7 @@ type ValidationRulesSectionProps = {
   showMultiSelectValidation: boolean;
   showDateValidation: boolean;
   register: UseFormRegister<EventFieldFormValues>;
+  uniqueKeyComponentError?: string;
 };
 
 const WEEKDAY_OPTIONS = [
@@ -32,6 +33,7 @@ export function ValidationRulesSection({
   showMultiSelectValidation,
   showDateValidation,
   register,
+  uniqueKeyComponentError,
 }: ValidationRulesSectionProps) {
   return (
     <SectionCard
@@ -43,6 +45,27 @@ export function ValidationRulesSection({
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5">
+            <input
+              type="checkbox"
+              disabled={isStructurallyLocked}
+              {...register('val_unique_key_component')}
+              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border"
+            />
+            <span>
+              <span className="block text-sm font-medium text-text">Use In Duplicate Matching</span>
+              <span className="block text-xs text-muted">
+                Unique means this field participates in duplicate detection. If two submissions have
+                the same values for all fields marked as unique, they are treated as duplicates.
+              </span>
+            </span>
+          </label>
+          {uniqueKeyComponentError && (
+            <p className="mt-2 text-sm text-danger">{uniqueKeyComponentError}</p>
+          )}
+        </div>
+
         {showTextValidation && (
           <>
             <RuleInput

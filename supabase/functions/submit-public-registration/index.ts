@@ -8,6 +8,7 @@ import {
   isOriginAllowed,
   readAllowedOrigins,
 } from '@/shared/security.ts';
+import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
 import {
   EventFieldWithValidation,
   FieldValidationError,
@@ -246,7 +247,6 @@ Deno.serve(async (req) => {
 
     const eventId = eventData.id;
     const duplicatePolicy = eventData.duplicate_policy;
-    const registrationScopeKey = resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
     let registrationId: string | null = null;
     let status: 'submitted' | 'updated' = 'submitted';
     let isNew = true;
@@ -284,6 +284,28 @@ Deno.serve(async (req) => {
       options: Array.isArray(f.options) ? f.options : [],
       validation_rules: f.validation_rules || {},
     }));
+
+    const uniquenessFields = selectUniquenessComponentFields(fieldsData || []);
+
+    const compoundScopeResult = resolveCompoundScopeKey(responses, uniquenessFields);
+    if (compoundScopeResult.errors.length > 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          error_code: 'VALIDATION_ERROR',
+          errors: compoundScopeResult.errors,
+        } as SubmitPublicRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    const hasCompoundScope = Boolean(compoundScopeResult.scopeKey);
+    const registrationScopeKey =
+      compoundScopeResult.scopeKey ?? resolveRegistrationScopeKey(duplicatePolicy, idempotency_key);
 
     const validationErrors: FieldValidationError[] = [];
 
@@ -439,6 +461,20 @@ Deno.serve(async (req) => {
       }
 
       if (!registrationId) {
+        if (hasCompoundScope) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'A registration with the same unique field values already exists.',
+              error_code: 'duplicate_compound_key',
+            } as SubmitPublicRegistrationError),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
         if (duplicatePolicy === 'allow_multiple') {
           console.error('Allow-multiple public registration conflict without idempotency match', {
             eventId,
