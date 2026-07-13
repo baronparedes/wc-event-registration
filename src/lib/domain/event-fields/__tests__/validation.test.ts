@@ -53,6 +53,7 @@ describe('validatePublicEventFieldConfig', () => {
           max_selections: 4,
           min_date: '2026-01-01',
           max_date: '2026-12-31',
+          max_past_days: 14,
           extra: 'ignored',
         },
       }),
@@ -78,6 +79,7 @@ describe('validatePublicEventFieldConfig', () => {
         max_selections: 4,
         min_date: '2026-01-01',
         max_date: '2026-12-31',
+        max_past_days: 14,
       },
     });
   });

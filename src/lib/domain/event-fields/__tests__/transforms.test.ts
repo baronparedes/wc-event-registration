@@ -52,6 +52,29 @@ function makePublicField(overrides: Partial<PublicEventField> = {}): PublicEvent
   };
 }
 
+const BASE_FORM_VALUES: EventFieldFormValues = {
+  field_key: 'team_name',
+  label: 'Team Name',
+  field_type: 'text',
+  is_required: true,
+  is_active: true,
+  placeholder: null,
+  help_text: null,
+  options: [],
+  val_min_length: '',
+  val_max_length: '',
+  val_pattern: '',
+  val_min: '',
+  val_max: '',
+  val_min_selections: '',
+  val_max_selections: '',
+  val_min_date: '',
+  val_max_date: '',
+  val_max_past_days: '',
+  val_allowed_weekdays: [],
+  val_unique_key_component: false,
+};
+
 describe('event-fields transforms', () => {
   it('converts an admin field to event field form values', () => {
     const values = fieldToFormValues(makeAdminField());
@@ -96,6 +119,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     };
 
     const rules = toValidationRules(values);
@@ -127,6 +151,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '4',
       val_min_date: '2026-01-01',
       val_max_date: '2026-12-31',
+      val_max_past_days: '',
       val_allowed_weekdays: ['4', '2', '2', '0', '7' as never],
     };
 
@@ -166,6 +191,29 @@ describe('event-fields transforms', () => {
     expect(values.val_pattern).toBe('');
     expect(values.val_min_date).toBe('');
     expect(values.val_max_date).toBe('');
+  });
+
+  it('maps max_past_days between saved rules and form values', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        field_type: 'date',
+        validation_rules: {
+          max_past_days: 14,
+        },
+      }),
+    );
+
+    expect(values.val_max_past_days).toBe('14');
+  });
+
+  it('adds max_past_days to validation rules when configured', () => {
+    const rules = toValidationRules({
+      ...BASE_FORM_VALUES,
+      field_type: 'date',
+      val_max_past_days: '14',
+    });
+
+    expect(rules.max_past_days).toBe(14);
   });
 
   it('maps option toggle fields with explicit and default toggle values', () => {
@@ -344,6 +392,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     };
 
     const rules = toValidationRules(values);
@@ -392,6 +441,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     };
 
     const rules = toValidationRules(values);
@@ -438,6 +488,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     };
 
     const rules = toValidationRules(values);
@@ -479,6 +530,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     };
 
     const rules = toValidationRules(values);
@@ -520,6 +572,7 @@ describe('event-fields transforms', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     };
 
     const rules = toValidationRules(values);

@@ -174,6 +174,18 @@ describe('DateFieldRenderer', () => {
       expect(screen.getByTestId('error')).toHaveTextContent('');
     });
   });
+
+  it('renders with max_past_days validation rule configured', () => {
+    render(
+      <DateRendererHarness
+        field={makeField({
+          validation_rules: { max_past_days: 3 },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /select date/i })).toBeInTheDocument();
+  });
 });
 
 describe('DatetimeFieldRenderer', () => {

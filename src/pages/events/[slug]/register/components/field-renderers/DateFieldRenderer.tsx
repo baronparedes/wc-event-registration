@@ -87,6 +87,7 @@ function buildDisabledDays(
   allowedWeekdays: number[],
   minDate: string | undefined,
   maxDate: string | undefined,
+  maxPastDays: number | undefined,
 ) {
   const disabled: Array<{ before: Date } | { after: Date } | ((date: Date) => boolean)> = [];
   const minDateParsed = parseDateOnly(minDate);
@@ -98,6 +99,13 @@ function buildDisabledDays(
 
   if (maxDateParsed) {
     disabled.push({ after: maxDateParsed });
+  }
+
+  if (typeof maxPastDays === 'number' && Number.isInteger(maxPastDays) && maxPastDays >= 0) {
+    const oldestAllowedDate = new Date();
+    oldestAllowedDate.setHours(0, 0, 0, 0);
+    oldestAllowedDate.setDate(oldestAllowedDate.getDate() - maxPastDays);
+    disabled.push({ before: oldestAllowedDate });
   }
 
   if (allowedWeekdays.length > 0) {
@@ -139,8 +147,14 @@ export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps
         allowedWeekdays,
         field.validation_rules.min_date,
         field.validation_rules.max_date,
+        field.validation_rules.max_past_days,
       ),
-    [allowedWeekdays, field.validation_rules.max_date, field.validation_rules.min_date],
+    [
+      allowedWeekdays,
+      field.validation_rules.max_date,
+      field.validation_rules.max_past_days,
+      field.validation_rules.min_date,
+    ],
   );
 
   return (
@@ -215,8 +229,14 @@ export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererP
         allowedWeekdays,
         field.validation_rules.min_date,
         field.validation_rules.max_date,
+        field.validation_rules.max_past_days,
       ),
-    [allowedWeekdays, field.validation_rules.max_date, field.validation_rules.min_date],
+    [
+      allowedWeekdays,
+      field.validation_rules.max_date,
+      field.validation_rules.max_past_days,
+      field.validation_rules.min_date,
+    ],
   );
 
   return (

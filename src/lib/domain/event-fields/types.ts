@@ -45,6 +45,7 @@ export type PublicEventFieldValidationRules = {
   >;
   min_date?: string;
   max_date?: string;
+  max_past_days?: number;
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
 };
@@ -67,6 +68,7 @@ export type AdminEventFieldValidationRules = {
   >;
   min_date?: string;
   max_date?: string;
+  max_past_days?: number;
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
 };

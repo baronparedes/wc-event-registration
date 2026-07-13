@@ -295,6 +295,16 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
     rules.max_date = maxDate;
   }
 
+  const maxPastDays = field.validation_rules.max_past_days;
+  if (
+    typeof maxPastDays === 'number' &&
+    Number.isFinite(maxPastDays) &&
+    Number.isInteger(maxPastDays) &&
+    maxPastDays >= 0
+  ) {
+    rules.max_past_days = maxPastDays;
+  }
+
   const allowedWeekdays = field.validation_rules.allowed_weekdays;
   if (Array.isArray(allowedWeekdays)) {
     const parsedWeekdays = allowedWeekdays

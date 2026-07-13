@@ -11,6 +11,13 @@ import type { PublicEventField } from '@/lib/domain/event-fields';
 
 const EVENT_ID = '9a693702-90e6-499f-8835-8f57ef1ea8d7';
 
+function formatDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function createField(overrides: Partial<PublicEventField>): PublicEventField {
   return {
     id: 'c9707ebf-a95d-4f42-ba04-bde679f92ed8',
@@ -90,6 +97,7 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.field_type).toBe('number');
@@ -114,6 +122,7 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.success).toBe(false);
@@ -147,6 +156,7 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.success).toBe(false);
@@ -182,6 +192,7 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.success).toBe(true);
@@ -214,9 +225,60 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it('accepts max past days when configured as a non-negative integer string', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'service_date',
+      label: 'Service Date',
+      field_type: 'date',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '14',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects max past days when not a non-negative integer', () => {
+    const parsed = eventFieldFormSchema.safeParse({
+      field_key: 'service_date',
+      label: 'Service Date',
+      field_type: 'date',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '-2',
+    });
+
+    expect(parsed.success).toBe(false);
   });
 
   it('accepts wildcard role allotment when it is the only role for an option', () => {
@@ -246,6 +308,7 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.success).toBe(true);
@@ -281,6 +344,7 @@ describe('event-fields schemas', () => {
       val_max_selections: '',
       val_min_date: '',
       val_max_date: '',
+      val_max_past_days: '',
     });
 
     expect(parsed.success).toBe(false);
@@ -597,6 +661,49 @@ describe('event-fields schemas', () => {
       schema.safeParse({
         service_date: '2026-07-12',
         service_time: '2026-07-12T09:00',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('enforces max_past_days for date and datetime fields', () => {
+    const today = new Date();
+    const withinWindowDate = new Date(today);
+    withinWindowDate.setDate(today.getDate() - 14);
+    const outsideWindowDate = new Date(today);
+    outsideWindowDate.setDate(today.getDate() - 15);
+
+    const withinWindow = formatDateOnly(withinWindowDate);
+    const outsideWindow = formatDateOnly(outsideWindowDate);
+
+    const schema = buildDynamicFieldResponseSchema([
+      createField({
+        field_key: 'service_date',
+        label: 'Service Date',
+        field_type: 'date',
+        is_required: true,
+        validation_rules: { max_past_days: 14 },
+      }),
+      createField({
+        id: '8ca8f5e6-09e0-4f24-a7f9-22d166f5f0db',
+        field_key: 'service_time',
+        label: 'Service Time',
+        field_type: 'datetime',
+        is_required: true,
+        validation_rules: { max_past_days: 14 },
+      }),
+    ]);
+
+    expect(
+      schema.safeParse({
+        service_date: withinWindow,
+        service_time: `${withinWindow}T09:00`,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      schema.safeParse({
+        service_date: outsideWindow,
+        service_time: `${outsideWindow}T09:00`,
       }).success,
     ).toBe(false);
   });

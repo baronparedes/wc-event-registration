@@ -157,6 +157,15 @@ export function ValidationRulesSection({
               registration={register('val_max_date')}
               disabled={isStructurallyLocked}
             />
+            <RuleInput
+              id="val_max_past_days"
+              label="Max Days In The Past"
+              type="number"
+              registration={register('val_max_past_days')}
+              disabled={isStructurallyLocked}
+              placeholder="e.g., 14"
+              helperText="Set 14 to disallow dates older than two weeks ago."
+            />
             <div className="sm:col-span-2">
               <p className="text-sm font-medium text-text">Allowed Weekdays</p>
               <p className="mt-1 text-xs text-muted">

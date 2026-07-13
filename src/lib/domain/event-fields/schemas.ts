@@ -128,10 +128,25 @@ export const eventFieldFormSchema = z
     val_max_selections: z.string(),
     val_min_date: z.string(),
     val_max_date: z.string(),
+    val_max_past_days: z.string(),
     val_allowed_weekdays: z.array(z.enum(['0', '1', '2', '3', '4', '5', '6'])).optional(),
     val_unique_key_component: z.boolean().default(false),
   })
   .superRefine((values, context) => {
+    if (
+      (values.field_type === 'date' || values.field_type === 'datetime') &&
+      values.val_max_past_days !== ''
+    ) {
+      const parsedMaxPastDays = Number.parseInt(values.val_max_past_days.trim(), 10);
+      if (!Number.isInteger(parsedMaxPastDays) || parsedMaxPastDays < 0) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Max Days In The Past must be a whole number greater than or equal to 0.',
+          path: ['val_max_past_days'],
+        });
+      }
+    }
+
     if (values.val_unique_key_component && !values.is_required) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -201,6 +216,23 @@ function coerceOptionalString(value: unknown): unknown {
 
   const trimmed = value.trim();
   return trimmed.length === 0 ? undefined : trimmed;
+}
+
+function parseLocalDateFromYyyyMmDd(value: string): Date | null {
+  const [yearString, monthString, dayString] = value.slice(0, 10).split('-');
+  const year = Number(yearString);
+  const month = Number(monthString);
+  const day = Number(dayString);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function getStartOfLocalDay(value: Date): Date {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
 }
 
 function buildStringSchema(field: PublicEventField): z.ZodType<string | undefined> {
@@ -469,6 +501,29 @@ function buildDateLikeSchema(field: PublicEventField): z.ZodType<string | undefi
       }
       return new Date(value).getTime() <= new Date(rules.max_date!).getTime();
     }, `${field.label} must be on or before ${rules.max_date}.`);
+  }
+
+  if (typeof rules.max_past_days === 'number' && Number.isInteger(rules.max_past_days)) {
+    schema = schema.refine((value) => {
+      const oldestAllowedDate = getStartOfLocalDay(new Date());
+      oldestAllowedDate.setDate(oldestAllowedDate.getDate() - rules.max_past_days!);
+
+      if (isDateOnly) {
+        const selectedDate = parseLocalDateFromYyyyMmDd(value);
+        if (!selectedDate) {
+          return false;
+        }
+
+        return selectedDate.getTime() >= oldestAllowedDate.getTime();
+      }
+
+      const selectedDate = parseLocalDateFromYyyyMmDd(value);
+      if (!selectedDate) {
+        return false;
+      }
+
+      return selectedDate.getTime() >= oldestAllowedDate.getTime();
+    }, `${field.label} cannot be more than ${rules.max_past_days} day(s) in the past.`);
   }
 
   if (allowedWeekdays.length > 0) {

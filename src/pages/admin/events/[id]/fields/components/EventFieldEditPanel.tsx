@@ -93,6 +93,7 @@ export function EventFieldEditPanel({
     setValue('val_max_selections', '');
     setValue('val_min_date', '');
     setValue('val_max_date', '');
+    setValue('val_max_past_days', '');
     setValue('val_allowed_weekdays', []);
   }
 

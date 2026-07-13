@@ -145,6 +145,7 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   val_max_selections: '',
   val_min_date: '',
   val_max_date: '',
+  val_max_past_days: '',
   val_allowed_weekdays: [],
   val_unique_key_component: false,
 };
@@ -194,6 +195,10 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
     val_max_selections: rules.max_selections != null ? String(rules.max_selections) : '',
     val_min_date: typeof rules.min_date === 'string' ? rules.min_date : '',
     val_max_date: typeof rules.max_date === 'string' ? rules.max_date : '',
+    val_max_past_days:
+      typeof rules.max_past_days === 'number' && Number.isInteger(rules.max_past_days)
+        ? String(rules.max_past_days)
+        : '',
     val_allowed_weekdays: Array.isArray(rules.allowed_weekdays)
       ? rules.allowed_weekdays
           .map((weekday) => toWeekdayString(weekday))
@@ -219,6 +224,12 @@ export function toValidationRules(values: EventFieldFormValues): Record<string, 
   }
   if (values.val_min_date !== '') rules.min_date = values.val_min_date;
   if (values.val_max_date !== '') rules.max_date = values.val_max_date;
+  if (values.val_max_past_days !== '') {
+    const maxPastDays = Number.parseInt(values.val_max_past_days, 10);
+    if (Number.isInteger(maxPastDays) && maxPastDays >= 0) {
+      rules.max_past_days = maxPastDays;
+    }
+  }
   if (values.val_unique_key_component) {
     rules.unique_key_component = true;
   }
