@@ -37,7 +37,7 @@ export type SubmitRegistrationResult = SubmitRegistrationSuccess | SubmitRegistr
 const callSubmitRegistration = createEdgeFunctionCaller<
   SubmitRegistrationRequest,
   SubmitRegistrationResult
->('submit-registration');
+>('submit-registration-v2');
 
 /**
  * Hook for submitting registration through submit-registration Edge Function.

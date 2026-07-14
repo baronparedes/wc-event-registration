@@ -435,6 +435,50 @@ Forms:
 - Return typed response shapes from Edge Functions with `success` discriminator.
 - Handle Edge Function errors explicitly in hooks with user-safe toast messages.
 
+**Edge Function internal architecture (handler pipeline pattern):**
+
+Complex Edge Functions must use a handler pipeline structure rather than a flat monolith. This is the canonical pattern established by `submit-registration-v2`.
+
+File structure:
+
+```
+supabase/functions/<function-name>/
+  index.ts           ← orchestrator only: chains handlers, maps results to HTTP responses, zero business logic
+  handlers/
+    parseRequest.ts
+    resolveContext.ts
+    <step>.ts
+    ...
+```
+
+Handler contract:
+
+- Every handler file exports a single function returning `HandlerResult<T>` from `@/shared/handler.ts`.
+- `HandlerResult<T>` is a discriminated union: `{ ok: true; data: T } | { ok: false; errorCode: string; message: string; httpStatus: number; errors?: FieldValidationError[] }`.
+- Handlers never throw for expected business outcomes — return `{ ok: false, ... }` instead.
+- Handlers have no side-effect coupling to each other; all inputs are explicit parameters.
+- Pure handlers (no DB calls) return `HandlerResult<T>` directly (not a Promise).
+- DB handlers accept `supabase: SupabaseClient` as first parameter.
+
+Orchestrator contract:
+
+- `index.ts` calls handlers sequentially, checks `result.ok` after each, and returns early via `errorResponse` on failure.
+- Use `errorResponse` and `successResponse` from `@/shared/http.ts` — never construct `new Response(...)` manually in `index.ts`.
+- No business logic in `index.ts` — only wiring and HTTP mapping.
+- No `console.log`, `console.error`, or `console.warn` anywhere in the function.
+
+Shared utilities:
+
+- `@/shared/handler.ts`: `HandlerResult<T>`, `SupabaseClient` — import these in every handler.
+- `@/shared/http.ts`: `errorResponse`, `successResponse`, `jsonResponse` — import in `index.ts` only.
+- `@/shared/validation.ts`, `@/shared/uniqueness.ts`, etc.: domain utilities used by handlers.
+- Do not add function-specific logic to `_shared/` — keep `_shared/` for truly cross-cutting utilities.
+- Function-specific handler logic lives inside the function's own `handlers/` folder.
+
+ESLint:
+
+- `supabase/functions/` must be listed in `globalIgnores` in `eslint.config.js` — the frontend ESLint config cannot parse Deno TypeScript syntax.
+
 ## Testing Strategy
 
 **Hook testing** (Vitest + React Query):
