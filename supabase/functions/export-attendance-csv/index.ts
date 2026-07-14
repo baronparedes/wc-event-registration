@@ -1,13 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
+import { errorResponse } from '@/shared/http.ts';
+import { z } from '@/shared/validation.ts';
 
 const exportAttendanceRequestSchema = z.object({
   event_id: z.string().uuid('event_id must be a valid UUID'),
@@ -61,8 +55,6 @@ type PublicAttendanceAnswerRow = {
   answer_text: string | null;
   answer_number: number | null;
 };
-
-const allowedOrigins = readAllowedOrigins();
 
 function escapeCsvField(value: unknown): string {
   if (value === null || value === undefined) {
@@ -143,86 +135,28 @@ function formatAttendanceAnswerValue(
 }
 
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'export-attendance-csv',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'export-attendance-csv',
+      windowMs: RATE_LIMIT_PRESETS.attendanceCsvExport.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.attendanceCsvExport.maxHits,
+    },
+    schema: exportAttendanceRequestSchema,
+  });
 
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    if (!env) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Environment not configured',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const parsedBody = await parseRequestBody(req, exportAttendanceRequestSchema);
-    if (!parsedBody.success) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const { event_id }: ExportAttendanceRequest = parsedBody.data;
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'export-attendance-csv',
-      supabaseUrl: env.supabaseUrl,
-      supabaseServiceKey: env.supabaseServiceKey,
-      authHeader: req.headers.get('authorization'),
-      corsHeaders,
-      rateLimit: {
-        scope: 'export-attendance-csv',
-        windowMs: 60_000,
-        maxHits: 12,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    const adminClient = createClient(env.supabaseUrl, env.supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const { event_id }: ExportAttendanceRequest = guard.data;
+    const adminClient = guard.client;
 
     const { data: eventData } = await adminClient
       .from('events')
@@ -540,21 +474,7 @@ Deno.serve(async (req) => {
         'Content-Disposition': `attachment; filename="${filename}"`,
       },
     });
-  } catch (error) {
-    console.error('[export-attendance-csv] unexpected error', {
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+  } catch {
+    return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 });

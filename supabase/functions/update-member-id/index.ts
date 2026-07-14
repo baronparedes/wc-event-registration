@@ -1,16 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
 import { tryConvertRfidInput } from '@/shared/rfid.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
+import { z } from '@/shared/validation.ts';
 
 const updateMemberIdRequestSchema = z.object({
   id: z.string().uuid('id must be a valid UUID'),
@@ -31,108 +23,30 @@ interface UpdateMemberIdError {
   error_code?: string;
 }
 
-const allowedOrigins = readAllowedOrigins();
-
-function maskValue(value: string | null, visible = 6): string {
-  if (!value) return 'null';
-  if (value.length <= visible * 2) return value;
-  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
-}
-
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
-
-  console.log('[update-member-id]', {
-    requestId,
-    method: req.method,
-    origin,
-    hasAuthorizationHeader: Boolean(req.headers.get('authorization')),
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'update-member-id',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'update-member-id',
+      windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.createMember.maxHits,
+    },
+    schema: updateMemberIdRequestSchema,
   });
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405);
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    console.log('[update-member-id] env/auth check', {
-      requestId,
-      hasSupabaseUrl: Boolean(env?.supabaseUrl),
-      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
-      hasAuthHeader: Boolean(authHeader),
-    });
-
-    if (!env) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured');
-    }
-    const { supabaseUrl, supabaseServiceKey } = env;
-
-    const parsedBody = await parseRequestBody(req, updateMemberIdRequestSchema);
-    if (!parsedBody.success) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        } as UpdateMemberIdError,
-        400,
-      );
-    }
-
-    const { id, member_id }: UpdateMemberIdRequest = parsedBody.data;
+    const { id, member_id }: UpdateMemberIdRequest = guard.data;
     const trimmedMemberId = tryConvertRfidInput(member_id.trim());
-
-    console.log('[update-member-id] parsed body', {
-      requestId,
-      memberId: maskValue(id),
-      newMemberId: maskValue(trimmedMemberId),
-    });
-
-    // Require admin access
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'update-member-id',
-      supabaseUrl,
-      supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'update-member-id',
-        windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,
-        maxHits: RATE_LIMIT_PRESETS.createMember.maxHits,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    // Create service role client for privileged operations
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const adminClient = guard.client;
 
     // Update member_id
     const { data: updatedMember, error: updateError } = await adminClient
@@ -142,21 +56,7 @@ Deno.serve(async (req) => {
       .select('id, member_id')
       .single();
 
-    console.log('[update-member-id] update result', {
-      requestId,
-      memberId: maskValue(id),
-      newMemberId: maskValue(trimmedMemberId),
-      updateErrorCode: updateError?.code ?? null,
-      updateErrorMessage: updateError?.message ?? null,
-    });
-
     if (updateError) {
-      console.error('[update-member-id] update error', {
-        requestId,
-        errorCode: updateError.code,
-        errorMessage: updateError.message,
-      });
-
       if (updateError.code === '23505') {
         return jsonResponse(
           corsHeaders,
@@ -184,12 +84,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[update-member-id] success', {
-      requestId,
-      memberId: maskValue(updatedMember.id),
-      updatedMemberId: maskValue(updatedMember.member_id),
-    });
-
     return jsonResponse(
       corsHeaders,
       {
@@ -199,12 +93,7 @@ Deno.serve(async (req) => {
       } as UpdateMemberIdSuccess,
       200,
     );
-  } catch (err) {
-    console.error('[update-member-id] unexpected error', {
-      error: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-
+  } catch {
     return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 });

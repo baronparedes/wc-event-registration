@@ -1,15 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  logAdminAction,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
+import { logAdminAction } from '@/shared/security.ts';
+import { z } from '@/shared/validation.ts';
 
 const reactivateRegistrationRequestSchema = z.object({
   registration_id: z.string().uuid('registration_id must be a valid UUID'),
@@ -22,112 +15,35 @@ interface ReactivateRegistrationSuccess {
   registration_id: string;
 }
 
-const allowedOrigins = readAllowedOrigins();
-
-function maskValue(value: string | null, visible = 6): string {
-  if (!value) return 'null';
-  if (value.length <= visible * 2) return value;
-  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
-}
-
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
-
-  console.log('[reactivate-registration]', {
-    requestId,
-    method: req.method,
-    origin,
-    hasAuthorizationHeader: Boolean(req.headers.get('authorization')),
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'reactivate-registration',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'reactivate-registration',
+      windowMs: RATE_LIMIT_PRESETS.cancelRegistration.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.cancelRegistration.maxHits,
+    },
+    schema: reactivateRegistrationRequestSchema,
   });
 
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405);
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    console.log('[reactivate-registration] env/auth check', {
-      requestId,
-      hasSupabaseUrl: Boolean(env?.supabaseUrl),
-      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
-      hasAuthHeader: Boolean(authHeader),
-    });
-
-    if (!env) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured');
-    }
-    const { supabaseUrl, supabaseServiceKey } = env;
-
-    const parsedBody = await parseRequestBody(req, reactivateRegistrationRequestSchema);
-    if (!parsedBody.success) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        },
-        400,
-      );
-    }
-
-    const { registration_id }: ReactivateRegistrationRequest = parsedBody.data;
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'reactivate-registration',
-      supabaseUrl,
-      supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'reactivate-registration',
-        windowMs: 60_000,
-        maxHits: 30,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const { registration_id }: ReactivateRegistrationRequest = guard.data;
+    const adminClient = guard.client;
 
     const { data: registration, error: regFetchError } = await adminClient
       .from('registrations')
       .select('id, status, event_id')
       .eq('id', registration_id)
       .single();
-
-    console.log('[reactivate-registration] registration fetch result', {
-      requestId,
-      registrationId: maskValue(registration_id),
-      found: Boolean(registration),
-      status: registration?.status ?? null,
-      regFetchErrorCode: regFetchError?.code ?? null,
-    });
 
     if (regFetchError || !registration) {
       return jsonResponse(
@@ -162,11 +78,6 @@ Deno.serve(async (req) => {
       .eq('id', registration_id);
 
     if (updateError) {
-      console.error('[reactivate-registration] update error', {
-        requestId,
-        errorCode: updateError.code,
-        errorMessage: updateError.message,
-      });
       return errorResponse(corsHeaders, 500, 'Failed to reactivate registration', undefined, {
         error_code: 'UPDATE_FAILED',
       });
@@ -174,7 +85,7 @@ Deno.serve(async (req) => {
 
     await logAdminAction({
       adminClient,
-      adminUserId: adminAccess.userId,
+      adminUserId: guard.userId,
       action: 'reactivate_registration',
       resourceType: 'registration',
       resourceId: registration_id,
@@ -193,11 +104,7 @@ Deno.serve(async (req) => {
       } as ReactivateRegistrationSuccess,
       200,
     );
-  } catch (error) {
-    console.error('[reactivate-registration] unexpected error', {
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
     return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 });

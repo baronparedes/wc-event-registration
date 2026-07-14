@@ -1,22 +1,13 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
+import { useEdgeHook } from '@/shared/edge.ts';
 import {
   errorResponse as sharedErrorResponse,
   successResponse as sharedSuccessResponse,
 } from '@/shared/http.ts';
 import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-} from '@/shared/security.ts';
-import {
   extractSelectedOptionValuesFromStoredAnswer,
   normalizePrimaryRoleValue,
-  parseFunctionEnvironment,
   parseMaxSlotRoleAllotmentsByOption,
   parseMaxSlotsByOption,
-  parseRequestBody,
   z,
 } from '@/shared/validation.ts';
 
@@ -90,46 +81,22 @@ function extractMemberRole(role: string | null): string | null {
   return normalizePrimaryRoleValue(role);
 }
 
-const allowedOrigins = readAllowedOrigins();
-
 Deno.serve(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
-
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
-
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return sharedErrorResponse(corsHeaders, 405, 'Method not allowed');
-  }
-
-  const env = parseFunctionEnvironment();
-  if (!env) {
-    return sharedErrorResponse(corsHeaders, 500, 'Environment not configured');
-  }
-
-  const parsedBody = await parseRequestBody(req, slotAvailabilityRequestSchema);
-  if (!parsedBody.success) {
-    return sharedErrorResponse(corsHeaders, 400, parsedBody.error, parsedBody.details);
-  }
-
-  const { event_id: eventId }: SlotAvailabilityRequest = parsedBody.data;
-
-  const supabase = createClient(env.supabaseUrl, env.supabaseServiceKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'event-slot-availability',
+    method: 'POST',
+    schema: slotAvailabilityRequestSchema,
   });
+
+  const corsHeaders = guard.corsHeaders;
+  if (!guard.valid) {
+    return guard.response;
+  }
+
+  const { event_id: eventId }: SlotAvailabilityRequest = guard.data;
+
+  const supabase = guard.client;
 
   const { data: eventFields, error: fieldsError } = await supabase
     .from('event_fields')

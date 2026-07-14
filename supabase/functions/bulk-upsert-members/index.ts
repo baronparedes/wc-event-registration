@@ -1,14 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
+import { errorResponse, successResponse } from '@/shared/http.ts';
+import { z } from '@/shared/validation.ts';
 
 type ExistingMember = {
   id: string;
@@ -54,8 +47,6 @@ const requestSchema = z.object({
 
 type RequestPayload = z.infer<typeof requestSchema>;
 type InputRow = RequestPayload['rows'][number];
-
-const allowedOrigins = readAllowedOrigins();
 
 function normalizeText(value: string | null | undefined): string {
   return (value ?? '').trim();
@@ -224,103 +215,44 @@ function resolveRows(
 }
 
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'bulk-upsert-members',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'bulk-upsert-members',
+      windowMs: RATE_LIMIT_PRESETS.bulkUpsertMembers.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.bulkUpsertMembers.maxHits,
+    },
+    schema: requestSchema,
+  });
 
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
-
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    if (!env) {
-      return new Response(JSON.stringify({ success: false, error: 'Environment not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const parsedBody = await parseRequestBody(req, requestSchema);
-    if (!parsedBody.success) {
-      return new Response(
-        JSON.stringify({ success: false, error: parsedBody.error, detail: parsedBody.details }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const { rows }: RequestPayload = parsedBody.data;
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'bulk-upsert-members',
-      supabaseUrl: env.supabaseUrl,
-      supabaseServiceKey: env.supabaseServiceKey,
-      authHeader: req.headers.get('authorization'),
-      corsHeaders,
-      rateLimit: {
-        scope: 'bulk-upsert-members',
-        windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,
-        maxHits: RATE_LIMIT_PRESETS.createMember.maxHits,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    const adminClient = createClient(env.supabaseUrl, env.supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const { rows }: RequestPayload = guard.data;
+    const adminClient = guard.client;
+    const corsHeaders = guard.corsHeaders;
 
     const { data: existingMembers, error: membersError } = await adminClient
       .from('users')
       .select('id, member_id, first_name, last_name, nickname, email');
 
     if (membersError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to load existing members' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
+      return errorResponse(corsHeaders, 500, 'Failed to load existing members');
     }
 
     const { resolvedRows, errors } = resolveRows(rows, (existingMembers ?? []) as ExistingMember[]);
 
     if (errors.length > 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'CSV validation failed. Import aborted.',
-          detail: errors.slice(0, 50).join('; '),
-          details: errors.slice(0, 50),
-          total_errors: errors.length,
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
+      return errorResponse(corsHeaders, 400, 'CSV validation failed. Import aborted.', undefined, {
+        detail: errors.slice(0, 50).join('; '),
+        details: errors.slice(0, 50),
+        total_errors: errors.length,
+      });
     }
 
     const { data: upsertResult, error: upsertError } = await adminClient.rpc(
@@ -331,15 +263,10 @@ Deno.serve(async (req) => {
     );
 
     if (upsertError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: upsertError.message || 'Failed to apply member import',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+      return errorResponse(
+        corsHeaders,
+        500,
+        upsertError.message || 'Failed to apply member import',
       );
     }
 
@@ -347,24 +274,13 @@ Deno.serve(async (req) => {
     const insertedCount = Number(summary?.inserted_count ?? 0);
     const updatedCount = Number(summary?.updated_count ?? 0);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        inserted_count: insertedCount,
-        updated_count: updatedCount,
-        imported_count: insertedCount + updatedCount,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    return successResponse(corsHeaders, {
+      inserted_count: insertedCount,
+      updated_count: updatedCount,
+      imported_count: insertedCount + updatedCount,
+    });
   } catch (error) {
     console.error('[bulk-upsert-members] unhandled error', error);
-
-    return new Response(JSON.stringify({ success: false, error: 'Unexpected server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse(guard.corsHeaders, 500, 'Unexpected server error');
   }
 });

@@ -1,16 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
-
-const allowedOrigins = readAllowedOrigins();
+import { z } from '@/shared/validation.ts';
 
 const requestSchema = z.object({
   event_id: z.string().uuid('Invalid event ID.'),
@@ -48,67 +39,28 @@ function escapeOrFilterValue(value: string): string {
 }
 
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'list-unregistered-members',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'list-unregistered-members',
+      windowMs: RATE_LIMIT_PRESETS.listUnregisteredMembers.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.listUnregisteredMembers.maxHits,
+    },
+    schema: requestSchema,
+  });
 
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405);
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    if (!env) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured');
-    }
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'list-unregistered-members',
-      supabaseUrl: env.supabaseUrl,
-      supabaseServiceKey: env.supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'list-unregistered-members',
-        windowMs: 60_000,
-        maxHits: 120,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    const parsedBody = await parseRequestBody(req, requestSchema);
-    if (!parsedBody.success) {
-      return errorResponse(corsHeaders, 400, parsedBody.error, parsedBody.details, {
-        error_code: 'INVALID_REQUEST',
-      });
-    }
-
-    const { event_id, page_size, offset, search_term }: RequestBody = parsedBody.data;
-
-    const adminClient = createClient(env.supabaseUrl, env.supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const { event_id, page_size, offset, search_term }: RequestBody = guard.data;
+    const adminClient = guard.client;
 
     const { data: registrations, error: registrationsError } = await adminClient
       .from('registrations')

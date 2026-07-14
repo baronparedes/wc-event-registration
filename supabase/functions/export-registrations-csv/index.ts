@@ -1,14 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  logAdminAction,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
+import { errorResponse } from '@/shared/http.ts';
+import { logAdminAction } from '@/shared/security.ts';
+import { z } from '@/shared/validation.ts';
 
 const exportRegistrationsRequestSchema = z.object({
   event_id: z.string().uuid('event_id must be a valid UUID'),
@@ -16,14 +10,6 @@ const exportRegistrationsRequestSchema = z.object({
 });
 
 type ExportRegistrationsRequest = z.infer<typeof exportRegistrationsRequestSchema>;
-
-const allowedOrigins = readAllowedOrigins();
-
-function maskValue(value: string | null, visible = 6): string {
-  if (!value) return 'null';
-  if (value.length <= visible * 2) return value;
-  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
-}
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -165,113 +151,28 @@ function buildUtcTimestampForFilename(date: Date): string {
 }
 
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
-
-  console.log('[export-registrations-csv]', {
-    requestId,
-    method: req.method,
-    origin,
-    hasAuthorizationHeader: Boolean(req.headers.get('authorization')),
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'export-registrations-csv',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'export-registrations-csv',
+      windowMs: RATE_LIMIT_PRESETS.exportRegistrationsCsv.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.exportRegistrationsCsv.maxHits,
+    },
+    schema: exportRegistrationsRequestSchema,
   });
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    console.log('[export-registrations-csv] env/auth check', {
-      requestId,
-      hasSupabaseUrl: Boolean(env?.supabaseUrl),
-      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
-      hasAuthHeader: Boolean(authHeader),
-      authHeaderPrefix: authHeader?.split(' ')[0] ?? null,
-      authHeaderLength: authHeader?.length ?? 0,
-    });
-
-    if (!env) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Environment not configured',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-    const { supabaseUrl, supabaseServiceKey } = env;
-
-    const parsedBody = await parseRequestBody(req, exportRegistrationsRequestSchema);
-    if (!parsedBody.success) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const { event_id, response_mode }: ExportRegistrationsRequest = parsedBody.data;
-
-    console.log('[export-registrations-csv] parsed body', {
-      requestId,
-      hasEventId: Boolean(event_id),
-      eventId: maskValue(event_id ?? null),
-    });
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'export-registrations-csv',
-      supabaseUrl,
-      supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'export-registrations-csv',
-        windowMs: 60_000,
-        maxHits: 5,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    // Create service role client for privileged operations after auth check
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const { event_id, response_mode }: ExportRegistrationsRequest = guard.data;
+    const adminClient = guard.client;
 
     // Fetch event metadata for friendly export filename
     const { data: eventData } = await adminClient
@@ -287,15 +188,7 @@ Deno.serve(async (req) => {
       .eq('event_id', event_id)
       .order('submitted_at', { ascending: false });
 
-    console.log('[export-registrations-csv] registration query result', {
-      requestId,
-      eventId: maskValue(event_id),
-      registrationCount: registrations?.length ?? 0,
-      regErrorCode: regError?.code ?? null,
-    });
-
     if (regError) {
-      console.error('Registration fetch error:', regError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -316,7 +209,6 @@ Deno.serve(async (req) => {
       .in('id', userIds);
 
     if (userError) {
-      console.error('User fetch error:', userError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -337,7 +229,6 @@ Deno.serve(async (req) => {
       .order('display_order', { ascending: true });
 
     if (fieldError) {
-      console.error('Field fetch error:', fieldError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -360,7 +251,6 @@ Deno.serve(async (req) => {
       .in('registration_id', regIds);
 
     if (answerError) {
-      console.error('Answer fetch error:', answerError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -450,7 +340,7 @@ Deno.serve(async (req) => {
     if (response_mode === 'names_json') {
       await logAdminAction({
         adminClient,
-        adminUserId: adminAccess.userId,
+        adminUserId: guard.userId,
         action: 'export_registration_names',
         resourceType: 'export',
         resourceId: event_id,
@@ -527,7 +417,7 @@ Deno.serve(async (req) => {
 
     await logAdminAction({
       adminClient,
-      adminUserId: adminAccess.userId,
+      adminUserId: guard.userId,
       action: 'export_registrations_csv',
       resourceType: 'export',
       resourceId: event_id,
@@ -546,20 +436,7 @@ Deno.serve(async (req) => {
         'Content-Disposition': `attachment; filename="${filename}"`,
       },
     });
-  } catch (error) {
-    console.error('[export-registrations-csv] unexpected error', {
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Internal server error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+  } catch {
+    return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 });

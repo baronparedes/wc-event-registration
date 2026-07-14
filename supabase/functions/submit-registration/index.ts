@@ -1,13 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  enforcePublicRateLimit,
-  isOriginAllowed,
-  readAllowedOrigins,
-} from '@/shared/security.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
 import {
   EventFieldWithValidation,
@@ -18,7 +10,6 @@ import {
   extractSelectedOptionValuesFromStoredAnswer,
   incrementOptionUsageFromSelection,
   normalizePrimaryRoleValue,
-  parseFunctionEnvironment,
   parseRequestBody,
   validateFieldValue,
   z,
@@ -114,62 +105,25 @@ function isRegistrationUniqueConflict(error: PostgrestErrorLike | null): boolean
   );
 }
 
-const allowedOrigins = readAllowedOrigins();
-
 Deno.serve(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
-
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
-
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const rateLimitResponse = enforcePublicRateLimit({
+  const guard = await useEdgeHook({
     req,
-    origin,
-    corsHeaders,
-    scope: 'submit-registration',
-    windowMs: RATE_LIMIT_PRESETS.submitRegistration.windowMs,
-    maxHits: RATE_LIMIT_PRESETS.submitRegistration.maxHits,
+    functionName: 'submit-registration',
+    method: 'POST',
+    publicRateLimit: {
+      scope: 'submit-registration',
+      windowMs: RATE_LIMIT_PRESETS.submitRegistration.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.submitRegistration.maxHits,
+    },
   });
 
-  if (rateLimitResponse) {
-    return rateLimitResponse;
+  const corsHeaders = guard.corsHeaders;
+
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-
-    if (!env) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Environment not configured',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-    const { supabaseUrl, supabaseServiceKey } = env;
-
     const parsedBody = await parseRequestBody(req, submitRegistrationRequestSchema);
     if (!parsedBody.success) {
       return new Response(
@@ -190,12 +144,7 @@ Deno.serve(async (req) => {
       parsedBody.data;
 
     // Create authenticated client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
+    const supabase = guard.client;
 
     // Step 1: Look up event by slug
     const { data: eventData, error: eventError } = await supabase
