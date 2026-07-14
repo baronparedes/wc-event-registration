@@ -1,15 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
+import { z } from '@/shared/validation.ts';
 
 const createMemberRequestSchema = z.object({
   member_id: z.string().trim().min(1, 'Member ID is required'),
@@ -38,74 +30,28 @@ interface CreateMemberError {
   error_code?: string;
 }
 
-const allowedOrigins = readAllowedOrigins();
-
-function maskValue(value: string | null, visible = 6): string {
-  if (!value) return 'null';
-  if (value.length <= visible * 2) return value;
-  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
-}
-
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
-
-  console.log('[create-member]', {
-    requestId,
-    method: req.method,
-    origin,
-    hasAuthorizationHeader: Boolean(req.headers.get('authorization')),
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'create-member',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'create-member',
+      windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.createMember.maxHits,
+    },
+    schema: createMemberRequestSchema,
   });
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405);
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    console.log('[create-member] env/auth check', {
-      requestId,
-      hasSupabaseUrl: Boolean(env?.supabaseUrl),
-      hasServiceRoleKey: Boolean(env?.supabaseServiceKey),
-      hasAuthHeader: Boolean(authHeader),
-    });
-
-    if (!env) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured');
-    }
-    const { supabaseUrl, supabaseServiceKey } = env;
-
-    const parsedBody = await parseRequestBody(req, createMemberRequestSchema);
-    if (!parsedBody.success) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        } as CreateMemberError,
-        400,
-      );
-    }
-
-    const body: CreateMemberRequest = parsedBody.data;
+    const body: CreateMemberRequest = guard.data;
     const {
       member_id,
       first_name,
@@ -118,50 +64,13 @@ Deno.serve(async (req) => {
       category,
     } = body;
 
-    console.log('[create-member] parsed body', {
-      requestId,
-      memberId: maskValue(member_id ?? null),
-      firstName: maskValue(first_name ?? null),
-      lastName: maskValue(last_name ?? null),
-      hasMemberId: Boolean(member_id),
-      hasFirstName: Boolean(first_name),
-      hasLastName: Boolean(last_name),
-      hasRole: Boolean(role),
-      hasCategory: Boolean(category),
-    });
-
     const normalizedFirstName = first_name.trim();
     const normalizedLastName = last_name.trim();
     const normalizedRole = role.trim();
     const normalizedCategory = category.trim();
     const derivedFullName = `${normalizedFirstName} ${normalizedLastName}`;
 
-    // Require admin access
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'create-member',
-      supabaseUrl,
-      supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'create-member',
-        windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,
-        maxHits: RATE_LIMIT_PRESETS.createMember.maxHits,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    // Create service role client for privileged operations
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const adminClient = guard.client;
 
     // Helper to normalize empty strings to null
     const toNull = (val: string | null | undefined): string | null => {
@@ -187,15 +96,6 @@ Deno.serve(async (req) => {
       })
       .select('id, member_id, full_name')
       .single();
-
-    console.log('[create-member] insert result', {
-      requestId,
-      memberId: maskValue(member_id),
-      fullName: maskValue(derivedFullName),
-      insertErrorCode: insertError?.code ?? null,
-      insertErrorDetails: insertError?.details ?? null,
-      hasNewMember: Boolean(newMember),
-    });
 
     if (insertError) {
       // Check for specific error types
@@ -234,12 +134,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[create-member] success', {
-      requestId,
-      memberId: maskValue(newMember.member_id),
-      fullName: maskValue(newMember.full_name),
-    });
-
     return jsonResponse(
       corsHeaders,
       {
@@ -250,14 +144,7 @@ Deno.serve(async (req) => {
       } as CreateMemberSuccess,
       201,
     );
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[create-member] error', {
-      requestId,
-      error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-
+  } catch {
     return errorResponse(corsHeaders, 500, 'An unexpected error occurred', undefined, {
       error_code: 'INTERNAL_ERROR',
     });

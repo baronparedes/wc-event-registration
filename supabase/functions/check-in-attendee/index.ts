@@ -1,17 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
-import { POSTGRES_ERROR_CODES } from '@/shared/constants.ts';
+import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
-
-const allowedOrigins = readAllowedOrigins();
+import { z } from '@/shared/validation.ts';
 
 const checkInAttendeeRequestSchema = z.object({
   event_id: z.string().uuid('Invalid event ID.'),
@@ -24,75 +14,33 @@ const checkInAttendeeRequestSchema = z.object({
 type CheckInAttendeeRequest = z.infer<typeof checkInAttendeeRequestSchema>;
 
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'check-in-attendee',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'check-in-attendee',
+      windowMs: RATE_LIMIT_PRESETS.checkInAttendee.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.checkInAttendee.maxHits,
+    },
+    schema: checkInAttendeeRequestSchema,
+  });
 
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405);
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    if (!env) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured');
-    }
-
-    const { supabaseUrl, supabaseServiceKey } = env;
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'check-in-attendee',
-      supabaseUrl,
-      supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'check-in-attendee',
-        windowMs: 60_000,
-        maxHits: 180,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    const parsedBody = await parseRequestBody(req, checkInAttendeeRequestSchema);
-    if (!parsedBody.success) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        },
-        400,
-      );
-    }
-
     const {
       event_id,
       attendee_kind,
       registration_id,
       public_registration_id,
       slot,
-    }: CheckInAttendeeRequest = parsedBody.data;
+    }: CheckInAttendeeRequest = guard.data;
 
     const resolvedAttendeeKind: 'registered' | 'public' =
       attendee_kind ?? (public_registration_id ? 'public' : 'registered');
@@ -114,12 +62,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const adminClient = guard.client;
 
     const { data: event, error: eventError } = await adminClient
       .from('events')
@@ -450,12 +393,7 @@ Deno.serve(async (req) => {
       },
       200,
     );
-  } catch (error) {
-    console.error('[check-in-attendee] unexpected error', {
-      requestId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
+  } catch {
     return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 });

@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    exclude: ['supabase/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],

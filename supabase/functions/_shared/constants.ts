@@ -50,6 +50,34 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 20,
   },
+  bulkUpsertAttendanceAnswers: {
+    windowMs: 60_000,
+    maxHits: 6,
+  },
+  bulkUpsertMembers: {
+    windowMs: 60_000,
+    maxHits: 60,
+  },
+  checkInAttendee: {
+    windowMs: 60_000,
+    maxHits: 180,
+  },
+  listUnregisteredMembers: {
+    windowMs: 60_000,
+    maxHits: 120,
+  },
+  updateAttendanceSettings: {
+    windowMs: 60_000,
+    maxHits: 60,
+  },
+  searchAttendees: {
+    windowMs: 60_000,
+    maxHits: 120,
+  },
+  attendanceCsvExport: {
+    windowMs: 60_000,
+    maxHits: 12,
+  },
   memberLookup: {
     windowMs: 60_000,
     maxHits: 60,

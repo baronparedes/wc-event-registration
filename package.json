@@ -17,6 +17,8 @@
     "test:unit": "vitest run --exclude \"src/__tests__/integration.test.ts\"",
     "test:coverage": "npm run test:unit -- --coverage",
     "test:ci": "npm run test:coverage",
+    "test:edge": "cd supabase/functions && deno test -A --no-check **/*.test.ts",
+    "test:supabase": "supabase test db && npm run test:edge",
     "ci:gate": "npm run format:check && npm run lint && npm run build && npm run test:ci",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",

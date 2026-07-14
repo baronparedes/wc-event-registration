@@ -1,16 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
-
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
-import {
-  buildCorsHeaders,
-  createObscuredDenyResponse,
-  isOriginAllowed,
-  readAllowedOrigins,
-  requireAdminAccess,
-} from '@/shared/security.ts';
-import { parseFunctionEnvironment, parseRequestBody, z } from '@/shared/validation.ts';
-
-const allowedOrigins = readAllowedOrigins();
+import { z } from '@/shared/validation.ts';
 
 const searchAttendeesRequestSchema = z.object({
   event_id: z.string().uuid('Invalid event ID.'),
@@ -279,76 +270,28 @@ function isMissingPublicRegistrationColumnError(error: unknown): boolean {
 }
 
 Deno.serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  const origin = req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'search-attendees',
+    method: 'POST',
+    requireAdmin: true,
+    rateLimit: {
+      scope: 'search-attendees',
+      windowMs: RATE_LIMIT_PRESETS.searchAttendees.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.searchAttendees.maxHits,
+    },
+    schema: searchAttendeesRequestSchema,
+  });
 
-  if (req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
-      return createObscuredDenyResponse(corsHeaders);
-    }
+  const corsHeaders = guard.corsHeaders;
 
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (!isOriginAllowed(origin, allowedOrigins)) {
-    return createObscuredDenyResponse(corsHeaders);
-  }
-
-  if (req.method !== 'POST') {
-    return jsonResponse(corsHeaders, { success: false, error: 'Method not allowed' }, 405);
+  if (!guard.valid) {
+    return guard.response;
   }
 
   try {
-    const env = parseFunctionEnvironment();
-    const authHeader = req.headers.get('authorization');
-
-    if (!env) {
-      return errorResponse(corsHeaders, 500, 'Environment not configured');
-    }
-
-    const { supabaseUrl, supabaseServiceKey } = env;
-
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: 'search-attendees',
-      supabaseUrl,
-      supabaseServiceKey,
-      authHeader,
-      corsHeaders,
-      rateLimit: {
-        scope: 'search-attendees',
-        windowMs: 60_000,
-        maxHits: 120,
-      },
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    const parsedBody = await parseRequestBody(req, searchAttendeesRequestSchema);
-    if (!parsedBody.success) {
-      return jsonResponse(
-        corsHeaders,
-        {
-          success: false,
-          error: parsedBody.error,
-          detail: parsedBody.details,
-          error_code: 'INVALID_REQUEST',
-        },
-        400,
-      );
-    }
-
-    const { event_id, search_token }: SearchAttendeesRequest = parsedBody.data;
-
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const { event_id, search_token }: SearchAttendeesRequest = guard.data;
+    const adminClient = guard.client;
 
     const { data: settings, error: settingsError } = await adminClient
       .from('attendance_settings')
