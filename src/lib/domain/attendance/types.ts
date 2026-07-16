@@ -136,3 +136,7 @@ export type UnregisteredMembersReportInput = {
   offset: number;
   search_term?: string;
 };
+
+export type ExportUnregisteredMembersCsvInput = {
+  event_id: string;
+};

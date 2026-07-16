@@ -1,4 +1,10 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import {
+  buildUtcTimestampForFilename,
+  escapeCsvField,
+  formatHeaderFromSnakeCase,
+  sanitizeFilenamePart,
+} from '@/shared/csv.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
@@ -56,42 +62,16 @@ type PublicAttendanceAnswerRow = {
   answer_number: number | null;
 };
 
-function escapeCsvField(value: unknown): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
+type EventTitleRow = {
+  title: string | null;
+};
 
-  let text = String(value);
-  if (text.includes(',') || text.includes('"') || text.includes('\n')) {
-    text = '"' + text.replace(/"/g, '""') + '"';
-  }
-
-  return text;
-}
+type AttendanceSettingsRow = {
+  attendance_enabled: boolean;
+};
 
 function formatHeaderFromKey(fieldKey: string): string {
-  return fieldKey
-    .split('_')
-    .map((part) => (part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : part))
-    .join(' ');
-}
-
-function sanitizeFilenamePart(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function buildUtcTimestampForFilename(date: Date): string {
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
-  const hh = String(date.getUTCHours()).padStart(2, '0');
-  const min = String(date.getUTCMinutes()).padStart(2, '0');
-  const ss = String(date.getUTCSeconds()).padStart(2, '0');
-  return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+  return formatHeaderFromSnakeCase(fieldKey);
 }
 
 function formatAttendanceAnswerValue(
@@ -158,17 +138,20 @@ Deno.serve(async (req) => {
     const { event_id }: ExportAttendanceRequest = guard.data;
     const adminClient = guard.client;
 
-    const { data: eventData } = await adminClient
+    const { data: eventData } = (await adminClient
       .from('events')
       .select('title')
       .eq('id', event_id)
-      .single();
+      .single()) as { data: EventTitleRow | null };
 
-    const { data: settingsData, error: settingsError } = await adminClient
+    const { data: settingsData, error: settingsError } = (await adminClient
       .from('attendance_settings')
       .select('attendance_enabled')
       .eq('event_id', event_id)
-      .maybeSingle();
+      .maybeSingle()) as {
+      data: AttendanceSettingsRow | null;
+      error: { message?: string } | null;
+    };
 
     if (settingsError) {
       return new Response(

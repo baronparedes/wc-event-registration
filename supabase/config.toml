@@ -148,6 +148,9 @@ verify_jwt = true
 [functions.list-unregistered-members]
 verify_jwt = true
 
+[functions.export-unregistered-members-csv]
+verify_jwt = true
+
 [functions.check-in-attendee]
 verify_jwt = true
 

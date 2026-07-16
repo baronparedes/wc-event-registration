@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { UserMinus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   ListTable,
@@ -27,6 +29,7 @@ import {
 import {
   useAttendanceSettingsQuery,
   useAttendanceUnregisteredMembersQuery,
+  useExportUnregisteredMembersCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
@@ -58,6 +61,7 @@ export function AdminAttendanceUnregisteredMembersPage() {
     cursor,
     searchTerm: normalizedSearchTerm,
   });
+  const exportMutation = useExportUnregisteredMembersCSVMutation(eventId ?? '');
 
   if (!eventId) {
     return (
@@ -82,6 +86,31 @@ export function AdminAttendanceUnregisteredMembersPage() {
     eventQuery.isLoading || settingsQuery.isLoading || unregisteredMembersQuery.isLoading;
   const error = eventQuery.error || settingsQuery.error || unregisteredMembersQuery.error;
   const attendanceEnabled = settingsQuery.data?.attendance_enabled ?? false;
+  const canExportCsv = Boolean(eventQuery.data) && totalCount > 0;
+
+  async function handleExportCsv() {
+    if (!eventId || !canExportCsv) {
+      return;
+    }
+
+    try {
+      const { text, filename } = await exportMutation.mutateAsync();
+      const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = filename ?? `event-${eventId}-unregistered-members.csv`;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export CSV.';
+      toast.error(message);
+    }
+  }
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
@@ -139,6 +168,16 @@ export function AdminAttendanceUnregisteredMembersPage() {
         }
         title="Unregistered Members Report"
         description={`Page ${currentPage} of ${totalPages} • ${totalCount} members without an active registration`}
+        actions={
+          <Button
+            type="button"
+            variant="primaryOutline"
+            onClick={handleExportCsv}
+            disabled={!canExportCsv || exportMutation.isPending}
+          >
+            {exportMutation.isPending ? 'Exporting...' : 'Export as CSV'}
+          </Button>
+        }
       />
 
       {!isLoading && !attendanceEnabled && (

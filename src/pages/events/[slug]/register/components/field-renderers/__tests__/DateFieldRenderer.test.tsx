@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
@@ -48,6 +48,10 @@ function DateRendererHarness({ field }: { field: PublicEventField }) {
     },
     mode: 'onChange',
   });
+  const watchedValue = useWatch({
+    control: dynamicForm.control,
+    name: field.field_key,
+  });
 
   return (
     <form>
@@ -60,7 +64,7 @@ function DateRendererHarness({ field }: { field: PublicEventField }) {
       >
         validate
       </button>
-      <output data-testid="value">{String(dynamicForm.watch(field.field_key) ?? '')}</output>
+      <output data-testid="value">{String(watchedValue ?? '')}</output>
       <output data-testid="error">
         {dynamicForm.formState.errors[field.field_key]?.message as string}
       </output>
@@ -75,6 +79,10 @@ function DatetimeRendererHarness({ field }: { field: PublicEventField }) {
     },
     mode: 'onChange',
   });
+  const watchedValue = useWatch({
+    control: dynamicForm.control,
+    name: field.field_key,
+  });
 
   return (
     <form>
@@ -87,7 +95,7 @@ function DatetimeRendererHarness({ field }: { field: PublicEventField }) {
       >
         validate
       </button>
-      <output data-testid="value">{String(dynamicForm.watch(field.field_key) ?? '')}</output>
+      <output data-testid="value">{String(watchedValue ?? '')}</output>
       <output data-testid="error">
         {dynamicForm.formState.errors[field.field_key]?.message as string}
       </output>

@@ -8,6 +8,7 @@ Feature: Handle Unregistered Attendees via Same-Day Registration Reopen
     - Admin can temporarily reopen registration for event day when policy allows additional attendees
     - Unregistered attendees must complete normal registration first
     - Once registration is completed, attendee uses the same standard check-in process as everyone else
+    - Unregistered members CSV export is always full-event scope and does not use current UI search filters or pagination state
 
   Scenario: Guide unregistered attendee to registration flow
     Given attendance tracking is enabled for an event

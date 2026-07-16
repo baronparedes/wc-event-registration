@@ -72,6 +72,7 @@ Features are organized into 9 epic folders:
 - **Manage Pre-Event Attendance Data Collection**: Admins design and fill custom attendance fields before event day for registered and public self-registered attendees
 - **Check-In Registered Attendees**: Admins check in registered attendees by name, email, or ID scan
 - **Handle Unregistered Attendees via Same-Day Registration Reopen**: Admins route unregistered attendees through registration, then use normal check-in
+- **Unregistered Members CSV Export Scope**: CSV export from the unregistered members report always includes the full event-level unregistered set, independent of current search filters and pagination state
 - **Track Timeslot Attendance**: Admins record which timeslot each attendee occupies during event
 - **Export Attendance CSV**: Admins download attendance data and status for post-event reporting
 - **Bulk Edit Attendance Data via CSV**: Admins download template, bulk edit locally, and upload to update 100s of attendees at once

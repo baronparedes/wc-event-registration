@@ -16,6 +16,7 @@ export type {
   CheckInAttendeeInput,
   UnregisteredMember,
   UnregisteredMembersReportInput,
+  ExportUnregisteredMembersCsvInput,
 } from './types';
 
 export type {

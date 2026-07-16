@@ -7,6 +7,7 @@ import {
   useBulkUpsertAttendanceAnswersMutation,
   useDownloadAttendanceCSVMutation,
   useExportAttendanceCSVMutation,
+  useExportUnregisteredMembersCSVMutation,
 } from '@/hooks/domain/attendance';
 
 const {
@@ -65,6 +66,27 @@ describe('attendance bulk csv mutations', () => {
     expect(mockCreateEdgeFunctionTextCaller).toHaveBeenCalledWith('export-attendance-csv');
     expect(mockTextCaller).toHaveBeenCalledWith({ event_id: eventId });
     expect(response).toEqual({ text: 'csv,data', filename: 'attendance-export.csv' });
+  });
+
+  it('exports unregistered members csv without search or pagination payload', async () => {
+    const eventId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+    mockTextCaller.mockResolvedValueOnce({
+      text: 'member_id,full_name\nWC-1,Alex Rivera',
+      filename: 'unregistered-members.csv',
+    });
+
+    const { result } = renderHookWithClient(() => useExportUnregisteredMembersCSVMutation(eventId));
+
+    const response = await act(async () => result.current.mutateAsync());
+
+    expect(mockCreateEdgeFunctionTextCaller).toHaveBeenCalledWith(
+      'export-unregistered-members-csv',
+    );
+    expect(mockTextCaller).toHaveBeenCalledWith({ event_id: eventId });
+    expect(response).toEqual({
+      text: 'member_id,full_name\nWC-1,Alex Rivera',
+      filename: 'unregistered-members.csv',
+    });
   });
 
   it('bulk upserts attendance rows and invalidates attendance answers cache', async () => {

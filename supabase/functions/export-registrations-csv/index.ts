@@ -1,4 +1,10 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import {
+  buildUtcTimestampForFilename,
+  escapeCsvField,
+  formatHeaderFromSnakeCase,
+  sanitizeFilenamePart,
+} from '@/shared/csv.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
 import { logAdminAction } from '@/shared/security.ts';
@@ -70,22 +76,6 @@ function formatMetadataValue(value: unknown): string {
   }
 }
 
-// Helper function to escape CSV fields
-function escapeCsvField(field: unknown): string {
-  if (field === null || field === undefined) {
-    return '';
-  }
-
-  let value = String(field);
-
-  // If field contains comma, quote, or newline, wrap in quotes and escape inner quotes
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    value = '"' + value.replace(/"/g, '""') + '"';
-  }
-
-  return value;
-}
-
 // Helper to format answer value based on type
 function formatAnswerValue(answer: unknown, fieldType: string): string {
   if (answer === null || answer === undefined) {
@@ -126,28 +116,7 @@ function formatAnswerValue(answer: unknown, fieldType: string): string {
 }
 
 function formatBaseHeader(field: string): string {
-  return field
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
-
-function sanitizeFilenamePart(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function buildUtcTimestampForFilename(date: Date): string {
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
-  const hh = String(date.getUTCHours()).padStart(2, '0');
-  const min = String(date.getUTCMinutes()).padStart(2, '0');
-  const ss = String(date.getUTCSeconds()).padStart(2, '0');
-  return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+  return formatHeaderFromSnakeCase(field);
 }
 
 Deno.serve(async (req) => {

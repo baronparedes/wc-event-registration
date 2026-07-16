@@ -94,6 +94,10 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 5,
   },
+  exportUnregisteredMembersCsv: {
+    windowMs: 60_000,
+    maxHits: 12,
+  },
 } as const;
 
 export const ERROR_CODES = {

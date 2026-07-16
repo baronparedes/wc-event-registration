@@ -1,4 +1,9 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import {
+  buildUtcTimestampForFilename,
+  escapeCsvField,
+  sanitizeFilenamePart,
+} from '@/shared/csv.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
@@ -50,33 +55,6 @@ type PublicAttendanceAnswerRow = {
   answer_text: string | null;
   answer_number: number | null;
 };
-
-function escapeCsvCell(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  const text = String(value);
-  if (text.includes(',') || text.includes('"') || text.includes('\n')) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
-function sanitizeFilenamePart(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function buildUtcTimestampForFilename(date: Date): string {
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
-  const hh = String(date.getUTCHours()).padStart(2, '0');
-  const min = String(date.getUTCMinutes()).padStart(2, '0');
-  const ss = String(date.getUTCSeconds()).padStart(2, '0');
-  return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
-}
 
 function formatAnswerValue(
   fieldType: string,
@@ -379,7 +357,7 @@ Deno.serve(async (req) => {
     });
 
     const csvRows = [header, ...memberRows, ...publicRows]
-      .map((row) => row.map(escapeCsvCell).join(','))
+      .map((row) => row.map(escapeCsvField).join(','))
       .join('\n');
 
     const eventTitle = eventData?.title ? sanitizeFilenamePart(String(eventData.title)) : 'event';
