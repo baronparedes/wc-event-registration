@@ -54,6 +54,12 @@
 - Member Profile: The saved person details used across registrations, including name and optional metadata.
 - Role: A profile label describing function or participation type, such as attendee, volunteer, or staff.
 - Category: A profile label used to group members for operational use, such as participant or organizer.
+- Invite: A manually created access record that links a person's email to an allowed account role before first sign-in.
+- Accepted Invite: An invite that has been used successfully for first sign-in and is now linked to the account holder.
+- Revoked Invite: An invite that has been cancelled by an admin and can no longer be used to sign in.
+- Expired Invite: An invite that is no longer valid because its allowed sign-in window has passed.
+- Stakeholder (SLOD): A non-admin account role that can view approved reports and selected account information but does not manage events.
+- Account Area: The signed-in section of the platform where a user sees role-based content after access is granted.
 
 ## Admin Operations and System Terms
 
@@ -64,6 +70,7 @@
 - Pagination: Splitting long lists into pages with selectable page size and page navigation.
 - Registrations Export: CSV report for registration data, including statuses and registration responses.
 - Attendance Export: Dedicated CSV report for attendance data, separate from registration export.
+- Invite-Only Access: Rule that a Google account can enter the platform only when an admin-created invite already exists for that email.
 
 ## Attendance Domain Terms
 

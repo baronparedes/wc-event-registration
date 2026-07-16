@@ -10,7 +10,7 @@ Each `.feature` file describes one user-facing capability of the platform in pla
 
 ## How to Navigate
 
-Features are organized into 8 epic folders:
+Features are organized into 9 epic folders:
 
 ### 1. Public Registration (6 features)
 
@@ -76,7 +76,14 @@ Features are organized into 8 epic folders:
 - **Export Attendance CSV**: Admins download attendance data and status for post-event reporting
 - **Bulk Edit Attendance Data via CSV**: Admins download template, bulk edit locally, and upload to update 100s of attendees at once
 
-### 9. Future/Planned (4 features in `future/` subfolder)
+### 9. Account Access (4 features)
+
+- **Manage Google Access Invites**: Admins create and manage invite-based access for members and stakeholders
+- **Google Sign-In**: Invited users sign in with Google using their approved email
+- **Invite Access Protection**: The system blocks uninvited, revoked, or expired accounts from entering
+- **Role-Based Account Area**: Members and stakeholders land in the correct area with role-based visibility
+
+### Future/Planned (4 features in `future/` subfolder)
 
 - **Event Scoping**: Admins limited to their own events
 - **Async CSV Export**: For large registration volumes
