@@ -27,7 +27,7 @@ export function AppMobileShell() {
 
   return (
     <div className="min-h-screen bg-background text-text">
-      <header className="sticky top-0 z-30 border-b border-border bg-surface">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
           <div className="flex items-center gap-3">
             <img src={brandLogo} alt="WC Events" className="h-12 w-12" />
