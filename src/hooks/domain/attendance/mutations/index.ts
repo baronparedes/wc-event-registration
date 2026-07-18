@@ -5,3 +5,5 @@ export { useDownloadAttendanceCSVMutation } from '@/hooks/domain/attendance/muta
 export { useExportAttendanceCSVMutation } from '@/hooks/domain/attendance/mutations/useExportAttendanceCSVMutation';
 export { useExportUnregisteredMembersCSVMutation } from '@/hooks/domain/attendance/mutations/useExportUnregisteredMembersCSVMutation';
 export { useBulkUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance/mutations/useBulkUpsertAttendanceAnswersMutation';
+export { useUpsertAttendanceSavedViewMutation } from '@/hooks/domain/attendance/mutations/useUpsertAttendanceSavedViewMutation';
+export { useDeleteAttendanceSavedViewMutation } from '@/hooks/domain/attendance/mutations/useDeleteAttendanceSavedViewMutation';

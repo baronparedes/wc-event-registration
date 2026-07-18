@@ -6,7 +6,14 @@ export type {
   AttendeeViewConfig,
   RegistrantViewGroup,
   BuildAttendeeViewResult,
+  AttendanceSavedView,
 } from './types';
+
+export {
+  attendeeViewConfigSchema,
+  upsertAttendanceSavedViewSchema,
+  deleteAttendanceSavedViewSchema,
+} from './schemas';
 
 export {
   toDynamicFieldToken,

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,6 +15,7 @@ const {
   mockUseAttendanceFieldsQuery,
   mockUseAdminEventFieldsQuery,
   mockUseAttendeesLocalCacheQuery,
+  mockExportMutateAsync,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
@@ -22,6 +23,7 @@ const {
   mockUseAttendanceFieldsQuery: vi.fn(),
   mockUseAdminEventFieldsQuery: vi.fn(),
   mockUseAttendeesLocalCacheQuery: vi.fn(),
+  mockExportMutateAsync: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -52,6 +54,10 @@ vi.mock('@/hooks/domain/attendance', async () => {
     ...actual,
     useAttendanceSettingsQuery: (...args: unknown[]) => mockUseAttendanceSettingsQuery(...args),
     useAttendeesLocalCacheQuery: (...args: unknown[]) => mockUseAttendeesLocalCacheQuery(...args),
+    useExportAttendanceCSVMutation: () => ({
+      mutateAsync: mockExportMutateAsync,
+      isPending: false,
+    }),
   };
 });
 
@@ -91,6 +97,17 @@ function renderPage() {
 describe('AdminAttendanceDataPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockExportMutateAsync.mockResolvedValue({ text: 'header', filename: 'attendance.csv' });
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      writable: true,
+      value: vi.fn(() => 'blob:mock-url'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      writable: true,
+      value: vi.fn(),
+    });
 
     mockUseParams.mockReturnValue({ id: EVENT_ID });
 
@@ -426,5 +443,36 @@ describe('AdminAttendanceDataPage', () => {
 
     fireEvent.change(input, { target: { value: 'MID-001' } });
     expect(input.value).toBe('MID-001');
+  });
+
+  it('export button calls mutateAsync when attendance is enabled', async () => {
+    renderPage();
+
+    const exportButton = screen.getByRole('button', { name: 'Export Attendance CSV' });
+    expect(exportButton).not.toBeDisabled();
+
+    fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('export button is absent from actions when canRunBulkOps is false', () => {
+    mockUseAttendanceSettingsQuery.mockReturnValue({
+      data: {
+        event_id: EVENT_ID,
+        attendance_enabled: false,
+        timeslot_enabled: false,
+        timeslots: [],
+        updated_at: '2026-07-04T00:00:00Z',
+      },
+      isLoading: false,
+    });
+    mockUseAttendanceFieldsQuery.mockReturnValue({ data: [], isLoading: false });
+
+    renderPage();
+
+    expect(screen.queryByRole('button', { name: 'Export Attendance CSV' })).not.toBeInTheDocument();
   });
 });

@@ -406,31 +406,4 @@ describe('AdminEventAttendancePage', () => {
     expect(getToggleInputByText('Enable attendance tracking')).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Save Attendance Settings' })).toBeDisabled();
   });
-
-  it('exports attendance csv when export action is clicked', async () => {
-    mockUseAttendanceSettingsQuery.mockReturnValue({
-      data: makeDefaultSettings({ attendance_enabled: true }),
-      isLoading: false,
-      error: null,
-    });
-
-    renderPage();
-
-    const exportButton = screen.getByRole('button', { name: 'Export Attendance CSV' });
-    await waitFor(() => {
-      expect(exportButton).not.toBeDisabled();
-    });
-
-    fireEvent.click(exportButton);
-
-    await waitFor(() => {
-      expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it('keeps export action disabled when attendance tracking is disabled', () => {
-    renderPage();
-
-    expect(screen.getByRole('button', { name: 'Export Attendance CSV' })).toBeDisabled();
-  });
 });

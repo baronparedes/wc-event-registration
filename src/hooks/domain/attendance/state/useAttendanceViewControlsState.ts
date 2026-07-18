@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   type AttendeeViewConfig,
@@ -103,11 +103,17 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     }));
   }
 
-  function clearViewControls() {
+  const clearViewControls = useCallback(() => {
     setViewConfig(DEFAULT_VIEW_CONFIG);
     setDynamicFilterFieldToken('');
     setDynamicFilterValue('');
-  }
+  }, []);
+
+  const applyViewConfig = useCallback((config: AttendeeViewConfig) => {
+    setViewConfig(config);
+    setDynamicFilterFieldToken('');
+    setDynamicFilterValue('');
+  }, []);
 
   function addGroupingLevel() {
     setViewConfig((current) => ({
@@ -191,6 +197,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     addDynamicFilter,
     removeDynamicFilter,
     clearViewControls,
+    applyViewConfig,
     addGroupingLevel,
     changeGroupingField,
     removeGroupingLevel,

@@ -38,3 +38,12 @@ export type BuildAttendeeViewResult = {
   filteredAttendees: AttendeeSearchResult[];
   groups: RegistrantViewGroup[];
 };
+
+export type AttendanceSavedView = {
+  id: string;
+  event_id: string;
+  name: string;
+  view_config: AttendeeViewConfig;
+  created_at: string;
+  updated_at: string;
+};

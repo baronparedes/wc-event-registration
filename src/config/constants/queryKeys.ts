@@ -24,4 +24,8 @@ export const QUERY_KEYS = {
     cursor: string | null,
     searchTerm: string,
   ) => ['admin-attendance-unregistered-members', eventId, pageSize, cursor, searchTerm] as const,
+  adminAttendanceSavedViews: (eventId: string | undefined) =>
+    ['admin-attendance-saved-views', eventId] as const,
+  adminAttendanceSavedView: (viewId: string | undefined) =>
+    ['admin-attendance-saved-view', viewId] as const,
 } as const;

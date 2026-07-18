@@ -11,7 +11,6 @@ import { Button, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
-  useExportAttendanceCSVMutation,
   useUpdateAttendanceSettingsMutation,
 } from '@/hooks/domain/attendance';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
@@ -26,7 +25,6 @@ import { EventNavigationLinks } from '@/pages/admin/events/components';
 const ATTENDANCE_TOAST_MESSAGES = {
   updated: 'Attendance settings updated successfully.',
   updateFailed: 'Failed to update attendance settings.',
-  exportFailed: 'Failed to export attendance CSV.',
 } as const;
 
 type AttendanceSettingsFormInput = z.input<typeof updateAttendanceSettingsSchema>;
@@ -68,7 +66,6 @@ export function AdminEventAttendancePage() {
     error: settingsError,
   } = useAttendanceSettingsQuery(eventId, canLoadAdminData);
   const updateMutation = useUpdateAttendanceSettingsMutation();
-  const exportMutation = useExportAttendanceCSVMutation(eventId ?? '');
 
   const {
     register,
@@ -167,33 +164,6 @@ export function AdminEventAttendancePage() {
   const isArchived = activeEvent.status === 'archived';
   const eventStartLocal = toDatetimeLocal(activeEvent.starts_at);
   const eventEndLocal = toDatetimeLocal(activeEvent.ends_at);
-  const canExportAttendance = settings?.attendance_enabled ?? false;
-
-  async function onExportAttendanceCSV() {
-    if (!eventId || !canExportAttendance) {
-      return;
-    }
-
-    try {
-      const { text, filename } = await exportMutation.mutateAsync();
-      const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-
-      link.href = url;
-      link.download = filename ?? `event-${eventId}-attendance.csv`;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : ATTENDANCE_TOAST_MESSAGES.exportFailed;
-      toast.error(message);
-    }
-  }
-
   function addTimeslot() {
     setValue('timeslots', [...effectiveTimeslots, ''], {
       shouldDirty: true,
@@ -280,15 +250,6 @@ export function AdminEventAttendancePage() {
         navLinks={<EventNavigationLinks eventId={resolvedEventId} currentSection="attendance" />}
         title="Manage Attendance"
         description="Configure event-day attendance tracking and timeslot attendance behavior."
-        actions={
-          <Button
-            variant="primaryOutline"
-            onClick={onExportAttendanceCSV}
-            disabled={!canExportAttendance || exportMutation.isPending}
-          >
-            {exportMutation.isPending ? 'Exporting...' : 'Export Attendance CSV'}
-          </Button>
-        }
       />
 
       {isArchived && (

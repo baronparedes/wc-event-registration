@@ -284,4 +284,60 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.dynamicFilterValue).toBe('');
     expect(result.current.hasActiveFilters).toBe(false);
   });
+
+  it('restores full view config via applyViewConfig and resets filter controls', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    act(() => {
+      result.current.setFilterFieldToken('registration:service');
+      result.current.setDynamicFilterValue('9AM');
+    });
+
+    const savedConfig = {
+      nameOrMemberQuery: 'MID-001',
+      role: ['Volunteer'],
+      category: 'Youth',
+      checkInStatus: 'checked_in' as const,
+      dynamicFilters: [
+        {
+          field: { source: 'attendance' as const, fieldKey: 'area', label: 'Area' },
+          value: 'East',
+        },
+      ],
+      groupBy: [{ source: 'registration' as const, fieldKey: 'service', label: 'Service' }],
+    };
+
+    act(() => {
+      result.current.applyViewConfig(savedConfig);
+    });
+
+    expect(result.current.viewConfig).toEqual(savedConfig);
+    expect(result.current.dynamicFilterFieldToken).toBe('');
+    expect(result.current.dynamicFilterValue).toBe('');
+    expect(result.current.hasActiveFilters).toBe(true);
+  });
+
+  it('handles static role and category grouping fields', () => {
+    const { result } = renderHook(() => useAttendanceViewControlsState([serviceOption]));
+
+    act(() => {
+      result.current.addGroupingLevel();
+      result.current.addGroupingLevel();
+      result.current.changeGroupingField(0, 'role:role');
+      result.current.changeGroupingField(1, 'category:category');
+    });
+
+    expect(result.current.viewConfig.groupBy[0]).toMatchObject({
+      source: 'role',
+      fieldKey: 'role',
+      label: 'Role',
+    });
+    expect(result.current.viewConfig.groupBy[1]).toMatchObject({
+      source: 'category',
+      fieldKey: 'category',
+      label: 'Category',
+    });
+  });
 });

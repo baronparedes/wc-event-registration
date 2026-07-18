@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink } from '@/components/ui/ActionLink';
@@ -13,9 +13,11 @@ import {
   toAdminEventDetail,
 } from '@/config/constants';
 import {
+  useAttendanceSavedViewQuery,
   useAttendanceSettingsQuery,
   useAttendanceViewControlsState,
   useAttendeesLocalCacheQuery,
+  useExportAttendanceCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
@@ -23,10 +25,17 @@ import { useAdminEventQuery } from '@/hooks/domain/events';
 import { buildAttendeeView, collectDynamicFieldOptions } from '@/lib/domain/attendance-views';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-import { AttendanceDataEntryList, AttendanceViewControls } from './components';
+import { AttendanceDataEntryList, AttendanceViewControls, SavedViewsModal } from './components';
 
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [savedViewsModalOpen, setSavedViewsModalOpen] = useState(false);
+  const appliedViewIdRef = useRef<string | null>(null);
+
+  const viewIdParam = searchParams.get('viewId');
+  const { data: savedView } = useAttendanceSavedViewQuery(viewIdParam ?? undefined);
 
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(id);
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(id);
@@ -112,11 +121,34 @@ export function AdminAttendanceDataPage() {
     addDynamicFilter,
     removeDynamicFilter,
     clearViewControls,
+    applyViewConfig,
     addGroupingLevel,
     changeGroupingField,
     removeGroupingLevel,
     moveGroupingLevel,
   } = useAttendanceViewControlsState(dynamicFieldOptions);
+
+  // Auto-apply saved view only once when viewId param changes
+  useEffect(() => {
+    if (
+      viewIdParam &&
+      appliedViewIdRef.current !== viewIdParam &&
+      savedView &&
+      savedView.view_config
+    ) {
+      applyViewConfig(savedView.view_config);
+      appliedViewIdRef.current = viewIdParam;
+    }
+  }, [viewIdParam, savedView, applyViewConfig]);
+
+  // Handle clearing the current saved view
+  const handleClearView = useCallback(() => {
+    clearViewControls();
+    appliedViewIdRef.current = null;
+    const params = new URLSearchParams(window.location.search);
+    params.delete('viewId');
+    navigate(params.toString() ? `?${params.toString()}` : '.', { replace: true });
+  }, [navigate, clearViewControls]);
 
   const viewResult = useMemo(
     () => buildAttendeeView(cachedAttendees, viewConfig),
@@ -135,15 +167,45 @@ export function AdminAttendanceDataPage() {
   }
 
   const attendanceEnabled = settings?.attendance_enabled ?? false;
+  const exportMutation = useExportAttendanceCSVMutation(id ?? '');
+
+  async function handleExportCSV() {
+    if (!id || !attendanceEnabled) return;
+    try {
+      const { text, filename } = await exportMutation.mutateAsync();
+      const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename ?? `event-${id}-attendance.csv`;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      const { toast } = await import('sonner');
+      const message = error instanceof Error ? error.message : 'Failed to export attendance CSV.';
+      toast.error(message);
+    }
+  }
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
 
   const actions = canRunBulkOps ? (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end print:hidden">
       {id && (
-        <Button asChild variant="outline">
-          <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
-        </Button>
+        <>
+          <Button variant="outline" onClick={() => setSavedViewsModalOpen(true)}>
+            Views
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV} disabled={exportMutation.isPending}>
+            {exportMutation.isPending ? 'Exporting...' : 'Export Attendance CSV'}
+          </Button>
+          <Button asChild variant="outline">
+            <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
+          </Button>
+        </>
       )}
     </div>
   ) : undefined;
@@ -223,6 +285,22 @@ export function AdminAttendanceDataPage() {
         </div>
       )}
 
+      {!isLoading && attendanceEnabled && viewIdParam && savedView && (
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm print:hidden">
+          <div>
+            <p className="text-muted">Viewing saved filter:</p>
+            <p className="font-semibold text-text">{savedView.name}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearView}
+            className="rounded px-3 py-1 text-xs text-primary underline hover:no-underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {!isLoading && attendanceEnabled && (
         <AttendanceViewControls
           viewConfig={viewConfig}
@@ -270,6 +348,19 @@ export function AdminAttendanceDataPage() {
           />
         )}
       </AdminPageShell.Content>
+
+      <SavedViewsModal
+        isOpen={savedViewsModalOpen}
+        onOpenChange={setSavedViewsModalOpen}
+        eventId={id ?? ''}
+        currentViewConfig={viewConfig}
+        currentViewId={viewIdParam}
+        onApplyView={applyViewConfig}
+        onViewDeleted={() => {
+          appliedViewIdRef.current = null;
+          clearViewControls();
+        }}
+      />
     </AdminPageShell>
   );
 }
