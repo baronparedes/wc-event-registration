@@ -134,7 +134,7 @@ export function AttendanceDataEntryList({
           <ListTableCell>
             <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
           </ListTableCell>
-          <ListTableCell>
+          <ListTableCell className="text-center align-middle">
             <span
               role="img"
               aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
@@ -176,7 +176,7 @@ export function AttendanceDataEntryList({
                   <ListTableHeaderCell>Member ID</ListTableHeaderCell>
                   <ListTableHeaderCell>Role</ListTableHeaderCell>
                   <ListTableHeaderCell>Category</ListTableHeaderCell>
-                  <ListTableHeaderCell>Check-In Status</ListTableHeaderCell>
+                  <ListTableHeaderCell className="text-center">Check-In Status</ListTableHeaderCell>
                   <ListTableHeaderCell className="print:hidden">Actions</ListTableHeaderCell>
                 </ListTableHeaderRow>
               </ListTableHead>
