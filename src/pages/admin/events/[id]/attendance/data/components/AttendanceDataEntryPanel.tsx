@@ -2,11 +2,13 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 import { useUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance';
 import type { AttendanceAnswer, RegistrantAttendanceRow } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 
 type AttendanceDataEntryPanelProps = {
+  isOpen: boolean;
   eventId: string;
   registrant: RegistrantAttendanceRow;
   fields: AttendanceField[];
@@ -48,6 +50,7 @@ function getExistingAnswerValue(
 
 /** Panel for entering attendance field answers for a single registrant. */
 export function AttendanceDataEntryPanel({
+  isOpen,
   eventId,
   registrant,
   fields,
@@ -123,9 +126,9 @@ export function AttendanceDataEntryPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg overflow-y-auto rounded-2xl bg-surface shadow-xl">
-        <div className="border-b border-border px-6 py-4">
+    <Dialog isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-lg">
+      <div className="max-h-[80vh] overflow-y-auto">
+        <div className="border-b border-border pb-4 mb-4">
           <h2 className="font-heading text-lg font-semibold text-text">
             Attendance Data: {registrant.full_name}
           </h2>
@@ -140,7 +143,7 @@ export function AttendanceDataEntryPanel({
           </p>
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4 px-6 py-4">
+        <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
           {fields.map((field) => {
             const inputId = `field-${field.id}`;
             const isRequired = field.is_required;
@@ -260,7 +263,7 @@ export function AttendanceDataEntryPanel({
             <p className="text-sm text-muted">No attendance fields configured for this event.</p>
           )}
 
-          <div className="flex justify-end gap-3 border-t border-border pt-4">
+          <div className="flex justify-end gap-3 border-t border-border mt-4 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -275,6 +278,6 @@ export function AttendanceDataEntryPanel({
           </div>
         </form>
       </div>
-    </div>
+    </Dialog>
   );
 }

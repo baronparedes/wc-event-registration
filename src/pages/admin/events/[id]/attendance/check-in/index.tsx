@@ -519,8 +519,8 @@ export function AdminAttendanceCheckInPage() {
               selectedResultId={selectedResultId}
               selectedAttendee={selectedAttendee}
               searchError={
-                !(isCacheError && cacheError && cacheError instanceof Error)
-                  ? new Error('Failed to load attendee cache.')
+                isCacheError && cacheError && cacheError instanceof Error
+                  ? new Error('Failed to load attendee cache')
                   : cacheError || null
               }
               onSelect={(registrationId) => {

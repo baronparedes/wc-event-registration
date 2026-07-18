@@ -225,7 +225,7 @@ export function BulkUploadPanel({
               Edit the staged values below before confirming the import.
             </p>
             <div className="mt-3 overflow-hidden rounded-xl border border-border bg-surface">
-              <ListTable density="dense" className="table-fixed">
+              <ListTable density="dense">
                 <ListTableHead>
                   <ListTableHeaderRow variant="plain">
                     <ListTableHeaderCell className="w-40">Attendee Kind</ListTableHeaderCell>

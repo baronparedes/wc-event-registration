@@ -78,6 +78,7 @@ describe('AttendanceDataEntryPanel', () => {
   it('renders multi-select field as a multiple select and preloads selected values', () => {
     render(
       <AttendanceDataEntryPanel
+        isOpen={true}
         eventId="event-1"
         registrant={registrant}
         fields={fields}
@@ -104,6 +105,7 @@ describe('AttendanceDataEntryPanel', () => {
 
     render(
       <AttendanceDataEntryPanel
+        isOpen={true}
         eventId="event-1"
         registrant={registrant}
         fields={fields}
@@ -279,6 +281,7 @@ describe('AttendanceDataEntryPanel', () => {
 
     render(
       <AttendanceDataEntryPanel
+        isOpen={true}
         eventId="event-1"
         registrant={mixedRegistrant}
         fields={mixedFields}
@@ -437,6 +440,7 @@ describe('AttendanceDataEntryPanel', () => {
 
     render(
       <AttendanceDataEntryPanel
+        isOpen={true}
         eventId="event-1"
         registrant={registrantForFormTypes}
         fields={formTypeFields}
@@ -490,6 +494,7 @@ describe('AttendanceDataEntryPanel', () => {
 
     render(
       <AttendanceDataEntryPanel
+        isOpen={true}
         eventId="event-1"
         registrant={registrant}
         fields={fields}
@@ -517,6 +522,7 @@ describe('AttendanceDataEntryPanel', () => {
         registrant={registrant}
         fields={fields}
         onClose={() => {}}
+        isOpen={true}
       />,
     );
 
@@ -596,6 +602,7 @@ describe('AttendanceDataEntryPanel', () => {
         registrant={defaultRegistrant}
         fields={defaultFields}
         onClose={() => {}}
+        isOpen={true}
       />,
     );
 
@@ -658,6 +665,7 @@ describe('AttendanceDataEntryPanel', () => {
         registrant={registrant}
         fields={edgeCaseFields}
         onClose={() => {}}
+        isOpen={true}
       />,
     );
 
@@ -674,6 +682,7 @@ describe('AttendanceDataEntryPanel', () => {
         registrant={registrant}
         fields={[]}
         onClose={() => {}}
+        isOpen={true}
       />,
     );
 

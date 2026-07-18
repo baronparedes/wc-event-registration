@@ -152,6 +152,7 @@ export function AttendanceDataEntryList({
 
       {editingRegistrant && (
         <AttendanceDataEntryPanel
+          isOpen={true}
           eventId={eventId}
           registrant={editingRegistrant}
           fields={fields}
