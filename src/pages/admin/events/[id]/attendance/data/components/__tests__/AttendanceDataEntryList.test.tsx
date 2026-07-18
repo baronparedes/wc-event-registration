@@ -80,7 +80,7 @@ describe('AttendanceDataEntryList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders field columns, ellipsis column, and answer/progress values', () => {
+  it('renders check-in status badge and hides attendance field columns', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
@@ -89,6 +89,9 @@ describe('AttendanceDataEntryList', () => {
         member_id: 'MID-001',
         full_name: 'Jane Doe',
         email: 'jane@example.com',
+        role: 'Volunteer',
+        category: 'North Team',
+        check_in_status: 'checked_in',
         answers: [
           {
             id: 'ans-1',
@@ -118,20 +121,21 @@ describe('AttendanceDataEntryList', () => {
       <AttendanceDataEntryList eventId="event-1" registrants={registrants} fields={baseFields} />,
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Table Number' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Area' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Notes' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: '…' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Check-In Status' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Role' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Table Number' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Area' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Notes' })).not.toBeInTheDocument();
 
     expect(screen.getByText('jane@example.com')).toBeInTheDocument();
-    expect(screen.getByText('50')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
-    expect(screen.getByText('2/4')).toBeInTheDocument();
+    expect(screen.getByText('Volunteer')).toBeInTheDocument();
+    expect(screen.getByText('North Team')).toBeInTheDocument();
+    expect(screen.getByLabelText('Checked In')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 
-  it('shows N/A progress for zero fields and opens panel on row click', () => {
+  it('shows not checked in badge for unknown check-in state and opens panel on row click', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
@@ -146,11 +150,34 @@ describe('AttendanceDataEntryList', () => {
 
     render(<AttendanceDataEntryList eventId="event-1" registrants={registrants} fields={[]} />);
 
-    expect(screen.getByText('N/A')).toBeInTheDocument();
+    expect(screen.getByLabelText('Not Checked In')).toBeInTheDocument();
+    expect(screen.getAllByText('—').length).toBeGreaterThan(1);
     expect(screen.getByRole('button', { name: 'Fill In' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('John Smith'));
 
     expect(screen.getByText('Panel for John Smith')).toBeInTheDocument();
+  });
+
+  it('shows a guest note for public attendees', () => {
+    const registrants: RegistrantAttendanceRow[] = [
+      {
+        attendee_kind: 'public',
+        registration_id: null,
+        public_registration_id: 'pub-1',
+        member_id: null,
+        full_name: 'Guest One',
+        email: 'guest@example.com',
+        role: null,
+        category: null,
+        check_in_status: 'not_checked_in',
+        answers: [],
+      },
+    ];
+
+    render(<AttendanceDataEntryList eventId="event-1" registrants={registrants} fields={[]} />);
+
+    expect(screen.getByText('Guest One')).toBeInTheDocument();
+    expect(screen.getByText('Guest', { selector: 'p' })).toBeInTheDocument();
   });
 });

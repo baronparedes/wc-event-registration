@@ -190,7 +190,7 @@ describe('AdminAttendanceDataPage', () => {
     });
   });
 
-  it('shows only active attendance fields in the attendee details table', () => {
+  it('renders the simplified attendee details table with fixed columns', () => {
     mockUseAttendanceFieldsQuery.mockReturnValue({
       data: [
         {
@@ -214,8 +214,10 @@ describe('AdminAttendanceDataPage', () => {
     renderPage();
 
     expect(mockUseAttendanceFieldsQuery).toHaveBeenCalledWith(EVENT_ID, { activeOnly: true });
-    expect(screen.getByRole('columnheader', { name: 'Shirt Size' })).toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Legacy Note' })).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Role' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Check-In Status' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Shirt Size' })).not.toBeInTheDocument();
   });
 
   it('shows no-fields warning when all attendance fields are inactive', () => {

@@ -406,6 +406,9 @@ export function attendeeToRegistrant(attendee: AttendeeSearchResult): Registrant
     member_id: attendee.member_id,
     full_name: attendee.full_name,
     email: attendee.email,
+    role: attendee.role,
+    category: attendee.category,
+    check_in_status: attendee.check_in_status,
     answers: attendee.attendance_answers.map((answer) => toAttendanceAnswer(attendee, answer)),
   };
 }

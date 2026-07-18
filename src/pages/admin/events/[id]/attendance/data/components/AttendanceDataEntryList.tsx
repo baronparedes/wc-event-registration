@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ExternalLink, Users } from 'lucide-react';
+import { Check, ExternalLink, Minus, Users } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
@@ -26,14 +26,6 @@ type AttendanceDataEntryListProps = {
   fields: AttendanceField[];
 };
 
-function getAnswerDisplay(answers: AttendanceAnswer[], fieldId: string): string {
-  const answer = answers.find((a) => a.attendance_field_id === fieldId);
-  if (!answer) return '—';
-  if (answer.answer_text !== null) return answer.answer_text;
-  if (answer.answer_number !== null) return String(answer.answer_number);
-  return '—';
-}
-
 function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField[]): number {
   return fields.filter((f) => {
     const answer = answers.find((a) => a.attendance_field_id === f.id);
@@ -48,7 +40,7 @@ function getRegistrationDetailsUrl(eventId: string, registrant: RegistrantAttend
   return `/admin/events/${eventId}/registrations/${registrant.registration_id}`;
 }
 
-/** List of registrants with their attendance field answers and per-registrant edit actions. */
+/** List of registrants with check-in status and per-registrant edit actions. */
 export function AttendanceDataEntryList({
   eventId,
   registrants,
@@ -80,8 +72,7 @@ export function AttendanceDataEntryList({
           ? `public-${registrant.public_registration_id}`
           : `registered-${registrant.registration_id}`;
       const filled = countFilledAnswers(registrant.answers, fields);
-      const total = fields.length;
-      const isComplete = total > 0 && filled === total;
+      const isCheckedIn = registrant.check_in_status === 'checked_in';
 
       return (
         <ListTableRow
@@ -103,6 +94,9 @@ export function AttendanceDataEntryList({
               </a>
               <div>
                 <span className="font-medium text-text">{registrant.full_name}</span>
+                {registrant.attendee_kind === 'public' && (
+                  <p className="text-xs text-muted">Guest</p>
+                )}
                 {registrant.email && (
                   <span className="ml-2 text-xs text-muted">{registrant.email}</span>
                 )}
@@ -112,19 +106,22 @@ export function AttendanceDataEntryList({
           <ListTableCell>
             <span className="font-mono text-xs text-muted">{registrant.member_id ?? 'Guest'}</span>
           </ListTableCell>
-          {fields.slice(0, 3).map((field) => (
-            <ListTableCell key={field.id}>
-              <span className="text-sm text-text">
-                {getAnswerDisplay(registrant.answers, field.id)}
-              </span>
-            </ListTableCell>
-          ))}
-          {fields.length > 3 && <ListTableCell>…</ListTableCell>}
+          <ListTableCell>
+            <span className="text-sm text-text">{registrant.role?.trim() || '—'}</span>
+          </ListTableCell>
+          <ListTableCell>
+            <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
+          </ListTableCell>
           <ListTableCell>
             <span
-              className={`text-xs font-medium ${isComplete ? 'text-secondary' : filled > 0 ? 'text-accent' : 'text-muted'}`}
+              role="img"
+              aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+              title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
+                isCheckedIn ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
+              }`}
             >
-              {total === 0 ? 'N/A' : `${filled}/${total}`}
+              {isCheckedIn ? <Check className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
             </span>
           </ListTableCell>
           <ListTableCell onClick={(e) => e.stopPropagation()}>
@@ -155,11 +152,9 @@ export function AttendanceDataEntryList({
                 <ListTableHeaderRow>
                   <ListTableHeaderCell className="px-6">Attendee</ListTableHeaderCell>
                   <ListTableHeaderCell>Member ID</ListTableHeaderCell>
-                  {fields.slice(0, 3).map((field) => (
-                    <ListTableHeaderCell key={field.id}>{field.label}</ListTableHeaderCell>
-                  ))}
-                  {fields.length > 3 && <ListTableHeaderCell>…</ListTableHeaderCell>}
-                  <ListTableHeaderCell>Progress</ListTableHeaderCell>
+                  <ListTableHeaderCell>Role</ListTableHeaderCell>
+                  <ListTableHeaderCell>Category</ListTableHeaderCell>
+                  <ListTableHeaderCell>Check-In Status</ListTableHeaderCell>
                   <ListTableHeaderCell>Actions</ListTableHeaderCell>
                 </ListTableHeaderRow>
               </ListTableHead>

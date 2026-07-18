@@ -115,6 +115,9 @@ export function useAttendanceAnswersQuery(eventId: string | undefined) {
           member_id: (user.member_id as string | null) ?? null,
           full_name: user.full_name as string,
           email: (user.email as string | null) ?? null,
+          role: null,
+          category: null,
+          check_in_status: 'not_checked_in',
           answers: (memberAnswers.data ?? [])
             .filter((a) => a.registration_id === registrationId)
             .map((answer) => ({
@@ -137,6 +140,9 @@ export function useAttendanceAnswersQuery(eventId: string | undefined) {
           member_id: null,
           full_name: fullName,
           email: (registration.email as string | null) ?? null,
+          role: null,
+          category: null,
+          check_in_status: 'not_checked_in',
           answers: safePublicAnswers
             .filter((a) => a.public_registration_id === registration.id)
             .map((answer) => ({

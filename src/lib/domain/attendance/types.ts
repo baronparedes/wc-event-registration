@@ -69,6 +69,9 @@ export type RegistrantAttendanceRow = {
   member_id: string | null;
   full_name: string;
   email: string | null;
+  role?: string | null;
+  category?: string | null;
+  check_in_status?: 'checked_in' | 'not_checked_in';
   answers: AttendanceAnswer[];
 };
 

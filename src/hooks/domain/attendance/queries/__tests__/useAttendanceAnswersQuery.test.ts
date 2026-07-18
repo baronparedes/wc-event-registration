@@ -177,6 +177,9 @@ describe('useAttendanceAnswersQuery', () => {
         member_id: 'mem-1',
         full_name: 'Alice',
         email: 'alice@test.com',
+        role: null,
+        category: null,
+        check_in_status: 'not_checked_in',
         answers: [{ ...mockAnswers[0], public_registration_id: null }],
       },
       {
@@ -186,6 +189,9 @@ describe('useAttendanceAnswersQuery', () => {
         member_id: 'mem-2',
         full_name: 'Bob',
         email: 'bob@test.com',
+        role: null,
+        category: null,
+        check_in_status: 'not_checked_in',
         answers: [{ ...mockAnswers[1], public_registration_id: null }],
       },
     ]);
