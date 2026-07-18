@@ -16,13 +16,14 @@ export function useWizardStepScroll(
     | undefined
   )[],
 ) {
+  const targetRef = stepRefs[activeStep - 1];
+
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
 
-    const targetRef = stepRefs[activeStep - 1];
     if (targetRef?.current) {
       targetRef.current.scrollIntoView({ behavior, block: 'start' });
     }
-  }, [activeStep, stepRefs]);
+  }, [activeStep, targetRef]);
 }
