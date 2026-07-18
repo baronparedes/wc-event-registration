@@ -74,9 +74,9 @@ describe('AttendanceDataEntryList', () => {
   it('renders empty state when there are no registrants', () => {
     render(<AttendanceDataEntryList eventId="event-1" registrants={[]} fields={baseFields} />);
 
-    expect(screen.getByText('No attendees yet')).toBeInTheDocument();
+    expect(screen.getByText('No matching attendees')).toBeInTheDocument();
     expect(
-      screen.getByText('Attendees who register for this event will appear here.'),
+      screen.getByText('Try adjusting your role, dynamic field, or grouping filters.'),
     ).toBeInTheDocument();
   });
 

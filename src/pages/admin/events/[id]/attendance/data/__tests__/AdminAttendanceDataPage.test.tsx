@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,15 +13,15 @@ const {
   mockUseAdminEventQuery,
   mockUseAttendanceSettingsQuery,
   mockUseAttendanceFieldsQuery,
-  mockUseAttendanceAnswersQuery,
-  mockUseDownloadAttendanceCSVMutation,
+  mockUseAdminEventFieldsQuery,
+  mockUseAttendeesLocalCacheQuery,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAttendanceSettingsQuery: vi.fn(),
   mockUseAttendanceFieldsQuery: vi.fn(),
-  mockUseAttendanceAnswersQuery: vi.fn(),
-  mockUseDownloadAttendanceCSVMutation: vi.fn(),
+  mockUseAdminEventFieldsQuery: vi.fn(),
+  mockUseAttendeesLocalCacheQuery: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -51,9 +51,7 @@ vi.mock('@/hooks/domain/attendance', async () => {
   return {
     ...actual,
     useAttendanceSettingsQuery: (...args: unknown[]) => mockUseAttendanceSettingsQuery(...args),
-    useAttendanceAnswersQuery: (...args: unknown[]) => mockUseAttendanceAnswersQuery(...args),
-    useDownloadAttendanceCSVMutation: (...args: unknown[]) =>
-      mockUseDownloadAttendanceCSVMutation(...args),
+    useAttendeesLocalCacheQuery: (...args: unknown[]) => mockUseAttendeesLocalCacheQuery(...args),
   };
 });
 
@@ -65,6 +63,17 @@ vi.mock('@/hooks/domain/attendance-fields', async () => {
   return {
     ...actual,
     useAttendanceFieldsQuery: (...args: unknown[]) => mockUseAttendanceFieldsQuery(...args),
+  };
+});
+
+vi.mock('@/hooks/domain/event-fields', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/event-fields')>(
+    '@/hooks/domain/event-fields',
+  );
+
+  return {
+    ...actual,
+    useAdminEventFieldsQuery: (...args: unknown[]) => mockUseAdminEventFieldsQuery(...args),
   };
 });
 
@@ -104,24 +113,80 @@ describe('AdminAttendanceDataPage', () => {
       isLoading: false,
     });
 
-    mockUseAttendanceAnswersQuery.mockReturnValue({
-      data: [
+    mockUseAdminEventFieldsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+
+    mockUseAttendeesLocalCacheQuery.mockReturnValue({
+      attendees: [
         {
+          attendee_kind: 'registered',
           registration_id: 'reg-1',
+          public_registration_id: null,
+          user_id: 'user-1',
           member_id: 'MID-001',
           full_name: 'Jane Doe',
           email: 'jane@example.com',
-          answers: [],
+          role: 'Member',
+          category: 'Adult',
+          registration_status: 'submitted',
+          submitted_at: '2026-07-04T00:00:00Z',
+          check_in_status: 'not_checked_in',
+          official_check_in_time: null,
+          registration_answers: [],
+          attendance_answers: [],
+        },
+      ],
+      cachedAt: Date.now(),
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refresh: vi.fn(),
+      updateAttendee: vi.fn(),
+    });
+
+    mockUseAttendanceFieldsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'attendance-field-1',
+          event_id: EVENT_ID,
+          field_key: 'area',
+          label: 'Area',
+          field_type: 'select',
+          is_required: false,
+          is_active: true,
+          display_order: 0,
+          options: [],
+          validation_rules: {},
+          created_at: '2026-07-04T00:00:00Z',
+          updated_at: '2026-07-04T00:00:00Z',
         },
       ],
       isLoading: false,
-      isFetching: false,
-      dataUpdatedAt: Date.now(),
     });
 
-    mockUseDownloadAttendanceCSVMutation.mockReturnValue({
-      isPending: false,
-      mutateAsync: vi.fn(),
+    mockUseAdminEventFieldsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'registration-field-1',
+          event_id: EVENT_ID,
+          field_key: 'service',
+          label: 'Service',
+          field_type: 'select',
+          is_required: false,
+          is_active: true,
+          placeholder: null,
+          help_text: null,
+          options: [],
+          validation_rules: {},
+          display_order: 0,
+          created_at: '2026-07-04T00:00:00Z',
+          updated_at: '2026-07-04T00:00:00Z',
+        },
+      ],
+      isLoading: false,
     });
   });
 
@@ -275,12 +340,16 @@ describe('AdminAttendanceDataPage', () => {
     expect(screen.getByText('Loading attendance data...')).toBeInTheDocument();
   });
 
-  it('shows loading state while attendance answers query is loading', () => {
-    mockUseAttendanceAnswersQuery.mockReturnValue({
-      data: [],
+  it('shows loading state while attendee cache query is loading', () => {
+    mockUseAttendeesLocalCacheQuery.mockReturnValue({
+      attendees: [],
+      cachedAt: null,
       isLoading: true,
       isFetching: true,
-      dataUpdatedAt: 0,
+      isError: false,
+      error: null,
+      refresh: vi.fn(),
+      updateAttendee: vi.fn(),
     });
     mockUseAttendanceFieldsQuery.mockReturnValue({
       data: [],
@@ -307,5 +376,47 @@ describe('AdminAttendanceDataPage', () => {
     expect(
       screen.queryByRole('link', { name: 'Configure attendance fields' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders filter field selector with registration and attendance sub-groups', () => {
+    const { container } = renderPage();
+
+    const filterFieldSelect = screen.getByLabelText('Filter field');
+    const registrationGroup = container.querySelector('optgroup[label="Registration Fields"]');
+    const attendanceGroup = container.querySelector('optgroup[label="Attendance Fields"]');
+
+    expect(filterFieldSelect).toBeInTheDocument();
+    expect(registrationGroup).not.toBeNull();
+    expect(attendanceGroup).not.toBeNull();
+    expect(screen.getByRole('option', { name: 'Service' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Area' })).toBeInTheDocument();
+  });
+
+  it('adds a group level and shows subgrouped dynamic field options', () => {
+    const { container } = renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
+
+    expect(screen.getByText('Level 1')).toBeInTheDocument();
+
+    const groupingSelect = container.querySelector('select.flex-1') as HTMLSelectElement | null;
+    expect(groupingSelect).not.toBeNull();
+
+    const registrationGroup = container.querySelector('optgroup[label="Registration Fields"]');
+    const attendanceGroup = container.querySelector('optgroup[label="Attendance Fields"]');
+
+    expect(registrationGroup).not.toBeNull();
+    expect(attendanceGroup).not.toBeNull();
+  });
+
+  it('renders and updates the name or member ID filter input', () => {
+    renderPage();
+
+    const input = screen.getByLabelText('Name or Member ID') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+    expect(input.value).toBe('');
+
+    fireEvent.change(input, { target: { value: 'MID-001' } });
+    expect(input.value).toBe('MID-001');
   });
 });

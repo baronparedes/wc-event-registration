@@ -1,0 +1,187 @@
+import { useMemo, useState } from 'react';
+
+import {
+  type AttendeeViewConfig,
+  type DynamicFieldOption,
+  fromDynamicFieldToken,
+  toDynamicFieldToken,
+} from '@/lib/domain/attendance-views';
+
+const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
+  nameOrMemberQuery: '',
+  role: 'all',
+  category: 'all',
+  checkInStatus: 'all',
+  dynamicFilters: [],
+  groupBy: [],
+};
+
+/**
+ * Manages filter and grouping UI state for admin attendance data views.
+ */
+export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicFieldOption[]) {
+  const [viewConfig, setViewConfig] = useState<AttendeeViewConfig>(DEFAULT_VIEW_CONFIG);
+  const [dynamicFilterFieldToken, setDynamicFilterFieldToken] = useState('');
+  const [dynamicFilterValue, setDynamicFilterValue] = useState('');
+
+  const dynamicFilterField = useMemo(
+    () => fromDynamicFieldToken(dynamicFilterFieldToken, dynamicFieldOptions),
+    [dynamicFilterFieldToken, dynamicFieldOptions],
+  );
+
+  const hasActiveFilters =
+    viewConfig.nameOrMemberQuery.trim().length > 0 ||
+    viewConfig.role !== 'all' ||
+    viewConfig.category !== 'all' ||
+    viewConfig.checkInStatus !== 'all' ||
+    viewConfig.dynamicFilters.length > 0 ||
+    viewConfig.groupBy.length > 0;
+
+  function setNameOrMemberQuery(value: string) {
+    setViewConfig((current) => ({ ...current, nameOrMemberQuery: value }));
+  }
+
+  function setRole(value: string) {
+    setViewConfig((current) => ({ ...current, role: value }));
+  }
+
+  function setCategory(value: string) {
+    setViewConfig((current) => ({ ...current, category: value }));
+  }
+
+  function setCheckInStatus(value: AttendeeViewConfig['checkInStatus']) {
+    setViewConfig((current) => ({ ...current, checkInStatus: value }));
+  }
+
+  function setFilterFieldToken(value: string) {
+    setDynamicFilterFieldToken(value);
+    setDynamicFilterValue('');
+  }
+
+  function addDynamicFilter() {
+    const normalizedValue = dynamicFilterValue.trim();
+    if (!dynamicFilterField || !normalizedValue) return;
+
+    setViewConfig((current) => {
+      const exists = current.dynamicFilters.some(
+        (filter) =>
+          filter.field.source === dynamicFilterField.source &&
+          filter.field.fieldKey === dynamicFilterField.fieldKey,
+      );
+
+      if (exists) {
+        return {
+          ...current,
+          dynamicFilters: current.dynamicFilters.map((filter) =>
+            filter.field.source === dynamicFilterField.source &&
+            filter.field.fieldKey === dynamicFilterField.fieldKey
+              ? { ...filter, value: normalizedValue }
+              : filter,
+          ),
+        };
+      }
+
+      return {
+        ...current,
+        dynamicFilters: [
+          ...current.dynamicFilters,
+          { field: dynamicFilterField, value: normalizedValue },
+        ],
+      };
+    });
+
+    setDynamicFilterValue('');
+  }
+
+  function removeDynamicFilter(token: string) {
+    setViewConfig((current) => ({
+      ...current,
+      dynamicFilters: current.dynamicFilters.filter(
+        (filter) => toDynamicFieldToken(filter.field) !== token,
+      ),
+    }));
+  }
+
+  function clearViewControls() {
+    setViewConfig(DEFAULT_VIEW_CONFIG);
+    setDynamicFilterFieldToken('');
+    setDynamicFilterValue('');
+  }
+
+  function addGroupingLevel() {
+    setViewConfig((current) => ({
+      ...current,
+      groupBy: [...current.groupBy, { source: 'registration', fieldKey: '', label: '' }],
+    }));
+  }
+
+  function changeGroupingField(index: number, token: string) {
+    const nextField = fromDynamicFieldToken(token, dynamicFieldOptions);
+
+    setViewConfig((current) => {
+      const nextGroupBy = [...current.groupBy];
+      if (!nextField) {
+        nextGroupBy[index] = { source: 'registration', fieldKey: '', label: '' };
+      } else {
+        const isDuplicate = nextGroupBy.some(
+          (field, fieldIndex) =>
+            fieldIndex !== index && toDynamicFieldToken(field) === toDynamicFieldToken(nextField),
+        );
+        if (isDuplicate) {
+          return current;
+        }
+        nextGroupBy[index] = nextField;
+      }
+
+      return {
+        ...current,
+        groupBy: nextGroupBy,
+      };
+    });
+  }
+
+  function removeGroupingLevel(index: number) {
+    setViewConfig((current) => ({
+      ...current,
+      groupBy: current.groupBy.filter((_, fieldIndex) => fieldIndex !== index),
+    }));
+  }
+
+  function moveGroupingLevel(index: number, direction: 'up' | 'down') {
+    setViewConfig((current) => {
+      const swapIndex = direction === 'up' ? index - 1 : index + 1;
+      if (swapIndex < 0 || swapIndex >= current.groupBy.length) return current;
+
+      const nextGroupBy = [...current.groupBy];
+      const item = nextGroupBy[index];
+      nextGroupBy[index] = nextGroupBy[swapIndex];
+      nextGroupBy[swapIndex] = item;
+
+      return {
+        ...current,
+        groupBy: nextGroupBy,
+      };
+    });
+  }
+
+  return {
+    viewConfig,
+    dynamicFilterField,
+    dynamicFilterFieldToken,
+    dynamicFilterValue,
+    hasActiveFilters,
+    setNameOrMemberQuery,
+    setRole,
+    setCategory,
+    setCheckInStatus,
+    setFilterFieldToken,
+    setDynamicFilterValue,
+    addDynamicFilter,
+    removeDynamicFilter,
+    clearViewControls,
+    addGroupingLevel,
+    changeGroupingField,
+    removeGroupingLevel,
+    moveGroupingLevel,
+  };
+}

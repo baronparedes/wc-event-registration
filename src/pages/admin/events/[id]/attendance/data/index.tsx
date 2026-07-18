@@ -1,4 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
+
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -11,13 +12,18 @@ import {
   toAdminEventAttendanceFields,
   toAdminEventDetail,
 } from '@/config/constants';
-import { QUERY_KEYS } from '@/config/constants';
-import { useAttendanceAnswersQuery, useAttendanceSettingsQuery } from '@/hooks/domain/attendance';
+import {
+  useAttendanceSettingsQuery,
+  useAttendanceViewControlsState,
+  useAttendeesLocalCacheQuery,
+} from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
+import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import { buildAttendeeView, collectDynamicFieldOptions } from '@/lib/domain/attendance-views';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-import { AttendanceDataEntryList } from './components';
+import { AttendanceDataEntryList, AttendanceViewControls } from './components';
 
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,19 +33,107 @@ export function AdminAttendanceDataPage() {
   const { data: fields = [], isLoading: fieldsLoading } = useAttendanceFieldsQuery(id, {
     activeOnly: true,
   });
-  const queryClient = useQueryClient();
+  const { data: registrationFields = [], isLoading: registrationFieldsLoading } =
+    useAdminEventFieldsQuery(id);
   const {
-    data: registrants = [],
-    isLoading: registrantsLoading,
-    isFetching: registrantsFetching,
-    dataUpdatedAt,
-  } = useAttendanceAnswersQuery(id);
+    attendees,
+    cachedAt,
+    isLoading: attendeesLoading,
+    isFetching: attendeesFetching,
+    refresh,
+  } = useAttendeesLocalCacheQuery(id);
 
-  const isLoading = eventLoading || settingsLoading || fieldsLoading || registrantsLoading;
+  const cachedAttendees = useMemo(() => attendees ?? [], [attendees]);
+  const seededDynamicFields = useMemo(
+    () => [
+      ...registrationFields
+        .filter((field) => field.is_active)
+        .map((field) => ({
+          source: 'registration' as const,
+          fieldKey: field.field_key,
+          label: field.label,
+          sortOrder: field.display_order,
+        })),
+      ...fields.map((field) => ({
+        source: 'attendance' as const,
+        fieldKey: field.field_key,
+        label: field.label,
+        sortOrder: field.display_order,
+      })),
+    ],
+    [registrationFields, fields],
+  );
+
+  const dynamicFieldOptions = useMemo(
+    () => collectDynamicFieldOptions(cachedAttendees, seededDynamicFields),
+    [cachedAttendees, seededDynamicFields],
+  );
+
+  const registrationDynamicFieldOptions = useMemo(
+    () => dynamicFieldOptions.filter((field) => field.source === 'registration'),
+    [dynamicFieldOptions],
+  );
+
+  const attendanceDynamicFieldOptions = useMemo(
+    () => dynamicFieldOptions.filter((field) => field.source === 'attendance'),
+    [dynamicFieldOptions],
+  );
+
+  const roleOptions = useMemo(
+    () =>
+      [
+        ...new Set(cachedAttendees.map((attendee) => attendee.role).filter(Boolean) as string[]),
+      ].sort((a, b) => a.localeCompare(b)),
+    [cachedAttendees],
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          cachedAttendees.map((attendee) => attendee.category).filter(Boolean) as string[],
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [cachedAttendees],
+  );
+
+  const {
+    viewConfig,
+    dynamicFilterField,
+    dynamicFilterFieldToken,
+    dynamicFilterValue,
+    hasActiveFilters,
+    setNameOrMemberQuery,
+    setRole,
+    setCategory,
+    setCheckInStatus,
+    setFilterFieldToken,
+    setDynamicFilterValue,
+    addDynamicFilter,
+    removeDynamicFilter,
+    clearViewControls,
+    addGroupingLevel,
+    changeGroupingField,
+    removeGroupingLevel,
+    moveGroupingLevel,
+  } = useAttendanceViewControlsState(dynamicFieldOptions);
+
+  const viewResult = useMemo(
+    () => buildAttendeeView(cachedAttendees, viewConfig),
+    [cachedAttendees, viewConfig],
+  );
+
+  const isLoading =
+    eventLoading ||
+    settingsLoading ||
+    fieldsLoading ||
+    registrationFieldsLoading ||
+    attendeesLoading;
 
   function handleRefreshCache() {
-    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminAttendanceAnswers(id) });
+    refresh();
   }
+
   const attendanceEnabled = settings?.attendance_enabled ?? false;
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
@@ -110,23 +204,53 @@ export function AdminAttendanceDataPage() {
 
       {!isLoading && attendanceEnabled && (
         <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted">
-          {registrantsFetching ? (
+          {attendeesFetching ? (
             <span>Loading attendee details...</span>
           ) : (
             <span>
-              {registrants.length} attendees cached
-              {dataUpdatedAt ? ` · Updated ${new Date(dataUpdatedAt).toLocaleTimeString()}` : ''}
+              {cachedAttendees.length} attendees cached
+              {cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''}
             </span>
           )}
           <button
             type="button"
             onClick={handleRefreshCache}
-            disabled={registrantsFetching}
+            disabled={attendeesFetching}
             className="ml-4 rounded px-2 py-1 text-primary underline hover:no-underline disabled:opacity-50"
           >
-            {registrantsFetching ? 'Refreshing...' : 'Refresh'}
+            {attendeesFetching ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
+      )}
+
+      {!isLoading && attendanceEnabled && (
+        <AdminPageShell.Filters>
+          <AttendanceViewControls
+            viewConfig={viewConfig}
+            hasActiveFilters={hasActiveFilters}
+            roleOptions={roleOptions}
+            categoryOptions={categoryOptions}
+            dynamicFieldOptions={dynamicFieldOptions}
+            registrationDynamicFieldOptions={registrationDynamicFieldOptions}
+            attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
+            dynamicFilterFieldToken={dynamicFilterFieldToken}
+            dynamicFilterValue={dynamicFilterValue}
+            dynamicFilterFieldLabel={dynamicFilterField?.label ?? null}
+            onNameOrMemberQueryChange={setNameOrMemberQuery}
+            onRoleChange={setRole}
+            onCategoryChange={setCategory}
+            onCheckInStatusChange={setCheckInStatus}
+            onAddGroupingLevel={addGroupingLevel}
+            onGroupingFieldChange={changeGroupingField}
+            onMoveGroupingLevel={moveGroupingLevel}
+            onRemoveGroupingLevel={removeGroupingLevel}
+            onClearViewControls={clearViewControls}
+            onDynamicFilterFieldTokenChange={setFilterFieldToken}
+            onDynamicFilterValueChange={setDynamicFilterValue}
+            onApplyDynamicFilter={addDynamicFilter}
+            onRemoveDynamicFilter={removeDynamicFilter}
+          />
+        </AdminPageShell.Filters>
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading attendance data...">
@@ -138,7 +262,12 @@ export function AdminAttendanceDataPage() {
             </Link>
           </div>
         ) : (
-          <AttendanceDataEntryList eventId={id ?? ''} registrants={registrants} fields={fields} />
+          <AttendanceDataEntryList
+            eventId={id ?? ''}
+            registrants={viewResult.groups.length === 1 ? viewResult.groups[0].registrants : []}
+            groups={viewResult.groups}
+            fields={fields}
+          />
         )}
       </AdminPageShell.Content>
     </AdminPageShell>

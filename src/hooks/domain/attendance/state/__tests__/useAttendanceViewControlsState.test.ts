@@ -1,0 +1,267 @@
+import { act, renderHook } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import type { DynamicFieldOption } from '@/lib/domain/attendance-views';
+
+import { useAttendanceViewControlsState } from '../useAttendanceViewControlsState';
+
+function makeOption(
+  source: DynamicFieldOption['source'],
+  fieldKey: string,
+  label: string,
+): DynamicFieldOption {
+  return {
+    source,
+    fieldKey,
+    label,
+    sortOrder: 0,
+    token: `${source}:${fieldKey}`,
+    values: [],
+  };
+}
+
+const serviceOption = makeOption('registration', 'service', 'Service');
+const teamOption = makeOption('registration', 'team', 'Team');
+const areaOption = makeOption('attendance', 'area', 'Area');
+
+describe('useAttendanceViewControlsState', () => {
+  it('initializes default state and updates base filters', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    expect(result.current.viewConfig.nameOrMemberQuery).toBe('');
+    expect(result.current.viewConfig.role).toBe('all');
+    expect(result.current.viewConfig.category).toBe('all');
+    expect(result.current.viewConfig.checkInStatus).toBe('all');
+    expect(result.current.dynamicFilterField).toBeNull();
+    expect(result.current.hasActiveFilters).toBe(false);
+
+    act(() => {
+      result.current.setNameOrMemberQuery('MID-001');
+      result.current.setRole('Volunteer');
+      result.current.setCategory('Youth');
+      result.current.setCheckInStatus('checked_in');
+    });
+
+    expect(result.current.viewConfig.nameOrMemberQuery).toBe('MID-001');
+    expect(result.current.viewConfig.role).toBe('Volunteer');
+    expect(result.current.viewConfig.category).toBe('Youth');
+    expect(result.current.viewConfig.checkInStatus).toBe('checked_in');
+    expect(result.current.hasActiveFilters).toBe(true);
+  });
+
+  it('handles adding, updating, and removing a dynamic filter', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    act(() => {
+      result.current.setFilterFieldToken('registration:service');
+    });
+
+    act(() => {
+      result.current.setDynamicFilterValue('  9AM  ');
+    });
+
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(1);
+    expect(result.current.viewConfig.dynamicFilters[0].field).toMatchObject({
+      source: 'registration',
+      fieldKey: 'service',
+      label: 'Service',
+      sortOrder: 0,
+    });
+    expect(result.current.viewConfig.dynamicFilters[0].value).toBe('9AM');
+    expect(result.current.dynamicFilterValue).toBe('');
+
+    act(() => {
+      result.current.setDynamicFilterValue('11AM');
+    });
+
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(1);
+    expect(result.current.viewConfig.dynamicFilters[0].value).toBe('11AM');
+
+    act(() => {
+      result.current.removeDynamicFilter('registration:service');
+    });
+
+    expect(result.current.viewConfig.dynamicFilters).toEqual([]);
+  });
+
+  it('guards addDynamicFilter when token is unknown or value is empty', () => {
+    const { result } = renderHook(() => useAttendanceViewControlsState([serviceOption]));
+
+    act(() => {
+      result.current.setFilterFieldToken('unknown:field');
+    });
+
+    act(() => {
+      result.current.setDynamicFilterValue('something');
+    });
+
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(0);
+
+    act(() => {
+      result.current.setFilterFieldToken('registration:service');
+    });
+
+    act(() => {
+      result.current.setDynamicFilterValue('   ');
+    });
+
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(0);
+  });
+
+  it('updates only the matching dynamic filter when multiple filters exist', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    act(() => {
+      result.current.setFilterFieldToken('registration:service');
+    });
+    act(() => {
+      result.current.setDynamicFilterValue('9AM');
+    });
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    act(() => {
+      result.current.setFilterFieldToken('registration:team');
+    });
+    act(() => {
+      result.current.setDynamicFilterValue('Blue');
+    });
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    act(() => {
+      result.current.setFilterFieldToken('registration:service');
+    });
+    act(() => {
+      result.current.setDynamicFilterValue('11AM');
+    });
+    act(() => {
+      result.current.addDynamicFilter();
+    });
+
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(2);
+    expect(result.current.viewConfig.dynamicFilters[0].field.fieldKey).toBe('service');
+    expect(result.current.viewConfig.dynamicFilters[0].value).toBe('11AM');
+    expect(result.current.viewConfig.dynamicFilters[1].field.fieldKey).toBe('team');
+    expect(result.current.viewConfig.dynamicFilters[1].value).toBe('Blue');
+  });
+
+  it('supports grouping operations including duplicate prevention and clear on invalid token', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    act(() => {
+      result.current.addGroupingLevel();
+      result.current.addGroupingLevel();
+      result.current.changeGroupingField(0, 'registration:service');
+      result.current.changeGroupingField(1, 'attendance:area');
+    });
+
+    expect(result.current.viewConfig.groupBy.map((field) => field.fieldKey)).toEqual([
+      'service',
+      'area',
+    ]);
+
+    act(() => {
+      result.current.changeGroupingField(1, 'registration:service');
+    });
+
+    expect(result.current.viewConfig.groupBy.map((field) => field.fieldKey)).toEqual([
+      'service',
+      'area',
+    ]);
+
+    act(() => {
+      result.current.changeGroupingField(1, 'unknown:token');
+    });
+
+    expect(result.current.viewConfig.groupBy[1]).toEqual({
+      source: 'registration',
+      fieldKey: '',
+      label: '',
+    });
+  });
+
+  it('moves/removes grouping levels and resets all controls', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    act(() => {
+      result.current.addGroupingLevel();
+      result.current.addGroupingLevel();
+      result.current.changeGroupingField(0, 'registration:service');
+      result.current.changeGroupingField(1, 'attendance:area');
+    });
+
+    act(() => {
+      result.current.moveGroupingLevel(0, 'down');
+    });
+
+    expect(result.current.viewConfig.groupBy.map((field) => field.fieldKey)).toEqual([
+      'area',
+      'service',
+    ]);
+
+    act(() => {
+      result.current.moveGroupingLevel(0, 'up');
+      result.current.moveGroupingLevel(1, 'down');
+    });
+
+    expect(result.current.viewConfig.groupBy.map((field) => field.fieldKey)).toEqual([
+      'area',
+      'service',
+    ]);
+
+    act(() => {
+      result.current.removeGroupingLevel(0);
+    });
+
+    expect(result.current.viewConfig.groupBy).toHaveLength(1);
+
+    act(() => {
+      result.current.setNameOrMemberQuery('MID-123');
+      result.current.setRole('Member');
+      result.current.setFilterFieldToken('attendance:area');
+      result.current.setDynamicFilterValue('West');
+      result.current.clearViewControls();
+    });
+
+    expect(result.current.viewConfig).toEqual({
+      nameOrMemberQuery: '',
+      role: 'all',
+      category: 'all',
+      checkInStatus: 'all',
+      dynamicFilters: [],
+      groupBy: [],
+    });
+    expect(result.current.dynamicFilterFieldToken).toBe('');
+    expect(result.current.dynamicFilterValue).toBe('');
+    expect(result.current.hasActiveFilters).toBe(false);
+  });
+});
