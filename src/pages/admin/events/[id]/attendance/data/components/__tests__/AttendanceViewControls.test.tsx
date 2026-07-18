@@ -142,7 +142,7 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onApplyDynamicFilter).toHaveBeenCalledTimes(1);
   });
 
-  it('renders dynamic filter chips and removes chip by token', () => {
+  it('renders dynamic filter chips and removes chip by token and value', () => {
     const handlers = renderControls({
       viewConfig: {
         ...baseViewConfig,
@@ -159,7 +159,7 @@ describe('AttendanceViewControls', () => {
     const chip = screen.getByRole('button', { name: 'Area (attendance): North x' });
     fireEvent.click(chip);
 
-    expect(handlers.onRemoveDynamicFilter).toHaveBeenCalledWith('attendance:area');
+    expect(handlers.onRemoveDynamicFilter).toHaveBeenCalledWith('attendance:area', 'North');
   });
 
   it('shows empty grouping copy when no grouping exists', () => {

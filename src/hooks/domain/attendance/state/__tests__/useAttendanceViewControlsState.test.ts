@@ -51,7 +51,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.hasActiveFilters).toBe(true);
   });
 
-  it('handles adding, updating, and removing a dynamic filter', () => {
+  it('handles adding same-field filter values and removing a single filter chip', () => {
     const { result } = renderHook(() =>
       useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
     );
@@ -86,8 +86,26 @@ describe('useAttendanceViewControlsState', () => {
       result.current.addDynamicFilter();
     });
 
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(2);
+    expect(result.current.viewConfig.dynamicFilters.map((filter) => filter.value)).toEqual([
+      '9AM',
+      '11AM',
+    ]);
+
+    act(() => {
+      result.current.removeDynamicFilter('registration:service', '9AM');
+    });
+
     expect(result.current.viewConfig.dynamicFilters).toHaveLength(1);
-    expect(result.current.viewConfig.dynamicFilters[0].value).toBe('11AM');
+    expect(result.current.viewConfig.dynamicFilters[0]).toMatchObject({
+      field: {
+        source: 'registration',
+        fieldKey: 'service',
+        label: 'Service',
+        sortOrder: 0,
+      },
+      value: '11AM',
+    });
 
     act(() => {
       result.current.removeDynamicFilter('registration:service');
@@ -128,7 +146,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.dynamicFilters).toHaveLength(0);
   });
 
-  it('updates only the matching dynamic filter when multiple filters exist', () => {
+  it('supports OR-style values on the same field while retaining other field filters', () => {
     const { result } = renderHook(() =>
       useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
     );
@@ -163,11 +181,13 @@ describe('useAttendanceViewControlsState', () => {
       result.current.addDynamicFilter();
     });
 
-    expect(result.current.viewConfig.dynamicFilters).toHaveLength(2);
+    expect(result.current.viewConfig.dynamicFilters).toHaveLength(3);
     expect(result.current.viewConfig.dynamicFilters[0].field.fieldKey).toBe('service');
-    expect(result.current.viewConfig.dynamicFilters[0].value).toBe('11AM');
+    expect(result.current.viewConfig.dynamicFilters[0].value).toBe('9AM');
     expect(result.current.viewConfig.dynamicFilters[1].field.fieldKey).toBe('team');
     expect(result.current.viewConfig.dynamicFilters[1].value).toBe('Blue');
+    expect(result.current.viewConfig.dynamicFilters[2].field.fieldKey).toBe('service');
+    expect(result.current.viewConfig.dynamicFilters[2].value).toBe('11AM');
   });
 
   it('supports grouping operations including duplicate prevention and clear on invalid token', () => {

@@ -66,19 +66,12 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
       const exists = current.dynamicFilters.some(
         (filter) =>
           filter.field.source === dynamicFilterField.source &&
-          filter.field.fieldKey === dynamicFilterField.fieldKey,
+          filter.field.fieldKey === dynamicFilterField.fieldKey &&
+          filter.value.trim().toLowerCase() === normalizedValue.toLowerCase(),
       );
 
       if (exists) {
-        return {
-          ...current,
-          dynamicFilters: current.dynamicFilters.map((filter) =>
-            filter.field.source === dynamicFilterField.source &&
-            filter.field.fieldKey === dynamicFilterField.fieldKey
-              ? { ...filter, value: normalizedValue }
-              : filter,
-          ),
-        };
+        return current;
       }
 
       return {
@@ -93,12 +86,20 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setDynamicFilterValue('');
   }
 
-  function removeDynamicFilter(token: string) {
+  function removeDynamicFilter(token: string, value?: string) {
     setViewConfig((current) => ({
       ...current,
-      dynamicFilters: current.dynamicFilters.filter(
-        (filter) => toDynamicFieldToken(filter.field) !== token,
-      ),
+      dynamicFilters: current.dynamicFilters.filter((filter) => {
+        if (toDynamicFieldToken(filter.field) !== token) {
+          return true;
+        }
+
+        if (value === undefined) {
+          return false;
+        }
+
+        return filter.value !== value;
+      }),
     }));
   }
 

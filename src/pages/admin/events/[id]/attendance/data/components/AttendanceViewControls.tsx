@@ -25,7 +25,7 @@ type AttendanceViewControlsProps = {
   onDynamicFilterFieldTokenChange: (value: string) => void;
   onDynamicFilterValueChange: (value: string) => void;
   onApplyDynamicFilter: () => void;
-  onRemoveDynamicFilter: (token: string) => void;
+  onRemoveDynamicFilter: (token: string, value: string) => void;
 };
 
 function getSelectableFields(
@@ -296,7 +296,7 @@ export function AttendanceViewControls({
               <button
                 key={`${token}:${filter.value}`}
                 type="button"
-                onClick={() => onRemoveDynamicFilter(token)}
+                onClick={() => onRemoveDynamicFilter(token, filter.value)}
                 className="rounded-full border border-border bg-background px-3 py-1 text-xs text-text hover:border-primary"
                 title="Remove filter"
               >
