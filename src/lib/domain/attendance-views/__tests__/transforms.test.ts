@@ -46,7 +46,7 @@ function findField(
 
 const defaultViewConfig: AttendeeViewConfig = {
   nameOrMemberQuery: '',
-  role: 'all',
+  role: [],
   category: 'all',
   checkInStatus: 'all',
   dynamicFilters: [],
@@ -151,7 +151,7 @@ describe('attendance-views transforms', () => {
 
     const result = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      role: 'member',
+      role: ['member'],
       dynamicFilters: [{ field: areaField, value: 'North' }],
     });
 
@@ -617,7 +617,7 @@ describe('attendance-views transforms', () => {
 
     const result = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      role: 'Member',
+      role: ['Member'],
       dynamicFilters: [
         { field: serviceField, value: 'ushering' },
         { field: serviceField, value: 'prayer' },

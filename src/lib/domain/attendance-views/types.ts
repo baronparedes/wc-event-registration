@@ -21,7 +21,7 @@ export type DynamicFieldOption = DynamicFieldRef & {
 
 export type AttendeeViewConfig = {
   nameOrMemberQuery: string;
-  role: string;
+  role: string[];
   category: string;
   checkInStatus: AttendeeSearchResult['check_in_status'] | 'all';
   dynamicFilters: DynamicFieldFilter[];

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
 import { toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
@@ -18,7 +19,7 @@ type AttendanceViewControlsProps = {
   dynamicFilterValue: string;
   dynamicFilterFieldLabel: string | null;
   onNameOrMemberQueryChange: (value: string) => void;
-  onRoleChange: (value: string) => void;
+  onRoleChange: (value: string[]) => void;
   onCategoryChange: (value: string) => void;
   onCheckInStatusChange: (value: AttendeeViewConfig['checkInStatus']) => void;
   onAddGroupingLevel: () => void;
@@ -96,56 +97,131 @@ export function AttendanceViewControls({
   onApplyDynamicFilter,
   onRemoveDynamicFilter,
 }: AttendanceViewControlsProps) {
-  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const roleDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isRoleDropdownOpen) {
+      return;
+    }
+
+    function handleDocumentMouseDown(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!roleDropdownRef.current?.contains(target)) {
+        setIsRoleDropdownOpen(false);
+      }
+    }
+
+    function handleDocumentKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsRoleDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+    document.addEventListener('keydown', handleDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentMouseDown);
+      document.removeEventListener('keydown', handleDocumentKeyDown);
+    };
+  }, [isRoleDropdownOpen]);
+
+  const selectedRoleCount = viewConfig.role.length;
+  const selectedRoleLabel =
+    selectedRoleCount === 0
+      ? 'All roles'
+      : selectedRoleCount === 1
+        ? viewConfig.role[0]
+        : `${selectedRoleCount} roles selected`;
+
+  function toggleRoleSelection(role: string) {
+    const isSelected = viewConfig.role.includes(role);
+    if (isSelected) {
+      onRoleChange(viewConfig.role.filter((selectedRole) => selectedRole !== role));
+      return;
+    }
+
+    onRoleChange([...viewConfig.role, role]);
+  }
 
   return (
     <>
-      {/* Search with expand/collapse chevron */}
-      <div className="mb-4">
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <label className="flex flex-col gap-1 text-sm text-muted">
-              Name or Member ID
-              <input
-                type="text"
-                value={viewConfig.nameOrMemberQuery}
-                onChange={(event) => onNameOrMemberQueryChange(event.target.value)}
-                placeholder="Search by attendee name or member ID"
-                className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-            className="flex items-center justify-center rounded-xl border border-border bg-background p-2 text-muted transition hover:border-primary hover:text-text"
-            aria-label={isFiltersExpanded ? 'Collapse filters' : 'Expand filters'}
-          >
-            <ChevronDown
-              className={`h-5 w-5 transition-transform ${isFiltersExpanded ? 'rotate-180' : ''}`}
-            />
-          </button>
-        </div>
-      </div>
-
       {/* Collapsible filters */}
-      {isFiltersExpanded && (
-        <div className="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            Role
-            <select
-              value={viewConfig.role}
-              onChange={(event) => onRoleChange(event.target.value)}
+      <CollapsibleSectionCard
+        title={
+          <label className="pr-12 flex flex-col gap-1 ">
+            <span className="sr-only">Name or Member ID</span>
+            <input
+              type="text"
+              value={viewConfig.nameOrMemberQuery}
+              onChange={(event) => onNameOrMemberQueryChange(event.target.value)}
+              placeholder="Search by attendee name or member ID"
               className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="all">All roles</option>
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
+            />
           </label>
+        }
+        defaultExpanded={false}
+        expandLabel="Expand filters"
+        collapseLabel="Collapse filters"
+        wrapperClassName="mb-4 rounded-2xl border border-border bg-surface p-6 shadow-sm print:hidden"
+        titleClassName="font-heading text-lg font-semibold text-text"
+      >
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 pt-4">
+          <div className="relative" ref={roleDropdownRef}>
+            <label className="mb-1 block text-sm text-muted">Role</label>
+            <button
+              type="button"
+              onClick={() => setIsRoleDropdownOpen((current) => !current)}
+              className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-left text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              aria-haspopup="listbox"
+              aria-expanded={isRoleDropdownOpen}
+              aria-label="Role"
+            >
+              <span>{selectedRoleLabel}</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isRoleDropdownOpen && (
+              <div
+                className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-surface p-2 shadow-md"
+                role="listbox"
+                aria-label="Role options"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRoleChange([]);
+                    setIsRoleDropdownOpen(false);
+                  }}
+                  className="mb-1 w-full rounded-lg px-2 py-1 text-left text-sm text-text transition hover:bg-slate-50"
+                >
+                  All roles
+                </button>
+                <div className="max-h-44 overflow-y-auto">
+                  {roleOptions.map((role) => (
+                    <label
+                      key={role}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm text-text transition hover:bg-slate-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={viewConfig.role.includes(role)}
+                        onChange={() => toggleRoleSelection(role)}
+                      />
+                      <span>{role}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <label className="flex flex-col gap-1 text-sm text-muted">
             Category
@@ -369,7 +445,7 @@ export function AttendanceViewControls({
             </div>
           )}
         </div>
-      )}
+      </CollapsibleSectionCard>
     </>
   );
 }

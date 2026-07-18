@@ -31,7 +31,7 @@ describe('useAttendanceViewControlsState', () => {
     );
 
     expect(result.current.viewConfig.nameOrMemberQuery).toBe('');
-    expect(result.current.viewConfig.role).toBe('all');
+    expect(result.current.viewConfig.role).toEqual([]);
     expect(result.current.viewConfig.category).toBe('all');
     expect(result.current.viewConfig.checkInStatus).toBe('all');
     expect(result.current.dynamicFilterField).toBeNull();
@@ -39,13 +39,13 @@ describe('useAttendanceViewControlsState', () => {
 
     act(() => {
       result.current.setNameOrMemberQuery('MID-001');
-      result.current.setRole('Volunteer');
+      result.current.setRole(['Volunteer']);
       result.current.setCategory('Youth');
       result.current.setCheckInStatus('checked_in');
     });
 
     expect(result.current.viewConfig.nameOrMemberQuery).toBe('MID-001');
-    expect(result.current.viewConfig.role).toBe('Volunteer');
+    expect(result.current.viewConfig.role).toEqual(['Volunteer']);
     expect(result.current.viewConfig.category).toBe('Youth');
     expect(result.current.viewConfig.checkInStatus).toBe('checked_in');
     expect(result.current.hasActiveFilters).toBe(true);
@@ -266,7 +266,7 @@ describe('useAttendanceViewControlsState', () => {
 
     act(() => {
       result.current.setNameOrMemberQuery('MID-123');
-      result.current.setRole('Member');
+      result.current.setRole(['Member']);
       result.current.setFilterFieldToken('attendance:area');
       result.current.setDynamicFilterValue('West');
       result.current.clearViewControls();
@@ -274,7 +274,7 @@ describe('useAttendanceViewControlsState', () => {
 
     expect(result.current.viewConfig).toEqual({
       nameOrMemberQuery: '',
-      role: 'all',
+      role: [],
       category: 'all',
       checkInStatus: 'all',
       dynamicFilters: [],

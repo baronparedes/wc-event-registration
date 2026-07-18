@@ -9,7 +9,7 @@ import {
 
 const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   nameOrMemberQuery: '',
-  role: 'all',
+  role: [],
   category: 'all',
   checkInStatus: 'all',
   dynamicFilters: [],
@@ -31,7 +31,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
   const hasActiveFilters =
     viewConfig.nameOrMemberQuery.trim().length > 0 ||
-    viewConfig.role !== 'all' ||
+    viewConfig.role.length > 0 ||
     viewConfig.category !== 'all' ||
     viewConfig.checkInStatus !== 'all' ||
     viewConfig.dynamicFilters.length > 0 ||
@@ -41,7 +41,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setViewConfig((current) => ({ ...current, nameOrMemberQuery: value }));
   }
 
-  function setRole(value: string) {
+  function setRole(value: string[]) {
     setViewConfig((current) => ({ ...current, role: value }));
   }
 

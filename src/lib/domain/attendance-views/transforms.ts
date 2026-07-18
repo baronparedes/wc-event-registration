@@ -272,11 +272,12 @@ function matchesBaseFilters(attendee: AttendeeSearchResult, config: AttendeeView
     }
   }
 
-  if (
-    config.role !== 'all' &&
-    normalizeValue(attendee.role ?? EMPTY_VALUE) !== normalizeValue(config.role)
-  ) {
-    return false;
+  if (config.role.length > 0) {
+    const roleTokens = new Set(config.role.map((role) => normalizeValue(role)));
+    const attendeeRole = normalizeValue(attendee.role ?? EMPTY_VALUE);
+    if (!roleTokens.has(attendeeRole)) {
+      return false;
+    }
   }
 
   if (

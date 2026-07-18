@@ -108,7 +108,7 @@ export function AttendanceDataEntryList({
                 href={getRegistrationDetailsUrl(eventId, registrant)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-0.5 flex-shrink-0 text-primary transition-colors hover:text-primary/80"
+                className="mt-0.5 flex-shrink-0 text-primary transition-colors hover:text-primary/80 print:hidden"
                 title="View registration details"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -146,7 +146,7 @@ export function AttendanceDataEntryList({
               {isCheckedIn ? <Check className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
             </span>
           </ListTableCell>
-          <ListTableCell onClick={(e) => e.stopPropagation()}>
+          <ListTableCell onClick={(e) => e.stopPropagation()} className="print:hidden">
             <ActionButton onClick={() => setEditingRegistrant(registrant)}>
               {filled > 0 ? 'Edit' : 'Fill In'}
             </ActionButton>
@@ -177,7 +177,7 @@ export function AttendanceDataEntryList({
                   <ListTableHeaderCell>Role</ListTableHeaderCell>
                   <ListTableHeaderCell>Category</ListTableHeaderCell>
                   <ListTableHeaderCell>Check-In Status</ListTableHeaderCell>
-                  <ListTableHeaderCell>Actions</ListTableHeaderCell>
+                  <ListTableHeaderCell className="print:hidden">Actions</ListTableHeaderCell>
                 </ListTableHeaderRow>
               </ListTableHead>
               <ListTableBody>{renderRows(group.registrants)}</ListTableBody>

@@ -139,7 +139,7 @@ export function AdminAttendanceDataPage() {
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
 
   const actions = canRunBulkOps ? (
-    <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
+    <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end print:hidden">
       {id && (
         <Button asChild variant="outline">
           <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
@@ -203,7 +203,7 @@ export function AdminAttendanceDataPage() {
       )}
 
       {!isLoading && attendanceEnabled && (
-        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted print:hidden">
           {attendeesFetching ? (
             <span>Loading attendee details...</span>
           ) : (
@@ -224,33 +224,31 @@ export function AdminAttendanceDataPage() {
       )}
 
       {!isLoading && attendanceEnabled && (
-        <AdminPageShell.Filters>
-          <AttendanceViewControls
-            viewConfig={viewConfig}
-            hasActiveFilters={hasActiveFilters}
-            roleOptions={roleOptions}
-            categoryOptions={categoryOptions}
-            dynamicFieldOptions={dynamicFieldOptions}
-            registrationDynamicFieldOptions={registrationDynamicFieldOptions}
-            attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
-            dynamicFilterFieldToken={dynamicFilterFieldToken}
-            dynamicFilterValue={dynamicFilterValue}
-            dynamicFilterFieldLabel={dynamicFilterField?.label ?? null}
-            onNameOrMemberQueryChange={setNameOrMemberQuery}
-            onRoleChange={setRole}
-            onCategoryChange={setCategory}
-            onCheckInStatusChange={setCheckInStatus}
-            onAddGroupingLevel={addGroupingLevel}
-            onGroupingFieldChange={changeGroupingField}
-            onMoveGroupingLevel={moveGroupingLevel}
-            onRemoveGroupingLevel={removeGroupingLevel}
-            onClearViewControls={clearViewControls}
-            onDynamicFilterFieldTokenChange={setFilterFieldToken}
-            onDynamicFilterValueChange={setDynamicFilterValue}
-            onApplyDynamicFilter={addDynamicFilter}
-            onRemoveDynamicFilter={removeDynamicFilter}
-          />
-        </AdminPageShell.Filters>
+        <AttendanceViewControls
+          viewConfig={viewConfig}
+          hasActiveFilters={hasActiveFilters}
+          roleOptions={roleOptions}
+          categoryOptions={categoryOptions}
+          dynamicFieldOptions={dynamicFieldOptions}
+          registrationDynamicFieldOptions={registrationDynamicFieldOptions}
+          attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
+          dynamicFilterFieldToken={dynamicFilterFieldToken}
+          dynamicFilterValue={dynamicFilterValue}
+          dynamicFilterFieldLabel={dynamicFilterField?.label ?? null}
+          onNameOrMemberQueryChange={setNameOrMemberQuery}
+          onRoleChange={setRole}
+          onCategoryChange={setCategory}
+          onCheckInStatusChange={setCheckInStatus}
+          onAddGroupingLevel={addGroupingLevel}
+          onGroupingFieldChange={changeGroupingField}
+          onMoveGroupingLevel={moveGroupingLevel}
+          onRemoveGroupingLevel={removeGroupingLevel}
+          onClearViewControls={clearViewControls}
+          onDynamicFilterFieldTokenChange={setFilterFieldToken}
+          onDynamicFilterValueChange={setDynamicFilterValue}
+          onApplyDynamicFilter={addDynamicFilter}
+          onRemoveDynamicFilter={removeDynamicFilter}
+        />
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading attendance data...">

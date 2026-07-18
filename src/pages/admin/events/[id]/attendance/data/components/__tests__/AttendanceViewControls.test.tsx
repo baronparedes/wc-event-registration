@@ -27,7 +27,7 @@ const attendanceOption = makeOption('attendance', 'area', 'Area');
 
 const baseViewConfig: AttendeeViewConfig = {
   nameOrMemberQuery: '',
-  role: 'all',
+  role: [],
   category: 'all',
   checkInStatus: 'all',
   dynamicFilters: [],
@@ -80,14 +80,17 @@ describe('AttendanceViewControls', () => {
     // Expand filters to access hidden fields
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
-    fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'Volunteer' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    fireEvent.click(screen.getByLabelText('Volunteer'));
+    fireEvent.click(screen.getByLabelText('Member'));
     fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'Youth' } });
     fireEvent.change(screen.getByLabelText('Check-in status'), {
       target: { value: 'checked_in' },
     });
 
     expect(handlers.onNameOrMemberQueryChange).toHaveBeenCalledWith('MID-42');
-    expect(handlers.onRoleChange).toHaveBeenCalledWith('Volunteer');
+    expect(handlers.onRoleChange).toHaveBeenNthCalledWith(1, ['Volunteer']);
+    expect(handlers.onRoleChange).toHaveBeenNthCalledWith(2, ['Member']);
     expect(handlers.onCategoryChange).toHaveBeenCalledWith('Youth');
     expect(handlers.onCheckInStatusChange).toHaveBeenCalledWith('checked_in');
 
@@ -113,7 +116,7 @@ describe('AttendanceViewControls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
     expect(handlers.onAddGroupingLevel).toHaveBeenCalledTimes(1);
 
-    fireEvent.change(screen.getAllByRole('combobox')[3], {
+    fireEvent.change(screen.getAllByRole('combobox')[2], {
       target: { value: 'registration:team' },
     });
     expect(handlers.onGroupingFieldChange).toHaveBeenCalledWith(0, 'registration:team');
@@ -182,5 +185,38 @@ describe('AttendanceViewControls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     expect(screen.getByText('No grouping applied.')).toBeInTheDocument();
+  });
+
+  it('closes the role dropdown on outside click and Escape key', () => {
+    renderControls({ hasActiveFilters: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+
+    expect(screen.getByLabelText('Role options')).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByLabelText('Role options')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    expect(screen.getByLabelText('Role options')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByLabelText('Role options')).not.toBeInTheDocument();
+  });
+
+  it('closes the role dropdown when All roles is clicked', () => {
+    const handlers = renderControls({
+      hasActiveFilters: true,
+      viewConfig: { ...baseViewConfig, role: ['Member'] },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'All roles' }));
+
+    expect(handlers.onRoleChange).toHaveBeenCalledWith([]);
+    expect(screen.queryByLabelText('Role options')).not.toBeInTheDocument();
   });
 });
