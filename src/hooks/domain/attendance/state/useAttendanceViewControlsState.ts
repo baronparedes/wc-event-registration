@@ -117,7 +117,18 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
   }
 
   function changeGroupingField(index: number, token: string) {
-    const nextField = fromDynamicFieldToken(token, dynamicFieldOptions);
+    // Try to parse as a dynamic field first
+    let nextField = fromDynamicFieldToken(token, dynamicFieldOptions);
+
+    // If not found, try to parse as a static field (role or category)
+    if (!nextField && (token === 'role:role' || token === 'category:category')) {
+      const source = token.split(':')[0] as 'role' | 'category';
+      nextField = {
+        source,
+        fieldKey: source,
+        label: source.charAt(0).toUpperCase() + source.slice(1),
+      };
+    }
 
     setViewConfig((current) => {
       const nextGroupBy = [...current.groupBy];

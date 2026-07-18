@@ -1,6 +1,6 @@
 import type { AttendeeSearchResult, RegistrantAttendanceRow } from '@/lib/domain/attendance';
 
-export type DynamicFieldSource = 'registration' | 'attendance';
+export type DynamicFieldSource = 'registration' | 'attendance' | 'role' | 'category';
 
 export type DynamicFieldRef = {
   source: DynamicFieldSource;

@@ -76,6 +76,10 @@ describe('AttendanceViewControls', () => {
     const handlers = renderControls();
 
     fireEvent.change(screen.getByLabelText('Name or Member ID'), { target: { value: 'MID-42' } });
+
+    // Expand filters to access hidden fields
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
     fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'Volunteer' } });
     fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'Youth' } });
     fireEvent.change(screen.getByLabelText('Check-in status'), {
@@ -102,6 +106,9 @@ describe('AttendanceViewControls', () => {
         ],
       },
     });
+
+    // Expand filters to access hidden controls
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
     expect(handlers.onAddGroupingLevel).toHaveBeenCalledTimes(1);
@@ -131,6 +138,9 @@ describe('AttendanceViewControls', () => {
       hasActiveFilters: true,
     });
 
+    // Expand filters to access hidden controls
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
     fireEvent.change(screen.getByLabelText('Filter field'), {
       target: { value: 'attendance:area' },
     });
@@ -156,6 +166,9 @@ describe('AttendanceViewControls', () => {
       hasActiveFilters: true,
     });
 
+    // Expand filters to access the filter controls section
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
     const chip = screen.getByRole('button', { name: 'Area (attendance): North x' });
     fireEvent.click(chip);
 
@@ -164,6 +177,9 @@ describe('AttendanceViewControls', () => {
 
   it('shows empty grouping copy when no grouping exists', () => {
     renderControls({ viewConfig: { ...baseViewConfig, groupBy: [] } });
+
+    // Expand filters to access the grouping section
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     expect(screen.getByText('No grouping applied.')).toBeInTheDocument();
   });

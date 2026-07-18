@@ -383,6 +383,9 @@ describe('AdminAttendanceDataPage', () => {
   it('renders filter field selector with registration and attendance sub-groups', () => {
     const { container } = renderPage();
 
+    // Expand filters to access hidden controls
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
     const filterFieldSelect = screen.getByLabelText('Filter field');
     const registrationGroup = container.querySelector('optgroup[label="Registration Fields"]');
     const attendanceGroup = container.querySelector('optgroup[label="Attendance Fields"]');
@@ -396,6 +399,9 @@ describe('AdminAttendanceDataPage', () => {
 
   it('adds a group level and shows subgrouped dynamic field options', () => {
     const { container } = renderPage();
+
+    // Expand filters to access the Add group level button
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
 

@@ -171,6 +171,11 @@ function findAnswerSummary(
   attendee: AttendeeSearchResult,
   field: DynamicFieldRef,
 ): RegistrationAnswerSummary | AttendanceAnswerSummary | null {
+  // Handle static fields (role, category)
+  if (field.source === 'role' || field.source === 'category') {
+    return null; // These are not actual answers, handled separately in findFieldGroupingValues
+  }
+
   const answers = getAnswerSummaries(attendee, field.source);
   return answers.find((item) => item.field_key === field.fieldKey) ?? null;
 }
@@ -289,6 +294,15 @@ function matchesBaseFilters(attendee: AttendeeSearchResult, config: AttendeeView
 }
 
 function findFieldGroupingValues(attendee: AttendeeSearchResult, field: DynamicFieldRef): string[] {
+  // Handle static fields
+  if (field.source === 'role') {
+    return attendee.role ? [attendee.role] : [];
+  }
+
+  if (field.source === 'category') {
+    return attendee.category ? [attendee.category] : [];
+  }
+
   const answer = findAnswerSummary(attendee, field);
   if (!answer) {
     return [];
@@ -419,9 +433,13 @@ function buildGroupKeys(attendee: AttendeeSearchResult, config: AttendeeViewConf
   let keys = [''];
 
   for (const field of config.groupBy) {
-    const answer = findAnswerSummary(attendee, field);
-    if (!answer) {
-      return [];
+    // For static fields like role and category, skip the findAnswerSummary check
+    let answer: RegistrationAnswerSummary | AttendanceAnswerSummary | null = null;
+    if (field.source !== 'role' && field.source !== 'category') {
+      answer = findAnswerSummary(attendee, field);
+      if (!answer) {
+        return [];
+      }
     }
 
     let values = findFieldGroupingValues(attendee, field);
@@ -431,6 +449,7 @@ function buildGroupKeys(attendee: AttendeeSearchResult, config: AttendeeViewConf
     );
 
     if (
+      answer &&
       sameFieldFilters.length > 0 &&
       (answer.field_type === 'multi_select' || answer.field_type === 'multi_select_toggle')
     ) {
