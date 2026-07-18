@@ -16,8 +16,9 @@ import {
 } from '@/config/constants';
 import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
+  searchAttendeesLocally,
   useAttendanceSettingsQuery,
-  useSearchAttendeesQuery,
+  useAttendeesLocalCacheQuery,
 } from '@/hooks/domain/attendance/queries';
 import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
@@ -96,14 +97,26 @@ export function AdminAttendanceCheckInPage() {
   const timeslotEnabled = settings?.timeslot_enabled ?? false;
   const timeslots = useMemo(() => settings?.timeslots ?? [], [settings]);
   const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', { pageSize: 1 });
-  const searchQuery = useSearchAttendeesQuery(eventId, submittedSearchToken);
+  const {
+    attendees: cachedAttendees,
+    cachedAt,
+    isLoading: cacheLoading,
+    isFetching: cacheFetching,
+    isError: isCacheError,
+    error: cacheError,
+    refresh: refreshCache,
+    updateAttendee,
+  } = useAttendeesLocalCacheQuery(eventId);
   const checkInMutation = useCheckInAttendeeMutation();
   const updateEventMutation = useUpdateEventMutation();
 
   const isLoading = eventLoading || settingsLoading;
   const registeredCount = registrationsQuery.data?.totalCount ?? 0;
 
-  const results = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
+  const results = useMemo(() => {
+    if (!submittedSearchToken.trim() || !cachedAttendees) return [];
+    return searchAttendeesLocally(cachedAttendees, submittedSearchToken);
+  }, [cachedAttendees, submittedSearchToken]);
   const registrationOpen = event
     ? isRegistrationOpenNow({
         registration_mode: event.registration_mode,
@@ -269,6 +282,13 @@ export function AdminAttendanceCheckInPage() {
 
       setCheckInResult(result);
 
+      if (result.status === 'checked_in' || result.status === 'already_checked_in') {
+        updateAttendee(confirmedAttendee.registration_id, {
+          check_in_status: 'checked_in',
+          official_check_in_time: result.official_check_in_time,
+        });
+      }
+
       if (result.status === 'checked_in') {
         toast.success('Attendee checked in successfully.');
         setTimeout(() => {
@@ -412,6 +432,31 @@ export function AdminAttendanceCheckInPage() {
         </div>
       )}
 
+      {showCheckInWizard && attendanceEnabled && (
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted">
+          {cacheLoading || cacheFetching ? (
+            <span>Loading attendee list...</span>
+          ) : isCacheError ? (
+            <span className="text-red-600">
+              {cacheError instanceof Error ? cacheError.message : 'Failed to load attendee cache.'}
+            </span>
+          ) : cachedAttendees ? (
+            <span>
+              {cachedAttendees.length} attendees cached
+              {cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={refreshCache}
+            disabled={cacheFetching}
+            className="ml-4 rounded px-2 py-1 text-primary underline hover:no-underline disabled:opacity-50"
+          >
+            {cacheFetching ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      )}
+
       {showCheckInWizard && (
         <StepIndicator
           currentStep={activeStep}
@@ -426,10 +471,10 @@ export function AdminAttendanceCheckInPage() {
             <AttendeeSearchStep
               searchToken={searchToken}
               submittedSearchToken={submittedSearchToken}
-              isSearching={searchQuery.isFetching}
-              disabled={!attendanceEnabled || isCheckInBlockedByWindow}
+              isSearching={cacheFetching}
+              disabled={!attendanceEnabled || isCheckInBlockedByWindow || cacheLoading}
               results={results}
-              isSearchError={searchQuery.isError}
+              isSearchError={isCacheError}
               onSearchTokenChange={setSearchToken}
               onSubmit={handleSubmitSearch}
               notFoundActions={
@@ -473,7 +518,11 @@ export function AdminAttendanceCheckInPage() {
               results={results}
               selectedResultId={selectedResultId}
               selectedAttendee={selectedAttendee}
-              searchError={searchQuery.error}
+              searchError={
+                !(isCacheError && cacheError && cacheError instanceof Error)
+                  ? new Error('Failed to load attendee cache.')
+                  : cacheError || null
+              }
               onSelect={(registrationId) => {
                 setSelectedRegistrationId(registrationId);
                 setConfirmedRegistrationId(null);

@@ -70,6 +70,7 @@ vi.mock('@/lib/infrastructure', async () => {
 describe('useAttendanceAnswersQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     mockRegistrationsBuilder.select.mockReturnValue(mockRegistrationsBuilder);
     mockRegistrationsBuilder.eq.mockReturnValue(mockRegistrationsBuilder);
     mockRegistrationsBuilder.order.mockReturnValue(mockRegistrationsBuilder);

@@ -1,7 +1,9 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createTestQueryClient } from '@/__tests__/unit-test-utils';
 import { AdminAttendanceDataPage } from '@/pages/admin/events/[id]/attendance/data';
 
 const EVENT_ID = 'ed27d3ac-ddb7-4cb4-9f44-2194c864e410';
@@ -67,10 +69,13 @@ vi.mock('@/hooks/domain/attendance-fields', async () => {
 });
 
 function renderPage() {
+  const queryClient = createTestQueryClient();
   return render(
-    <MemoryRouter>
-      <AdminAttendanceDataPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <AdminAttendanceDataPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -110,6 +115,8 @@ describe('AdminAttendanceDataPage', () => {
         },
       ],
       isLoading: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
     });
 
     mockUseDownloadAttendanceCSVMutation.mockReturnValue({
@@ -272,6 +279,8 @@ describe('AdminAttendanceDataPage', () => {
     mockUseAttendanceAnswersQuery.mockReturnValue({
       data: [],
       isLoading: true,
+      isFetching: true,
+      dataUpdatedAt: 0,
     });
     mockUseAttendanceFieldsQuery.mockReturnValue({
       data: [],

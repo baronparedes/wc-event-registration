@@ -5,6 +5,35 @@ import { QUERY_KEYS } from '@/config/constants';
 import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
 import { supabase } from '@/lib/infrastructure';
 
+const CACHE_KEY_PREFIX = 'wc:attendance-answers';
+
+type LocalCacheEntry = {
+  data: RegistrantAttendanceRow[];
+  updatedAt: number;
+};
+
+function getStorageKey(eventId: string): string {
+  return `${CACHE_KEY_PREFIX}:${eventId}`;
+}
+
+function readCache(eventId: string): LocalCacheEntry | null {
+  try {
+    const raw = localStorage.getItem(getStorageKey(eventId));
+    if (!raw) return null;
+    return JSON.parse(raw) as LocalCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(eventId: string, data: RegistrantAttendanceRow[]): void {
+  try {
+    localStorage.setItem(getStorageKey(eventId), JSON.stringify({ data, updatedAt: Date.now() }));
+  } catch {
+    // localStorage quota exceeded or unavailable — continue without persisting
+  }
+}
+
 /**
  * Fetches all registrants for an event with their attendance field answers.
  * Used in the admin attendance data entry list.
@@ -118,9 +147,20 @@ export function useAttendanceAnswersQuery(eventId: string | undefined) {
         };
       });
 
-      return [...memberRows, ...publicRows].sort((a, b) => a.full_name.localeCompare(b.full_name));
+      const result = [...memberRows, ...publicRows].sort((a, b) =>
+        a.full_name.localeCompare(b.full_name),
+      );
+
+      if (eventId) writeCache(eventId, result);
+
+      return result;
     },
     enabled: Boolean(eventId),
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    initialData: () => (eventId ? (readCache(eventId)?.data ?? undefined) : undefined),
+    initialDataUpdatedAt: () =>
+      eventId ? (readCache(eventId)?.updatedAt ?? undefined) : undefined,
   });
 }
 /* c8 ignore stop */

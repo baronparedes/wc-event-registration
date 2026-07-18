@@ -1364,5 +1364,417 @@ describe('AdminPublicRegistrationDetailPage', () => {
       // Verify cancel button exists - mutation is configured for error handling
       expect(screen.getByRole('button', { name: 'Cancel Registration' })).toBeInTheDocument();
     });
+
+    it('calls showError when cancel mutation throws an Error', async () => {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'submitted',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: '2026-07-04T12:00:00Z',
+        },
+        fieldResponses: [],
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      const mockMutateAsync = vi.fn().mockRejectedValue(new Error('Cancel failed'));
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      // Open the cancel dialog
+      const headerCancelBtn = screen.getAllByRole('button', { name: 'Cancel Registration' })[0];
+      fireEvent.click(headerCancelBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Cancel Public Registration')).toBeInTheDocument();
+      });
+
+      // Click the confirm button inside the dialog (last button with that name)
+      const allCancelBtns = screen.getAllByRole('button', { name: 'Cancel Registration' });
+      fireEvent.click(allCancelBtns[allCancelBtns.length - 1]);
+
+      await waitFor(() => {
+        expect(mockShowError).toHaveBeenCalledWith('Cancel failed');
+      });
+    });
+
+    it('calls showError with fallback message when cancel mutation throws a non-Error', async () => {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'submitted',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: '2026-07-04T12:00:00Z',
+        },
+        fieldResponses: [],
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      const mockMutateAsync = vi.fn().mockRejectedValue('unexpected');
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      const headerCancelBtn = screen.getAllByRole('button', { name: 'Cancel Registration' })[0];
+      fireEvent.click(headerCancelBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Cancel Public Registration')).toBeInTheDocument();
+      });
+
+      const allCancelBtns = screen.getAllByRole('button', { name: 'Cancel Registration' });
+      fireEvent.click(allCancelBtns[allCancelBtns.length - 1]);
+
+      await waitFor(() => {
+        expect(mockShowError).toHaveBeenCalledWith('Failed to cancel public registration');
+      });
+    });
+
+    it('calls showError when reactivate mutation throws an Error', async () => {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'cancelled',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: '2026-07-04T13:00:00Z',
+        },
+        fieldResponses: [],
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      const mockMutateAsync = vi.fn().mockRejectedValue(new Error('Reactivate failed'));
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      // Open the reactivate dialog
+      const headerReactivateBtn = screen.getAllByRole('button', {
+        name: 'Reactivate Registration',
+      })[0];
+      fireEvent.click(headerReactivateBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Reactivate Public Registration')).toBeInTheDocument();
+      });
+
+      // Click the confirm button inside the dialog
+      const allReactivateBtns = screen.getAllByRole('button', { name: 'Reactivate Registration' });
+      fireEvent.click(allReactivateBtns[allReactivateBtns.length - 1]);
+
+      await waitFor(() => {
+        expect(mockShowError).toHaveBeenCalledWith('Reactivate failed');
+      });
+    });
+
+    it('calls showError with fallback message when reactivate mutation throws a non-Error', async () => {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'cancelled',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: '2026-07-04T13:00:00Z',
+        },
+        fieldResponses: [],
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      const mockMutateAsync = vi.fn().mockRejectedValue('unexpected');
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      const headerReactivateBtn = screen.getAllByRole('button', {
+        name: 'Reactivate Registration',
+      })[0];
+      fireEvent.click(headerReactivateBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Reactivate Public Registration')).toBeInTheDocument();
+      });
+
+      const allReactivateBtns = screen.getAllByRole('button', { name: 'Reactivate Registration' });
+      fireEvent.click(allReactivateBtns[allReactivateBtns.length - 1]);
+
+      await waitFor(() => {
+        expect(mockShowError).toHaveBeenCalledWith('Failed to reactivate public registration');
+      });
+    });
+
+    it('opens reactivate dialog and calls mutation with refetch on confirmation', async () => {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'cancelled',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: '2026-07-04T13:00:00Z',
+        },
+        fieldResponses: [],
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      const mockRefetch = vi.fn();
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+      });
+
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      const mockMutateAsync = vi.fn().mockResolvedValue({ success: true });
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      // Open the reactivate dialog
+      const headerReactivateBtn = screen.getAllByRole('button', {
+        name: 'Reactivate Registration',
+      })[0];
+      fireEvent.click(headerReactivateBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Reactivate Public Registration')).toBeInTheDocument();
+        expect(
+          screen.getByText('Restore this public registration to active status?'),
+        ).toBeInTheDocument();
+      });
+
+      // Confirm in the dialog
+      const allReactivateBtns = screen.getAllByRole('button', { name: 'Reactivate Registration' });
+      fireEvent.click(allReactivateBtns[allReactivateBtns.length - 1]);
+
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalledWith({ registration_id: testRegistrationId });
+        expect(mockRefetch).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('formatAnswer edge cases', () => {
+    function setupWithFieldResponses(fieldResponses: object[]) {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'submitted',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: null,
+        },
+        fieldResponses,
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      renderWithRouter();
+    }
+
+    it('formats multi_select_toggle with non-object answer as plain string', () => {
+      setupWithFieldResponses([
+        {
+          field_id: 'f1',
+          field_name: 'toggle',
+          field_label: 'Toggle Field',
+          field_type: 'multi_select_toggle',
+          answer: 'raw string value',
+        },
+      ]);
+
+      expect(screen.getByText('raw string value')).toBeInTheDocument();
+    });
+
+    it('renders default status badge for unknown registration status', () => {
+      const registrationData = {
+        registration: {
+          id: testRegistrationId,
+          event_id: testEventId,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@example.com',
+          phone: null,
+          nickname: null,
+          status: 'pending',
+          submitted_at: '2026-07-04T12:00:00Z',
+          updated_at: null,
+        },
+        fieldResponses: [],
+      };
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: registrationData,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      // The default badge renders the raw status string
+      expect(screen.getByText('pending')).toBeInTheDocument();
+    });
   });
 });

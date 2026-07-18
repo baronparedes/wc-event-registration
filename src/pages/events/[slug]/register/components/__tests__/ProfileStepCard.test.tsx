@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeMemberLookupProfile } from '@/__tests__/factories';
 
@@ -56,5 +56,65 @@ describe('ProfileStepCard', () => {
     expect(screen.getByText(matchedMember.role)).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
     expect(screen.getByText(matchedMember.category)).toBeInTheDocument();
+  });
+
+  describe('countdown timer message branches', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('shows the blocked message when isRegistrationBlocked is true', async () => {
+      render(
+        <ProfileStepCard
+          matchedMember={matchedMember}
+          isRegistrationBlocked
+          countdownMs={30_000}
+          onTimeout={vi.fn()}
+        />,
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(0);
+      });
+
+      expect(screen.getByText('Returning to Step 1 in 30s.')).toBeInTheDocument();
+    });
+
+    it('shows the waiting message when canContinueToStepThree is true', async () => {
+      render(
+        <ProfileStepCard
+          matchedMember={matchedMember}
+          onContinueToStepThree={vi.fn()}
+          countdownMs={30_000}
+          onTimeout={vi.fn()}
+        />,
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(0);
+      });
+
+      expect(
+        screen.getByText('Returning to Step 1 in 30s if no one continues.'),
+      ).toBeInTheDocument();
+    });
+
+    it('shows the incomplete-registration message when no action is available', async () => {
+      render(
+        <ProfileStepCard matchedMember={matchedMember} countdownMs={30_000} onTimeout={vi.fn()} />,
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(0);
+      });
+
+      expect(
+        screen.getByText('Returning to Step 1 in 30s if this registration is not completed.'),
+      ).toBeInTheDocument();
+    });
   });
 });

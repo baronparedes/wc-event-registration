@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -10,6 +11,7 @@ import {
   toAdminEventAttendanceFields,
   toAdminEventDetail,
 } from '@/config/constants';
+import { QUERY_KEYS } from '@/config/constants';
 import { useAttendanceAnswersQuery, useAttendanceSettingsQuery } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -25,9 +27,19 @@ export function AdminAttendanceDataPage() {
   const { data: fields = [], isLoading: fieldsLoading } = useAttendanceFieldsQuery(id, {
     activeOnly: true,
   });
-  const { data: registrants = [], isLoading: registrantsLoading } = useAttendanceAnswersQuery(id);
+  const queryClient = useQueryClient();
+  const {
+    data: registrants = [],
+    isLoading: registrantsLoading,
+    isFetching: registrantsFetching,
+    dataUpdatedAt,
+  } = useAttendanceAnswersQuery(id);
 
   const isLoading = eventLoading || settingsLoading || fieldsLoading || registrantsLoading;
+
+  function handleRefreshCache() {
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminAttendanceAnswers(id) });
+  }
   const attendanceEnabled = settings?.attendance_enabled ?? false;
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
@@ -93,6 +105,27 @@ export function AdminAttendanceDataPage() {
               'Configure attendance fields first to start collecting data.'
             )}
           </p>
+        </div>
+      )}
+
+      {!isLoading && attendanceEnabled && (
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted">
+          {registrantsFetching ? (
+            <span>Loading attendee details...</span>
+          ) : (
+            <span>
+              {registrants.length} attendees cached
+              {dataUpdatedAt ? ` · Updated ${new Date(dataUpdatedAt).toLocaleTimeString()}` : ''}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleRefreshCache}
+            disabled={registrantsFetching}
+            className="ml-4 rounded px-2 py-1 text-primary underline hover:no-underline disabled:opacity-50"
+          >
+            {registrantsFetching ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       )}
 

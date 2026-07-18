@@ -74,6 +74,10 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 120,
   },
+  listAttendees: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
   attendanceCsvExport: {
     windowMs: 60_000,
     maxHits: 12,
