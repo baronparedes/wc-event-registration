@@ -267,6 +267,8 @@ export function AdminAttendanceDataPage() {
             registrants={viewResult.groups.length === 1 ? viewResult.groups[0].registrants : []}
             groups={viewResult.groups}
             fields={fields}
+            allAttendees={viewResult.filteredAttendees}
+            registrationFields={registrationFields}
           />
         )}
       </AdminPageShell.Content>

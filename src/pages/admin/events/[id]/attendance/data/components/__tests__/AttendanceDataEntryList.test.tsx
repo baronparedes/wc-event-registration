@@ -72,7 +72,15 @@ const baseFields: AttendanceField[] = [
 
 describe('AttendanceDataEntryList', () => {
   it('renders empty state when there are no registrants', () => {
-    render(<AttendanceDataEntryList eventId="event-1" registrants={[]} fields={baseFields} />);
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={[]}
+        fields={baseFields}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
 
     expect(screen.getByText('No matching attendees')).toBeInTheDocument();
     expect(
@@ -118,7 +126,13 @@ describe('AttendanceDataEntryList', () => {
     ];
 
     render(
-      <AttendanceDataEntryList eventId="event-1" registrants={registrants} fields={baseFields} />,
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={baseFields}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
     );
 
     expect(screen.getByRole('columnheader', { name: 'Check-In Status' })).toBeInTheDocument();
@@ -148,7 +162,15 @@ describe('AttendanceDataEntryList', () => {
       },
     ];
 
-    render(<AttendanceDataEntryList eventId="event-1" registrants={registrants} fields={[]} />);
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={[]}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
 
     expect(screen.getByLabelText('Not Checked In')).toBeInTheDocument();
     expect(screen.getAllByText('—').length).toBeGreaterThan(1);
@@ -156,7 +178,7 @@ describe('AttendanceDataEntryList', () => {
 
     fireEvent.click(screen.getByText('John Smith'));
 
-    expect(screen.getByText('Panel for John Smith')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
   it('shows a guest note for public attendees', () => {
@@ -175,9 +197,167 @@ describe('AttendanceDataEntryList', () => {
       },
     ];
 
-    render(<AttendanceDataEntryList eventId="event-1" registrants={registrants} fields={[]} />);
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={[]}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
 
     expect(screen.getByText('Guest One')).toBeInTheDocument();
     expect(screen.getByText('Guest', { selector: 'p' })).toBeInTheDocument();
+  });
+
+  it('shows "Edit" button when attendance answers are filled', () => {
+    const registrants: RegistrantAttendanceRow[] = [
+      {
+        attendee_kind: 'registered',
+        registration_id: 'reg-3',
+        public_registration_id: null,
+        member_id: 'MID-003',
+        full_name: 'Jane Smith',
+        email: 'jane.smith@example.com',
+        role: 'Staff',
+        category: 'Team Lead',
+        check_in_status: 'checked_in',
+        answers: [
+          {
+            id: 'ans-3',
+            registration_id: 'reg-3',
+            public_registration_id: null,
+            attendance_field_id: 'field-1',
+            answer_text: '12',
+            answer_number: null,
+            created_at: '2026-07-01T00:00:00Z',
+            updated_at: '2026-07-01T00:00:00Z',
+          },
+          {
+            id: 'ans-4',
+            registration_id: 'reg-3',
+            public_registration_id: null,
+            attendance_field_id: 'field-2',
+            answer_text: 'North',
+            answer_number: null,
+            created_at: '2026-07-01T00:00:00Z',
+            updated_at: '2026-07-01T00:00:00Z',
+          },
+        ],
+      },
+    ];
+
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={baseFields}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  it('renders groups with labels and attendee counts', () => {
+    const registrants: RegistrantAttendanceRow[] = [
+      {
+        attendee_kind: 'registered',
+        registration_id: 'reg-4',
+        public_registration_id: null,
+        member_id: 'MID-004',
+        full_name: 'Alice Johnson',
+        email: 'alice@example.com',
+        role: 'Volunteer',
+        category: 'Team A',
+        check_in_status: 'checked_in',
+        answers: [],
+      },
+      {
+        attendee_kind: 'registered',
+        registration_id: 'reg-5',
+        public_registration_id: null,
+        member_id: 'MID-005',
+        full_name: 'Bob Wilson',
+        email: 'bob@example.com',
+        role: 'Volunteer',
+        category: 'Team B',
+        check_in_status: 'not_checked_in',
+        answers: [],
+      },
+    ];
+
+    const groups = [
+      {
+        key: 'team-a',
+        label: 'Team A Group',
+        registrants: [registrants[0]],
+      },
+      {
+        key: 'team-b',
+        label: 'Team B Group',
+        registrants: [registrants[1]],
+      },
+    ];
+
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={[]}
+        groups={groups}
+        fields={baseFields}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
+
+    expect(screen.getByText('Team A Group')).toBeInTheDocument();
+    expect(screen.getByText('Team B Group')).toBeInTheDocument();
+    expect(screen.getAllByText('1 attendee')).toHaveLength(2);
+  });
+
+  it('opens edit panel when Edit button is clicked', () => {
+    const registrants: RegistrantAttendanceRow[] = [
+      {
+        attendee_kind: 'registered',
+        registration_id: 'reg-6',
+        public_registration_id: null,
+        member_id: 'MID-006',
+        full_name: 'Charlie Brown',
+        email: 'charlie@example.com',
+        role: 'Admin',
+        category: 'Management',
+        check_in_status: 'checked_in',
+        answers: [
+          {
+            id: 'ans-5',
+            registration_id: 'reg-6',
+            public_registration_id: null,
+            attendance_field_id: 'field-1',
+            answer_text: 'Area A',
+            answer_number: null,
+            created_at: '2026-07-01T00:00:00Z',
+            updated_at: '2026-07-01T00:00:00Z',
+          },
+        ],
+      },
+    ];
+
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={baseFields}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
+
+    const editButton = screen.getByRole('button', { name: 'Edit' });
+    fireEvent.click(editButton);
+
+    expect(screen.getByText('Panel for Charlie Brown')).toBeInTheDocument();
   });
 });

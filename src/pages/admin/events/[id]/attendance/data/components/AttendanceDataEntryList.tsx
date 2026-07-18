@@ -13,17 +13,25 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import type { AttendanceAnswer, RegistrantAttendanceRow } from '@/lib/domain/attendance';
+import type {
+  AttendanceAnswer,
+  AttendeeSearchResult,
+  RegistrantAttendanceRow,
+} from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import type { RegistrantViewGroup } from '@/lib/domain/attendance-views';
+import type { AdminEventField } from '@/lib/domain/event-fields';
 
 import { AttendanceDataEntryPanel } from './AttendanceDataEntryPanel';
+import { AttendeeDetailsModal } from './AttendeeDetailsModal';
 
 type AttendanceDataEntryListProps = {
   eventId: string;
   registrants: RegistrantAttendanceRow[];
   groups?: RegistrantViewGroup[];
   fields: AttendanceField[];
+  allAttendees: AttendeeSearchResult[];
+  registrationFields: AdminEventField[];
 };
 
 function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField[]): number {
@@ -46,8 +54,22 @@ export function AttendanceDataEntryList({
   registrants,
   groups,
   fields,
+  allAttendees,
+  registrationFields,
 }: AttendanceDataEntryListProps) {
+  const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
   const [editingRegistrant, setEditingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
+
+  // Find the full attendee details for the viewing registrant
+  const viewingAttendee = viewingRegistrant
+    ? allAttendees.find(
+        (attendee) =>
+          (viewingRegistrant.registration_id &&
+            attendee.registration_id === viewingRegistrant.registration_id) ||
+          (viewingRegistrant.public_registration_id &&
+            attendee.public_registration_id === viewingRegistrant.public_registration_id),
+      )
+    : null;
 
   const resolvedGroups =
     groups && groups.length > 0 ? groups : [{ key: 'all', label: '', registrants }];
@@ -78,7 +100,7 @@ export function AttendanceDataEntryList({
         <ListTableRow
           key={rowKey}
           className="cursor-pointer"
-          onClick={() => setEditingRegistrant(registrant)}
+          onClick={() => setViewingRegistrant(registrant)}
         >
           <ListTableCell className="px-6">
             <div className="flex items-start gap-2">
@@ -163,6 +185,15 @@ export function AttendanceDataEntryList({
           </section>
         ))}
       </div>
+
+      <AttendeeDetailsModal
+        isOpen={viewingRegistrant !== null}
+        registrant={viewingRegistrant}
+        attendanceFields={fields}
+        registrationFields={registrationFields}
+        registrationAnswers={viewingAttendee?.registration_answers ?? []}
+        onClose={() => setViewingRegistrant(null)}
+      />
 
       {editingRegistrant && (
         <AttendanceDataEntryPanel

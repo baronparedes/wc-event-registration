@@ -18,7 +18,7 @@ export function Dialog({ isOpen, onClose, children, maxWidthClass = 'max-w-lg' }
       onClick={onClose}
     >
       <div
-        className={`mx-4 w-full ${maxWidthClass} rounded-2xl border border-border bg-surface p-6 shadow-lg`}
+        className={`mx-4 w-full ${maxWidthClass} rounded-2xl border border-border bg-surface p-2 shadow-lg`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}
