@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   test: {
+    reporters: ['default', 'agent'],
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],

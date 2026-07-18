@@ -366,7 +366,46 @@ Forms:
 - **Testing RLS policies**: Use `supabase test db` to run SQL tests in `supabase/tests/`; policies must deny by default.
 - **Inspecting local DB**: Connect with `psql` or use Supabase Studio at `localhost:54323`.
 - **VSCode debugging**: Hooks run in browser; use browser DevTools for frontend debugging. Server-side: check Edge Function logs via `supabase functions serve` output.
-- **Build check**: Run `npm run build` and `npm run format:check` before commits.
+- **Agent build check**: Use `npm run build:agent` for agent-driven verification; do not use `npm run build` unless the user explicitly asks.
+- **Agent test check**: Use `npm run test:agent` for agent-driven verification.
+- **Do not run high-cost gate by default**: Do not run `npm run ci:gate` unless the user explicitly asks for the full CI gate.
+
+## Agent Token-Saving Mode (Default)
+
+Use this mode by default unless the user requests broader validation.
+
+- **Command restraint by default**: Prefer read-only analysis first; do not run terminal commands unless needed to complete the request.
+- **No full CI gate by default**: Never run `npm run ci:gate` unless the user explicitly requests full CI validation.
+- **Agent-only verification scripts**: For build/test checks, use `npm run build:agent` and `npm run test:agent`.
+- **Targeted verification first**: Run the smallest relevant check first (specific test files or focused checks), then expand only if needed.
+- **Single verification pass per chunk**: Avoid repeated build/test loops while iterating; run verification near chunk completion.
+- **Concise response bias**: Keep answers short and action-focused unless the user asks for deeper detail.
+- **Scope lock**: Limit search/edit to requested files and features; avoid broad repo scans when path-level context is available.
+
+### Ultra-Low-Token Chat Starter
+
+Paste this at the start of a chat when you want strict cost control:
+
+"Use ultra-low-token mode with Context Intake Gate. Read-only analysis first. Do not run any command unless I explicitly say RUN. Never run npm run ci:gate. Use npm run build:agent and npm run test:agent only when needed, and only once near completion. Keep responses concise: patch summary plus key deltas only. Limit search and edits to requested files. Do not assume context; if anything is missing, ask only for objective, scope, constraints, and validation target. Do not implement until those are complete."
+
+### Context Intake Gate (No Assumptions)
+
+When enabled by user preference, the agent must not assume missing requirements or infer hidden context. It must request the minimum required context first, then proceed.
+
+- **No assumption rule**: Do not infer intent, scope, acceptance criteria, or file targets when not explicitly provided.
+- **Minimum context contract**: Before implementation, require all of these:
+  - Objective: what must change
+  - Scope: exact files/folders in scope
+  - Constraints: what must not change
+  - Validation target: what command/check proves done
+- **Hard stop behavior**: If one or more required context fields are missing, ask concise follow-up questions and do not implement yet.
+- **Smallest-question strategy**: Ask only the minimum questions needed to unblock execution.
+- **No speculative scanning**: Do not run broad repository searches to guess scope; only inspect paths provided by the user.
+- **Execution permission line**: After context is complete, restate scope in one short line and ask for explicit approval to run commands when command execution is needed.
+
+Suggested user prompt to activate:
+
+"Use Context Intake Gate. Do not assume context. If anything is missing, ask only for: objective, scope, constraints, and validation target. Do not implement until complete."
 
 **Type safety at boundaries:**
 

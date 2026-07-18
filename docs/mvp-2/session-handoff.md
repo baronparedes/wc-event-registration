@@ -9,8 +9,7 @@ Scope: EPIC-8 Event-Day Attendance (8.1 through 8.7 including bulk CSV edit)
 - Current state: Paused after implementing Session 7 (EPIC-8-S6 Timeslot Attendance) and post-session coverage stabilization.
 - Next session to start: Session 8 (EPIC-8-S7 Attendance CSV Export).
 - Latest validation at pause:
-  - `npm run test:ci` passed.
-  - `npm run ci:gate` passed.
+  - `npm run test:agent` passed.
   - Global branch coverage recovered to threshold (90.02%).
 - New route `/admin/events/:id/attendance/fields` added for attendance field config + data entry.
 

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:agent": "tsc -b && vite build --logLevel error",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier . --write",
@@ -16,6 +17,7 @@
     "test:integration": "node scripts/ensure-integration-env.mjs && vitest run src/__tests__/integration.test.ts",
     "test:unit": "vitest run --exclude \"src/__tests__/integration.test.ts\"",
     "test:coverage": "npm run test:unit -- --coverage",
+    "test:agent": "vitest run --reporter=agent --exclude \"src/__tests__/integration.test.ts\"",
     "test:ci": "npm run test:coverage",
     "test:edge": "cd supabase/functions && deno test -A --no-check **/*.test.ts",
     "test:supabase": "supabase test db && npm run test:edge",
