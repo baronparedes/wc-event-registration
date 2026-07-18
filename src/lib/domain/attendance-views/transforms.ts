@@ -147,6 +147,79 @@ function parseMultiSelectToggleKeys(
   }
 }
 
+function parseMultiSelectToggleMap(
+  answer: RegistrationAnswerSummary | AttendanceAnswerSummary,
+): Record<string, boolean> {
+  if (answer.field_type !== 'multi_select_toggle' || answer.answer_text === null) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(answer.answer_text);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const result: Record<string, boolean> = {};
+    for (const [rawKey, rawValue] of Object.entries(parsed as Record<string, unknown>)) {
+      const key = rawKey.trim();
+      if (!key) {
+        continue;
+      }
+
+      if (typeof rawValue !== 'boolean') {
+        continue;
+      }
+
+      result[key] = rawValue;
+    }
+
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+function parseMultiSelectToggleFilterValue(rawFilterValue: string): {
+  key: string;
+  expectedBoolean: boolean | null;
+} | null {
+  const trimmed = rawFilterValue.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const equalsIndex = trimmed.indexOf('=');
+  if (equalsIndex === -1) {
+    return {
+      key: trimmed,
+      expectedBoolean: null,
+    };
+  }
+
+  const key = trimmed.slice(0, equalsIndex).trim();
+  const rawBoolean = trimmed
+    .slice(equalsIndex + 1)
+    .trim()
+    .toLowerCase();
+  if (!key) {
+    return null;
+  }
+
+  if (rawBoolean === 'true') {
+    return { key, expectedBoolean: true };
+  }
+
+  if (rawBoolean === 'false') {
+    return { key, expectedBoolean: false };
+  }
+
+  return {
+    key: trimmed,
+    expectedBoolean: null,
+  };
+}
+
 function fieldFilterValues(answer: RegistrationAnswerSummary | AttendanceAnswerSummary): string[] {
   if (answer.field_type === 'multi_select') {
     return parseMultiSelectValues(answer);
@@ -338,13 +411,27 @@ function matchesDynamicFilter(attendee: AttendeeSearchResult, filter: DynamicFie
   }
 
   if (answer.field_type === 'multi_select_toggle') {
-    const values = parseMultiSelectToggleKeys(answer);
-    if (values.length === 0) {
+    const parsedFilter = parseMultiSelectToggleFilterValue(filter.value);
+    if (!parsedFilter) {
       return false;
     }
 
-    const normalizedFilter = normalizeValue(filter.value);
-    return values.some((value) => normalizeValue(value) === normalizedFilter);
+    const normalizedFilterKey = normalizeValue(parsedFilter.key);
+
+    if (parsedFilter.expectedBoolean === null) {
+      const values = parseMultiSelectToggleKeys(answer);
+      if (values.length === 0) {
+        return false;
+      }
+
+      return values.some((value) => normalizeValue(value) === normalizedFilterKey);
+    }
+
+    const toggleMap = parseMultiSelectToggleMap(answer);
+    return Object.entries(toggleMap).some(
+      ([key, value]) =>
+        normalizeValue(key) === normalizedFilterKey && value === parsedFilter.expectedBoolean,
+    );
   }
 
   const fieldValue = answerValue(answer);
@@ -454,9 +541,22 @@ function buildGroupKeys(attendee: AttendeeSearchResult, config: AttendeeViewConf
       sameFieldFilters.length > 0 &&
       (answer.field_type === 'multi_select' || answer.field_type === 'multi_select_toggle')
     ) {
-      const allowedValues = new Set(
-        sameFieldFilters.map((filter) => normalizeValue(filter.value)).filter(Boolean),
-      );
+      const allowedValues = new Set<string>();
+      for (const filter of sameFieldFilters) {
+        if (answer.field_type === 'multi_select_toggle') {
+          const parsedFilter = parseMultiSelectToggleFilterValue(filter.value);
+          if (parsedFilter) {
+            allowedValues.add(normalizeValue(parsedFilter.key));
+          }
+          continue;
+        }
+
+        const normalized = normalizeValue(filter.value);
+        if (normalized) {
+          allowedValues.add(normalized);
+        }
+      }
+
       values = values.filter((value) => allowedValues.has(normalizeValue(value)));
     }
 

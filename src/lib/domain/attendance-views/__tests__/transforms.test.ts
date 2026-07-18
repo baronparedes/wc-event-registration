@@ -159,6 +159,26 @@ describe('attendance-views transforms', () => {
     expect(result.filteredAttendees[0].registration_id).toBe('reg-1');
   });
 
+  it('excludes attendees without role when role filters are applied', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        role: null,
+      }),
+      makeAttendee({
+        registration_id: 'reg-2',
+        role: 'Member',
+      }),
+    ];
+
+    const result = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      role: ['member'],
+    });
+
+    expect(result.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual(['reg-2']);
+  });
+
   it('filters attendees by name or member ID query', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
@@ -688,6 +708,179 @@ describe('attendance-views transforms', () => {
       'reg-2',
     ]);
     expect(missingKeyMatch.filteredAttendees).toHaveLength(0);
+  });
+
+  it('supports multi-select-toggle key boolean filters (key, key=true, key=false)', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-slot',
+            field_type: 'multi_select_toggle',
+            field_key: 'slot_choice',
+            label: 'Slots',
+            answer_text: '{"9AM":true,"12NN":false}',
+            answer_number: null,
+          },
+        ],
+      }),
+      makeAttendee({
+        registration_id: 'reg-2',
+        registration_answers: [
+          {
+            event_field_id: 'field-slot',
+            field_type: 'multi_select_toggle',
+            field_key: 'slot_choice',
+            label: 'Slots',
+            answer_text: '{"9AM":false,"12NN":true}',
+            answer_number: null,
+          },
+        ],
+      }),
+      makeAttendee({
+        registration_id: 'reg-3',
+        registration_answers: [
+          {
+            event_field_id: 'field-slot',
+            field_type: 'multi_select_toggle',
+            field_key: 'slot_choice',
+            label: 'Slots',
+            answer_text: '{"12NN":true}',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const slotField = findField(fields, 'registration', 'slot_choice');
+
+    const byKeyOnly = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilters: [{ field: slotField, value: '9AM' }],
+    });
+
+    const byTrue = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilters: [{ field: slotField, value: '9AM=true' }],
+    });
+
+    const byFalse = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilters: [{ field: slotField, value: '9AM=false' }],
+    });
+
+    expect(byKeyOnly.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+      'reg-1',
+      'reg-2',
+    ]);
+    expect(byTrue.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual(['reg-1']);
+    expect(byFalse.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+      'reg-2',
+    ]);
+  });
+
+  it('rejects invalid multi-select-toggle equals syntax with empty key', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-slot',
+            field_type: 'multi_select_toggle',
+            field_key: 'slot_choice',
+            label: 'Slots',
+            answer_text: '{"9AM":true}',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const slotField = findField(fields, 'registration', 'slot_choice');
+    const invalidFilterResult = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilters: [{ field: slotField, value: '=true' }],
+    });
+
+    expect(invalidFilterResult.filteredAttendees).toHaveLength(0);
+  });
+
+  it('drops attendees with missing static group values when grouping by role/category', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        role: 'Member',
+        category: 'Adult',
+      }),
+      makeAttendee({
+        registration_id: 'reg-2',
+        role: null,
+        category: 'Adult',
+      }),
+      makeAttendee({
+        registration_id: 'reg-3',
+        role: 'Member',
+        category: null,
+      }),
+    ];
+
+    const groupedByRole = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      groupBy: [{ source: 'role', fieldKey: 'role', label: 'Role' }],
+    });
+
+    const groupedByCategory = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      groupBy: [{ source: 'category', fieldKey: 'category', label: 'Category' }],
+    });
+
+    expect(
+      groupedByRole.groups.map((group) => group.registrants.map((item) => item.registration_id)),
+    ).toEqual([['reg-1', 'reg-3']]);
+    expect(
+      groupedByCategory.groups.map((group) =>
+        group.registrants.map((item) => item.registration_id),
+      ),
+    ).toEqual([['reg-1', 'reg-2']]);
+  });
+
+  it('does not treat key=true syntax specially for non-multi-select-toggle fields', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'multi_select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '["9AM"]',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const serviceField = findField(fields, 'registration', 'service');
+
+    const exactValueMatch = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilters: [{ field: serviceField, value: '9AM' }],
+    });
+
+    const equalsSyntaxShouldNotMatch = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilters: [{ field: serviceField, value: '9AM=true' }],
+    });
+
+    expect(exactValueMatch.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+      'reg-1',
+    ]);
+    expect(equalsSyntaxShouldNotMatch.filteredAttendees).toHaveLength(0);
   });
 
   it('fans out multi-select-toggle grouping into true-key subgroup buckets', () => {
