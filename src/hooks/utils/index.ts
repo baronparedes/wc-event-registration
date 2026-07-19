@@ -9,3 +9,4 @@ export { useStepCountdown } from './useStepCountdown';
 export { useIsMobileViewport } from './useIsMobileViewport';
 export { useFieldAnswerTextFormatter } from './useFieldAnswerTextFormatter';
 export { useWizardStepScroll } from './useWizardStepScroll';
+export { useLocalStorage } from './useLocalStorage';

@@ -22,6 +22,7 @@ import {
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import { useLocalStorage } from '@/hooks/utils';
 import { buildAttendeeView, collectDynamicFieldOptions } from '@/lib/domain/attendance-views';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -33,37 +34,17 @@ function getSelectedViewStorageKey(eventId: string): string {
   return `${SELECTED_VIEW_STORAGE_PREFIX}:${eventId}`;
 }
 
-function readSelectedViewId(eventId: string): string | null {
-  try {
-    const value = localStorage.getItem(getSelectedViewStorageKey(eventId));
-    return value?.trim() ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeSelectedViewId(eventId: string, viewId: string): void {
-  try {
-    localStorage.setItem(getSelectedViewStorageKey(eventId), viewId);
-  } catch {
-    // localStorage may be unavailable or full; selection still works without persistence.
-  }
-}
-
-function clearSelectedViewId(eventId: string): void {
-  try {
-    localStorage.removeItem(getSelectedViewStorageKey(eventId));
-  } catch {
-    // ignore
-  }
-}
-
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [savedViewsModalOpen, setSavedViewsModalOpen] = useState(false);
   const appliedViewIdRef = useRef<string | null>(null);
+  const persistedViewIdRef = useRef<string | null>(null);
+  const selectedViewStorage = useLocalStorage<string>(id ? getSelectedViewStorageKey(id) : null, {
+    parse: (raw) => raw,
+    stringify: (value) => value,
+  });
 
   const viewIdParam = searchParams.get('viewId');
   const { data: savedView } = useAttendanceSavedViewQuery(viewIdParam ?? undefined);
@@ -182,11 +163,16 @@ export function AdminAttendanceDataPage() {
     }
 
     if (viewIdParam) {
-      writeSelectedViewId(id, viewIdParam);
+      if (persistedViewIdRef.current !== viewIdParam) {
+        selectedViewStorage.set(viewIdParam);
+        persistedViewIdRef.current = viewIdParam;
+      }
       return;
     }
 
-    const storedViewId = readSelectedViewId(id);
+    persistedViewIdRef.current = null;
+
+    const storedViewId = selectedViewStorage.get()?.trim() || null;
     if (!storedViewId) {
       return;
     }
@@ -200,14 +186,14 @@ export function AdminAttendanceDataPage() {
       },
       { replace: true },
     );
-  }, [id, navigate, searchParams, viewIdParam]);
+  }, [id, navigate, searchParams, selectedViewStorage, viewIdParam]);
 
   // Handle clearing the current saved view
   const handleClearView = useCallback(() => {
     clearViewControls();
     appliedViewIdRef.current = null;
     if (id) {
-      clearSelectedViewId(id);
+      selectedViewStorage.remove();
     }
 
     const params = new URLSearchParams(searchParams);
@@ -218,7 +204,7 @@ export function AdminAttendanceDataPage() {
       },
       { replace: true },
     );
-  }, [clearViewControls, id, navigate, searchParams]);
+  }, [clearViewControls, id, navigate, searchParams, selectedViewStorage]);
 
   const viewResult = useMemo(
     () => buildAttendeeView(cachedAttendees, viewConfig),
@@ -433,7 +419,7 @@ export function AdminAttendanceDataPage() {
         onApplyView={applyViewConfig}
         onViewDeleted={() => {
           if (id) {
-            clearSelectedViewId(id);
+            selectedViewStorage.remove();
           }
           appliedViewIdRef.current = null;
           clearViewControls();
