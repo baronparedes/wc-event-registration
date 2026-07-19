@@ -10,7 +10,7 @@ type AdminPageShellProps = {
 
 export function AdminPageShell({ children }: AdminPageShellProps) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 print:px-8 print:py-8">
       <div className="space-y-5">{children}</div>
     </div>
   );
