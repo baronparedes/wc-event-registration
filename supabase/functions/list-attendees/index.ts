@@ -180,26 +180,26 @@ function logListAttendeesError(stage: string, error: unknown, context?: Record<s
 }
 
 Deno.serve(async (req) => {
-  const guard = await useEdgeHook({
-    req,
-    functionName: 'list-attendees',
-    method: 'POST',
-    requireAdmin: true,
-    rateLimit: {
-      scope: 'list-attendees',
-      windowMs: RATE_LIMIT_PRESETS.listAttendees.windowMs,
-      maxHits: RATE_LIMIT_PRESETS.listAttendees.maxHits,
-    },
-    schema: listAttendeesRequestSchema,
-  });
-
-  const corsHeaders = guard.corsHeaders;
-
-  if (!guard.valid) {
-    return guard.response;
-  }
-
   try {
+    const guard = await useEdgeHook({
+      req,
+      functionName: 'list-attendees',
+      method: 'POST',
+      requireAdmin: true,
+      rateLimit: {
+        scope: 'list-attendees',
+        windowMs: RATE_LIMIT_PRESETS.listAttendees.windowMs,
+        maxHits: RATE_LIMIT_PRESETS.listAttendees.maxHits,
+      },
+      schema: listAttendeesRequestSchema,
+    });
+
+    const corsHeaders = guard.corsHeaders;
+
+    if (!guard.valid) {
+      return guard.response;
+    }
+
     const { event_id }: ListAttendeesRequest = guard.data;
     const adminClient = guard.client;
 
@@ -562,6 +562,6 @@ Deno.serve(async (req) => {
     return jsonResponse(corsHeaders, { success: true, results }, 200);
   } catch (error) {
     logListAttendeesError('unhandled_exception', error);
-    return errorResponse(corsHeaders, 500, 'Internal server error');
+    throw error;
   }
 });
