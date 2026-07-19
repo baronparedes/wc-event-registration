@@ -63,7 +63,7 @@ async function fetchAllAttendees(eventId: string): Promise<AttendeeSearchResult[
   const caller = createEdgeFunctionCaller<
     ListAttendeesInput,
     ListAttendeesSuccess | ListAttendeesError
-  >('list-attendees');
+  >('list-attendees-v2');
 
   const response = await caller({ event_id: eventId });
 
