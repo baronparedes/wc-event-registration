@@ -9,6 +9,10 @@ const listAttendeesRequestSchema = z.object({
 
 type ListAttendeesRequest = z.infer<typeof listAttendeesRequestSchema>;
 
+type AttendanceSettingsRow = {
+  attendance_enabled: boolean;
+};
+
 type UserRow = {
   id: string;
   member_id: string | null;
@@ -167,6 +171,14 @@ function isMissingPublicRegistrationColumnError(error: unknown): boolean {
   return code === '42703' || message.toLowerCase().includes('public_registration_id');
 }
 
+function logListAttendeesError(stage: string, error: unknown, context?: Record<string, unknown>) {
+  console.error('[list-attendees] error', {
+    stage,
+    error,
+    ...(context ?? {}),
+  });
+}
+
 Deno.serve(async (req) => {
   const guard = await useEdgeHook({
     req,
@@ -197,13 +209,16 @@ Deno.serve(async (req) => {
       .eq('event_id', event_id)
       .maybeSingle();
 
+    const settingsRow = settings as AttendanceSettingsRow | null;
+
     if (settingsError) {
+      logListAttendeesError('load_attendance_settings', settingsError, { event_id });
       return errorResponse(corsHeaders, 500, 'Failed to load attendance settings', undefined, {
         error_code: 'SETTINGS_LOOKUP_FAILED',
       });
     }
 
-    if (!settings?.attendance_enabled) {
+    if (!settingsRow?.attendance_enabled) {
       return jsonResponse(
         corsHeaders,
         {
@@ -234,6 +249,16 @@ Deno.serve(async (req) => {
     ]);
 
     if (registrationsResult.error || publicRegistrationsResult.error) {
+      logListAttendeesError(
+        'fetch_registrations',
+        {
+          registrationsError: registrationsResult.error,
+          publicRegistrationsError: publicRegistrationsResult.error,
+        },
+        {
+          event_id,
+        },
+      );
       return errorResponse(corsHeaders, 500, 'Failed to fetch registrations', undefined, {
         error_code: 'REGISTRATION_FETCH_FAILED',
       });
@@ -339,6 +364,23 @@ Deno.serve(async (req) => {
       registrationAnswersResult.error ||
       publicRegistrationAnswersResult.error
     ) {
+      logListAttendeesError(
+        'load_attendee_details',
+        {
+          checkInsError: checkInsResult.error,
+          publicCheckInsError: publicCheckInsResult.error,
+          publicCheckInLookupError,
+          attendanceAnswersError: attendanceAnswersResult.error,
+          publicAttendanceAnswersError: publicAttendanceAnswersResult.error,
+          registrationAnswersError: registrationAnswersResult.error,
+          publicRegistrationAnswersError: publicRegistrationAnswersResult.error,
+        },
+        {
+          event_id,
+          registration_count: registrationIds.length,
+          public_registration_count: publicRegistrationIds.length,
+        },
+      );
       return errorResponse(corsHeaders, 500, 'Failed to load attendee details', undefined, {
         error_code: 'ATTENDEE_DETAILS_LOOKUP_FAILED',
       });
@@ -518,7 +560,8 @@ Deno.serve(async (req) => {
     );
 
     return jsonResponse(corsHeaders, { success: true, results }, 200);
-  } catch {
+  } catch (error) {
+    logListAttendeesError('unhandled_exception', error);
     return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 });
