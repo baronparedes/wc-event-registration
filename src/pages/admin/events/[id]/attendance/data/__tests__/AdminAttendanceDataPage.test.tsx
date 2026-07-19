@@ -231,10 +231,10 @@ describe('AdminAttendanceDataPage', () => {
     renderPage();
 
     expect(mockUseAttendanceFieldsQuery).toHaveBeenCalledWith(EVENT_ID, { activeOnly: true });
-    expect(screen.getByRole('columnheader', { name: 'Role' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Check-In Status' })).toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Shirt Size' })).not.toBeInTheDocument();
+    expect(screen.getByText('Role')).toBeInTheDocument();
+    expect(screen.getByText('Category')).toBeInTheDocument();
+    expect(screen.getByText('Checked-In')).toBeInTheDocument();
+    expect(screen.queryByText('Shirt Size')).not.toBeInTheDocument();
   });
 
   it('shows no-fields warning when all attendance fields are inactive', () => {

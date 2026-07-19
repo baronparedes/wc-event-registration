@@ -135,12 +135,12 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Check-In Status' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Role' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Table Number' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Area' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Notes' })).not.toBeInTheDocument();
+    expect(screen.getByText('Checked-In')).toBeInTheDocument();
+    expect(screen.getByText('Role')).toBeInTheDocument();
+    expect(screen.getByText('Category')).toBeInTheDocument();
+    expect(screen.queryByText('Table Number')).not.toBeInTheDocument();
+    expect(screen.queryByText('Area')).not.toBeInTheDocument();
+    expect(screen.queryByText('Notes')).not.toBeInTheDocument();
 
     expect(screen.getByText('jane@example.com')).toBeInTheDocument();
     expect(screen.getByText('Volunteer')).toBeInTheDocument();
@@ -215,8 +215,8 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Service' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Area' })).toBeInTheDocument();
+    expect(screen.getByText('Service')).toBeInTheDocument();
+    expect(screen.getByText('Area')).toBeInTheDocument();
     expect(screen.getByText('9AM')).toBeInTheDocument();
     expect(screen.getByText('North')).toBeInTheDocument();
   });

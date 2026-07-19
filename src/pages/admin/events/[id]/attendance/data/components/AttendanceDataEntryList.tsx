@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Check, ExternalLink, Minus, Users } from 'lucide-react';
+import { Check, Minus, Users } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
@@ -42,13 +42,6 @@ function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField
   }).length;
 }
 
-function getRegistrationDetailsUrl(eventId: string, registrant: RegistrantAttendanceRow): string {
-  if (registrant.attendee_kind === 'public') {
-    return `/admin/events/${eventId}/public-registrations/${registrant.public_registration_id}`;
-  }
-  return `/admin/events/${eventId}/registrations/${registrant.registration_id}`;
-}
-
 function getRegistrantKey(
   registrant: Pick<
     RegistrantAttendanceRow,
@@ -84,6 +77,29 @@ function getVisibleFieldValue(attendee: AttendeeSearchResult | undefined, field:
   return '—';
 }
 
+function getVisibleFieldItemSpan(index: number, total: number, columns: number): number {
+  if (columns <= 1 || total <= 1) {
+    return 1;
+  }
+
+  const remainder = total % columns;
+  if (remainder === 0) {
+    return 1;
+  }
+
+  // If one card is left on the final row, let it fill the row.
+  if (remainder === 1 && index === total - 1) {
+    return columns;
+  }
+
+  // If two cards are left and 4+ columns are available, split the final row in half.
+  if (remainder === 2 && columns >= 4 && index >= total - 2) {
+    return Math.floor(columns / 2);
+  }
+
+  return 1;
+}
+
 /** List of registrants with check-in status and per-registrant edit actions. */
 export function AttendanceDataEntryList({
   eventId,
@@ -96,10 +112,38 @@ export function AttendanceDataEntryList({
 }: AttendanceDataEntryListProps) {
   const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
   const [editingRegistrant, setEditingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
+  const visibleFieldsGridRef = useRef<HTMLDivElement | null>(null);
+  const [visibleFieldColumns, setVisibleFieldColumns] = useState(1);
   const attendeesByRegistrantKey = useMemo(
     () => new Map(allAttendees.map((attendee) => [getRegistrantKey(attendee), attendee])),
     [allAttendees],
   );
+
+  useEffect(() => {
+    const grid = visibleFieldsGridRef.current;
+    if (!grid) {
+      return;
+    }
+
+    const minCardWidth = 250;
+    const gridGap = 8;
+
+    const updateColumns = (width: number) => {
+      const nextColumns = Math.max(1, Math.floor((width + gridGap) / (minCardWidth + gridGap)));
+      setVisibleFieldColumns((prev) => (prev === nextColumns ? prev : nextColumns));
+    };
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        updateColumns(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(grid);
+    updateColumns(grid.getBoundingClientRect().width);
+
+    return () => observer.disconnect();
+  }, [visibleFields.length]);
 
   // Find the full attendee details for the viewing registrant
   const viewingAttendee = viewingRegistrant
@@ -141,18 +185,8 @@ export function AttendanceDataEntryList({
           className="cursor-pointer"
           onClick={() => setViewingRegistrant(registrant)}
         >
-          <ListTableCell className="px-6">
-            <div className="flex items-start gap-2">
-              <a
-                href={getRegistrationDetailsUrl(eventId, registrant)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-0.5 flex-shrink-0 text-primary transition-colors hover:text-primary/80 print:hidden"
-                title="View registration details"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="h-4 w-4" />
-              </a>
+          <ListTableCell colSpan={6} className="px-6">
+            <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto]">
               <div>
                 <span className="font-medium text-text">{registrant.full_name}</span>
                 {registrant.attendee_kind === 'public' && (
@@ -162,39 +196,64 @@ export function AttendanceDataEntryList({
                   <span className="ml-2 text-xs text-muted">{registrant.email}</span>
                 )}
               </div>
+              <div>
+                <span
+                  role="img"
+                  aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+                  title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
+                    isCheckedIn
+                      ? 'bg-primary text-white'
+                      : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
+                  }`}
+                >
+                  {isCheckedIn ? <Check className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                </span>
+              </div>
+              <div>
+                <span className="font-mono text-xs text-muted">
+                  {registrant.member_id ?? 'Guest'}
+                </span>
+              </div>
+              <div>
+                <span className="text-sm text-text">{registrant.role?.trim() || '—'}</span>
+              </div>
+              <div>
+                <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
+              </div>
+              <div onClick={(e) => e.stopPropagation()} className="print:hidden">
+                <ActionButton onClick={() => setEditingRegistrant(registrant)}>
+                  {filled > 0 ? 'Edit' : 'Fill In'}
+                </ActionButton>
+              </div>
             </div>
-          </ListTableCell>
-          <ListTableCell className="text-center align-middle">
-            <span
-              role="img"
-              aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-              title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
-                isCheckedIn ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
-              }`}
-            >
-              {isCheckedIn ? <Check className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-            </span>
-          </ListTableCell>
-          <ListTableCell>
-            <span className="font-mono text-xs text-muted">{registrant.member_id ?? 'Guest'}</span>
-          </ListTableCell>
-          <ListTableCell>
-            <span className="text-sm text-text">{registrant.role?.trim() || '—'}</span>
-          </ListTableCell>
-          <ListTableCell>
-            <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
-          </ListTableCell>
-          {visibleFields.map((field) => (
-            <ListTableCell key={`${rowKey}:${field.source}:${field.fieldKey}`}>
-              <span className="text-sm text-text">{getVisibleFieldValue(attendee, field)}</span>
-            </ListTableCell>
-          ))}
+            {visibleFields.length > 0 && (
+              <div
+                ref={visibleFieldsGridRef}
+                className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2"
+              >
+                {visibleFields.map((field, index) => {
+                  const span = getVisibleFieldItemSpan(
+                    index,
+                    visibleFields.length,
+                    visibleFieldColumns,
+                  );
 
-          <ListTableCell onClick={(e) => e.stopPropagation()} className="print:hidden">
-            <ActionButton onClick={() => setEditingRegistrant(registrant)}>
-              {filled > 0 ? 'Edit' : 'Fill In'}
-            </ActionButton>
+                  return (
+                    <div
+                      key={`${rowKey}:${field.source}:${field.fieldKey}`}
+                      className="rounded-xl border border-border bg-muted/20 px-3 py-2"
+                      style={{ gridColumn: `span ${span} / span ${span}` }}
+                    >
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                        {field.label}
+                      </p>
+                      <p className="text-sm text-text">{getVisibleFieldValue(attendee, field)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </ListTableCell>
         </ListTableRow>
       );
@@ -220,17 +279,16 @@ export function AttendanceDataEntryList({
             <ListTable className="min-w-max">
               <ListTableHead>
                 <ListTableHeaderRow>
-                  <ListTableHeaderCell className="px-6">Attendee</ListTableHeaderCell>
-                  <ListTableHeaderCell className="text-center">Check-In Status</ListTableHeaderCell>
-                  <ListTableHeaderCell>Member ID</ListTableHeaderCell>
-                  <ListTableHeaderCell>Role</ListTableHeaderCell>
-                  <ListTableHeaderCell>Category</ListTableHeaderCell>
-                  {visibleFields.map((field) => (
-                    <ListTableHeaderCell key={`${field.source}:${field.fieldKey}`}>
-                      {field.label}
-                    </ListTableHeaderCell>
-                  ))}
-                  <ListTableHeaderCell className="print:hidden">Actions</ListTableHeaderCell>
+                  <ListTableHeaderCell colSpan={6} className="px-6">
+                    <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto]">
+                      <div>Attendee</div>
+                      <div className="hidden md:block">Checked-In</div>
+                      <div className="hidden md:block">RFID</div>
+                      <div className="hidden md:block">Role</div>
+                      <div className="hidden md:block">Category</div>
+                      <div className="hidden md:block print:hidden">Actions</div>
+                    </div>
+                  </ListTableHeaderCell>
                 </ListTableHeaderRow>
               </ListTableHead>
               <ListTableBody>{renderRows(group.registrants)}</ListTableBody>
