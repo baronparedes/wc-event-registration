@@ -175,6 +175,10 @@ function logListAttendeesError(stage: string, error: unknown, context?: Record<s
   console.error('[list-attendees] error', {
     stage,
     error,
+    supabaseStatus: error?.status,
+    supabaseCode: error?.code,
+    supabaseDetails: error?.details,
+    supabaseHint: error?.hint,
     ...(context ?? {}),
   });
 }
