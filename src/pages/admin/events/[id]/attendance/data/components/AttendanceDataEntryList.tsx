@@ -186,8 +186,20 @@ export function AttendanceDataEntryList({
           onClick={() => setViewingRegistrant(registrant)}
         >
           <ListTableCell colSpan={6} className="px-6">
-            <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto]">
+            <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <div>
+                <span
+                  role="img"
+                  aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+                  title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full mr-2 ${
+                    isCheckedIn
+                      ? 'bg-primary text-white'
+                      : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
+                  }`}
+                >
+                  {isCheckedIn ? <Check className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                </span>
                 <span className="font-medium text-text">{registrant.full_name}</span>
                 {registrant.attendee_kind === 'public' && (
                   <p className="text-xs text-muted">Guest</p>
@@ -195,20 +207,6 @@ export function AttendanceDataEntryList({
                 {registrant.email && (
                   <span className="ml-2 text-xs text-muted">{registrant.email}</span>
                 )}
-              </div>
-              <div>
-                <span
-                  role="img"
-                  aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                  title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
-                    isCheckedIn
-                      ? 'bg-primary text-white'
-                      : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
-                  }`}
-                >
-                  {isCheckedIn ? <Check className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                </span>
               </div>
               <div>
                 <span className="font-mono text-xs text-muted">
@@ -230,7 +228,7 @@ export function AttendanceDataEntryList({
             {visibleFields.length > 0 && (
               <div
                 ref={visibleFieldsGridRef}
-                className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2"
+                className="mt-1 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2 print:grid-cols-[repeat(auto-fit,minmax(160px,1fr))]"
               >
                 {visibleFields.map((field, index) => {
                   const span = getVisibleFieldItemSpan(
@@ -242,10 +240,10 @@ export function AttendanceDataEntryList({
                   return (
                     <div
                       key={`${rowKey}:${field.source}:${field.fieldKey}`}
-                      className="rounded-xl border border-border bg-muted/20 px-3 py-2"
+                      className="attendance-visible-field-card rounded-xl border border-border bg-muted/20 px-2 py-1.5"
                       style={{ gridColumn: `span ${span} / span ${span}` }}
                     >
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted print:text-[9px]">
                         {field.label}
                       </p>
                       <p className="text-sm text-text">{getVisibleFieldValue(attendee, field)}</p>
@@ -276,16 +274,15 @@ export function AttendanceDataEntryList({
                 </p>
               </div>
             )}
-            <ListTable className="min-w-max">
+            <ListTable className="min-w-max print:min-w-0">
               <ListTableHead>
                 <ListTableHeaderRow>
                   <ListTableHeaderCell colSpan={6} className="px-6">
-                    <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto]">
+                    <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
                       <div>Attendee</div>
-                      <div className="hidden md:block">Checked-In</div>
-                      <div className="hidden md:block">RFID</div>
-                      <div className="hidden md:block">Role</div>
-                      <div className="hidden md:block">Category</div>
+                      <div className="hidden md:block print:block">RFID</div>
+                      <div className="hidden md:block print:block">Role</div>
+                      <div className="hidden md:block print:block">Category</div>
                       <div className="hidden md:block print:hidden">Actions</div>
                     </div>
                   </ListTableHeaderCell>

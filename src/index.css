@@ -52,6 +52,10 @@ body {
     -webkit-print-color-adjust: economy;
     print-color-adjust: economy;
   }
+
+  .attendance-visible-field-card {
+    grid-column: span 1 / span 1 !important;
+  }
 }
 
 #root {

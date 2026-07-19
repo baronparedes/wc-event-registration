@@ -252,7 +252,7 @@ export function AdminAttendanceDataPage() {
       )}
 
       {!isLoading && attendanceEnabled && fields.length === 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 print:hidden">
           <p className="text-sm font-medium text-blue-800">No attendance fields configured</p>
           <p className="mt-1 text-xs text-blue-700">
             {id ? (

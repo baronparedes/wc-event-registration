@@ -43,7 +43,7 @@ function joinClasses(...classes: Array<string | undefined>) {
 export function ListTable({ className, density = 'default', ...props }: ListTableProps) {
   return (
     <tableDensityContext.Provider value={density}>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto print:overflow-visible">
         <table
           className={joinClasses(
             'w-full text-sm print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
@@ -95,7 +95,16 @@ export function ListTableRow({ className, hover = 'default', ...props }: ListTab
     none: '',
   };
 
-  return <tr className={joinClasses(hoverStyles[hover], className)} {...props} />;
+  return (
+    <tr
+      className={joinClasses(
+        hoverStyles[hover],
+        'print:[break-inside:avoid] print:[page-break-inside:avoid]',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function ListTableHeaderCell({ className, density, ...props }: ListTableHeaderCellProps) {
@@ -113,8 +122,10 @@ export function ListTableCell({ className, density, ...props }: ListTableCellPro
   const tableDensity = useContext(tableDensityContext);
   const resolvedDensity = density ?? tableDensity;
   const densityStyles: Record<ListTableDensity, string> = {
-    default: 'px-4 py-4 print:px-2 print:py-1',
-    dense: 'px-4 py-3 print:px-2 print:py-1',
+    default:
+      'px-4 py-4 print:px-2 print:py-1 print:[break-inside:avoid] print:[page-break-inside:avoid]',
+    dense:
+      'px-4 py-3 print:px-2 print:py-1 print:[break-inside:avoid] print:[page-break-inside:avoid]',
   };
 
   return <td className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />;

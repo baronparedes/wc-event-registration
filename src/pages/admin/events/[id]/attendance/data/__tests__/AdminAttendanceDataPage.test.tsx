@@ -233,7 +233,6 @@ describe('AdminAttendanceDataPage', () => {
     expect(mockUseAttendanceFieldsQuery).toHaveBeenCalledWith(EVENT_ID, { activeOnly: true });
     expect(screen.getByText('Role')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('Checked-In')).toBeInTheDocument();
     expect(screen.queryByText('Shirt Size')).not.toBeInTheDocument();
   });
 

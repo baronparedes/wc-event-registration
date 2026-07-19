@@ -135,7 +135,6 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByText('Checked-In')).toBeInTheDocument();
     expect(screen.getByText('Role')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
     expect(screen.queryByText('Table Number')).not.toBeInTheDocument();
