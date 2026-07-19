@@ -413,12 +413,6 @@ export function AttendanceViewControls({
                 }
                 className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
-              {(dynamicFilterFieldType === 'date' || dynamicFilterFieldType === 'datetime') && (
-                <span className="text-xs text-muted">
-                  Tip: You can use date presets like UPCOMING_SUNDAY, MONTH_JULY,
-                  YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.
-                </span>
-              )}
             </label>
 
             <div className="flex items-end">
@@ -432,6 +426,13 @@ export function AttendanceViewControls({
                 Apply field filter
               </Button>
             </div>
+
+            {(dynamicFilterFieldType === 'date' || dynamicFilterFieldType === 'datetime') && (
+              <p className="text-xs text-muted md:col-start-2 md:col-span-2">
+                Tip: You can use date presets like UPCOMING_SUNDAY, MONTH_JULY,
+                YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.
+              </p>
+            )}
           </div>
 
           {viewConfig.dynamicFilters.length > 0 && (
