@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Check, ExternalLink, Minus, Users } from 'lucide-react';
 
@@ -19,7 +19,7 @@ import type {
   RegistrantAttendanceRow,
 } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
-import type { RegistrantViewGroup } from '@/lib/domain/attendance-views';
+import type { DynamicFieldRef, RegistrantViewGroup } from '@/lib/domain/attendance-views';
 import type { AdminEventField } from '@/lib/domain/event-fields';
 
 import { AttendanceDataEntryPanel } from './AttendanceDataEntryPanel';
@@ -32,6 +32,7 @@ type AttendanceDataEntryListProps = {
   fields: AttendanceField[];
   allAttendees: AttendeeSearchResult[];
   registrationFields: AdminEventField[];
+  visibleFields?: DynamicFieldRef[];
 };
 
 function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField[]): number {
@@ -48,6 +49,41 @@ function getRegistrationDetailsUrl(eventId: string, registrant: RegistrantAttend
   return `/admin/events/${eventId}/registrations/${registrant.registration_id}`;
 }
 
+function getRegistrantKey(
+  registrant: Pick<
+    RegistrantAttendanceRow,
+    'attendee_kind' | 'registration_id' | 'public_registration_id'
+  >,
+): string {
+  return registrant.attendee_kind === 'public'
+    ? `public-${registrant.public_registration_id}`
+    : `registered-${registrant.registration_id}`;
+}
+
+function getVisibleFieldValue(attendee: AttendeeSearchResult | undefined, field: DynamicFieldRef) {
+  if (!attendee) {
+    return '—';
+  }
+
+  const answers =
+    field.source === 'registration' ? attendee.registration_answers : attendee.attendance_answers;
+
+  const answer = answers.find((item) => item.field_key === field.fieldKey);
+  if (!answer) {
+    return '—';
+  }
+
+  if (answer.answer_text !== null && answer.answer_text.trim().length > 0) {
+    return answer.answer_text;
+  }
+
+  if (answer.answer_number !== null) {
+    return String(answer.answer_number);
+  }
+
+  return '—';
+}
+
 /** List of registrants with check-in status and per-registrant edit actions. */
 export function AttendanceDataEntryList({
   eventId,
@@ -56,9 +92,14 @@ export function AttendanceDataEntryList({
   fields,
   allAttendees,
   registrationFields,
+  visibleFields = [],
 }: AttendanceDataEntryListProps) {
   const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
   const [editingRegistrant, setEditingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
+  const attendeesByRegistrantKey = useMemo(
+    () => new Map(allAttendees.map((attendee) => [getRegistrantKey(attendee), attendee])),
+    [allAttendees],
+  );
 
   // Find the full attendee details for the viewing registrant
   const viewingAttendee = viewingRegistrant
@@ -89,12 +130,10 @@ export function AttendanceDataEntryList({
 
   function renderRows(items: RegistrantAttendanceRow[]) {
     return items.map((registrant) => {
-      const rowKey =
-        registrant.attendee_kind === 'public'
-          ? `public-${registrant.public_registration_id}`
-          : `registered-${registrant.registration_id}`;
+      const rowKey = getRegistrantKey(registrant);
       const filled = countFilledAnswers(registrant.answers, fields);
       const isCheckedIn = registrant.check_in_status === 'checked_in';
+      const attendee = attendeesByRegistrantKey.get(rowKey);
 
       return (
         <ListTableRow
@@ -125,15 +164,6 @@ export function AttendanceDataEntryList({
               </div>
             </div>
           </ListTableCell>
-          <ListTableCell>
-            <span className="font-mono text-xs text-muted">{registrant.member_id ?? 'Guest'}</span>
-          </ListTableCell>
-          <ListTableCell>
-            <span className="text-sm text-text">{registrant.role?.trim() || '—'}</span>
-          </ListTableCell>
-          <ListTableCell>
-            <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
-          </ListTableCell>
           <ListTableCell className="text-center align-middle">
             <span
               role="img"
@@ -146,6 +176,21 @@ export function AttendanceDataEntryList({
               {isCheckedIn ? <Check className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
             </span>
           </ListTableCell>
+          <ListTableCell>
+            <span className="font-mono text-xs text-muted">{registrant.member_id ?? 'Guest'}</span>
+          </ListTableCell>
+          <ListTableCell>
+            <span className="text-sm text-text">{registrant.role?.trim() || '—'}</span>
+          </ListTableCell>
+          <ListTableCell>
+            <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
+          </ListTableCell>
+          {visibleFields.map((field) => (
+            <ListTableCell key={`${rowKey}:${field.source}:${field.fieldKey}`}>
+              <span className="text-sm text-text">{getVisibleFieldValue(attendee, field)}</span>
+            </ListTableCell>
+          ))}
+
           <ListTableCell onClick={(e) => e.stopPropagation()} className="print:hidden">
             <ActionButton onClick={() => setEditingRegistrant(registrant)}>
               {filled > 0 ? 'Edit' : 'Fill In'}
@@ -172,14 +217,19 @@ export function AttendanceDataEntryList({
                 </p>
               </div>
             )}
-            <ListTable>
+            <ListTable className="min-w-max">
               <ListTableHead>
                 <ListTableHeaderRow>
                   <ListTableHeaderCell className="px-6">Attendee</ListTableHeaderCell>
+                  <ListTableHeaderCell className="text-center">Check-In Status</ListTableHeaderCell>
                   <ListTableHeaderCell>Member ID</ListTableHeaderCell>
                   <ListTableHeaderCell>Role</ListTableHeaderCell>
                   <ListTableHeaderCell>Category</ListTableHeaderCell>
-                  <ListTableHeaderCell className="text-center">Check-In Status</ListTableHeaderCell>
+                  {visibleFields.map((field) => (
+                    <ListTableHeaderCell key={`${field.source}:${field.fieldKey}`}>
+                      {field.label}
+                    </ListTableHeaderCell>
+                  ))}
                   <ListTableHeaderCell className="print:hidden">Actions</ListTableHeaderCell>
                 </ListTableHeaderRow>
               </ListTableHead>

@@ -34,6 +34,7 @@ const baseViewConfig: AttendeeViewConfig = {
   checkInStatus: 'all',
   dynamicFilters: [],
   groupBy: [],
+  visibleFields: [],
 };
 
 function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceViewControls>>) {
@@ -51,6 +52,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
     onDynamicFilterValueChange: vi.fn(),
     onApplyDynamicFilter: vi.fn(),
     onRemoveDynamicFilter: vi.fn(),
+    onToggleVisibleField: vi.fn(),
   };
 
   render(
@@ -156,6 +158,18 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onDynamicFilterFieldTokenChange).toHaveBeenCalledWith('attendance:area');
     expect(handlers.onDynamicFilterValueChange).toHaveBeenCalledWith('East');
     expect(handlers.onApplyDynamicFilter).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles displayed field checkboxes from registration and attendance groups', () => {
+    const handlers = renderControls({ hasActiveFilters: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
+    fireEvent.click(screen.getByLabelText('Service'));
+    fireEvent.click(screen.getByLabelText('Area'));
+
+    expect(handlers.onToggleVisibleField).toHaveBeenNthCalledWith(1, 'registration:service');
+    expect(handlers.onToggleVisibleField).toHaveBeenNthCalledWith(2, 'attendance:area');
   });
 
   it('shows preset hint when selected filter field type is date/datetime', () => {

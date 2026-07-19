@@ -177,7 +177,7 @@ export function SavedViewsModal({
           <div>
             <h2 className="font-heading text-lg font-semibold">Save Current View</h2>
             <p className="mt-1 text-sm text-muted">
-              Give your view a name to save the current filters and grouping.
+              Give your view a name to save the current filters, grouping, and displayed fields.
             </p>
           </div>
 

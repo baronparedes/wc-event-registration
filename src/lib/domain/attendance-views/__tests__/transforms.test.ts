@@ -51,6 +51,7 @@ const defaultViewConfig: AttendeeViewConfig = {
   checkInStatus: 'all',
   dynamicFilters: [],
   groupBy: [],
+  visibleFields: [],
 };
 
 describe('attendance-views transforms', () => {

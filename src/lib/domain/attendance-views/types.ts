@@ -32,6 +32,7 @@ export type AttendeeViewConfig = {
   checkInStatus: AttendeeSearchResult['check_in_status'] | 'all';
   dynamicFilters: DynamicFieldFilter[];
   groupBy: DynamicFieldRef[];
+  visibleFields: DynamicFieldRef[];
 };
 
 export type RegistrantViewGroup = {

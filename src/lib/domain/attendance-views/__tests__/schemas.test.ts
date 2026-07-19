@@ -21,6 +21,7 @@ describe('attendeeViewConfigSchema', () => {
         },
       ],
       groupBy: [{ source: 'attendance', fieldKey: 'area', label: 'Area', sortOrder: 0 }],
+      visibleFields: [{ source: 'registration', fieldKey: 'service', label: 'Service' }],
     });
 
     expect(result.nameOrMemberQuery).toBe('John');
@@ -29,6 +30,7 @@ describe('attendeeViewConfigSchema', () => {
     expect(result.checkInStatus).toBe('checked_in');
     expect(result.dynamicFilters).toHaveLength(1);
     expect(result.groupBy).toHaveLength(1);
+    expect(result.visibleFields).toHaveLength(1);
   });
 
   it('applies default values when fields are missing', () => {
@@ -40,6 +42,7 @@ describe('attendeeViewConfigSchema', () => {
     expect(result.checkInStatus).toBe('all');
     expect(result.dynamicFilters).toEqual([]);
     expect(result.groupBy).toEqual([]);
+    expect(result.visibleFields).toEqual([]);
   });
 
   it('accepts "not_checked_in" and "all" as valid checkInStatus values', () => {
@@ -71,6 +74,7 @@ describe('upsertAttendanceSavedViewSchema', () => {
     checkInStatus: 'all' as const,
     dynamicFilters: [],
     groupBy: [],
+    visibleFields: [],
   };
 
   it('accepts valid input with all fields', () => {

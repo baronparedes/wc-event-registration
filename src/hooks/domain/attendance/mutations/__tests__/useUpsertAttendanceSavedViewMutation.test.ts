@@ -30,6 +30,7 @@ const mockViewConfig = {
   checkInStatus: 'all' as const,
   dynamicFilters: [],
   groupBy: [],
+  visibleFields: [],
 };
 
 describe('useUpsertAttendanceSavedViewMutation', () => {

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   type AttendeeViewConfig,
   type DynamicFieldOption,
+  attendeeViewConfigSchema,
   fromDynamicFieldToken,
   toDynamicFieldToken,
 } from '@/lib/domain/attendance-views';
@@ -14,6 +15,7 @@ const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   checkInStatus: 'all',
   dynamicFilters: [],
   groupBy: [],
+  visibleFields: [],
 };
 
 /**
@@ -35,7 +37,8 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     viewConfig.category !== 'all' ||
     viewConfig.checkInStatus !== 'all' ||
     viewConfig.dynamicFilters.length > 0 ||
-    viewConfig.groupBy.length > 0;
+    viewConfig.groupBy.length > 0 ||
+    viewConfig.visibleFields.length > 0;
 
   function setNameOrMemberQuery(value: string) {
     setViewConfig((current) => ({ ...current, nameOrMemberQuery: value }));
@@ -103,6 +106,41 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     }));
   }
 
+  function toggleVisibleField(token: string) {
+    const option = fromDynamicFieldToken(token, dynamicFieldOptions);
+    if (!option) {
+      return;
+    }
+
+    const nextField = {
+      source: option.source,
+      fieldKey: option.fieldKey,
+      label: option.label,
+      sortOrder: option.sortOrder,
+      fieldType: option.fieldType,
+    };
+
+    setViewConfig((current) => {
+      const isSelected = current.visibleFields.some(
+        (field) => toDynamicFieldToken(field) === token,
+      );
+
+      if (isSelected) {
+        return {
+          ...current,
+          visibleFields: current.visibleFields.filter(
+            (field) => toDynamicFieldToken(field) !== token,
+          ),
+        };
+      }
+
+      return {
+        ...current,
+        visibleFields: [...current.visibleFields, nextField],
+      };
+    });
+  }
+
   const clearViewControls = useCallback(() => {
     setViewConfig(DEFAULT_VIEW_CONFIG);
     setDynamicFilterFieldToken('');
@@ -110,7 +148,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
   }, []);
 
   const applyViewConfig = useCallback((config: AttendeeViewConfig) => {
-    setViewConfig(config);
+    setViewConfig(attendeeViewConfigSchema.parse(config));
     setDynamicFilterFieldToken('');
     setDynamicFilterValue('');
   }, []);
@@ -196,6 +234,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setDynamicFilterValue,
     addDynamicFilter,
     removeDynamicFilter,
+    toggleVisibleField,
     clearViewControls,
     applyViewConfig,
     addGroupingLevel,

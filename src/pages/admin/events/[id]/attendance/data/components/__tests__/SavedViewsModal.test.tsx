@@ -53,6 +53,7 @@ const defaultViewConfig: AttendeeViewConfig = {
   checkInStatus: 'all',
   dynamicFilters: [],
   groupBy: [],
+  visibleFields: [],
 };
 
 function makeView(overrides: Partial<AttendanceSavedView> = {}): AttendanceSavedView {

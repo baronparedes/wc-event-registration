@@ -43,6 +43,7 @@ const mockView: AttendanceSavedView = {
     checkInStatus: 'all',
     dynamicFilters: [],
     groupBy: [],
+    visibleFields: [],
   },
   created_at: '2026-07-19T00:00:00.000Z',
   updated_at: '2026-07-19T00:00:00.000Z',

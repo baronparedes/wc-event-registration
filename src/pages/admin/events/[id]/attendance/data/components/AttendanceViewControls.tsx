@@ -7,6 +7,8 @@ import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
 import { toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
+import { AttendanceViewFieldSelector } from './AttendanceViewFieldSelector';
+
 type AttendanceViewControlsProps = {
   viewConfig: AttendeeViewConfig;
   hasActiveFilters: boolean;
@@ -32,6 +34,7 @@ type AttendanceViewControlsProps = {
   onDynamicFilterValueChange: (value: string) => void;
   onApplyDynamicFilter: () => void;
   onRemoveDynamicFilter: (token: string, value: string) => void;
+  onToggleVisibleField: (token: string) => void;
 };
 
 function getSelectableFields(
@@ -98,6 +101,7 @@ export function AttendanceViewControls({
   onDynamicFilterValueChange,
   onApplyDynamicFilter,
   onRemoveDynamicFilter,
+  onToggleVisibleField,
 }: AttendanceViewControlsProps) {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const roleDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -356,6 +360,13 @@ export function AttendanceViewControls({
               </div>
             )}
           </div>
+
+          <AttendanceViewFieldSelector
+            selectedFields={viewConfig.visibleFields}
+            registrationFieldOptions={registrationDynamicFieldOptions}
+            attendanceFieldOptions={attendanceDynamicFieldOptions}
+            onToggleField={onToggleVisibleField}
+          />
 
           <div className="flex items-end">
             <Button

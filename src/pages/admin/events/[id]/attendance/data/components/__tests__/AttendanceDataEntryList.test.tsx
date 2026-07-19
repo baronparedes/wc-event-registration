@@ -149,6 +149,78 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 
+  it('renders selected registration and attendance fields as columns', () => {
+    const registrants: RegistrantAttendanceRow[] = [
+      {
+        attendee_kind: 'registered',
+        registration_id: 'reg-6',
+        public_registration_id: null,
+        member_id: 'MID-006',
+        full_name: 'Visible Fields User',
+        email: 'visible@example.com',
+        role: 'Member',
+        category: 'Adult',
+        check_in_status: 'checked_in',
+        answers: [],
+      },
+    ];
+
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={baseFields}
+        allAttendees={[
+          {
+            attendee_kind: 'registered',
+            registration_id: 'reg-6',
+            public_registration_id: null,
+            user_id: 'user-6',
+            member_id: 'MID-006',
+            full_name: 'Visible Fields User',
+            email: 'visible@example.com',
+            role: 'Member',
+            category: 'Adult',
+            registration_status: 'submitted',
+            submitted_at: '2026-07-01T00:00:00Z',
+            check_in_status: 'checked_in',
+            official_check_in_time: null,
+            registration_answers: [
+              {
+                event_field_id: 'event-field-1',
+                field_type: 'select',
+                field_key: 'service',
+                label: 'Service',
+                answer_text: '9AM',
+                answer_number: null,
+              },
+            ],
+            attendance_answers: [
+              {
+                attendance_field_id: 'attendance-field-1',
+                field_type: 'text',
+                field_key: 'area',
+                label: 'Area',
+                answer_text: 'North',
+                answer_number: null,
+              },
+            ],
+          },
+        ]}
+        registrationFields={[]}
+        visibleFields={[
+          { source: 'registration', fieldKey: 'service', label: 'Service' },
+          { source: 'attendance', fieldKey: 'area', label: 'Area' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole('columnheader', { name: 'Service' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Area' })).toBeInTheDocument();
+    expect(screen.getByText('9AM')).toBeInTheDocument();
+    expect(screen.getByText('North')).toBeInTheDocument();
+  });
+
   it('shows not checked in badge for unknown check-in state and opens panel on row click', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {

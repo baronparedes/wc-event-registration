@@ -21,6 +21,7 @@ export const attendeeViewConfigSchema = z.object({
     .default('all'),
   dynamicFilters: z.array(dynamicFieldFilterSchema).default([]),
   groupBy: z.array(dynamicFieldRefSchema).default([]),
+  visibleFields: z.array(dynamicFieldRefSchema).default([]),
 });
 
 export const upsertAttendanceSavedViewSchema = z.object({

@@ -122,6 +122,7 @@ export function AdminAttendanceDataPage() {
     setDynamicFilterValue,
     addDynamicFilter,
     removeDynamicFilter,
+    toggleVisibleField,
     clearViewControls,
     applyViewConfig,
     addGroupingLevel,
@@ -331,6 +332,7 @@ export function AdminAttendanceDataPage() {
           onDynamicFilterValueChange={setDynamicFilterValue}
           onApplyDynamicFilter={addDynamicFilter}
           onRemoveDynamicFilter={removeDynamicFilter}
+          onToggleVisibleField={toggleVisibleField}
         />
       )}
 
@@ -350,6 +352,7 @@ export function AdminAttendanceDataPage() {
             fields={fields}
             allAttendees={viewResult.filteredAttendees}
             registrationFields={registrationFields}
+            visibleFields={viewConfig.visibleFields}
           />
         )}
       </AdminPageShell.Content>

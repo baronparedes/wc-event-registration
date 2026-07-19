@@ -34,6 +34,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.role).toEqual([]);
     expect(result.current.viewConfig.category).toBe('all');
     expect(result.current.viewConfig.checkInStatus).toBe('all');
+    expect(result.current.viewConfig.visibleFields).toEqual([]);
     expect(result.current.dynamicFilterField).toBeNull();
     expect(result.current.hasActiveFilters).toBe(false);
 
@@ -190,6 +191,28 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.dynamicFilters[2].value).toBe('11AM');
   });
 
+  it('toggles visible fields by token and counts them as active view state', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    act(() => {
+      result.current.toggleVisibleField('registration:service');
+    });
+
+    expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'registration', fieldKey: 'service', label: 'Service', sortOrder: 0 },
+    ]);
+    expect(result.current.hasActiveFilters).toBe(true);
+
+    act(() => {
+      result.current.toggleVisibleField('registration:service');
+    });
+
+    expect(result.current.viewConfig.visibleFields).toEqual([]);
+    expect(result.current.hasActiveFilters).toBe(false);
+  });
+
   it('supports grouping operations including duplicate prevention and clear on invalid token', () => {
     const { result } = renderHook(() =>
       useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
@@ -279,6 +302,7 @@ describe('useAttendanceViewControlsState', () => {
       checkInStatus: 'all',
       dynamicFilters: [],
       groupBy: [],
+      visibleFields: [],
     });
     expect(result.current.dynamicFilterFieldToken).toBe('');
     expect(result.current.dynamicFilterValue).toBe('');
@@ -307,6 +331,7 @@ describe('useAttendanceViewControlsState', () => {
         },
       ],
       groupBy: [{ source: 'registration' as const, fieldKey: 'service', label: 'Service' }],
+      visibleFields: [{ source: 'attendance' as const, fieldKey: 'area', label: 'Area' }],
     };
 
     act(() => {
