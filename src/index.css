@@ -37,6 +37,23 @@ body {
   min-height: 100vh;
 }
 
+@page {
+  margin: 12mm;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    background: #fff !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: economy;
+    print-color-adjust: economy;
+  }
+}
+
 #root {
   min-height: 100vh;
 }
