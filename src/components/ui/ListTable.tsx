@@ -89,9 +89,9 @@ export function ListTableBody({ children, className, divider = 'default' }: List
 export function ListTableRow({ className, hover = 'default', ...props }: ListTableRowProps) {
   const hoverStyles: Record<ListTableRowHover, string> = {
     default:
-      'bg-white even:bg-slate-100 print:even:bg-slate-100 transition-all hover:bg-slate-300 hover:shadow-xs print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
+      'bg-white even:bg-slate-100 print:bg-white print:even:bg-white transition-all hover:bg-slate-300 hover:shadow-xs print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
     muted:
-      'bg-white even:bg-slate-100/70 print:even:bg-slate-100 transition hover:bg-slate-300/90 print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
+      'bg-white even:bg-slate-100/70 print:bg-white print:even:bg-white transition hover:bg-slate-300/90 print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
     none: '',
   };
 

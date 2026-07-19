@@ -162,7 +162,7 @@ export function AttendanceDataEntryList({
         {resolvedGroups.map((group) => (
           <section
             key={group.key}
-            className="rounded-2xl border border-border bg-surface print:[break-inside:avoid-page] print:[page-break-inside:avoid]"
+            className="rounded-2xl border border-border bg-surface print:[break-inside:auto] print:[page-break-inside:auto]"
           >
             {group.label && (
               <div className="border-b border-border px-6 py-3">
