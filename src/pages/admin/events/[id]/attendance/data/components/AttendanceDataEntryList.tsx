@@ -160,7 +160,10 @@ export function AttendanceDataEntryList({
     <>
       <div className="space-y-4">
         {resolvedGroups.map((group) => (
-          <section key={group.key} className="rounded-2xl border border-border bg-surface">
+          <section
+            key={group.key}
+            className="rounded-2xl border border-border bg-surface print:[break-inside:avoid-page] print:[page-break-inside:avoid]"
+          >
             {group.label && (
               <div className="border-b border-border px-6 py-3">
                 <h3 className="font-heading text-base font-semibold text-text">{group.label}</h3>
