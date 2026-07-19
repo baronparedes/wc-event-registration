@@ -457,22 +457,4 @@ describe('AdminAttendanceDataPage', () => {
       expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
     });
   });
-
-  it('export button is absent from actions when canRunBulkOps is false', () => {
-    mockUseAttendanceSettingsQuery.mockReturnValue({
-      data: {
-        event_id: EVENT_ID,
-        attendance_enabled: false,
-        timeslot_enabled: false,
-        timeslots: [],
-        updated_at: '2026-07-04T00:00:00Z',
-      },
-      isLoading: false,
-    });
-    mockUseAttendanceFieldsQuery.mockReturnValue({ data: [], isLoading: false });
-
-    renderPage();
-
-    expect(screen.queryByRole('button', { name: 'Export Attendance CSV' })).not.toBeInTheDocument();
-  });
 });

@@ -192,7 +192,7 @@ export function AdminAttendanceDataPage() {
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
 
-  const actions = canRunBulkOps ? (
+  const actions = (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end print:hidden">
       {id && (
         <>
@@ -202,13 +202,15 @@ export function AdminAttendanceDataPage() {
           <Button variant="outline" onClick={handleExportCSV} disabled={exportMutation.isPending}>
             {exportMutation.isPending ? 'Exporting...' : 'Export Attendance CSV'}
           </Button>
-          <Button asChild variant="outline">
-            <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
-          </Button>
+          {canRunBulkOps && (
+            <Button asChild variant="outline">
+              <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
+            </Button>
+          )}
         </>
       )}
     </div>
-  ) : undefined;
+  );
 
   return (
     <AdminPageShell>
