@@ -186,7 +186,7 @@ export function AttendanceDataEntryList({
           onClick={() => setViewingRegistrant(registrant)}
         >
           <ListTableCell colSpan={6} className="px-6">
-            <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <div>
                 <span
                   role="img"
@@ -228,7 +228,7 @@ export function AttendanceDataEntryList({
             {visibleFields.length > 0 && (
               <div
                 ref={visibleFieldsGridRef}
-                className="mt-1 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2 print:grid-cols-[repeat(auto-fit,minmax(160px,1fr))]"
+                className="mt-1 grid grid-cols-[repeat(auto-fit,minmax(min(100%,250px),1fr))] gap-2 print:grid-cols-[repeat(auto-fit,minmax(160px,1fr))]"
               >
                 {visibleFields.map((field, index) => {
                   const span = getVisibleFieldItemSpan(
@@ -274,16 +274,16 @@ export function AttendanceDataEntryList({
                 </p>
               </div>
             )}
-            <ListTable className="min-w-max print:min-w-0">
+            <ListTable>
               <ListTableHead>
                 <ListTableHeaderRow>
                   <ListTableHeaderCell colSpan={6} className="px-6">
-                    <div className="grid items-center gap-4 grid-cols-1 md:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                    <div className="grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
                       <div>Attendee</div>
-                      <div className="hidden md:block print:block">RFID</div>
-                      <div className="hidden md:block print:block">Role</div>
-                      <div className="hidden md:block print:block">Category</div>
-                      <div className="hidden md:block print:hidden">Actions</div>
+                      <div className="hidden lg:block print:block">RFID</div>
+                      <div className="hidden lg:block print:block">Role</div>
+                      <div className="hidden lg:block print:block">Category</div>
+                      <div className="hidden lg:block print:hidden">Actions</div>
                     </div>
                   </ListTableHeaderCell>
                 </ListTableHeaderRow>
