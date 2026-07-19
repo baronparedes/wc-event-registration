@@ -10,20 +10,22 @@ function makeOption(
   source: DynamicFieldOption['source'],
   fieldKey: string,
   label: string,
+  fieldType?: DynamicFieldOption['fieldType'],
 ): DynamicFieldOption {
   return {
     source,
     fieldKey,
     label,
     sortOrder: 0,
+    fieldType,
     token: `${source}:${fieldKey}`,
     values: [],
   };
 }
 
-const registrationOption = makeOption('registration', 'service', 'Service');
+const registrationOption = makeOption('registration', 'service', 'Service', 'date');
 const registrationTeamOption = makeOption('registration', 'team', 'Team');
-const attendanceOption = makeOption('attendance', 'area', 'Area');
+const attendanceOption = makeOption('attendance', 'area', 'Area', 'datetime');
 
 const baseViewConfig: AttendeeViewConfig = {
   nameOrMemberQuery: '',
@@ -63,6 +65,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
       dynamicFilterFieldToken=""
       dynamicFilterValue=""
       dynamicFilterFieldLabel={null}
+      dynamicFilterFieldType={null}
       {...handlers}
       {...overrides}
     />,
@@ -153,6 +156,40 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onDynamicFilterFieldTokenChange).toHaveBeenCalledWith('attendance:area');
     expect(handlers.onDynamicFilterValueChange).toHaveBeenCalledWith('East');
     expect(handlers.onApplyDynamicFilter).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows preset hint when selected filter field type is date/datetime', () => {
+    renderControls({
+      dynamicFilterFieldToken: 'registration:service',
+      dynamicFilterFieldLabel: 'Service',
+      dynamicFilterFieldType: 'date',
+      hasActiveFilters: true,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
+    expect(
+      screen.getByText(
+        'Tip: You can use date presets like UPCOMING_SUNDAY, MONTH_JULY, YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('hides preset hint for non-date fields', () => {
+    renderControls({
+      dynamicFilterFieldToken: 'registration:team',
+      dynamicFilterFieldLabel: 'Team',
+      dynamicFilterFieldType: 'text',
+      hasActiveFilters: true,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
+    expect(
+      screen.queryByText(
+        'Tip: You can use date presets like UPCOMING_SUNDAY, MONTH_JULY, YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.',
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it('renders dynamic filter chips and removes chip by token and value', () => {

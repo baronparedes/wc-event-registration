@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 
@@ -206,6 +206,145 @@ describe('attendance-views transforms', () => {
     });
     expect(byMemberId.filteredAttendees).toHaveLength(1);
     expect(byMemberId.filteredAttendees[0].registration_id).toBe('reg-2');
+  });
+
+  it('supports relative date literal filters for date and datetime fields', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-19T12:00:00.000Z'));
+
+    try {
+      const attendees: AttendeeSearchResult[] = [
+        makeAttendee({
+          registration_id: 'reg-1',
+          full_name: 'Sunday Member',
+          registration_answers: [
+            {
+              event_field_id: 'event-field-service-date',
+              field_type: 'date',
+              field_key: 'service_date',
+              label: 'Service Date',
+              answer_text: '2026-07-19',
+              answer_number: null,
+            },
+          ],
+        }),
+        makeAttendee({
+          registration_id: 'reg-2',
+          full_name: 'Previous Week Member',
+          registration_answers: [
+            {
+              event_field_id: 'event-field-service-date',
+              field_type: 'date',
+              field_key: 'service_date',
+              label: 'Service Date',
+              answer_text: '2026-07-05',
+              answer_number: null,
+            },
+          ],
+        }),
+        makeAttendee({
+          registration_id: 'reg-3',
+          full_name: 'Previous Month Member',
+          registration_answers: [
+            {
+              event_field_id: 'event-field-service-date',
+              field_type: 'date',
+              field_key: 'service_date',
+              label: 'Service Date',
+              answer_text: '2026-06-01',
+              answer_number: null,
+            },
+          ],
+        }),
+        makeAttendee({
+          registration_id: 'reg-4',
+          full_name: 'Different Year Member',
+          registration_answers: [
+            {
+              event_field_id: 'event-field-service-date',
+              field_type: 'date',
+              field_key: 'service_date',
+              label: 'Service Date',
+              answer_text: '2025-07-19',
+              answer_number: null,
+            },
+          ],
+        }),
+        makeAttendee({
+          registration_id: 'reg-5',
+          full_name: 'DateTime Member',
+          registration_answers: [
+            {
+              event_field_id: 'event-field-check-in-time',
+              field_type: 'datetime',
+              field_key: 'check_in_time',
+              label: 'Check-in Time',
+              answer_text: '2026-07-19T08:30:00.000Z',
+              answer_number: null,
+            },
+          ],
+        }),
+      ];
+
+      const fields = collectDynamicFieldOptions(attendees);
+      const serviceDateField = findField(fields, 'registration', 'service_date');
+      const checkInTimeField = findField(fields, 'registration', 'check_in_time');
+
+      const upcomingSunday = buildAttendeeView(attendees, {
+        ...defaultViewConfig,
+        dynamicFilters: [{ field: serviceDateField, value: 'UPCOMING_SUNDAY' }],
+      });
+      expect(upcomingSunday.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+        'reg-1',
+      ]);
+
+      const july = buildAttendeeView(attendees, {
+        ...defaultViewConfig,
+        dynamicFilters: [{ field: serviceDateField, value: 'MONTH_JULY' }],
+      });
+      expect(july.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+        'reg-1',
+        'reg-2',
+        'reg-4',
+      ]);
+
+      const year2026 = buildAttendeeView(attendees, {
+        ...defaultViewConfig,
+        dynamicFilters: [{ field: serviceDateField, value: 'YEAR_2026' }],
+      });
+      expect(year2026.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+        'reg-1',
+        'reg-2',
+        'reg-3',
+      ]);
+
+      const yearMonth2026July = buildAttendeeView(attendees, {
+        ...defaultViewConfig,
+        dynamicFilters: [{ field: serviceDateField, value: 'YEAR_MONTH_2026_JULY' }],
+      });
+      expect(
+        yearMonth2026July.filteredAttendees.map((attendee) => attendee.registration_id),
+      ).toEqual(['reg-1', 'reg-2']);
+
+      const previous3Weeks = buildAttendeeView(attendees, {
+        ...defaultViewConfig,
+        dynamicFilters: [{ field: serviceDateField, value: 'PREVIOUS_3_WEEKS' }],
+      });
+      expect(previous3Weeks.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+        'reg-1',
+        'reg-2',
+      ]);
+
+      const datetimeRelative = buildAttendeeView(attendees, {
+        ...defaultViewConfig,
+        dynamicFilters: [{ field: checkInTimeField, value: 'UPCOMING_SUNDAY' }],
+      });
+      expect(
+        datetimeRelative.filteredAttendees.map((attendee) => attendee.registration_id),
+      ).toEqual(['reg-5']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('groups attendees by multiple dynamic fields in ordered levels', () => {

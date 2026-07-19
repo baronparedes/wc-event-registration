@@ -62,12 +62,14 @@ export function AdminAttendanceDataPage() {
           fieldKey: field.field_key,
           label: field.label,
           sortOrder: field.display_order,
+          fieldType: field.field_type,
         })),
       ...fields.map((field) => ({
         source: 'attendance' as const,
         fieldKey: field.field_key,
         label: field.label,
         sortOrder: field.display_order,
+        fieldType: field.field_type,
       })),
     ],
     [registrationFields, fields],
@@ -315,6 +317,7 @@ export function AdminAttendanceDataPage() {
           dynamicFilterFieldToken={dynamicFilterFieldToken}
           dynamicFilterValue={dynamicFilterValue}
           dynamicFilterFieldLabel={dynamicFilterField?.label ?? null}
+          dynamicFilterFieldType={dynamicFilterField?.fieldType ?? null}
           onNameOrMemberQueryChange={setNameOrMemberQuery}
           onRoleChange={setRole}
           onCategoryChange={setCategory}

@@ -18,6 +18,7 @@ type AttendanceViewControlsProps = {
   dynamicFilterFieldToken: string;
   dynamicFilterValue: string;
   dynamicFilterFieldLabel: string | null;
+  dynamicFilterFieldType?: DynamicFieldOption['fieldType'] | null;
   onNameOrMemberQueryChange: (value: string) => void;
   onRoleChange: (value: string[]) => void;
   onCategoryChange: (value: string) => void;
@@ -83,6 +84,7 @@ export function AttendanceViewControls({
   dynamicFilterFieldToken,
   dynamicFilterValue,
   dynamicFilterFieldLabel,
+  dynamicFilterFieldType = null,
   onNameOrMemberQueryChange,
   onRoleChange,
   onCategoryChange,
@@ -411,6 +413,12 @@ export function AttendanceViewControls({
                 }
                 className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
+              {(dynamicFilterFieldType === 'date' || dynamicFilterFieldType === 'datetime') && (
+                <span className="text-xs text-muted">
+                  Tip: You can use date presets like UPCOMING_SUNDAY, MONTH_JULY,
+                  YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.
+                </span>
+              )}
             </label>
 
             <div className="flex items-end">

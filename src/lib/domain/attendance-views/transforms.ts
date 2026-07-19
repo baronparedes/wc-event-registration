@@ -19,12 +19,181 @@ import type {
 const EMPTY_VALUE = '';
 const NULL_ANSWER_DATE = '1970-01-01T00:00:00.000Z';
 
+const WEEKDAY_BY_TOKEN: Record<string, number> = {
+  SUNDAY: 0,
+  MONDAY: 1,
+  TUESDAY: 2,
+  WEDNESDAY: 3,
+  THURSDAY: 4,
+  FRIDAY: 5,
+  SATURDAY: 6,
+};
+
+const MONTH_BY_TOKEN: Record<string, number> = {
+  JANUARY: 0,
+  FEBRUARY: 1,
+  MARCH: 2,
+  APRIL: 3,
+  MAY: 4,
+  JUNE: 5,
+  JULY: 6,
+  AUGUST: 7,
+  SEPTEMBER: 8,
+  OCTOBER: 9,
+  NOVEMBER: 10,
+  DECEMBER: 11,
+};
+
+type RelativeDateLiteral =
+  | {
+      kind: 'upcomingWeekday';
+      weekday: number;
+    }
+  | {
+      kind: 'month';
+      month: number;
+    }
+  | {
+      kind: 'yearMonth';
+      year: number;
+      month: number;
+    }
+  | {
+      kind: 'year';
+      year: number;
+    }
+  | {
+      kind: 'previousWeeks';
+      weeks: number;
+    };
+
 function sourcePriority(source: DynamicFieldSource): number {
   return source === 'registration' ? 0 : 1;
 }
 
 function normalizeValue(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function addUtcDays(date: Date, days: number): Date {
+  const next = new Date(date.getTime());
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function parseRelativeDateLiteral(rawValue: string): RelativeDateLiteral | null {
+  const normalized = rawValue.trim().toUpperCase();
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.startsWith('UPCOMING_')) {
+    const token = normalized.slice('UPCOMING_'.length);
+    const weekday = WEEKDAY_BY_TOKEN[token];
+    if (weekday !== undefined) {
+      return {
+        kind: 'upcomingWeekday',
+        weekday,
+      };
+    }
+  }
+
+  if (normalized.startsWith('MONTH_')) {
+    const token = normalized.slice('MONTH_'.length);
+    const month = MONTH_BY_TOKEN[token];
+    if (month !== undefined) {
+      return {
+        kind: 'month',
+        month,
+      };
+    }
+  }
+
+  const yearMonthMatch = normalized.match(/^YEAR_MONTH_(\d{4})_([A-Z]+)$/);
+  if (yearMonthMatch) {
+    const month = MONTH_BY_TOKEN[yearMonthMatch[2]];
+    if (month !== undefined) {
+      return {
+        kind: 'yearMonth',
+        year: Number(yearMonthMatch[1]),
+        month,
+      };
+    }
+  }
+
+  const yearMatch = normalized.match(/^YEAR_(\d{4})$/);
+  if (yearMatch) {
+    return {
+      kind: 'year',
+      year: Number(yearMatch[1]),
+    };
+  }
+
+  const previousWeeksMatch = normalized.match(/^PREVIOUS_(\d+)_WEEKS$/);
+  if (previousWeeksMatch) {
+    const weeks = Number(previousWeeksMatch[1]);
+    if (Number.isInteger(weeks) && weeks > 0) {
+      return {
+        kind: 'previousWeeks',
+        weeks,
+      };
+    }
+  }
+
+  return null;
+}
+
+function parseDateValue(rawValue: string): Date | null {
+  const timestamp = Date.parse(rawValue);
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+
+  return new Date(timestamp);
+}
+
+function matchesRelativeDateLiteral(
+  fieldValue: string,
+  filterValue: string,
+  now: Date = new Date(),
+): boolean | null {
+  const literal = parseRelativeDateLiteral(filterValue);
+  if (!literal) {
+    return null;
+  }
+
+  const fieldDate = parseDateValue(fieldValue);
+  if (!fieldDate) {
+    return false;
+  }
+
+  const fieldDay = startOfUtcDay(fieldDate);
+  const nowDay = startOfUtcDay(now);
+
+  if (literal.kind === 'upcomingWeekday') {
+    const daysUntil = (literal.weekday - nowDay.getUTCDay() + 7) % 7;
+    const targetDay = addUtcDays(nowDay, daysUntil);
+    return fieldDay.getTime() === targetDay.getTime();
+  }
+
+  if (literal.kind === 'month') {
+    return fieldDate.getUTCMonth() === literal.month;
+  }
+
+  if (literal.kind === 'year') {
+    return fieldDate.getUTCFullYear() === literal.year;
+  }
+
+  if (literal.kind === 'yearMonth') {
+    return fieldDate.getUTCFullYear() === literal.year && fieldDate.getUTCMonth() === literal.month;
+  }
+
+  const rangeStart = addUtcDays(nowDay, -literal.weeks * 7);
+  return fieldDay.getTime() >= rangeStart.getTime() && fieldDay.getTime() <= nowDay.getTime();
 }
 
 function answerValue(answer: RegistrationAnswerSummary | AttendanceAnswerSummary): string {
@@ -295,6 +464,7 @@ export function collectDynamicFieldOptions(
           fieldKey: answer.field_key,
           label: answer.label,
           sortOrder: undefined,
+          fieldType: answer.field_type,
         };
         const token = toDynamicFieldToken(field);
         const current = byToken.get(token);
@@ -313,6 +483,10 @@ export function collectDynamicFieldOptions(
           if (!current.values.includes(value)) {
             current.values.push(value);
           }
+        }
+
+        if (current.fieldType === undefined) {
+          current.fieldType = answer.field_type;
         }
       }
     }
@@ -437,6 +611,13 @@ function matchesDynamicFilter(attendee: AttendeeSearchResult, filter: DynamicFie
   const fieldValue = answerValue(answer);
   if (!fieldValue) {
     return false;
+  }
+
+  if (answer.field_type === 'date' || answer.field_type === 'datetime') {
+    const relativeDateMatch = matchesRelativeDateLiteral(fieldValue, filter.value);
+    if (relativeDateMatch !== null) {
+      return relativeDateMatch;
+    }
   }
 
   return normalizeValue(fieldValue) === normalizeValue(filter.value);

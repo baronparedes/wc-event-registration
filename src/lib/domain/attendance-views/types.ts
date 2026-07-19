@@ -1,4 +1,9 @@
-import type { AttendeeSearchResult, RegistrantAttendanceRow } from '@/lib/domain/attendance';
+import type {
+  AttendanceAnswerSummary,
+  AttendeeSearchResult,
+  RegistrantAttendanceRow,
+  RegistrationAnswerSummary,
+} from '@/lib/domain/attendance';
 
 export type DynamicFieldSource = 'registration' | 'attendance' | 'role' | 'category';
 
@@ -7,6 +12,7 @@ export type DynamicFieldRef = {
   fieldKey: string;
   label: string;
   sortOrder?: number;
+  fieldType?: RegistrationAnswerSummary['field_type'] | AttendanceAnswerSummary['field_type'];
 };
 
 export type DynamicFieldFilter = {
