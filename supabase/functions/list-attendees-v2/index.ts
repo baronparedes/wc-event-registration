@@ -411,7 +411,6 @@ Deno.serve(async (req) => {
                 .select(
                   'registration_id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields!inner(id, field_type, field_key, label, display_order)',
                 )
-                .eq('event_id', event_id)
                 .in('registration_id', registrationIdChunk),
           }).then((data) => ({ data, error: null }))
         : Promise.resolve({ data: [], error: null });
