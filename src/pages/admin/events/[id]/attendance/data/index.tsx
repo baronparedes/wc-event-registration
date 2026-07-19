@@ -27,6 +27,37 @@ import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendanceDataEntryList, AttendanceViewControls, SavedViewsModal } from './components';
 
+const SELECTED_VIEW_STORAGE_PREFIX = 'wc:attendance-data:selected-view';
+
+function getSelectedViewStorageKey(eventId: string): string {
+  return `${SELECTED_VIEW_STORAGE_PREFIX}:${eventId}`;
+}
+
+function readSelectedViewId(eventId: string): string | null {
+  try {
+    const value = localStorage.getItem(getSelectedViewStorageKey(eventId));
+    return value?.trim() ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSelectedViewId(eventId: string, viewId: string): void {
+  try {
+    localStorage.setItem(getSelectedViewStorageKey(eventId), viewId);
+  } catch {
+    // localStorage may be unavailable or full; selection still works without persistence.
+  }
+}
+
+function clearSelectedViewId(eventId: string): void {
+  try {
+    localStorage.removeItem(getSelectedViewStorageKey(eventId));
+  } catch {
+    // ignore
+  }
+}
+
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -144,14 +175,50 @@ export function AdminAttendanceDataPage() {
     }
   }, [viewIdParam, savedView, applyViewConfig]);
 
+  // Persist the selected saved view ID locally and restore it when the URL is empty.
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    if (viewIdParam) {
+      writeSelectedViewId(id, viewIdParam);
+      return;
+    }
+
+    const storedViewId = readSelectedViewId(id);
+    if (!storedViewId) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams);
+    params.set('viewId', storedViewId);
+
+    navigate(
+      {
+        search: `?${params.toString()}`,
+      },
+      { replace: true },
+    );
+  }, [id, navigate, searchParams, viewIdParam]);
+
   // Handle clearing the current saved view
   const handleClearView = useCallback(() => {
     clearViewControls();
     appliedViewIdRef.current = null;
-    const params = new URLSearchParams(window.location.search);
+    if (id) {
+      clearSelectedViewId(id);
+    }
+
+    const params = new URLSearchParams(searchParams);
     params.delete('viewId');
-    navigate(params.toString() ? `?${params.toString()}` : '.', { replace: true });
-  }, [navigate, clearViewControls]);
+    navigate(
+      {
+        search: params.toString() ? `?${params.toString()}` : '',
+      },
+      { replace: true },
+    );
+  }, [clearViewControls, id, navigate, searchParams]);
 
   const viewResult = useMemo(
     () => buildAttendeeView(cachedAttendees, viewConfig),
@@ -365,6 +432,9 @@ export function AdminAttendanceDataPage() {
         currentViewId={viewIdParam}
         onApplyView={applyViewConfig}
         onViewDeleted={() => {
+          if (id) {
+            clearSelectedViewId(id);
+          }
           appliedViewIdRef.current = null;
           clearViewControls();
         }}

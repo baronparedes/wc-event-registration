@@ -15,6 +15,10 @@ const {
   mockUseAttendanceFieldsQuery,
   mockUseAdminEventFieldsQuery,
   mockUseAttendeesLocalCacheQuery,
+  mockUseAttendanceSavedViewQuery,
+  mockUseAttendanceSavedViewsQuery,
+  mockUpsertMutate,
+  mockDeleteMutate,
   mockExportMutateAsync,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
@@ -23,6 +27,10 @@ const {
   mockUseAttendanceFieldsQuery: vi.fn(),
   mockUseAdminEventFieldsQuery: vi.fn(),
   mockUseAttendeesLocalCacheQuery: vi.fn(),
+  mockUseAttendanceSavedViewQuery: vi.fn(),
+  mockUseAttendanceSavedViewsQuery: vi.fn(),
+  mockUpsertMutate: vi.fn(),
+  mockDeleteMutate: vi.fn(),
   mockExportMutateAsync: vi.fn(),
 }));
 
@@ -53,13 +61,36 @@ vi.mock('@/hooks/domain/attendance', async () => {
   return {
     ...actual,
     useAttendanceSettingsQuery: (...args: unknown[]) => mockUseAttendanceSettingsQuery(...args),
+    useAttendanceSavedViewQuery: (...args: unknown[]) => mockUseAttendanceSavedViewQuery(...args),
+    useAttendanceSavedViewsQuery: (...args: unknown[]) => mockUseAttendanceSavedViewsQuery(...args),
     useAttendeesLocalCacheQuery: (...args: unknown[]) => mockUseAttendeesLocalCacheQuery(...args),
     useExportAttendanceCSVMutation: () => ({
       mutateAsync: mockExportMutateAsync,
       isPending: false,
     }),
+    useUpsertAttendanceSavedViewMutation: () => ({ mutate: mockUpsertMutate, isPending: false }),
+    useDeleteAttendanceSavedViewMutation: () => ({ mutate: mockDeleteMutate, isPending: false }),
   };
 });
+
+const selectedViewStorageKey = `wc:attendance-data:selected-view:${EVENT_ID}`;
+
+const savedView = {
+  id: 'view-1',
+  event_id: EVENT_ID,
+  name: 'Saved Attendance View',
+  view_config: {
+    nameOrMemberQuery: 'Jane',
+    role: ['Member'],
+    category: 'Adult',
+    checkInStatus: 'checked_in',
+    dynamicFilters: [],
+    groupBy: [],
+    visibleFields: [],
+  },
+  created_at: '2026-07-04T00:00:00Z',
+  updated_at: '2026-07-04T00:00:00Z',
+};
 
 vi.mock('@/hooks/domain/attendance-fields', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/attendance-fields')>(
@@ -97,6 +128,7 @@ function renderPage() {
 describe('AdminAttendanceDataPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
 
     mockExportMutateAsync.mockResolvedValue({ text: 'header', filename: 'attendance.csv' });
 
@@ -162,6 +194,17 @@ describe('AdminAttendanceDataPage', () => {
       error: null,
       refresh: vi.fn(),
       updateAttendee: vi.fn(),
+    });
+
+    mockUseAttendanceSavedViewQuery.mockImplementation((viewId: string | undefined) => ({
+      data: viewId === savedView.id ? savedView : undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+    }));
+
+    mockUseAttendanceSavedViewsQuery.mockReturnValue({
+      data: [savedView],
     });
 
     mockUseAttendanceFieldsQuery.mockReturnValue({
@@ -411,6 +454,47 @@ describe('AdminAttendanceDataPage', () => {
     expect(attendanceGroup).not.toBeNull();
     expect(screen.getByRole('option', { name: 'Service' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Area' })).toBeInTheDocument();
+  });
+
+  it('restores a saved view from localStorage when the URL has no viewId', async () => {
+    localStorage.setItem(selectedViewStorageKey, savedView.id);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Viewing saved filter:')).toBeInTheDocument();
+      expect(screen.getByText(savedView.name)).toBeInTheDocument();
+    });
+  });
+
+  it('persists the selected saved view when a view is applied', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    await waitFor(() => {
+      expect(localStorage.getItem(selectedViewStorageKey)).toBe(savedView.id);
+      expect(screen.getByText('Viewing saved filter:')).toBeInTheDocument();
+      expect(screen.getByText(savedView.name)).toBeInTheDocument();
+    });
+  });
+
+  it('clears the persisted saved view when Clear is clicked', async () => {
+    localStorage.setItem(selectedViewStorageKey, savedView.id);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(savedView.name)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    await waitFor(() => {
+      expect(localStorage.getItem(selectedViewStorageKey)).toBeNull();
+      expect(screen.queryByText('Viewing saved filter:')).not.toBeInTheDocument();
+    });
   });
 
   it('adds a group level and shows subgrouped dynamic field options', () => {
