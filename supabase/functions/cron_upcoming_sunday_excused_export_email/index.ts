@@ -44,9 +44,12 @@ type SundayRequestRecord = {
 };
 
 const cronEnvironmentSchema = z.object({
-  CRON_RESEND_API_KEY: z.string().trim().min(1, 'CRON_RESEND_API_KEY is required'),
-  CRON_TARGET_EMAIL: z.string().trim().email('CRON_TARGET_EMAIL must be a valid email address'),
-  CRON_EVENT_ID: z.string().trim().uuid('CRON_EVENT_ID must be a valid UUID'),
+  RESEND_API_KEY: z.string().trim().min(1, 'RESEND_API_KEY is required'),
+  UPCOMING_SUNDAY_TARGET_EMAIL: z
+    .string()
+    .trim()
+    .email('UPCOMING_SUNDAY_TARGET_EMAIL must be a valid email address'),
+  UPCOMING_SUNDAY_EVENT_ID: z.string().trim().uuid('UPCOMING_SUNDAY_EVENT_ID must be a valid UUID'),
   CRON_RESEND_FROM_EMAIL: z
     .string()
     .trim()
@@ -86,10 +89,10 @@ function isAuthorizedCronRequest(req: Request, expectedServiceRoleKey: string): 
 
 function parseCronEnvironment(): CronEnvironment | null {
   const parsed = cronEnvironmentSchema.safeParse({
-    CRON_RESEND_API_KEY: Deno.env.get('CRON_RESEND_API_KEY') ?? '',
-    CRON_TARGET_EMAIL: Deno.env.get('CRON_TARGET_EMAIL') ?? '',
-    CRON_EVENT_ID: Deno.env.get('CRON_EVENT_ID') ?? '',
-    CRON_RESEND_FROM_EMAIL: Deno.env.get('CRON_RESEND_FROM_EMAIL') ?? undefined,
+    RESEND_API_KEY: Deno.env.get('RESEND_API_KEY') ?? '',
+    UPCOMING_SUNDAY_TARGET_EMAIL: Deno.env.get('UPCOMING_SUNDAY_TARGET_EMAIL') ?? '',
+    UPCOMING_SUNDAY_EVENT_ID: Deno.env.get('UPCOMING_SUNDAY_EVENT_ID') ?? '',
+    RESEND_FROM_EMAIL: Deno.env.get('RESEND_FROM_EMAIL') ?? undefined,
   });
 
   if (!parsed.success) {
@@ -100,9 +103,9 @@ function parseCronEnvironment(): CronEnvironment | null {
   }
 
   return {
-    resendApiKey: parsed.data.CRON_RESEND_API_KEY,
-    targetEmail: parsed.data.CRON_TARGET_EMAIL,
-    eventId: parsed.data.CRON_EVENT_ID,
+    resendApiKey: parsed.data.RESEND_API_KEY,
+    targetEmail: parsed.data.UPCOMING_SUNDAY_TARGET_EMAIL,
+    eventId: parsed.data.UPCOMING_SUNDAY_EVENT_ID,
     fromEmail: parsed.data.CRON_RESEND_FROM_EMAIL,
   };
 }
@@ -410,14 +413,14 @@ Deno.serve(async (req) => {
   }
 
   const jsonAttachment = JSON.stringify(payload, null, 2);
-  const filename = `sunday-requests-${cronEnv.eventId}-${targetSundayDate}.json`;
+  const filename = `sunday-excuse-requests-${targetSundayDate}.json`;
 
   const emailResult = await sendEmailWithAttachment({
     resendApiKey: cronEnv.resendApiKey,
     fromEmail: cronEnv.fromEmail,
     toEmail: cronEnv.targetEmail,
-    subject: `Sunday Requests (${targetSundayDate})`,
-    html: `<p>Attached is the Sunday request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>${payload.length}</strong></p>`,
+    subject: `Sunday Excuse Requests (${targetSundayDate} - ${new Date().toLocaleTimeString()})`,
+    html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>${payload.length}</strong></p>`,
     filename,
     content: jsonAttachment,
   });
