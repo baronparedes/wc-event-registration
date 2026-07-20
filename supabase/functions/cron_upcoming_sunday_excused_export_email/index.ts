@@ -163,28 +163,6 @@ function normalizeValueToText(value: unknown): string {
   }
 }
 
-function normalizeDateValue(value: unknown): string {
-  const text = normalizeValueToText(value);
-  if (!text) {
-    return '';
-  }
-
-  const exactDateMatch = text.match(/\d{4}-\d{2}-\d{2}/);
-  if (exactDateMatch) {
-    return exactDateMatch[0];
-  }
-
-  const parsed = new Date(text);
-  if (Number.isNaN(parsed.getTime())) {
-    return '';
-  }
-
-  const year = parsed.getUTCFullYear();
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(parsed.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function computeForthcomingSundayDateInPht(now = new Date()): string {
   const phtNowMs = now.getTime() + CRON_TIMEZONE_OFFSET_MS;
   const phtNow = new Date(phtNowMs);
@@ -309,11 +287,80 @@ Deno.serve(async (req) => {
 
   const requestedFieldIds = (eventFields ?? []).map((field) => field.id);
 
+  // Find the event_field ID for 'request_date'
+  const requestDateFieldId = (eventFields ?? []).find((f) => f.field_key === 'request_date')?.id;
+
+  if (!requestDateFieldId) {
+    console.error('[cron_upcoming_sunday_excused_export_email] request_date field not found');
+    return jsonResponse(500, {
+      success: false,
+      error: 'request_date field not configured for event',
+    });
+  }
+
+  // Filter by request_date at database level to reduce result set
+  const { data: requestDateAnswers, error: requestDateAnswersError } = await supabase
+    .from('registration_answers')
+    .select('registration_id')
+    .eq('event_field_id', requestDateFieldId)
+    .or(`answer_text.ilike.%${targetSundayDate}%,answer_date.eq.${targetSundayDate}`)
+    .returns<{ registration_id: string }[]>();
+
+  if (requestDateAnswersError) {
+    console.error(
+      '[cron_upcoming_sunday_excused_export_email] Request date filter lookup failed',
+      requestDateAnswersError,
+    );
+    return jsonResponse(500, {
+      success: false,
+      error: 'Failed to filter by request_date',
+    });
+  }
+
+  const registrationIds = (requestDateAnswers ?? []).map((answer) => answer.registration_id);
+
+  if (registrationIds.length === 0) {
+    // No matching requests for this Sunday, send empty report
+    const jsonAttachment = JSON.stringify([], null, 2);
+    const filename = `sunday-excuse-requests-${targetSundayDate}.json`;
+
+    const emailResult = await sendEmailWithAttachment({
+      resendApiKey: cronEnv.resendApiKey,
+      fromEmail: cronEnv.fromEmail,
+      toEmail: cronEnv.targetEmail,
+      subject: `Sunday Excuse Requests (${targetSundayDate} - ${new Date().toLocaleTimeString()})`,
+      html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>0</strong></p>`,
+      filename,
+      content: jsonAttachment,
+    });
+
+    if (!emailResult.ok) {
+      console.error('[cron_upcoming_sunday_excused_export_email] Resend send failed', {
+        status: emailResult.status,
+        body: emailResult.body,
+      });
+
+      return jsonResponse(502, {
+        success: false,
+        error: 'Failed to send email attachment',
+        resend_status: emailResult.status,
+      });
+    }
+
+    return jsonResponse(200, {
+      success: true,
+      records: 0,
+      targetDate: targetSundayDate,
+    });
+  }
+
+  // Fetch full registrations and answers only for filtered registration IDs
   const { data: registrations, error: registrationsError } = await supabase
     .from('registrations')
     .select('id, users!inner(first_name, last_name, email)')
     .eq('event_id', cronEnv.eventId)
     .neq('status', 'cancelled')
+    .in('id', registrationIds)
     .returns<RegistrationRow[]>();
 
   if (registrationsError) {
@@ -326,8 +373,6 @@ Deno.serve(async (req) => {
       error: 'Failed to load registrations',
     });
   }
-
-  const registrationIds = (registrations ?? []).map((registration) => registration.id);
 
   let answers: RegistrationAnswerRow[] = [];
   if (registrationIds.length > 0 && requestedFieldIds.length > 0) {
@@ -375,16 +420,11 @@ Deno.serve(async (req) => {
     }
 
     const answerMap = answersByRegistration.get(registration.id) ?? {};
-    const requestDate = normalizeDateValue(answerMap.request_date);
-
-    if (!requestDate || requestDate !== targetSundayDate) {
-      continue;
-    }
 
     payload.push({
       firstName: (user.first_name ?? '').trim(),
       lastName: (user.last_name ?? '').trim(),
-      requestDate,
+      requestDate: targetSundayDate,
       services: normalizeValueToText(answerMap.services),
       reason: normalizeValueToText(answerMap.reason),
       email: (user.email ?? '').trim(),
