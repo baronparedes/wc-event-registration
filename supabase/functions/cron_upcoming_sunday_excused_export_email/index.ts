@@ -73,20 +73,6 @@ function jsonResponse(status: number, payload: Record<string, unknown>): Respons
   });
 }
 
-function isAuthorizedCronRequest(req: Request, expectedServiceRoleKey: string): boolean {
-  const authHeader = req.headers.get('authorization') ?? '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-
-  const token = authHeader.slice('Bearer '.length).trim();
-  if (!token || !expectedServiceRoleKey) {
-    return false;
-  }
-
-  return token === expectedServiceRoleKey;
-}
-
 function parseCronEnvironment(): CronEnvironment | null {
   const parsed = cronEnvironmentSchema.safeParse({
     RESEND_API_KEY: Deno.env.get('RESEND_API_KEY') ?? '',
@@ -281,13 +267,6 @@ Deno.serve(async (req) => {
     return jsonResponse(500, {
       success: false,
       error: 'Supabase environment not configured',
-    });
-  }
-
-  if (!isAuthorizedCronRequest(req, functionEnv.supabaseServiceKey)) {
-    return jsonResponse(401, {
-      success: false,
-      error: 'Unauthorized',
     });
   }
 
