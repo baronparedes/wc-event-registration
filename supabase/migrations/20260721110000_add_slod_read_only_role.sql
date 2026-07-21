@@ -120,13 +120,22 @@ using
 (public.is_admin_or_slod
 ());
 
-create policy "admins and slod can read attendance walk ins"
-  on public.attendance_walk_ins for
-select
-    to authenticated
-using
-(public.is_admin_or_slod
-());
+do $$
+begin
+    if to_regclass('public.attendance_walk_ins') is not null then
+    execute $policy$
+    create policy "admins and slod can read attendance walk ins"
+        on public.attendance_walk_ins for
+    select
+        to authenticated
+    using
+    (public.is_admin_or_slod
+    ());
+$policy$;
+end
+if;
+end
+$$;
 
 create policy "admins and slod can read attendance check ins"
   on public.attendance_check_ins for
