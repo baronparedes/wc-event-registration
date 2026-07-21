@@ -13,9 +13,11 @@ import {
   toAdminEventDetail,
   toAdminEventRegistrations,
 } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations';
 import type { AdminPublicRegistrationsPage } from '@/hooks/domain/public-registrations/queries/useAdminPublicRegistrationsQuery';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
@@ -24,6 +26,7 @@ import { PublicRegistrationsList } from '../registrations/components';
 
 export function AdminPublicRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
+  const { data: authState } = useAdminAuthQuery();
 
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminRegistrationsPageSize);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -71,6 +74,7 @@ export function AdminPublicRegistrationsPage() {
   const isLoading = eventQuery.isLoading || publicRegistrationsQuery.isLoading;
   const error = eventQuery.error || publicRegistrationsQuery.error;
   const isEventArchived = event?.status === 'archived';
+  const canWrite = canWriteAdminData(authState?.adminRole);
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
@@ -194,6 +198,7 @@ export function AdminPublicRegistrationsPage() {
             eventId={eventId}
             isEventArchived={isEventArchived}
             searchTerm={normalizedSearchTerm}
+            canWrite={canWrite}
           />
 
           <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">

@@ -7,6 +7,7 @@ import { AdminRegistrationDetailPage } from '@/pages/admin/events/[id]/registrat
 const {
   mockUseParams,
   mockNavigate,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseRegistrationDetailQuery,
   mockCancelMutateAsync,
@@ -15,12 +16,21 @@ const {
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseRegistrationDetailQuery: vi.fn(),
   mockCancelMutateAsync: vi.fn(),
   mockReactivateMutateAsync: vi.fn(),
   mockShowError: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -88,6 +98,10 @@ describe('AdminRegistrationDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: 'event-1', registration_id: 'reg-1' });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockUseAdminEventQuery.mockReturnValue({
       data: { id: 'event-1', name: 'Test Event' },
       isLoading: false,
@@ -569,5 +583,42 @@ describe('AdminRegistrationDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel Dialog' }));
     expect(screen.queryByRole('button', { name: 'Cancel Dialog' })).not.toBeInTheDocument();
+  });
+
+  it('hides write actions for slod users', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+    mockUseRegistrationDetailQuery.mockReturnValue({
+      data: {
+        registration: {
+          id: 'reg-1',
+          status: 'submitted',
+          submitted_at: '2026-06-27T10:00:00.000Z',
+          updated_at: '2026-06-27T10:00:00.000Z',
+        },
+        member: {
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: null,
+          role: 'player',
+          category: 'adult',
+          nickname: null,
+        },
+        fieldResponses: [],
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.queryByRole('button', { name: 'Cancel Registration' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Reactivate Registration' }),
+    ).not.toBeInTheDocument();
   });
 });

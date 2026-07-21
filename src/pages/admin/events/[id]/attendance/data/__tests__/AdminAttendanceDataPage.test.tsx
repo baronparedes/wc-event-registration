@@ -10,6 +10,7 @@ const EVENT_ID = 'ed27d3ac-ddb7-4cb4-9f44-2194c864e410';
 
 const {
   mockUseParams,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseAttendanceSettingsQuery,
   mockUseAttendanceFieldsQuery,
@@ -22,6 +23,7 @@ const {
   mockExportMutateAsync,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAttendanceSettingsQuery: vi.fn(),
   mockUseAttendanceFieldsQuery: vi.fn(),
@@ -33,6 +35,15 @@ const {
   mockDeleteMutate: vi.fn(),
   mockExportMutateAsync: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -142,6 +153,10 @@ describe('AdminAttendanceDataPage', () => {
     });
 
     mockUseParams.mockReturnValue({ id: EVENT_ID });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
 
     mockUseAdminEventQuery.mockReturnValue({
       data: {
@@ -535,6 +550,31 @@ describe('AdminAttendanceDataPage', () => {
     expect(exportButton).not.toBeDisabled();
 
     fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('lets slod open views and export csv while keeping write controls hidden', async () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Views' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export Attendance CSV' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Upload CSV' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fill In' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }));
+    expect(screen.getByRole('button', { name: 'Save Current' })).toBeInTheDocument();
+    expect(screen.queryByText('Delete Saved View')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Attendance CSV' }));
 
     await waitFor(() => {
       expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);

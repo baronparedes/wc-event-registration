@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
 import { HTTP_STATUS } from './constants.ts';
 import { errorResponse } from './http.ts';
 import {
+  type AdminAccountRole,
   buildCorsHeaders,
   createObscuredDenyResponse,
   enforcePublicRateLimit,
@@ -40,10 +41,12 @@ type EdgeHookAdminOptions =
   | {
       requireAdmin: true;
       rateLimit?: AdminRateLimitConfig;
+      allowedRoles?: AdminAccountRole[];
     }
   | {
       requireAdmin?: false;
       rateLimit?: never;
+      allowedRoles?: never;
     };
 
 type EdgeHookOptions = EdgeHookBaseOptions & EdgeHookAdminOptions;
@@ -204,6 +207,7 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
       authHeader: options.req.headers.get('authorization'),
       corsHeaders,
       rateLimit: options.rateLimit,
+      allowedRoles: options.allowedRoles,
     });
 
     if (!adminAccess.ok) {

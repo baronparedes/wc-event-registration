@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
     functionName: 'export-attendance-csv',
     method: 'POST',
     requireAdmin: true,
+    allowedRoles: ['admin', 'super_admin', 'slod'],
     rateLimit: {
       scope: 'export-attendance-csv',
       windowMs: RATE_LIMIT_PRESETS.attendanceCsvExport.windowMs,

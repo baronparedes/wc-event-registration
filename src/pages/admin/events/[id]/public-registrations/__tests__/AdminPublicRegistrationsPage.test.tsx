@@ -8,6 +8,7 @@ import { AdminPublicRegistrationsPage } from '@/pages/admin/events/[id]/public-r
 const {
   mockUseParams,
   mockNavigate,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseAdminPublicRegistrationsQuery,
   mockGetCurrentPageFromCursor,
@@ -15,11 +16,20 @@ const {
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminPublicRegistrationsQuery: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
   mockGetPageCursor: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -65,8 +75,11 @@ vi.mock('@/components/ui/AdminPaginationControls', () => ({
 }));
 
 vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
-  PublicRegistrationsList: (props: { registrations: Array<{ email: string }> }) => (
-    <div>{`Public registrations: ${props.registrations.map((registration) => registration.email).join(', ')}`}</div>
+  PublicRegistrationsList: (props: {
+    registrations: Array<{ email: string }>;
+    canWrite?: boolean;
+  }) => (
+    <div>{`Public registrations: ${props.registrations.map((registration) => registration.email).join(', ')}:${props.canWrite ? 'write' : 'read'}`}</div>
   ),
 }));
 
@@ -77,6 +90,10 @@ describe('AdminPublicRegistrationsPage', () => {
     vi.clearAllMocks();
     testEventId = faker.string.uuid();
     mockUseParams.mockReturnValue({ id: testEventId });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockGetCurrentPageFromCursor.mockReturnValue(1);
     mockGetPageCursor.mockReturnValue(null);
   });
@@ -122,7 +139,7 @@ describe('AdminPublicRegistrationsPage', () => {
     expect(
       screen.getByText('This event is published. All public registrations are visible.'),
     ).toBeInTheDocument();
-    expect(screen.getByText(`Public registrations: ${attendeeEmail}`)).toBeInTheDocument();
+    expect(screen.getByText(`Public registrations: ${attendeeEmail}:write`)).toBeInTheDocument();
   });
 
   it('renders error state when queries fail', () => {
@@ -238,5 +255,31 @@ describe('AdminPublicRegistrationsPage', () => {
     ).toBe('');
 
     vi.useRealTimers();
+  });
+
+  it('passes read-only mode to the list for slod users', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: testEventId, title: 'Event', status: 'published' },
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminPublicRegistrationsQuery.mockReturnValue({
+      data: {
+        items: [{ email: 'guest@example.com' }],
+        hasMore: false,
+        nextCursor: null,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Public registrations: guest@example.com:read')).toBeInTheDocument();
   });
 });

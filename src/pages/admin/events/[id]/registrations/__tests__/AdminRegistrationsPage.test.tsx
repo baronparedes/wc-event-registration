@@ -8,6 +8,7 @@ import { AdminRegistrationsPage } from '@/pages/admin/events/[id]/registrations'
 const {
   mockUseParams,
   mockNavigate,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseAdminRegistrationsQuery,
   mockGetCurrentPageFromCursor,
@@ -16,12 +17,21 @@ const {
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminRegistrationsQuery: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
   mockGetPageCursor: vi.fn(),
   mockPaginationProps: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -97,8 +107,11 @@ vi.mock('@/components/ui/AdminPaginationControls', () => ({
 }));
 
 vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
-  RegistrationsList: (props: { registrations: Array<{ member_id: string }> }) => (
-    <div>{`Registrations: ${props.registrations.map((registration) => registration.member_id).join(', ')}`}</div>
+  RegistrationsList: (props: {
+    registrations: Array<{ member_id: string }>;
+    canWrite?: boolean;
+  }) => (
+    <div>{`Registrations: ${props.registrations.map((registration) => registration.member_id).join(', ')}:${props.canWrite ? 'write' : 'read'}`}</div>
   ),
   CopyNamesButton: (props: { disabled?: boolean }) => (
     <button type="button" disabled={props.disabled}>
@@ -132,6 +145,10 @@ describe('AdminRegistrationsPage', () => {
     vi.clearAllMocks();
     testEventId = faker.string.uuid();
     mockUseParams.mockReturnValue({ id: testEventId });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockNavigate.mockReset();
     mockGetCurrentPageFromCursor.mockReturnValue(1);
     mockGetPageCursor.mockReturnValue(null);
@@ -171,7 +188,7 @@ describe('AdminRegistrationsPage', () => {
     expect(
       screen.getByText('This event is published. All registrations are visible.'),
     ).toBeInTheDocument();
-    expect(screen.getByText(`Registrations: ${memberId}`)).toBeInTheDocument();
+    expect(screen.getByText(`Registrations: ${memberId}:write`)).toBeInTheDocument();
   });
 
   it('renders error state when queries fail', () => {
@@ -352,6 +369,35 @@ describe('AdminRegistrationsPage', () => {
 
     fireEvent.click(publicRegistrationsButton);
     expect(mockNavigate).toHaveBeenCalledWith(`/admin/events/${testEventId}/public-registrations`);
+  });
+
+  it('passes read-only mode to the registrations list for slod users', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: testEventId, title: 'Event', status: 'published' },
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminRegistrationsQuery.mockReturnValue({
+      data: {
+        items: [{ member_id: 'WC-001' }],
+        hasMore: false,
+        nextCursor: null,
+        totalCount: 1,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Registrations: WC-001:read')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export as CSV' })).toBeInTheDocument();
   });
 
   it('disables copy and export actions when there are no registrations yet', () => {

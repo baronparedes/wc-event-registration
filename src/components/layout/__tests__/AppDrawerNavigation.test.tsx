@@ -18,6 +18,7 @@ function renderDrawer(options?: {
   path?: string;
   isOpen?: boolean;
   isAuthenticated?: boolean;
+  adminRole?: 'admin' | 'super_admin' | 'slod' | null;
   onClose?: () => void;
   onLogout?: () => Promise<void>;
 }) {
@@ -30,6 +31,7 @@ function renderDrawer(options?: {
         isOpen={options?.isOpen ?? true}
         onClose={onClose}
         isAuthenticated={options?.isAuthenticated ?? true}
+        adminRole={options?.adminRole ?? 'admin'}
         onLogout={onLogout}
       />
     </MemoryRouter>,
@@ -50,7 +52,7 @@ describe('AppDrawerNavigation', () => {
   it('shows sign-in link for unauthenticated users', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
 
-    renderDrawer({ isAuthenticated: false });
+    renderDrawer({ isAuthenticated: false, adminRole: null });
 
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
@@ -149,5 +151,41 @@ describe('AppDrawerNavigation', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Manage Event' }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides write-only links for slod users while preserving read navigation', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+
+    renderDrawer({ path: '/admin/events/event-1/registrations', adminRole: 'slod' });
+
+    expect(screen.getByRole('link', { name: 'Manage Members' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminMembers,
+    );
+    expect(screen.queryByRole('link', { name: 'Manage Event' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Manage Registration Fields' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Attendance' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Check-In' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance Fields' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Unregistered Members' })).not.toBeInTheDocument();
+
+    expect(screen.getByRole('link', { name: 'Manage Events' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminEvents,
+    );
+    expect(screen.getByRole('link', { name: 'Manage Registrations' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/registrations',
+    );
+    expect(screen.getByRole('link', { name: 'Manage Public Registrations' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/public-registrations',
+    );
+    expect(screen.getByRole('link', { name: 'Attendee Details' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/attendance/data',
+    );
   });
 });

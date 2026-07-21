@@ -29,6 +29,7 @@ Deno.serve(async (req) => {
     functionName: 'upsert-attendance-saved-view',
     method: 'POST',
     requireAdmin: true,
+    allowedRoles: ['admin', 'super_admin', 'slod'],
     schema: upsertViewRequestSchema,
   });
 

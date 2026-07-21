@@ -33,6 +33,7 @@ type AttendanceDataEntryListProps = {
   allAttendees: AttendeeSearchResult[];
   registrationFields: AdminEventField[];
   visibleFields?: DynamicFieldRef[];
+  canWrite?: boolean;
 };
 
 function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField[]): number {
@@ -109,6 +110,7 @@ export function AttendanceDataEntryList({
   allAttendees,
   registrationFields,
   visibleFields = [],
+  canWrite = true,
 }: AttendanceDataEntryListProps) {
   const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
   const [editingRegistrant, setEditingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
@@ -178,6 +180,9 @@ export function AttendanceDataEntryList({
       const filled = countFilledAnswers(registrant.answers, fields);
       const isCheckedIn = registrant.check_in_status === 'checked_in';
       const attendee = attendeesByRegistrantKey.get(rowKey);
+      const gridClassName = canWrite
+        ? 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
+        : 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]';
 
       return (
         <ListTableRow
@@ -185,8 +190,8 @@ export function AttendanceDataEntryList({
           className="cursor-pointer"
           onClick={() => setViewingRegistrant(registrant)}
         >
-          <ListTableCell colSpan={6} className="px-6">
-            <div className="grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <ListTableCell colSpan={canWrite ? 6 : 5} className="px-6">
+            <div className={gridClassName}>
               <div>
                 <span
                   role="img"
@@ -219,11 +224,13 @@ export function AttendanceDataEntryList({
               <div>
                 <span className="text-sm text-text">{registrant.category?.trim() || '—'}</span>
               </div>
-              <div onClick={(e) => e.stopPropagation()} className="print:hidden">
-                <ActionButton onClick={() => setEditingRegistrant(registrant)}>
-                  {filled > 0 ? 'Edit' : 'Fill In'}
-                </ActionButton>
-              </div>
+              {canWrite && (
+                <div onClick={(e) => e.stopPropagation()} className="print:hidden">
+                  <ActionButton onClick={() => setEditingRegistrant(registrant)}>
+                    {filled > 0 ? 'Edit' : 'Fill In'}
+                  </ActionButton>
+                </div>
+              )}
             </div>
             {visibleFields.length > 0 && (
               <div
@@ -277,13 +284,19 @@ export function AttendanceDataEntryList({
             <ListTable>
               <ListTableHead>
                 <ListTableHeaderRow>
-                  <ListTableHeaderCell colSpan={6} className="px-6">
-                    <div className="grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                  <ListTableHeaderCell colSpan={canWrite ? 6 : 5} className="px-6">
+                    <div
+                      className={
+                        canWrite
+                          ? 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
+                          : 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
+                      }
+                    >
                       <div>Attendee</div>
                       <div className="hidden lg:block print:block">RFID</div>
                       <div className="hidden lg:block print:block">Role</div>
                       <div className="hidden lg:block print:block">Category</div>
-                      <div className="hidden lg:block print:hidden">Actions</div>
+                      {canWrite && <div className="hidden lg:block print:hidden">Actions</div>}
                     </div>
                   </ListTableHeaderCell>
                 </ListTableHeaderRow>
@@ -303,7 +316,7 @@ export function AttendanceDataEntryList({
         onClose={() => setViewingRegistrant(null)}
       />
 
-      {editingRegistrant && (
+      {canWrite && editingRegistrant && (
         <AttendanceDataEntryPanel
           isOpen={true}
           eventId={eventId}

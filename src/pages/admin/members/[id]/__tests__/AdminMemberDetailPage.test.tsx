@@ -7,6 +7,7 @@ import { AdminMemberDetailPage } from '@/pages/admin/members/[id]';
 const {
   mockNavigate,
   mockUseParams,
+  mockUseAdminAuthQuery,
   mockUseAdminMemberQuery,
   mockUseUpdateMemberMutation,
   mockUseSoftDeleteMemberMutation,
@@ -19,6 +20,7 @@ const {
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockUseParams: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminMemberQuery: vi.fn(),
   mockUseUpdateMemberMutation: vi.fn(),
   mockUseSoftDeleteMemberMutation: vi.fn(),
@@ -29,6 +31,14 @@ const {
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -70,6 +80,10 @@ describe('AdminMemberDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: 'user-1' });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockUseUpdateMemberMutation.mockReturnValue({
       mutateAsync: mockUpdateMutateAsync,
       isPending: false,
@@ -447,5 +461,22 @@ describe('AdminMemberDetailPage', () => {
       expect(screen.getByDisplayValue('first_sunday')).toBeInTheDocument();
       expect(screen.getByDisplayValue('yes')).toBeInTheDocument();
     });
+  });
+
+  it('renders member details as read-only for slod users', async () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByRole('heading', { name: 'View Member' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to Members' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete Member' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Restore Member' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('First Name *')).toBeDisabled();
+    expect(screen.getByLabelText('Role *')).toBeDisabled();
   });
 });

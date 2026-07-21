@@ -91,4 +91,16 @@ describe('fetchAdminAuthState', () => {
       adminRole: 'super_admin',
     });
   });
+
+  it('returns authenticated state with slod role', async () => {
+    const session = { user: { id: 'auth-1' } };
+    mockGetSession.mockResolvedValue({ data: { session }, error: null });
+    mockAdminMaybeSingle.mockResolvedValue({ data: { role: 'slod' }, error: null });
+
+    await expect(fetchAdminAuthState()).resolves.toEqual({
+      isAuthenticated: true,
+      session,
+      adminRole: 'slod',
+    });
+  });
 });

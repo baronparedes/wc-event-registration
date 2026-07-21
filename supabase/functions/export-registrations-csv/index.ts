@@ -125,6 +125,7 @@ Deno.serve(async (req) => {
     functionName: 'export-registrations-csv',
     method: 'POST',
     requireAdmin: true,
+    allowedRoles: ['admin', 'super_admin', 'slod'],
     rateLimit: {
       scope: 'export-registrations-csv',
       windowMs: RATE_LIMIT_PRESETS.exportRegistrationsCsv.windowMs,

@@ -23,17 +23,21 @@ import {
   TIMING,
   UI_MESSAGES,
   toAdminEventAttendance,
+  toAdminEventAttendanceData,
   toAdminEventDetail,
   toAdminEventFields,
   toAdminEventRegistrations,
 } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
 import { DuplicatePolicyLabel, EventStatusBadge } from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
+  const { data: authState } = useAdminAuthQuery();
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize);
   const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +63,7 @@ export function AdminEventsPage() {
 
   const isLoading = eventsQuery.isLoading;
   const error = eventsQuery.error;
+  const canWrite = canWriteAdminData(authState?.adminRole);
 
   function handleNextPage() {
     if (!nextCursor) return;
@@ -98,15 +103,17 @@ export function AdminEventsPage() {
         title="Manage Events"
         description="Create, edit, archive, and manage registration behavior."
         actions={
-          <Button
-            size="md"
-            variant="default"
-            onClick={() => navigate(ROUTE_PATHS.adminEventNew)}
-            className="w-full sm:w-auto sm:inline-flex"
-          >
-            <Plus className="h-4 w-4" />
-            New Event
-          </Button>
+          canWrite ? (
+            <Button
+              size="md"
+              variant="default"
+              onClick={() => navigate(ROUTE_PATHS.adminEventNew)}
+              className="w-full sm:w-auto sm:inline-flex"
+            >
+              <Plus className="h-4 w-4" />
+              New Event
+            </Button>
+          ) : undefined
         }
       />
 
@@ -146,11 +153,17 @@ export function AdminEventsPage() {
             <EmptyState
               icon={<Plus className="h-6 w-6" />}
               title="No events yet"
-              description="Create your first event to get started with registrations."
+              description={
+                canWrite
+                  ? 'Create your first event to get started with registrations.'
+                  : 'Events will appear here once an admin creates them.'
+              }
               action={
-                <Button asChild size="md" variant="default">
-                  <Link to={ROUTE_PATHS.adminEventNew}>Create Event</Link>
-                </Button>
+                canWrite ? (
+                  <Button asChild size="md" variant="default">
+                    <Link to={ROUTE_PATHS.adminEventNew}>Create Event</Link>
+                  </Button>
+                ) : undefined
               }
             />
           </div>
@@ -173,8 +186,8 @@ export function AdminEventsPage() {
                 {events.map((event) => (
                   <ListTableRow
                     key={event.id}
-                    className="cursor-pointer"
-                    onClick={() => navigate(toAdminEventDetail(event.id))}
+                    className={canWrite ? 'cursor-pointer' : undefined}
+                    onClick={canWrite ? () => navigate(toAdminEventDetail(event.id)) : undefined}
                   >
                     <ListTableCell className="px-6">
                       <p className="font-medium text-text">{event.title}</p>
@@ -196,9 +209,18 @@ export function AdminEventsPage() {
                     </ListTableCell>
                     <ListTableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
-                        <ActionLink to={toAdminEventDetail(event.id)}>Edit</ActionLink>
-                        <ActionLink to={toAdminEventAttendance(event.id)}>Attendance</ActionLink>
-                        <ActionLink to={toAdminEventFields(event.id)}>Fields</ActionLink>
+                        {canWrite && (
+                          <ActionLink to={toAdminEventDetail(event.id)}>Edit</ActionLink>
+                        )}
+                        {canWrite && (
+                          <ActionLink to={toAdminEventAttendance(event.id)}>Attendance</ActionLink>
+                        )}
+                        {canWrite && (
+                          <ActionLink to={toAdminEventFields(event.id)}>Fields</ActionLink>
+                        )}
+                        <ActionLink to={toAdminEventAttendanceData(event.id)}>
+                          Attendee Details
+                        </ActionLink>
                         <ActionLink to={toAdminEventRegistrations(event.id)}>
                           Registrations
                         </ActionLink>

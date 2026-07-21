@@ -39,7 +39,7 @@ const baseRegistration: PublicRegistrationSummary = {
 
 function renderList(
   registrations: PublicRegistrationSummary[],
-  options: { isEventArchived?: boolean; searchTerm?: string } = {},
+  options: { isEventArchived?: boolean; searchTerm?: string; canWrite?: boolean } = {},
 ) {
   return render(
     <MemoryRouter>
@@ -48,6 +48,7 @@ function renderList(
         eventId="event-1"
         isEventArchived={options.isEventArchived}
         searchTerm={options.searchTerm}
+        canWrite={options.canWrite}
       />
     </MemoryRouter>,
   );
@@ -73,6 +74,14 @@ describe('PublicRegistrationsList', () => {
 
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reactivate' })).toBeInTheDocument();
+  });
+
+  it('hides write actions in read-only mode', () => {
+    renderList([baseRegistration], { canWrite: false });
+
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reactivate' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View' })).toBeInTheDocument();
   });
 
   it('renders loading state', () => {

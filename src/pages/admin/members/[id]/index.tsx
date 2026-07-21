@@ -11,12 +11,14 @@ import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import {
   useAdminMemberQuery,
   useRestoreMemberMutation,
   useSoftDeleteMemberMutation,
   useUpdateMemberMutation,
 } from '@/hooks/domain/members';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 
@@ -57,6 +59,7 @@ function toFormValues(member: AdminMember): UpdateMemberInput {
 export function AdminMemberDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { data: authState } = useAdminAuthQuery();
 
   const memberQuery = useAdminMemberQuery(id, { includeInactive: true });
   const updateMemberMutation = useUpdateMemberMutation();
@@ -86,6 +89,7 @@ export function AdminMemberDetailPage() {
     .map((value) => value.trim())
     .filter(Boolean)
     .join(' ');
+  const canWrite = canWriteAdminData(authState?.adminRole);
 
   useEffect(() => {
     if (memberQuery.data) {
@@ -132,7 +136,7 @@ export function AdminMemberDetailPage() {
   if (!id) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Edit Member" />
+        <AdminPageShell.Header title={canWrite ? 'Edit Member' : 'View Member'} />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Member ID is missing.</p>
         </AdminPageShell.Content>
@@ -153,7 +157,7 @@ export function AdminMemberDetailPage() {
   if (memberQuery.isError || !memberQuery.data) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Edit Member" />
+        <AdminPageShell.Header title={canWrite ? 'Edit Member' : 'View Member'} />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">{UI_MESSAGES.errors.memberNotFound}</p>
         </AdminPageShell.Content>
@@ -172,8 +176,12 @@ export function AdminMemberDetailPage() {
           { label: member.full_name },
         ]}
         navLinks={<ActionLink to={ROUTE_PATHS.adminMembers}>Back to Members</ActionLink>}
-        title="Edit Member"
-        description="Update the member profile, contact details, and admin metadata."
+        title={canWrite ? 'Edit Member' : 'View Member'}
+        description={
+          canWrite
+            ? 'Update the member profile, contact details, and admin metadata.'
+            : 'View the member profile, contact details, and admin metadata.'
+        }
       />
 
       <AdminPageShell.Content>
@@ -212,7 +220,7 @@ export function AdminMemberDetailPage() {
                 registration={register('first_name')}
                 error={errors.first_name?.message}
                 required
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="last-name"
@@ -220,7 +228,7 @@ export function AdminMemberDetailPage() {
                 registration={register('last_name')}
                 error={errors.last_name?.message}
                 required
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="nickname"
@@ -228,7 +236,7 @@ export function AdminMemberDetailPage() {
                 registration={register('nickname')}
                 error={errors.nickname?.message}
                 required
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="date-of-birth"
@@ -236,7 +244,7 @@ export function AdminMemberDetailPage() {
                 registration={register('date_of_birth')}
                 error={errors.date_of_birth?.message}
                 type="date"
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="email"
@@ -244,14 +252,14 @@ export function AdminMemberDetailPage() {
                 registration={register('email')}
                 error={errors.email?.message}
                 type="email"
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="phone"
                 label="Phone"
                 registration={register('phone')}
                 error={errors.phone?.message}
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="role"
@@ -259,7 +267,7 @@ export function AdminMemberDetailPage() {
                 registration={register('role')}
                 error={errors.role?.message}
                 required
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="category"
@@ -267,7 +275,7 @@ export function AdminMemberDetailPage() {
                 registration={register('category')}
                 error={errors.category?.message}
                 required
-                disabled={isDeletedMember}
+                disabled={!canWrite || isDeletedMember}
               />
             </div>
           </SectionCard>
@@ -282,32 +290,36 @@ export function AdminMemberDetailPage() {
               errors={errors}
               remove={removeMetadata}
               append={appendMetadata}
-              disabled={isDeletedMember}
+              disabled={!canWrite || isDeletedMember}
             />
           </SectionCard>
 
           <div className="flex items-center justify-end gap-3">
-            <MemberLifecycleActions
-              isDeletedMember={isDeletedMember}
-              memberFullName={member.full_name}
-              isDeleting={deleteMemberMutation.isPending}
-              isRestoring={restoreMemberMutation.isPending}
-              onDeleteMember={onDeleteMember}
-              onRestoreMember={onRestoreMember}
-            />
+            {canWrite && (
+              <MemberLifecycleActions
+                isDeletedMember={isDeletedMember}
+                memberFullName={member.full_name}
+                isDeleting={deleteMemberMutation.isPending}
+                isRestoring={restoreMemberMutation.isPending}
+                onDeleteMember={onDeleteMember}
+                onRestoreMember={onRestoreMember}
+              />
+            )}
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate(ROUTE_PATHS.adminMembers)}
             >
-              Cancel
+              {canWrite ? 'Cancel' : 'Back to Members'}
             </Button>
-            <Button
-              type="submit"
-              disabled={isDeletedMember || !isDirty || updateMemberMutation.isPending}
-            >
-              {updateMemberMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
+            {canWrite && (
+              <Button
+                type="submit"
+                disabled={isDeletedMember || !isDirty || updateMemberMutation.isPending}
+              >
+                {updateMemberMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            )}
           </div>
         </form>
       </AdminPageShell.Content>

@@ -7,6 +7,7 @@ import { AdminPublicRegistrationDetailPage } from '@/pages/admin/events/[id]/pub
 
 const {
   mockUseParams,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUsePublicRegistrationDetailQuery,
   mockUseCancelPublicRegistrationMutation,
@@ -14,12 +15,21 @@ const {
   mockUseErrorWithFadeout,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUsePublicRegistrationDetailQuery: vi.fn(),
   mockUseCancelPublicRegistrationMutation: vi.fn(),
   mockUseReactivatePublicRegistrationMutation: vi.fn(),
   mockUseErrorWithFadeout: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -74,6 +84,11 @@ describe('AdminPublicRegistrationDetailPage', () => {
     mockUseParams.mockReturnValue({
       id: testEventId,
       registration_id: testRegistrationId,
+    });
+
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
     });
 
     mockUseErrorWithFadeout.mockReturnValue({ showError: mockShowError });
@@ -1775,6 +1790,57 @@ describe('AdminPublicRegistrationDetailPage', () => {
 
       // The default badge renders the raw status string
       expect(screen.getByText('pending')).toBeInTheDocument();
+    });
+
+    it('hides write actions for slod users', () => {
+      mockUseAdminAuthQuery.mockReturnValue({
+        data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+        isLoading: false,
+      });
+
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: testEventId, title: 'Event', status: 'published' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUsePublicRegistrationDetailQuery.mockReturnValue({
+        data: {
+          registration: {
+            id: testRegistrationId,
+            event_id: testEventId,
+            first_name: 'Jane',
+            last_name: 'Doe',
+            email: 'jane@example.com',
+            phone: null,
+            nickname: null,
+            status: 'submitted',
+            submitted_at: '2026-07-04T12:00:00Z',
+            updated_at: '2026-07-04T12:00:00Z',
+          },
+          fieldResponses: [],
+        },
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+
+      mockUseCancelPublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      mockUseReactivatePublicRegistrationMutation.mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      });
+
+      renderWithRouter();
+
+      expect(screen.queryByRole('button', { name: 'Cancel Registration' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Reactivate Registration' }),
+      ).not.toBeInTheDocument();
     });
   });
 });

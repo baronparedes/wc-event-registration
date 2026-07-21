@@ -5,16 +5,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminMembersPage } from '@/pages/admin/members';
 
 const {
+  mockUseAdminAuthQuery,
   mockUseAdminMembersQuery,
   mockGetCurrentPageFromCursor,
   mockGetPageCursor,
   mockPaginationProps,
 } = vi.hoisted(() => ({
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminMembersQuery: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
   mockGetPageCursor: vi.fn(),
   mockPaginationProps: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('@/hooks/domain/members', async () => {
   const actual =
@@ -82,6 +92,10 @@ vi.mock('@/pages/admin/members/components/UpdateMemberIdDialog', () => ({
 describe('AdminMembersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockGetCurrentPageFromCursor.mockReturnValue(1);
     mockGetPageCursor.mockReturnValue(null);
   });
@@ -285,6 +299,50 @@ describe('AdminMembersPage', () => {
 
     expect(mockUseAdminMembersQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({ statusFilter: 'deleted' }),
+    );
+  });
+
+  it('shows read-only member access for slod users', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+    mockUseAdminMembersQuery.mockReturnValue({
+      data: {
+        items: [
+          {
+            id: 'user-1',
+            member_id: 'WC-001',
+            is_active: true,
+            full_name: 'Jane Doe',
+            nickname: null,
+            email: 'jane@example.com',
+            phone: null,
+            role: 'player',
+            category: 'adult',
+            created_at: '2026-06-27T00:00:00.000Z',
+          },
+        ],
+        hasMore: false,
+        nextCursor: null,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Upload CSV' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Add Member Dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Update Member ID Dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View' })).toHaveAttribute(
+      'href',
+      '/admin/members/user-1',
     );
   });
 });
