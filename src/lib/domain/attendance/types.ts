@@ -22,6 +22,14 @@ export type CheckInResult = {
   message: string;
 };
 
+export type AttendanceCheckInRealtimeEvent = {
+  event_id: string;
+  attendee_kind: AttendeeKind;
+  registration_id: string | null;
+  public_registration_id: string | null;
+  first_checked_in_at: string;
+};
+
 export type AttendanceSlotPayload = {
   slot: string;
 };

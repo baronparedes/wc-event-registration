@@ -3,6 +3,7 @@ export type {
   CheckInStatus,
   AttendanceSettings,
   CheckInResult,
+  AttendanceCheckInRealtimeEvent,
   AttendanceSlotPayload,
   TimeslotAttendanceRecord,
   AttendanceSlotAttendee,
