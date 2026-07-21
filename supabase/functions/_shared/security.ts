@@ -57,7 +57,10 @@ export interface AdminGuardOptions {
     windowMs: number;
     maxHits: number;
   };
+  allowedRoles?: AdminAccountRole[];
 }
+
+export type AdminAccountRole = 'admin' | 'super_admin' | 'slod';
 
 export interface AdminAuditLogOptions {
   adminClient: ReturnType<typeof createClient>;
@@ -76,6 +79,8 @@ export interface AdminAuditLogOptions {
 }
 
 export type AdminGuardResult = { ok: true; userId: string } | { ok: false; response: Response };
+
+const DEFAULT_ADMIN_GUARD_ROLES: AdminAccountRole[] = ['admin', 'super_admin'];
 
 function maskValue(value: string | null, visible = 6): string {
   if (!value) return 'null';
@@ -215,6 +220,7 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     authHeader,
     corsHeaders,
     rateLimit,
+    allowedRoles = DEFAULT_ADMIN_GUARD_ROLES,
   } = options;
 
   if (!authHeader || !authHeader.startsWith(AUTH.bearerPrefix)) {
@@ -312,9 +318,9 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
 
   const { data: adminRecord, error: adminCheckError } = await authClient
     .from('admins')
-    .select('id')
+    .select('id, role')
     .eq('auth_user_id', userId)
-    .single();
+    .single<{ id: string; role: AdminAccountRole }>();
 
   console.log(`[${logPrefix}] admin check result`, {
     requestId,
@@ -325,6 +331,21 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
   });
 
   if (adminCheckError || !adminRecord) {
+    return {
+      ok: false,
+      response: createJsonResponse(
+        {
+          success: false,
+          error: 'Unauthorized',
+          error_code: ERROR_CODES.unauthorized,
+        },
+        HTTP_STATUS.unauthorized,
+        corsHeaders,
+      ),
+    };
+  }
+
+  if (!allowedRoles.includes(adminRecord.role)) {
     return {
       ok: false,
       response: createJsonResponse(

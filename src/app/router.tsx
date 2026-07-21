@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS } from '@/config/constants';
+import { canWriteAdminData } from '@/lib/domain/auth';
 
 import { AppMobileShell, AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
@@ -161,6 +162,34 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
   return children;
 }
 
+function RequireAdminWriteAccess({ children }: { children: ReactElement }) {
+  const { data, isLoading } = useAdminAuthQuery();
+
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6">
+        <div className="space-y-3" aria-hidden="true">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-4/5" />
+        </div>
+      </section>
+    );
+  }
+
+  const isAuthenticated = data?.isAuthenticated ?? false;
+
+  if (!isAuthenticated) {
+    return <Navigate to={ROUTE_PATHS.adminLogin} replace />;
+  }
+
+  if (!canWriteAdminData(data?.adminRole)) {
+    return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
+  }
+
+  return children;
+}
+
 export function AppRouter() {
   return (
     <Routes>
@@ -201,31 +230,31 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMembers}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminMembersPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminMembersImport}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminMembersImportPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminMemberDetailPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminMemberDetailPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
@@ -241,51 +270,51 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEventNew}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminNewEventPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventDetailPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminEditEventPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventFieldsPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminEventFieldsPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendancePattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminEventAttendancePage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendanceFieldsPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminAttendanceFieldsPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
@@ -301,31 +330,31 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEventAttendanceDataBulkUploadPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminAttendanceDataBulkUploadPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendanceCheckInPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminAttendanceCheckInPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendanceUnregisteredMembersPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminWriteAccess>
               <LazyRoute>
                 <AdminAttendanceUnregisteredMembersPage />
               </LazyRoute>
-            </RequireAdminAuth>
+            </RequireAdminWriteAccess>
           }
         />
         <Route

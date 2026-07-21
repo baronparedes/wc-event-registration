@@ -1,11 +1,11 @@
 import { supabase } from '@/lib/infrastructure';
 
-import type { AdminAuthState } from './types';
+import type { AdminAuthState, AdminRole } from './types';
 
 export const ADMIN_AUTH_QUERY_KEY = ['admin-auth-state'] as const;
 
 type AdminRow = {
-  role: 'admin' | 'super_admin';
+  role: AdminRole;
 };
 
 export async function fetchAdminAuthState(): Promise<AdminAuthState> {

@@ -58,6 +58,7 @@ export function AppMobileShell() {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         isAuthenticated={adminAuth?.isAuthenticated ?? false}
+        adminRole={adminAuth?.adminRole ?? null}
         onLogout={handleLogout}
       />
 
