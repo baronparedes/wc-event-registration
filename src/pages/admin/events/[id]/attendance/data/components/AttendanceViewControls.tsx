@@ -29,9 +29,9 @@ type AttendanceViewControlsProps = {
   onRoleChange: (value: string[]) => void;
   onCategoryChange: (value: string) => void;
   onCheckInStatusChange: (value: AttendeeViewConfig['checkInStatus']) => void;
-  onGroupSortChange: (value: AttendeeViewGroupSort) => void;
   onAddGroupingLevel: () => void;
   onGroupingFieldChange: (index: number, token: string) => void;
+  onGroupingSortChange: (index: number, value: AttendeeViewGroupSort) => void;
   onMoveGroupingLevel: (index: number, direction: 'up' | 'down') => void;
   onRemoveGroupingLevel: (index: number) => void;
   onClearViewControls: () => void;
@@ -97,9 +97,9 @@ export function AttendanceViewControls({
   onRoleChange,
   onCategoryChange,
   onCheckInStatusChange,
-  onGroupSortChange,
   onAddGroupingLevel,
   onGroupingFieldChange,
+  onGroupingSortChange,
   onMoveGroupingLevel,
   onRemoveGroupingLevel,
   onClearViewControls,
@@ -266,22 +266,6 @@ export function AttendanceViewControls({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            Group order
-            <select
-              value={viewConfig.groupSort ?? 'label_asc'}
-              onChange={(event) => onGroupSortChange(event.target.value as AttendeeViewGroupSort)}
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="label_asc">A-Z</option>
-              <option value="label_desc">Z-A</option>
-              <option value="size_desc">Largest group first</option>
-              <option value="size_asc">Smallest group first</option>
-              <option value="time_asc">Chronological (earliest first)</option>
-              <option value="time_desc">Chronological (latest first)</option>
-            </select>
-          </label>
-
           <div className="rounded-xl border border-border p-3 md:col-span-2 lg:col-span-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm text-muted">Group levels</p>
@@ -295,6 +279,13 @@ export function AttendanceViewControls({
             ) : (
               <div className="space-y-2">
                 {viewConfig.groupBy.map((groupField, index) => {
+                  const isPrimaryGroupingLevel = index === 0;
+                  const currentGroupSort = groupField.groupSort ?? 'label_asc';
+                  const displayedGroupSort =
+                    !isPrimaryGroupingLevel &&
+                    (currentGroupSort === 'size_desc' || currentGroupSort === 'size_asc')
+                      ? 'label_asc'
+                      : currentGroupSort;
                   const selectableFields = getSelectableFields(
                     dynamicFieldOptions,
                     viewConfig.groupBy,
@@ -349,6 +340,21 @@ export function AttendanceViewControls({
                             ))}
                           </optgroup>
                         )}
+                      </select>
+                      <select
+                        aria-label={`Level ${index + 1} order`}
+                        value={displayedGroupSort}
+                        onChange={(event) =>
+                          onGroupingSortChange(index, event.target.value as AttendeeViewGroupSort)
+                        }
+                        className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="label_asc">A-Z</option>
+                        <option value="label_desc">Z-A</option>
+                        {isPrimaryGroupingLevel && <option value="size_desc">Largest</option>}
+                        {isPrimaryGroupingLevel && <option value="size_asc">Smallest</option>}
+                        <option value="time_asc">Earliest</option>
+                        <option value="time_desc">Latest</option>
                       </select>
                       <Button
                         type="button"

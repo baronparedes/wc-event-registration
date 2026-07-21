@@ -247,7 +247,14 @@ describe('useAttendanceViewControlsState', () => {
       source: 'registration',
       fieldKey: '',
       label: '',
+      groupSort: 'label_asc',
     });
+
+    act(() => {
+      result.current.changeGroupingSort(0, 'time_asc');
+    });
+
+    expect(result.current.viewConfig.groupBy[0].groupSort).toBe('time_asc');
   });
 
   it('moves/removes grouping levels and resets all controls', () => {
@@ -260,6 +267,7 @@ describe('useAttendanceViewControlsState', () => {
       result.current.addGroupingLevel();
       result.current.changeGroupingField(0, 'registration:service');
       result.current.changeGroupingField(1, 'attendance:area');
+      result.current.changeGroupingSort(0, 'size_desc');
     });
 
     act(() => {
@@ -270,6 +278,7 @@ describe('useAttendanceViewControlsState', () => {
       'area',
       'service',
     ]);
+    expect(result.current.viewConfig.groupBy[1].groupSort).toBe('label_asc');
 
     act(() => {
       result.current.moveGroupingLevel(0, 'up');
@@ -300,7 +309,6 @@ describe('useAttendanceViewControlsState', () => {
       role: [],
       category: 'all',
       checkInStatus: 'all',
-      groupSort: 'label_asc',
       dynamicFilters: [],
       groupBy: [],
       visibleFields: [],
@@ -325,14 +333,26 @@ describe('useAttendanceViewControlsState', () => {
       role: ['Volunteer'],
       category: 'Youth',
       checkInStatus: 'checked_in' as const,
-      groupSort: 'time_asc' as const,
       dynamicFilters: [
         {
           field: { source: 'attendance' as const, fieldKey: 'area', label: 'Area' },
           value: 'East',
         },
       ],
-      groupBy: [{ source: 'registration' as const, fieldKey: 'service', label: 'Service' }],
+      groupBy: [
+        {
+          source: 'registration' as const,
+          fieldKey: 'service',
+          label: 'Service',
+          groupSort: 'time_asc' as const,
+        },
+        {
+          source: 'attendance' as const,
+          fieldKey: 'area',
+          label: 'Area',
+          groupSort: 'size_desc' as const,
+        },
+      ],
       visibleFields: [{ source: 'attendance' as const, fieldKey: 'area', label: 'Area' }],
     };
 
@@ -340,7 +360,16 @@ describe('useAttendanceViewControlsState', () => {
       result.current.applyViewConfig(savedConfig);
     });
 
-    expect(result.current.viewConfig).toEqual(savedConfig);
+    expect(result.current.viewConfig).toEqual({
+      ...savedConfig,
+      groupBy: [
+        savedConfig.groupBy[0],
+        {
+          ...savedConfig.groupBy[1],
+          groupSort: 'label_asc',
+        },
+      ],
+    });
     expect(result.current.dynamicFilterFieldToken).toBe('');
     expect(result.current.dynamicFilterValue).toBe('');
     expect(result.current.hasActiveFilters).toBe(true);

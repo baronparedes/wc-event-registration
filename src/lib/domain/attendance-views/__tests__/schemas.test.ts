@@ -20,9 +20,16 @@ describe('attendeeViewConfigSchema', () => {
           value: '9AM',
         },
       ],
-      groupBy: [{ source: 'attendance', fieldKey: 'area', label: 'Area', sortOrder: 0 }],
+      groupBy: [
+        {
+          source: 'attendance',
+          fieldKey: 'area',
+          label: 'Area',
+          sortOrder: 0,
+          groupSort: 'time_asc',
+        },
+      ],
       visibleFields: [{ source: 'registration', fieldKey: 'service', label: 'Service' }],
-      groupSort: 'time_asc',
     });
 
     expect(result.nameOrMemberQuery).toBe('John');
@@ -32,7 +39,7 @@ describe('attendeeViewConfigSchema', () => {
     expect(result.dynamicFilters).toHaveLength(1);
     expect(result.groupBy).toHaveLength(1);
     expect(result.visibleFields).toHaveLength(1);
-    expect(result.groupSort).toBe('time_asc');
+    expect(result.groupBy[0].groupSort).toBe('time_asc');
   });
 
   it('applies default values when fields are missing', () => {
@@ -45,7 +52,6 @@ describe('attendeeViewConfigSchema', () => {
     expect(result.dynamicFilters).toEqual([]);
     expect(result.groupBy).toEqual([]);
     expect(result.visibleFields).toEqual([]);
-    expect(result.groupSort).toBe('label_asc');
   });
 
   it('accepts "not_checked_in" and "all" as valid checkInStatus values', () => {
@@ -56,11 +62,27 @@ describe('attendeeViewConfigSchema', () => {
     expect(attendeeViewConfigSchema.parse({ checkInStatus: 'all' }).checkInStatus).toBe('all');
   });
 
-  it('accepts supported groupSort values', () => {
-    expect(attendeeViewConfigSchema.parse({ groupSort: 'label_desc' }).groupSort).toBe(
-      'label_desc',
-    );
-    expect(attendeeViewConfigSchema.parse({ groupSort: 'time_asc' }).groupSort).toBe('time_asc');
+  it('accepts supported per-level groupSort values', () => {
+    const result = attendeeViewConfigSchema.parse({
+      groupBy: [
+        {
+          source: 'registration',
+          fieldKey: 'service',
+          label: 'Service',
+          groupSort: 'label_desc',
+        },
+      ],
+    });
+
+    expect(result.groupBy[0].groupSort).toBe('label_desc');
+  });
+
+  it('applies default groupSort for groupBy entries when missing', () => {
+    const result = attendeeViewConfigSchema.parse({
+      groupBy: [{ source: 'registration', fieldKey: 'service', label: 'Service' }],
+    });
+
+    expect(result.groupBy[0].groupSort).toBe('label_asc');
   });
 
   it('rejects invalid checkInStatus', () => {

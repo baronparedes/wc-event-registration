@@ -137,7 +137,6 @@ export function AdminAttendanceDataPage() {
     setRole,
     setCategory,
     setCheckInStatus,
-    setGroupSort,
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,
@@ -147,6 +146,7 @@ export function AdminAttendanceDataPage() {
     applyViewConfig,
     addGroupingLevel,
     changeGroupingField,
+    changeGroupingSort,
     removeGroupingLevel,
     moveGroupingLevel,
   } = useAttendanceViewControlsState(dynamicFieldOptions);
@@ -391,9 +391,9 @@ export function AdminAttendanceDataPage() {
           onRoleChange={setRole}
           onCategoryChange={setCategory}
           onCheckInStatusChange={setCheckInStatus}
-          onGroupSortChange={setGroupSort}
           onAddGroupingLevel={addGroupingLevel}
           onGroupingFieldChange={changeGroupingField}
+          onGroupingSortChange={changeGroupingSort}
           onMoveGroupingLevel={moveGroupingLevel}
           onRemoveGroupingLevel={removeGroupingLevel}
           onClearViewControls={clearViewControls}

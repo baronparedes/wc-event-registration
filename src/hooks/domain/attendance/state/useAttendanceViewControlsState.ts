@@ -17,8 +17,22 @@ const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   dynamicFilters: [],
   groupBy: [],
   visibleFields: [],
-  groupSort: 'label_asc',
 };
+
+function normalizeGroupingSortByLevel(groupBy: AttendeeViewConfig['groupBy']) {
+  return groupBy.map((field, index) => {
+    const currentSort = field.groupSort ?? 'label_asc';
+    const normalizedSort =
+      index > 0 && (currentSort === 'size_desc' || currentSort === 'size_asc')
+        ? 'label_asc'
+        : currentSort;
+
+    return {
+      ...field,
+      groupSort: normalizedSort,
+    };
+  });
+}
 
 /**
  * Manages filter and grouping UI state for admin attendance data views.
@@ -38,7 +52,6 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     viewConfig.role.length > 0 ||
     viewConfig.category !== 'all' ||
     viewConfig.checkInStatus !== 'all' ||
-    (viewConfig.groupSort ?? 'label_asc') !== 'label_asc' ||
     viewConfig.dynamicFilters.length > 0 ||
     viewConfig.groupBy.length > 0 ||
     viewConfig.visibleFields.length > 0;
@@ -57,10 +70,6 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
   function setCheckInStatus(value: AttendeeViewConfig['checkInStatus']) {
     setViewConfig((current) => ({ ...current, checkInStatus: value }));
-  }
-
-  function setGroupSort(value: AttendeeViewGroupSort) {
-    setViewConfig((current) => ({ ...current, groupSort: value }));
   }
 
   function setFilterFieldToken(value: string) {
@@ -155,7 +164,11 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
   }, []);
 
   const applyViewConfig = useCallback((config: AttendeeViewConfig) => {
-    setViewConfig(attendeeViewConfigSchema.parse(config));
+    const parsedConfig = attendeeViewConfigSchema.parse(config);
+    setViewConfig({
+      ...parsedConfig,
+      groupBy: normalizeGroupingSortByLevel(parsedConfig.groupBy),
+    });
     setDynamicFilterFieldToken('');
     setDynamicFilterValue('');
   }, []);
@@ -163,7 +176,10 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
   function addGroupingLevel() {
     setViewConfig((current) => ({
       ...current,
-      groupBy: [...current.groupBy, { source: 'registration', fieldKey: '', label: '' }],
+      groupBy: [
+        ...current.groupBy,
+        { source: 'registration', fieldKey: '', label: '', groupSort: 'label_asc' },
+      ],
     }));
   }
 
@@ -184,7 +200,12 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setViewConfig((current) => {
       const nextGroupBy = [...current.groupBy];
       if (!nextField) {
-        nextGroupBy[index] = { source: 'registration', fieldKey: '', label: '' };
+        nextGroupBy[index] = {
+          source: 'registration',
+          fieldKey: '',
+          label: '',
+          groupSort: nextGroupBy[index]?.groupSort ?? 'label_asc',
+        };
       } else {
         const isDuplicate = nextGroupBy.some(
           (field, fieldIndex) =>
@@ -193,12 +214,15 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
         if (isDuplicate) {
           return current;
         }
-        nextGroupBy[index] = nextField;
+        nextGroupBy[index] = {
+          ...nextField,
+          groupSort: nextGroupBy[index]?.groupSort ?? 'label_asc',
+        };
       }
 
       return {
         ...current,
-        groupBy: nextGroupBy,
+        groupBy: normalizeGroupingSortByLevel(nextGroupBy),
       };
     });
   }
@@ -222,7 +246,26 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
       return {
         ...current,
-        groupBy: nextGroupBy,
+        groupBy: normalizeGroupingSortByLevel(nextGroupBy),
+      };
+    });
+  }
+
+  function changeGroupingSort(index: number, value: AttendeeViewGroupSort) {
+    setViewConfig((current) => {
+      if (index < 0 || index >= current.groupBy.length) {
+        return current;
+      }
+
+      const nextGroupBy = [...current.groupBy];
+      nextGroupBy[index] = {
+        ...nextGroupBy[index],
+        groupSort: value,
+      };
+
+      return {
+        ...current,
+        groupBy: normalizeGroupingSortByLevel(nextGroupBy),
       };
     });
   }
@@ -237,7 +280,6 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setRole,
     setCategory,
     setCheckInStatus,
-    setGroupSort,
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,
@@ -247,6 +289,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     applyViewConfig,
     addGroupingLevel,
     changeGroupingField,
+    changeGroupingSort,
     removeGroupingLevel,
     moveGroupingLevel,
   };

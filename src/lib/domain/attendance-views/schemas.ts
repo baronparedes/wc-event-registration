@@ -7,6 +7,12 @@ const dynamicFieldRefSchema = z.object({
   sortOrder: z.number().optional(),
 });
 
+const groupByFieldRefSchema = dynamicFieldRefSchema.extend({
+  groupSort: z
+    .enum(['label_asc', 'label_desc', 'size_desc', 'size_asc', 'time_asc', 'time_desc'])
+    .default('label_asc'),
+});
+
 const dynamicFieldFilterSchema = z.object({
   field: dynamicFieldRefSchema,
   value: z.string(),
@@ -20,11 +26,8 @@ export const attendeeViewConfigSchema = z.object({
     .union([z.enum(['checked_in', 'not_checked_in']), z.literal('all')])
     .default('all'),
   dynamicFilters: z.array(dynamicFieldFilterSchema).default([]),
-  groupBy: z.array(dynamicFieldRefSchema).default([]),
+  groupBy: z.array(groupByFieldRefSchema).default([]),
   visibleFields: z.array(dynamicFieldRefSchema).default([]),
-  groupSort: z
-    .enum(['label_asc', 'label_desc', 'size_desc', 'size_asc', 'time_asc', 'time_desc'])
-    .default('label_asc'),
 });
 
 export const upsertAttendanceSavedViewSchema = z.object({

@@ -1,6 +1,7 @@
 export type {
   DynamicFieldSource,
   DynamicFieldRef,
+  GroupByFieldRef,
   DynamicFieldFilter,
   DynamicFieldOption,
   AttendeeViewConfig,

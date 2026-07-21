@@ -49,7 +49,6 @@ const defaultViewConfig: AttendeeViewConfig = {
   role: [],
   category: 'all',
   checkInStatus: 'all',
-  groupSort: 'label_asc',
   dynamicFilters: [],
   groupBy: [],
   visibleFields: [],
@@ -1088,8 +1087,7 @@ describe('attendance-views transforms', () => {
     const slotField = findField(fields, 'registration', 'slot_choice');
     const grouped = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      groupBy: [slotField],
-      groupSort: 'time_asc',
+      groupBy: [{ ...slotField, groupSort: 'time_asc' }],
     });
 
     expect(grouped.groups.map((group) => group.label)).toEqual(['9AM', '12NN', '3PM']);
@@ -1117,8 +1115,7 @@ describe('attendance-views transforms', () => {
     const slotField = findField(fields, 'registration', 'service_datetime');
     const grouped = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      groupBy: [slotField],
-      groupSort: 'time_asc',
+      groupBy: [{ ...slotField, groupSort: 'time_asc' }],
     });
 
     expect(grouped.groups.map((group) => group.label)).toEqual([

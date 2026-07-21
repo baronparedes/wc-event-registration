@@ -33,15 +33,18 @@ export type AttendeeViewGroupSort =
   | 'time_asc'
   | 'time_desc';
 
+export type GroupByFieldRef = DynamicFieldRef & {
+  groupSort?: AttendeeViewGroupSort;
+};
+
 export type AttendeeViewConfig = {
   nameOrMemberQuery: string;
   role: string[];
   category: string;
   checkInStatus: AttendeeSearchResult['check_in_status'] | 'all';
   dynamicFilters: DynamicFieldFilter[];
-  groupBy: DynamicFieldRef[];
+  groupBy: GroupByFieldRef[];
   visibleFields: DynamicFieldRef[];
-  groupSort?: AttendeeViewGroupSort;
 };
 
 export type RegistrantViewGroup = {

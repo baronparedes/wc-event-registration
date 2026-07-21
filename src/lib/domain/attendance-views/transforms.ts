@@ -14,6 +14,7 @@ import type {
   DynamicFieldOption,
   DynamicFieldRef,
   DynamicFieldSource,
+  GroupByFieldRef,
   RegistrantViewGroup,
 } from './types';
 
@@ -766,17 +767,13 @@ function buildGroupLabel(groupKey: string, config: AttendeeViewConfig): string {
   return parts.join(' / ');
 }
 
-function getPrimaryGroupLabelSegment(rawLabel: string): string {
-  return rawLabel.split(' / ')[0]?.trim() ?? '';
-}
-
-function parseTimeLabelToMinutes(rawLabel: string): number | null {
-  const firstSegment = getPrimaryGroupLabelSegment(rawLabel).toUpperCase();
-  if (!firstSegment) {
+function parseTimeLabelToMinutes(rawSegment: string): number | null {
+  const segment = rawSegment.trim().toUpperCase();
+  if (!segment) {
     return null;
   }
 
-  const match = firstSegment.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM|NN|MN)$/);
+  const match = segment.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM|NN|MN)$/);
   if (!match) {
     return null;
   }
@@ -809,18 +806,18 @@ function parseTimeLabelToMinutes(rawLabel: string): number | null {
   return normalizedHours * 60 + minutes;
 }
 
-function parseChronologicalLabel(rawLabel: string): number | null {
-  const firstSegment = getPrimaryGroupLabelSegment(rawLabel);
-  if (!firstSegment) {
+function parseChronologicalLabel(rawSegment: string): number | null {
+  const segment = rawSegment.trim();
+  if (!segment) {
     return null;
   }
 
-  const parsedTimestamp = Date.parse(firstSegment);
+  const parsedTimestamp = Date.parse(segment);
   if (!Number.isNaN(parsedTimestamp)) {
     return parsedTimestamp;
   }
 
-  const minutes = parseTimeLabelToMinutes(firstSegment);
+  const minutes = parseTimeLabelToMinutes(segment);
   if (minutes === null) {
     return null;
   }
@@ -829,57 +826,86 @@ function parseChronologicalLabel(rawLabel: string): number | null {
   return minutes * 60 * 1000;
 }
 
-function sortGroups(groups: RegistrantViewGroup[], sortMode: AttendeeViewGroupSort) {
-  const byLabelAsc = (a: RegistrantViewGroup, b: RegistrantViewGroup) =>
-    a.label.localeCompare(b.label);
+function compareBySortMode(
+  aSegment: string,
+  bSegment: string,
+  sortMode: AttendeeViewGroupSort,
+  aCount: number,
+  bCount: number,
+): number {
+  if (sortMode === 'size_desc') {
+    if (bCount !== aCount) {
+      return bCount - aCount;
+    }
 
+    return aSegment.localeCompare(bSegment);
+  }
+
+  if (sortMode === 'size_asc') {
+    if (aCount !== bCount) {
+      return aCount - bCount;
+    }
+
+    return aSegment.localeCompare(bSegment);
+  }
+
+  if (sortMode === 'time_asc' || sortMode === 'time_desc') {
+    const aChronologicalValue = parseChronologicalLabel(aSegment);
+    const bChronologicalValue = parseChronologicalLabel(bSegment);
+
+    if (
+      aChronologicalValue !== null &&
+      bChronologicalValue !== null &&
+      aChronologicalValue !== bChronologicalValue
+    ) {
+      return sortMode === 'time_asc'
+        ? aChronologicalValue - bChronologicalValue
+        : bChronologicalValue - aChronologicalValue;
+    }
+
+    if (aChronologicalValue !== null && bChronologicalValue === null) {
+      return -1;
+    }
+
+    if (aChronologicalValue === null && bChronologicalValue !== null) {
+      return 1;
+    }
+
+    return aSegment.localeCompare(bSegment);
+  }
+
+  if (sortMode === 'label_desc') {
+    return bSegment.localeCompare(aSegment);
+  }
+
+  return aSegment.localeCompare(bSegment);
+}
+
+function sortGroups(groups: RegistrantViewGroup[], groupBy: GroupByFieldRef[]) {
   return [...groups].sort((a, b) => {
-    if (sortMode === 'size_desc') {
-      if (b.registrants.length !== a.registrants.length) {
-        return b.registrants.length - a.registrants.length;
-      }
+    const aSegments = a.key.split('|||');
+    const bSegments = b.key.split('|||');
+    const maxLevels = Math.max(groupBy.length, aSegments.length, bSegments.length);
 
-      return byLabelAsc(a, b);
+    for (let level = 0; level < maxLevels; level += 1) {
+      const sortMode = groupBy[level]?.groupSort ?? 'label_asc';
+      const aSegment = aSegments[level] ?? '';
+      const bSegment = bSegments[level] ?? '';
+
+      const compareResult = compareBySortMode(
+        aSegment,
+        bSegment,
+        sortMode,
+        a.registrants.length,
+        b.registrants.length,
+      );
+
+      if (compareResult !== 0) {
+        return compareResult;
+      }
     }
 
-    if (sortMode === 'size_asc') {
-      if (a.registrants.length !== b.registrants.length) {
-        return a.registrants.length - b.registrants.length;
-      }
-
-      return byLabelAsc(a, b);
-    }
-
-    if (sortMode === 'time_asc' || sortMode === 'time_desc') {
-      const aChronologicalValue = parseChronologicalLabel(a.label);
-      const bChronologicalValue = parseChronologicalLabel(b.label);
-
-      if (
-        aChronologicalValue !== null &&
-        bChronologicalValue !== null &&
-        aChronologicalValue !== bChronologicalValue
-      ) {
-        return sortMode === 'time_asc'
-          ? aChronologicalValue - bChronologicalValue
-          : bChronologicalValue - aChronologicalValue;
-      }
-
-      if (aChronologicalValue !== null && bChronologicalValue === null) {
-        return -1;
-      }
-
-      if (aChronologicalValue === null && bChronologicalValue !== null) {
-        return 1;
-      }
-
-      return byLabelAsc(a, b);
-    }
-
-    if (sortMode === 'label_desc') {
-      return b.label.localeCompare(a.label);
-    }
-
-    return byLabelAsc(a, b);
+    return a.label.localeCompare(b.label);
   });
 }
 
@@ -919,7 +945,7 @@ export function buildAttendeeView(
     }),
   );
 
-  const groups = sortGroups(unsortedGroups, config.groupSort ?? 'label_asc');
+  const groups = sortGroups(unsortedGroups, config.groupBy);
 
   return {
     filteredAttendees,

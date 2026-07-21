@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
@@ -32,7 +32,6 @@ const baseViewConfig: AttendeeViewConfig = {
   role: [],
   category: 'all',
   checkInStatus: 'all',
-  groupSort: 'label_asc',
   dynamicFilters: [],
   groupBy: [],
   visibleFields: [],
@@ -44,9 +43,9 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
     onRoleChange: vi.fn(),
     onCategoryChange: vi.fn(),
     onCheckInStatusChange: vi.fn(),
-    onGroupSortChange: vi.fn(),
     onAddGroupingLevel: vi.fn(),
     onGroupingFieldChange: vi.fn(),
+    onGroupingSortChange: vi.fn(),
     onMoveGroupingLevel: vi.fn(),
     onRemoveGroupingLevel: vi.fn(),
     onClearViewControls: vi.fn(),
@@ -94,16 +93,11 @@ describe('AttendanceViewControls', () => {
     fireEvent.change(screen.getByLabelText('Check-in status'), {
       target: { value: 'checked_in' },
     });
-    fireEvent.change(screen.getByLabelText('Group order'), {
-      target: { value: 'time_asc' },
-    });
-
     expect(handlers.onNameOrMemberQueryChange).toHaveBeenCalledWith('MID-42');
     expect(handlers.onRoleChange).toHaveBeenNthCalledWith(1, ['Volunteer']);
     expect(handlers.onRoleChange).toHaveBeenNthCalledWith(2, ['Member']);
     expect(handlers.onCategoryChange).toHaveBeenCalledWith('Youth');
     expect(handlers.onCheckInStatusChange).toHaveBeenCalledWith('checked_in');
-    expect(handlers.onGroupSortChange).toHaveBeenCalledWith('time_asc');
 
     expect(screen.getByRole('button', { name: 'Clear view controls' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Apply field filter' })).toBeDisabled();
@@ -115,8 +109,8 @@ describe('AttendanceViewControls', () => {
       viewConfig: {
         ...baseViewConfig,
         groupBy: [
-          { source: 'registration', fieldKey: 'service', label: 'Service' },
-          { source: 'attendance', fieldKey: 'area', label: 'Area' },
+          { source: 'registration', fieldKey: 'service', label: 'Service', groupSort: 'label_asc' },
+          { source: 'attendance', fieldKey: 'area', label: 'Area', groupSort: 'label_asc' },
         ],
       },
     });
@@ -127,10 +121,19 @@ describe('AttendanceViewControls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
     expect(handlers.onAddGroupingLevel).toHaveBeenCalledTimes(1);
 
-    fireEvent.change(screen.getAllByRole('combobox')[3], {
+    fireEvent.change(screen.getAllByRole('combobox')[2], {
       target: { value: 'registration:team' },
     });
     expect(handlers.onGroupingFieldChange).toHaveBeenCalledWith(0, 'registration:team');
+
+    fireEvent.change(screen.getByLabelText('Level 1 order'), {
+      target: { value: 'time_asc' },
+    });
+    expect(handlers.onGroupingSortChange).toHaveBeenCalledWith(0, 'time_asc');
+
+    const level2Order = screen.getByLabelText('Level 2 order');
+    expect(within(level2Order).queryByRole('option', { name: 'Largest' })).not.toBeInTheDocument();
+    expect(within(level2Order).queryByRole('option', { name: 'Smallest' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Up' })[1]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Down' })[0]);
