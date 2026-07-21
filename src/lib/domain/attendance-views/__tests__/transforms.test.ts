@@ -1534,4 +1534,105 @@ describe('attendance-views transforms', () => {
     expect(grouped.groups[0].label).toBe('North');
     expect(grouped.groups[0].registrants.map((item) => item.registration_id)).toEqual(['reg-1']);
   });
+
+  it('supports nested dynamicFilterExpression with group and not operators', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '9AM',
+            answer_number: null,
+          },
+        ],
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-area',
+            field_type: 'select',
+            field_key: 'area',
+            label: 'Area',
+            answer_text: 'North',
+            answer_number: null,
+          },
+        ],
+      }),
+      makeAttendee({
+        registration_id: 'reg-2',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '9AM',
+            answer_number: null,
+          },
+        ],
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-area',
+            field_type: 'select',
+            field_key: 'area',
+            label: 'Area',
+            answer_text: 'West',
+            answer_number: null,
+          },
+        ],
+      }),
+      makeAttendee({
+        registration_id: 'reg-3',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '12NN',
+            answer_number: null,
+          },
+        ],
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-area',
+            field_type: 'select',
+            field_key: 'area',
+            label: 'Area',
+            answer_text: 'West',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const serviceField = findField(fields, 'registration', 'service');
+    const areaField = findField(fields, 'attendance', 'area');
+
+    const result = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilterExpression: {
+        type: 'group',
+        op: 'and',
+        children: [
+          {
+            type: 'condition',
+            filter: { field: serviceField, value: '9AM' },
+          },
+          {
+            type: 'not',
+            child: {
+              type: 'condition',
+              filter: { field: areaField, value: 'North' },
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual(['reg-2']);
+  });
 });

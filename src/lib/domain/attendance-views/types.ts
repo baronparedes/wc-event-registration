@@ -22,6 +22,21 @@ export type DynamicFieldFilter = {
 
 export type DynamicFilterCombination = 'and' | 'or';
 
+export type DynamicFilterExpressionNode =
+  | {
+      type: 'condition';
+      filter: DynamicFieldFilter;
+    }
+  | {
+      type: 'group';
+      op: DynamicFilterCombination;
+      children: DynamicFilterExpressionNode[];
+    }
+  | {
+      type: 'not';
+      child: DynamicFilterExpressionNode;
+    };
+
 export type DynamicFieldOption = DynamicFieldRef & {
   token: string;
   values: string[];
@@ -46,6 +61,7 @@ export type AttendeeViewConfig = {
   checkInStatus: AttendeeSearchResult['check_in_status'] | 'all';
   dynamicFilterCombination?: DynamicFilterCombination;
   dynamicFilters: DynamicFieldFilter[];
+  dynamicFilterExpression?: DynamicFilterExpressionNode;
   groupBy: GroupByFieldRef[];
   visibleFields: DynamicFieldRef[];
 };

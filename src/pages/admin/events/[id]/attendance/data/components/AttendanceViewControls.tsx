@@ -41,6 +41,7 @@ type AttendanceViewControlsProps = {
   onDynamicFilterValueChange: (value: string) => void;
   onDynamicFilterCombinationChange: (value: DynamicFilterCombination) => void;
   onApplyDynamicFilter: () => void;
+  onApplyCustomFilterJson: (rawJson: string) => { ok: boolean; error?: string };
   onRemoveDynamicFilter: (token: string, value: string) => void;
   onToggleVisibleField: (token: string) => void;
 };
@@ -111,10 +112,13 @@ export function AttendanceViewControls({
   onDynamicFilterValueChange,
   onDynamicFilterCombinationChange,
   onApplyDynamicFilter,
+  onApplyCustomFilterJson,
   onRemoveDynamicFilter,
   onToggleVisibleField,
 }: AttendanceViewControlsProps) {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const [customFilterJson, setCustomFilterJson] = useState('');
+  const [customFilterJsonError, setCustomFilterJsonError] = useState<string | null>(null);
   const roleDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -164,6 +168,16 @@ export function AttendanceViewControls({
     }
 
     onRoleChange([...viewConfig.role, role]);
+  }
+
+  function handleApplyCustomJson() {
+    const result = onApplyCustomFilterJson(customFilterJson);
+    if (!result.ok) {
+      setCustomFilterJsonError(result.error ?? 'Unable to apply custom JSON filter.');
+      return;
+    }
+
+    setCustomFilterJsonError(null);
   }
 
   return (
@@ -491,6 +505,44 @@ export function AttendanceViewControls({
                 YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.
               </p>
             )}
+
+            <div className="md:col-span-3">
+              <label className="flex flex-col gap-1 text-sm text-muted">
+                Custom filter JSON
+                <textarea
+                  value={customFilterJson}
+                  onChange={(event) => {
+                    setCustomFilterJson(event.target.value);
+                    if (customFilterJsonError) {
+                      setCustomFilterJsonError(null);
+                    }
+                  }}
+                  placeholder='{"expression":{"type":"group","op":"or","children":[{"type":"condition","filter":{"token":"registration:service","value":"9AM"}},{"type":"not","child":{"type":"condition","filter":{"token":"attendance:area","value":"North"}}}]}}'
+                  rows={5}
+                  className="rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </label>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleApplyCustomJson}
+                  disabled={customFilterJson.trim().length === 0}
+                >
+                  Apply custom JSON filter
+                </Button>
+                <p className="text-xs text-muted">
+                  Supports arrays, dynamicFilterCombination/filters, or expression nodes
+                  (condition/group/not).
+                </p>
+              </div>
+              {customFilterJsonError && (
+                <p className="mt-2 text-xs text-red-600" role="alert">
+                  {customFilterJsonError}
+                </p>
+              )}
+            </div>
           </div>
 
           {viewConfig.dynamicFilters.length > 0 && (

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { DynamicFilterExpressionNode } from './types';
+
 const dynamicFieldRefSchema = z.object({
   source: z.enum(['registration', 'attendance', 'role', 'category']),
   fieldKey: z.string(),
@@ -18,6 +20,24 @@ const dynamicFieldFilterSchema = z.object({
   value: z.string(),
 });
 
+const dynamicFilterExpressionNodeSchema: z.ZodType<DynamicFilterExpressionNode> = z.lazy(() =>
+  z.union([
+    z.object({
+      type: z.literal('condition'),
+      filter: dynamicFieldFilterSchema,
+    }),
+    z.object({
+      type: z.literal('group'),
+      op: z.enum(['and', 'or']),
+      children: z.array(dynamicFilterExpressionNodeSchema).min(1),
+    }),
+    z.object({
+      type: z.literal('not'),
+      child: dynamicFilterExpressionNodeSchema,
+    }),
+  ]),
+);
+
 export const attendeeViewConfigSchema = z.object({
   nameOrMemberQuery: z.string().default(''),
   role: z.array(z.string()).default([]),
@@ -27,6 +47,7 @@ export const attendeeViewConfigSchema = z.object({
     .default('all'),
   dynamicFilterCombination: z.enum(['and', 'or']).default('and'),
   dynamicFilters: z.array(dynamicFieldFilterSchema).default([]),
+  dynamicFilterExpression: dynamicFilterExpressionNodeSchema.optional(),
   groupBy: z.array(groupByFieldRefSchema).default([]),
   visibleFields: z.array(dynamicFieldRefSchema).default([]),
 });

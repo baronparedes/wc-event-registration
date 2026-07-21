@@ -53,6 +53,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
     onDynamicFilterValueChange: vi.fn(),
     onDynamicFilterCombinationChange: vi.fn(),
     onApplyDynamicFilter: vi.fn(),
+    onApplyCustomFilterJson: vi.fn(() => ({ ok: true as const })),
     onRemoveDynamicFilter: vi.fn(),
     onToggleVisibleField: vi.fn(),
   };
@@ -173,6 +174,36 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onDynamicFilterCombinationChange).toHaveBeenCalledWith('or');
     expect(handlers.onDynamicFilterValueChange).toHaveBeenCalledWith('East');
     expect(handlers.onApplyDynamicFilter).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies custom JSON filter text and surfaces callback errors', () => {
+    const customJsonHandler = vi
+      .fn()
+      .mockReturnValueOnce({ ok: false as const, error: 'Invalid payload.' })
+      .mockReturnValueOnce({ ok: true as const });
+
+    renderControls({
+      hasActiveFilters: true,
+      onApplyCustomFilterJson: customJsonHandler,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
+    fireEvent.change(screen.getByLabelText('Custom filter JSON'), {
+      target: {
+        value:
+          '{"dynamicFilterCombination":"and","filters":[{"token":"attendance:area","value":"North"}]}',
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply custom JSON filter' }));
+    expect(customJsonHandler).toHaveBeenCalledWith(
+      '{"dynamicFilterCombination":"and","filters":[{"token":"attendance:area","value":"North"}]}',
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Invalid payload.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply custom JSON filter' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('toggles displayed field checkboxes from registration and attendance groups', () => {

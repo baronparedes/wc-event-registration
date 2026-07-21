@@ -16,6 +16,7 @@ export function buildAttendeeView(
         attendee,
         config.dynamicFilters,
         config.dynamicFilterCombination ?? 'and',
+        config.dynamicFilterExpression,
       ),
     );
 

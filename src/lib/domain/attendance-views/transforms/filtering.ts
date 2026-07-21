@@ -1,6 +1,11 @@
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 
-import type { AttendeeViewConfig, DynamicFieldFilter, DynamicFilterCombination } from '../types';
+import type {
+  AttendeeViewConfig,
+  DynamicFieldFilter,
+  DynamicFilterCombination,
+  DynamicFilterExpressionNode,
+} from '../types';
 import { findAnswerSummary } from './field-access';
 import {
   answerValue,
@@ -116,7 +121,12 @@ export function matchesDynamicFilters(
   attendee: AttendeeSearchResult,
   filters: DynamicFieldFilter[],
   combination: DynamicFilterCombination = 'and',
+  expression?: DynamicFilterExpressionNode,
 ): boolean {
+  if (expression) {
+    return evaluateDynamicFilterExpression(attendee, expression);
+  }
+
   if (filters.length === 0) {
     return true;
   }
@@ -146,4 +156,27 @@ export function matchesDynamicFilters(
   }
 
   return true;
+}
+
+export function evaluateDynamicFilterExpression(
+  attendee: AttendeeSearchResult,
+  expression: DynamicFilterExpressionNode,
+): boolean {
+  if (expression.type === 'condition') {
+    return matchesDynamicFilter(attendee, expression.filter);
+  }
+
+  if (expression.type === 'not') {
+    return !evaluateDynamicFilterExpression(attendee, expression.child);
+  }
+
+  if (expression.children.length === 0) {
+    return true;
+  }
+
+  if (expression.op === 'or') {
+    return expression.children.some((child) => evaluateDynamicFilterExpression(attendee, child));
+  }
+
+  return expression.children.every((child) => evaluateDynamicFilterExpression(attendee, child));
 }

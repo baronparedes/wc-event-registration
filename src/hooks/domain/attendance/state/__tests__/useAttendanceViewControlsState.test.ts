@@ -35,6 +35,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.category).toBe('all');
     expect(result.current.viewConfig.checkInStatus).toBe('all');
     expect(result.current.viewConfig.dynamicFilterCombination).toBe('and');
+    expect(result.current.viewConfig.dynamicFilterExpression).toBeUndefined();
     expect(result.current.viewConfig.visibleFields).toEqual([]);
     expect(result.current.dynamicFilterField).toBeNull();
     expect(result.current.hasActiveFilters).toBe(false);
@@ -314,6 +315,7 @@ describe('useAttendanceViewControlsState', () => {
       checkInStatus: 'all',
       dynamicFilterCombination: 'and',
       dynamicFilters: [],
+      dynamicFilterExpression: undefined,
       groupBy: [],
       visibleFields: [],
     });
@@ -367,6 +369,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig).toEqual({
       ...savedConfig,
       dynamicFilterCombination: 'and',
+      dynamicFilterExpression: undefined,
       groupBy: [
         savedConfig.groupBy[0],
         {
@@ -399,6 +402,143 @@ describe('useAttendanceViewControlsState', () => {
       source: 'category',
       fieldKey: 'category',
       label: 'Category',
+    });
+  });
+
+  it('applies custom dynamic filters from JSON payload', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    const payload = JSON.stringify({
+      dynamicFilterCombination: 'or',
+      filters: [
+        { token: 'registration:service', value: '9AM' },
+        { source: 'attendance', fieldKey: 'area', value: 'North' },
+      ],
+    });
+
+    let applyResult: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      applyResult = result.current.applyCustomFilterJson(payload);
+    });
+
+    expect(applyResult).toEqual({ ok: true, appliedCount: 2 });
+    expect(result.current.viewConfig.dynamicFilterCombination).toBe('or');
+    expect(result.current.viewConfig.dynamicFilters).toEqual([
+      {
+        field: {
+          source: 'registration',
+          fieldKey: 'service',
+          label: 'Service',
+          sortOrder: 0,
+          fieldType: undefined,
+        },
+        value: '9AM',
+      },
+      {
+        field: {
+          source: 'attendance',
+          fieldKey: 'area',
+          label: 'Area',
+          sortOrder: 0,
+          fieldType: undefined,
+        },
+        value: 'North',
+      },
+    ]);
+  });
+
+  it('returns errors for invalid custom filter JSON payloads', () => {
+    const { result } = renderHook(() => useAttendanceViewControlsState([serviceOption]));
+
+    let parseFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      parseFailure = result.current.applyCustomFilterJson('{invalid json');
+    });
+    expect(parseFailure).toEqual({ ok: false, error: 'Invalid JSON format.' });
+
+    let unknownFieldFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      unknownFieldFailure = result.current.applyCustomFilterJson(
+        JSON.stringify([{ token: 'registration:unknown', value: 'X' }]),
+      );
+    });
+    expect(unknownFieldFailure).toEqual({
+      ok: false,
+      error: 'Unknown filter field: registration:unknown',
+    });
+  });
+
+  it('supports expression payloads with nested group and not nodes', () => {
+    const { result } = renderHook(() =>
+      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+    );
+
+    const payload = JSON.stringify({
+      expression: {
+        type: 'group',
+        op: 'or',
+        children: [
+          {
+            type: 'condition',
+            filter: { token: 'registration:service', value: '9AM' },
+          },
+          {
+            type: 'not',
+            child: {
+              type: 'condition',
+              filter: {
+                source: 'attendance',
+                fieldKey: 'area',
+                value: 'North',
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    let applyResult: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      applyResult = result.current.applyCustomFilterJson(payload);
+    });
+
+    expect(applyResult).toEqual({ ok: true, appliedCount: 0 });
+    expect(result.current.viewConfig.dynamicFilterExpression).toEqual({
+      type: 'group',
+      op: 'or',
+      children: [
+        {
+          type: 'condition',
+          filter: {
+            field: {
+              source: 'registration',
+              fieldKey: 'service',
+              label: 'Service',
+              sortOrder: 0,
+              fieldType: undefined,
+            },
+            value: '9AM',
+          },
+        },
+        {
+          type: 'not',
+          child: {
+            type: 'condition',
+            filter: {
+              field: {
+                source: 'attendance',
+                fieldKey: 'area',
+                label: 'Area',
+                sortOrder: 0,
+                fieldType: undefined,
+              },
+              value: 'North',
+            },
+          },
+        },
+      ],
     });
   });
 });

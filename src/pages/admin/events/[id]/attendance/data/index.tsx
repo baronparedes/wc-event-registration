@@ -145,6 +145,7 @@ export function AdminAttendanceDataPage() {
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,
+    applyCustomFilterJson,
     removeDynamicFilter,
     toggleVisibleField,
     clearViewControls,
@@ -389,6 +390,7 @@ export function AdminAttendanceDataPage() {
           onDynamicFilterValueChange={setDynamicFilterValue}
           onDynamicFilterCombinationChange={setDynamicFilterCombination}
           onApplyDynamicFilter={addDynamicFilter}
+          onApplyCustomFilterJson={applyCustomFilterJson}
           onRemoveDynamicFilter={removeDynamicFilter}
           onToggleVisibleField={toggleVisibleField}
         />

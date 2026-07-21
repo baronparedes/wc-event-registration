@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { z } from 'zod';
+
 import {
   type AttendeeViewConfig,
   type AttendeeViewGroupSort,
@@ -17,9 +19,88 @@ const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   checkInStatus: 'all',
   dynamicFilterCombination: 'and',
   dynamicFilters: [],
+  dynamicFilterExpression: undefined,
   groupBy: [],
   visibleFields: [],
 };
+
+type RawCustomJsonFilter = {
+  token?: string;
+  source?: 'registration' | 'attendance';
+  fieldKey?: string;
+  value: string;
+};
+
+type RawCustomJsonExpressionNode =
+  | {
+      type: 'condition';
+      filter: RawCustomJsonFilter;
+    }
+  | {
+      type: 'group';
+      op: DynamicFilterCombination;
+      children: RawCustomJsonExpressionNode[];
+    }
+  | {
+      type: 'not';
+      child: RawCustomJsonExpressionNode;
+    };
+
+const customJsonFilterSchema: z.ZodType<RawCustomJsonFilter> = z
+  .object({
+    token: z.string().trim().min(1).optional(),
+    source: z.enum(['registration', 'attendance']).optional(),
+    fieldKey: z.string().trim().min(1).optional(),
+    value: z.string().trim().min(1),
+  })
+  .superRefine((value, ctx) => {
+    if (value.token) {
+      return;
+    }
+
+    if (!value.source || !value.fieldKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Each filter must provide token or source + fieldKey.',
+      });
+    }
+  });
+
+const customJsonExpressionNodeSchema: z.ZodType<RawCustomJsonExpressionNode> = z.lazy(() =>
+  z.union([
+    z.object({
+      type: z.literal('condition'),
+      filter: customJsonFilterSchema,
+    }),
+    z.object({
+      type: z.literal('group'),
+      op: z.enum(['and', 'or']),
+      children: z.array(customJsonExpressionNodeSchema).min(1),
+    }),
+    z.object({
+      type: z.literal('not'),
+      child: customJsonExpressionNodeSchema,
+    }),
+  ]),
+);
+
+const customJsonPayloadSchema = z.union([
+  z.array(customJsonFilterSchema),
+  z.object({
+    dynamicFilterCombination: z.enum(['and', 'or']).optional(),
+    combination: z.enum(['and', 'or']).optional(),
+    filters: z.array(customJsonFilterSchema).optional(),
+    dynamicFilters: z.array(customJsonFilterSchema).optional(),
+    expression: customJsonExpressionNodeSchema.optional(),
+  }),
+]);
+
+type ApplyCustomFilterJsonResult =
+  | { ok: true; appliedCount: number }
+  | { ok: false; error: string };
+
+type ParsedCustomJsonFilter = z.infer<typeof customJsonFilterSchema>;
+type ParsedCustomJsonExpressionNode = z.infer<typeof customJsonExpressionNodeSchema>;
 
 function normalizeGroupingSortByLevel(groupBy: AttendeeViewConfig['groupBy']) {
   return groupBy.map((field, index) => {
@@ -55,6 +136,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     viewConfig.category !== 'all' ||
     viewConfig.checkInStatus !== 'all' ||
     viewConfig.dynamicFilters.length > 0 ||
+    viewConfig.dynamicFilterExpression !== undefined ||
     viewConfig.groupBy.length > 0 ||
     viewConfig.visibleFields.length > 0;
 
@@ -108,10 +190,182 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
           ...current.dynamicFilters,
           { field: dynamicFilterField, value: normalizedValue },
         ],
+        dynamicFilterExpression: undefined,
       };
     });
 
     setDynamicFilterValue('');
+  }
+
+  function resolveCustomFilterField(filter: ParsedCustomJsonFilter) {
+    if (filter.token) {
+      return fromDynamicFieldToken(filter.token, dynamicFieldOptions);
+    }
+
+    return dynamicFieldOptions.find(
+      (field) => field.source === filter.source && field.fieldKey === filter.fieldKey,
+    );
+  }
+
+  function mapCustomFilter(filter: ParsedCustomJsonFilter) {
+    const field = resolveCustomFilterField(filter);
+    if (!field) {
+      const descriptor = filter.token ?? `${filter.source}:${filter.fieldKey}`;
+      return {
+        ok: false as const,
+        error: `Unknown filter field: ${descriptor}`,
+      };
+    }
+
+    return {
+      ok: true as const,
+      filter: {
+        field: {
+          source: field.source,
+          fieldKey: field.fieldKey,
+          label: field.label,
+          sortOrder: field.sortOrder,
+          fieldType: field.fieldType,
+        },
+        value: filter.value.trim(),
+      },
+    };
+  }
+
+  function mapExpressionNode(
+    node: ParsedCustomJsonExpressionNode,
+  ):
+    | { ok: true; node: NonNullable<AttendeeViewConfig['dynamicFilterExpression']> }
+    | { ok: false; error: string } {
+    if (node.type === 'condition') {
+      const mappedCondition = mapCustomFilter(node.filter);
+      if (!mappedCondition.ok) {
+        return mappedCondition;
+      }
+
+      return {
+        ok: true,
+        node: {
+          type: 'condition',
+          filter: mappedCondition.filter,
+        },
+      };
+    }
+
+    if (node.type === 'not') {
+      const mappedChild = mapExpressionNode(node.child);
+      if (!mappedChild.ok) {
+        return mappedChild;
+      }
+
+      return {
+        ok: true,
+        node: {
+          type: 'not',
+          child: mappedChild.node,
+        },
+      };
+    }
+
+    const mappedChildren: NonNullable<AttendeeViewConfig['dynamicFilterExpression']>[] = [];
+    for (const child of node.children) {
+      const mappedChild = mapExpressionNode(child);
+      if (!mappedChild.ok) {
+        return mappedChild;
+      }
+
+      mappedChildren.push(mappedChild.node);
+    }
+
+    return {
+      ok: true,
+      node: {
+        type: 'group',
+        op: node.op,
+        children: mappedChildren,
+      },
+    };
+  }
+
+  function applyCustomFilterJson(rawJson: string): ApplyCustomFilterJsonResult {
+    const trimmedJson = rawJson.trim();
+    if (!trimmedJson) {
+      return { ok: false, error: 'JSON input is empty.' };
+    }
+
+    let rawParsed: unknown;
+    try {
+      rawParsed = JSON.parse(trimmedJson);
+    } catch {
+      return { ok: false, error: 'Invalid JSON format.' };
+    }
+
+    const parsedPayload = customJsonPayloadSchema.safeParse(rawParsed);
+    if (!parsedPayload.success) {
+      return {
+        ok: false,
+        error: parsedPayload.error.issues[0]?.message ?? 'Invalid filter JSON payload.',
+      };
+    }
+
+    const payload = parsedPayload.data;
+    const filters = Array.isArray(payload)
+      ? payload
+      : (payload.dynamicFilters ?? payload.filters ?? []);
+    const nextCombination = Array.isArray(payload)
+      ? undefined
+      : (payload.dynamicFilterCombination ?? payload.combination);
+    const nextExpression = Array.isArray(payload) ? undefined : payload.expression;
+
+    if (!nextExpression && filters.length === 0) {
+      return {
+        ok: false,
+        error: 'No filters found. Provide filters/dynamicFilters or expression.',
+      };
+    }
+
+    const mappedFilters: AttendeeViewConfig['dynamicFilters'] = [];
+    for (const filter of filters) {
+      const mappedFilter = mapCustomFilter(filter);
+      if (!mappedFilter.ok) {
+        return mappedFilter;
+      }
+
+      mappedFilters.push(mappedFilter.filter);
+    }
+
+    const dedupedFilters = mappedFilters.filter((filter, index, all) => {
+      const firstIndex = all.findIndex(
+        (candidate) =>
+          candidate.field.source === filter.field.source &&
+          candidate.field.fieldKey === filter.field.fieldKey &&
+          candidate.value.toLowerCase() === filter.value.toLowerCase(),
+      );
+
+      return firstIndex === index;
+    });
+
+    let mappedExpression: AttendeeViewConfig['dynamicFilterExpression'] = undefined;
+    if (nextExpression) {
+      const expressionResult = mapExpressionNode(nextExpression);
+      if (!expressionResult.ok) {
+        return expressionResult;
+      }
+
+      mappedExpression = expressionResult.node;
+    }
+
+    setViewConfig((current) => ({
+      ...current,
+      dynamicFilterCombination: nextCombination ?? current.dynamicFilterCombination ?? 'and',
+      dynamicFilters: dedupedFilters,
+      dynamicFilterExpression: mappedExpression,
+    }));
+
+    setDynamicFilterFieldToken('');
+    setDynamicFilterValue('');
+
+    return { ok: true, appliedCount: dedupedFilters.length };
   }
 
   function removeDynamicFilter(token: string, value?: string) {
@@ -128,6 +382,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
         return filter.value !== value;
       }),
+      dynamicFilterExpression: undefined,
     }));
   }
 
@@ -177,6 +432,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setViewConfig({
       ...parsedConfig,
       groupBy: normalizeGroupingSortByLevel(parsedConfig.groupBy),
+      dynamicFilterExpression: parsedConfig.dynamicFilterExpression,
     });
     setDynamicFilterFieldToken('');
     setDynamicFilterValue('');
@@ -293,6 +549,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,
+    applyCustomFilterJson,
     removeDynamicFilter,
     toggleVisibleField,
     clearViewControls,
