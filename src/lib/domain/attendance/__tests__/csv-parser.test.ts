@@ -275,9 +275,9 @@ describe('attendance csv parser', () => {
 
   it('parses exported csv rows that contain quoted commas and multiline field values', () => {
     const csv = [
-      'attendee_kind,registration_id,public_registration_id,member_id,full_name,email,table_number,team_color',
-      'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,MID-001,"Doe, Jane",jane@example.com,12,red',
-      'public,,bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb,,"Guest Person",guest@example.com,"34\n35",blue',
+      'attendee_kind,registration_id,public_registration_id,member_id,full_name,email,role,category,table_number,team_color',
+      'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,MID-001,"Doe, Jane",jane@example.com,Staff,Adults,12,red',
+      'public,,bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb,,"Guest Person",guest@example.com,,,"34\n35",blue',
     ].join('\n');
 
     const parsed = parseCsvText(csv);
@@ -287,7 +287,19 @@ describe('attendance csv parser', () => {
 
     expect(parsed.data.rows).toHaveLength(2);
     expect(parsed.data.rows[0]?.full_name).toBe('Doe, Jane');
+    expect(parsed.data.rows[0]?.role).toBe('Staff');
+    expect(parsed.data.rows[0]?.category).toBe('Adults');
     expect(parsed.data.rows[1]?.table_number).toBe('34\n35');
+
+    const built = buildBulkAttendanceRowsFromCsv(parsed.data.rows, TEST_FIELDS);
+    expect(built.errors).toEqual([]);
+    expect(built.rows).toHaveLength(2);
+    expect(built.rows[0]?.answers).toEqual(
+      expect.objectContaining({
+        table_number: 12,
+        team_color: 'red',
+      }),
+    );
   });
 
   it('allows blank values for required attendance fields in bulk CSV rows', () => {

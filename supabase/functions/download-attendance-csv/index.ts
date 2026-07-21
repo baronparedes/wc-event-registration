@@ -40,6 +40,8 @@ type UserRow = {
   member_id: string | null;
   full_name: string;
   email: string | null;
+  role: string | null;
+  category: string | null;
 };
 
 type AttendanceAnswerRow = {
@@ -199,7 +201,7 @@ Deno.serve(async (req) => {
     const { data: users, error: userError } = memberUserIds.length
       ? await adminClient
           .from('users')
-          .select('id, member_id, full_name, email')
+          .select('id, member_id, full_name, email, role, category')
           .in('id', memberUserIds)
       : { data: [], error: null };
 
@@ -301,6 +303,8 @@ Deno.serve(async (req) => {
       'member_id',
       'full_name',
       'email',
+      'role',
+      'category',
       ...safeFields.map((field) => field.field_key),
     ];
 
@@ -327,6 +331,8 @@ Deno.serve(async (req) => {
           user.member_id ?? '',
           user.full_name,
           user.email ?? '',
+          user.role ?? '',
+          user.category ?? '',
           ...answerCells,
         ];
       })
@@ -352,6 +358,8 @@ Deno.serve(async (req) => {
         '',
         fullName || 'Guest Attendee',
         registration.email ?? '',
+        '',
+        '',
         ...answerCells,
       ];
     });
