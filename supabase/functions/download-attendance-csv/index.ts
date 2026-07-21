@@ -48,6 +48,7 @@ type EventAttendeeRow = {
   registration_id: string | null;
   public_registration_id: string | null;
   member_id: string | null;
+  member_metadata: unknown;
   full_name: string | null;
   email: string | null;
   role: string | null;
@@ -155,6 +156,22 @@ function buildRegistrationMetadata(registrationAnswers: RegistrationAnswerRow[] 
   return JSON.stringify(metadata);
 }
 
+function formatMetadataForCsv(metadata: unknown): string {
+  if (metadata === null || metadata === undefined) {
+    return '';
+  }
+
+  if (typeof metadata === 'string') {
+    return metadata;
+  }
+
+  try {
+    return JSON.stringify(metadata);
+  } catch {
+    return '';
+  }
+}
+
 Deno.serve(async (req) => {
   const guard = await useEdgeHook({
     req,
@@ -246,6 +263,7 @@ Deno.serve(async (req) => {
       'registration_id',
       'public_registration_id',
       'member_id',
+      'member_metadata',
       'full_name',
       'email',
       'role',
@@ -278,6 +296,7 @@ Deno.serve(async (req) => {
           ? (attendee.public_registration_id ?? attendee.registration_id ?? '')
           : (attendee.public_registration_id ?? ''),
         isPublicAttendee ? '' : (attendee.member_id ?? ''),
+        formatMetadataForCsv(attendee.member_metadata),
         attendee.full_name ?? (isPublicAttendee ? 'Guest Attendee' : ''),
         attendee.email ?? '',
         attendee.role ?? '',
