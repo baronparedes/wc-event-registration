@@ -413,8 +413,8 @@ export function AttendanceViewControls({
             </Button>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:col-span-2 lg:col-span-3">
-            <label className="flex flex-col gap-1 text-sm text-muted md:col-span-3 lg:col-span-1">
+          <div className="grid gap-3 md:grid-cols-3 md:col-span-2 lg:col-span-3">
+            <label className="flex flex-col gap-1 text-sm text-muted">
               Match mode
               <select
                 value={dynamicFilterCombination}
@@ -473,7 +473,7 @@ export function AttendanceViewControls({
               />
             </label>
 
-            <div className="flex items-end">
+            <div className="flex items-end md:col-span-3">
               <Button
                 type="button"
                 variant="outline"
@@ -486,7 +486,7 @@ export function AttendanceViewControls({
             </div>
 
             {(dynamicFilterFieldType === 'date' || dynamicFilterFieldType === 'datetime') && (
-              <p className="text-xs text-muted md:col-start-2 md:col-span-2">
+              <p className="text-xs text-muted md:col-span-3">
                 Tip: You can use date presets like UPCOMING_SUNDAY, MONTH_JULY,
                 YEAR_MONTH_2026_JULY, YEAR_2026, or PREVIOUS_3_WEEKS.
               </p>
