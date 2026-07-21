@@ -17,7 +17,6 @@ import {
   useAttendanceSettingsQuery,
   useAttendanceViewControlsState,
   useAttendeesLocalCacheQuery,
-  useExportAttendanceCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import {
@@ -32,7 +31,12 @@ import { buildAttendeeView, collectDynamicFieldOptions } from '@/lib/domain/atte
 import { canWriteAdminData } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-import { AttendanceDataEntryList, AttendanceViewControls, SavedViewsModal } from './components';
+import {
+  AttendanceDataEntryList,
+  AttendanceViewControls,
+  ExportAttendanceViewButton,
+  SavedViewsModal,
+} from './components';
 
 const SELECTED_VIEW_STORAGE_PREFIX = 'wc:attendance-data:selected-view';
 
@@ -231,31 +235,9 @@ export function AdminAttendanceDataPage() {
   }
 
   const attendanceEnabled = settings?.attendance_enabled ?? false;
-  const exportMutation = useExportAttendanceCSVMutation(id ?? '');
   const canWrite = canWriteAdminData(authState?.adminRole);
   const canManageViews = canManageAttendanceSavedViews(authState?.adminRole);
   const canExport = canExportAdminReports(authState?.adminRole);
-
-  async function handleExportCSV() {
-    if (!id || !attendanceEnabled) return;
-    try {
-      const { text, filename } = await exportMutation.mutateAsync();
-      const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename ?? `event-${id}-attendance.csv`;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      const { toast } = await import('sonner');
-      const message = error instanceof Error ? error.message : 'Failed to export attendance CSV.';
-      toast.error(message);
-    }
-  }
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
 
@@ -269,9 +251,13 @@ export function AdminAttendanceDataPage() {
             </Button>
           )}
           {canExport && (
-            <Button variant="outline" onClick={handleExportCSV} disabled={exportMutation.isPending}>
-              {exportMutation.isPending ? 'Exporting...' : 'Export Attendance CSV'}
-            </Button>
+            <ExportAttendanceViewButton
+              eventId={id}
+              attendanceEnabled={attendanceEnabled}
+              filteredAttendees={viewResult.filteredAttendees}
+              groups={viewResult.groups}
+              visibleFields={viewConfig.visibleFields}
+            />
           )}
           {canWrite && canRunBulkOps && (
             <Button asChild variant="outline">

@@ -20,7 +20,6 @@ const {
   mockUseAttendanceSavedViewsQuery,
   mockUpsertMutate,
   mockDeleteMutate,
-  mockExportMutateAsync,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockUseAdminAuthQuery: vi.fn(),
@@ -33,7 +32,6 @@ const {
   mockUseAttendanceSavedViewsQuery: vi.fn(),
   mockUpsertMutate: vi.fn(),
   mockDeleteMutate: vi.fn(),
-  mockExportMutateAsync: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/auth', async () => {
@@ -75,10 +73,6 @@ vi.mock('@/hooks/domain/attendance', async () => {
     useAttendanceSavedViewQuery: (...args: unknown[]) => mockUseAttendanceSavedViewQuery(...args),
     useAttendanceSavedViewsQuery: (...args: unknown[]) => mockUseAttendanceSavedViewsQuery(...args),
     useAttendeesLocalCacheQuery: (...args: unknown[]) => mockUseAttendeesLocalCacheQuery(...args),
-    useExportAttendanceCSVMutation: () => ({
-      mutateAsync: mockExportMutateAsync,
-      isPending: false,
-    }),
     useUpsertAttendanceSavedViewMutation: () => ({ mutate: mockUpsertMutate, isPending: false }),
     useDeleteAttendanceSavedViewMutation: () => ({ mutate: mockDeleteMutate, isPending: false }),
   };
@@ -140,8 +134,6 @@ describe('AdminAttendanceDataPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-
-    mockExportMutateAsync.mockResolvedValue({ text: 'header', filename: 'attendance.csv' });
 
     Object.defineProperty(URL, 'createObjectURL', {
       writable: true,
@@ -543,7 +535,7 @@ describe('AdminAttendanceDataPage', () => {
     expect(input.value).toBe('MID-001');
   });
 
-  it('export button calls mutateAsync when attendance is enabled', async () => {
+  it('exports attendance csv from the active view when attendance is enabled', async () => {
     renderPage();
 
     const exportButton = screen.getByRole('button', { name: 'Export Attendance CSV' });
@@ -552,7 +544,7 @@ describe('AdminAttendanceDataPage', () => {
     fireEvent.click(exportButton);
 
     await waitFor(() => {
-      expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
+      expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -577,7 +569,7 @@ describe('AdminAttendanceDataPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Export Attendance CSV' }));
 
     await waitFor(() => {
-      expect(mockExportMutateAsync).toHaveBeenCalledTimes(1);
+      expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     });
   });
 });

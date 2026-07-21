@@ -24,3 +24,5 @@ export {
   attendeeToRegistrant,
   buildAttendeeView,
 } from './transforms';
+
+export { buildAttendanceViewCsvExport } from './export';
