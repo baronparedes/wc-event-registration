@@ -1,6 +1,6 @@
 import { type ReactElement, Suspense, lazy } from 'react';
 
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS } from '@/config/constants';
@@ -140,6 +140,7 @@ function ResponsiveShellLayout() {
 
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const { data, isLoading } = useAdminAuthQuery();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -156,7 +157,9 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
   const isAuthenticated = data?.isAuthenticated ?? false;
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTE_PATHS.adminLogin} replace />;
+    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
+    const searchParams = new URLSearchParams({ redirect: redirectTarget });
+    return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
   }
 
   return children;
@@ -164,6 +167,7 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
 
 function RequireAdminWriteAccess({ children }: { children: ReactElement }) {
   const { data, isLoading } = useAdminAuthQuery();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -180,7 +184,9 @@ function RequireAdminWriteAccess({ children }: { children: ReactElement }) {
   const isAuthenticated = data?.isAuthenticated ?? false;
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTE_PATHS.adminLogin} replace />;
+    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
+    const searchParams = new URLSearchParams({ redirect: redirectTarget });
+    return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
   }
 
   if (!canWriteAdminData(data?.adminRole)) {

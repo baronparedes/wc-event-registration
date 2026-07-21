@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -18,10 +18,27 @@ const adminLoginSchema = z.object({
 
 type AdminLoginForm = z.infer<typeof adminLoginSchema>;
 
+function getSafeRedirectTarget(search: string): string {
+  const params = new URLSearchParams(search);
+  const redirectTarget = params.get('redirect');
+
+  if (!redirectTarget || !redirectTarget.startsWith('/') || redirectTarget.startsWith('//')) {
+    return ROUTE_PATHS.adminEvents;
+  }
+
+  if (redirectTarget.startsWith(ROUTE_PATHS.adminLogin)) {
+    return ROUTE_PATHS.adminEvents;
+  }
+
+  return redirectTarget;
+}
+
 export function AdminLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const loginMutation = useAdminLoginMutation();
   const { data: adminAuth, isLoading } = useAdminAuthQuery();
+  const redirectTarget = getSafeRedirectTarget(location.search);
 
   const form = useForm<AdminLoginForm>({
     resolver: zodResolver(adminLoginSchema),
@@ -33,15 +50,15 @@ export function AdminLoginPage() {
 
   useEffect(() => {
     if (!isLoading && adminAuth?.isAuthenticated) {
-      navigate(ROUTE_PATHS.adminEvents, { replace: true });
+      navigate(redirectTarget, { replace: true });
     }
-  }, [adminAuth?.isAuthenticated, isLoading, navigate]);
+  }, [adminAuth?.isAuthenticated, isLoading, navigate, redirectTarget]);
 
   async function handleSubmit(values: AdminLoginForm) {
     try {
       await loginMutation.mutateAsync(values);
       toast.success(TOAST_MESSAGES.adminSignInSuccess);
-      navigate(ROUTE_PATHS.adminEvents, { replace: true });
+      navigate(redirectTarget, { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure;
       toast.error(message);
