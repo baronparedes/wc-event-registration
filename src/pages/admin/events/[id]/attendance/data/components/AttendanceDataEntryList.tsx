@@ -181,8 +181,8 @@ export function AttendanceDataEntryList({
       const isCheckedIn = registrant.check_in_status === 'checked_in';
       const attendee = attendeesByRegistrantKey.get(rowKey);
       const gridClassName = canWrite
-        ? 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
-        : 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]';
+        ? 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-5'
+        : 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] print:grid-cols-5';
 
       return (
         <ListTableRow
@@ -192,7 +192,7 @@ export function AttendanceDataEntryList({
         >
           <ListTableCell colSpan={canWrite ? 6 : 5} className="px-6">
             <div className={gridClassName}>
-              <div>
+              <div className="print:col-span-2">
                 <span
                   role="img"
                   aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
@@ -210,7 +210,7 @@ export function AttendanceDataEntryList({
                   <p className="text-xs text-muted">Guest</p>
                 )}
                 {registrant.email && (
-                  <span className="ml-2 text-xs text-muted">{registrant.email}</span>
+                  <span className="ml-2 text-xs text-muted print:hidden">{registrant.email}</span>
                 )}
               </div>
               <div>
@@ -288,11 +288,11 @@ export function AttendanceDataEntryList({
                     <div
                       className={
                         canWrite
-                          ? 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
-                          : 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]'
+                          ? 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_auto] print:grid-cols-5'
+                          : 'grid items-center gap-4 grid-cols-1 lg:grid-cols-[minmax(14rem,2fr)_minmax(6rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)_minmax(7rem,1fr)] print:grid-cols-5'
                       }
                     >
-                      <div>Attendee</div>
+                      <div className="print:col-span-2">Attendee</div>
                       <div className="hidden lg:block print:block">RFID</div>
                       <div className="hidden lg:block print:block">Role</div>
                       <div className="hidden lg:block print:block">Category</div>
