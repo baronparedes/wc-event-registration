@@ -42,6 +42,17 @@ body {
 }
 
 @media print {
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+
   html,
   body,
   #root {
@@ -55,6 +66,11 @@ body {
 
   .attendance-visible-field-card {
     grid-column: span 1 / span 1 !important;
+  }
+
+  [aria-label='App navigation drawer'],
+  [aria-label='Close navigation drawer overlay'] {
+    display: none !important;
   }
 }
 

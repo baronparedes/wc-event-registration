@@ -44,13 +44,7 @@ export function ListTable({ className, density = 'default', ...props }: ListTabl
   return (
     <tableDensityContext.Provider value={density}>
       <div className="overflow-x-auto print:overflow-visible">
-        <table
-          className={joinClasses(
-            'w-full text-sm print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
-            className,
-          )}
-          {...props}
-        />
+        <table className={joinClasses('w-full text-sm', className)} {...props} />
       </div>
     </tableDensityContext.Provider>
   );
@@ -89,9 +83,9 @@ export function ListTableBody({ children, className, divider = 'default' }: List
 export function ListTableRow({ className, hover = 'default', ...props }: ListTableRowProps) {
   const hoverStyles: Record<ListTableRowHover, string> = {
     default:
-      'bg-white even:bg-slate-100 print:bg-white print:even:bg-white transition-all hover:bg-slate-300 hover:shadow-xs print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
+      'bg-white even:bg-slate-100 print:bg-transparent print:even:bg-transparent transition-all hover:bg-slate-300 hover:shadow-xs',
     muted:
-      'bg-white even:bg-slate-100/70 print:bg-white print:even:bg-white transition hover:bg-slate-300/90 print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]',
+      'bg-white even:bg-slate-100/70 print:bg-transparent print:even:bg-transparent transition hover:bg-slate-300/90',
     none: '',
   };
 
