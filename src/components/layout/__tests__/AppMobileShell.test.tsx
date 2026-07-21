@@ -32,10 +32,18 @@ vi.mock('../AppDrawerNavigation', () => ({
     isOpen: boolean;
     onClose: () => void;
     isAuthenticated: boolean;
+    adminRole?: 'admin' | 'super_admin' | 'slod' | null;
+    currentUserLabel?: string | null;
     onLogout: () => Promise<void>;
   }) =>
     props.isOpen ? (
       <div>
+        {props.currentUserLabel && (
+          <p>
+            Signed in as {props.currentUserLabel}
+            {props.adminRole ? ` (${props.adminRole})` : ''}
+          </p>
+        )}
         <a href={ROUTE_PATHS.home}>Events</a>
         {props.isAuthenticated ? (
           <>
@@ -89,13 +97,20 @@ describe('AppMobileShell', () => {
   });
 
   it('shows events entry in drawer', () => {
-    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: {
+        isAuthenticated: true,
+        adminRole: 'admin',
+        session: { user: { email: 'admin@example.com' } },
+      },
+    });
 
     renderShell('/');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
     expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', ROUTE_PATHS.home);
+    expect(screen.getByText('Signed in as admin@example.com (admin)')).toBeInTheDocument();
   });
 
   it('handles successful mobile sign out', async () => {

@@ -10,10 +10,23 @@ import { TOAST_MESSAGES } from '@/config/constants';
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 
+function getCurrentUserLabel(email?: string | null, phone?: string | null, userId?: string) {
+  return email ?? phone ?? userId ?? null;
+}
+
+function getSignedInText(userLabel: string, role?: string | null) {
+  return role ? `Signed in as ${userLabel} (${role})` : `Signed in as ${userLabel}`;
+}
+
 export function AppShell() {
   const { data: adminAuth } = useAdminAuthQuery();
   const logoutMutation = useAdminLogoutMutation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const currentUserLabel = getCurrentUserLabel(
+    adminAuth?.session?.user?.email,
+    adminAuth?.session?.user?.phone,
+    adminAuth?.session?.user?.id,
+  );
 
   async function handleLogout() {
     try {
@@ -42,15 +55,22 @@ export function AppShell() {
             </div>
           </div>
 
-          <button
-            type="button"
-            aria-label="Open app navigation drawer"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-text shadow-xs transition hover:bg-primary/10"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-            <span>Menu</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {adminAuth?.isAuthenticated && currentUserLabel && (
+              <p className="max-w-[20rem] truncate text-xs text-muted">
+                {getSignedInText(currentUserLabel, adminAuth?.adminRole)}
+              </p>
+            )}
+            <button
+              type="button"
+              aria-label="Open app navigation drawer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-text shadow-xs transition hover:bg-primary/10"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+              <span>Menu</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -59,6 +79,7 @@ export function AppShell() {
         onClose={() => setDrawerOpen(false)}
         isAuthenticated={adminAuth?.isAuthenticated ?? false}
         adminRole={adminAuth?.adminRole ?? null}
+        currentUserLabel={currentUserLabel}
         onLogout={handleLogout}
       />
 

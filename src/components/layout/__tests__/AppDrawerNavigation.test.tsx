@@ -19,6 +19,7 @@ function renderDrawer(options?: {
   isOpen?: boolean;
   isAuthenticated?: boolean;
   adminRole?: 'admin' | 'super_admin' | 'slod' | null;
+  currentUserLabel?: string | null;
   onClose?: () => void;
   onLogout?: () => Promise<void>;
 }) {
@@ -32,6 +33,7 @@ function renderDrawer(options?: {
         onClose={onClose}
         isAuthenticated={options?.isAuthenticated ?? true}
         adminRole={options?.adminRole ?? 'admin'}
+        currentUserLabel={options?.currentUserLabel ?? null}
         onLogout={onLogout}
       />
     </MemoryRouter>,
@@ -63,7 +65,10 @@ describe('AppDrawerNavigation', () => {
 
   it('shows admin links and handles sign out for authenticated users', async () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
-    const { onClose, onLogout } = renderDrawer({ isAuthenticated: true });
+    const { onClose, onLogout } = renderDrawer({
+      isAuthenticated: true,
+      currentUserLabel: 'admin@example.com',
+    });
 
     expect(screen.getByRole('link', { name: 'Manage Events' })).toHaveAttribute(
       'href',
@@ -73,6 +78,7 @@ describe('AppDrawerNavigation', () => {
       'href',
       ROUTE_PATHS.adminMembers,
     );
+    expect(screen.getByText('Signed in as admin@example.com (admin)')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
 

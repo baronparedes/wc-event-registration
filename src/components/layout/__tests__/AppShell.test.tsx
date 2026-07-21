@@ -32,10 +32,18 @@ vi.mock('../AppDrawerNavigation', () => ({
     isOpen: boolean;
     onClose: () => void;
     isAuthenticated: boolean;
+    adminRole?: 'admin' | 'super_admin' | 'slod' | null;
+    currentUserLabel?: string | null;
     onLogout: () => Promise<void>;
   }) =>
     props.isOpen ? (
       <div>
+        {props.currentUserLabel && (
+          <p>
+            Signed in as {props.currentUserLabel}
+            {props.adminRole ? ` (${props.adminRole})` : ''}
+          </p>
+        )}
         {props.isAuthenticated ? (
           <>
             <a href={ROUTE_PATHS.adminEvents}>Manage Events</a>
@@ -92,7 +100,13 @@ describe('AppShell', () => {
   });
 
   it('renders admin links for authenticated users', () => {
-    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: {
+        isAuthenticated: true,
+        adminRole: 'admin',
+        session: { user: { email: 'admin@example.com' } },
+      },
+    });
 
     renderShell('/admin/events');
 
@@ -106,6 +120,7 @@ describe('AppShell', () => {
       'href',
       ROUTE_PATHS.adminMembers,
     );
+    expect(screen.getAllByText('Signed in as admin@example.com (admin)').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 

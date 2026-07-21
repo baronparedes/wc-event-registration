@@ -23,6 +23,7 @@ type AppDrawerNavigationProps = {
   onClose: () => void;
   isAuthenticated: boolean;
   adminRole?: AdminRole | null;
+  currentUserLabel?: string | null;
   onLogout: () => Promise<void>;
 };
 
@@ -58,11 +59,16 @@ function DrawerNavLink({ to, label, onClose }: { to: string; label: string; onCl
   );
 }
 
+function getSignedInText(userLabel: string, role?: AdminRole | null) {
+  return role ? `Signed in as ${userLabel} (${role})` : `Signed in as ${userLabel}`;
+}
+
 export function AppDrawerNavigation({
   isOpen,
   onClose,
   isAuthenticated,
   adminRole = null,
+  currentUserLabel = null,
   onLogout,
 }: AppDrawerNavigationProps) {
   const location = useLocation();
@@ -201,6 +207,11 @@ export function AppDrawerNavigation({
 
           {isAuthenticated && (
             <div className="border-t border-border p-4">
+              {currentUserLabel && (
+                <p className="mb-3 truncate text-xs text-muted">
+                  {getSignedInText(currentUserLabel, adminRole)}
+                </p>
+              )}
               <Button
                 type="button"
                 variant="outline"

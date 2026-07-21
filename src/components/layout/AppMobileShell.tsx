@@ -10,10 +10,19 @@ import { TOAST_MESSAGES } from '@/config/constants';
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 
+function getCurrentUserLabel(email?: string | null, phone?: string | null, userId?: string) {
+  return email ?? phone ?? userId ?? null;
+}
+
 export function AppMobileShell() {
   const { data: adminAuth } = useAdminAuthQuery();
   const logoutMutation = useAdminLogoutMutation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const currentUserLabel = getCurrentUserLabel(
+    adminAuth?.session?.user?.email,
+    adminAuth?.session?.user?.phone,
+    adminAuth?.session?.user?.id,
+  );
 
   async function handleLogout() {
     try {
@@ -42,15 +51,17 @@ export function AppMobileShell() {
             </div>
           </div>
 
-          <button
-            type="button"
-            aria-label="Open app navigation drawer"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-text shadow-xs transition hover:bg-primary/10"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-            <span>Menu</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open app navigation drawer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-text shadow-xs transition hover:bg-primary/10"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+              <span>Menu</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -59,6 +70,7 @@ export function AppMobileShell() {
         onClose={() => setDrawerOpen(false)}
         isAuthenticated={adminAuth?.isAuthenticated ?? false}
         adminRole={adminAuth?.adminRole ?? null}
+        currentUserLabel={currentUserLabel}
         onLogout={handleLogout}
       />
 
