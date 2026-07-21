@@ -1,18 +1,8 @@
 begin;
 
-    create or replace function public.list_event_attendees_v2
-    (p_event_id uuid)
-returns table
-    (
-  attendance_enabled boolean,
-  results jsonb
-)
-language sql
-security definer
-stable
-    set search_path
-    = public
-as $$
+create or replace function public.list_event_attendees_v2 (p_event_id uuid) returns table (attendance_enabled boolean, results jsonb) language sql security definer stable
+set
+  search_path = public as $$
     with
         settings
         as
@@ -230,9 +220,10 @@ end as results
 from settings s;
 $$;
 
-grant execute on function public.list_event_attendees_v2
-(uuid) to authenticated;
-grant execute on function public.list_event_attendees_v2
-(uuid) to service_role;
+grant
+execute on function public.list_event_attendees_v2 (uuid) to authenticated;
+
+grant
+execute on function public.list_event_attendees_v2 (uuid) to service_role;
 
 commit;

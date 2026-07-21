@@ -24,10 +24,9 @@ create table public.users_import_staging (
   constraint users_import_staging_batch_row_unique unique (batch_id, row_number)
 );
 
-create index users_import_staging_batch_idx
-  on public.users_import_staging (batch_id);
-create index users_import_staging_batch_rfid_idx
-  on public.users_import_staging (batch_id, rfid);
+create index users_import_staging_batch_idx on public.users_import_staging (batch_id);
+
+create index users_import_staging_batch_rfid_idx on public.users_import_staging (batch_id, rfid);
 
 create table public.import_errors (
   id bigint generated always as identity primary key,
@@ -41,14 +40,10 @@ create table public.import_errors (
 );
 
 create index import_errors_batch_idx on public.import_errors (batch_id);
-create index import_errors_batch_row_idx
-  on public.import_errors (batch_id, row_number);
 
-create or replace function public.is_valid_email(email_input text, strict boolean default false)
-returns boolean
-language sql
-immutable
-as $$
+create index import_errors_batch_row_idx on public.import_errors (batch_id, row_number);
+
+create or replace function public.is_valid_email (email_input text, strict boolean default false) returns boolean language sql immutable as $$
   select case
     when email_input is null then true
     when length(trim(email_input)) = 0 then true
@@ -58,21 +53,18 @@ as $$
   end;
 $$;
 
-create or replace function public.process_members_import_batch(
+create or replace function public.process_members_import_batch (
   p_batch_id uuid,
   p_email_strict boolean default false
-)
-returns table (
+) returns table (
   total_rows integer,
   valid_rows integer,
   inserted_users integer,
   updated_users integer,
   error_rows integer
-)
-language plpgsql
-security definer
-set search_path = public
-as $$
+) language plpgsql security definer
+set
+  search_path = public as $$
 declare
   v_total_rows integer := 0;
   v_valid_rows integer := 0;

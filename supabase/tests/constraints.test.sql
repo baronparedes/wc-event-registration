@@ -1,9 +1,8 @@
 begin;
 
-create temporary table tap_results (
-  name text not null,
-  pass boolean not null
-) on commit drop;
+create temporary table tap_results (name text not null, pass boolean not null) on
+commit
+drop;
 
 create temporary table tap_fixture as
 select
@@ -13,20 +12,33 @@ select
   u_main.id as user_main_id,
   u_other.id as user_other_id,
   u_future.id as user_future_id
-from events e
-join events e_future on e_future.slug = 'future-event'
-join events e_closed on e_closed.slug = 'closed-event'
-cross join users u_main
-cross join users u_other
-cross join users u_future
-where e.slug = 'sample-event'
+from
+  events e
+  join events e_future on e_future.slug = 'future-event'
+  join events e_closed on e_closed.slug = 'closed-event'
+  cross join users u_main
+  cross join users u_other
+  cross join users u_future
+where
+  e.slug = 'sample-event'
   and u_main.member_id = '3865598676'
   and u_other.member_id = '1627890198'
   and u_future.member_id = '1628023334'
-limit 1;
+limit
+  1;
 
-insert into tap_results (name, pass)
-values ('Fixture records are available for constraints tests', (select count(*) = 1 from tap_fixture));
+insert into
+  tap_results (name, pass)
+values
+  (
+    'Fixture records are available for constraints tests',
+    (
+      select
+        count(*) = 1
+      from
+        tap_fixture
+    )
+  );
 
 do $$
 declare
@@ -200,8 +212,26 @@ begin
 end
 $$;
 
-select extensions.plan((select count(*)::integer from tap_results));
-select extensions.ok(pass, name) from tap_results order by name;
-select * from extensions.finish();
+select
+  extensions.plan (
+    (
+      select
+        count(*)::integer
+      from
+        tap_results
+    )
+  );
+
+select
+  extensions.ok (pass, name)
+from
+  tap_results
+order by
+  name;
+
+select
+  *
+from
+  extensions.finish ();
 
 rollback;

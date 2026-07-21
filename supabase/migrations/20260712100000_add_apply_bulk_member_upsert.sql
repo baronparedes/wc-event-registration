@@ -1,14 +1,8 @@
 begin;
 
-create or replace function public.apply_bulk_member_upsert(p_rows jsonb)
-returns table (
-  inserted_count integer,
-  updated_count integer
-)
-language plpgsql
-security definer
-set search_path = public
-as $$
+create or replace function public.apply_bulk_member_upsert (p_rows jsonb) returns table (inserted_count integer, updated_count integer) language plpgsql security definer
+set
+  search_path = public as $$
 declare
   v_row jsonb;
   v_operation text;
@@ -220,8 +214,10 @@ begin
 end;
 $$;
 
-grant execute on function public.apply_bulk_member_upsert(jsonb) to authenticated;
+grant
+execute on function public.apply_bulk_member_upsert (jsonb) to authenticated;
 
-grant execute on function public.apply_bulk_member_upsert(jsonb) to service_role;
+grant
+execute on function public.apply_bulk_member_upsert (jsonb) to service_role;
 
 commit;

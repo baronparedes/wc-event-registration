@@ -2,11 +2,15 @@ begin;
 
 create extension if not exists pgcrypto;
 
-create type public.event_status as enum ('draft', 'published', 'archived');
-create type public.duplicate_policy as enum ('block', 'allow_update');
-create type public.registration_mode as enum ('open', 'closed');
-create type public.registration_status as enum ('submitted', 'updated', 'cancelled');
-create type public.event_field_type as enum (
+create type public.event_status as enum('draft', 'published', 'archived');
+
+create type public.duplicate_policy as enum('block', 'allow_update');
+
+create type public.registration_mode as enum('open', 'closed');
+
+create type public.registration_status as enum('submitted', 'updated', 'cancelled');
+
+create type public.event_field_type as enum(
   'text',
   'textarea',
   'number',
@@ -21,10 +25,7 @@ create type public.event_field_type as enum (
   'boolean'
 );
 
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
+create or replace function public.set_updated_at () returns trigger language plpgsql as $$
 begin
   new.updated_at = now();
   return new;
@@ -49,14 +50,14 @@ create table public.users (
 );
 
 create unique index users_member_id_unique_idx on public.users (member_id);
-create unique index users_email_unique_ci_idx
-  on public.users ((lower(email)))
-  where email is not null;
+
+create unique index users_email_unique_ci_idx on public.users ((lower(email)))
+where
+  email is not null;
 
 create trigger users_set_updated_at
-before update on public.users
-for each row
-execute function public.set_updated_at();
+before update on public.users for each row
+execute function public.set_updated_at ();
 
 create table public.admins (
   id uuid primary key default gen_random_uuid(),
@@ -100,14 +101,14 @@ create table public.events (
 );
 
 create unique index events_slug_unique_idx on public.events (slug);
+
 create index events_status_idx on public.events (status);
-create index events_registration_window_idx
-  on public.events (registration_opens_at, registration_closes_at);
+
+create index events_registration_window_idx on public.events (registration_opens_at, registration_closes_at);
 
 create trigger events_set_updated_at
-before update on public.events
-for each row
-execute function public.set_updated_at();
+before update on public.events for each row
+execute function public.set_updated_at ();
 
 create table public.event_fields (
   id uuid primary key default gen_random_uuid(),
@@ -129,17 +130,15 @@ create table public.event_fields (
   constraint event_fields_display_order_non_negative check (display_order >= 0)
 );
 
-create unique index event_fields_event_key_unique_idx
-  on public.event_fields (event_id, field_key);
-create index event_fields_event_display_idx
-  on public.event_fields (event_id, display_order);
-create index event_fields_event_active_idx
-  on public.event_fields (event_id, is_active);
+create unique index event_fields_event_key_unique_idx on public.event_fields (event_id, field_key);
+
+create index event_fields_event_display_idx on public.event_fields (event_id, display_order);
+
+create index event_fields_event_active_idx on public.event_fields (event_id, is_active);
 
 create trigger event_fields_set_updated_at
-before update on public.event_fields
-for each row
-execute function public.set_updated_at();
+before update on public.event_fields for each row
+execute function public.set_updated_at ();
 
 create table public.registrations (
   id uuid primary key default gen_random_uuid(),
@@ -154,19 +153,19 @@ create table public.registrations (
   constraint registrations_source_not_blank check (length(trim(source)) > 0)
 );
 
-create unique index registrations_event_user_unique_idx
-  on public.registrations (event_id, user_id);
-create unique index registrations_event_idempotency_unique_idx
-  on public.registrations (event_id, idempotency_key)
-  where idempotency_key is not null;
-create index registrations_event_status_idx
-  on public.registrations (event_id, status);
+create unique index registrations_event_user_unique_idx on public.registrations (event_id, user_id);
+
+create unique index registrations_event_idempotency_unique_idx on public.registrations (event_id, idempotency_key)
+where
+  idempotency_key is not null;
+
+create index registrations_event_status_idx on public.registrations (event_id, status);
+
 create index registrations_user_idx on public.registrations (user_id);
 
 create trigger registrations_set_updated_at
-before update on public.registrations
-for each row
-execute function public.set_updated_at();
+before update on public.registrations for each row
+execute function public.set_updated_at ();
 
 create table public.registration_answers (
   id uuid primary key default gen_random_uuid(),
@@ -188,14 +187,12 @@ create table public.registration_answers (
   )
 );
 
-create unique index registration_answers_registration_field_unique_idx
-  on public.registration_answers (registration_id, event_field_id);
-create index registration_answers_field_idx
-  on public.registration_answers (event_field_id);
+create unique index registration_answers_registration_field_unique_idx on public.registration_answers (registration_id, event_field_id);
+
+create index registration_answers_field_idx on public.registration_answers (event_field_id);
 
 create trigger registration_answers_set_updated_at
-before update on public.registration_answers
-for each row
-execute function public.set_updated_at();
+before update on public.registration_answers for each row
+execute function public.set_updated_at ();
 
 commit;

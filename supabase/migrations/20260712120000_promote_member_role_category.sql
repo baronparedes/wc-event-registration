@@ -1,50 +1,46 @@
 begin;
 
 alter table public.users
-  add column if not exists role text not null default '',
-  add column if not exists category text not null default '';
+add column if not exists role text not null default '',
+add column if not exists category text not null default '';
 
 update public.users
-set
-  role = coalesce(
-    nullif(trim(role), ''),
-    case
-      when jsonb_typeof(metadata -> 'role') = 'string' then trim(metadata ->> 'role')
-      else ''
-    end,
-    ''
-  ),
-  category = coalesce(
-    nullif(trim(category), ''),
-    case
-      when jsonb_typeof(metadata -> 'category') = 'string' then trim(metadata ->> 'category')
-      else ''
-    end,
-    ''
-  ),
-  metadata = coalesce(metadata, '{}'::jsonb) - 'role' - 'category',
-  updated_at = now()
+set role = coalesce(
+  nullif(trim(role), ''),
+  case
+    when jsonb_typeof(metadata -> 'role') = 'string' then trim(metadata ->> 'role')
+    else ''
+  end,
+  ''
+),
+category = coalesce(
+  nullif(trim(category), ''),
+  case
+    when jsonb_typeof(metadata -> 'category') = 'string' then trim(metadata ->> 'category')
+    else ''
+  end,
+  ''
+),
+metadata = coalesce(metadata, '{}'::jsonb) - 'role' - 'category',
+updated_at = now()
 where
   nullif(trim(role), '') is null
   or nullif(trim(category), '') is null
   or metadata ? 'role'
   or metadata ? 'category';
 
-create or replace function public.process_members_import_batch(
+create or replace function public.process_members_import_batch (
   p_batch_id uuid,
   p_email_strict boolean default false
-)
-returns table (
+) returns table (
   total_rows integer,
   valid_rows integer,
   inserted_users integer,
   updated_users integer,
   error_rows integer
-)
-language plpgsql
-security definer
-set search_path = public
-as $$
+) language plpgsql security definer
+set
+  search_path = public as $$
 declare
   v_total_rows integer := 0;
   v_valid_rows integer := 0;
@@ -311,15 +307,9 @@ begin
 end;
 $$;
 
-create or replace function public.apply_bulk_member_upsert(p_rows jsonb)
-returns table (
-  inserted_count integer,
-  updated_count integer
-)
-language plpgsql
-security definer
-set search_path = public
-as $$
+create or replace function public.apply_bulk_member_upsert (p_rows jsonb) returns table (inserted_count integer, updated_count integer) language plpgsql security definer
+set
+  search_path = public as $$
 declare
   v_row jsonb;
   v_operation text;
