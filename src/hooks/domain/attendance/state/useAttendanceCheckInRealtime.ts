@@ -77,11 +77,21 @@ export function useAttendanceCheckInRealtime(
           const parsed = toCheckInEvent(
             payload as RealtimePostgresInsertPayload<AttendanceCheckInRow>,
           );
+
           if (!parsed) return;
+
           onCheckIn(parsed);
         },
       )
-      .subscribe();
+      .subscribe((status, error) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('[attendance-check-ins] realtime subscription issue', {
+            eventId,
+            status,
+            error,
+          });
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);

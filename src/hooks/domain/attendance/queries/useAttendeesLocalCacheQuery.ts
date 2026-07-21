@@ -153,6 +153,7 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
       const attendees = await fetchAllAttendees(eventId);
       const entry = buildCacheEntry(attendees);
       cacheStorage.set(entry);
+
       return entry;
     },
     enabled: Boolean(eventId),
@@ -162,6 +163,7 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
 
   const refresh = useCallback(() => {
     if (!eventId) return;
+
     cacheStorage.remove();
     void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminAttendeesLocalCache(eventId) });
   }, [cacheStorage, eventId, queryClient]);
