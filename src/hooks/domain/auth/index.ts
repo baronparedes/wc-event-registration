@@ -1,5 +1,7 @@
 export {
   ADMIN_AUTH_QUERY_KEY,
+  canExportAdminReports,
+  canManageAttendanceSavedViews,
   canWriteAdminData,
   type AdminAuthState,
   type AdminRole,

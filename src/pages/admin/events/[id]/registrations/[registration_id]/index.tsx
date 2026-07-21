@@ -13,6 +13,7 @@ import {
   toAdminEventDetail,
   toAdminEventRegistrations,
 } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
   useCancelRegistrationMutation,
@@ -20,6 +21,7 @@ import {
   useRegistrationDetailQuery,
 } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 function formatDate(dateString: string): string {
@@ -113,8 +115,10 @@ export function AdminRegistrationDetailPage() {
 
   const detailQuery = useRegistrationDetailQuery(registrationId ?? '');
   const eventQuery = useAdminEventQuery(eventId ?? '');
+  const { data: authState } = useAdminAuthQuery();
   const cancelMutation = useCancelRegistrationMutation(eventId ?? '');
   const reactivateMutation = useReactivateRegistrationMutation(eventId ?? '');
+  const canWrite = canWriteAdminData(authState?.adminRole);
 
   if (!eventId || !registrationId) {
     return <div>Invalid registration ID</div>;
@@ -198,15 +202,17 @@ export function AdminRegistrationDetailPage() {
     }
   };
 
-  const pageActions = canCancel ? (
-    <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
-      Cancel Registration
-    </Button>
-  ) : (
-    <Button variant="default" onClick={() => setShowReactivateDialog(true)}>
-      Reactivate Registration
-    </Button>
-  );
+  const pageActions = canWrite ? (
+    canCancel ? (
+      <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
+        Cancel Registration
+      </Button>
+    ) : (
+      <Button variant="default" onClick={() => setShowReactivateDialog(true)}>
+        Reactivate Registration
+      </Button>
+    )
+  ) : undefined;
 
   return (
     <>
@@ -325,48 +331,52 @@ export function AdminRegistrationDetailPage() {
         </AdminPageShell.Content>
       </AdminPageShell>
 
-      <ConfirmDialog
-        isOpen={showCancelDialog}
-        onCancel={() => setShowCancelDialog(false)}
-        title="Cancel Registration"
-        description={
-          <div className="space-y-4">
-            <p className="text-gray-700">
-              Are you sure you want to cancel this registration? This action cannot be undone.
-            </p>
-            <div className="rounded-lg bg-gray-50 p-3">
-              <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
-              <p className="text-sm text-gray-600">{member.member_id}</p>
-              <p className="text-sm text-gray-600">{member.email}</p>
+      {canWrite && (
+        <ConfirmDialog
+          isOpen={showCancelDialog}
+          onCancel={() => setShowCancelDialog(false)}
+          title="Cancel Registration"
+          description={
+            <div className="space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to cancel this registration? This action cannot be undone.
+              </p>
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
+                <p className="text-sm text-gray-600">{member.member_id}</p>
+                <p className="text-sm text-gray-600">{member.email}</p>
+              </div>
             </div>
-          </div>
-        }
-        confirmLabel="Cancel Registration"
-        confirmLoadingLabel="Cancelling..."
-        confirmVariant="destructive"
-        onConfirm={handleCancel}
-        isPending={cancelMutation.isPending}
-      />
+          }
+          confirmLabel="Cancel Registration"
+          confirmLoadingLabel="Cancelling..."
+          confirmVariant="destructive"
+          onConfirm={handleCancel}
+          isPending={cancelMutation.isPending}
+        />
+      )}
 
-      <ConfirmDialog
-        isOpen={showReactivateDialog}
-        onCancel={() => setShowReactivateDialog(false)}
-        title="Reactivate Registration"
-        description={
-          <div className="space-y-4">
-            <p className="text-gray-700">Restore this registration to active status?</p>
-            <div className="rounded-lg bg-gray-50 p-3">
-              <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
-              <p className="text-sm text-gray-600">{member.member_id}</p>
-              <p className="text-sm text-gray-600">{member.email}</p>
+      {canWrite && (
+        <ConfirmDialog
+          isOpen={showReactivateDialog}
+          onCancel={() => setShowReactivateDialog(false)}
+          title="Reactivate Registration"
+          description={
+            <div className="space-y-4">
+              <p className="text-gray-700">Restore this registration to active status?</p>
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
+                <p className="text-sm text-gray-600">{member.member_id}</p>
+                <p className="text-sm text-gray-600">{member.email}</p>
+              </div>
             </div>
-          </div>
-        }
-        confirmLabel="Reactivate Registration"
-        confirmLoadingLabel="Reactivating..."
-        onConfirm={handleReactivate}
-        isPending={reactivateMutation.isPending}
-      />
+          }
+          confirmLabel="Reactivate Registration"
+          confirmLoadingLabel="Reactivating..."
+          onConfirm={handleReactivate}
+          isPending={reactivateMutation.isPending}
+        />
+      )}
     </>
   );
 }

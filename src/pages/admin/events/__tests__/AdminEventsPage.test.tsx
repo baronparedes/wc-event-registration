@@ -6,15 +6,25 @@ import { AdminEventsPage } from '@/pages/admin/events';
 
 const {
   mockUseAdminEventsQuery,
+  mockUseAdminAuthQuery,
   mockGetCurrentPageFromCursor,
   mockGetPageCursor,
   mockPaginationProps,
 } = vi.hoisted(() => ({
   mockUseAdminEventsQuery: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
   mockGetPageCursor: vi.fn(),
   mockPaginationProps: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
@@ -79,6 +89,10 @@ vi.mock('@/pages/admin/events/components', () => ({
 describe('AdminEventsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockGetCurrentPageFromCursor.mockReturnValue(1);
     mockGetPageCursor.mockReturnValue(null);
     mockUseAdminEventsQuery.mockReturnValue({
@@ -261,5 +275,31 @@ describe('AdminEventsPage', () => {
     const beforeCalls = mockUseAdminEventsQuery.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(mockUseAdminEventsQuery.mock.calls.length).toBe(beforeCalls);
+  });
+
+  it('hides write controls for slod users while keeping read navigation', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminEventsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Fields' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Attendee Details' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/attendance/data',
+    );
+    expect(screen.getByRole('link', { name: 'Registrations' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/registrations',
+    );
   });
 });

@@ -24,7 +24,9 @@ import {
   UI_MESSAGES,
   toAdminMemberDetail,
 } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
 import { AddMemberDialog } from './components/AddMemberDialog';
@@ -32,6 +34,7 @@ import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
 
 export function AdminMembersPage() {
   const navigate = useNavigate();
+  const { data: authState } = useAdminAuthQuery();
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize);
   const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,6 +66,7 @@ export function AdminMembersPage() {
 
   const isLoading = membersQuery.isLoading;
   const error = membersQuery.error;
+  const canWrite = canWriteAdminData(authState?.adminRole);
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
@@ -105,18 +109,24 @@ export function AdminMembersPage() {
       <AdminPageShell.Header
         breadcrumbs={[{ label: 'Members' }]}
         title="Manage Members"
-        description="View and manage member profiles and details."
+        description={
+          canWrite
+            ? 'View and manage member profiles and details.'
+            : 'View member profiles and details.'
+        }
         actions={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
-            >
-              Upload CSV
-            </Button>
-            <AddMemberDialog />
-          </div>
+          canWrite ? (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
+              >
+                Upload CSV
+              </Button>
+              <AddMemberDialog />
+            </div>
+          ) : undefined
         }
       />
 
@@ -239,9 +249,9 @@ export function AdminMembersPage() {
                       <ListTableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-3">
                           <ActionLink to={toAdminMemberDetail(member.id)}>
-                            {member.is_active ? 'Edit' : 'View'}
+                            {canWrite && member.is_active ? 'Edit' : 'View'}
                           </ActionLink>
-                          {member.is_active && (
+                          {canWrite && member.is_active && (
                             <UpdateMemberIdDialog
                               memberId={member.id}
                               memberName={member.full_name}

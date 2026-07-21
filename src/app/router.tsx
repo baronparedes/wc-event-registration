@@ -230,11 +230,11 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMembers}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth>
               <LazyRoute>
                 <AdminMembersPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
@@ -250,11 +250,11 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMemberDetailPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth>
               <LazyRoute>
                 <AdminMemberDetailPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route

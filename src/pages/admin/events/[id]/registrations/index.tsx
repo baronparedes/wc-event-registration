@@ -13,8 +13,10 @@ import {
   toAdminEventDetail,
   toAdminEventPublicRegistrations,
 } from '@/config/constants';
+import { canExportAdminReports, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -22,6 +24,7 @@ import { CopyNamesButton, ExportButton, RegistrationsList, ViewNamesButton } fro
 
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
+  const { data: authState } = useAdminAuthQuery();
 
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminRegistrationsPageSize);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -69,6 +72,8 @@ export function AdminRegistrationsPage() {
   const isLoading = eventQuery.isLoading || registrationsQuery.isLoading;
   const error = eventQuery.error || registrationsQuery.error;
   const hasRegistrations = totalRegistrations > 0;
+  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canExport = canExportAdminReports(authState?.adminRole);
 
   if (error) {
     return (
@@ -132,7 +137,7 @@ export function AdminRegistrationsPage() {
         disabled={isLoading || !hasRegistrations}
       />
       <ViewNamesButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
-      <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
+      {canExport && <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />}
     </div>
   );
 
@@ -202,6 +207,7 @@ export function AdminRegistrationsPage() {
             eventId={eventId}
             isEventArchived={isEventArchived}
             searchTerm={normalizedSearchTerm}
+            canWrite={canWrite}
           />
 
           <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">

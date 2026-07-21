@@ -7,3 +7,11 @@ export function canWriteAdminData(role: AdminRole | null | undefined): boolean {
 export function canReadAdminData(role: AdminRole | null | undefined): boolean {
   return role != null;
 }
+
+export function canManageAttendanceSavedViews(role: AdminRole | null | undefined): boolean {
+  return role != null;
+}
+
+export function canExportAdminReports(role: AdminRole | null | undefined): boolean {
+  return role != null;
+}

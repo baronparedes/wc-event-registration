@@ -19,6 +19,7 @@ interface SavedViewsModalProps {
   currentViewId: string | null;
   onApplyView: (config: AttendeeViewConfig) => void;
   onViewDeleted: () => void;
+  canDelete?: boolean;
 }
 
 export function SavedViewsModal({
@@ -29,6 +30,7 @@ export function SavedViewsModal({
   currentViewId,
   onApplyView,
   onViewDeleted,
+  canDelete = true,
 }: SavedViewsModalProps) {
   const navigate = useNavigate();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -142,14 +144,16 @@ export function SavedViewsModal({
                     >
                       Apply
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteView(view.id)}
-                      className="text-xs px-2 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    {canDelete && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteView(view.id)}
+                        className="text-xs px-2 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -212,20 +216,22 @@ export function SavedViewsModal({
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteConfirm}
-        title="Delete Saved View"
-        description="Are you sure you want to delete this saved view? This action cannot be undone."
-        confirmLabel="Delete"
-        confirmLoadingLabel="Deleting..."
-        confirmVariant="destructive"
-        isPending={deleteMutation.isPending}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setDeleteViewId(null);
-        }}
-      />
+      {canDelete && (
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          title="Delete Saved View"
+          description="Are you sure you want to delete this saved view? This action cannot be undone."
+          confirmLabel="Delete"
+          confirmLoadingLabel="Deleting..."
+          confirmVariant="destructive"
+          isPending={deleteMutation.isPending}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setShowDeleteConfirm(false);
+            setDeleteViewId(null);
+          }}
+        />
+      )}
     </>
   );
 }

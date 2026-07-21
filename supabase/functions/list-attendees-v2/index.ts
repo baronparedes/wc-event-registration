@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
       functionName: 'list-attendees-v2',
       method: 'POST',
       requireAdmin: true,
+      allowedRoles: ['admin', 'super_admin', 'slod'],
       rateLimit: {
         scope: 'list-attendees',
         windowMs: RATE_LIMIT_PRESETS.listAttendees.windowMs,

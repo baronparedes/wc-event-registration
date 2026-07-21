@@ -20,10 +20,16 @@ import {
   useExportAttendanceCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
+import {
+  canExportAdminReports,
+  canManageAttendanceSavedViews,
+  useAdminAuthQuery,
+} from '@/hooks/domain/auth';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useLocalStorage } from '@/hooks/utils';
 import { buildAttendeeView, collectDynamicFieldOptions } from '@/lib/domain/attendance-views';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendanceDataEntryList, AttendanceViewControls, SavedViewsModal } from './components';
@@ -37,6 +43,7 @@ function getSelectedViewStorageKey(eventId: string): string {
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { data: authState } = useAdminAuthQuery();
   const [searchParams] = useSearchParams();
   const [savedViewsModalOpen, setSavedViewsModalOpen] = useState(false);
   const appliedViewIdRef = useRef<string | null>(null);
@@ -224,6 +231,9 @@ export function AdminAttendanceDataPage() {
 
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const exportMutation = useExportAttendanceCSVMutation(id ?? '');
+  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canManageViews = canManageAttendanceSavedViews(authState?.adminRole);
+  const canExport = canExportAdminReports(authState?.adminRole);
 
   async function handleExportCSV() {
     if (!id || !attendanceEnabled) return;
@@ -250,15 +260,19 @@ export function AdminAttendanceDataPage() {
 
   const actions = (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end print:hidden">
-      {id && (
+      {id && (canManageViews || canExport || canWrite) && (
         <>
-          <Button variant="outline" onClick={() => setSavedViewsModalOpen(true)}>
-            Views
-          </Button>
-          <Button variant="outline" onClick={handleExportCSV} disabled={exportMutation.isPending}>
-            {exportMutation.isPending ? 'Exporting...' : 'Export Attendance CSV'}
-          </Button>
-          {canRunBulkOps && (
+          {canManageViews && (
+            <Button variant="outline" onClick={() => setSavedViewsModalOpen(true)}>
+              Views
+            </Button>
+          )}
+          {canExport && (
+            <Button variant="outline" onClick={handleExportCSV} disabled={exportMutation.isPending}>
+              {exportMutation.isPending ? 'Exporting...' : 'Export Attendance CSV'}
+            </Button>
+          )}
+          {canWrite && canRunBulkOps && (
             <Button asChild variant="outline">
               <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
             </Button>
@@ -294,7 +308,7 @@ export function AdminAttendanceDataPage() {
           <p className="text-sm font-medium text-amber-800">Attendance tracking is disabled</p>
           <p className="mt-1 text-xs text-amber-700">
             Enable attendance tracking in{' '}
-            {id ? (
+            {id && canWrite ? (
               <ActionLink to={toAdminEventAttendance(id)}>Attendance Settings</ActionLink>
             ) : (
               'Attendance Settings'
@@ -308,7 +322,7 @@ export function AdminAttendanceDataPage() {
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 print:hidden">
           <p className="text-sm font-medium text-blue-800">No attendance fields configured</p>
           <p className="mt-1 text-xs text-blue-700">
-            {id ? (
+            {id && canWrite ? (
               <>
                 <ActionLink to={toAdminEventAttendanceFields(id)}>
                   Configure attendance fields
@@ -406,25 +420,29 @@ export function AdminAttendanceDataPage() {
             allAttendees={viewResult.filteredAttendees}
             registrationFields={registrationFields}
             visibleFields={viewConfig.visibleFields}
+            canWrite={canWrite}
           />
         )}
       </AdminPageShell.Content>
 
-      <SavedViewsModal
-        isOpen={savedViewsModalOpen}
-        onOpenChange={setSavedViewsModalOpen}
-        eventId={id ?? ''}
-        currentViewConfig={viewConfig}
-        currentViewId={viewIdParam}
-        onApplyView={applyViewConfig}
-        onViewDeleted={() => {
-          if (id) {
-            selectedViewStorage.remove();
-          }
-          appliedViewIdRef.current = null;
-          clearViewControls();
-        }}
-      />
+      {canManageViews && (
+        <SavedViewsModal
+          isOpen={savedViewsModalOpen}
+          onOpenChange={setSavedViewsModalOpen}
+          eventId={id ?? ''}
+          currentViewConfig={viewConfig}
+          currentViewId={viewIdParam}
+          onApplyView={applyViewConfig}
+          canDelete={canWrite}
+          onViewDeleted={() => {
+            if (id) {
+              selectedViewStorage.remove();
+            }
+            appliedViewIdRef.current = null;
+            clearViewControls();
+          }}
+        />
+      )}
     </AdminPageShell>
   );
 }

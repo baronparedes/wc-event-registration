@@ -68,7 +68,7 @@ export function AppDrawerNavigation({
   const location = useLocation();
   const eventId = getEventIdFromPath(location.pathname);
   const { data: selectedEvent } = useAdminEventQuery(eventId ?? undefined);
-  const canWrite = adminRole ? canWriteAdminData(adminRole) : isAuthenticated;
+  const canWrite = canWriteAdminData(adminRole);
 
   return (
     <>
@@ -115,13 +115,11 @@ export function AppDrawerNavigation({
                     label="Manage Events"
                     onClose={onClose}
                   />
-                  {canWrite && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminMembers}
-                      label="Manage Members"
-                      onClose={onClose}
-                    />
-                  )}
+                  <DrawerNavLink
+                    to={ROUTE_PATHS.adminMembers}
+                    label="Manage Members"
+                    onClose={onClose}
+                  />
                 </>
               ) : (
                 <DrawerNavLink to={ROUTE_PATHS.adminLogin} label="Sign In" onClose={onClose} />

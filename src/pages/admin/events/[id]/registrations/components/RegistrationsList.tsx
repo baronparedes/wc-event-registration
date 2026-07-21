@@ -28,6 +28,7 @@ interface RegistrationsListProps {
   eventId: string;
   isEventArchived?: boolean;
   searchTerm?: string;
+  canWrite?: boolean;
 }
 
 function getStatusBadge(status: string) {
@@ -76,6 +77,7 @@ export function RegistrationsList({
   eventId,
   isEventArchived,
   searchTerm,
+  canWrite = true,
 }: RegistrationsListProps) {
   const navigate = useNavigate();
   const [selectedRegistration, setSelectedRegistration] =
@@ -171,37 +173,40 @@ export function RegistrationsList({
                   <ActionLink to={toAdminRegistrationDetail(eventId, registration.id)}>
                     View
                   </ActionLink>
-                  {registration.status === 'cancelled' ? (
-                    <button
-                      onClick={() => handleReactivateClick(registration)}
-                      disabled={isEventArchived}
-                      className={`text-sm font-medium ${
-                        isEventArchived
-                          ? 'cursor-not-allowed text-gray-400'
-                          : 'text-green-700 hover:text-green-800'
-                      }`}
-                      title={
-                        isEventArchived ? 'Cannot reactivate registrations for archived events' : ''
-                      }
-                    >
-                      Reactivate
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleCancelClick(registration)}
-                      disabled={isEventArchived}
-                      className={`text-sm font-medium ${
-                        isEventArchived
-                          ? 'cursor-not-allowed text-gray-400'
-                          : 'text-red-600 hover:text-red-700'
-                      }`}
-                      title={
-                        isEventArchived ? 'Cannot cancel registrations for archived events' : ''
-                      }
-                    >
-                      Cancel
-                    </button>
-                  )}
+                  {canWrite &&
+                    (registration.status === 'cancelled' ? (
+                      <button
+                        onClick={() => handleReactivateClick(registration)}
+                        disabled={isEventArchived}
+                        className={`text-sm font-medium ${
+                          isEventArchived
+                            ? 'cursor-not-allowed text-gray-400'
+                            : 'text-green-700 hover:text-green-800'
+                        }`}
+                        title={
+                          isEventArchived
+                            ? 'Cannot reactivate registrations for archived events'
+                            : ''
+                        }
+                      >
+                        Reactivate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleCancelClick(registration)}
+                        disabled={isEventArchived}
+                        className={`text-sm font-medium ${
+                          isEventArchived
+                            ? 'cursor-not-allowed text-gray-400'
+                            : 'text-red-600 hover:text-red-700'
+                        }`}
+                        title={
+                          isEventArchived ? 'Cannot cancel registrations for archived events' : ''
+                        }
+                      >
+                        Cancel
+                      </button>
+                    ))}
                 </div>
               </ListTableCell>
             </ListTableRow>
@@ -209,7 +214,7 @@ export function RegistrationsList({
         </ListTableBody>
       </ListTable>
 
-      {selectedRegistration && (
+      {canWrite && selectedRegistration && (
         <CancelRegistrationDialog
           registration={selectedRegistration}
           isOpen={showCancelDialog}
@@ -221,7 +226,7 @@ export function RegistrationsList({
         />
       )}
 
-      {selectedRegistration && (
+      {canWrite && selectedRegistration && (
         <ConfirmDialog
           isOpen={showReactivateDialog}
           onCancel={() => {
