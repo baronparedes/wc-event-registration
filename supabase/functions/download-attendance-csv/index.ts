@@ -20,45 +20,46 @@ type AttendanceFieldRow = {
   field_key: string;
   field_type: string;
   label: string;
-};
-
-type RegistrationRow = {
-  id: string;
-  user_id: string;
-  status: 'submitted' | 'updated' | 'cancelled';
-  submitted_at: string;
-};
-
-type PublicRegistrationRow = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  status: 'submitted' | 'updated' | 'cancelled';
-  submitted_at: string;
-};
-
-type UserRow = {
-  id: string;
-  member_id: string | null;
-  full_name: string;
-  email: string | null;
-  role: string | null;
-  category: string | null;
+  is_active: boolean;
+  display_order: number;
 };
 
 type AttendanceAnswerRow = {
-  registration_id: string;
   attendance_field_id: string;
+  field_key: string;
+  field_type: string;
   answer_text: string | null;
   answer_number: number | null;
 };
 
-type PublicAttendanceAnswerRow = {
-  public_registration_id: string;
-  attendance_field_id: string;
+type RegistrationAnswerRow = {
+  field_key: string;
   answer_text: string | null;
   answer_number: number | null;
+};
+
+type EventContextRow = {
+  title: string | null;
+  attendance_fields: AttendanceFieldRow[] | null;
+};
+
+type EventAttendeeRow = {
+  attendee_kind: 'registered' | 'public';
+  registration_id: string | null;
+  public_registration_id: string | null;
+  member_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  role: string | null;
+  category: string | null;
+  submitted_at: string | null;
+  attendance_answers: AttendanceAnswerRow[] | null;
+  registration_answers: RegistrationAnswerRow[] | null;
+};
+
+type EventAttendeesRpcResponse = {
+  attendance_enabled: boolean;
+  results: EventAttendeeRow[] | null;
 };
 
 const PH_TIME_ZONE = 'Asia/Manila';
@@ -109,6 +110,51 @@ function formatAnswerValue(
   return answerText;
 }
 
+function buildAnswerCellsAndMetadata(
+  fields: AttendanceFieldRow[],
+  answersByField: Map<string, { answer_text: string | null; answer_number: number | null }>,
+): { answerCells: string[]; metadataJson: string } {
+  const answerCells: string[] = [];
+  const metadata: Record<string, string> = {};
+
+  for (let i = 0; i < fields.length; i += 1) {
+    const field = fields[i];
+    const answer = answersByField.get(field.id);
+    const formattedAnswer = formatAnswerValue(
+      field.field_type,
+      answer?.answer_text ?? null,
+      answer?.answer_number ?? null,
+    );
+
+    answerCells.push(formattedAnswer);
+    if (formattedAnswer) {
+      metadata[field.field_key] = formattedAnswer;
+    }
+  }
+
+  return { answerCells, metadataJson: JSON.stringify(metadata) };
+}
+
+function buildRegistrationMetadata(registrationAnswers: RegistrationAnswerRow[] | null): string {
+  if (!registrationAnswers?.length) {
+    return JSON.stringify({});
+  }
+
+  const metadata: Record<string, string> = {};
+  registrationAnswers.forEach((answer) => {
+    const value =
+      answer.answer_number !== null && answer.answer_number !== undefined
+        ? String(answer.answer_number)
+        : (answer.answer_text ?? '');
+
+    if (value) {
+      metadata[answer.field_key] = value;
+    }
+  });
+
+  return JSON.stringify(metadata);
+}
+
 Deno.serve(async (req) => {
   const guard = await useEdgeHook({
     req,
@@ -133,21 +179,17 @@ Deno.serve(async (req) => {
     const { event_id }: RequestPayload = guard.data;
     const adminClient = guard.client;
 
-    const { data: eventData } = await adminClient
+    const { data: eventContextData, error: eventContextError } = await adminClient
       .from('events')
-      .select('title')
+      .select(
+        'title, attendance_fields(id, field_key, field_type, label, is_active, display_order)',
+      )
       .eq('id', event_id)
       .single();
 
-    const { data: settingsData, error: settingsError } = await adminClient
-      .from('attendance_settings')
-      .select('attendance_enabled')
-      .eq('event_id', event_id)
-      .maybeSingle();
-
-    if (settingsError) {
+    if (eventContextError || !eventContextData) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read attendance settings' }),
+        JSON.stringify({ success: false, error: 'Failed to read event attendance context' }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -155,9 +197,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!settingsData?.attendance_enabled) {
+    const eventContext = eventContextData as EventContextRow;
+
+    const safeFields = ((eventContext.attendance_fields ?? []) as AttendanceFieldRow[])
+      .filter((field) => field.is_active)
+      .sort((a, b) => a.display_order - b.display_order);
+
+    const rpc = adminClient.rpc.bind(adminClient) as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => { single: () => PromiseLike<{ data: unknown; error: unknown }> };
+
+    const { data: attendeesData, error: attendeesError } = await rpc('list_event_attendees_v2', {
+      p_event_id: event_id,
+    }).single();
+
+    if (attendeesError || !attendeesData) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Attendance tracking is disabled for this event' }),
+        JSON.stringify({ success: false, error: 'Failed to read event attendees' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    const attendeePayload = attendeesData as EventAttendeesRpcResponse;
+    if (!attendeePayload.attendance_enabled) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Attendance tracking is disabled for this event.',
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -165,141 +236,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: fields, error: fieldError } = await adminClient
-      .from('attendance_fields')
-      .select('id, field_key, field_type, label')
-      .eq('event_id', event_id)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
-
-    if (fieldError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read attendance fields' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const safeFields = (fields ?? []) as AttendanceFieldRow[];
-
-    const { data: registrations, error: registrationError } = await adminClient
-      .from('registrations')
-      .select('id, user_id, status, submitted_at')
-      .eq('event_id', event_id)
-      .in('status', ['submitted', 'updated']);
-
-    if (registrationError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read member registrations' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const memberRegistrations = (registrations ?? []) as RegistrationRow[];
-    const memberUserIds = memberRegistrations.map((registration) => registration.user_id);
-
-    const { data: users, error: userError } = memberUserIds.length
-      ? await adminClient
-          .from('users')
-          .select('id, member_id, full_name, email, role, category')
-          .in('id', memberUserIds)
-      : { data: [], error: null };
-
-    if (userError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read member details' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const { data: publicRegistrations, error: publicRegistrationError } = await adminClient
-      .from('public_registrations')
-      .select('id, first_name, last_name, email, status, submitted_at')
-      .eq('event_id', event_id)
-      .neq('status', 'cancelled');
-
-    if (publicRegistrationError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read public registrations' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const safePublicRegistrations = (publicRegistrations ?? []) as PublicRegistrationRow[];
-
-    const memberRegistrationIds = memberRegistrations.map((registration) => registration.id);
-    const publicRegistrationIds = safePublicRegistrations.map((registration) => registration.id);
-
-    const { data: memberAnswers, error: memberAnswerError } =
-      memberRegistrationIds.length && safeFields.length
-        ? await adminClient
-            .from('attendance_answers')
-            .select('registration_id, attendance_field_id, answer_text, answer_number')
-            .in('registration_id', memberRegistrationIds)
-            .in(
-              'attendance_field_id',
-              safeFields.map((field) => field.id),
-            )
-        : { data: [], error: null };
-
-    if (memberAnswerError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read member attendance answers' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const { data: publicAnswers, error: publicAnswerError } =
-      publicRegistrationIds.length && safeFields.length
-        ? await adminClient
-            .from('public_attendance_answers')
-            .select('public_registration_id, attendance_field_id, answer_text, answer_number')
-            .in('public_registration_id', publicRegistrationIds)
-            .in(
-              'attendance_field_id',
-              safeFields.map((field) => field.id),
-            )
-        : { data: [], error: null };
-
-    if (publicAnswerError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read public attendance answers' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    const userById = new Map(((users ?? []) as UserRow[]).map((user) => [user.id, user]));
-
-    const memberAnswersByTarget = new Map<string, Map<string, AttendanceAnswerRow>>();
-    ((memberAnswers ?? []) as AttendanceAnswerRow[]).forEach((answer) => {
-      const current = memberAnswersByTarget.get(answer.registration_id) ?? new Map();
-      current.set(answer.attendance_field_id, answer);
-      memberAnswersByTarget.set(answer.registration_id, current);
-    });
-
-    const publicAnswersByTarget = new Map<string, Map<string, PublicAttendanceAnswerRow>>();
-    ((publicAnswers ?? []) as PublicAttendanceAnswerRow[]).forEach((answer) => {
-      const current = publicAnswersByTarget.get(answer.public_registration_id) ?? new Map();
-      current.set(answer.attendance_field_id, answer);
-      publicAnswersByTarget.set(answer.public_registration_id, current);
-    });
+    const attendees = (
+      Array.isArray(attendeePayload.results) ? attendeePayload.results : []
+    ) as EventAttendeeRow[];
 
     const header = [
       'attendee_kind',
@@ -311,72 +250,48 @@ Deno.serve(async (req) => {
       'email',
       'role',
       'category',
+      'registration_answers_metadata',
       ...safeFields.map((field) => field.field_key),
     ];
 
-    const memberRows = memberRegistrations
-      .map((registration) => {
-        const user = userById.get(registration.user_id);
-        if (!user) return null;
-
-        const answersByField = memberAnswersByTarget.get(registration.id) ?? new Map();
-
-        const answerCells = safeFields.map((field) => {
-          const answer = answersByField.get(field.id);
-          return formatAnswerValue(
-            field.field_type,
-            answer?.answer_text ?? null,
-            answer?.answer_number ?? null,
-          );
+    const rows = attendees.map((attendee) => {
+      const answersByField = new Map<
+        string,
+        { answer_text: string | null; answer_number: number | null }
+      >();
+      (attendee.attendance_answers ?? []).forEach((answer) => {
+        answersByField.set(answer.attendance_field_id, {
+          answer_text: answer.answer_text,
+          answer_number: answer.answer_number,
         });
-
-        return [
-          'registered',
-          formatTimestampInTimeZone(registration.submitted_at, PH_TIME_ZONE, 'PHT'),
-          registration.id,
-          '',
-          user.member_id ?? '',
-          user.full_name,
-          user.email ?? '',
-          user.role ?? '',
-          user.category ?? '',
-          ...answerCells,
-        ];
-      })
-      .filter((row): row is string[] => Array.isArray(row));
-
-    const publicRows = safePublicRegistrations.map((registration) => {
-      const fullName = `${registration.first_name ?? ''} ${registration.last_name ?? ''}`.trim();
-      const answersByField = publicAnswersByTarget.get(registration.id) ?? new Map();
-
-      const answerCells = safeFields.map((field) => {
-        const answer = answersByField.get(field.id);
-        return formatAnswerValue(
-          field.field_type,
-          answer?.answer_text ?? null,
-          answer?.answer_number ?? null,
-        );
       });
 
+      const { answerCells } = buildAnswerCellsAndMetadata(safeFields, answersByField);
+      const metadataJson = buildRegistrationMetadata(attendee.registration_answers ?? null);
+
+      const isPublicAttendee = attendee.attendee_kind === 'public';
       return [
-        'public',
-        formatTimestampInTimeZone(registration.submitted_at, PH_TIME_ZONE, 'PHT'),
-        '',
-        registration.id,
-        '',
-        fullName || 'Guest Attendee',
-        registration.email ?? '',
-        '',
-        '',
+        attendee.attendee_kind,
+        formatTimestampInTimeZone(attendee.submitted_at ?? '', PH_TIME_ZONE, 'PHT'),
+        isPublicAttendee ? '' : (attendee.registration_id ?? ''),
+        isPublicAttendee
+          ? (attendee.public_registration_id ?? attendee.registration_id ?? '')
+          : (attendee.public_registration_id ?? ''),
+        isPublicAttendee ? '' : (attendee.member_id ?? ''),
+        attendee.full_name ?? (isPublicAttendee ? 'Guest Attendee' : ''),
+        attendee.email ?? '',
+        attendee.role ?? '',
+        attendee.category ?? '',
+        metadataJson,
         ...answerCells,
       ];
     });
 
-    const csvRows = [header, ...memberRows, ...publicRows]
-      .map((row) => row.map(escapeCsvField).join(','))
-      .join('\n');
+    const csvRows = [header, ...rows].map((row) => row.map(escapeCsvField).join(',')).join('\n');
 
-    const eventTitle = eventData?.title ? sanitizeFilenamePart(String(eventData.title)) : 'event';
+    const eventTitle = eventContext.title
+      ? sanitizeFilenamePart(String(eventContext.title))
+      : 'event';
     const timestamp = buildUtcTimestampForFilename(new Date());
     const filename = `${eventTitle || 'event'}-attendance-data-${timestamp}.csv`;
 
