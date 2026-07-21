@@ -197,7 +197,7 @@ export function AttendanceDataEntryList({
                   role="img"
                   aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
                   title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full mr-2 ${
+                  className={`mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full print:hidden ${
                     isCheckedIn
                       ? 'bg-primary text-white'
                       : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
@@ -271,7 +271,7 @@ export function AttendanceDataEntryList({
         {resolvedGroups.map((group) => (
           <section
             key={group.key}
-            className="rounded-2xl border border-border bg-surface print:[break-inside:auto] print:[page-break-inside:auto]"
+            className="overflow-hidden rounded-2xl border border-border bg-surface print:[break-inside:auto] print:[page-break-inside:auto]"
           >
             {group.label && (
               <div className="border-b border-border px-6 py-3">
