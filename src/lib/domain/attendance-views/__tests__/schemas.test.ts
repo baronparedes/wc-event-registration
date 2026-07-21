@@ -36,6 +36,7 @@ describe('attendeeViewConfigSchema', () => {
     expect(result.role).toEqual(['Member']);
     expect(result.category).toBe('Adult');
     expect(result.checkInStatus).toBe('checked_in');
+    expect(result.dynamicFilterCombination).toBe('and');
     expect(result.dynamicFilters).toHaveLength(1);
     expect(result.groupBy).toHaveLength(1);
     expect(result.visibleFields).toHaveLength(1);
@@ -49,6 +50,7 @@ describe('attendeeViewConfigSchema', () => {
     expect(result.role).toEqual([]);
     expect(result.category).toBe('all');
     expect(result.checkInStatus).toBe('all');
+    expect(result.dynamicFilterCombination).toBe('and');
     expect(result.dynamicFilters).toEqual([]);
     expect(result.groupBy).toEqual([]);
     expect(result.visibleFields).toEqual([]);
@@ -75,6 +77,15 @@ describe('attendeeViewConfigSchema', () => {
     });
 
     expect(result.groupBy[0].groupSort).toBe('label_desc');
+  });
+
+  it('accepts supported dynamic filter combination values', () => {
+    expect(
+      attendeeViewConfigSchema.parse({ dynamicFilterCombination: 'and' }).dynamicFilterCombination,
+    ).toBe('and');
+    expect(
+      attendeeViewConfigSchema.parse({ dynamicFilterCombination: 'or' }).dynamicFilterCombination,
+    ).toBe('or');
   });
 
   it('applies default groupSort for groupBy entries when missing', () => {
@@ -104,6 +115,7 @@ describe('upsertAttendanceSavedViewSchema', () => {
     role: [],
     category: 'all',
     checkInStatus: 'all' as const,
+    dynamicFilterCombination: 'and' as const,
     dynamicFilters: [],
     groupBy: [],
     visibleFields: [],

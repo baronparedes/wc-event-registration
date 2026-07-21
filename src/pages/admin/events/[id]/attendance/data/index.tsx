@@ -141,6 +141,7 @@ export function AdminAttendanceDataPage() {
     setRole,
     setCategory,
     setCheckInStatus,
+    setDynamicFilterCombination,
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,
@@ -371,6 +372,7 @@ export function AdminAttendanceDataPage() {
           attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
           dynamicFilterFieldToken={dynamicFilterFieldToken}
           dynamicFilterValue={dynamicFilterValue}
+          dynamicFilterCombination={viewConfig.dynamicFilterCombination ?? 'and'}
           dynamicFilterFieldLabel={dynamicFilterField?.label ?? null}
           dynamicFilterFieldType={dynamicFilterField?.fieldType ?? null}
           onNameOrMemberQueryChange={setNameOrMemberQuery}
@@ -385,6 +387,7 @@ export function AdminAttendanceDataPage() {
           onClearViewControls={clearViewControls}
           onDynamicFilterFieldTokenChange={setFilterFieldToken}
           onDynamicFilterValueChange={setDynamicFilterValue}
+          onDynamicFilterCombinationChange={setDynamicFilterCombination}
           onApplyDynamicFilter={addDynamicFilter}
           onRemoveDynamicFilter={removeDynamicFilter}
           onToggleVisibleField={toggleVisibleField}

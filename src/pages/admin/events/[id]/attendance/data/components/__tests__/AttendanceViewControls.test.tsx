@@ -51,6 +51,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
     onClearViewControls: vi.fn(),
     onDynamicFilterFieldTokenChange: vi.fn(),
     onDynamicFilterValueChange: vi.fn(),
+    onDynamicFilterCombinationChange: vi.fn(),
     onApplyDynamicFilter: vi.fn(),
     onRemoveDynamicFilter: vi.fn(),
     onToggleVisibleField: vi.fn(),
@@ -67,6 +68,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
       attendanceDynamicFieldOptions={[attendanceOption]}
       dynamicFilterFieldToken=""
       dynamicFilterValue=""
+      dynamicFilterCombination="and"
       dynamicFilterFieldLabel={null}
       dynamicFilterFieldType={null}
       {...handlers}
@@ -161,10 +163,14 @@ describe('AttendanceViewControls', () => {
     fireEvent.change(screen.getByLabelText('Filter field'), {
       target: { value: 'attendance:area' },
     });
+    fireEvent.change(screen.getByLabelText('Match mode'), {
+      target: { value: 'or' },
+    });
     fireEvent.change(screen.getByLabelText('Field value'), { target: { value: 'East' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply field filter' }));
 
     expect(handlers.onDynamicFilterFieldTokenChange).toHaveBeenCalledWith('attendance:area');
+    expect(handlers.onDynamicFilterCombinationChange).toHaveBeenCalledWith('or');
     expect(handlers.onDynamicFilterValueChange).toHaveBeenCalledWith('East');
     expect(handlers.onApplyDynamicFilter).toHaveBeenCalledTimes(1);
   });

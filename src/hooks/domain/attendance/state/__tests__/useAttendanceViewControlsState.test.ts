@@ -34,6 +34,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.role).toEqual([]);
     expect(result.current.viewConfig.category).toBe('all');
     expect(result.current.viewConfig.checkInStatus).toBe('all');
+    expect(result.current.viewConfig.dynamicFilterCombination).toBe('and');
     expect(result.current.viewConfig.visibleFields).toEqual([]);
     expect(result.current.dynamicFilterField).toBeNull();
     expect(result.current.hasActiveFilters).toBe(false);
@@ -43,12 +44,14 @@ describe('useAttendanceViewControlsState', () => {
       result.current.setRole(['Volunteer']);
       result.current.setCategory('Youth');
       result.current.setCheckInStatus('checked_in');
+      result.current.setDynamicFilterCombination('or');
     });
 
     expect(result.current.viewConfig.nameOrMemberQuery).toBe('MID-001');
     expect(result.current.viewConfig.role).toEqual(['Volunteer']);
     expect(result.current.viewConfig.category).toBe('Youth');
     expect(result.current.viewConfig.checkInStatus).toBe('checked_in');
+    expect(result.current.viewConfig.dynamicFilterCombination).toBe('or');
     expect(result.current.hasActiveFilters).toBe(true);
   });
 
@@ -309,6 +312,7 @@ describe('useAttendanceViewControlsState', () => {
       role: [],
       category: 'all',
       checkInStatus: 'all',
+      dynamicFilterCombination: 'and',
       dynamicFilters: [],
       groupBy: [],
       visibleFields: [],
@@ -362,6 +366,7 @@ describe('useAttendanceViewControlsState', () => {
 
     expect(result.current.viewConfig).toEqual({
       ...savedConfig,
+      dynamicFilterCombination: 'and',
       groupBy: [
         savedConfig.groupBy[0],
         {

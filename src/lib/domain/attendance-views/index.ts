@@ -3,6 +3,7 @@ export type {
   DynamicFieldRef,
   GroupByFieldRef,
   DynamicFieldFilter,
+  DynamicFilterCombination,
   DynamicFieldOption,
   AttendeeViewConfig,
   RegistrantViewGroup,

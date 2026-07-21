@@ -4,6 +4,7 @@ import {
   type AttendeeViewConfig,
   type AttendeeViewGroupSort,
   type DynamicFieldOption,
+  type DynamicFilterCombination,
   attendeeViewConfigSchema,
   fromDynamicFieldToken,
   toDynamicFieldToken,
@@ -14,6 +15,7 @@ const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   role: [],
   category: 'all',
   checkInStatus: 'all',
+  dynamicFilterCombination: 'and',
   dynamicFilters: [],
   groupBy: [],
   visibleFields: [],
@@ -70,6 +72,13 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
   function setCheckInStatus(value: AttendeeViewConfig['checkInStatus']) {
     setViewConfig((current) => ({ ...current, checkInStatus: value }));
+  }
+
+  function setDynamicFilterCombination(value: DynamicFilterCombination) {
+    setViewConfig((current) => ({
+      ...current,
+      dynamicFilterCombination: value,
+    }));
   }
 
   function setFilterFieldToken(value: string) {
@@ -280,6 +289,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setRole,
     setCategory,
     setCheckInStatus,
+    setDynamicFilterCombination,
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,

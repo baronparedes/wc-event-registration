@@ -790,6 +790,98 @@ describe('attendance-views transforms', () => {
     ]);
   });
 
+  it('supports OR matching across different fields when dynamicFilterCombination is set to or', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '9AM',
+            answer_number: null,
+          },
+        ],
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-area',
+            field_type: 'select',
+            field_key: 'area',
+            label: 'Area',
+            answer_text: 'West',
+            answer_number: null,
+          },
+        ],
+      }),
+      makeAttendee({
+        registration_id: 'reg-2',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '12NN',
+            answer_number: null,
+          },
+        ],
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-area',
+            field_type: 'select',
+            field_key: 'area',
+            label: 'Area',
+            answer_text: 'North',
+            answer_number: null,
+          },
+        ],
+      }),
+      makeAttendee({
+        registration_id: 'reg-3',
+        registration_answers: [
+          {
+            event_field_id: 'field-service',
+            field_type: 'select',
+            field_key: 'service',
+            label: 'Service',
+            answer_text: '7AM',
+            answer_number: null,
+          },
+        ],
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-area',
+            field_type: 'select',
+            field_key: 'area',
+            label: 'Area',
+            answer_text: 'South',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const serviceField = findField(fields, 'registration', 'service');
+    const areaField = findField(fields, 'attendance', 'area');
+
+    const result = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      dynamicFilterCombination: 'or',
+      dynamicFilters: [
+        { field: serviceField, value: '9AM' },
+        { field: areaField, value: 'North' },
+      ],
+    });
+
+    expect(result.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+      'reg-1',
+      'reg-2',
+    ]);
+  });
+
   it('matches multi-select-toggle filters when the key exists regardless of toggle boolean', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({

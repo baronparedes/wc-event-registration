@@ -8,6 +8,7 @@ import type {
   AttendeeViewConfig,
   AttendeeViewGroupSort,
   DynamicFieldOption,
+  DynamicFilterCombination,
 } from '@/lib/domain/attendance-views';
 import { toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
@@ -23,6 +24,7 @@ type AttendanceViewControlsProps = {
   attendanceDynamicFieldOptions: DynamicFieldOption[];
   dynamicFilterFieldToken: string;
   dynamicFilterValue: string;
+  dynamicFilterCombination: DynamicFilterCombination;
   dynamicFilterFieldLabel: string | null;
   dynamicFilterFieldType?: DynamicFieldOption['fieldType'] | null;
   onNameOrMemberQueryChange: (value: string) => void;
@@ -37,6 +39,7 @@ type AttendanceViewControlsProps = {
   onClearViewControls: () => void;
   onDynamicFilterFieldTokenChange: (value: string) => void;
   onDynamicFilterValueChange: (value: string) => void;
+  onDynamicFilterCombinationChange: (value: DynamicFilterCombination) => void;
   onApplyDynamicFilter: () => void;
   onRemoveDynamicFilter: (token: string, value: string) => void;
   onToggleVisibleField: (token: string) => void;
@@ -91,6 +94,7 @@ export function AttendanceViewControls({
   attendanceDynamicFieldOptions,
   dynamicFilterFieldToken,
   dynamicFilterValue,
+  dynamicFilterCombination,
   dynamicFilterFieldLabel,
   dynamicFilterFieldType = null,
   onNameOrMemberQueryChange,
@@ -105,6 +109,7 @@ export function AttendanceViewControls({
   onClearViewControls,
   onDynamicFilterFieldTokenChange,
   onDynamicFilterValueChange,
+  onDynamicFilterCombinationChange,
   onApplyDynamicFilter,
   onRemoveDynamicFilter,
   onToggleVisibleField,
@@ -409,6 +414,20 @@ export function AttendanceViewControls({
           </div>
 
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:col-span-2 lg:col-span-3">
+            <label className="flex flex-col gap-1 text-sm text-muted md:col-span-3 lg:col-span-1">
+              Match mode
+              <select
+                value={dynamicFilterCombination}
+                onChange={(event) =>
+                  onDynamicFilterCombinationChange(event.target.value as DynamicFilterCombination)
+                }
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="and">All filters must match (AND)</option>
+                <option value="or">Any filter can match (OR)</option>
+              </select>
+            </label>
+
             <label className="flex flex-col gap-1 text-sm text-muted">
               Filter field
               <select

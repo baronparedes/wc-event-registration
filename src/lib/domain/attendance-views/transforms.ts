@@ -14,6 +14,7 @@ import type {
   DynamicFieldOption,
   DynamicFieldRef,
   DynamicFieldSource,
+  DynamicFilterCombination,
   GroupByFieldRef,
   RegistrantViewGroup,
 } from './types';
@@ -632,9 +633,14 @@ function toFilterFieldToken(filter: DynamicFieldFilter): string {
 function matchesDynamicFilters(
   attendee: AttendeeSearchResult,
   filters: DynamicFieldFilter[],
+  combination: DynamicFilterCombination = 'and',
 ): boolean {
   if (filters.length === 0) {
     return true;
+  }
+
+  if (combination === 'or') {
+    return filters.some((filter) => matchesDynamicFilter(attendee, filter));
   }
 
   const filtersByField = new Map<string, DynamicFieldFilter[]>();
@@ -915,7 +921,13 @@ export function buildAttendeeView(
 ): BuildAttendeeViewResult {
   const filteredAttendees = attendees
     .filter((attendee) => matchesBaseFilters(attendee, config))
-    .filter((attendee) => matchesDynamicFilters(attendee, config.dynamicFilters));
+    .filter((attendee) =>
+      matchesDynamicFilters(
+        attendee,
+        config.dynamicFilters,
+        config.dynamicFilterCombination ?? 'and',
+      ),
+    );
 
   const groupMap = new Map<string, AttendeeSearchResult[]>();
   for (const attendee of filteredAttendees) {

@@ -20,6 +20,8 @@ export type DynamicFieldFilter = {
   value: string;
 };
 
+export type DynamicFilterCombination = 'and' | 'or';
+
 export type DynamicFieldOption = DynamicFieldRef & {
   token: string;
   values: string[];
@@ -42,6 +44,7 @@ export type AttendeeViewConfig = {
   role: string[];
   category: string;
   checkInStatus: AttendeeSearchResult['check_in_status'] | 'all';
+  dynamicFilterCombination?: DynamicFilterCombination;
   dynamicFilters: DynamicFieldFilter[];
   groupBy: GroupByFieldRef[];
   visibleFields: DynamicFieldRef[];

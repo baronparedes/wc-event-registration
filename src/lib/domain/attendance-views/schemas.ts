@@ -25,6 +25,7 @@ export const attendeeViewConfigSchema = z.object({
   checkInStatus: z
     .union([z.enum(['checked_in', 'not_checked_in']), z.literal('all')])
     .default('all'),
+  dynamicFilterCombination: z.enum(['and', 'or']).default('and'),
   dynamicFilters: z.array(dynamicFieldFilterSchema).default([]),
   groupBy: z.array(groupByFieldRefSchema).default([]),
   visibleFields: z.array(dynamicFieldRefSchema).default([]),
