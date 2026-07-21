@@ -1,9 +1,16 @@
 /* c8 ignore start */
+import { useCallback, useRef } from 'react';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
+import { useAttendanceCheckInRealtime } from '@/hooks/domain/attendance/state/useAttendanceCheckInRealtime';
 import { useLocalStorage } from '@/hooks/utils';
-import type { AttendeeSearchResult } from '@/lib/domain/attendance';
+import type {
+  AttendanceCheckInRealtimeEvent,
+  AttendeeKind,
+  AttendeeSearchResult,
+} from '@/lib/domain/attendance/types';
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 type ListAttendeesInput = {
@@ -26,7 +33,16 @@ type LocalCacheEntry = {
   cachedAt: number;
 };
 
+type AttendeeCheckInPatch = {
+  id: string;
+  kind: AttendeeKind;
+  checkedInAt: string;
+  registrationId: string | null;
+  publicRegistrationId: string | null;
+};
+
 const CACHE_KEY_PREFIX = 'wc:attendees';
+const REFRESH_THROTTLE_MS = 2000;
 
 function getStorageKey(eventId: string): string {
   return `${CACHE_KEY_PREFIX}:${eventId}`;
@@ -35,6 +51,69 @@ function getStorageKey(eventId: string): string {
 function buildCacheEntry(attendees: AttendeeSearchResult[]): LocalCacheEntry {
   const entry: LocalCacheEntry = { attendees, cachedAt: Date.now() };
   return entry;
+}
+
+function resolveCheckInTime(currentTime: string | null, incomingTime: string): string {
+  if (!currentTime) return incomingTime;
+
+  const currentMs = Date.parse(currentTime);
+  const incomingMs = Date.parse(incomingTime);
+
+  if (!Number.isFinite(currentMs) || !Number.isFinite(incomingMs)) {
+    return incomingTime;
+  }
+
+  return incomingMs < currentMs ? incomingTime : currentTime;
+}
+
+function matchesAttendeePatch(
+  attendee: AttendeeSearchResult,
+  patch: AttendeeCheckInPatch,
+): boolean {
+  if (patch.kind === 'registered') {
+    return (
+      attendee.registration_id === patch.registrationId || attendee.registration_id === patch.id
+    );
+  }
+
+  return (
+    attendee.public_registration_id === patch.publicRegistrationId ||
+    attendee.public_registration_id === patch.id ||
+    attendee.registration_id === patch.id
+  );
+}
+
+export function applyCheckInPatchToAttendees(
+  attendees: AttendeeSearchResult[],
+  patch: AttendeeCheckInPatch,
+): { attendees: AttendeeSearchResult[]; didUpdate: boolean } {
+  let didUpdate = false;
+
+  const nextAttendees: AttendeeSearchResult[] = attendees.map((attendee): AttendeeSearchResult => {
+    if (!matchesAttendeePatch(attendee, patch)) {
+      return attendee;
+    }
+
+    const nextOfficialCheckInTime = resolveCheckInTime(
+      attendee.official_check_in_time,
+      patch.checkedInAt,
+    );
+    const hasSameStatus = attendee.check_in_status === 'checked_in';
+    const hasSameTime = attendee.official_check_in_time === nextOfficialCheckInTime;
+
+    if (hasSameStatus && hasSameTime) {
+      return attendee;
+    }
+
+    didUpdate = true;
+    return {
+      ...attendee,
+      check_in_status: 'checked_in',
+      official_check_in_time: nextOfficialCheckInTime,
+    } as AttendeeSearchResult;
+  });
+
+  return { attendees: nextAttendees, didUpdate };
 }
 
 async function fetchAllAttendees(eventId: string): Promise<AttendeeSearchResult[]> {
@@ -61,6 +140,7 @@ async function fetchAllAttendees(eventId: string): Promise<AttendeeSearchResult[
 export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
   const queryClient = useQueryClient();
   const cacheStorage = useLocalStorage<LocalCacheEntry>(eventId ? getStorageKey(eventId) : null);
+  const lastRefreshAtRef = useRef<number>(0);
 
   const query = useQuery({
     queryKey: QUERY_KEYS.adminAttendeesLocalCache(eventId),
@@ -80,11 +160,21 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
     gcTime: 24 * 60 * 60 * 1000,
   });
 
-  function refresh() {
+  const refresh = useCallback(() => {
     if (!eventId) return;
     cacheStorage.remove();
     void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminAttendeesLocalCache(eventId) });
-  }
+  }, [cacheStorage, eventId, queryClient]);
+
+  const refreshThrottled = useCallback(() => {
+    const now = Date.now();
+    if (now - lastRefreshAtRef.current < REFRESH_THROTTLE_MS) {
+      return;
+    }
+
+    lastRefreshAtRef.current = now;
+    refresh();
+  }, [refresh]);
 
   function updateAttendee(registrationId: string, updates: Partial<AttendeeSearchResult>): void {
     if (!eventId) return;
@@ -99,6 +189,53 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
     cacheStorage.set(newEntry);
     queryClient.setQueryData(QUERY_KEYS.adminAttendeesLocalCache(eventId), newEntry);
   }
+
+  const handleRealtimeCheckIn = useCallback(
+    (checkInEvent: AttendanceCheckInRealtimeEvent) => {
+      if (!eventId) return;
+
+      const current = queryClient.getQueryData<LocalCacheEntry>(
+        QUERY_KEYS.adminAttendeesLocalCache(eventId),
+      );
+
+      if (!current?.attendees?.length) {
+        refreshThrottled();
+        return;
+      }
+
+      const patch: AttendeeCheckInPatch = {
+        id: checkInEvent.public_registration_id ?? checkInEvent.registration_id ?? '',
+        kind: checkInEvent.attendee_kind,
+        checkedInAt: checkInEvent.first_checked_in_at,
+        registrationId: checkInEvent.registration_id,
+        publicRegistrationId: checkInEvent.public_registration_id,
+      };
+
+      if (!patch.id) {
+        refreshThrottled();
+        return;
+      }
+
+      const { attendees: patchedAttendees, didUpdate } = applyCheckInPatchToAttendees(
+        current.attendees,
+        patch,
+      );
+
+      if (!didUpdate) {
+        refreshThrottled();
+        return;
+      }
+
+      const updatedEntry = buildCacheEntry(patchedAttendees);
+      cacheStorage.set(updatedEntry);
+      queryClient.setQueryData(QUERY_KEYS.adminAttendeesLocalCache(eventId), updatedEntry);
+    },
+    [cacheStorage, eventId, queryClient, refreshThrottled],
+  );
+
+  useAttendanceCheckInRealtime(eventId, {
+    onCheckIn: handleRealtimeCheckIn,
+  });
 
   return {
     attendees: query.data?.attendees ?? null,
