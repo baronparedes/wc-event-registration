@@ -111,8 +111,8 @@ export function ListTableHeaderCell({ className, density, ...props }: ListTableH
   const tableDensity = useContext(tableDensityContext);
   const resolvedDensity = density ?? tableDensity;
   const densityStyles: Record<ListTableDensity, string> = {
-    default: 'px-4 py-3 print:px-2 print:py-2',
-    dense: 'px-4 py-2.5 print:px-2 print:py-2',
+    default: 'px-4 py-3 print:py-2',
+    dense: 'px-4 py-2.5 print:py-2',
   };
 
   return <th className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />;
@@ -122,10 +122,8 @@ export function ListTableCell({ className, density, ...props }: ListTableCellPro
   const tableDensity = useContext(tableDensityContext);
   const resolvedDensity = density ?? tableDensity;
   const densityStyles: Record<ListTableDensity, string> = {
-    default:
-      'px-4 py-4 print:px-2 print:py-1 print:[break-inside:avoid] print:[page-break-inside:avoid]',
-    dense:
-      'px-4 py-3 print:px-2 print:py-1 print:[break-inside:avoid] print:[page-break-inside:avoid]',
+    default: 'px-4 py-4 print:py-2 print:[break-inside:avoid] print:[page-break-inside:avoid]',
+    dense: 'px-4 py-3 print:py-2 print:[break-inside:avoid] print:[page-break-inside:avoid]',
   };
 
   return <td className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />;
