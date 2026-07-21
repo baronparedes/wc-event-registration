@@ -25,6 +25,14 @@ export type DynamicFieldOption = DynamicFieldRef & {
   values: string[];
 };
 
+export type AttendeeViewGroupSort =
+  | 'label_asc'
+  | 'label_desc'
+  | 'size_desc'
+  | 'size_asc'
+  | 'time_asc'
+  | 'time_desc';
+
 export type AttendeeViewConfig = {
   nameOrMemberQuery: string;
   role: string[];
@@ -33,6 +41,7 @@ export type AttendeeViewConfig = {
   dynamicFilters: DynamicFieldFilter[];
   groupBy: DynamicFieldRef[];
   visibleFields: DynamicFieldRef[];
+  groupSort?: AttendeeViewGroupSort;
 };
 
 export type RegistrantViewGroup = {

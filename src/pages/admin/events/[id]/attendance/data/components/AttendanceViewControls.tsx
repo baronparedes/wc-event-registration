@@ -4,7 +4,11 @@ import { ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
-import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
+import type {
+  AttendeeViewConfig,
+  AttendeeViewGroupSort,
+  DynamicFieldOption,
+} from '@/lib/domain/attendance-views';
 import { toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
 import { AttendanceViewFieldSelector } from './AttendanceViewFieldSelector';
@@ -25,6 +29,7 @@ type AttendanceViewControlsProps = {
   onRoleChange: (value: string[]) => void;
   onCategoryChange: (value: string) => void;
   onCheckInStatusChange: (value: AttendeeViewConfig['checkInStatus']) => void;
+  onGroupSortChange: (value: AttendeeViewGroupSort) => void;
   onAddGroupingLevel: () => void;
   onGroupingFieldChange: (index: number, token: string) => void;
   onMoveGroupingLevel: (index: number, direction: 'up' | 'down') => void;
@@ -92,6 +97,7 @@ export function AttendanceViewControls({
   onRoleChange,
   onCategoryChange,
   onCheckInStatusChange,
+  onGroupSortChange,
   onAddGroupingLevel,
   onGroupingFieldChange,
   onMoveGroupingLevel,
@@ -257,6 +263,22 @@ export function AttendanceViewControls({
               <option value="all">All check-in states</option>
               <option value="checked_in">Checked in</option>
               <option value="not_checked_in">Not checked in</option>
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-muted">
+            Group order
+            <select
+              value={viewConfig.groupSort ?? 'label_asc'}
+              onChange={(event) => onGroupSortChange(event.target.value as AttendeeViewGroupSort)}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="label_asc">A-Z</option>
+              <option value="label_desc">Z-A</option>
+              <option value="size_desc">Largest group first</option>
+              <option value="size_asc">Smallest group first</option>
+              <option value="time_asc">Chronological (earliest first)</option>
+              <option value="time_desc">Chronological (latest first)</option>
             </select>
           </label>
 

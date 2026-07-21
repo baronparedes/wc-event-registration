@@ -49,6 +49,7 @@ const defaultViewConfig: AttendeeViewConfig = {
   role: [],
   category: 'all',
   checkInStatus: 'all',
+  groupSort: 'label_asc',
   dynamicFilters: [],
   groupBy: [],
   visibleFields: [],
@@ -1064,6 +1065,67 @@ describe('attendance-views transforms', () => {
     expect(
       grouped.groups.map((group) => group.registrants.map((item) => item.registration_id)),
     ).toEqual([['reg-1', 'reg-2'], ['reg-1'], ['reg-1', 'reg-2']]);
+  });
+
+  it('sorts service-like time groups chronologically when groupSort is time_asc', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-slot',
+            field_type: 'multi_select_toggle',
+            field_key: 'slot_choice',
+            label: 'Slots',
+            answer_text: '{"12NN":true,"3PM":true,"9AM":true}',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const slotField = findField(fields, 'registration', 'slot_choice');
+    const grouped = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      groupBy: [slotField],
+      groupSort: 'time_asc',
+    });
+
+    expect(grouped.groups.map((group) => group.label)).toEqual(['9AM', '12NN', '3PM']);
+  });
+
+  it('sorts actual date-time group labels chronologically when groupSort is time_asc', () => {
+    const attendees: AttendeeSearchResult[] = [
+      makeAttendee({
+        registration_id: 'reg-1',
+        registration_answers: [
+          {
+            event_field_id: 'field-slot',
+            field_type: 'multi_select_toggle',
+            field_key: 'service_datetime',
+            label: 'Service DateTime',
+            answer_text:
+              '{"2026-07-27 12:00 PM":true,"2026-07-27 3:00 PM":true,"2026-07-27 9:00 AM":true}',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const fields = collectDynamicFieldOptions(attendees);
+    const slotField = findField(fields, 'registration', 'service_datetime');
+    const grouped = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      groupBy: [slotField],
+      groupSort: 'time_asc',
+    });
+
+    expect(grouped.groups.map((group) => group.label)).toEqual([
+      '2026-07-27 9:00 AM',
+      '2026-07-27 12:00 PM',
+      '2026-07-27 3:00 PM',
+    ]);
   });
 
   it('handles malformed and duplicate dynamic answer payloads without producing invalid filter values', () => {

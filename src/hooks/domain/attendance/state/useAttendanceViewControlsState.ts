@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   type AttendeeViewConfig,
+  type AttendeeViewGroupSort,
   type DynamicFieldOption,
   attendeeViewConfigSchema,
   fromDynamicFieldToken,
@@ -16,6 +17,7 @@ const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   dynamicFilters: [],
   groupBy: [],
   visibleFields: [],
+  groupSort: 'label_asc',
 };
 
 /**
@@ -36,6 +38,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     viewConfig.role.length > 0 ||
     viewConfig.category !== 'all' ||
     viewConfig.checkInStatus !== 'all' ||
+    (viewConfig.groupSort ?? 'label_asc') !== 'label_asc' ||
     viewConfig.dynamicFilters.length > 0 ||
     viewConfig.groupBy.length > 0 ||
     viewConfig.visibleFields.length > 0;
@@ -54,6 +57,10 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
   function setCheckInStatus(value: AttendeeViewConfig['checkInStatus']) {
     setViewConfig((current) => ({ ...current, checkInStatus: value }));
+  }
+
+  function setGroupSort(value: AttendeeViewGroupSort) {
+    setViewConfig((current) => ({ ...current, groupSort: value }));
   }
 
   function setFilterFieldToken(value: string) {
@@ -230,6 +237,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setRole,
     setCategory,
     setCheckInStatus,
+    setGroupSort,
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,

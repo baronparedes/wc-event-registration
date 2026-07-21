@@ -7,6 +7,7 @@ export type {
   RegistrantViewGroup,
   BuildAttendeeViewResult,
   AttendanceSavedView,
+  AttendeeViewGroupSort,
 } from './types';
 
 export {

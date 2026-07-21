@@ -137,6 +137,7 @@ export function AdminAttendanceDataPage() {
     setRole,
     setCategory,
     setCheckInStatus,
+    setGroupSort,
     setFilterFieldToken,
     setDynamicFilterValue,
     addDynamicFilter,
@@ -390,6 +391,7 @@ export function AdminAttendanceDataPage() {
           onRoleChange={setRole}
           onCategoryChange={setCategory}
           onCheckInStatusChange={setCheckInStatus}
+          onGroupSortChange={setGroupSort}
           onAddGroupingLevel={addGroupingLevel}
           onGroupingFieldChange={changeGroupingField}
           onMoveGroupingLevel={moveGroupingLevel}

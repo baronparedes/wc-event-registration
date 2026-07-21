@@ -8,6 +8,7 @@ import type {
 
 import type {
   AttendeeViewConfig,
+  AttendeeViewGroupSort,
   BuildAttendeeViewResult,
   DynamicFieldFilter,
   DynamicFieldOption,
@@ -765,6 +766,123 @@ function buildGroupLabel(groupKey: string, config: AttendeeViewConfig): string {
   return parts.join(' / ');
 }
 
+function getPrimaryGroupLabelSegment(rawLabel: string): string {
+  return rawLabel.split(' / ')[0]?.trim() ?? '';
+}
+
+function parseTimeLabelToMinutes(rawLabel: string): number | null {
+  const firstSegment = getPrimaryGroupLabelSegment(rawLabel).toUpperCase();
+  if (!firstSegment) {
+    return null;
+  }
+
+  const match = firstSegment.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM|NN|MN)$/);
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number.parseInt(match[1], 10);
+  const minutes = match[2] ? Number.parseInt(match[2], 10) : 0;
+  const meridiem = match[3];
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 1 || hours > 12) {
+    return null;
+  }
+
+  if (minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  if (meridiem === 'MN') {
+    return minutes;
+  }
+
+  if (meridiem === 'NN') {
+    return 12 * 60 + minutes;
+  }
+
+  let normalizedHours = hours % 12;
+  if (meridiem === 'PM') {
+    normalizedHours += 12;
+  }
+
+  return normalizedHours * 60 + minutes;
+}
+
+function parseChronologicalLabel(rawLabel: string): number | null {
+  const firstSegment = getPrimaryGroupLabelSegment(rawLabel);
+  if (!firstSegment) {
+    return null;
+  }
+
+  const parsedTimestamp = Date.parse(firstSegment);
+  if (!Number.isNaN(parsedTimestamp)) {
+    return parsedTimestamp;
+  }
+
+  const minutes = parseTimeLabelToMinutes(firstSegment);
+  if (minutes === null) {
+    return null;
+  }
+
+  // Use a synthetic epoch-based timestamp for time-only labels.
+  return minutes * 60 * 1000;
+}
+
+function sortGroups(groups: RegistrantViewGroup[], sortMode: AttendeeViewGroupSort) {
+  const byLabelAsc = (a: RegistrantViewGroup, b: RegistrantViewGroup) =>
+    a.label.localeCompare(b.label);
+
+  return [...groups].sort((a, b) => {
+    if (sortMode === 'size_desc') {
+      if (b.registrants.length !== a.registrants.length) {
+        return b.registrants.length - a.registrants.length;
+      }
+
+      return byLabelAsc(a, b);
+    }
+
+    if (sortMode === 'size_asc') {
+      if (a.registrants.length !== b.registrants.length) {
+        return a.registrants.length - b.registrants.length;
+      }
+
+      return byLabelAsc(a, b);
+    }
+
+    if (sortMode === 'time_asc' || sortMode === 'time_desc') {
+      const aChronologicalValue = parseChronologicalLabel(a.label);
+      const bChronologicalValue = parseChronologicalLabel(b.label);
+
+      if (
+        aChronologicalValue !== null &&
+        bChronologicalValue !== null &&
+        aChronologicalValue !== bChronologicalValue
+      ) {
+        return sortMode === 'time_asc'
+          ? aChronologicalValue - bChronologicalValue
+          : bChronologicalValue - aChronologicalValue;
+      }
+
+      if (aChronologicalValue !== null && bChronologicalValue === null) {
+        return -1;
+      }
+
+      if (aChronologicalValue === null && bChronologicalValue !== null) {
+        return 1;
+      }
+
+      return byLabelAsc(a, b);
+    }
+
+    if (sortMode === 'label_desc') {
+      return b.label.localeCompare(a.label);
+    }
+
+    return byLabelAsc(a, b);
+  });
+}
+
 export function buildAttendeeView(
   attendees: AttendeeSearchResult[],
   config: AttendeeViewConfig,
@@ -791,15 +909,17 @@ export function buildAttendeeView(
     }
   }
 
-  const groups: RegistrantViewGroup[] = [...groupMap.entries()]
-    .map(([key, groupAttendees]) => ({
+  const unsortedGroups: RegistrantViewGroup[] = [...groupMap.entries()].map(
+    ([key, groupAttendees]) => ({
       key,
       label: buildGroupLabel(key, config),
       registrants: groupAttendees
         .map(attendeeToRegistrant)
         .sort((a, b) => a.full_name.localeCompare(b.full_name)),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+    }),
+  );
+
+  const groups = sortGroups(unsortedGroups, config.groupSort ?? 'label_asc');
 
   return {
     filteredAttendees,

@@ -300,6 +300,7 @@ describe('useAttendanceViewControlsState', () => {
       role: [],
       category: 'all',
       checkInStatus: 'all',
+      groupSort: 'label_asc',
       dynamicFilters: [],
       groupBy: [],
       visibleFields: [],
@@ -324,6 +325,7 @@ describe('useAttendanceViewControlsState', () => {
       role: ['Volunteer'],
       category: 'Youth',
       checkInStatus: 'checked_in' as const,
+      groupSort: 'time_asc' as const,
       dynamicFilters: [
         {
           field: { source: 'attendance' as const, fieldKey: 'area', label: 'Area' },
