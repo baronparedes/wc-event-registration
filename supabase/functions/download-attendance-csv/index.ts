@@ -2,6 +2,7 @@ import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import {
   buildUtcTimestampForFilename,
   escapeCsvField,
+  formatTimestampInTimeZone,
   sanitizeFilenamePart,
 } from '@/shared/csv.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
@@ -25,6 +26,7 @@ type RegistrationRow = {
   id: string;
   user_id: string;
   status: 'submitted' | 'updated' | 'cancelled';
+  submitted_at: string;
 };
 
 type PublicRegistrationRow = {
@@ -33,6 +35,7 @@ type PublicRegistrationRow = {
   last_name: string | null;
   email: string | null;
   status: 'submitted' | 'updated' | 'cancelled';
+  submitted_at: string;
 };
 
 type UserRow = {
@@ -57,6 +60,8 @@ type PublicAttendanceAnswerRow = {
   answer_text: string | null;
   answer_number: number | null;
 };
+
+const PH_TIME_ZONE = 'Asia/Manila';
 
 function formatAnswerValue(
   fieldType: string,
@@ -181,7 +186,7 @@ Deno.serve(async (req) => {
 
     const { data: registrations, error: registrationError } = await adminClient
       .from('registrations')
-      .select('id, user_id, status')
+      .select('id, user_id, status, submitted_at')
       .eq('event_id', event_id)
       .in('status', ['submitted', 'updated']);
 
@@ -217,7 +222,7 @@ Deno.serve(async (req) => {
 
     const { data: publicRegistrations, error: publicRegistrationError } = await adminClient
       .from('public_registrations')
-      .select('id, first_name, last_name, email, status')
+      .select('id, first_name, last_name, email, status, submitted_at')
       .eq('event_id', event_id)
       .neq('status', 'cancelled');
 
@@ -298,6 +303,7 @@ Deno.serve(async (req) => {
 
     const header = [
       'attendee_kind',
+      'registration_date',
       'registration_id',
       'public_registration_id',
       'member_id',
@@ -326,6 +332,7 @@ Deno.serve(async (req) => {
 
         return [
           'registered',
+          formatTimestampInTimeZone(registration.submitted_at, PH_TIME_ZONE, 'PHT'),
           registration.id,
           '',
           user.member_id ?? '',
@@ -353,6 +360,7 @@ Deno.serve(async (req) => {
 
       return [
         'public',
+        formatTimestampInTimeZone(registration.submitted_at, PH_TIME_ZONE, 'PHT'),
         '',
         registration.id,
         '',

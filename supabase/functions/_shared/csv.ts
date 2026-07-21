@@ -29,6 +29,38 @@ export function buildUtcTimestampForFilename(date: Date): string {
   return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
 }
 
+export function formatTimestampInTimeZone(
+  timestamp: string,
+  timeZone: string,
+  suffix?: string,
+): string {
+  if (!timestamp) {
+    return '';
+  }
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const getPart = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((part) => part.type === type)?.value ?? '';
+
+  const formatted = `${getPart('year')}-${getPart('month')}-${getPart('day')} ${getPart('hour')}:${getPart('minute')}:${getPart('second')}`;
+  return suffix ? `${formatted} ${suffix}` : formatted;
+}
+
 export function formatHeaderFromSnakeCase(value: string): string {
   return value
     .split('_')
