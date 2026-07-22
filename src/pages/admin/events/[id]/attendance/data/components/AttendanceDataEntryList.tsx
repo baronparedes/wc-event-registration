@@ -1,32 +1,21 @@
 import { useMemo, useState } from 'react';
 
-import { Check, Minus, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
-import { ActionButton } from '@/components/ui/ActionLink';
-import {
-  ListTable,
-  ListTableBody,
-  ListTableCell,
-  ListTableHead,
-  ListTableHeaderCell,
-  ListTableHeaderRow,
-  ListTableRow,
-} from '@/components/ui/ListTable';
+import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
 import type {
   AttendanceAnswer,
   AttendeeSearchResult,
   RegistrantAttendanceRow,
 } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
-import {
-  type DynamicFieldRef,
-  type RegistrantViewGroup,
-  toDynamicFieldToken,
-} from '@/lib/domain/attendance-views';
+import { type DynamicFieldRef, type RegistrantViewGroup } from '@/lib/domain/attendance-views';
 import type { AdminEventField } from '@/lib/domain/event-fields';
 
 import { AttendanceDataEntryPanel } from './AttendanceDataEntryPanel';
+import { AttendanceDataMobileView } from './AttendanceDataMobileView';
+import { AttendanceDataTableView } from './AttendanceDataTableView';
 import { AttendeeDetailsModal } from './AttendeeDetailsModal';
 
 type AttendanceDataEntryListProps = {
@@ -125,6 +114,7 @@ export function AttendanceDataEntryList({
 }: AttendanceDataEntryListProps) {
   const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
   const [editingRegistrant, setEditingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
+  const isMobileViewport = useIsMobileViewport();
   const attendeesByRegistrantKey = useMemo(
     () => new Map(allAttendees.map((attendee) => [getRegistrantKey(attendee), attendee])),
     [allAttendees],
@@ -157,70 +147,9 @@ export function AttendanceDataEntryList({
     );
   }
 
-  function renderRows(items: RegistrantAttendanceRow[]) {
-    return items.map((registrant) => {
-      const rowKey = getRegistrantKey(registrant);
-      const filled = countFilledAnswers(registrant.answers, fields);
-      const isCheckedIn = registrant.check_in_status === 'checked_in';
-      const attendee = attendeesByRegistrantKey.get(rowKey);
-
-      return (
-        <ListTableRow
-          key={rowKey}
-          className="group cursor-pointer border-b border-border/80 bg-white hover:bg-slate-100"
-          hover="none"
-          onClick={() => setViewingRegistrant(registrant)}
-        >
-          <ListTableCell className="sticky left-0 z-10 bg-white !px-2 !py-2 align-middle group-hover:bg-slate-100">
-            <div className="flex items-center gap-1">
-              <span
-                role="img"
-                aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full print:hidden ${
-                  isCheckedIn
-                    ? 'bg-primary text-white'
-                    : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
-                }`}
-              >
-                {isCheckedIn ? <Check className="h-2 w-2" /> : <Minus className="h-2 w-2" />}
-              </span>
-              <p className="truncate font-semibold text-text">{registrant.full_name}</p>
-            </div>
-          </ListTableCell>
-          {visibleFields.map((field) => (
-            <ListTableCell
-              key={`${rowKey}:${field.source}:${field.fieldKey}`}
-              className="whitespace-nowrap !px-2 !py-2 align-middle"
-            >
-              <span
-                className={
-                  toDynamicFieldToken(field) === 'member:member_id'
-                    ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700'
-                    : 'text-sm text-text'
-                }
-              >
-                {getVisibleFieldValue(attendee, field)}
-              </span>
-            </ListTableCell>
-          ))}
-          {canWrite && (
-            <ListTableCell className="whitespace-nowrap !px-2 !py-2 align-middle print:hidden">
-              <div onClick={(e) => e.stopPropagation()}>
-                <ActionButton onClick={() => setEditingRegistrant(registrant)}>
-                  {filled > 0 ? 'Edit' : 'Fill In'}
-                </ActionButton>
-              </div>
-            </ListTableCell>
-          )}
-        </ListTableRow>
-      );
-    });
-  }
-
   return (
     <>
-      <div className="space-y-1">
+      <div className="space-y-3">
         {resolvedGroups.map((group) => (
           <section
             key={group.key}
@@ -236,29 +165,33 @@ export function AttendanceDataEntryList({
                 </h3>
               </div>
             )}
-            <ListTable>
-              <ListTableHead>
-                <ListTableHeaderRow className="bg-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  <ListTableHeaderCell className="sticky left-0 z-20 bg-slate-100 !px-2 !py-2">
-                    Attendee
-                  </ListTableHeaderCell>
-                  {visibleFields.map((field) => (
-                    <ListTableHeaderCell
-                      key={`header:${field.source}:${field.fieldKey}`}
-                      className="!px-2 !py-2"
-                    >
-                      {field.label}
-                    </ListTableHeaderCell>
-                  ))}
-                  {canWrite && (
-                    <ListTableHeaderCell className="!px-2 !py-2 print:hidden">
-                      Actions
-                    </ListTableHeaderCell>
-                  )}
-                </ListTableHeaderRow>
-              </ListTableHead>
-              <ListTableBody>{renderRows(group.registrants)}</ListTableBody>
-            </ListTable>
+            {isMobileViewport ? (
+              <AttendanceDataMobileView
+                registrants={group.registrants}
+                visibleFields={visibleFields}
+                fields={fields}
+                attendeesByRegistrantKey={attendeesByRegistrantKey}
+                canWrite={canWrite}
+                onViewRegistrant={setViewingRegistrant}
+                onEditRegistrant={setEditingRegistrant}
+                countFilledAnswers={countFilledAnswers}
+                getRegistrantKey={getRegistrantKey}
+                getVisibleFieldValue={getVisibleFieldValue}
+              />
+            ) : (
+              <AttendanceDataTableView
+                registrants={group.registrants}
+                visibleFields={visibleFields}
+                fields={fields}
+                attendeesByRegistrantKey={attendeesByRegistrantKey}
+                canWrite={canWrite}
+                onViewRegistrant={setViewingRegistrant}
+                onEditRegistrant={setEditingRegistrant}
+                countFilledAnswers={countFilledAnswers}
+                getRegistrantKey={getRegistrantKey}
+                getVisibleFieldValue={getVisibleFieldValue}
+              />
+            )}
           </section>
         ))}
       </div>
