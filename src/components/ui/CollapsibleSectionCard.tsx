@@ -34,6 +34,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
 
   const contentId = useId();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [isAnimatingContent, setIsAnimatingContent] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const actionLabel = isExpanded ? collapseLabel : expandLabel;
   const wrapperClassName = sectionCardProps.wrapperClassName
@@ -112,10 +113,16 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
           <motion.div
             id={contentId}
             key={contentId}
-            className="overflow-hidden"
+            className={isAnimatingContent ? 'overflow-hidden' : 'overflow-visible'}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            onAnimationStart={() => {
+              setIsAnimatingContent(true);
+            }}
+            onAnimationComplete={() => {
+              setIsAnimatingContent(false);
+            }}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }

@@ -105,6 +105,8 @@ describe('SelectFieldRenderer family', () => {
 
     render(<Harness field={field} renderer="select" />);
 
+    fireEvent.click(screen.getByRole('button'));
+
     expect(screen.getByRole('option', { name: 'Select an option' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Vegetarian' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toBeInTheDocument();
@@ -129,6 +131,8 @@ describe('SelectFieldRenderer family', () => {
 
     render(<Harness field={field} renderer="select" />);
 
+    fireEvent.click(screen.getByRole('button'));
+
     expect(screen.getByRole('option', { name: 'Vegetarian' })).toBeInTheDocument();
     expect(
       screen.getByRole('option', {
@@ -150,6 +154,8 @@ describe('SelectFieldRenderer family', () => {
     render(
       <Harness field={field} renderer="select" remainingSlotsByOption={{ veg: 3, nonveg: 2 }} />,
     );
+
+    fireEvent.click(screen.getByRole('button'));
 
     expect(screen.getByRole('option', { name: 'Vegetarian (3 slots left)' })).toBeInTheDocument();
   });
@@ -206,6 +212,8 @@ describe('SelectFieldRenderer family', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button'));
+
     expect(
       screen.getByRole('option', { name: 'Non-Vegetarian (1 slots left)' }),
     ).toBeInTheDocument();
@@ -230,7 +238,12 @@ describe('SelectFieldRenderer family', () => {
       />,
     );
 
-    expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 
   it('keeps role-allotted option enabled when member role does not match configured roles', () => {
@@ -256,7 +269,12 @@ describe('SelectFieldRenderer family', () => {
       />,
     );
 
-    expect(screen.getByRole('option', { name: /Non-Vegetarian/i })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByRole('option', { name: /Non-Vegetarian/i })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 
   it('renders remaining slots as muted sub-label for card-style options', () => {

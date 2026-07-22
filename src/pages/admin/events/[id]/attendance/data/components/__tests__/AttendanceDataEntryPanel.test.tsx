@@ -75,7 +75,7 @@ describe('AttendanceDataEntryPanel', () => {
     mockMutationState.isPending = false;
   });
 
-  it('renders multi-select field as a multiple select and preloads selected values', () => {
+  it('renders multi-select dropdown and preloads selected values', () => {
     render(
       <AttendanceDataEntryPanel
         isOpen={true}
@@ -86,18 +86,15 @@ describe('AttendanceDataEntryPanel', () => {
       />,
     );
 
-    const select = screen.getByLabelText('Meal Preferences') as HTMLSelectElement;
-    expect(select.multiple).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Meal Preferences' }));
 
-    const vegetarianOption = screen.getByRole('option', {
-      name: 'Vegetarian',
-    }) as HTMLOptionElement;
-    const vipOption = screen.getByRole('option', { name: 'VIP' }) as HTMLOptionElement;
-    const kosherOption = screen.getByRole('option', { name: 'Kosher' }) as HTMLOptionElement;
+    const vegetarianOption = screen.getByLabelText('Vegetarian') as HTMLInputElement;
+    const vipOption = screen.getByLabelText('VIP') as HTMLInputElement;
+    const kosherOption = screen.getByLabelText('Kosher') as HTMLInputElement;
 
-    expect(vegetarianOption.selected).toBe(true);
-    expect(vipOption.selected).toBe(true);
-    expect(kosherOption.selected).toBe(false);
+    expect(vegetarianOption.checked).toBe(true);
+    expect(vipOption.checked).toBe(true);
+    expect(kosherOption.checked).toBe(false);
   });
 
   it('serializes multi-select selections as JSON in answer_text on submit', async () => {
@@ -113,13 +110,9 @@ describe('AttendanceDataEntryPanel', () => {
       />,
     );
 
-    const select = screen.getByLabelText('Meal Preferences') as HTMLSelectElement;
-
-    for (const option of Array.from(select.options)) {
-      option.selected = option.value === 'kosher' || option.value === 'vip';
-    }
-
-    fireEvent.change(select);
+    fireEvent.click(screen.getByRole('button', { name: 'Meal Preferences' }));
+    fireEvent.click(screen.getByLabelText('Vegetarian'));
+    fireEvent.click(screen.getByLabelText('Kosher'));
     fireEvent.click(screen.getByRole('button', { name: 'Save Data' }));
 
     await waitFor(() => {
@@ -292,10 +285,10 @@ describe('AttendanceDataEntryPanel', () => {
     const numberInput = screen.getByLabelText('Badge Count') as HTMLInputElement;
     expect(numberInput.value).toBe('42');
 
-    const multiSelect = screen.getByLabelText('Shifts') as HTMLSelectElement;
-    const morningOption = screen.getByRole('option', { name: 'Morning' }) as HTMLOptionElement;
-    expect(multiSelect.multiple).toBe(true);
-    expect(morningOption.selected).toBe(false);
+    expect(screen.getByRole('button', { name: 'Shifts' })).toHaveTextContent('No selection');
+    fireEvent.click(screen.getByRole('button', { name: 'Shifts' }));
+    const morningOption = screen.getByLabelText('Morning') as HTMLInputElement;
+    expect(morningOption.checked).toBe(false);
 
     fireEvent.change(screen.getByLabelText('Text Note'), { target: { value: '   ' } });
     fireEvent.change(numberInput, { target: { value: '7' } });
@@ -449,8 +442,20 @@ describe('AttendanceDataEntryPanel', () => {
     );
 
     fireEvent.change(screen.getByLabelText(/Notes/), { target: { value: '  bring water  ' } });
-    fireEvent.change(screen.getByLabelText('Team'), { target: { value: 'gold' } });
-    fireEvent.change(screen.getByLabelText('Entry Gate'), { target: { value: 'south' } });
+
+    // Select Team (FormSelectField)
+    fireEvent.click(screen.getByRole('button', { name: 'Team' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Gold' }));
+
+    // Wait a bit for the form to update and select Entry Gate
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Select Entry Gate (FormSelectField with radio type)
+    fireEvent.click(screen.getByRole('button', { name: 'Entry Gate' }));
+    fireEvent.click(screen.getByRole('option', { name: 'South' }));
+
+    // Wait again for form update
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     fireEvent.click(screen.getByRole('button', { name: 'Save Data' }));
 
@@ -606,10 +611,11 @@ describe('AttendanceDataEntryPanel', () => {
       />,
     );
 
-    const groupAOption = screen.getByRole('option', { name: 'Group A' }) as HTMLOptionElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Groups' }));
+    const groupAOption = screen.getByLabelText('Group A') as HTMLInputElement;
     const textInput = screen.getByLabelText('Comment') as HTMLInputElement;
 
-    expect(groupAOption.selected).toBe(false);
+    expect(groupAOption.checked).toBe(false);
     expect(textInput.value).toBe('');
   });
 
@@ -669,8 +675,8 @@ describe('AttendanceDataEntryPanel', () => {
       />,
     );
 
-    const multiSelect = screen.getByLabelText('Multi Without Options') as HTMLSelectElement;
-    expect(multiSelect.options).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Multi Without Options' }));
+    expect(screen.getByText('No options available')).toBeInTheDocument();
     expect(screen.getByLabelText(/Required Checkbox/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Required Text/)).toBeInTheDocument();
   });

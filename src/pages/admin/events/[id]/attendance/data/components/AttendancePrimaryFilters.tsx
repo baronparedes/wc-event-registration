@@ -1,6 +1,7 @@
-import { ChevronDown, RotateCcw, Search } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 
 import { FormInputField } from '@/components/ui/FormInputField';
+import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
 
@@ -77,55 +78,20 @@ export function AttendancePrimaryFilters({
         </div>
       </div>
 
-      <div className="relative" ref={roleDropdownRef}>
-        <button
-          type="button"
-          onClick={onToggleRoleDropdown}
-          className="flex h-10 w-full items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-left text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-          aria-haspopup="listbox"
-          aria-expanded={isRoleDropdownOpen}
-          aria-label="Role"
-        >
-          <span>{selectedRoleLabel}</span>
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
-
-        {isRoleDropdownOpen && (
-          <div
-            className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-surface p-2 shadow-md"
-            role="listbox"
-            aria-label="Role options"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                onRoleChange([]);
-                onCloseRoleDropdown();
-              }}
-              className="mb-1 w-full rounded-lg px-2 py-1 text-left text-sm text-text transition hover:bg-slate-50"
-            >
-              All roles
-            </button>
-            <div className="max-h-44 overflow-y-auto">
-              {roleOptions.map((role) => (
-                <label
-                  key={role}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm text-text transition hover:bg-slate-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={viewConfig.role.includes(role)}
-                    onChange={() => onToggleRoleSelection(role)}
-                  />
-                  <span>{role}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      <FormMultiSelectDropdownField
+        triggerAriaLabel="Role"
+        optionsAriaLabel="Role options"
+        selectedLabel={selectedRoleLabel}
+        options={roleOptions}
+        selectedValues={viewConfig.role}
+        isOpen={isRoleDropdownOpen}
+        containerRef={roleDropdownRef}
+        clearButtonLabel="All roles"
+        onToggleDropdown={onToggleRoleDropdown}
+        onCloseDropdown={onCloseRoleDropdown}
+        onClearSelection={() => onRoleChange([])}
+        onToggleSelection={onToggleRoleSelection}
+      />
 
       <div>
         <FormSelectField

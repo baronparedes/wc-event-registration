@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import type {
   AttendeeViewConfig,
   AttendeeViewGroupSort,
@@ -99,58 +100,60 @@ export function AttendanceGroupLevelsCard({
             return (
               <div key={`group-level-${index}`} className="flex items-center gap-2">
                 <span className="w-16 text-xs text-muted">Level {index + 1}</span>
-                <select
+                <FormSelectField
+                  ariaLabel={`Level ${index + 1} field`}
                   value={currentToken}
-                  onChange={(event) => onGroupingFieldChange(index, event.target.value)}
-                  className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="">Select field</option>
-                  {selectableStaticFields.length > 0 && (
-                    <optgroup label="Static Fields">
-                      {selectableStaticFields.map((staticField) => (
-                        <option
-                          key={staticField.source}
-                          value={`${staticField.source}:${staticField.source}`}
-                        >
-                          {staticField.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {selectableRegistrationFields.length > 0 && (
-                    <optgroup label="Registration Fields">
-                      {selectableRegistrationFields.map((field) => (
-                        <option key={field.token} value={field.token}>
-                          {field.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {selectableAttendanceFields.length > 0 && (
-                    <optgroup label="Attendance Fields">
-                      {selectableAttendanceFields.map((field) => (
-                        <option key={field.token} value={field.token}>
-                          {field.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-                <select
-                  aria-label={`Level ${index + 1} order`}
+                  onChange={(value) => onGroupingFieldChange(index, value)}
+                  placeholder="Select field"
+                  options={[
+                    ...(selectableStaticFields.length > 0
+                      ? [
+                          { value: '__static', label: 'Static Fields', isGroupHeader: true },
+                          ...selectableStaticFields.map((staticField) => ({
+                            value: `${staticField.source}:${staticField.source}`,
+                            label: staticField.label,
+                          })),
+                        ]
+                      : []),
+                    ...(selectableRegistrationFields.length > 0
+                      ? [
+                          { value: '__reg', label: 'Registration Fields', isGroupHeader: true },
+                          ...selectableRegistrationFields.map((field) => ({
+                            value: field.token,
+                            label: field.label,
+                          })),
+                        ]
+                      : []),
+                    ...(selectableAttendanceFields.length > 0
+                      ? [
+                          { value: '__att', label: 'Attendance Fields', isGroupHeader: true },
+                          ...selectableAttendanceFields.map((field) => ({
+                            value: field.token,
+                            label: field.label,
+                          })),
+                        ]
+                      : []),
+                  ]}
+                  selectClassName="flex-1 rounded-xl py-2"
+                />
+                <FormSelectField
+                  ariaLabel={`Level ${index + 1} order`}
                   value={displayedGroupSort}
-                  onChange={(event) =>
-                    onGroupingSortChange(index, event.target.value as AttendeeViewGroupSort)
-                  }
-                  className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="label_asc">A-Z</option>
-                  <option value="label_desc">Z-A</option>
-                  {isPrimaryGroupingLevel && <option value="size_desc">Largest</option>}
-                  {isPrimaryGroupingLevel && <option value="size_asc">Smallest</option>}
-                  <option value="time_asc">Earliest</option>
-                  <option value="time_desc">Latest</option>
-                </select>
+                  onChange={(value) => onGroupingSortChange(index, value as AttendeeViewGroupSort)}
+                  options={[
+                    { value: 'label_asc', label: 'A-Z' },
+                    { value: 'label_desc', label: 'Z-A' },
+                    ...(isPrimaryGroupingLevel
+                      ? [
+                          { value: 'size_desc', label: 'Largest' },
+                          { value: 'size_asc', label: 'Smallest' },
+                        ]
+                      : []),
+                    { value: 'time_asc', label: 'Earliest' },
+                    { value: 'time_desc', label: 'Latest' },
+                  ]}
+                  selectClassName="rounded-xl py-2"
+                />
                 <Button
                   type="button"
                   variant="outline"

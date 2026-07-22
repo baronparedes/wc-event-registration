@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
   ListTable,
   ListTableBody,
@@ -263,21 +264,20 @@ export function BulkUploadPanel({
                           ) {
                             return (
                               <ListTableCell key={field.id} className="align-top">
-                                <select
+                                <FormSelectField
                                   id={fieldId}
+                                  ariaLabel={field.label}
                                   value={value}
-                                  onChange={(event) =>
-                                    handleCellChange(index, field.field_key, event.target.value)
+                                  onChange={(nextValue) =>
+                                    handleCellChange(index, field.field_key, nextValue)
                                   }
-                                  className={previewInputClassName}
-                                >
-                                  <option value="">-- Select --</option>
-                                  {field.options.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
+                                  placeholder="-- Select --"
+                                  options={field.options.map((option) => ({
+                                    value: option.value,
+                                    label: option.label,
+                                  }))}
+                                  selectClassName={previewInputClassName}
+                                />
                               </ListTableCell>
                             );
                           }
@@ -285,18 +285,20 @@ export function BulkUploadPanel({
                           if (field.field_type === 'boolean' || field.field_type === 'checkbox') {
                             return (
                               <ListTableCell key={field.id} className="align-top">
-                                <select
+                                <FormSelectField
                                   id={fieldId}
+                                  ariaLabel={field.label}
                                   value={value}
-                                  onChange={(event) =>
-                                    handleCellChange(index, field.field_key, event.target.value)
+                                  onChange={(nextValue) =>
+                                    handleCellChange(index, field.field_key, nextValue)
                                   }
-                                  className={previewInputClassName}
-                                >
-                                  <option value="">--</option>
-                                  <option value="true">True</option>
-                                  <option value="false">False</option>
-                                </select>
+                                  placeholder="--"
+                                  options={[
+                                    { value: 'true', label: 'True' },
+                                    { value: 'false', label: 'False' },
+                                  ]}
+                                  selectClassName={previewInputClassName}
+                                />
                               </ListTableCell>
                             );
                           }

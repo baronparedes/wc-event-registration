@@ -6,12 +6,13 @@ import type { CreateEventInput } from '@/lib/domain/events';
 
 type EventRegistrationSettingsSectionProps = {
   register: UseFormRegister<CreateEventInput>;
-  watch?: UseFormWatch<CreateEventInput>;
+  watch: UseFormWatch<CreateEventInput>;
   disabled?: boolean;
 };
 
 export function EventRegistrationSettingsSection({
   register,
+  watch,
   disabled,
 }: EventRegistrationSettingsSectionProps) {
   return (
@@ -22,6 +23,7 @@ export function EventRegistrationSettingsSection({
             disabled={disabled}
             id="event-duplicate-policy"
             label="Duplicate Policy"
+            value={watch('duplicate_policy')}
             options={[
               { value: 'block', label: 'Block (prevent re-registration)' },
               { value: 'allow_update', label: 'Allow Update (overwrite responses)' },
@@ -39,6 +41,7 @@ export function EventRegistrationSettingsSection({
             disabled={disabled}
             id="event-registration-mode"
             label="Registration Mode"
+            value={watch('registration_mode')}
             options={[
               { value: 'open', label: 'Open' },
               { value: 'closed', label: 'Closed' },

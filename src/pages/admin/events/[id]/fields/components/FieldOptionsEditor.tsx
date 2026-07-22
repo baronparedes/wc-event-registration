@@ -10,6 +10,7 @@ import type {
 import { useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import type { EventFieldFormValues } from '@/lib/domain/event-fields';
 import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
 
@@ -159,10 +160,18 @@ export function FieldOptionsEditor({
                       </p>
                     </label>
 
-                    <label className="space-y-1 text-sm text-text">
+                    <div className="space-y-1 text-sm text-text">
                       <span className="block text-xs text-muted">Default toggle</span>
-                      <select
-                        {...register(`options.${index}.toggle_default`, {
+                      <FormSelectField
+                        ariaLabel={`Option ${index + 1} toggle default`}
+                        value={
+                          watchedOptions[index]?.toggle_default === true
+                            ? 'true'
+                            : watchedOptions[index]?.toggle_default === false
+                              ? 'false'
+                              : ''
+                        }
+                        registration={register(`options.${index}.toggle_default`, {
                           setValueAs: (value) => {
                             if (value === '') {
                               return undefined;
@@ -172,14 +181,13 @@ export function FieldOptionsEditor({
                           },
                         })}
                         disabled={isOptionStructureLocked}
-                        aria-label={`Option ${index + 1} toggle default`}
-                        className={inputClass}
-                      >
-                        <option value="">Choose...</option>
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </label>
+                        placeholder="Choose..."
+                        options={[
+                          { value: 'false', label: 'No' },
+                          { value: 'true', label: 'Yes' },
+                        ]}
+                      />
+                    </div>
                   </div>
                 </div>
               )}

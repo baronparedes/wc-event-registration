@@ -350,7 +350,11 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             disabled={isArchivedEvent}
           />
 
-          <EventRegistrationSettingsSection register={register} disabled={isArchivedEvent} />
+          <EventRegistrationSettingsSection
+            register={register}
+            watch={watch}
+            disabled={isArchivedEvent}
+          />
 
           {formValues.status === 'draft' && <PublishRequirementsChecker formValues={formValues} />}
 

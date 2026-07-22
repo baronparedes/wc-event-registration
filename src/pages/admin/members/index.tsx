@@ -7,6 +7,7 @@ import { AdminPageShell } from '@/components/layout';
 import { Button, EmptyState } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
   ListTable,
   ListTableBody,
@@ -143,20 +144,20 @@ export function AdminMembersPage() {
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-muted sm:min-w-48">
-            Status
-            <select
+          <div className="flex flex-col gap-1 text-sm text-muted sm:min-w-48">
+            <span>Status</span>
+            <FormSelectField
+              ariaLabel="Status"
               value={statusFilter}
-              onChange={(event) =>
-                handleStatusFilterChange(event.target.value as 'active' | 'deleted' | 'all')
-              }
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            >
-              <option value="active">Active</option>
-              <option value="deleted">Deleted</option>
-              <option value="all">All</option>
-            </select>
-          </label>
+              onChange={(value) => handleStatusFilterChange(value as 'active' | 'deleted' | 'all')}
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'deleted', label: 'Deleted' },
+                { value: 'all', label: 'All' },
+              ]}
+              selectClassName="rounded-xl py-2"
+            />
+          </div>
 
           <Button
             type="button"
