@@ -363,9 +363,7 @@ describe('AdminRegistrationsPage', () => {
     });
     const headerActionsContainer = publicRegistrationsButton.parentElement;
 
-    expect(headerActionsContainer).toHaveClass('w-full');
     expect(headerActionsContainer).toHaveClass('flex-col');
-    expect(headerActionsContainer).toHaveClass('items-stretch');
 
     fireEvent.click(publicRegistrationsButton);
     expect(mockNavigate).toHaveBeenCalledWith(`/admin/events/${testEventId}/public-registrations`);

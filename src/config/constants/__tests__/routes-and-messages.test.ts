@@ -23,8 +23,8 @@ describe('route constants and builders', () => {
     expect(ROUTE_PATHS.adminRegistrationDetailPattern).toBe(
       '/admin/events/:id/registrations/:registration_id',
     );
-    expect(ROUTE_PATHS.adminEventAttendanceUnregisteredMembersPattern).toBe(
-      '/admin/events/:id/attendance/unregistered-members',
+    expect(ROUTE_PATHS.adminEventRegistrationsUnregisteredMembersPattern).toBe(
+      '/admin/events/:id/registrations/unregistered-members',
     );
     expect(ROUTE_PATHS.adminRegistrationNamesPattern).toBe('/admin/events/:id/registrations/names');
     expect(ROUTE_PREFIXES.admin).toBe('/admin/');
@@ -38,7 +38,7 @@ describe('route constants and builders', () => {
     expect(toAdminEventFields('event-1')).toBe('/admin/events/event-1/fields');
     expect(toAdminEventRegistrations('event-1')).toBe('/admin/events/event-1/registrations');
     expect(toAdminEventAttendanceUnregisteredMembers('event-1')).toBe(
-      '/admin/events/event-1/attendance/unregistered-members',
+      '/admin/events/event-1/registrations/unregistered-members',
     );
     expect(toAdminRegistrationDetail('event-1', 'reg-1')).toBe(
       '/admin/events/event-1/registrations/reg-1',

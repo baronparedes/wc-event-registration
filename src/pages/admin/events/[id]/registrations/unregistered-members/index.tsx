@@ -22,8 +22,8 @@ import {
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
-  toAdminEventAttendance,
   toAdminEventDetail,
+  toAdminEventRegistrations,
   toAdminMemberDetail,
 } from '@/config/constants';
 import {
@@ -35,7 +35,7 @@ import { useAdminEventQuery } from '@/hooks/domain/events';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-export function AdminAttendanceUnregisteredMembersPage() {
+export function AdminUnregisteredMembersPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
   const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize);
@@ -153,17 +153,14 @@ export function AdminAttendanceUnregisteredMembersPage() {
             to: eventId ? toAdminEventDetail(eventId) : undefined,
           },
           {
-            label: 'Attendance',
-            to: eventId ? toAdminEventAttendance(eventId) : undefined,
+            label: 'Registrations',
+            to: eventId ? toAdminEventRegistrations(eventId) : undefined,
           },
           { label: 'Unregistered Members' },
         ]}
         navLinks={
           eventId ? (
-            <EventNavigationLinks
-              eventId={eventId}
-              currentSection="attendance-unregistered-members"
-            />
+            <EventNavigationLinks eventId={eventId} currentSection="registrations" />
           ) : undefined
         }
         title="Unregistered Members Report"

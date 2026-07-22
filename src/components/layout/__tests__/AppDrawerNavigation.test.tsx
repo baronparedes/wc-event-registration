@@ -119,7 +119,7 @@ describe('AppDrawerNavigation', () => {
     );
     expect(screen.getByRole('link', { name: 'Unregistered Members' })).toHaveAttribute(
       'href',
-      '/admin/events/event-1/attendance/unregistered-members',
+      '/admin/events/event-1/registrations/unregistered-members',
     );
   });
 

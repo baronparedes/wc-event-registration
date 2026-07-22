@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, SectionCard } from '@/components/ui';
-import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
+import { ROUTE_PATHS, toAdminEventAttendanceFields, toAdminEventDetail } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useUpdateAttendanceSettingsMutation,
@@ -54,6 +54,7 @@ function isWithinEventWindow(
 
 export function AdminEventAttendancePage() {
   const { id: eventId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: authState, isLoading: isAuthLoading } = useAdminAuthQuery();
   const canLoadAdminData = !isAuthLoading && (authState?.isAuthenticated ?? false);
 
@@ -375,6 +376,13 @@ export function AdminEventAttendancePage() {
           </SectionCard>
 
           <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(toAdminEventAttendanceFields(resolvedEventId))}
+            >
+              Manage Attendance Fields
+            </Button>
             <Button
               type="submit"
               size="lg"

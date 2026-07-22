@@ -10,6 +10,7 @@ import {
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
+  toAdminEventAttendanceUnregisteredMembers,
   toAdminEventDetail,
   toAdminEventPublicRegistrations,
 } from '@/config/constants';
@@ -124,13 +125,6 @@ export function AdminRegistrationsPage() {
 
   const navActions = (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
-      <Button
-        asChild
-        variant="primaryOutline"
-        onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
-      >
-        View Public Registrations
-      </Button>
       <CopyNamesButton
         eventId={eventId}
         eventTitle={event?.title}
@@ -232,6 +226,22 @@ export function AdminRegistrationsPage() {
               onGoToPage={handleGoToPage}
             />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-2 pt-6 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(toAdminEventAttendanceUnregisteredMembers(eventId))}
+          >
+            View Unregistered Members
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
+          >
+            View Public Registrations
+          </Button>
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>
