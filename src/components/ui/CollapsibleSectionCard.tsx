@@ -37,6 +37,9 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
   const [isAnimatingContent, setIsAnimatingContent] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const actionLabel = isExpanded ? collapseLabel : expandLabel;
+  const toggleExpanded = () => {
+    setIsExpanded((current) => !current);
+  };
   const wrapperClassName = sectionCardProps.wrapperClassName
     ? `${sectionCardProps.wrapperClassName} relative`
     : 'relative rounded-2xl border border-border bg-surface p-6 shadow-sm';
@@ -46,8 +49,14 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
     title || subtitle ? (
       <div className="relative">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            {title && (
+          {title ? (
+            <button
+              aria-controls={contentId}
+              aria-expanded={isExpanded}
+              className="flex-1 text-left focus:outline-none"
+              onClick={toggleExpanded}
+              type="button"
+            >
               <div
                 className={
                   sectionCardProps.titleClassName ?? 'font-heading text-xl font-semibold text-text'
@@ -55,22 +64,28 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
               >
                 {title}
               </div>
-            )}
-            {subtitle && (
-              <div className={sectionCardProps.subtitleClassName ?? 'mt-2 text-sm text-muted'}>
-                {subtitle}
-              </div>
-            )}
-          </div>
+              {subtitle && (
+                <div className={sectionCardProps.subtitleClassName ?? 'mt-2 text-sm text-muted'}>
+                  {subtitle}
+                </div>
+              )}
+            </button>
+          ) : (
+            <div className="flex-1">
+              {subtitle && (
+                <div className={sectionCardProps.subtitleClassName ?? 'mt-2 text-sm text-muted'}>
+                  {subtitle}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <button
           aria-controls={contentId}
           aria-expanded={isExpanded}
           aria-label={actionLabel}
-          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
-          onClick={() => {
-            setIsExpanded((current) => !current);
-          }}
+          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none"
+          onClick={toggleExpanded}
           title={actionLabel}
           type="button"
         >
@@ -92,10 +107,8 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
             aria-controls={contentId}
             aria-expanded={isExpanded}
             aria-label={actionLabel}
-            className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
-            onClick={() => {
-              setIsExpanded((current) => !current);
-            }}
+            className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none"
+            onClick={toggleExpanded}
             title={actionLabel}
             type="button"
           >
