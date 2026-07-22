@@ -54,7 +54,7 @@ export function AttendanceAdvancedFiltersCard({
 
   return (
     <>
-      <div className="grid gap-2 md:col-span-3 lg:grid-cols-4 lg:items-end">
+      <div className="grid gap-2 border-t border-border pt-3 md:col-span-3 lg:grid-cols-4 lg:items-end">
         <div className="flex justify-end lg:col-span-4">
           <button
             type="button"

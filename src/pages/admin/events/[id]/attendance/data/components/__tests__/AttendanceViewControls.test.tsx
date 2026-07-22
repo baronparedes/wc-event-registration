@@ -137,9 +137,9 @@ describe('AttendanceViewControls', () => {
     const level2OrderButton = screen.getByRole('button', { name: 'Level 2 order' });
     expect(level2OrderButton).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Up' })[1]);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Down' })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Move level 2 up' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move level 1 down' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove level 1' }));
 
     expect(handlers.onMoveGroupingLevel).toHaveBeenCalledWith(1, 'up');
     expect(handlers.onMoveGroupingLevel).toHaveBeenCalledWith(0, 'down');
