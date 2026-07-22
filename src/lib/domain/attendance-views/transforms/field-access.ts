@@ -15,7 +15,19 @@ import {
 import { toDynamicFieldToken } from './tokens';
 
 export function sourcePriority(source: DynamicFieldSource): number {
-  return source === 'registration' ? 0 : 1;
+  if (source === 'registration') {
+    return 0;
+  }
+
+  if (source === 'attendance') {
+    return 1;
+  }
+
+  if (source === 'member') {
+    return 2;
+  }
+
+  return 3;
 }
 
 export function fieldFilterValues(
@@ -37,15 +49,23 @@ export function getAnswerSummaries(
   attendee: AttendeeSearchResult,
   source: DynamicFieldSource,
 ): Array<RegistrationAnswerSummary | AttendanceAnswerSummary> {
-  return source === 'registration' ? attendee.registration_answers : attendee.attendance_answers;
+  if (source === 'registration') {
+    return attendee.registration_answers;
+  }
+
+  if (source === 'attendance') {
+    return attendee.attendance_answers;
+  }
+
+  return [];
 }
 
 export function findAnswerSummary(
   attendee: AttendeeSearchResult,
   field: DynamicFieldRef,
 ): RegistrationAnswerSummary | AttendanceAnswerSummary | null {
-  // Handle static fields (role, category).
-  if (field.source === 'role' || field.source === 'category') {
+  // Handle static fields (role, category) and direct member fields.
+  if (field.source === 'role' || field.source === 'category' || field.source === 'member') {
     return null;
   }
 

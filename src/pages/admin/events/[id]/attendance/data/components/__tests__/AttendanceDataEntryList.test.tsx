@@ -88,7 +88,7 @@ describe('AttendanceDataEntryList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders check-in status badge and hides attendance field columns', () => {
+  it('renders default core columns and hides attendance field columns', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
@@ -130,7 +130,25 @@ describe('AttendanceDataEntryList', () => {
         eventId="event-1"
         registrants={registrants}
         fields={baseFields}
-        allAttendees={[]}
+        allAttendees={[
+          {
+            attendee_kind: 'registered',
+            registration_id: 'reg-1',
+            public_registration_id: null,
+            user_id: 'user-1',
+            member_id: 'MID-001',
+            full_name: 'Jane Doe',
+            email: 'jane@example.com',
+            role: 'Volunteer',
+            category: 'North Team',
+            registration_status: 'submitted',
+            submitted_at: '2026-07-01T00:00:00Z',
+            check_in_status: 'checked_in',
+            official_check_in_time: null,
+            registration_answers: [],
+            attendance_answers: [],
+          },
+        ]}
         registrationFields={[]}
       />,
     );
@@ -141,10 +159,10 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.queryByText('Area')).not.toBeInTheDocument();
     expect(screen.queryByText('Notes')).not.toBeInTheDocument();
 
-    expect(screen.getByText('jane@example.com')).toBeInTheDocument();
+    expect(screen.queryByText('jane@example.com')).not.toBeInTheDocument();
     expect(screen.getByText('Volunteer')).toBeInTheDocument();
     expect(screen.getByText('North Team')).toBeInTheDocument();
-    expect(screen.getByLabelText('Checked In')).toBeInTheDocument();
+    expect(screen.getByText('MID-001')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 
@@ -220,7 +238,7 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.getByText('North')).toBeInTheDocument();
   });
 
-  it('shows not checked in badge for unknown check-in state and opens panel on row click', () => {
+  it('opens panel on row click and shows fallback values for missing optional columns', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
@@ -243,7 +261,6 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Not Checked In')).toBeInTheDocument();
     expect(screen.getAllByText('—').length).toBeGreaterThan(1);
     expect(screen.getByRole('button', { name: 'Fill In' })).toBeInTheDocument();
 
@@ -252,7 +269,7 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
-  it('shows a guest note for public attendees', () => {
+  it('renders public attendees by full name in attendee column', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'public',
@@ -279,7 +296,6 @@ describe('AttendanceDataEntryList', () => {
     );
 
     expect(screen.getByText('Guest One')).toBeInTheDocument();
-    expect(screen.getByText('Guest', { selector: 'p' })).toBeInTheDocument();
   });
 
   it('shows "Edit" button when attendance answers are filled', () => {

@@ -35,7 +35,7 @@ export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
   const canAccessCheckIn = canAccessAttendanceCheckIn(authState?.adminRole);
 
   return (
-    <>
+    <div className="flex flex-wrap gap-6 print:hidden">
       {canWrite && <AdminSubNavLink to={toAdminEventDetail(eventId)}>Event</AdminSubNavLink>}
       {canWrite && <AdminSubNavLink to={toAdminEventFields(eventId)}>Fields</AdminSubNavLink>}
       {canRead && (
@@ -50,6 +50,6 @@ export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
       {canAccessCheckIn && (
         <AdminSubNavLink to={toAdminEventAttendanceCheckIn(eventId)}>Check-In</AdminSubNavLink>
       )}
-    </>
+    </div>
   );
 }

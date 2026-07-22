@@ -5,6 +5,7 @@ type AttendanceViewFieldSelectorProps = {
   selectedFields: DynamicFieldRef[];
   registrationFieldOptions: DynamicFieldOption[];
   attendanceFieldOptions: DynamicFieldOption[];
+  memberFieldOptions: DynamicFieldOption[];
   onToggleField: (token: string) => void;
 };
 
@@ -59,6 +60,7 @@ export function AttendanceViewFieldSelector({
   selectedFields,
   registrationFieldOptions,
   attendanceFieldOptions,
+  memberFieldOptions,
   onToggleField,
 }: AttendanceViewFieldSelectorProps) {
   return (
@@ -75,6 +77,13 @@ export function AttendanceViewFieldSelector({
           title="Attendance fields"
           emptyState="No active attendance fields are available."
           options={attendanceFieldOptions}
+          selectedFields={selectedFields}
+          onToggleField={onToggleField}
+        />
+        <FieldOptionGroup
+          title="Member fields"
+          emptyState="No member fields are available."
+          options={memberFieldOptions}
           selectedFields={selectedFields}
           onToggleField={onToggleField}
         />

@@ -16,6 +16,7 @@ type AttendancePrimaryFiltersProps = {
   categoryOptions: string[];
   registrationDynamicFieldOptions: DynamicFieldOption[];
   attendanceDynamicFieldOptions: DynamicFieldOption[];
+  memberDynamicFieldOptions: DynamicFieldOption[];
   selectedRoleLabel: string;
   isRoleDropdownOpen: boolean;
   roleDropdownRef: React.RefObject<HTMLDivElement | null>;
@@ -37,6 +38,7 @@ export function AttendancePrimaryFilters({
   categoryOptions,
   registrationDynamicFieldOptions,
   attendanceDynamicFieldOptions,
+  memberDynamicFieldOptions,
   selectedRoleLabel,
   isRoleDropdownOpen,
   roleDropdownRef,
@@ -124,6 +126,7 @@ export function AttendancePrimaryFilters({
         selectedFields={viewConfig.visibleFields}
         registrationFieldOptions={registrationDynamicFieldOptions}
         attendanceFieldOptions={attendanceDynamicFieldOptions}
+        memberFieldOptions={memberDynamicFieldOptions}
         onToggleField={onToggleVisibleField}
       />
     </div>

@@ -23,6 +23,9 @@ function makeOption(
 const serviceOption = makeOption('registration', 'service', 'Service');
 const teamOption = makeOption('registration', 'team', 'Team');
 const areaOption = makeOption('attendance', 'area', 'Area');
+const rfidOption = makeOption('member', 'member_id', 'RFID');
+const roleOption = makeOption('role', 'role', 'Role');
+const categoryOption = makeOption('category', 'category', 'Category');
 
 describe('useAttendanceViewControlsState', () => {
   it('initializes default state and updates base filters', () => {
@@ -36,7 +39,11 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.checkInStatus).toBe('all');
     expect(result.current.viewConfig.dynamicFilterCombination).toBe('and');
     expect(result.current.viewConfig.dynamicFilterExpression).toBeUndefined();
-    expect(result.current.viewConfig.visibleFields).toEqual([]);
+    expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
+      { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
+      { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
+    ]);
     expect(result.current.dynamicFilterField).toBeNull();
     expect(result.current.hasActiveFilters).toBe(false);
 
@@ -58,7 +65,14 @@ describe('useAttendanceViewControlsState', () => {
 
   it('handles adding same-field filter values and removing a single filter chip', () => {
     const { result } = renderHook(() =>
-      useAttendanceViewControlsState([serviceOption, teamOption, areaOption]),
+      useAttendanceViewControlsState([
+        serviceOption,
+        teamOption,
+        areaOption,
+        rfidOption,
+        roleOption,
+        categoryOption,
+      ]),
     );
 
     act(() => {
@@ -205,6 +219,9 @@ describe('useAttendanceViewControlsState', () => {
     });
 
     expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
+      { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
+      { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
       { source: 'registration', fieldKey: 'service', label: 'Service', sortOrder: 0 },
     ]);
     expect(result.current.hasActiveFilters).toBe(true);
@@ -213,7 +230,11 @@ describe('useAttendanceViewControlsState', () => {
       result.current.toggleVisibleField('registration:service');
     });
 
-    expect(result.current.viewConfig.visibleFields).toEqual([]);
+    expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
+      { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
+      { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
+    ]);
     expect(result.current.hasActiveFilters).toBe(false);
   });
 
@@ -317,7 +338,11 @@ describe('useAttendanceViewControlsState', () => {
       dynamicFilters: [],
       dynamicFilterExpression: undefined,
       groupBy: [],
-      visibleFields: [],
+      visibleFields: [
+        { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
+        { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
+        { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
+      ],
     });
     expect(result.current.dynamicFilterFieldToken).toBe('');
     expect(result.current.dynamicFilterValue).toBe('');

@@ -22,6 +22,7 @@ type AttendanceViewControlsProps = {
   dynamicFieldOptions: DynamicFieldOption[];
   registrationDynamicFieldOptions: DynamicFieldOption[];
   attendanceDynamicFieldOptions: DynamicFieldOption[];
+  memberDynamicFieldOptions: DynamicFieldOption[];
   dynamicFilterFieldToken: string;
   dynamicFilterValue: string;
   dynamicFilterCombination: DynamicFilterCombination;
@@ -54,6 +55,7 @@ export function AttendanceViewControls({
   dynamicFieldOptions,
   registrationDynamicFieldOptions,
   attendanceDynamicFieldOptions,
+  memberDynamicFieldOptions,
   dynamicFilterFieldToken,
   dynamicFilterValue,
   dynamicFilterCombination,
@@ -159,6 +161,7 @@ export function AttendanceViewControls({
           categoryOptions={categoryOptions}
           registrationDynamicFieldOptions={registrationDynamicFieldOptions}
           attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
+          memberDynamicFieldOptions={memberDynamicFieldOptions}
           selectedRoleLabel={selectedRoleLabel}
           isRoleDropdownOpen={isRoleDropdownOpen}
           roleDropdownRef={roleDropdownRef}

@@ -12,6 +12,36 @@ import {
   toDynamicFieldToken,
 } from '@/lib/domain/attendance-views';
 
+const DEFAULT_VISIBLE_FIELDS: AttendeeViewConfig['visibleFields'] = [
+  { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
+  { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
+  { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
+];
+
+const DEFAULT_VISIBLE_FIELD_TOKENS = new Set(
+  DEFAULT_VISIBLE_FIELDS.map((field) => toDynamicFieldToken(field)),
+);
+
+function hasNonDefaultVisibleFields(visibleFields: AttendeeViewConfig['visibleFields']) {
+  if (visibleFields.length !== DEFAULT_VISIBLE_FIELDS.length) {
+    return true;
+  }
+
+  const currentTokens = new Set(visibleFields.map((field) => toDynamicFieldToken(field)));
+
+  if (currentTokens.size !== DEFAULT_VISIBLE_FIELD_TOKENS.size) {
+    return true;
+  }
+
+  for (const token of DEFAULT_VISIBLE_FIELD_TOKENS) {
+    if (!currentTokens.has(token)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   nameOrMemberQuery: '',
   role: [],
@@ -21,7 +51,7 @@ const DEFAULT_VIEW_CONFIG: AttendeeViewConfig = {
   dynamicFilters: [],
   dynamicFilterExpression: undefined,
   groupBy: [],
-  visibleFields: [],
+  visibleFields: DEFAULT_VISIBLE_FIELDS,
 };
 
 type RawCustomJsonFilter = {
@@ -138,7 +168,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     viewConfig.dynamicFilters.length > 0 ||
     viewConfig.dynamicFilterExpression !== undefined ||
     viewConfig.groupBy.length > 0 ||
-    viewConfig.visibleFields.length > 0;
+    hasNonDefaultVisibleFields(viewConfig.visibleFields);
 
   function setNameOrMemberQuery(value: string) {
     setViewConfig((current) => ({ ...current, nameOrMemberQuery: value }));
@@ -387,19 +417,6 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
   }
 
   function toggleVisibleField(token: string) {
-    const option = fromDynamicFieldToken(token, dynamicFieldOptions);
-    if (!option) {
-      return;
-    }
-
-    const nextField = {
-      source: option.source,
-      fieldKey: option.fieldKey,
-      label: option.label,
-      sortOrder: option.sortOrder,
-      fieldType: option.fieldType,
-    };
-
     setViewConfig((current) => {
       const isSelected = current.visibleFields.some(
         (field) => toDynamicFieldToken(field) === token,
@@ -413,6 +430,19 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
           ),
         };
       }
+
+      const option = fromDynamicFieldToken(token, dynamicFieldOptions);
+      if (!option) {
+        return current;
+      }
+
+      const nextField = {
+        source: option.source,
+        fieldKey: option.fieldKey,
+        label: option.label,
+        sortOrder: option.sortOrder,
+        fieldType: option.fieldType,
+      };
 
       return {
         ...current,

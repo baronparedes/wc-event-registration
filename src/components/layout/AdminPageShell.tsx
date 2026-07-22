@@ -37,7 +37,7 @@ function AdminPageHeader({
   return (
     <div className="space-y-3">
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted">
+        <nav className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted print:hidden">
           {breadcrumbs.map((crumb, index) => (
             <div key={index} className="flex items-center gap-1.5">
               {index > 0 && <ChevronRight className="h-4 w-4 flex-shrink-0" />}
@@ -66,7 +66,7 @@ function AdminPageHeader({
       </div>
 
       {navLinks && (
-        <div className="border-b border-border">
+        <div className="border-b border-border print:hidden">
           <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <nav className="-mb-px flex gap-6">{navLinks}</nav>
           </div>

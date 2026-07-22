@@ -5,7 +5,7 @@ import type {
   RegistrationAnswerSummary,
 } from '@/lib/domain/attendance';
 
-export type DynamicFieldSource = 'registration' | 'attendance' | 'role' | 'category';
+export type DynamicFieldSource = 'registration' | 'attendance' | 'member' | 'role' | 'category';
 
 export type DynamicFieldRef = {
   source: DynamicFieldSource;

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { DynamicFilterExpressionNode } from './types';
 
 const dynamicFieldRefSchema = z.object({
-  source: z.enum(['registration', 'attendance', 'role', 'category']),
+  source: z.enum(['registration', 'attendance', 'member', 'role', 'category']),
   fieldKey: z.string(),
   label: z.string(),
   sortOrder: z.number().optional(),

@@ -76,6 +76,67 @@ export function AdminAttendanceDataPage() {
   } = useAttendeesLocalCacheQuery(id);
 
   const cachedAttendees = useMemo(() => attendees ?? [], [attendees]);
+  const memberDynamicFieldOptions = useMemo(
+    () => [
+      {
+        source: 'member' as const,
+        fieldKey: 'member_id',
+        label: 'RFID',
+        sortOrder: 0,
+        token: 'member:member_id',
+        values: [
+          ...new Set(
+            cachedAttendees
+              .map((attendee) => attendee.member_id?.trim())
+              .filter((value): value is string => Boolean(value)),
+          ),
+        ].sort((a, b) => a.localeCompare(b)),
+      },
+      {
+        source: 'role' as const,
+        fieldKey: 'role',
+        label: 'Role',
+        sortOrder: 1,
+        token: 'role:role',
+        values: [
+          ...new Set(
+            cachedAttendees
+              .map((attendee) => attendee.role?.trim())
+              .filter((value): value is string => Boolean(value)),
+          ),
+        ].sort((a, b) => a.localeCompare(b)),
+      },
+      {
+        source: 'category' as const,
+        fieldKey: 'category',
+        label: 'Category',
+        sortOrder: 2,
+        token: 'category:category',
+        values: [
+          ...new Set(
+            cachedAttendees
+              .map((attendee) => attendee.category?.trim())
+              .filter((value): value is string => Boolean(value)),
+          ),
+        ].sort((a, b) => a.localeCompare(b)),
+      },
+      {
+        source: 'member' as const,
+        fieldKey: 'email',
+        label: 'Email',
+        sortOrder: 3,
+        token: 'member:email',
+        values: [
+          ...new Set(
+            cachedAttendees
+              .map((attendee) => attendee.email?.trim())
+              .filter((value): value is string => Boolean(value)),
+          ),
+        ].sort((a, b) => a.localeCompare(b)),
+      },
+    ],
+    [cachedAttendees],
+  );
   const seededDynamicFields = useMemo(
     () => [
       ...registrationFields
@@ -94,8 +155,14 @@ export function AdminAttendanceDataPage() {
         sortOrder: field.display_order,
         fieldType: field.field_type,
       })),
+      ...memberDynamicFieldOptions.map((field) => ({
+        source: field.source,
+        fieldKey: field.fieldKey,
+        label: field.label,
+        sortOrder: field.sortOrder,
+      })),
     ],
-    [registrationFields, fields],
+    [registrationFields, fields, memberDynamicFieldOptions],
   );
 
   const dynamicFieldOptions = useMemo(
@@ -371,6 +438,7 @@ export function AdminAttendanceDataPage() {
           dynamicFieldOptions={dynamicFieldOptions}
           registrationDynamicFieldOptions={registrationDynamicFieldOptions}
           attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
+          memberDynamicFieldOptions={memberDynamicFieldOptions}
           dynamicFilterFieldToken={dynamicFilterFieldToken}
           dynamicFilterValue={dynamicFilterValue}
           dynamicFilterCombination={viewConfig.dynamicFilterCombination ?? 'and'}

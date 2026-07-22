@@ -12,6 +12,7 @@ type AttendanceColumnsButtonProps = {
   selectedFields: DynamicFieldRef[];
   registrationFieldOptions: DynamicFieldOption[];
   attendanceFieldOptions: DynamicFieldOption[];
+  memberFieldOptions: DynamicFieldOption[];
   onToggleField: (token: string) => void;
 };
 
@@ -19,6 +20,7 @@ export function AttendanceColumnsButton({
   selectedFields,
   registrationFieldOptions,
   attendanceFieldOptions,
+  memberFieldOptions,
   onToggleField,
 }: AttendanceColumnsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +49,7 @@ export function AttendanceColumnsButton({
           <div>
             <h2 className="font-heading text-lg font-semibold text-text">Displayed Fields</h2>
             <p className="mt-0.5 text-xs text-muted">
-              Choose which registration and attendance fields appear as table columns.
+              Choose which registration, attendance, and member fields appear as table columns.
             </p>
           </div>
           <button
@@ -64,6 +66,7 @@ export function AttendanceColumnsButton({
           selectedFields={selectedFields}
           registrationFieldOptions={registrationFieldOptions}
           attendanceFieldOptions={attendanceFieldOptions}
+          memberFieldOptions={memberFieldOptions}
           onToggleField={onToggleField}
         />
 
