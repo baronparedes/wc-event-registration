@@ -6,7 +6,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -175,7 +174,6 @@ export function AdminMemberDetailPage() {
           { label: 'Members', to: ROUTE_PATHS.adminMembers },
           { label: member.full_name },
         ]}
-        navLinks={<ActionLink to={ROUTE_PATHS.adminMembers}>Back to Members</ActionLink>}
         title={canWrite ? 'Edit Member' : 'View Member'}
         description={
           canWrite

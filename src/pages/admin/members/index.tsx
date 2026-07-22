@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { AdminPageShell } from '@/components/layout';
+import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
 import { Button, EmptyState } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
@@ -130,6 +130,11 @@ export function AdminMembersPage() {
           ) : undefined
         }
       />
+
+      <AdminPageShell.SubNav>
+        <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
+        <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
+      </AdminPageShell.SubNav>
 
       <AdminPageShell.Filters>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">

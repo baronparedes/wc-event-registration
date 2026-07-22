@@ -1,3 +1,13 @@
+import { AdminSubNavLink } from '@/components/layout';
+import {
+  toAdminEventAttendance,
+  toAdminEventAttendanceCheckIn,
+  toAdminEventAttendanceData,
+  toAdminEventDetail,
+  toAdminEventFields,
+  toAdminEventRegistrations,
+} from '@/config/constants';
+
 type EventNavigationSection =
   | 'event'
   | 'fields'
@@ -16,9 +26,15 @@ type EventNavigationLinksProps = {
   currentSection: EventNavigationSection;
 };
 
-export function EventNavigationLinks({ eventId, currentSection }: EventNavigationLinksProps) {
-  void eventId;
-  void currentSection;
-
-  return null;
+export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
+  return (
+    <>
+      <AdminSubNavLink to={toAdminEventDetail(eventId)}>Event</AdminSubNavLink>
+      <AdminSubNavLink to={toAdminEventFields(eventId)}>Fields</AdminSubNavLink>
+      <AdminSubNavLink to={toAdminEventRegistrations(eventId)}>Registrations</AdminSubNavLink>
+      <AdminSubNavLink to={toAdminEventAttendance(eventId)}>Attendance</AdminSubNavLink>
+      <AdminSubNavLink to={toAdminEventAttendanceData(eventId)}>Attendee Details</AdminSubNavLink>
+      <AdminSubNavLink to={toAdminEventAttendanceCheckIn(eventId)}>Check-In</AdminSubNavLink>
+    </>
+  );
 }

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { cx } from 'class-variance-authority';
 import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 
 type AdminPageShellProps = {
   children: ReactNode;
@@ -36,30 +36,21 @@ function AdminPageHeader({
 }: AdminPageHeaderProps) {
   return (
     <div className="space-y-3">
-      {(breadcrumbs?.length || navLinks) && (
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted">
-              {breadcrumbs.map((crumb, index) => (
-                <div key={index} className="flex items-center gap-1.5">
-                  {index > 0 && <ChevronRight className="h-4 w-4 flex-shrink-0" />}
-                  {crumb.to ? (
-                    <Link to={crumb.to} className="truncate hover:text-text hover:underline">
-                      {crumb.label}
-                    </Link>
-                  ) : (
-                    <span className="truncate">{crumb.label}</span>
-                  )}
-                </div>
-              ))}
-            </nav>
-          )}
-          {navLinks && (
-            <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
-              {navLinks}
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <nav className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted">
+          {breadcrumbs.map((crumb, index) => (
+            <div key={index} className="flex items-center gap-1.5">
+              {index > 0 && <ChevronRight className="h-4 w-4 flex-shrink-0" />}
+              {crumb.to ? (
+                <Link to={crumb.to} className="truncate hover:text-text hover:underline">
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="truncate">{crumb.label}</span>
+              )}
             </div>
-          )}
-        </div>
+          ))}
+        </nav>
       )}
 
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -73,6 +64,14 @@ function AdminPageHeader({
           </div>
         )}
       </div>
+
+      {navLinks && (
+        <div className="border-b border-border">
+          <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <nav className="-mb-px flex gap-6">{navLinks}</nav>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -114,6 +113,45 @@ function AdminPageContent({
   return <div className={className}>{children}</div>;
 }
 
+type AdminPageSubNavProps = {
+  children: ReactNode;
+};
+
+function AdminPageSubNav({ children }: AdminPageSubNavProps) {
+  return (
+    <div className="border-b border-border">
+      <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <nav className="-mb-px flex gap-6">{children}</nav>
+      </div>
+    </div>
+  );
+}
+
 AdminPageShell.Header = AdminPageHeader;
 AdminPageShell.Filters = AdminPageFilters;
 AdminPageShell.Content = AdminPageContent;
+AdminPageShell.SubNav = AdminPageSubNav;
+
+type AdminSubNavLinkProps = {
+  to: string;
+  children: ReactNode;
+};
+
+export function AdminSubNavLink({ to, children }: AdminSubNavLinkProps) {
+  return (
+    <NavLink
+      to={to}
+      end
+      className={({ isActive }) =>
+        cx(
+          'whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors',
+          isActive
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted hover:border-border hover:text-text',
+        )
+      }
+    >
+      {children}
+    </NavLink>
+  );
+}

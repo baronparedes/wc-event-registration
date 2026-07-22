@@ -11,7 +11,6 @@ import {
   ROUTE_PATHS,
   TIMING,
   toAdminEventAttendance,
-  toAdminEventDetail,
   toEventRegistration,
 } from '@/config/constants';
 import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
@@ -25,7 +24,6 @@ import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
-import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
 
@@ -382,17 +380,7 @@ export function AdminAttendanceCheckInPage() {
 
   return (
     <AdminPageShell>
-      <AdminPageShell.Header
-        breadcrumbs={[
-          { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event.title, to: toAdminEventDetail(eventId) },
-          { label: 'Attendance', to: toAdminEventAttendance(eventId) },
-          { label: 'Check-In' },
-        ]}
-        navLinks={<EventNavigationLinks eventId={eventId} currentSection="attendance-check-in" />}
-        title="Manage Check-In"
-        description="Scan RFID or search attendee by name or email, confirm check-in, then continue to the next person."
-      />
+      <AdminPageShell.Header title="Event Check-In" />
 
       <EventHeaderCard
         defaultExpanded={false}
