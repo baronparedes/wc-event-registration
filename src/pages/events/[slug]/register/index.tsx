@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { TIMING } from '@/config/constants';
 import { useWizardStepScroll } from '@/hooks/utils';
+import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 
 import { DynamicFieldsStepCard, MemberLookupStepCard, ProfileStepCard } from './components';
 import { useEventRegistrationPageState } from './hooks';
@@ -45,6 +46,15 @@ export function EventRegistrationPage() {
     enterWizardConfirmStep,
     isEffectiveRegistrationBlocked,
   } = useEventRegistrationPageState();
+
+  const publicRegistrationAccess =
+    availability?.status === 'available'
+      ? derivePublicRegistrationAccess({
+          public_registration_access: availability.event.metadata?.public_registration_access,
+          allow_public_registrations: availability.event.allow_public_registrations,
+          require_id_lookup: availability.event.require_id_lookup,
+        })
+      : 'members';
 
   useWizardStepScroll(activeWizardStep, [stepOneRef, stepTwoRef, dynamicFieldsStepRef]);
 
@@ -96,11 +106,8 @@ export function EventRegistrationPage() {
                     ? Boolean(availability.event.metadata?.allow_name_lookup)
                     : false
                 }
-                allowPublicRegistration={
-                  availability?.status === 'available' && availability.event
-                    ? Boolean(availability.event.allow_public_registrations)
-                    : false
-                }
+                allowMemberRegistration={publicRegistrationAccess !== 'public'}
+                allowPublicRegistration={publicRegistrationAccess !== 'members'}
               />
             </div>
           )}

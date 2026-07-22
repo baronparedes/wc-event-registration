@@ -24,6 +24,7 @@ type MemberLookupStepCardProps = {
   shouldHighlightInput?: boolean;
   onDismissLookupError?: () => void;
   allowNameLookup: boolean;
+  allowMemberRegistration?: boolean;
   allowPublicRegistration?: boolean;
 };
 
@@ -40,6 +41,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     shouldHighlightInput = false,
     onDismissLookupError,
     allowNameLookup,
+    allowMemberRegistration = true,
     allowPublicRegistration = false,
   } = props;
 
@@ -68,7 +70,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
         )}
 
         {/* Step 2a: ID lookup */}
-        {lookupMethod === 'id' && (
+        {lookupMethod === 'id' && allowMemberRegistration && (
           <form className="space-y-3" onSubmit={lookupForm.handleSubmit(onLookupSubmit)} noValidate>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -126,6 +128,24 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
               </Button>
             </div>
           </form>
+        )}
+
+        {lookupMethod === 'id' && !allowMemberRegistration && (
+          <div className="space-y-3 rounded-md border border-border bg-background p-4">
+            <p className="text-sm text-muted">
+              This event is currently set to public-only registration.
+            </p>
+            {slug && allowPublicRegistration && (
+              <Button
+                type="button"
+                variant="default"
+                className="w-full"
+                onClick={() => navigate(`/events/${slug}/register-public`)}
+              >
+                Continue as Guest
+              </Button>
+            )}
+          </div>
         )}
 
         {/* Step 2b: Name lookup */}

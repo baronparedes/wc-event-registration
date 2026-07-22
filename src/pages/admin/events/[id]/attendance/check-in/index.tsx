@@ -24,6 +24,7 @@ import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/event
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { canWriteAdminData } from '@/lib/domain/auth';
+import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
 import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
@@ -331,7 +332,10 @@ export function AdminAttendanceCheckInPage() {
         status: event.status,
         duplicate_policy: event.duplicate_policy,
         registration_mode: 'open',
-        allow_public_registrations: event.allow_public_registrations,
+        public_registration_access: derivePublicRegistrationAccess({
+          allow_public_registrations: event.allow_public_registrations,
+          require_id_lookup: event.require_id_lookup,
+        }),
         allow_name_lookup: Boolean(event.metadata?.allow_name_lookup),
       });
       toast.success(

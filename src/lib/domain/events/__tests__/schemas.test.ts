@@ -14,6 +14,7 @@ const validEventInput = {
   status: 'draft' as const,
   duplicate_policy: 'block' as const,
   registration_mode: 'open' as const,
+  public_registration_access: 'members' as const,
 };
 
 describe('events schemas', () => {
@@ -53,6 +54,7 @@ describe('events schemas', () => {
       status: 'published',
       duplicate_policy: 'allow_update',
       registration_mode: 'closed',
+      public_registration_access: 'members_and_public',
     });
 
     expect(parsed.status).toBe('published');

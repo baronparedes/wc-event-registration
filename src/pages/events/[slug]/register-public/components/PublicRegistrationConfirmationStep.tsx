@@ -8,6 +8,7 @@ type PublicRegistrationConfirmationStepProps = {
   registrationId: string;
   email: string;
   eventSlug: string;
+  canUpdate: boolean;
   inactivityTimeoutMs?: number;
   onInactivityTimeout?: () => void;
 };
@@ -16,6 +17,7 @@ export function PublicRegistrationConfirmationStep({
   registrationId,
   email,
   eventSlug,
+  canUpdate,
   inactivityTimeoutMs,
   onInactivityTimeout,
 }: PublicRegistrationConfirmationStepProps) {
@@ -50,7 +52,12 @@ export function PublicRegistrationConfirmationStep({
         </div>
 
         <div className="space-y-2 text-sm text-muted">
-          <p>You can manage your registration through the confirmation email.</p>
+          {canUpdate && (
+            <p>
+              You can update your registration using the same email address you used for
+              registration.
+            </p>
+          )}
           <p>
             If you need to register for another event, visit the{' '}
             <a href="/" className="font-medium text-primary hover:underline">

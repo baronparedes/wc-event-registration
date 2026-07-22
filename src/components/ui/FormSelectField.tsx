@@ -89,7 +89,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
         target: { value: optionValue, name: registration.name },
       } as ChangeEvent<HTMLSelectElement>);
       registration.onBlur({
-        target: { name: registration.name },
+        target: { name: registration.name, value: optionValue },
       } as FocusEvent<HTMLSelectElement>);
     }
   }

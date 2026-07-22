@@ -92,8 +92,9 @@ export function PublicAttendeeInfoStep({
           />
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex gap-2">
           <Button
+            className="w-full"
             type="submit"
             disabled={isSubmitting || isFormSubmitting}
             onClick={() => handleSubmit(onSubmit)()}

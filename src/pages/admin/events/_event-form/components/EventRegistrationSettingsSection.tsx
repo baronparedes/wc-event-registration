@@ -18,7 +18,7 @@ export function EventRegistrationSettingsSection({
   return (
     <SectionCard title="Registration Settings">
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormSelectField
             disabled={disabled}
             id="event-duplicate-policy"
@@ -49,6 +49,20 @@ export function EventRegistrationSettingsSection({
             registration={register('registration_mode')}
             required
           />
+
+          <FormSelectField
+            disabled={disabled}
+            id="event-public-registration-access"
+            label="Allow Public Registrations"
+            value={watch('public_registration_access')}
+            options={[
+              { value: 'members', label: 'Members' },
+              { value: 'members_and_public', label: 'Members + Public' },
+              { value: 'public', label: 'Public' },
+            ]}
+            registration={register('public_registration_access')}
+            required
+          />
         </div>
 
         <div className="rounded-lg border border-border bg-background p-4">
@@ -64,24 +78,6 @@ export function EventRegistrationSettingsSection({
               <span className="text-sm font-medium text-text">Allow name-based lookup</span>
               <span className="text-xs text-muted">
                 Members can search by name if they don't have their RFID
-              </span>
-            </div>
-          </label>
-        </div>
-
-        <div className="rounded-lg border border-border bg-background p-4">
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="allow-public-registrations"
-              disabled={disabled}
-              {...register('allow_public_registrations')}
-              className="h-4 w-4 cursor-pointer rounded border-border"
-            />
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-text">Allow public registrations</span>
-              <span className="text-xs text-muted">
-                Non-members can register for this event via public registration form
               </span>
             </div>
           </label>

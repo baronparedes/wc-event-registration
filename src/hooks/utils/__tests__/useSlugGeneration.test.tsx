@@ -20,6 +20,7 @@ describe('useSlugGeneration', () => {
       status: 'draft',
       duplicate_policy: 'block',
       registration_mode: 'open',
+      public_registration_access: 'members',
     };
 
     const watch = ((key: keyof CreateEventInput) => values[key]) as UseFormWatch<CreateEventInput>;
@@ -63,6 +64,7 @@ describe('useSlugGeneration', () => {
       status: 'published',
       duplicate_policy: 'block',
       registration_mode: 'open',
+      public_registration_access: 'members_and_public',
     };
 
     const watch = ((key: keyof CreateEventInput) => values[key]) as UseFormWatch<CreateEventInput>;

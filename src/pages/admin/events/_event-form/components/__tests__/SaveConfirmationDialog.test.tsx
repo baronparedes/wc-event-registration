@@ -47,7 +47,7 @@ describe('SaveConfirmationDialog', () => {
     render(
       <SaveConfirmationDialog
         isOpen
-        changedFieldNames={['title', 'registration_mode']}
+        changedFieldNames={['title', 'public_registration_access']}
         isPending
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
@@ -71,6 +71,6 @@ describe('SaveConfirmationDialog', () => {
     render(<>{lastCall.description}</>);
     expect(screen.getByText("You're updating the following fields:")).toBeInTheDocument();
     expect(screen.getByText('Event Title')).toBeInTheDocument();
-    expect(screen.getByText('Registration Status')).toBeInTheDocument();
+    expect(screen.getByText('Allow Public Registrations')).toBeInTheDocument();
   });
 });

@@ -18,6 +18,7 @@ function buildEventInput(): CreateEventInput {
     status: 'draft',
     duplicate_policy: 'block',
     registration_mode: 'open',
+    public_registration_access: 'members',
   };
 }
 

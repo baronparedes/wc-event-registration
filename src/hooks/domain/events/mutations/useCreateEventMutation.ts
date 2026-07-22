@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
 import type { CreateEventInput } from '@/lib/domain/events';
+import { mapPublicRegistrationAccessToEventFlags } from '@/lib/domain/events';
 import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
 
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
@@ -19,6 +20,10 @@ export function useCreateEventMutation() {
 
   return useMutation({
     mutationFn: async (input: CreateEventInput): Promise<string> => {
+      const publicRegistrationFlags = mapPublicRegistrationAccessToEventFlags(
+        input.public_registration_access,
+      );
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -48,10 +53,11 @@ export function useCreateEventMutation() {
           status: input.status,
           duplicate_policy: input.duplicate_policy,
           registration_mode: input.registration_mode,
-          allow_public_registrations: input.allow_public_registrations ?? false,
-          require_id_lookup: true,
+          allow_public_registrations: publicRegistrationFlags.allow_public_registrations,
+          require_id_lookup: publicRegistrationFlags.require_id_lookup,
           metadata: {
             allow_name_lookup: input.allow_name_lookup ?? false,
+            public_registration_access: input.public_registration_access,
           },
           created_by_admin_id: createdByAdminId,
         })
