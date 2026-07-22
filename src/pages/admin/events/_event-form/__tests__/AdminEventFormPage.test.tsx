@@ -7,6 +7,7 @@ import { AdminEventFormPage } from '@/pages/admin/events/_event-form';
 const {
   mockNavigate,
   mockUseParams,
+  mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockCreateMutateAsync,
   mockUpdateMutateAsync,
@@ -18,6 +19,7 @@ const {
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockUseParams: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockCreateMutateAsync: vi.fn(),
   mockUpdateMutateAsync: vi.fn(),
@@ -27,6 +29,14 @@ const {
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -87,6 +97,10 @@ describe('AdminEventFormPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: 'event-1' });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
     mockUseAdminEventQuery.mockReturnValue({
       data: {
         id: 'event-1',

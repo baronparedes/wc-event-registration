@@ -396,6 +396,39 @@ describe('AdminRegistrationsPage', () => {
 
     expect(screen.getByText('Registrations: WC-001:read')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export as CSV' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'View Unregistered Members' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Public Registrations' })).toBeInTheDocument();
+  });
+
+  it('shows both registrations sub-actions for write-enabled admins', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: testEventId, title: 'Event', status: 'published' },
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminRegistrationsQuery.mockReturnValue({
+      data: {
+        items: [{ member_id: 'WC-001' }],
+        hasMore: false,
+        nextCursor: null,
+        totalCount: 1,
+        totalPages: 1,
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByRole('button', { name: 'View Unregistered Members' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Public Registrations' })).toBeInTheDocument();
   });
 
   it('disables copy and export actions when there are no registrations yet', () => {

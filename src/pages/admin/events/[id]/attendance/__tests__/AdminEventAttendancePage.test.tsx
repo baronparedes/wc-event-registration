@@ -406,4 +406,20 @@ describe('AdminEventAttendancePage', () => {
     expect(getToggleInputByText('Enable attendance tracking')).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Save Attendance Settings' })).toBeDisabled();
   });
+
+  it('hides attendance footer actions for non-write roles', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(
+      screen.queryByRole('button', { name: 'Manage Attendance Fields' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Save Attendance Settings' }),
+    ).not.toBeInTheDocument();
+  });
 });

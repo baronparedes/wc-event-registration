@@ -17,7 +17,7 @@ import {
 import { canExportAdminReports, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -73,6 +73,7 @@ export function AdminRegistrationsPage() {
   const isLoading = eventQuery.isLoading || registrationsQuery.isLoading;
   const error = eventQuery.error || registrationsQuery.error;
   const hasRegistrations = totalRegistrations > 0;
+  const canRead = canReadAdminData(authState?.adminRole);
   const canWrite = canWriteAdminData(authState?.adminRole);
   const canExport = canExportAdminReports(authState?.adminRole);
 
@@ -229,19 +230,23 @@ export function AdminRegistrationsPage() {
         </div>
 
         <div className="flex flex-col gap-2 pt-6 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate(toAdminEventAttendanceUnregisteredMembers(eventId))}
-          >
-            View Unregistered Members
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
-          >
-            View Public Registrations
-          </Button>
+          {canWrite && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(toAdminEventAttendanceUnregisteredMembers(eventId))}
+            >
+              View Unregistered Members
+            </Button>
+          )}
+          {canRead && (
+            <Button
+              variant="outline"
+              onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
+            >
+              View Public Registrations
+            </Button>
+          )}
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

@@ -7,6 +7,8 @@ import {
   toAdminEventFields,
   toAdminEventRegistrations,
 } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
+import { canAccessAttendanceCheckIn, canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
 
 type EventNavigationSection =
   | 'event'
@@ -27,14 +29,27 @@ type EventNavigationLinksProps = {
 };
 
 export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
+  const { data: authState } = useAdminAuthQuery();
+  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canRead = canReadAdminData(authState?.adminRole);
+  const canAccessCheckIn = canAccessAttendanceCheckIn(authState?.adminRole);
+
   return (
     <>
-      <AdminSubNavLink to={toAdminEventDetail(eventId)}>Event</AdminSubNavLink>
-      <AdminSubNavLink to={toAdminEventFields(eventId)}>Fields</AdminSubNavLink>
-      <AdminSubNavLink to={toAdminEventRegistrations(eventId)}>Registrations</AdminSubNavLink>
-      <AdminSubNavLink to={toAdminEventAttendance(eventId)}>Attendance</AdminSubNavLink>
-      <AdminSubNavLink to={toAdminEventAttendanceData(eventId)}>Attendee Details</AdminSubNavLink>
-      <AdminSubNavLink to={toAdminEventAttendanceCheckIn(eventId)}>Check-In</AdminSubNavLink>
+      {canWrite && <AdminSubNavLink to={toAdminEventDetail(eventId)}>Event</AdminSubNavLink>}
+      {canWrite && <AdminSubNavLink to={toAdminEventFields(eventId)}>Fields</AdminSubNavLink>}
+      {canRead && (
+        <AdminSubNavLink to={toAdminEventRegistrations(eventId)}>Registrations</AdminSubNavLink>
+      )}
+      {canWrite && (
+        <AdminSubNavLink to={toAdminEventAttendance(eventId)}>Attendance</AdminSubNavLink>
+      )}
+      {canRead && (
+        <AdminSubNavLink to={toAdminEventAttendanceData(eventId)}>Attendee Details</AdminSubNavLink>
+      )}
+      {canAccessCheckIn && (
+        <AdminSubNavLink to={toAdminEventAttendanceCheckIn(eventId)}>Check-In</AdminSubNavLink>
+      )}
     </>
   );
 }

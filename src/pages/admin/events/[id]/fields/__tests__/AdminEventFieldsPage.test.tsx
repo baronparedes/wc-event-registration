@@ -4,11 +4,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdminEventFieldsPage } from '@/pages/admin/events/[id]/fields';
 
-const { mockUseParams, mockUseAdminEventQuery, mockUseAdminEventFieldsQuery } = vi.hoisted(() => ({
+const {
+  mockUseParams,
+  mockUseAdminAuthQuery,
+  mockUseAdminEventQuery,
+  mockUseAdminEventFieldsQuery,
+} = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminEventFieldsQuery: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -65,6 +79,10 @@ describe('AdminEventFieldsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: 'event-1' });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      isLoading: false,
+    });
   });
 
   it('renders event fields list for a draft event and opens create panel', () => {

@@ -19,6 +19,7 @@ import {
   type UpdateAttendanceSettingsInput,
   updateAttendanceSettingsSchema,
 } from '@/lib/domain/attendance';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateTime, localDateTimeToUTC8ISO } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -163,6 +164,7 @@ export function AdminEventAttendancePage() {
 
   const activeEvent = event;
   const isArchived = activeEvent.status === 'archived';
+  const canWrite = canWriteAdminData(authState?.adminRole);
   const eventStartLocal = toDatetimeLocal(activeEvent.starts_at);
   const eventEndLocal = toDatetimeLocal(activeEvent.ends_at);
   function addTimeslot() {
@@ -375,22 +377,24 @@ export function AdminEventAttendancePage() {
             </div>
           </SectionCard>
 
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(toAdminEventAttendanceFields(resolvedEventId))}
-            >
-              Manage Attendance Fields
-            </Button>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isArchived || updateMutation.isPending || !isDirty}
-            >
-              {updateMutation.isPending ? 'Saving...' : 'Save Attendance Settings'}
-            </Button>
-          </div>
+          {canWrite && (
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(toAdminEventAttendanceFields(resolvedEventId))}
+              >
+                Manage Attendance Fields
+              </Button>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isArchived || updateMutation.isPending || !isDirty}
+              >
+                {updateMutation.isPending ? 'Saving...' : 'Save Attendance Settings'}
+              </Button>
+            </div>
+          )}
         </form>
       </AdminPageShell.Content>
     </AdminPageShell>
