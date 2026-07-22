@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
@@ -8,9 +8,12 @@ type SelectOption = {
 };
 
 type FormSelectFieldProps = {
-  id: string;
-  label: string;
-  registration: UseFormRegisterReturn;
+  id?: string;
+  label?: string;
+  ariaLabel?: string;
+  registration?: UseFormRegisterReturn;
+  value?: string;
+  onChange?: (value: string) => void;
   options: SelectOption[];
   error?: string | null;
   required?: boolean;
@@ -25,7 +28,10 @@ export function FormSelectField(props: FormSelectFieldProps) {
   const {
     id,
     label,
+    ariaLabel,
     registration,
+    value,
+    onChange,
     options,
     error,
     required,
@@ -35,15 +41,25 @@ export function FormSelectField(props: FormSelectFieldProps) {
     selectClassName,
   } = props;
 
+  const controlledProps = registration
+    ? { ...registration }
+    : {
+        value,
+        onChange: (e: ChangeEvent<HTMLSelectElement>) => onChange?.(e.target.value),
+      };
+
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-semibold text-text" htmlFor={id}>
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-        {labelAdornment}
-      </label>
+      {label && (
+        <label className="block text-sm font-semibold text-text" htmlFor={id}>
+          {label}
+          {required && <span className="text-red-500"> *</span>}
+          {labelAdornment}
+        </label>
+      )}
       <select
-        {...registration}
+        {...controlledProps}
+        aria-label={ariaLabel}
         className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
           error
             ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30 focus:shadow-lg focus:shadow-red-500/20'

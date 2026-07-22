@@ -86,9 +86,6 @@ describe('AttendanceViewControls', () => {
 
     fireEvent.change(screen.getByLabelText('Name or Member ID'), { target: { value: 'MID-42' } });
 
-    // Expand filters to access hidden fields
-    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
-
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
     fireEvent.click(screen.getByLabelText('Volunteer'));
     fireEvent.click(screen.getByLabelText('Member'));
@@ -102,7 +99,8 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onCategoryChange).toHaveBeenCalledWith('Youth');
     expect(handlers.onCheckInStatusChange).toHaveBeenCalledWith('checked_in');
 
-    expect(screen.getByRole('button', { name: 'Clear view controls' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+
     expect(screen.getByRole('button', { name: 'Apply field filter' })).toBeDisabled();
   });
 
@@ -118,7 +116,6 @@ describe('AttendanceViewControls', () => {
       },
     });
 
-    // Expand filters to access hidden controls
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
@@ -145,9 +142,6 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onMoveGroupingLevel).toHaveBeenCalledWith(1, 'up');
     expect(handlers.onMoveGroupingLevel).toHaveBeenCalledWith(0, 'down');
     expect(handlers.onRemoveGroupingLevel).toHaveBeenCalledWith(0);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Clear view controls' }));
-    expect(handlers.onClearViewControls).toHaveBeenCalledTimes(1);
   });
 
   it('supports filter field/value interactions and apply action when value is present', () => {
@@ -158,13 +152,12 @@ describe('AttendanceViewControls', () => {
       hasActiveFilters: true,
     });
 
-    // Expand filters to access hidden controls
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     fireEvent.change(screen.getByLabelText('Filter field'), {
       target: { value: 'attendance:area' },
     });
-    fireEvent.change(screen.getByLabelText('Match mode'), {
+    fireEvent.change(screen.getByLabelText('Field-Based Conditions'), {
       target: { value: 'or' },
     });
     fireEvent.change(screen.getByLabelText('Field value'), { target: { value: 'East' } });
@@ -188,15 +181,20 @@ describe('AttendanceViewControls', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Custom JSON Filter' }));
 
-    fireEvent.change(screen.getByLabelText('Custom filter JSON'), {
+    const applyCustomJsonButton = screen.getByRole('button', { name: 'Apply custom JSON filter' });
+    const customJsonContainer = applyCustomJsonButton.closest('div')?.parentElement;
+    expect(customJsonContainer).not.toBeNull();
+
+    fireEvent.change(within(customJsonContainer as HTMLElement).getByRole('textbox'), {
       target: {
         value:
           '{"dynamicFilterCombination":"and","filters":[{"token":"attendance:area","value":"North"}]}',
       },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Apply custom JSON filter' }));
+    fireEvent.click(applyCustomJsonButton);
     expect(customJsonHandler).toHaveBeenCalledWith(
       '{"dynamicFilterCombination":"and","filters":[{"token":"attendance:area","value":"North"}]}',
     );
@@ -209,7 +207,7 @@ describe('AttendanceViewControls', () => {
   it('toggles displayed field checkboxes from registration and attendance groups', () => {
     const handlers = renderControls({ hasActiveFilters: true });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
 
     fireEvent.click(screen.getByLabelText('Service'));
     fireEvent.click(screen.getByLabelText('Area'));
@@ -278,7 +276,6 @@ describe('AttendanceViewControls', () => {
   it('shows empty grouping copy when no grouping exists', () => {
     renderControls({ viewConfig: { ...baseViewConfig, groupBy: [] } });
 
-    // Expand filters to access the grouping section
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     expect(screen.getByText('No grouping applied.')).toBeInTheDocument();
@@ -287,7 +284,6 @@ describe('AttendanceViewControls', () => {
   it('closes the role dropdown on outside click and Escape key', () => {
     renderControls({ hasActiveFilters: true });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
 
     expect(screen.getByLabelText('Role options')).toBeInTheDocument();
@@ -308,12 +304,40 @@ describe('AttendanceViewControls', () => {
       viewConfig: { ...baseViewConfig, role: ['Member'] },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'All roles' }));
 
     expect(handlers.onRoleChange).toHaveBeenCalledWith([]);
     expect(screen.queryByLabelText('Role options')).not.toBeInTheDocument();
+  });
+
+  it('shows advanced rules indicator count when grouping or dynamic filters are active', () => {
+    renderControls({
+      viewConfig: {
+        ...baseViewConfig,
+        groupBy: [
+          { source: 'registration', fieldKey: 'service', label: 'Service', groupSort: 'label_asc' },
+        ],
+        dynamicFilters: [
+          {
+            field: { source: 'attendance', fieldKey: 'area', label: 'Area' },
+            value: 'North',
+          },
+        ],
+      },
+    });
+
+    const heading = screen.getByText('Advanced filtering & rules').parentElement;
+    expect(heading).not.toBeNull();
+    expect(within(heading as HTMLElement).getByText('2')).toBeInTheDocument();
+  });
+
+  it('hides advanced rules indicator count when no advanced criteria are active', () => {
+    renderControls({ viewConfig: { ...baseViewConfig, groupBy: [], dynamicFilters: [] } });
+
+    const heading = screen.getByText('Advanced filtering & rules').parentElement;
+    expect(heading).not.toBeNull();
+    expect(within(heading as HTMLElement).queryByText(/^\d+$/)).not.toBeInTheDocument();
   });
 });

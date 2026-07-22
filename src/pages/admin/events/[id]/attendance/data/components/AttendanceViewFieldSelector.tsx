@@ -26,7 +26,7 @@ function FieldOptionGroup({
   onToggleField: (token: string) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-xl border border-border p-3">
+    <div className="space-y-2 py-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-text">{title}</p>
         <span className="text-xs text-muted">
@@ -62,15 +62,8 @@ export function AttendanceViewFieldSelector({
   onToggleField,
 }: AttendanceViewFieldSelectorProps) {
   return (
-    <div className="space-y-3 rounded-xl border border-border p-3 md:col-span-2 lg:col-span-3">
-      <div>
-        <p className="text-sm font-medium text-text">Displayed fields</p>
-        <p className="text-xs text-muted">
-          Choose which registration and attendance fields appear as table columns.
-        </p>
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-2">
+    <div className="space-y-3 md:col-span-2 lg:col-span-3">
+      <div className="border-t border-border divide-y divide-border">
         <FieldOptionGroup
           title="Registration fields"
           emptyState="No active registration fields are available."

@@ -10,10 +10,10 @@ export type CollapsibleSectionCardProps = {
   defaultExpanded?: boolean;
   collapseLabel?: string;
   expandLabel?: string;
-  headerRight?: ReactNode;
   wrapperClassName?: string;
   titleClassName?: string;
   subtitleClassName?: string;
+  headerWrapperClassName?: string;
 };
 
 /**
@@ -26,9 +26,9 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
     defaultExpanded = true,
     collapseLabel = 'Collapse section',
     expandLabel = 'Expand section',
-    headerRight,
     title,
     subtitle,
+    headerWrapperClassName,
     ...sectionCardProps
   } = props;
 
@@ -40,9 +40,9 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
     ? `${sectionCardProps.wrapperClassName} relative`
     : 'relative rounded-2xl border border-border bg-surface p-6 shadow-sm';
 
-  // When headerRight is provided, render custom header; otherwise use SectionCard's rendering
+  // Render header when title or subtitle is provided
   const headerContent =
-    headerRight || title || subtitle ? (
+    title || subtitle ? (
       <div className="relative">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
@@ -61,13 +61,12 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
               </div>
             )}
           </div>
-          {headerRight && <div>{headerRight}</div>}
         </div>
         <button
           aria-controls={contentId}
           aria-expanded={isExpanded}
           aria-label={actionLabel}
-          className="absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
           onClick={() => {
             setIsExpanded((current) => !current);
           }}
@@ -85,26 +84,28 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
 
   return (
     <div className={wrapperClassName}>
-      {headerContent}
-      {!headerContent && (
-        <button
-          aria-controls={contentId}
-          aria-expanded={isExpanded}
-          aria-label={actionLabel}
-          className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
-          onClick={() => {
-            setIsExpanded((current) => !current);
-          }}
-          title={actionLabel}
-          type="button"
-        >
-          <ChevronDown
-            aria-hidden="true"
-            className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
-          />
-          <span className="sr-only">{actionLabel}</span>
-        </button>
-      )}
+      <div className={headerWrapperClassName}>
+        {headerContent}
+        {!headerContent && (
+          <button
+            aria-controls={contentId}
+            aria-expanded={isExpanded}
+            aria-label={actionLabel}
+            className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
+            onClick={() => {
+              setIsExpanded((current) => !current);
+            }}
+            title={actionLabel}
+            type="button"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
+            />
+            <span className="sr-only">{actionLabel}</span>
+          </button>
+        )}
+      </div>
 
       <AnimatePresence initial={false}>
         {isExpanded && (

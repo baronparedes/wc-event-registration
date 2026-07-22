@@ -3,8 +3,9 @@ import type { ChangeEventHandler, ReactNode } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
 type FormInputFieldBaseProps = {
-  id: string;
-  label: string;
+  id?: string;
+  label?: string;
+  ariaLabel?: string;
   error?: string | null;
   required?: boolean;
   placeholder?: string;
@@ -36,6 +37,7 @@ export function FormInputField(props: FormInputFieldProps) {
   const {
     id,
     label,
+    ariaLabel,
     registration,
     value,
     onChange,
@@ -60,13 +62,16 @@ export function FormInputField(props: FormInputFieldProps) {
 
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-semibold text-text" htmlFor={id}>
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-        {labelAdornment}
-      </label>
+      {label && (
+        <label className="block text-sm font-semibold text-text" htmlFor={id}>
+          {label}
+          {required && <span className="text-red-500"> *</span>}
+          {labelAdornment}
+        </label>
+      )}
       <input
         {...controlledProps}
+        aria-label={ariaLabel}
         className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
           error
             ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30 focus:shadow-lg focus:shadow-red-500/20'
