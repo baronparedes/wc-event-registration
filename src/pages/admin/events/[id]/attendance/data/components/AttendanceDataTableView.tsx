@@ -72,20 +72,23 @@ export function AttendanceDataTableView({
         </ListTableHeaderRow>
       </ListTableHead>
       <ListTableBody>
-        {registrants.map((registrant) => {
+        {registrants.map((registrant, index) => {
           const rowKey = getRegistrantKey(registrant);
           const filled = countFilledAnswers(registrant.answers, fields);
           const isCheckedIn = registrant.check_in_status === 'checked_in';
           const attendee = attendeesByRegistrantKey.get(rowKey);
+          const rowBackgroundClass = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
 
           return (
             <ListTableRow
               key={rowKey}
-              className="group cursor-pointer border-b border-border/80 bg-white hover:bg-slate-100"
+              className={`group cursor-pointer border-b border-border/80 ${rowBackgroundClass} hover:bg-slate-100`}
               hover="none"
               onClick={() => onViewRegistrant(registrant)}
             >
-              <ListTableCell className="sticky left-0 z-10 bg-white !px-2 !py-2 align-middle group-hover:bg-slate-100">
+              <ListTableCell
+                className={`sticky left-0 z-10 ${rowBackgroundClass} !px-2 !py-2 align-middle group-hover:bg-slate-100`}
+              >
                 <div className="flex items-center gap-1">
                   <span
                     role="img"
