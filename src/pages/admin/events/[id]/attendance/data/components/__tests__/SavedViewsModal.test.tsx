@@ -294,4 +294,49 @@ describe('SavedViewsModal', () => {
       );
     });
   });
+
+  it('updates selected view when Update Current is clicked', async () => {
+    const eventId = faker.string.uuid();
+    const selectedView = makeView({ name: 'Current View' });
+    const onApplyView = vi.fn();
+    const onOpenChange = vi.fn();
+
+    mockUseAttendanceSavedViewsQuery.mockReturnValue({ data: [selectedView] });
+
+    mockUpsertMutate.mockImplementation(
+      (_payload: unknown, opts: { onSuccess: (result: { id: string }) => void }) => {
+        opts.onSuccess({ id: selectedView.id });
+      },
+    );
+
+    renderModal({
+      eventId,
+      currentViewId: selectedView.id,
+      currentViewConfig: defaultViewConfig,
+      onApplyView,
+      onOpenChange,
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Update Current' }));
+    });
+
+    await waitFor(() => {
+      expect(mockUpsertMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: selectedView.id,
+          event_id: eventId,
+          name: selectedView.name,
+          view_config: defaultViewConfig,
+        }),
+        expect.any(Object),
+      );
+      expect(onApplyView).toHaveBeenCalledWith(defaultViewConfig);
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+      expect(mockNavigate).toHaveBeenCalledWith(
+        expect.stringContaining(`viewId=${selectedView.id}`),
+        expect.objectContaining({ replace: true }),
+      );
+    });
+  });
 });

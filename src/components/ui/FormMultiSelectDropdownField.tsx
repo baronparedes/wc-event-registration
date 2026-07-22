@@ -56,7 +56,7 @@ export function FormMultiSelectDropdownField({
 
       {isOpen && (
         <div
-          className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-surface p-2 shadow-md"
+          className="absolute z-40 mt-1 w-full rounded-xl border border-border bg-surface p-2 shadow-md"
           role="listbox"
           aria-label={optionsAriaLabel}
         >

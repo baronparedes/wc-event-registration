@@ -41,6 +41,9 @@ export function SavedViewsModal({
   const { data: savedViews = [] } = useAttendanceSavedViewsQuery(eventId);
   const upsertMutation = useUpsertAttendanceSavedViewMutation();
   const deleteMutation = useDeleteAttendanceSavedViewMutation();
+  const currentSavedView = currentViewId
+    ? savedViews.find((view) => view.id === currentViewId)
+    : null;
 
   function handleSaveNewView() {
     if (!newViewName.trim()) return;
@@ -76,6 +79,28 @@ export function SavedViewsModal({
       params.set('viewId', viewId);
       navigate(`?${params.toString()}`, { replace: true });
     }
+  }
+
+  function handleUpdateCurrentView() {
+    if (!currentViewId || !currentSavedView) return;
+
+    upsertMutation.mutate(
+      {
+        id: currentViewId,
+        event_id: eventId,
+        name: currentSavedView.name,
+        view_config: currentViewConfig,
+      },
+      {
+        onSuccess: (result) => {
+          onApplyView(currentViewConfig);
+          onOpenChange(false);
+          const params = new URLSearchParams(window.location.search);
+          params.set('viewId', result.id);
+          navigate(`?${params.toString()}`, { replace: true });
+        },
+      },
+    );
   }
 
   function handleDeleteView(viewId: string) {
@@ -164,6 +189,16 @@ export function SavedViewsModal({
             <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Close
             </Button>
+            {currentViewId && (
+              <Button
+                variant="outline"
+                onClick={handleUpdateCurrentView}
+                disabled={!currentSavedView || upsertMutation.isPending}
+                className="flex-1"
+              >
+                {upsertMutation.isPending ? 'Updating...' : 'Update Current'}
+              </Button>
+            )}
             <Button variant="default" onClick={() => setShowSaveDialog(true)} className="flex-1">
               Save Current
             </Button>
