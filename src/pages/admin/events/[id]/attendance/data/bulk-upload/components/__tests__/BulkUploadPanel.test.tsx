@@ -583,8 +583,9 @@ describe('BulkUploadPanel', () => {
 
     fireEvent.change(fileInput, { target: { files: [validCsv] } });
 
-    const areaSelect = (await screen.findByDisplayValue('2F')) as HTMLSelectElement;
-    fireEvent.change(areaSelect, { target: { value: '4F' } });
+    await screen.findByText(/Preview \(1 row\)/);
+    fireEvent.click(screen.getByRole('button', { name: 'Area' }));
+    fireEvent.click(screen.getByRole('option', { name: '4F' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Import CSV' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm Import' }));
@@ -631,8 +632,9 @@ describe('BulkUploadPanel', () => {
 
     fireEvent.change(fileInput, { target: { files: [validCsv] } });
 
-    const checkedSelect = (await screen.findByRole('combobox')) as HTMLSelectElement;
-    fireEvent.change(checkedSelect, { target: { value: 'true' } });
+    await screen.findByText(/Preview \(1 row\)/);
+    fireEvent.click(screen.getByRole('button', { name: 'Checked' }));
+    fireEvent.click(screen.getByRole('option', { name: 'True' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Import CSV' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm Import' }));
@@ -748,8 +750,11 @@ describe('BulkUploadPanel', () => {
 
     fireEvent.change(fileInput, { target: { files: [validCsv] } });
 
-    const areaSelect = (await screen.findByDisplayValue('2F')) as HTMLSelectElement;
-    fireEvent.change(areaSelect, { target: { value: '4F' } });
+    await screen.findByText(/Preview \(1 row\)/);
+    const areaButton = screen.getByRole('button', { name: 'Area' });
+    fireEvent.click(areaButton);
+    const option4F = await screen.findByRole('option', { name: '4F' });
+    fireEvent.click(option4F);
 
     fireEvent.click(screen.getByRole('button', { name: 'Import CSV' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm Import' }));

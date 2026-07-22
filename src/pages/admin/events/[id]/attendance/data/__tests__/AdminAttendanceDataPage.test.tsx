@@ -446,21 +446,24 @@ describe('AdminAttendanceDataPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('renders filter field selector with registration and attendance sub-groups', () => {
-    const { container } = renderPage();
+  it('renders filter field selector with registration and attendance sub-groups', async () => {
+    renderPage();
 
     // Expand filters to access hidden controls
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
-    const filterFieldSelect = screen.getByLabelText('Filter field');
-    const registrationGroup = container.querySelector('optgroup[label="Registration Fields"]');
-    const attendanceGroup = container.querySelector('optgroup[label="Attendance Fields"]');
+    const filterFieldButton = screen.getByRole('button', { name: 'Filter field' });
+    expect(filterFieldButton).toBeInTheDocument();
 
-    expect(filterFieldSelect).toBeInTheDocument();
-    expect(registrationGroup).not.toBeNull();
-    expect(attendanceGroup).not.toBeNull();
-    expect(screen.getByRole('option', { name: 'Service' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Area' })).toBeInTheDocument();
+    fireEvent.click(filterFieldButton);
+
+    // Wait for and verify group headers and options appear in the dropdown
+    await waitFor(() => {
+      expect(screen.getByText('Registration Fields')).toBeInTheDocument();
+      expect(screen.getByText('Attendance Fields')).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Service' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Area' })).toBeInTheDocument();
+    });
   });
 
   it('restores a saved view from localStorage when the URL has no viewId', async () => {
@@ -504,8 +507,8 @@ describe('AdminAttendanceDataPage', () => {
     });
   });
 
-  it('adds a group level and shows subgrouped dynamic field options', () => {
-    const { container } = renderPage();
+  it('adds a group level and shows subgrouped dynamic field options', async () => {
+    renderPage();
 
     // Expand filters to access the Add group level button
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
@@ -514,14 +517,16 @@ describe('AdminAttendanceDataPage', () => {
 
     expect(screen.getByText('Level 1')).toBeInTheDocument();
 
-    const groupingSelect = container.querySelector('select.flex-1') as HTMLSelectElement | null;
-    expect(groupingSelect).not.toBeNull();
+    // Click on the grouping field dropdown to open it
+    const groupingButton = screen.getByRole('button', { name: 'Level 1 field' });
+    expect(groupingButton).toBeInTheDocument();
+    fireEvent.click(groupingButton);
 
-    const registrationGroup = container.querySelector('optgroup[label="Registration Fields"]');
-    const attendanceGroup = container.querySelector('optgroup[label="Attendance Fields"]');
-
-    expect(registrationGroup).not.toBeNull();
-    expect(attendanceGroup).not.toBeNull();
+    // Wait for and verify the Registration Fields and Attendance Fields groups are present
+    await waitFor(() => {
+      expect(screen.getByText('Registration Fields')).toBeInTheDocument();
+      expect(screen.getByText('Attendance Fields')).toBeInTheDocument();
+    });
   });
 
   it('renders and updates the name or member ID filter input', () => {

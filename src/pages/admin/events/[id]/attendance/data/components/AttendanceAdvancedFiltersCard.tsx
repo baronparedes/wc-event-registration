@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Filter } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import type {
   AttendeeViewConfig,
   DynamicFieldOption,
@@ -66,44 +67,46 @@ export function AttendanceAdvancedFiltersCard({
 
         {!isCustomJsonMode && (
           <>
-            <select
-              aria-label="Field-Based Conditions"
+            <FormSelectField
+              ariaLabel="Field-Based Conditions"
               value={dynamicFilterCombination}
-              onChange={(event) =>
-                onDynamicFilterCombinationChange(event.target.value as DynamicFilterCombination)
+              onChange={(value) =>
+                onDynamicFilterCombinationChange(value as DynamicFilterCombination)
               }
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="and">All filters must match (AND)</option>
-              <option value="or">Any filter can match (OR)</option>
-            </select>
+              options={[
+                { value: 'and', label: 'All filters must match (AND)' },
+                { value: 'or', label: 'Any filter can match (OR)' },
+              ]}
+              selectClassName="rounded-xl py-2"
+            />
 
-            <select
-              aria-label="Filter field"
+            <FormSelectField
+              ariaLabel="Filter field"
               value={dynamicFilterFieldToken}
-              onChange={(event) => onDynamicFilterFieldTokenChange(event.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Select a field</option>
-              {registrationDynamicFieldOptions.length > 0 && (
-                <optgroup label="Registration Fields">
-                  {registrationDynamicFieldOptions.map((field) => (
-                    <option key={field.token} value={field.token}>
-                      {field.label}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {attendanceDynamicFieldOptions.length > 0 && (
-                <optgroup label="Attendance Fields">
-                  {attendanceDynamicFieldOptions.map((field) => (
-                    <option key={field.token} value={field.token}>
-                      {field.label}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+              onChange={onDynamicFilterFieldTokenChange}
+              placeholder="Select a field"
+              options={[
+                ...(registrationDynamicFieldOptions.length > 0
+                  ? [
+                      { value: '__reg', label: 'Registration Fields', isGroupHeader: true },
+                      ...registrationDynamicFieldOptions.map((field) => ({
+                        value: field.token,
+                        label: field.label,
+                      })),
+                    ]
+                  : []),
+                ...(attendanceDynamicFieldOptions.length > 0
+                  ? [
+                      { value: '__att', label: 'Attendance Fields', isGroupHeader: true },
+                      ...attendanceDynamicFieldOptions.map((field) => ({
+                        value: field.token,
+                        label: field.label,
+                      })),
+                    ]
+                  : []),
+              ]}
+              selectClassName="rounded-xl py-2"
+            />
 
             <div className="flex items-end gap-2 lg:col-span-2">
               <input

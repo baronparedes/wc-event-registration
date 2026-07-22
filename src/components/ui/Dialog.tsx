@@ -14,7 +14,7 @@ export function Dialog({ isOpen, onClose, children, maxWidthClass = 'max-w-lg' }
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-6"
       onClick={onClose}
     >
       <div

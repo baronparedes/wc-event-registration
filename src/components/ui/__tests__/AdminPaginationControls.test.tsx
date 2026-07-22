@@ -29,7 +29,8 @@ describe('AdminPaginationControls', () => {
 
     renderControls({ pageSize: 25, pageSizeOptions: [10, 25, 50], onPageSizeChange });
 
-    fireEvent.change(screen.getByLabelText('Rows per page'), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Rows per page' }));
+    fireEvent.click(screen.getByRole('option', { name: '50' }));
 
     expect(onPageSizeChange).toHaveBeenCalledWith(50);
   });

@@ -3,6 +3,7 @@ import { type FormEvent, useState } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 
 type AdminPaginationControlsProps = {
   currentPage: number;
@@ -88,22 +89,18 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
       {pageSizeOptions && pageSizeOptions.length > 0 && pageSize && onPageSizeChange && (
         <div className="flex w-full items-center justify-center gap-2 text-sm text-muted sm:w-auto sm:justify-start">
           <span className="shrink-0 whitespace-nowrap">Rows per page</span>
-          <label className="sr-only" htmlFor="admin-pagination-page-size">
-            Rows per page
-          </label>
-          <select
+          <FormSelectField
             id="admin-pagination-page-size"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            ariaLabel="Rows per page"
+            value={String(pageSize)}
+            onChange={(value) => onPageSizeChange(Number(value))}
             disabled={isLoading}
-            className="min-h-10 rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600"
-          >
-            {pageSizeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+            options={pageSizeOptions.map((option) => ({
+              value: String(option),
+              label: String(option),
+            }))}
+            selectClassName="min-h-10 py-2"
+          />
         </div>
       )}
 

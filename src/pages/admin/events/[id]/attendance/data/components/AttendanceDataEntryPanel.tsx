@@ -1,8 +1,12 @@
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
+
+import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import { useUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance';
 import type { AttendanceAnswer, RegistrantAttendanceRow } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
@@ -57,6 +61,10 @@ export function AttendanceDataEntryPanel({
   onClose,
 }: AttendanceDataEntryPanelProps) {
   const upsertMutation = useUpsertAttendanceAnswersMutation();
+  const [openMultiSelectFieldId, setOpenMultiSelectFieldId] = useState<string | null>(null);
+  const [requiredMultiSelectErrors, setRequiredMultiSelectErrors] = useState<Record<string, true>>(
+    {},
+  );
 
   const defaultValues: AnswerFormValues = {};
   for (const field of fields) {
@@ -67,10 +75,78 @@ export function AttendanceDataEntryPanel({
     );
   }
 
-  const { register, handleSubmit } = useForm<AnswerFormValues>({ defaultValues });
+  const { control, register, handleSubmit, setValue } = useForm<AnswerFormValues>({
+    defaultValues,
+  });
+  const formValues = useWatch({ control });
+
+  function getMultiSelectSelectedLabel(field: AttendanceField): string {
+    const selectedValues = Array.isArray(formValues[field.id])
+      ? (formValues[field.id] as string[])
+      : [];
+
+    if (selectedValues.length === 0) {
+      return field.is_required ? 'Select option(s)' : 'No selection';
+    }
+
+    if (selectedValues.length === 1) {
+      const matchingOption = (field.options ?? []).find(
+        (option) => option.value === selectedValues[0],
+      );
+      return matchingOption?.label ?? selectedValues[0];
+    }
+
+    return `${selectedValues.length} options selected`;
+  }
+
+  function handleToggleMultiSelectOption(fieldId: string, optionValue: string) {
+    const currentValues = Array.isArray(formValues[fieldId])
+      ? (formValues[fieldId] as string[])
+      : [];
+    const nextValues = currentValues.includes(optionValue)
+      ? currentValues.filter((value) => value !== optionValue)
+      : [...currentValues, optionValue];
+
+    setValue(fieldId, nextValues, { shouldDirty: true, shouldValidate: true });
+    setRequiredMultiSelectErrors((current) => {
+      if (!(fieldId in current)) {
+        return current;
+      }
+
+      const nextErrors = { ...current };
+      delete nextErrors[fieldId];
+      return nextErrors;
+    });
+  }
 
   async function onSubmit(values: AnswerFormValues) {
     try {
+      const missingRequiredMultiSelectFields = fields.filter((field) => {
+        if (!(field.field_type === 'multi_select' && field.is_required)) {
+          return false;
+        }
+
+        const rawValue = values[field.id];
+        if (!Array.isArray(rawValue)) {
+          return true;
+        }
+
+        return rawValue.filter((value) => value.trim().length > 0).length === 0;
+      });
+
+      if (missingRequiredMultiSelectFields.length > 0) {
+        const nextErrors: Record<string, true> = {};
+        for (const field of missingRequiredMultiSelectFields) {
+          nextErrors[field.id] = true;
+        }
+
+        setRequiredMultiSelectErrors(nextErrors);
+        toast.error('Select at least one option for all required multi-select fields.');
+        return;
+      }
+
+      setRequiredMultiSelectErrors({});
+
       const answers = fields.map((field) => {
         const rawValue = values[field.id] ?? '';
 
@@ -127,7 +203,7 @@ export function AttendanceDataEntryPanel({
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-lg">
-      <div className="max-h-[80vh] overflow-y-auto">
+      <div className="overflow-visible">
         <div className="border-b border-border pb-4 mb-4">
           <h2 className="font-heading text-lg font-semibold text-text">
             Attendance Data: {registrant.full_name}
@@ -173,43 +249,71 @@ export function AttendanceDataEntryPanel({
                     {field.label}
                     {isRequired && <span className="ml-1 text-danger">*</span>}
                   </label>
-                  <select
+                  <FormSelectField
                     id={inputId}
-                    {...register(field.id)}
-                    required={isRequired}
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    <option value="">— Select —</option>
-                    {(field.options ?? []).map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    ariaLabel={field.label}
+                    value={
+                      typeof formValues[field.id] === 'string'
+                        ? (formValues[field.id] as string)
+                        : ''
+                    }
+                    onChange={(nextValue) => setValue(field.id, nextValue)}
+                    placeholder="— Select —"
+                    options={(field.options ?? []).map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    }))}
+                  />
                 </div>
               );
             }
 
             if (field.field_type === 'multi_select') {
+              const selectedValues = Array.isArray(formValues[field.id])
+                ? (formValues[field.id] as string[])
+                : [];
+
               return (
                 <div key={field.id} className="space-y-1">
                   <label htmlFor={inputId} className="text-xs font-medium text-text">
                     {field.label}
                     {isRequired && <span className="ml-1 text-danger">*</span>}
                   </label>
-                  <select
-                    id={inputId}
-                    multiple
-                    {...register(field.id)}
-                    required={isRequired}
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    {(field.options ?? []).map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  <FormMultiSelectDropdownField
+                    triggerAriaLabel={field.label}
+                    optionsAriaLabel={`${field.label} options`}
+                    selectedLabel={getMultiSelectSelectedLabel(field)}
+                    options={(field.options ?? []).map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    }))}
+                    selectedValues={selectedValues}
+                    isOpen={openMultiSelectFieldId === field.id}
+                    clearButtonLabel="Clear selections"
+                    emptyStateLabel="No options available"
+                    onToggleDropdown={() =>
+                      setOpenMultiSelectFieldId((current) =>
+                        current === field.id ? null : field.id,
+                      )
+                    }
+                    onCloseDropdown={() => setOpenMultiSelectFieldId(null)}
+                    onClearSelection={() => {
+                      setValue(field.id, [], { shouldDirty: true, shouldValidate: true });
+                      setRequiredMultiSelectErrors((current) => {
+                        if (!(field.id in current)) {
+                          return current;
+                        }
+
+                        const nextErrors = { ...current };
+                        delete nextErrors[field.id];
+                        return nextErrors;
+                      });
+                    }}
+                    onToggleSelection={(value) => handleToggleMultiSelectOption(field.id, value)}
+                  />
+                  {requiredMultiSelectErrors[field.id] && (
+                    <p className="text-xs text-danger">Select at least one option.</p>
+                  )}
                 </div>
               );
             }

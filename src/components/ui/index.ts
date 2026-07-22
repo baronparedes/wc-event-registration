@@ -1,6 +1,7 @@
 export { Button } from './Button';
 export { CheckboxField } from './CheckboxField';
 export { FormInputField } from './FormInputField';
+export { FormMultiSelectDropdownField } from './FormMultiSelectDropdownField';
 export { FormSelectField } from './FormSelectField';
 export { FormTextareaField } from './FormTextareaField';
 export { SectionCard } from './SectionCard';

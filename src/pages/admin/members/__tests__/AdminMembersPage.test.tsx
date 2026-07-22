@@ -277,7 +277,7 @@ describe('AdminMembersPage', () => {
     expect(mockGetPageCursor).toHaveBeenCalledWith(3, expect.any(Number));
   });
 
-  it('allows filtering by deleted members', () => {
+  it('allows filtering by deleted members', async () => {
     mockUseAdminMembersQuery.mockReturnValue({
       data: {
         items: [],
@@ -295,7 +295,10 @@ describe('AdminMembersPage', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'deleted' } });
+    const statusButton = screen.getByRole('button', { name: 'Status' });
+    fireEvent.click(statusButton);
+    const deletedOption = await screen.findByRole('option', { name: 'Deleted' });
+    fireEvent.click(deletedOption);
 
     expect(mockUseAdminMembersQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({ statusFilter: 'deleted' }),

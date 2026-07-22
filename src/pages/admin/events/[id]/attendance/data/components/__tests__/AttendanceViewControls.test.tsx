@@ -87,12 +87,17 @@ describe('AttendanceViewControls', () => {
     fireEvent.change(screen.getByLabelText('Name or Member ID'), { target: { value: 'MID-42' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
-    fireEvent.click(screen.getByLabelText('Volunteer'));
-    fireEvent.click(screen.getByLabelText('Member'));
-    fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'Youth' } });
-    fireEvent.change(screen.getByLabelText('Check-in status'), {
-      target: { value: 'checked_in' },
-    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Volunteer' }));
+
+    // Re-open Role dropdown to select Member
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Member' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Category' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Youth' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check-in status' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Checked in' }));
     expect(handlers.onNameOrMemberQueryChange).toHaveBeenCalledWith('MID-42');
     expect(handlers.onRoleChange).toHaveBeenNthCalledWith(1, ['Volunteer']);
     expect(handlers.onRoleChange).toHaveBeenNthCalledWith(2, ['Member']);
@@ -121,19 +126,16 @@ describe('AttendanceViewControls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add group level' }));
     expect(handlers.onAddGroupingLevel).toHaveBeenCalledTimes(1);
 
-    fireEvent.change(screen.getAllByRole('combobox')[2], {
-      target: { value: 'registration:team' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Level 1 field' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Team' }));
     expect(handlers.onGroupingFieldChange).toHaveBeenCalledWith(0, 'registration:team');
 
-    fireEvent.change(screen.getByLabelText('Level 1 order'), {
-      target: { value: 'time_asc' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Level 1 order' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Earliest' }));
     expect(handlers.onGroupingSortChange).toHaveBeenCalledWith(0, 'time_asc');
 
-    const level2Order = screen.getByLabelText('Level 2 order');
-    expect(within(level2Order).queryByRole('option', { name: 'Largest' })).not.toBeInTheDocument();
-    expect(within(level2Order).queryByRole('option', { name: 'Smallest' })).not.toBeInTheDocument();
+    const level2OrderButton = screen.getByRole('button', { name: 'Level 2 order' });
+    expect(level2OrderButton).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Up' })[1]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Down' })[0]);
@@ -154,12 +156,13 @@ describe('AttendanceViewControls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
-    fireEvent.change(screen.getByLabelText('Filter field'), {
-      target: { value: 'attendance:area' },
-    });
-    fireEvent.change(screen.getByLabelText('Field-Based Conditions'), {
-      target: { value: 'or' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Filter field' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Area' }));
+
+    // Open Field-Based Conditions dropdown and select OR
+    fireEvent.click(screen.getByRole('button', { name: 'Field-Based Conditions' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Any filter can match (OR)' }));
+
     fireEvent.change(screen.getByLabelText('Field value'), { target: { value: 'East' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply field filter' }));
 

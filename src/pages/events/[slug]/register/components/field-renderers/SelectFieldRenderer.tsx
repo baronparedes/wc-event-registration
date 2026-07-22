@@ -1,9 +1,7 @@
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 
+import { FormSelectField } from '@/components/ui/FormSelectField';
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
-
-const baseInputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-base text-text outline-none transition focus:border-primary';
 
 type SelectFieldRendererProps = {
   field: PublicEventField;
@@ -204,15 +202,15 @@ export function SelectFieldRenderer({
   remainingSlotsByRoleByOption,
 }: SelectFieldRendererProps) {
   const selectedValue = useWatch({ control: dynamicForm.control, name: field.field_key });
+  const currentValue = typeof selectedValue === 'string' ? selectedValue : '';
 
   return (
-    <select
+    <FormSelectField
       id={`field-${field.field_key}`}
-      className={baseInputClassName}
-      {...dynamicForm.register(field.field_key)}
-    >
-      <option value="">Select an option</option>
-      {field.options.map((option: { value: string; label: string }) => {
+      registration={dynamicForm.register(field.field_key)}
+      value={currentValue}
+      placeholder="Select an option"
+      options={field.options.map((option: { value: string; label: string }) => {
         const isUnavailable = isOptionUnavailableForRole(
           field,
           option.value,
@@ -220,25 +218,19 @@ export function SelectFieldRenderer({
           remainingSlotsByOption,
           remainingSlotsByRoleByOption,
         );
-
         const { combinedInlineLabel } = getOptionSlotMetadata(
           field,
           option,
           remainingSlotsByOption,
           remainingSlotsByRoleByOption,
         );
-
-        return (
-          <option
-            key={`${field.id}-${option.value}`}
-            value={option.value}
-            disabled={isUnavailable && selectedValue !== option.value}
-          >
-            {combinedInlineLabel ? `${option.label} (${combinedInlineLabel})` : option.label}
-          </option>
-        );
+        return {
+          value: option.value,
+          label: combinedInlineLabel ? `${option.label} (${combinedInlineLabel})` : option.label,
+          disabled: isUnavailable && currentValue !== option.value,
+        };
       })}
-    </select>
+    />
   );
 }
 
