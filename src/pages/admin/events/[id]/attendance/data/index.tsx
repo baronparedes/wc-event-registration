@@ -494,6 +494,7 @@ export function AdminAttendanceDataPage() {
           currentViewConfig={viewConfig}
           currentViewId={viewIdParam}
           onApplyView={applyViewConfig}
+          canUpdate={canWrite}
           canDelete={canWrite}
           onViewDeleted={() => {
             if (id) {

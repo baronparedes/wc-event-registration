@@ -2,6 +2,7 @@ import { POSTGRES_ERROR_CODES } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import type { SupabaseClient } from '@/shared/handler.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
+import type { AdminAccountRole } from '@/shared/security.ts';
 import { z } from '@/shared/validation.ts';
 
 const upsertViewRequestSchema = z.object({
@@ -44,6 +45,24 @@ Deno.serve(async (req) => {
     const { id, event_id, name, view_config } = payload;
     const supabase = guard.client;
 
+    if (!guard.userId) {
+      return errorResponse(corsHeaders, 401, 'Unauthorized');
+    }
+
+    const { data: adminRecord, error: adminRecordError } = await supabase
+      .from('admins')
+      .select('role')
+      .eq('auth_user_id', guard.userId)
+      .maybeSingle<{ role: AdminAccountRole }>();
+
+    if (adminRecordError || !adminRecord) {
+      return errorResponse(corsHeaders, 401, 'Unauthorized');
+    }
+
+    if (id && adminRecord.role === 'slod') {
+      return errorResponse(corsHeaders, 403, 'SLOD cannot update existing saved views');
+    }
+
     const viewName =
       !name || name.startsWith('View ') ? await generateViewName(supabase, event_id) : name;
 
@@ -62,7 +81,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (updateError) {
-        if (updateError.code === POSTGRES_ERROR_CODES.UNIQUE_VIOLATION) {
+        if (updateError.code === POSTGRES_ERROR_CODES.uniqueViolation) {
           return errorResponse(corsHeaders, 409, 'A view with this name already exists');
         }
         throw updateError;
@@ -82,7 +101,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (createError) {
-        if (createError.code === POSTGRES_ERROR_CODES.UNIQUE_VIOLATION) {
+        if (createError.code === POSTGRES_ERROR_CODES.uniqueViolation) {
           return errorResponse(corsHeaders, 409, 'A view with this name already exists');
         }
         throw createError;

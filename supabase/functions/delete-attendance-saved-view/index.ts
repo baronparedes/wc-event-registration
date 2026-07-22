@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     functionName: 'delete-attendance-saved-view',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    allowedRoles: ['admin', 'super_admin'],
     schema: deleteViewRequestSchema,
   });
 

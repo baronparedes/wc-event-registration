@@ -19,6 +19,7 @@ interface SavedViewsModalProps {
   currentViewId: string | null;
   onApplyView: (config: AttendeeViewConfig) => void;
   onViewDeleted: () => void;
+  canUpdate?: boolean;
   canDelete?: boolean;
 }
 
@@ -30,6 +31,7 @@ export function SavedViewsModal({
   currentViewId,
   onApplyView,
   onViewDeleted,
+  canUpdate = true,
   canDelete = true,
 }: SavedViewsModalProps) {
   const navigate = useNavigate();
@@ -189,7 +191,7 @@ export function SavedViewsModal({
             <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Close
             </Button>
-            {currentViewId && (
+            {canUpdate && currentViewId && (
               <Button
                 variant="outline"
                 onClick={handleUpdateCurrentView}

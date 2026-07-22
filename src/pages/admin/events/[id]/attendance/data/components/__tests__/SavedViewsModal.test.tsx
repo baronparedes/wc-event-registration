@@ -339,4 +339,13 @@ describe('SavedViewsModal', () => {
       );
     });
   });
+
+  it('hides Update Current when canUpdate is false', () => {
+    const selectedView = makeView({ name: 'Current View' });
+    mockUseAttendanceSavedViewsQuery.mockReturnValue({ data: [selectedView] });
+
+    renderModal({ currentViewId: selectedView.id, canUpdate: false });
+
+    expect(screen.queryByRole('button', { name: 'Update Current' })).not.toBeInTheDocument();
+  });
 });
