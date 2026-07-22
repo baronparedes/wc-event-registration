@@ -36,8 +36,8 @@ export function SaveConfirmationDialog({
     status: 'Status',
     registration_mode: 'Registration Status',
     duplicate_policy: 'Re-registration Policy',
+    public_registration_access: 'Allow Public Registrations',
     allow_name_lookup: 'Allow Name Lookup',
-    allow_public_registrations: 'Allow Public Registrations',
   };
 
   return (

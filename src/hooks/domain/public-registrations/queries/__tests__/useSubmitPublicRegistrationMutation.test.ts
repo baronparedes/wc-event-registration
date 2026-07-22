@@ -3,6 +3,7 @@ import { act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { QUERY_KEYS } from '@/config/constants';
 import { useSubmitPublicRegistrationMutation } from '@/hooks/domain/public-registrations/queries/useSubmitPublicRegistrationMutation';
 
 const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
@@ -27,7 +28,7 @@ describe('useSubmitPublicRegistrationMutation', () => {
     vi.clearAllMocks();
   });
 
-  it('submits registration and invalidates attendee-check query', async () => {
+  it('submits registration and invalidates attendee-check and event queries', async () => {
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
     const email = faker.internet.email();
 
@@ -55,6 +56,9 @@ describe('useSubmitPublicRegistrationMutation', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['publicAttendeeCheck', email, eventSlug],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: QUERY_KEYS.publicEventBySlug(eventSlug),
     });
   });
 

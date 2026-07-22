@@ -2,11 +2,14 @@ export type {
   EventStatus,
   DuplicatePolicy,
   RegistrationMode,
+  PublicRegistrationAccess,
   AdminEvent,
   EventAvailability,
   PublicEventListingItem,
   DynamicFieldAnswerPreview,
 } from './types';
+
+export { derivePublicRegistrationAccess, mapPublicRegistrationAccessToEventFlags } from './types';
 
 export {
   createEventSchema,

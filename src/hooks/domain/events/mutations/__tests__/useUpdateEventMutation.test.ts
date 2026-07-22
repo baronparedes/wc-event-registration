@@ -83,6 +83,8 @@ describe('useUpdateEventMutation', () => {
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'closed',
+        allow_public_registrations: false,
+        require_id_lookup: true,
       },
     });
 
@@ -102,7 +104,7 @@ describe('useUpdateEventMutation', () => {
         status: 'published',
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
-        allow_public_registrations: false,
+        public_registration_access: 'members',
       });
     });
 
@@ -118,6 +120,10 @@ describe('useUpdateEventMutation', () => {
       duplicate_policy: 'allow_update',
       registration_mode: 'open',
       allow_public_registrations: false,
+      require_id_lookup: true,
+      metadata: {
+        public_registration_access: 'members',
+      },
     });
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
       action: 'update_event',
@@ -131,7 +137,7 @@ describe('useUpdateEventMutation', () => {
           'status',
           'duplicate_policy',
           'registration_mode',
-          'allow_public_registrations',
+          'metadata',
         ],
       },
     });
@@ -155,6 +161,8 @@ describe('useUpdateEventMutation', () => {
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'closed',
+        allow_public_registrations: false,
+        require_id_lookup: true,
       },
     });
     mockUpdateBuilder.eq.mockResolvedValueOnce({ error: new Error('update failed') });
@@ -174,6 +182,7 @@ describe('useUpdateEventMutation', () => {
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'closed',
+        public_registration_access: 'members',
       }),
     ).rejects.toThrow('update failed');
 
@@ -198,7 +207,7 @@ describe('useUpdateEventMutation', () => {
         status: 'published',
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
-        allow_public_registrations: true,
+        public_registration_access: 'public',
       });
     });
 
@@ -217,6 +226,8 @@ describe('useUpdateEventMutation', () => {
             'duplicate_policy',
             'registration_mode',
             'allow_public_registrations',
+            'require_id_lookup',
+            'metadata',
           ],
         },
       }),
@@ -237,6 +248,7 @@ describe('useUpdateEventMutation', () => {
         duplicate_policy: 'block',
         registration_mode: 'closed',
         allow_public_registrations: false,
+        require_id_lookup: true,
         metadata: { legacy_flag: true },
       },
     });
@@ -256,7 +268,7 @@ describe('useUpdateEventMutation', () => {
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'closed',
-        allow_public_registrations: false,
+        public_registration_access: 'members',
         allow_name_lookup: true,
       });
     });
@@ -265,6 +277,7 @@ describe('useUpdateEventMutation', () => {
       expect.objectContaining({
         metadata: {
           legacy_flag: true,
+          public_registration_access: 'members',
           allow_name_lookup: true,
         },
       }),

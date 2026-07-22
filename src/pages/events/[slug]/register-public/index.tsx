@@ -13,10 +13,12 @@ import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields/queries';
 import { usePublicEventQuery } from '@/hooks/domain/events/queries';
 import {
   fetchPublicAttendeeCheck,
+  fetchPublicRegistrationDetail,
   useSubmitPublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
+import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
 import { buildSubmitPublicRegistrationSchema } from '@/lib/domain/public-registrations';
 import { formatDateTime } from '@/lib/infrastructure';
@@ -60,10 +62,12 @@ export function PublicEventRegistrationPage() {
   const hasShownFieldsErrorToastRef = useRef(false);
 
   const eventQuery = usePublicEventQuery(slug ?? null);
-  const event =
-    eventQuery.data?.status === 'available' && eventQuery.data.event ? eventQuery.data.event : null;
+  const availableEventId =
+    eventQuery.data?.status === 'available' && eventQuery.data.event
+      ? eventQuery.data.event.id
+      : undefined;
 
-  const fieldsQuery = usePublicEventFieldsQuery(event?.id);
+  const fieldsQuery = usePublicEventFieldsQuery(availableEventId);
   const submitMutation = useSubmitPublicRegistrationMutation();
 
   useEffect(() => {
@@ -102,13 +106,42 @@ export function PublicEventRegistrationPage() {
 
       try {
         const existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
+        const allowsExistingRegistrationUpdate =
+          eventQuery.data?.status === 'available' &&
+          (eventQuery.data.event.duplicate_policy === 'allow_update' ||
+            eventQuery.data.event.duplicate_policy === 'allow_multiple_update');
 
-        if (existingRegistration) {
+        if (existingRegistration && !allowsExistingRegistrationUpdate) {
           setAttendeeEmailErrorMessage('This email is already registered for this event.');
           return;
         }
 
+        if (existingRegistration && allowsExistingRegistrationUpdate) {
+          const detail = await fetchPublicRegistrationDetail(existingRegistration.id);
+          const hydratedFieldResponses = detail.fieldResponses.reduce(
+            (acc: DynamicFieldResponseValues, response) => {
+              if (response.field_name) {
+                acc[response.field_name] = response.answer;
+              }
+              return acc;
+            },
+            {} as DynamicFieldResponseValues,
+          );
+
+          setAttendeeInfo({
+            first_name: detail.registration.first_name,
+            last_name: detail.registration.last_name,
+            nickname: detail.registration.nickname,
+            email: detail.registration.email,
+            phone: detail.registration.phone,
+          });
+          setFieldResponses(hydratedFieldResponses);
+          setCurrentStep('event-fields');
+          return;
+        }
+
         setAttendeeInfo(data);
+        setFieldResponses({});
         setCurrentStep('event-fields');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to check attendee';
@@ -117,7 +150,7 @@ export function PublicEventRegistrationPage() {
         setIsCheckingAttendee(false);
       }
     },
-    [slug],
+    [slug, eventQuery.data],
   );
 
   const handleFieldsSubmit = useCallback(
@@ -231,35 +264,47 @@ export function PublicEventRegistrationPage() {
     );
   }
 
+  if (eventQuery.data.status !== 'available' || !eventQuery.data.event.allow_public_registrations) {
+    return (
+      <section className="mx-auto max-w-3xl space-y-6">
+        <EmptyState
+          icon={<AlertCircle />}
+          title="Public Registration Unavailable"
+          description="This event is not accepting public registrations at the moment."
+        />
+      </section>
+    );
+  }
+
+  const availableEvent = eventQuery.data.event;
+  const publicRegistrationAccess = derivePublicRegistrationAccess({
+    public_registration_access: availableEvent.metadata?.public_registration_access,
+    allow_public_registrations: availableEvent.allow_public_registrations,
+    require_id_lookup: availableEvent.require_id_lookup,
+  });
+  const canReturnToMemberRegistration = publicRegistrationAccess !== 'public';
+  const canUpdatePublicRegistration =
+    availableEvent.duplicate_policy === 'allow_update' ||
+    availableEvent.duplicate_policy === 'allow_multiple_update';
+  const eventWindowText =
+    availableEvent.registration_opens_at && availableEvent.registration_closes_at
+      ? {
+          opens: formatDateTime(availableEvent.registration_opens_at),
+          closes: formatDateTime(availableEvent.registration_closes_at),
+        }
+      : null;
+
   return (
     <section className="mx-auto max-w-3xl space-y-6">
-      {(() => {
-        const isAvailable = eventQuery.data?.status === 'available';
-        const availData = isAvailable
-          ? (eventQuery.data as Extract<typeof eventQuery.data, { status: 'available' }>)
-          : null;
-        const event = availData?.event;
-
-        return (
-          <EventHeaderCard
-            defaultExpanded={false}
-            slug={slug}
-            isLoading={eventQuery.isLoading}
-            isError={eventQuery.isError}
-            availability={eventQuery.data}
-            isGateReady={!!event?.registration_opens_at}
-            eventWindowText={
-              // eslint-disable-next-line no-restricted-syntax
-              event?.registration_opens_at && event?.registration_closes_at
-                ? {
-                    opens: formatDateTime(event.registration_opens_at),
-                    closes: formatDateTime(event.registration_closes_at),
-                  }
-                : null
-            }
-          />
-        );
-      })()}
+      <EventHeaderCard
+        defaultExpanded={false}
+        slug={slug}
+        isLoading={eventQuery.isLoading}
+        isError={eventQuery.isError}
+        availability={eventQuery.data}
+        isGateReady={!!availableEvent.registration_opens_at}
+        eventWindowText={eventWindowText}
+      />
 
       <StepIndicator
         currentStep={getStepNumber()}
@@ -278,13 +323,15 @@ export function PublicEventRegistrationPage() {
             onInactivityTimeout={handleInactivityReset}
           />
           <div className="flex items-center justify-start">
-            <button
-              type="button"
-              onClick={() => slug && navigate(`/events/${slug}/register`)}
-              className="text-sm text-muted underline transition hover:text-text"
-            >
-              ← Back to member registration
-            </button>
+            {canReturnToMemberRegistration && (
+              <button
+                type="button"
+                onClick={() => slug && navigate(`/events/${slug}/register`)}
+                className="text-sm text-muted underline transition hover:text-text"
+              >
+                ← Back to member registration
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -321,6 +368,7 @@ export function PublicEventRegistrationPage() {
             registrationId={confirmationData.registrationId}
             email={confirmationData.email}
             eventSlug={slug}
+            canUpdate={canUpdatePublicRegistration}
             inactivityTimeoutMs={TIMING.publicRegistrationConfirmationTimeoutMs}
             onInactivityTimeout={handleInactivityReset}
           />

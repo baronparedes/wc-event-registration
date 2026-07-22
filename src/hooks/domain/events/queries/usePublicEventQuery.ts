@@ -63,7 +63,7 @@ export function usePublicEventQuery(slug: string | null) {
       }
 
       const { data: countData, error: countError } = await supabase.rpc(
-        'get_event_registration_count',
+        'get_total_event_registration_count',
         { p_event_id: data.id },
       );
       if (countError) {

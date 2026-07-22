@@ -44,7 +44,10 @@ type AnswerRow = {
   answer_boolean: boolean | null;
   answer_date: string | null;
   answer_json: unknown | null;
-  event_fields: { field_key: string } | { field_key: string }[] | null;
+  event_fields:
+    | { field_key: string; field_type?: string | null }
+    | { field_key: string; field_type?: string | null }[]
+    | null;
 };
 
 type UserLookupRow = {
@@ -160,11 +163,29 @@ function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
 }
 
 function getAnswerValue(row: AnswerRow): unknown {
+  const eventField = Array.isArray(row.event_fields) ? row.event_fields[0] : row.event_fields;
+  const fieldType = eventField?.field_type ?? null;
+
   if (row.answer_json !== null) return row.answer_json;
   if (row.answer_boolean !== null) return row.answer_boolean;
   if (row.answer_number !== null) return row.answer_number;
   if (row.answer_date !== null) return row.answer_date;
+
   if (row.answer_text !== null) {
+    // Keep text-like answers as raw strings; parsing "12" would coerce it to number 12.
+    if (
+      fieldType === 'text' ||
+      fieldType === 'textarea' ||
+      fieldType === 'email' ||
+      fieldType === 'phone' ||
+      fieldType === 'select' ||
+      fieldType === 'radio' ||
+      fieldType === 'date' ||
+      fieldType === 'datetime'
+    ) {
+      return row.answer_text;
+    }
+
     try {
       return JSON.parse(row.answer_text);
     } catch {
@@ -290,7 +311,7 @@ async function getExistingRegistrationState(
   const { data: answerRows, error: answersError } = await supabase
     .from('registration_answers')
     .select(
-      'answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields!inner(field_key)',
+      'answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields!inner(field_key, field_type)',
     )
     .eq('registration_id', existingRegistration.id);
 

@@ -20,6 +20,7 @@ import {
 import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
 import { createEventSchema } from '@/lib/domain/events';
 import type { CreateEventInput } from '@/lib/domain/events';
+import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 
 import { EventNavigationLinks, PublishActionButton } from '../components';
 import {
@@ -57,8 +58,8 @@ const DEFAULT_VALUES: CreateEventInput = {
   status: 'draft',
   duplicate_policy: 'block',
   registration_mode: 'open',
+  public_registration_access: 'members',
   allow_name_lookup: false,
-  allow_public_registrations: false,
 };
 
 export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
@@ -114,8 +115,12 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         status: existingEvent.status,
         duplicate_policy: existingEvent.duplicate_policy,
         registration_mode: existingEvent.registration_mode,
+        public_registration_access: derivePublicRegistrationAccess({
+          public_registration_access: eventMetadata.public_registration_access,
+          allow_public_registrations: existingEvent.allow_public_registrations,
+          require_id_lookup: existingEvent.require_id_lookup,
+        }),
         allow_name_lookup: eventMetadata.allow_name_lookup === true,
-        allow_public_registrations: existingEvent.allow_public_registrations ?? false,
       });
     }
   }, [isEditMode, existingEvent, reset]);

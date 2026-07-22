@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
@@ -6,6 +8,113 @@ import { WizardStep } from '@/components/ui/WizardStep';
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
+
+function normalizeHydratedValueForField(
+  value: unknown,
+  fieldType: PublicEventField['field_type'],
+): unknown {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (fieldType === 'text' || fieldType === 'textarea' || fieldType === 'email') {
+    return value === null ? '' : String(value);
+  }
+
+  if (fieldType === 'phone' || fieldType === 'date' || fieldType === 'datetime') {
+    return value === null ? '' : String(value);
+  }
+
+  if (fieldType === 'select' || fieldType === 'radio') {
+    return value === null ? '' : String(value);
+  }
+
+  if (fieldType === 'number') {
+    if (value === null || value === '') {
+      return undefined;
+    }
+
+    if (typeof value === 'number' || typeof value === 'string') {
+      return value;
+    }
+
+    return String(value);
+  }
+
+  if (fieldType === 'checkbox' || fieldType === 'boolean') {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const lowered = value.trim().toLowerCase();
+      if (lowered === 'true' || lowered === '1' || lowered === 'yes') {
+        return true;
+      }
+
+      if (lowered === 'false' || lowered === '0' || lowered === 'no') {
+        return false;
+      }
+    }
+
+    if (typeof value === 'number') {
+      return value === 1;
+    }
+
+    return Boolean(value);
+  }
+
+  if (fieldType === 'multi_select') {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item));
+    }
+
+    if (value === null || value === '') {
+      return [];
+    }
+
+    return [String(value)];
+  }
+
+  if (fieldType === 'multi_select_toggle') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entryValue]) => [
+        key,
+        entryValue === null ? null : Boolean(entryValue),
+      ]),
+    );
+  }
+
+  return value;
+}
+
+function buildNormalizedDefaultValues(
+  fields: PublicEventField[],
+  defaultValues?: DynamicFieldResponseValues,
+): DynamicFieldResponseValues {
+  const normalized: DynamicFieldResponseValues = {};
+
+  if (!defaultValues) {
+    return normalized;
+  }
+
+  for (const field of fields) {
+    if (!(field.field_key in defaultValues)) {
+      continue;
+    }
+
+    normalized[field.field_key] = normalizeHydratedValueForField(
+      defaultValues[field.field_key],
+      field.field_type,
+    );
+  }
+
+  return normalized;
+}
 
 type PublicEventFieldsStepProps = {
   fields: PublicEventField[];
@@ -29,11 +138,25 @@ export function PublicEventFieldsStep({
   onInactivityTimeout,
 }: PublicEventFieldsStepProps) {
   const schema = buildDynamicFieldResponseSchema(fields);
+  const lastAppliedDefaultsRef = useRef<string>('');
+
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     resolver: zodResolver(schema),
     mode: 'onBlur',
-    defaultValues,
+    defaultValues: {},
   });
+
+  useEffect(() => {
+    const normalizedDefaultValues = buildNormalizedDefaultValues(fields, defaultValues);
+    const serializedDefaults = JSON.stringify(normalizedDefaultValues);
+
+    if (serializedDefaults === lastAppliedDefaultsRef.current) {
+      return;
+    }
+
+    lastAppliedDefaultsRef.current = serializedDefaults;
+    dynamicForm.reset(normalizedDefaultValues);
+  }, [dynamicForm, fields, defaultValues]);
 
   return (
     <WizardStep

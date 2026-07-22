@@ -5,6 +5,7 @@
 
 export {
   fetchPublicAttendeeCheck,
+  fetchPublicRegistrationDetail,
   useAdminPublicRegistrationsQuery,
   usePublicRegistrationDetailQuery,
   usePublicAttendeeCheckQuery,

@@ -16,6 +16,7 @@ import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout, useRfidAutoFocus, useScanBuffer } from '@/hooks/utils';
 import {
   type DynamicFieldResponseValues,
+  type EventFieldType,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
 } from '@/lib/domain/event-fields';
@@ -34,6 +35,87 @@ function formatUtcDateTime(value: string | null): string {
   }
 
   return parsed.toLocaleString();
+}
+
+function normalizePrefillValueForField(value: unknown, fieldType: EventFieldType): unknown {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (
+    fieldType === 'text' ||
+    fieldType === 'textarea' ||
+    fieldType === 'email' ||
+    fieldType === 'phone'
+  ) {
+    return value === null ? '' : String(value);
+  }
+
+  if (
+    fieldType === 'select' ||
+    fieldType === 'radio' ||
+    fieldType === 'date' ||
+    fieldType === 'datetime'
+  ) {
+    return value === null ? '' : String(value);
+  }
+
+  if (fieldType === 'number') {
+    if (value === null || value === '') {
+      return undefined;
+    }
+
+    if (typeof value === 'number' || typeof value === 'string') {
+      return value;
+    }
+
+    return String(value);
+  }
+
+  if (fieldType === 'checkbox' || fieldType === 'boolean') {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const lowered = value.trim().toLowerCase();
+      if (lowered === 'true' || lowered === '1' || lowered === 'yes') return true;
+      if (lowered === 'false' || lowered === '0' || lowered === 'no') return false;
+    }
+
+    if (typeof value === 'number') {
+      return value === 1;
+    }
+
+    return Boolean(value);
+  }
+
+  if (fieldType === 'multi_select') {
+    if (Array.isArray(value)) {
+      return value.map((entry) => String(entry));
+    }
+
+    if (value === null || value === '') {
+      return [];
+    }
+
+    return [String(value)];
+  }
+
+  if (fieldType === 'multi_select_toggle') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entryValue]) => [
+        key,
+        entryValue === null ? null : Boolean(entryValue),
+      ]),
+    );
+  }
+
+  return value;
 }
 
 export function stepBadgeClassName(currentStep: WizardStep, badgeStep: WizardStep): string {
@@ -281,8 +363,24 @@ export function useEventRegistrationPageState() {
 
   useEffect(() => {
     const defaults = createDynamicFieldDefaultValues(activeFields);
-    const merged = memberLookup.prefillResponses
-      ? { ...defaults, ...memberLookup.prefillResponses }
+    const normalizedPrefillResponses = (
+      memberLookup.prefillResponses
+        ? activeFields.reduce<Record<string, unknown>>((acc, field) => {
+            if (!(field.field_key in memberLookup.prefillResponses!)) {
+              return acc;
+            }
+
+            acc[field.field_key] = normalizePrefillValueForField(
+              memberLookup.prefillResponses![field.field_key],
+              field.field_type,
+            );
+            return acc;
+          }, {})
+        : null
+    ) as Record<string, unknown> | null;
+
+    const merged = normalizedPrefillResponses
+      ? { ...defaults, ...normalizedPrefillResponses }
       : defaults;
     dynamicForm.reset(merged, {
       keepDefaultValues: false,

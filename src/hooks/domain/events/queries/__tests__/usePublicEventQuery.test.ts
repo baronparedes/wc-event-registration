@@ -94,6 +94,10 @@ describe('usePublicEventQuery', () => {
       },
       registration_count: registrationCount,
     });
+
+    expect(mockRpc).toHaveBeenCalledWith('get_total_event_registration_count', {
+      p_event_id: eventId,
+    });
   });
 
   it('keeps event accessible when guest registration is disabled', async () => {

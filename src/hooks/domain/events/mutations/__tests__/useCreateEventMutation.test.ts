@@ -107,6 +107,7 @@ describe('useCreateEventMutation', () => {
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'open',
+        public_registration_access: 'members',
       }),
     );
 
@@ -119,9 +120,14 @@ describe('useCreateEventMutation', () => {
         duplicate_policy: 'block',
         registration_mode: 'open',
         require_id_lookup: true,
+        allow_public_registrations: false,
         created_by_admin_id: adminId,
         description: null,
         location: null,
+        metadata: {
+          allow_name_lookup: false,
+          public_registration_access: 'members',
+        },
       }),
     );
     expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
@@ -161,6 +167,7 @@ describe('useCreateEventMutation', () => {
         status: 'published',
         duplicate_policy: 'allow_update',
         registration_mode: 'open',
+        public_registration_access: 'members_and_public',
       }),
     );
 
@@ -175,6 +182,12 @@ describe('useCreateEventMutation', () => {
         ends_at: '2026-07-01T12:00+08:00',
         registration_opens_at: '2026-06-20T10:00+08:00',
         registration_closes_at: '2026-06-30T10:00+08:00',
+        allow_public_registrations: true,
+        require_id_lookup: true,
+        metadata: {
+          allow_name_lookup: false,
+          public_registration_access: 'members_and_public',
+        },
       }),
     );
   });
@@ -204,6 +217,7 @@ describe('useCreateEventMutation', () => {
         status: 'draft',
         duplicate_policy: 'block',
         registration_mode: 'closed',
+        public_registration_access: 'public',
       }),
     ).rejects.toThrow('insert failed');
 

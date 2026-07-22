@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { QUERY_KEYS } from '@/config/constants';
 import type {
   SubmitPublicRegistrationRequest,
   SubmitPublicRegistrationResult,
@@ -33,6 +34,11 @@ export function useSubmitPublicRegistrationMutation() {
       // Invalidate check query for this email/event to reflect new registration
       queryClient.invalidateQueries({
         queryKey: ['publicAttendeeCheck', variables.attendee.email, variables.event_slug],
+      });
+
+      // Refresh event availability header data (includes registered count)
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.publicEventBySlug(variables.event_slug),
       });
     },
   });

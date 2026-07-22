@@ -32,6 +32,7 @@ type LookupValues = { memberId?: string; name?: string };
 function renderCard(
   options: {
     allowNameLookup?: boolean;
+    allowMemberRegistration?: boolean;
     allowPublicRegistration?: boolean;
     slug?: string;
     lookupErrorMessage?: string | null;
@@ -59,6 +60,7 @@ function renderCard(
         shouldHighlightInput={options.shouldHighlightInput ?? false}
         onDismissLookupError={onDismissLookupError}
         allowNameLookup={options.allowNameLookup ?? true}
+        allowMemberRegistration={options.allowMemberRegistration ?? true}
         allowPublicRegistration={options.allowPublicRegistration ?? false}
       />
     );
@@ -140,6 +142,22 @@ describe('MemberLookupStepCard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Not a Member? Register as guest' }));
 
+    expect(mockNavigate).toHaveBeenCalledWith('/events/sample-event/register-public');
+  });
+
+  it('shows public-only notice and CTA when member registration is disabled', () => {
+    renderCard({
+      allowNameLookup: false,
+      allowMemberRegistration: false,
+      allowPublicRegistration: true,
+      slug: 'sample-event',
+    });
+
+    expect(
+      screen.getByText('This event is currently set to public-only registration.'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue as Guest' }));
     expect(mockNavigate).toHaveBeenCalledWith('/events/sample-event/register-public');
   });
 
