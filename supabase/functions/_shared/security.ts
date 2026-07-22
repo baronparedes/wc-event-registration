@@ -60,7 +60,7 @@ export interface AdminGuardOptions {
   allowedRoles?: AdminAccountRole[];
 }
 
-export type AdminAccountRole = 'admin' | 'super_admin' | 'slod';
+export type AdminAccountRole = 'admin' | 'super_admin' | 'slod' | 'kiosk';
 
 export interface AdminAuditLogOptions {
   adminClient: ReturnType<typeof createClient>;

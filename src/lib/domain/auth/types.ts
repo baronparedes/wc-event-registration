@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 
-export type AdminRole = 'admin' | 'super_admin' | 'slod';
+export type AdminRole = 'admin' | 'super_admin' | 'slod' | 'kiosk';
 
 export type AdminAuthState = {
   isAuthenticated: boolean;

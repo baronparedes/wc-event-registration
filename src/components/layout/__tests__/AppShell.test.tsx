@@ -32,7 +32,7 @@ vi.mock('../AppDrawerNavigation', () => ({
     isOpen: boolean;
     onClose: () => void;
     isAuthenticated: boolean;
-    adminRole?: 'admin' | 'super_admin' | 'slod' | null;
+    adminRole?: 'admin' | 'super_admin' | 'slod' | 'kiosk' | null;
     currentUserLabel?: string | null;
     onLogout: () => Promise<void>;
   }) =>

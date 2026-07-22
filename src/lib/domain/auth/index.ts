@@ -1,5 +1,6 @@
 export type { AdminAuthState, AdminRole } from './types';
 export {
+  canAccessAttendanceCheckIn,
   canExportAdminReports,
   canManageAttendanceSavedViews,
   canReadAdminData,

@@ -18,7 +18,7 @@ function renderDrawer(options?: {
   path?: string;
   isOpen?: boolean;
   isAuthenticated?: boolean;
-  adminRole?: 'admin' | 'super_admin' | 'slod' | null;
+  adminRole?: 'admin' | 'super_admin' | 'slod' | 'kiosk' | null;
   currentUserLabel?: string | null;
   onClose?: () => void;
   onLogout?: () => Promise<void>;
@@ -193,5 +193,27 @@ describe('AppDrawerNavigation', () => {
       'href',
       '/admin/events/event-1/attendance/data',
     );
+  });
+
+  it('shows check-in only navigation for kiosk users on event routes', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+
+    renderDrawer({ path: '/admin/events/event-1/attendance/check-in', adminRole: 'kiosk' });
+
+    expect(screen.getByRole('link', { name: 'Check-In' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/attendance/check-in',
+    );
+    expect(screen.queryByRole('link', { name: 'Manage Events' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Members' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Event' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Attendance' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Registrations' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Manage Public Registrations' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendee Details' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance Fields' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Unregistered Members' })).not.toBeInTheDocument();
   });
 });

@@ -19,10 +19,11 @@ import {
   useAttendanceSettingsQuery,
   useAttendeesLocalCacheQuery,
 } from '@/hooks/domain/attendance/queries';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/events';
-import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
+import { canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateTime } from '@/lib/infrastructure';
 
 import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
@@ -89,12 +90,12 @@ export function AdminAttendanceCheckInPage() {
   const confirmStepRef = useRef<HTMLDivElement | null>(null);
 
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
+  const { data: authState } = useAdminAuthQuery();
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const enforceCheckInEventWindow = settings?.enforce_check_in_event_window ?? true;
   const timeslotEnabled = settings?.timeslot_enabled ?? false;
   const timeslots = useMemo(() => settings?.timeslots ?? [], [settings]);
-  const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', { pageSize: 1 });
   const {
     attendees: cachedAttendees,
     cachedAt,
@@ -107,9 +108,10 @@ export function AdminAttendanceCheckInPage() {
   } = useAttendeesLocalCacheQuery(eventId);
   const checkInMutation = useCheckInAttendeeMutation();
   const updateEventMutation = useUpdateEventMutation();
+  const canWrite = canWriteAdminData(authState?.adminRole);
 
   const isLoading = eventLoading || settingsLoading;
-  const registeredCount = registrationsQuery.data?.totalCount ?? 0;
+  const registeredCount = cachedAttendees?.length ?? 0;
 
   const results = useMemo(() => {
     if (!submittedSearchToken.trim() || !cachedAttendees) return [];
@@ -399,9 +401,15 @@ export function AdminAttendanceCheckInPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-800">Attendance tracking is disabled</p>
           <p className="mt-1 text-xs text-amber-700">
-            Enable attendance tracking in{' '}
-            <ActionLink to={toAdminEventAttendance(eventId)}>Attendance Settings</ActionLink> to use
-            check-in.
+            {canWrite ? (
+              <>
+                Enable attendance tracking in{' '}
+                <ActionLink to={toAdminEventAttendance(eventId)}>Attendance Settings</ActionLink> to
+                use check-in.
+              </>
+            ) : (
+              'Attendance settings must be enabled by an admin before kiosk check-in can be used.'
+            )}
           </p>
         </div>
       )}
@@ -483,7 +491,7 @@ export function AdminAttendanceCheckInPage() {
                     >
                       Open Registration Page
                     </Button>
-                  ) : (
+                  ) : canWrite ? (
                     <Button
                       type="button"
                       onClick={handleReopenRegistration}
@@ -493,6 +501,10 @@ export function AdminAttendanceCheckInPage() {
                         ? 'Reopening Registration...'
                         : 'Reopen Registration (Admin)'}
                     </Button>
+                  ) : (
+                    <p className="text-sm text-muted">
+                      Registration is closed. Ask an admin to reopen registration before check-in.
+                    </p>
                   )}
                 </div>
               }

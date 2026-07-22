@@ -14,7 +14,12 @@ import {
   toAdminEventRegistrations,
 } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { type AdminRole, canWriteAdminData } from '@/lib/domain/auth';
+import {
+  type AdminRole,
+  canAccessAttendanceCheckIn,
+  canReadAdminData,
+  canWriteAdminData,
+} from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
 
@@ -75,6 +80,8 @@ export function AppDrawerNavigation({
   const eventId = getEventIdFromPath(location.pathname);
   const { data: selectedEvent } = useAdminEventQuery(eventId ?? undefined);
   const canWrite = canWriteAdminData(adminRole);
+  const canRead = canReadAdminData(adminRole);
+  const canAccessCheckIn = canAccessAttendanceCheckIn(adminRole);
 
   return (
     <>
@@ -116,16 +123,20 @@ export function AppDrawerNavigation({
               <SectionHeading label="Admin" />
               {isAuthenticated ? (
                 <>
-                  <DrawerNavLink
-                    to={ROUTE_PATHS.adminEvents}
-                    label="Manage Events"
-                    onClose={onClose}
-                  />
-                  <DrawerNavLink
-                    to={ROUTE_PATHS.adminMembers}
-                    label="Manage Members"
-                    onClose={onClose}
-                  />
+                  {canRead && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminEvents}
+                      label="Manage Events"
+                      onClose={onClose}
+                    />
+                  )}
+                  {canRead && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminMembers}
+                      label="Manage Members"
+                      onClose={onClose}
+                    />
+                  )}
                 </>
               ) : (
                 <DrawerNavLink to={ROUTE_PATHS.adminLogin} label="Sign In" onClose={onClose} />
@@ -152,16 +163,20 @@ export function AppDrawerNavigation({
                     onClose={onClose}
                   />
                 )}
-                <DrawerNavLink
-                  to={toAdminEventRegistrations(eventId)}
-                  label="Manage Registrations"
-                  onClose={onClose}
-                />
-                <DrawerNavLink
-                  to={toAdminEventPublicRegistrations(eventId)}
-                  label="Manage Public Registrations"
-                  onClose={onClose}
-                />
+                {canRead && (
+                  <DrawerNavLink
+                    to={toAdminEventRegistrations(eventId)}
+                    label="Manage Registrations"
+                    onClose={onClose}
+                  />
+                )}
+                {canRead && (
+                  <DrawerNavLink
+                    to={toAdminEventPublicRegistrations(eventId)}
+                    label="Manage Public Registrations"
+                    onClose={onClose}
+                  />
+                )}
                 {canWrite && (
                   <DrawerNavLink
                     to={toAdminEventAttendance(eventId)}
@@ -175,7 +190,7 @@ export function AppDrawerNavigation({
             {eventId && (
               <div className="space-y-2">
                 <SectionHeading label="Attendance" />
-                {canWrite && (
+                {canAccessCheckIn && (
                   <DrawerNavLink
                     to={toAdminEventAttendanceCheckIn(eventId)}
                     label="Check-In"
@@ -189,11 +204,13 @@ export function AppDrawerNavigation({
                     onClose={onClose}
                   />
                 )}
-                <DrawerNavLink
-                  to={toAdminEventAttendanceData(eventId)}
-                  label="Attendee Details"
-                  onClose={onClose}
-                />
+                {canRead && (
+                  <DrawerNavLink
+                    to={toAdminEventAttendanceData(eventId)}
+                    label="Attendee Details"
+                    onClose={onClose}
+                  />
+                )}
                 {canWrite && (
                   <DrawerNavLink
                     to={toAdminEventAttendanceUnregisteredMembers(eventId)}

@@ -4,7 +4,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS } from '@/config/constants';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAccessAttendanceCheckIn, canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
 
 import { AppMobileShell, AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
@@ -160,6 +160,41 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
     const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
     const searchParams = new URLSearchParams({ redirect: redirectTarget });
     return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
+  }
+
+  if (!canReadAdminData(data?.adminRole)) {
+    return <Navigate to={ROUTE_PATHS.home} replace />;
+  }
+
+  return children;
+}
+
+function RequireAdminCheckInAccess({ children }: { children: ReactElement }) {
+  const { data, isLoading } = useAdminAuthQuery();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6">
+        <div className="space-y-3" aria-hidden="true">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-4/5" />
+        </div>
+      </section>
+    );
+  }
+
+  const isAuthenticated = data?.isAuthenticated ?? false;
+
+  if (!isAuthenticated) {
+    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
+    const searchParams = new URLSearchParams({ redirect: redirectTarget });
+    return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
+  }
+
+  if (!canAccessAttendanceCheckIn(data?.adminRole)) {
+    return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
   }
 
   return children;
@@ -346,11 +381,11 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEventAttendanceCheckInPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminCheckInAccess>
               <LazyRoute>
                 <AdminAttendanceCheckInPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminCheckInAccess>
           }
         />
         <Route

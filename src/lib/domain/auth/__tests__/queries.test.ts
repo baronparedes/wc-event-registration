@@ -103,4 +103,16 @@ describe('fetchAdminAuthState', () => {
       adminRole: 'slod',
     });
   });
+
+  it('returns authenticated state with kiosk role', async () => {
+    const session = { user: { id: 'auth-1' } };
+    mockGetSession.mockResolvedValue({ data: { session }, error: null });
+    mockAdminMaybeSingle.mockResolvedValue({ data: { role: 'kiosk' }, error: null });
+
+    await expect(fetchAdminAuthState()).resolves.toEqual({
+      isAuthenticated: true,
+      session,
+      adminRole: 'kiosk',
+    });
+  });
 });
