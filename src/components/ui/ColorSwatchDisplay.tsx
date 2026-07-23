@@ -9,11 +9,16 @@ export function ColorSwatchDisplay({ value, fullWidth = false }: ColorSwatchDisp
     return <span>—</span>;
   }
 
+  const swatchStyle = {
+    backgroundColor: value,
+    '--print-swatch-color': value,
+  } as React.CSSProperties;
+
   if (fullWidth) {
     return (
       <span
-        className="block h-12 w-full rounded border border-border"
-        style={{ backgroundColor: value }}
+        className="print-color-swatch block h-12 w-full rounded border border-border"
+        style={swatchStyle}
         title={value}
       />
     );
@@ -21,8 +26,8 @@ export function ColorSwatchDisplay({ value, fullWidth = false }: ColorSwatchDisp
 
   return (
     <span
-      className="inline-block h-8 w-8 shrink-0 rounded border border-border"
-      style={{ backgroundColor: value }}
+      className="print-color-swatch inline-block h-8 w-8 shrink-0 rounded border border-border"
+      style={swatchStyle}
       title={value}
     />
   );
