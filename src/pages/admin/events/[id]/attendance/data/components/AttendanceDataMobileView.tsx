@@ -1,4 +1,4 @@
-import { Check, Minus } from 'lucide-react';
+import { Check, EditIcon, Minus } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
 import type {
@@ -8,6 +8,8 @@ import type {
 } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import { type DynamicFieldRef, toDynamicFieldToken } from '@/lib/domain/attendance-views';
+
+import { Avatar } from '../../../../../../../components/ui/Avatar';
 
 type AttendanceDataMobileViewProps = {
   registrants: RegistrantAttendanceRow[];
@@ -33,12 +35,10 @@ type AttendanceDataMobileViewProps = {
 export function AttendanceDataMobileView({
   registrants,
   visibleFields,
-  fields,
   attendeesByRegistrantKey,
   canWrite,
   onViewRegistrant,
   onEditRegistrant,
-  countFilledAnswers,
   getRegistrantKey,
   getVisibleFieldValue,
 }: AttendanceDataMobileViewProps) {
@@ -46,7 +46,6 @@ export function AttendanceDataMobileView({
     <div className="space-y-2 p-2">
       {registrants.map((registrant) => {
         const rowKey = getRegistrantKey(registrant);
-        const filled = countFilledAnswers(registrant.answers, fields);
         const isCheckedIn = registrant.check_in_status === 'checked_in';
         const attendee = attendeesByRegistrantKey.get(rowKey);
         const compactMemberFields = visibleFields.filter((field) => {
@@ -73,11 +72,15 @@ export function AttendanceDataMobileView({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-start gap-1">
+                  <Avatar name={registrant.full_name} size="md" className="shrink-0" />
+                  <p className="break-words font-semibold text-text self-center">
+                    {registrant.full_name}
+                  </p>
                   <span
                     role="img"
                     aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
                     title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                    className={`mt-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full print:hidden ${
+                    className={`mt-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center self-center justify-center rounded-full print:hidden ${
                       isCheckedIn
                         ? 'bg-primary text-white'
                         : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
@@ -85,7 +88,6 @@ export function AttendanceDataMobileView({
                   >
                     {isCheckedIn ? <Check className="h-2 w-2" /> : <Minus className="h-2 w-2" />}
                   </span>
-                  <p className="break-words font-semibold text-text">{registrant.full_name}</p>
                 </div>
                 {attendee?.email && (
                   <p className="mt-0.5 break-words text-xs text-muted">{attendee.email}</p>
@@ -117,7 +119,7 @@ export function AttendanceDataMobileView({
               {canWrite && (
                 <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                   <ActionButton onClick={() => onEditRegistrant(registrant)}>
-                    {filled > 0 ? 'Edit' : 'Fill In'}
+                    <EditIcon className="h-5 w-5" />
                   </ActionButton>
                 </div>
               )}

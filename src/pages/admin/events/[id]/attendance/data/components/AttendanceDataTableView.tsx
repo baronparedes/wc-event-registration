@@ -18,6 +18,8 @@ import type {
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import { type DynamicFieldRef, toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
+import { Avatar } from '../../../../../../../components/ui/Avatar';
+
 type AttendanceDataTableViewProps = {
   registrants: RegistrantAttendanceRow[];
   visibleFields: DynamicFieldRef[];
@@ -90,6 +92,8 @@ export function AttendanceDataTableView({
                 className={`sticky left-0 z-10 ${rowBackgroundClass} !px-2 !py-2 align-middle group-hover:bg-slate-100`}
               >
                 <div className="flex items-center gap-1">
+                  <Avatar name={registrant.full_name} size="lg" className="shrink-0" />
+                  <p className="truncate font-semibold text-text">{registrant.full_name}</p>
                   <span
                     role="img"
                     aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
@@ -102,7 +106,6 @@ export function AttendanceDataTableView({
                   >
                     {isCheckedIn ? <Check className="h-2 w-2" /> : <Minus className="h-2 w-2" />}
                   </span>
-                  <p className="truncate font-semibold text-text">{registrant.full_name}</p>
                 </div>
               </ListTableCell>
               {visibleFields.map((field) => (
