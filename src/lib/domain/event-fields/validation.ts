@@ -22,6 +22,7 @@ const eventFieldTypeSchema = z.enum([
   'date',
   'datetime',
   'boolean',
+  'color_picker',
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -11,7 +11,8 @@ export type AttendanceFieldType =
   | 'multi_select_toggle'
   | 'date'
   | 'datetime'
-  | 'boolean';
+  | 'boolean'
+  | 'color_picker';
 
 export type AttendanceFieldOption = {
   label: string;

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button';
+import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { Dialog } from '@/components/ui/Dialog';
 import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
@@ -143,7 +144,11 @@ export function AttendeeDetailsModal({
                         {getFieldLabel(field)}
                       </p>
                       <p className="mt-2 break-words text-sm font-semibold text-text">
-                        {answerText}
+                        {answer.field_type === 'color_picker' ? (
+                          <ColorSwatchDisplay value={answerText} fullWidth />
+                        ) : (
+                          answerText
+                        )}
                       </p>
                     </li>
                   );
@@ -169,7 +174,11 @@ export function AttendeeDetailsModal({
                         {getFieldLabel(field)}
                       </p>
                       <p className="mt-2 break-words text-sm font-semibold text-text">
-                        {answerText}
+                        {field.field_type === 'color_picker' ? (
+                          <ColorSwatchDisplay value={answerText} fullWidth />
+                        ) : (
+                          answerText
+                        )}
                       </p>
                     </li>
                   );

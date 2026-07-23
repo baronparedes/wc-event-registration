@@ -11,7 +11,8 @@ export type EventFieldType =
   | 'multi_select_toggle'
   | 'date'
   | 'datetime'
-  | 'boolean';
+  | 'boolean'
+  | 'color_picker';
 
 export type PublicEventFieldOption = {
   label: string;

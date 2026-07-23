@@ -18,6 +18,7 @@ export const FIELD_TYPES = [
   'date',
   'datetime',
   'boolean',
+  'color_picker',
 ] as const;
 
 export type EventFieldTypeEnum = (typeof FIELD_TYPES)[number];

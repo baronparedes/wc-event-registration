@@ -1,6 +1,7 @@
 import { Check, Minus } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
+import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import {
   ListTable,
   ListTableBody,
@@ -126,15 +127,21 @@ export function AttendanceDataTableView({
                   key={`${rowKey}:${field.source}:${field.fieldKey}`}
                   className="whitespace-nowrap !px-2 !py-2 align-middle"
                 >
-                  <span
-                    className={
-                      toDynamicFieldToken(field) === 'member:member_id'
-                        ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700'
-                        : 'text-sm text-text'
-                    }
-                  >
-                    {getVisibleFieldValue(attendee, field)}
-                  </span>
+                  {field.fieldType === 'color_picker' ? (
+                    <span className="text-sm text-text">
+                      <ColorSwatchDisplay value={getVisibleFieldValue(attendee, field)} />
+                    </span>
+                  ) : (
+                    <span
+                      className={
+                        toDynamicFieldToken(field) === 'member:member_id'
+                          ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700'
+                          : 'text-sm text-text'
+                      }
+                    >
+                      {getVisibleFieldValue(attendee, field)}
+                    </span>
+                  )}
                 </ListTableCell>
               ))}
               {canWrite && (

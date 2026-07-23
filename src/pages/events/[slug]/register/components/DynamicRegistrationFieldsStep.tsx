@@ -16,6 +16,7 @@ import {
   SelectFieldRenderer,
 } from './field-renderers/SelectFieldRenderer';
 import {
+  ColorPickerFieldRenderer,
   EmailFieldRenderer,
   NumberFieldRenderer,
   PhoneFieldRenderer,
@@ -89,6 +90,8 @@ function DynamicFieldInput(props: {
     case 'checkbox':
     case 'boolean':
       return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />;
+    case 'color_picker':
+      return <ColorPickerFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'text':
     default:
       return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />;

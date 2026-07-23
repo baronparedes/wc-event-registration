@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui';
+import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { WizardStep } from '@/components/ui/WizardStep';
 import { useFieldAnswerTextFormatter } from '@/hooks/utils';
 import type { AttendeeSearchResult, CheckInResult } from '@/lib/domain/attendance';
@@ -109,7 +110,11 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                         {answer.label}
                       </p>
                       <p className="mt-2 break-words text-xl font-semibold text-text">
-                        {answerText}
+                        {answer.field_type === 'color_picker' ? (
+                          <ColorSwatchDisplay value={answerText} fullWidth />
+                        ) : (
+                          answerText
+                        )}
                       </p>
                     </li>
                   );
@@ -135,7 +140,11 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                         {answer.label}
                       </p>
                       <p className="mt-2 break-words text-xl font-semibold text-text">
-                        {answerText}
+                        {answer.field_type === 'color_picker' ? (
+                          <ColorSwatchDisplay value={answerText} fullWidth />
+                        ) : (
+                          answerText
+                        )}
                       </p>
                     </li>
                   );

@@ -14,6 +14,7 @@ export const ATTENDANCE_FIELD_TYPE_LABELS: Record<AttendanceFieldType, string> =
   date: 'Date',
   datetime: 'Date & Time',
   boolean: 'Yes / No Toggle',
+  color_picker: 'Color Picker',
 };
 
 export function attendanceFieldTypeHasOptions(fieldType: AttendanceFieldType): boolean {

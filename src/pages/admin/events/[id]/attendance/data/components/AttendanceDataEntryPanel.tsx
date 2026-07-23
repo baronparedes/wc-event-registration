@@ -344,7 +344,9 @@ export function AttendanceDataEntryPanel({
                     ? 'date'
                     : field.field_type === 'datetime'
                       ? 'datetime-local'
-                      : 'text';
+                      : field.field_type === 'color_picker'
+                        ? 'color'
+                        : 'text';
 
             return (
               <div key={field.id} className="space-y-1">

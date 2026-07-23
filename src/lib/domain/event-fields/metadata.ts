@@ -15,6 +15,7 @@ export const FIELD_TYPE_LABELS: Record<EventFieldTypeEnum, string> = {
   date: 'Date',
   datetime: 'Date & Time',
   boolean: 'Yes / No Toggle',
+  color_picker: 'Color Picker',
 };
 
 /**

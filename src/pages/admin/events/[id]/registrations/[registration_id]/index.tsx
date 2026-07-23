@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
+import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   ROUTE_PATHS,
@@ -311,7 +312,13 @@ export function AdminRegistrationDetailPage() {
                       >
                         <p className="text-sm font-medium text-muted">{response.field_label}</p>
                         <p className="mt-1 text-base text-text">
-                          {formatAnswer(response.answer, response.field_type)}
+                          {response.field_type === 'color_picker' ? (
+                            <ColorSwatchDisplay
+                              value={formatAnswer(response.answer, response.field_type)}
+                            />
+                          ) : (
+                            formatAnswer(response.answer, response.field_type)
+                          )}
                         </p>
                       </div>
                     ))}

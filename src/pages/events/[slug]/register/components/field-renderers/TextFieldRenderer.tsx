@@ -69,3 +69,14 @@ export function TextareaFieldRenderer({ field, dynamicForm }: TextFieldRendererP
     />
   );
 }
+
+export function ColorPickerFieldRenderer({ field, dynamicForm }: TextFieldRendererProps) {
+  return (
+    <input
+      id={`field-${field.field_key}`}
+      type="color"
+      className="h-10 w-16 cursor-pointer rounded-md border border-border bg-background p-1"
+      {...dynamicForm.register(field.field_key)}
+    />
+  );
+}

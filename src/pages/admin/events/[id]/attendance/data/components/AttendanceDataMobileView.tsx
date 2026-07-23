@@ -1,6 +1,7 @@
 import { Check, EditIcon, Minus } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
+import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import type {
   AttendanceAnswer,
   AttendeeSearchResult,
@@ -148,15 +149,19 @@ export function AttendanceDataMobileView({
                     {field.label}
                   </dt>
                   <dd className="mt-0.5 break-words whitespace-normal">
-                    <span
-                      className={
-                        toDynamicFieldToken(field) === 'member:member_id'
-                          ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 break-words whitespace-normal'
-                          : 'text-sm text-text break-words whitespace-normal'
-                      }
-                    >
-                      {getVisibleFieldValue(attendee, field)}
-                    </span>
+                    {field.fieldType === 'color_picker' ? (
+                      <ColorSwatchDisplay value={getVisibleFieldValue(attendee, field)} fullWidth />
+                    ) : (
+                      <span
+                        className={
+                          toDynamicFieldToken(field) === 'member:member_id'
+                            ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 break-words whitespace-normal'
+                            : 'text-sm text-text break-words whitespace-normal'
+                        }
+                      >
+                        {getVisibleFieldValue(attendee, field)}
+                      </span>
+                    )}
                   </dd>
                 </div>
               ))}

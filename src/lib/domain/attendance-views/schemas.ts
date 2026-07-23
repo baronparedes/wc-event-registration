@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { FIELD_TYPES } from '@/lib/domain/event-fields';
+
 import type { DynamicFilterExpressionNode } from './types';
 
 const dynamicFieldRefSchema = z.object({
@@ -7,6 +9,7 @@ const dynamicFieldRefSchema = z.object({
   fieldKey: z.string(),
   label: z.string(),
   sortOrder: z.number().optional(),
+  fieldType: z.enum(FIELD_TYPES).optional(),
 });
 
 const groupByFieldRefSchema = dynamicFieldRefSchema.extend({
