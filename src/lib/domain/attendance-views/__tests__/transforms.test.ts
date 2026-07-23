@@ -182,15 +182,17 @@ describe('attendance-views transforms', () => {
     expect(result.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual(['reg-2']);
   });
 
-  it('filters attendees by name or member ID query', () => {
+  it('filters attendees by name, nickname, or member ID query', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
+        nickname: 'Ali',
         full_name: 'Alice Santos',
         member_id: 'MID-100',
       }),
       makeAttendee({
         registration_id: 'reg-2',
+        nickname: 'Bobby',
         full_name: 'Bob Reyes',
         member_id: 'MID-200',
       }),
@@ -209,6 +211,13 @@ describe('attendance-views transforms', () => {
     });
     expect(byMemberId.filteredAttendees).toHaveLength(1);
     expect(byMemberId.filteredAttendees[0].registration_id).toBe('reg-2');
+
+    const byNickname = buildAttendeeView(attendees, {
+      ...defaultViewConfig,
+      nameOrMemberQuery: 'bobby',
+    });
+    expect(byNickname.filteredAttendees).toHaveLength(1);
+    expect(byNickname.filteredAttendees[0].registration_id).toBe('reg-2');
   });
 
   it('supports relative date literal filters for date and datetime fields', () => {

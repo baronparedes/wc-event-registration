@@ -42,6 +42,10 @@ export function AttendanceDataMobileView({
   getRegistrantKey,
   getVisibleFieldValue,
 }: AttendanceDataMobileViewProps) {
+  const renderableFields = visibleFields.filter(
+    (field) => toDynamicFieldToken(field) !== 'member:avatar',
+  );
+
   return (
     <div className="space-y-2 p-2">
       {registrants.map((registrant) => {
@@ -51,7 +55,7 @@ export function AttendanceDataMobileView({
         const shouldShowAvatar = visibleFields.some(
           (field) => toDynamicFieldToken(field) === 'member:avatar',
         );
-        const compactMemberFields = visibleFields.filter((field) => {
+        const compactMemberFields = renderableFields.filter((field) => {
           if (field.source === 'role') {
             return true;
           }
@@ -62,7 +66,7 @@ export function AttendanceDataMobileView({
 
           return field.source === 'member' && field.fieldKey === 'member_id';
         });
-        const remainingFields = visibleFields.filter(
+        const remainingFields = renderableFields.filter(
           (field) => !compactMemberFields.includes(field),
         );
 

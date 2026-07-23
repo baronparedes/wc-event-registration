@@ -53,6 +53,10 @@ export function AttendanceDataTableView({
   getRegistrantKey,
   getVisibleFieldValue,
 }: AttendanceDataTableViewProps) {
+  const renderableFields = visibleFields.filter(
+    (field) => toDynamicFieldToken(field) !== 'member:avatar',
+  );
+
   return (
     <ListTable>
       <ListTableHead>
@@ -60,7 +64,7 @@ export function AttendanceDataTableView({
           <ListTableHeaderCell className="sticky left-0 z-20 bg-slate-100 !px-2 !py-2">
             Attendee
           </ListTableHeaderCell>
-          {visibleFields.map((field) => (
+          {renderableFields.map((field) => (
             <ListTableHeaderCell
               key={`header:${field.source}:${field.fieldKey}`}
               className="!px-2 !py-2"
@@ -117,7 +121,7 @@ export function AttendanceDataTableView({
                   </span>
                 </div>
               </ListTableCell>
-              {visibleFields.map((field) => (
+              {renderableFields.map((field) => (
                 <ListTableCell
                   key={`${rowKey}:${field.source}:${field.fieldKey}`}
                   className="whitespace-nowrap !px-2 !py-2 align-middle"

@@ -20,7 +20,7 @@ export const Avatar: React.FC<AvatarProps> = ({ name, size = 'md', className = '
 
   const sizeClasses = {
     sm: 'w-10 h-10 text-sm',
-    md: 'w-12 h-12 text-base',
+    md: 'w-16 h-16 text-base',
     lg: 'w-24 h-24 text-lg',
     xl: 'w-48 h-48 text-xl',
     '2xl': 'w-64 h-64 text-2xl',

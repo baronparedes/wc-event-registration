@@ -27,8 +27,13 @@ export function matchesBaseFilters(
   const normalizedQuery = normalizeValue(config.nameOrMemberQuery);
   if (normalizedQuery.length > 0) {
     const fullName = normalizeValue(attendee.full_name);
+    const nickname = normalizeValue(attendee.nickname ?? EMPTY_VALUE);
     const memberId = normalizeValue(attendee.member_id ?? EMPTY_VALUE);
-    if (!fullName.includes(normalizedQuery) && !memberId.includes(normalizedQuery)) {
+    if (
+      !fullName.includes(normalizedQuery) &&
+      !nickname.includes(normalizedQuery) &&
+      !memberId.includes(normalizedQuery)
+    ) {
       return false;
     }
   }
