@@ -29,6 +29,8 @@ vi.mock('sonner', () => ({
 
 describe('AttendanceDataEntryPanel', () => {
   const registrant: RegistrantAttendanceRow = {
+    nickname: 'Jane',
+    last_name: 'Doe',
     attendee_kind: 'registered',
     registration_id: 'reg-1',
     public_registration_id: null,
@@ -138,6 +140,8 @@ describe('AttendanceDataEntryPanel', () => {
     const onClose = vi.fn();
 
     const mixedRegistrant: RegistrantAttendanceRow = {
+      nickname: 'John',
+      last_name: 'Smith',
       attendee_kind: 'registered',
       registration_id: 'reg-2',
       public_registration_id: null,
@@ -357,6 +361,8 @@ describe('AttendanceDataEntryPanel', () => {
     const onClose = vi.fn();
 
     const registrantForFormTypes: RegistrantAttendanceRow = {
+      nickname: 'Sam',
+      last_name: 'Lee',
       attendee_kind: 'registered',
       registration_id: 'reg-3',
       public_registration_id: null,
@@ -541,6 +547,8 @@ describe('AttendanceDataEntryPanel', () => {
       registration_id: 'reg-4',
       public_registration_id: null,
       member_id: '',
+      nickname: 'Default',
+      last_name: 'Case',
       full_name: 'Default Case',
       email: null,
       answers: [

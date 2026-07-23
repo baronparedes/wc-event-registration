@@ -77,13 +77,13 @@ export function AttendanceDataMobileView({
                 <div className="flex items-start gap-1">
                   {shouldShowAvatar && (
                     <Avatar
-                      name={attendee?.full_name ?? registrant.full_name}
+                      name={`${registrant.nickname} ${registrant.last_name}`}
                       size="md"
                       className="shrink-0"
                     />
                   )}
                   <p className="break-words font-semibold text-text self-center">
-                    {registrant.full_name}
+                    {registrant.nickname} {registrant.last_name}
                   </p>
                   <span
                     role="img"

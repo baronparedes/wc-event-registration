@@ -9,9 +9,30 @@ const listAttendeesRequestSchema = z.object({
 
 type ListAttendeesRequest = z.infer<typeof listAttendeesRequestSchema>;
 
+type ListAttendeesAttendeeRow = {
+  attendee_kind: 'registered' | 'public';
+  registration_id: string;
+  public_registration_id: string | null;
+  user_id: string | null;
+  member_id: string | null;
+  member_metadata?: unknown;
+  nickname: string;
+  last_name: string;
+  full_name: string;
+  email: string | null;
+  role: string | null;
+  category: string | null;
+  registration_status: 'submitted' | 'updated' | 'cancelled';
+  submitted_at: string;
+  check_in_status: 'checked_in' | 'not_checked_in';
+  official_check_in_time: string | null;
+  registration_answers: unknown[];
+  attendance_answers: unknown[];
+};
+
 type ListAttendeesRpcRow = {
   attendance_enabled: boolean;
-  results: unknown;
+  results: ListAttendeesAttendeeRow[] | null;
 };
 
 function logListAttendeesError(stage: string, error: unknown, context?: Record<string, unknown>) {

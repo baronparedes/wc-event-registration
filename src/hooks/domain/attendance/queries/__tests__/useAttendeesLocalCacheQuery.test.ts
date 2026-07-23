@@ -10,6 +10,8 @@ function buildAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearch
     public_registration_id: null,
     user_id: 'user-1',
     member_id: 'WC-001',
+    nickname: 'Test',
+    last_name: 'Person',
     full_name: 'Test Person',
     email: 'test@example.com',
     role: null,

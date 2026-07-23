@@ -18,6 +18,8 @@ function makeAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchR
     public_registration_id: null,
     user_id: 'user-1',
     member_id: 'M-001',
+    nickname: 'Alpha',
+    last_name: 'Member',
     full_name: 'Alpha Member',
     email: 'alpha@example.com',
     role: 'Member',

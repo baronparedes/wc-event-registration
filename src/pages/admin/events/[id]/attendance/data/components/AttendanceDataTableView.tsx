@@ -97,12 +97,12 @@ export function AttendanceDataTableView({
                 <div className="flex items-center gap-1">
                   {shouldShowAvatar && (
                     <Avatar
-                      name={attendee?.full_name ?? registrant.full_name}
+                      name={`${registrant.nickname} ${registrant.last_name}`}
                       size="lg"
                       className="shrink-0"
                     />
                   )}
-                  <p className="truncate font-semibold text-text">{registrant.full_name}</p>
+                  <p className="truncate font-semibold text-text">{`${registrant.nickname} ${registrant.last_name}`}</p>
                   <span
                     role="img"
                     aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}

@@ -36,6 +36,8 @@ export function attendeeToRegistrant(attendee: AttendeeSearchResult): Registrant
     public_registration_id:
       attendee.attendee_kind === 'public' ? attendee.public_registration_id : null,
     member_id: attendee.member_id,
+    nickname: attendee.nickname,
+    last_name: attendee.last_name,
     full_name: attendee.full_name,
     email: attendee.email,
     role: attendee.role,

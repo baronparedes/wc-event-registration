@@ -14,6 +14,8 @@ describe('AttendeeDetailsModal', () => {
     registration_id: 'reg-1',
     public_registration_id: null,
     member_id: 'MID-001',
+    nickname: 'John',
+    last_name: 'Doe',
     full_name: 'John Doe',
     email: 'john@example.com',
     role: 'admin',

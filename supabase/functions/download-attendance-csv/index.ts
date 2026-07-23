@@ -48,6 +48,8 @@ type EventAttendeeRow = {
   registration_id: string | null;
   public_registration_id: string | null;
   member_id: string | null;
+  nickname: string;
+  last_name: string;
   member_metadata: unknown;
   full_name: string | null;
   email: string | null;

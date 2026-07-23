@@ -75,6 +75,8 @@ export type RegistrantAttendanceRow = {
   registration_id: string | null;
   public_registration_id: string | null;
   member_id: string | null;
+  nickname: string;
+  last_name: string;
   full_name: string;
   email: string | null;
   role?: string | null;
@@ -107,6 +109,8 @@ export type AttendeeSearchResult = {
   public_registration_id: string | null;
   user_id: string | null;
   member_id: string | null;
+  nickname: string;
+  last_name: string;
   full_name: string;
   email: string | null;
   role: string | null;
