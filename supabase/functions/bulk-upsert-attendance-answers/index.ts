@@ -31,6 +31,7 @@ const bulkRowSchema = z
 const requestSchema = z.object({
   event_id: z.string().uuid('event_id must be a valid UUID'),
   rows: z.array(bulkRowSchema).min(1, 'rows must include at least one item'),
+  uploaded_field_keys: z.array(z.string()).optional(),
 });
 
 type RequestPayload = z.infer<typeof requestSchema>;
@@ -353,7 +354,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { event_id, rows }: RequestPayload = guard.data;
+    const { event_id, rows, uploaded_field_keys }: RequestPayload = guard.data;
     const adminClient = guard.client;
     const corsHeaders = guard.corsHeaders;
 
@@ -388,6 +389,7 @@ Deno.serve(async (req) => {
     }
 
     const fieldsByKey = new Map(safeFields.map((field) => [field.field_key, field]));
+    const requestedFieldKeySet = new Set((uploaded_field_keys ?? []).map((key) => key.trim()));
 
     const registrationIds = rows
       .filter((row) => row.attendee_kind === 'registered')
@@ -434,6 +436,7 @@ Deno.serve(async (req) => {
 
     const errors: string[] = [];
     const preparedAnswerRows: PreparedAnswerRow[] = [];
+    const targetedFieldKeySet = new Set<string>();
 
     rows.forEach((row, rowIndex) => {
       const rowNumber = rowIndex + 1;
@@ -465,7 +468,18 @@ Deno.serve(async (req) => {
         return;
       }
 
-      for (const field of safeFields) {
+      answerKeys.forEach((key) => {
+        if (requestedFieldKeySet.size === 0 || requestedFieldKeySet.has(key)) {
+          targetedFieldKeySet.add(key);
+        }
+      });
+
+      const targetFields =
+        requestedFieldKeySet.size === 0
+          ? safeFields.filter((field) => targetedFieldKeySet.has(field.field_key))
+          : safeFields.filter((field) => requestedFieldKeySet.has(field.field_key));
+
+      for (const field of targetFields) {
         const normalized = validateAndNormalizeAnswer(field, row.answers[field.field_key]);
 
         if (normalized.error) {
@@ -496,7 +510,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const fieldIds = safeFields.map((field) => field.id);
+    const targetFields =
+      requestedFieldKeySet.size === 0
+        ? safeFields.filter((field) => targetedFieldKeySet.has(field.field_key))
+        : safeFields.filter((field) => requestedFieldKeySet.has(field.field_key));
+
+    if (targetFields.length === 0) {
+      return errorResponse(
+        corsHeaders,
+        400,
+        'No attendance field columns were provided. Include at least one attendance field key.',
+      );
+    }
+
+    const fieldIds = targetFields.map((field) => field.id);
 
     if (registrationIds.length > 0 && fieldIds.length > 0) {
       const { error: deleteRegisteredError } = await adminClient

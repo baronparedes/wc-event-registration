@@ -202,9 +202,11 @@ function parseAnswerByFieldType(field: AttendanceField, rawValue: string): unkno
 export function buildBulkAttendanceRowsFromCsv(
   csvRows: Record<string, string>[],
   fields: AttendanceField[],
+  includedFieldKeys?: string[],
 ): BuildBulkRowsResult {
   const rows: BulkAttendanceCsvRowInput[] = [];
   const errors: string[] = [];
+  const includedFieldKeySet = new Set(includedFieldKeys ?? fields.map((field) => field.field_key));
 
   for (let index = 0; index < csvRows.length; index += 1) {
     const csvRow = csvRows[index];
@@ -231,6 +233,10 @@ export function buildBulkAttendanceRowsFromCsv(
 
     const answers: Record<string, unknown> = {};
     for (const field of fields) {
+      if (!includedFieldKeySet.has(field.field_key)) {
+        continue;
+      }
+
       answers[field.field_key] = parseAnswerByFieldType(field, csvRow[field.field_key] ?? '');
     }
 

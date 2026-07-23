@@ -87,12 +87,22 @@ export function BulkUploadPanel({
   const [fileName, setFileName] = useState<string>('');
   const [preparedRows, setPreparedRows] = useState<BulkAttendanceCsvRowInput[]>([]);
   const [parsedPreviewRows, setParsedPreviewRows] = useState<Record<string, string>[]>([]);
+  const [uploadedFieldKeys, setUploadedFieldKeys] = useState<string[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const hasSelectedFile = fileName.trim().length > 0;
+  const uploadedFields = fields.filter((field) => uploadedFieldKeys.includes(field.field_key));
 
-  function applyPreviewRowValidation(rows: Record<string, string>[]) {
-    const builtRows = buildBulkAttendanceRowsFromCsv(rows, fields);
+  function applyPreviewRowValidation(rows: Record<string, string>[], activeFieldKeys: string[]) {
+    if (activeFieldKeys.length === 0) {
+      setPreparedRows([]);
+      setErrors([
+        'CSV has no attendance field columns. Include at least one attendance field header to update.',
+      ]);
+      return;
+    }
+
+    const builtRows = buildBulkAttendanceRowsFromCsv(rows, fields, activeFieldKeys);
     if (builtRows.errors.length > 0) {
       setPreparedRows([]);
       setErrors(builtRows.errors);
@@ -122,7 +132,7 @@ export function BulkUploadPanel({
     );
 
     setParsedPreviewRows(nextRows);
-    applyPreviewRowValidation(nextRows);
+    applyPreviewRowValidation(nextRows, uploadedFieldKeys);
   }
 
   async function handleFileChange(file: File | null) {
@@ -130,6 +140,7 @@ export function BulkUploadPanel({
       setFileName('');
       setPreparedRows([]);
       setParsedPreviewRows([]);
+      setUploadedFieldKeys([]);
       setErrors([]);
       return;
     }
@@ -143,12 +154,18 @@ export function BulkUploadPanel({
     if (!parsedCsv.success) {
       setPreparedRows([]);
       setParsedPreviewRows([]);
+      setUploadedFieldKeys([]);
       setErrors([parsedCsv.error]);
       return;
     }
 
+    const nextUploadedFieldKeys = fields
+      .filter((field) => parsedCsv.data.headers.includes(field.field_key))
+      .map((field) => field.field_key);
+
+    setUploadedFieldKeys(nextUploadedFieldKeys);
     setParsedPreviewRows(parsedCsv.data.rows);
-    applyPreviewRowValidation(parsedCsv.data.rows);
+    applyPreviewRowValidation(parsedCsv.data.rows, nextUploadedFieldKeys);
   }
 
   async function handleImport() {
@@ -161,6 +178,7 @@ export function BulkUploadPanel({
       const result = await bulkUpsertMutation.mutateAsync({
         event_id: eventId,
         rows: preparedRows,
+        uploaded_field_keys: uploadedFieldKeys,
       });
 
       if (!result.success) {
@@ -231,7 +249,7 @@ export function BulkUploadPanel({
                   <ListTableHeaderRow variant="plain">
                     <ListTableHeaderCell className="w-40">Attendee Kind</ListTableHeaderCell>
                     <ListTableHeaderCell className="w-72">Name</ListTableHeaderCell>
-                    {fields.map((field) => (
+                    {uploadedFields.map((field) => (
                       <ListTableHeaderCell key={field.id} className="min-w-44">
                         {field.label}
                       </ListTableHeaderCell>
@@ -254,7 +272,7 @@ export function BulkUploadPanel({
                         <ListTableCell className="align-top text-sm font-medium text-text">
                           {attendeeName}
                         </ListTableCell>
-                        {fields.map((field) => {
+                        {uploadedFields.map((field) => {
                           const value = row[field.field_key] ?? '';
                           const fieldId = `preview-${index}-${field.field_key}`;
 

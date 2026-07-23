@@ -179,9 +179,11 @@ export type BulkAttendanceCsvRowInput = z.infer<ReturnType<typeof buildBulkAtten
 export const bulkUpsertAttendanceAnswersSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
   rows: z.array(z.record(z.string(), z.unknown())).min(1, 'At least one row is required'),
+  uploaded_field_keys: z.array(z.string().trim().min(1)).optional(),
 });
 
 export type BulkUpsertAttendanceAnswersInput = {
   event_id: string;
   rows: BulkAttendanceCsvRowInput[];
+  uploaded_field_keys?: string[];
 };

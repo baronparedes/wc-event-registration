@@ -273,6 +273,31 @@ describe('attendance csv parser', () => {
     );
   });
 
+  it('limits answer keys to uploaded attendance columns for partial updates', () => {
+    const built = buildBulkAttendanceRowsFromCsv(
+      [
+        {
+          attendee_kind: 'registered',
+          registration_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          public_registration_id: '',
+          table_number: '',
+        },
+      ],
+      TEST_FIELDS,
+      ['table_number'],
+    );
+
+    expect(built.errors).toEqual([]);
+    expect(built.rows).toHaveLength(1);
+    expect(built.rows[0]).toEqual(
+      expect.objectContaining({
+        answers: {
+          table_number: undefined,
+        },
+      }),
+    );
+  });
+
   it('parses exported csv rows that contain quoted commas and multiline field values', () => {
     const csv = [
       'attendee_kind,registration_id,public_registration_id,member_id,full_name,email,role,category,table_number,team_color',

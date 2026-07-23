@@ -446,6 +446,7 @@ describe('BulkUploadPanel', () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith({
         event_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        uploaded_field_keys: ['table_number'],
         rows: [
           {
             attendee_kind: 'registered',
