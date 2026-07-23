@@ -58,20 +58,10 @@ export function PublicRegistrationConfirmationStep({
               registration.
             </p>
           )}
-          <p>
-            If you need to register for another event, visit the{' '}
-            <a href="/" className="font-medium text-primary hover:underline">
-              events page
-            </a>
-            .
-          </p>
         </div>
 
-        <div className="flex justify-center gap-2">
-          <Button variant="outline" asChild>
-            <a href="/">Browse Other Events</a>
-          </Button>
-          <Button asChild>
+        <div className="flex w-full flex-col gap-2">
+          <Button asChild className="w-full" variant="outline" size="lg">
             <a href={toEventRegistration(eventSlug)}>Return to Event</a>
           </Button>
         </div>

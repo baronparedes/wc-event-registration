@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Info } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
@@ -174,6 +175,25 @@ export function PublicEventFieldsStep({
           </div>
         )}
 
+        {fields.length === 0 && (
+          <div
+            aria-live="polite"
+            className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-blue-600 bg-blue-100 px-4 py-3 text-sm text-blue-950 shadow-md"
+          >
+            <span
+              aria-hidden="true"
+              className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary text-white ring-1 ring-primary/30"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </span>
+            <div className="space-y-1">
+              <p className="registration-status-title text-base font-semibold leading-6">
+                Tap "Submit Registration" to confirm your attendance for this event.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-6">
           {fields.map((field) => (
             <div key={field.id}>
@@ -192,12 +212,18 @@ export function PublicEventFieldsStep({
           ))}
         </div>
 
-        <div className="flex justify-between gap-2">
-          <Button variant="outline" onClick={onBack} disabled={isSubmitting}>
-            Back
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="flex w-full flex-col gap-2">
+          <Button className="w-full" type="submit" disabled={isSubmitting} size="lg">
             {isSubmitting ? 'Submitting...' : 'Submit Registration'}
+          </Button>
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={onBack}
+            disabled={isSubmitting}
+            size="lg"
+          >
+            Back
           </Button>
         </div>
       </form>
