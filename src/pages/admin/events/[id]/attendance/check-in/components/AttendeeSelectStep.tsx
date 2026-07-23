@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import { Check, Users } from 'lucide-react';
 
 import { Badge, Button, EmptyState } from '@/components/ui';
@@ -40,6 +42,26 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
   const checkedInBadgeClass =
     'bg-emerald-800 text-white text-base px-5 py-2 font-semibold border border-emerald-950/30 shadow-none';
   const readyBadgeClass = 'text-sm px-4 py-1.5 font-semibold';
+  const lastAutoConfirmedRegistrationId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (results.length !== 1) {
+      lastAutoConfirmedRegistrationId.current = null;
+      return;
+    }
+
+    const onlyResultId = results[0].registration_id;
+    if (!selectedResultId || selectedResultId !== onlyResultId) {
+      return;
+    }
+
+    if (lastAutoConfirmedRegistrationId.current === onlyResultId) {
+      return;
+    }
+
+    lastAutoConfirmedRegistrationId.current = onlyResultId;
+    onConfirmSelection();
+  }, [onConfirmSelection, results, selectedResultId]);
 
   return (
     <WizardStep

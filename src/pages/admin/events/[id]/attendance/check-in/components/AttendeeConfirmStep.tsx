@@ -1,11 +1,10 @@
 import { Button } from '@/components/ui';
+import { Avatar } from '@/components/ui/Avatar';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { WizardStep } from '@/components/ui/WizardStep';
 import { useFieldAnswerTextFormatter } from '@/hooks/utils';
 import type { AttendeeSearchResult, CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
-
-import { Avatar } from '../../../../../../../components/ui/Avatar';
 
 function getAnswerCardsItemClass(cardCount: number): string {
   if (cardCount <= 1) {
@@ -69,17 +68,17 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
       inactivityTimerMessage={(s) => `Returning to Step 1 in ${s}s due to inactivity.`}
     >
       {!attendee && (
-        <p className="text-base text-muted">Select an attendee from search results to continue.</p>
+        <p className="text-sm text-muted">Select an attendee from search results to continue.</p>
       )}
       {attendee && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {avatarName && attendee.attendee_kind == 'registered' && (
             <div className="flex items-center justify-center">
               <Avatar size="xl" name={avatarName} />
             </div>
           )}
           <div
-            className={`rounded-xl border px-4 py-3 text-base font-semibold shadow-sm ${
+            className={`rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm ${
               attendee.check_in_status === 'checked_in'
                 ? 'border-green-300 bg-green-100 text-green-900'
                 : 'border-primary/40 bg-blue-100 text-primary'
@@ -90,38 +89,72 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
               : 'Ready for Check-In'}
           </div>
 
-          <div className="space-y-2 rounded-xl border border-border bg-background p-4">
-            <h3 className="text-2xl font-semibold text-text">{attendee.full_name}</h3>
-            <p className="text-base text-muted">Member ID: {attendee.member_id ?? 'Guest'}</p>
-            <p className="text-base text-muted">Role: {attendee.role ?? 'N/A'}</p>
-            <p className="text-base text-muted">Category: {attendee.category ?? 'N/A'}</p>
-            <p className="text-base text-muted">
-              Registered: {formatDateTime(attendee.submitted_at)}
-            </p>
-            {attendee.official_check_in_time && (
-              <p className="text-base text-muted">
-                Official check-in time: {formatDateTime(attendee.official_check_in_time)}
-              </p>
-            )}
+          <div className="rounded-xl border border-border bg-background p-3 lg:p-4">
+            <h3 className="text-xl font-semibold text-text">{attendee.full_name}</h3>
+
+            <dl className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-lg border border-border/60 bg-surface p-2.5">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Member ID
+                </dt>
+                <dd className="mt-0.5 text-sm font-semibold text-text">
+                  {attendee.member_id ?? 'Guest'}
+                </dd>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-surface p-2.5">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Role</dt>
+                <dd className="mt-0.5 text-sm font-semibold text-text">{attendee.role ?? 'N/A'}</dd>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-surface p-2.5">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Category
+                </dt>
+                <dd className="mt-0.5 text-sm font-semibold text-text">
+                  {attendee.category ?? 'N/A'}
+                </dd>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-surface p-2.5 md:col-span-2 xl:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Registered
+                </dt>
+                <dd className="mt-0.5 text-sm font-semibold text-text">
+                  {formatDateTime(attendee.submitted_at)}
+                </dd>
+              </div>
+
+              {attendee.official_check_in_time && (
+                <div className="rounded-lg border border-green-200 bg-green-50 p-2.5 md:col-span-2 xl:col-span-1">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-green-800">
+                    Official check-in time
+                  </dt>
+                  <dd className="mt-0.5 text-sm font-semibold text-green-900">
+                    {formatDateTime(attendee.official_check_in_time)}
+                  </dd>
+                </div>
+              )}
+            </dl>
           </div>
 
-          <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-5 shadow-sm">
-            <p className="text-2xl font-semibold text-text">Registration answers</p>
+          <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-4 shadow-sm">
+            <p className="text-xl font-semibold text-text">Registration answers</p>
             {attendee.registration_answers.length === 0 ? (
-              <p className="mt-3 text-lg text-muted">No registration answers available.</p>
+              <p className="mt-2 text-base text-muted">No registration answers available.</p>
             ) : (
-              <ul className="mt-4 flex flex-wrap gap-3">
+              <ul className="mt-3 flex flex-wrap gap-2">
                 {attendee.registration_answers.map((answer) => {
                   const answerText = getAnswerText(answer.field_type, answer);
                   return (
                     <li
                       key={answer.event_field_id}
-                      className={`${getAnswerCardsItemClass(attendee.registration_answers.length)} rounded-xl border border-secondary/20 bg-surface p-4 shadow-xs`}
+                      className={`${getAnswerCardsItemClass(attendee.registration_answers.length)} rounded-xl border border-secondary/20 bg-surface p-3 shadow-xs`}
                     >
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                         {answer.label}
                       </p>
-                      <p className="mt-2 break-words text-xl font-semibold text-text">
+                      <p className="mt-1.5 break-words text-lg font-semibold text-text">
                         {answer.field_type === 'color_picker' ? (
                           <ColorSwatchDisplay value={answerText} fullWidth />
                         ) : (
@@ -135,23 +168,25 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
             )}
           </div>
 
-          <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-5 shadow-sm">
-            <p className="text-2xl font-semibold text-text">Attendance details</p>
+          <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-4 shadow-sm">
+            <p className="text-xl font-semibold text-text">Attendance details</p>
             {attendee.attendance_answers.length === 0 ? (
-              <p className="mt-3 text-lg text-muted">No pre-event attendance details saved yet.</p>
+              <p className="mt-2 text-base text-muted">
+                No pre-event attendance details saved yet.
+              </p>
             ) : (
-              <ul className="mt-4 flex flex-wrap gap-3">
+              <ul className="mt-3 flex flex-wrap gap-2">
                 {attendee.attendance_answers.map((answer) => {
                   const answerText = getAnswerText(answer.field_type, answer);
                   return (
                     <li
                       key={answer.attendance_field_id}
-                      className={`${getAnswerCardsItemClass(attendee.attendance_answers.length)} rounded-xl border border-primary/20 bg-surface p-4 shadow-xs`}
+                      className={`${getAnswerCardsItemClass(attendee.attendance_answers.length)} rounded-xl border border-primary/20 bg-surface p-3 shadow-xs`}
                     >
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                         {answer.label}
                       </p>
-                      <p className="mt-2 break-words text-xl font-semibold text-text">
+                      <p className="mt-1.5 break-words text-lg font-semibold text-text">
                         {answer.field_type === 'color_picker' ? (
                           <ColorSwatchDisplay value={answerText} fullWidth />
                         ) : (
@@ -167,7 +202,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
 
           {checkInResult && (
             <div
-              className={`rounded-xl border px-4 py-3 text-base ${
+              className={`rounded-xl border px-3 py-2 text-sm ${
                 checkInResult.status === 'checked_in'
                   ? 'border-green-200 bg-green-50 text-green-800'
                   : checkInResult.status === 'already_checked_in'
@@ -177,7 +212,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
             >
               <p className="font-medium">{checkInResult.message}</p>
               {checkInResult.official_check_in_time && (
-                <p className="mt-1 text-base">
+                <p className="mt-1 text-sm">
                   Official time: {formatDateTime(checkInResult.official_check_in_time)}
                 </p>
               )}
@@ -185,13 +220,13 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
           )}
 
           {!shouldShowReadyForNext && requiresTimeslotSelection && (
-            <div className="rounded-xl border border-border bg-background p-4">
+            <div className="rounded-xl border border-border bg-background p-3">
               <p className="text-sm font-medium text-text">Timeslot</p>
               <p className="mt-1 text-xs text-muted">
                 Tap one timeslot to confirm attendance immediately.
               </p>
 
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="mt-2 flex flex-col gap-1.5">
                 {timeslots.map((slot) => {
                   const isSuggested = suggestedSlot === slot;
                   return (
@@ -200,7 +235,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                       type="button"
                       onClick={() => onTimeslotConfirm(slot)}
                       disabled={isSubmitting}
-                      className={`min-h-12 w-full rounded-xl border-2 px-4 py-3 text-center text-base font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                      className={`min-h-10 w-full rounded-xl border-2 px-3 py-2 text-center text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                         isSuggested
                           ? 'border-primary bg-primary text-white shadow-xs hover:bg-primary/90'
                           : 'border-text/40 bg-surface text-text hover:border-primary/70 hover:bg-blue-50'
@@ -208,7 +243,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                     >
                       <span className="block">{formatDateTime(slot, slot)}</span>
                       {isSuggested && (
-                        <span className="mt-2 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                        <span className="mt-1.5 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                           Suggested
                         </span>
                       )}
@@ -219,16 +254,16 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
             </div>
           )}
 
-          <div className="sticky bottom-2 space-y-2 rounded-xl bg-surface/95 p-2 backdrop-blur sm:static sm:bg-transparent sm:p-0">
+          <div className="sticky bottom-1.5 space-y-1.5 rounded-xl bg-surface/95 p-1.5 backdrop-blur sm:static sm:bg-transparent sm:p-0">
             {shouldShowReadyForNext ? (
-              <Button type="button" fullWidth={true} size="lg" onClick={onReadyForNext}>
+              <Button type="button" fullWidth={true} size="md" onClick={onReadyForNext}>
                 Ready for Next Attendee
               </Button>
             ) : requiresTimeslotSelection ? null : (
               <Button
                 type="button"
                 fullWidth={true}
-                size="lg"
+                size="md"
                 onClick={onCheckIn}
                 disabled={isSubmitting}
               >
