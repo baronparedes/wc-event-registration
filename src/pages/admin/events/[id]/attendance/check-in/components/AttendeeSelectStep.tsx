@@ -37,6 +37,10 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
     onInactivityTimeout,
   } = props;
 
+  const checkedInBadgeClass =
+    'bg-emerald-800 text-white text-base px-5 py-2 font-semibold border border-emerald-950/30 shadow-none';
+  const readyBadgeClass = 'text-sm px-4 py-1.5 font-semibold';
+
   return (
     <WizardStep
       title="Step 2: Select Matching Attendee"
@@ -82,8 +86,8 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                         variant={result.check_in_status === 'checked_in' ? 'closed' : 'open'}
                         className={
                           result.check_in_status === 'checked_in'
-                            ? 'bg-green-600 text-white text-base px-5 py-2 font-semibold shadow-sm'
-                            : 'text-sm px-4 py-1.5 font-semibold'
+                            ? checkedInBadgeClass
+                            : readyBadgeClass
                         }
                       >
                         {result.check_in_status === 'checked_in' ? 'Checked In' : 'Ready'}
@@ -136,8 +140,8 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                             variant={result.check_in_status === 'checked_in' ? 'closed' : 'open'}
                             className={
                               result.check_in_status === 'checked_in'
-                                ? 'bg-green-600 text-white text-base px-5 py-2 font-semibold shadow-sm'
-                                : 'text-sm px-4 py-1.5 font-semibold'
+                                ? checkedInBadgeClass
+                                : readyBadgeClass
                             }
                           >
                             {result.check_in_status === 'checked_in' ? 'Checked In' : 'Ready'}
