@@ -45,19 +45,30 @@ export function PublicRegistrationConfirmationStep({
           </p>
         </div>
 
-        <div className="rounded-lg border border-border bg-background p-4">
-          <div className="text-sm text-muted">
-            <p>Registration ID: {registrationId}</p>
-          </div>
-        </div>
-
-        <div className="space-y-2 text-sm text-muted">
-          {canUpdate && (
+        {canUpdate && (
+          <div className="space-y-2 text-sm text-muted">
             <p>
               You can update your registration using the same email address you used for
               registration.
             </p>
-          )}
+          </div>
+        )}
+
+        <div
+          aria-live="polite"
+          className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md"
+        >
+          <span
+            aria-hidden="true"
+            className="mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-green-700 text-sm font-bold text-white ring-1 ring-green-800/30"
+          >
+            !
+          </span>
+          <div>
+            <p className="registration-status-message text-sm font-medium text-green-900">
+              Registration ID: {registrationId}
+            </p>
+          </div>
         </div>
 
         <div className="flex w-full flex-col gap-2">

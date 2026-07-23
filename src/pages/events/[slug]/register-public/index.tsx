@@ -309,7 +309,7 @@ export function PublicEventRegistrationPage() {
       <StepIndicator
         currentStep={getStepNumber()}
         totalSteps={3}
-        labels={['Your Info', 'Event Details', 'Confirmation']}
+        labels={['Info', 'Details', 'Confirm']}
       />
 
       {currentStep === 'attendee-info' && (

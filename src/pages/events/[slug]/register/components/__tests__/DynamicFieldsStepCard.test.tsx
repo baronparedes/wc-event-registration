@@ -378,7 +378,7 @@ describe('DynamicFieldsStepCard', () => {
       onConfirmAcknowledged,
     });
 
-    expect(screen.getByText('Registration Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Registration Confirmed!')).toBeInTheDocument();
     expect(screen.getByText('Registration submitted successfully. ID: reg-1')).toBeInTheDocument();
     expect(
       screen.queryByText('A confirmation toast was also sent. You can now scan the next attendee.'),

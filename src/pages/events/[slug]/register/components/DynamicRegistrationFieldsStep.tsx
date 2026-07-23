@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { CheckCircle2, Info } from 'lucide-react';
 import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
@@ -223,7 +223,16 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
       )}
 
       {isRegistrationConfirmed && submitSuccessMessage && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3 text-center">
+          <div className="flex justify-center">
+            <CheckCircle2 className="h-16 w-16 text-primary" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-text">Registration Confirmed!</h2>
+            <p className="text-muted">Thank you for registering.</p>
+          </div>
+
           <div
             aria-live="polite"
             className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md"
@@ -235,9 +244,6 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               !
             </span>
             <div className="space-y-1">
-              <p className="registration-status-title text-base font-semibold leading-6">
-                Registration Confirmed
-              </p>
               <p className="registration-status-message text-sm font-medium text-green-900">
                 {submitSuccessMessage}
               </p>
