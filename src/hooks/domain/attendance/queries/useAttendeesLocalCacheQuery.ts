@@ -42,6 +42,7 @@ type AttendeeCheckInPatch = {
 };
 
 const CACHE_KEY_PREFIX = 'wc:attendees';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const REFRESH_THROTTLE_MS = 2000;
 
 function getStorageKey(eventId: string): string {
@@ -51,6 +52,10 @@ function getStorageKey(eventId: string): string {
 function buildCacheEntry(attendees: AttendeeSearchResult[]): LocalCacheEntry {
   const entry: LocalCacheEntry = { attendees, cachedAt: Date.now() };
   return entry;
+}
+
+function isCacheExpired(cachedAt: number, now = Date.now()): boolean {
+  return now - cachedAt >= CACHE_TTL_MS;
 }
 
 function resolveCheckInTime(currentTime: string | null, incomingTime: string): string {
@@ -148,7 +153,10 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
       if (!eventId) return null;
 
       const cached = cacheStorage.get();
-      if (cached) return cached;
+      if (cached && !isCacheExpired(cached.cachedAt)) return cached;
+      if (cached) {
+        cacheStorage.remove();
+      }
 
       const attendees = await fetchAllAttendees(eventId);
       const entry = buildCacheEntry(attendees);
@@ -157,8 +165,8 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
       return entry;
     },
     enabled: Boolean(eventId),
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours — cache is valid for one event day
-    gcTime: 24 * 60 * 60 * 1000,
+    staleTime: CACHE_TTL_MS, // 24 hours — cache is valid for one event day
+    gcTime: CACHE_TTL_MS,
   });
 
   const refresh = useCallback(() => {
@@ -270,4 +278,6 @@ export function searchAttendeesLocally(
     return fullName.includes(t) || memberId.includes(t) || email.includes(t);
   });
 }
+
+export { CACHE_TTL_MS, isCacheExpired };
 /* c8 ignore stop */

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyCheckInPatchToAttendees } from '@/hooks/domain/attendance/queries/useAttendeesLocalCacheQuery';
+import {
+  CACHE_TTL_MS,
+  applyCheckInPatchToAttendees,
+  isCacheExpired,
+} from '@/hooks/domain/attendance/queries/useAttendeesLocalCacheQuery';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 
 function buildAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchResult {
@@ -101,5 +105,21 @@ describe('applyCheckInPatchToAttendees', () => {
 
     expect(result.didUpdate).toBe(false);
     expect(result.attendees).toEqual(attendees);
+  });
+});
+
+describe('isCacheExpired', () => {
+  it('returns false when cache age is under 24 hours', () => {
+    const now = Date.UTC(2026, 6, 23, 12, 0, 0);
+    const cachedAt = now - (CACHE_TTL_MS - 1);
+
+    expect(isCacheExpired(cachedAt, now)).toBe(false);
+  });
+
+  it('returns true when cache age reaches 24 hours', () => {
+    const now = Date.UTC(2026, 6, 23, 12, 0, 0);
+    const cachedAt = now - CACHE_TTL_MS;
+
+    expect(isCacheExpired(cachedAt, now)).toBe(true);
   });
 });
