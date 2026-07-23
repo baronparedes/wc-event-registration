@@ -48,6 +48,9 @@ export function AttendanceDataMobileView({
         const rowKey = getRegistrantKey(registrant);
         const isCheckedIn = registrant.check_in_status === 'checked_in';
         const attendee = attendeesByRegistrantKey.get(rowKey);
+        const shouldShowAvatar = visibleFields.some(
+          (field) => toDynamicFieldToken(field) === 'member:avatar',
+        );
         const compactMemberFields = visibleFields.filter((field) => {
           if (field.source === 'role') {
             return true;
@@ -72,7 +75,13 @@ export function AttendanceDataMobileView({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-start gap-1">
-                  <Avatar name={registrant.full_name} size="md" className="shrink-0" />
+                  {shouldShowAvatar && (
+                    <Avatar
+                      name={attendee?.full_name ?? registrant.full_name}
+                      size="md"
+                      className="shrink-0"
+                    />
+                  )}
                   <p className="break-words font-semibold text-text self-center">
                     {registrant.full_name}
                   </p>

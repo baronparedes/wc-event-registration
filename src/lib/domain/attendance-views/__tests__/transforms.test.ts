@@ -449,6 +449,23 @@ describe('attendance-views transforms', () => {
     expect(fromDynamicFieldToken('registration:missing', options)).toBeNull();
   });
 
+  it('includes seeded member avatar options even without attendee answers', () => {
+    const options = collectDynamicFieldOptions(
+      [],
+      [{ source: 'member', fieldKey: 'avatar', label: 'Avatar' }],
+    );
+
+    expect(options).toEqual([
+      {
+        source: 'member',
+        fieldKey: 'avatar',
+        label: 'Avatar',
+        token: 'member:avatar',
+        values: [],
+      },
+    ]);
+  });
+
   it('sorts same-source seeded fields by label when sort order is not provided', () => {
     const options = collectDynamicFieldOptions(
       [],

@@ -27,6 +27,7 @@ const registrationOption = makeOption('registration', 'service', 'Service', 'dat
 const registrationTeamOption = makeOption('registration', 'team', 'Team');
 const attendanceOption = makeOption('attendance', 'area', 'Area', 'datetime');
 const memberOption = makeOption('member', 'email', 'Email');
+const memberAvatarOption = makeOption('member', 'avatar', 'Avatar');
 
 const baseViewConfig: AttendeeViewConfig = {
   nameOrMemberQuery: '',
@@ -68,7 +69,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
       dynamicFieldOptions={[registrationOption, registrationTeamOption, attendanceOption]}
       registrationDynamicFieldOptions={[registrationOption, registrationTeamOption]}
       attendanceDynamicFieldOptions={[attendanceOption]}
-      memberDynamicFieldOptions={[memberOption]}
+      memberDynamicFieldOptions={[memberOption, memberAvatarOption]}
       dynamicFilterFieldToken=""
       dynamicFilterValue=""
       dynamicFilterCombination="and"
@@ -217,10 +218,12 @@ describe('AttendanceViewControls', () => {
     fireEvent.click(screen.getByLabelText('Service'));
     fireEvent.click(screen.getByLabelText('Area'));
     fireEvent.click(screen.getByLabelText('Email'));
+    fireEvent.click(screen.getByLabelText('Avatar'));
 
     expect(handlers.onToggleVisibleField).toHaveBeenNthCalledWith(1, 'registration:service');
     expect(handlers.onToggleVisibleField).toHaveBeenNthCalledWith(2, 'attendance:area');
     expect(handlers.onToggleVisibleField).toHaveBeenNthCalledWith(3, 'member:email');
+    expect(handlers.onToggleVisibleField).toHaveBeenNthCalledWith(4, 'member:avatar');
   });
 
   it('shows preset hint when selected filter field type is date/datetime', () => {

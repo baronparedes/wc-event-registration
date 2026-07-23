@@ -79,6 +79,9 @@ export function AttendanceDataTableView({
           const filled = countFilledAnswers(registrant.answers, fields);
           const isCheckedIn = registrant.check_in_status === 'checked_in';
           const attendee = attendeesByRegistrantKey.get(rowKey);
+          const shouldShowAvatar = visibleFields.some(
+            (field) => toDynamicFieldToken(field) === 'member:avatar',
+          );
           const rowBackgroundClass = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
 
           return (
@@ -92,7 +95,13 @@ export function AttendanceDataTableView({
                 className={`sticky left-0 z-10 ${rowBackgroundClass} !px-2 !py-2 align-middle group-hover:bg-slate-100`}
               >
                 <div className="flex items-center gap-1">
-                  <Avatar name={registrant.full_name} size="lg" className="shrink-0" />
+                  {shouldShowAvatar && (
+                    <Avatar
+                      name={attendee?.full_name ?? registrant.full_name}
+                      size="lg"
+                      className="shrink-0"
+                    />
+                  )}
                   <p className="truncate font-semibold text-text">{registrant.full_name}</p>
                   <span
                     role="img"

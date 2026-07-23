@@ -13,6 +13,7 @@ import {
 } from '@/lib/domain/attendance-views';
 
 const DEFAULT_VISIBLE_FIELDS: AttendeeViewConfig['visibleFields'] = [
+  { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 0 },
   { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
   { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
   { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },

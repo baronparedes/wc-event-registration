@@ -40,6 +40,7 @@ describe('useAttendanceViewControlsState', () => {
     expect(result.current.viewConfig.dynamicFilterCombination).toBe('and');
     expect(result.current.viewConfig.dynamicFilterExpression).toBeUndefined();
     expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 0 },
       { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
       { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
       { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
@@ -219,6 +220,7 @@ describe('useAttendanceViewControlsState', () => {
     });
 
     expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 0 },
       { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
       { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
       { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
@@ -231,6 +233,7 @@ describe('useAttendanceViewControlsState', () => {
     });
 
     expect(result.current.viewConfig.visibleFields).toEqual([
+      { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 0 },
       { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
       { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
       { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
@@ -339,6 +342,7 @@ describe('useAttendanceViewControlsState', () => {
       dynamicFilterExpression: undefined,
       groupBy: [],
       visibleFields: [
+        { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 0 },
         { source: 'member', fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
         { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
         { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },

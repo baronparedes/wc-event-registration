@@ -134,6 +134,14 @@ export function AdminAttendanceDataPage() {
           ),
         ].sort((a, b) => a.localeCompare(b)),
       },
+      {
+        source: 'member' as const,
+        fieldKey: 'avatar',
+        label: 'Avatar',
+        sortOrder: 4,
+        token: 'member:avatar',
+        values: [],
+      },
     ],
     [cachedAttendees],
   );
