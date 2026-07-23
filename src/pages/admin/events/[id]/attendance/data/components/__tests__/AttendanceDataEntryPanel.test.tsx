@@ -101,6 +101,7 @@ describe('AttendanceDataEntryPanel', () => {
 
   it('serializes multi-select selections as JSON in answer_text on submit', async () => {
     const onClose = vi.fn();
+    const onSaveSuccess = vi.fn();
 
     render(
       <AttendanceDataEntryPanel
@@ -109,6 +110,7 @@ describe('AttendanceDataEntryPanel', () => {
         registrant={registrant}
         fields={fields}
         onClose={onClose}
+        onSaveSuccess={onSaveSuccess}
       />,
     );
 
@@ -132,6 +134,22 @@ describe('AttendanceDataEntryPanel', () => {
     expect(JSON.parse(payload.answers[0].answer_text)).toEqual(
       expect.arrayContaining(['vip', 'kosher']),
     );
+
+    expect(onSaveSuccess).toHaveBeenCalledWith({
+      attendeeKind: 'registered',
+      registrationId: 'reg-1',
+      publicRegistrationId: null,
+      attendanceAnswers: [
+        {
+          attendance_field_id: 'field-multi',
+          field_type: 'multi_select',
+          field_key: 'meal_preferences',
+          label: 'Meal Preferences',
+          answer_text: JSON.stringify(['vip', 'kosher']),
+          answer_number: null,
+        },
+      ],
+    });
 
     expect(onClose).toHaveBeenCalled();
   });

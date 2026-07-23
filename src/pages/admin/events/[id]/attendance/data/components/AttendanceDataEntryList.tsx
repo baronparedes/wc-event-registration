@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui';
 import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
 import type {
   AttendanceAnswer,
+  AttendanceAnswerSummary,
   AttendeeSearchResult,
   RegistrantAttendanceRow,
 } from '@/lib/domain/attendance';
@@ -27,6 +28,12 @@ type AttendanceDataEntryListProps = {
   registrationFields: AdminEventField[];
   visibleFields?: DynamicFieldRef[];
   canWrite?: boolean;
+  onRegistrantAttendanceSaved?: (payload: {
+    attendeeKind: 'registered' | 'public';
+    registrationId: string | null;
+    publicRegistrationId: string | null;
+    attendanceAnswers: AttendanceAnswerSummary[];
+  }) => void;
 };
 
 const DEFAULT_VISIBLE_FIELDS: DynamicFieldRef[] = [
@@ -111,6 +118,7 @@ export function AttendanceDataEntryList({
   registrationFields,
   visibleFields = DEFAULT_VISIBLE_FIELDS,
   canWrite = true,
+  onRegistrantAttendanceSaved,
 }: AttendanceDataEntryListProps) {
   const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
   const [editingRegistrant, setEditingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
@@ -211,6 +219,7 @@ export function AttendanceDataEntryList({
           eventId={eventId}
           registrant={editingRegistrant}
           fields={fields}
+          onSaveSuccess={onRegistrantAttendanceSaved}
           onClose={() => setEditingRegistrant(null)}
         />
       )}

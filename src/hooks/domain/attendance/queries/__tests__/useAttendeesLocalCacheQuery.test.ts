@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CACHE_TTL_MS,
+  applyAttendanceAnswersPatchToAttendees,
   applyCheckInPatchToAttendees,
   isCacheExpired,
 } from '@/hooks/domain/attendance/queries/useAttendeesLocalCacheQuery';
@@ -121,5 +122,73 @@ describe('isCacheExpired', () => {
     const cachedAt = now - CACHE_TTL_MS;
 
     expect(isCacheExpired(cachedAt, now)).toBe(true);
+  });
+});
+
+describe('applyAttendanceAnswersPatchToAttendees', () => {
+  it('replaces attendance answers for a registered attendee', () => {
+    const attendees: AttendeeSearchResult[] = [
+      buildAttendee({
+        registration_id: 'reg-1',
+        attendance_answers: [
+          {
+            attendance_field_id: 'field-old',
+            field_type: 'text',
+            field_key: 'old',
+            label: 'Old',
+            answer_text: 'old-value',
+            answer_number: null,
+          },
+        ],
+      }),
+    ];
+
+    const result = applyAttendanceAnswersPatchToAttendees(attendees, {
+      attendeeKind: 'registered',
+      registrationId: 'reg-1',
+      publicRegistrationId: null,
+      attendanceAnswers: [
+        {
+          attendance_field_id: 'field-new',
+          field_type: 'text',
+          field_key: 'section',
+          label: 'Section',
+          answer_text: 'North',
+          answer_number: null,
+        },
+      ],
+    });
+
+    expect(result.didUpdate).toBe(true);
+    expect(result.attendees[0].attendance_answers).toEqual([
+      {
+        attendance_field_id: 'field-new',
+        field_type: 'text',
+        field_key: 'section',
+        label: 'Section',
+        answer_text: 'North',
+        answer_number: null,
+      },
+    ]);
+  });
+
+  it('replaces attendance answers for a public attendee', () => {
+    const attendees: AttendeeSearchResult[] = [
+      buildAttendee({
+        attendee_kind: 'public',
+        registration_id: 'public-reg-1',
+        public_registration_id: 'public-reg-1',
+      }),
+    ];
+
+    const result = applyAttendanceAnswersPatchToAttendees(attendees, {
+      attendeeKind: 'public',
+      registrationId: null,
+      publicRegistrationId: 'public-reg-1',
+      attendanceAnswers: [],
+    });
+
+    expect(result.didUpdate).toBe(true);
+    expect(result.attendees[0].attendance_answers).toEqual([]);
   });
 });

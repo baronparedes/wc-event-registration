@@ -8,7 +8,13 @@ import { Dialog } from '@/components/ui/Dialog';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import { useUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance';
-import type { AttendanceAnswer, RegistrantAttendanceRow } from '@/lib/domain/attendance';
+import type {
+  AttendanceAnswer,
+  AttendanceAnswerEntry,
+  AttendanceAnswerSummary,
+  AttendeeKind,
+  RegistrantAttendanceRow,
+} from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 
 type AttendanceDataEntryPanelProps = {
@@ -17,6 +23,12 @@ type AttendanceDataEntryPanelProps = {
   registrant: RegistrantAttendanceRow;
   fields: AttendanceField[];
   onClose: () => void;
+  onSaveSuccess?: (payload: {
+    attendeeKind: AttendeeKind;
+    registrationId: string | null;
+    publicRegistrationId: string | null;
+    attendanceAnswers: AttendanceAnswerSummary[];
+  }) => void;
 };
 
 type AnswerFormValues = {
@@ -52,6 +64,78 @@ function getExistingAnswerValue(
   return answer.answer_text ?? '';
 }
 
+function buildMutationAnswers(
+  fields: AttendanceField[],
+  values: AnswerFormValues,
+): AttendanceAnswerEntry[] {
+  return fields.map((field) => {
+    const rawValue = values[field.id] ?? '';
+
+    if (field.field_type === 'number') {
+      const parsedValue = Array.isArray(rawValue) ? (rawValue[0] ?? '') : rawValue;
+      const num = parsedValue.trim() === '' ? null : Number(parsedValue);
+
+      return {
+        attendance_field_id: field.id,
+        answer_text: null,
+        answer_number: num !== null && !Number.isNaN(num) ? num : null,
+      };
+    }
+
+    if (field.field_type === 'multi_select') {
+      const selectedValues = Array.isArray(rawValue)
+        ? rawValue.filter((value) => value.trim().length > 0)
+        : [];
+
+      return {
+        attendance_field_id: field.id,
+        answer_text: selectedValues.length > 0 ? JSON.stringify(selectedValues) : null,
+        answer_number: null,
+      };
+    }
+
+    const parsedValue = Array.isArray(rawValue) ? (rawValue[0] ?? '') : rawValue;
+
+    return {
+      attendance_field_id: field.id,
+      answer_text: parsedValue.trim().length > 0 ? parsedValue.trim() : null,
+      answer_number: null,
+    };
+  });
+}
+
+function buildAttendanceAnswerSummaries(
+  fields: AttendanceField[],
+  answers: AttendanceAnswerEntry[],
+): AttendanceAnswerSummary[] {
+  const fieldsById = new Map(fields.map((field) => [field.id, field]));
+
+  return answers.flatMap((answer) => {
+    const field = fieldsById.get(answer.attendance_field_id);
+    if (!field) {
+      return [];
+    }
+
+    const answerText = typeof answer.answer_text === 'string' ? answer.answer_text.trim() : null;
+    const answerNumber = typeof answer.answer_number === 'number' ? answer.answer_number : null;
+
+    if (!answerText && answerNumber === null) {
+      return [];
+    }
+
+    return [
+      {
+        attendance_field_id: field.id,
+        field_type: field.field_type,
+        field_key: field.field_key,
+        label: field.label,
+        answer_text: answerText,
+        answer_number: answerNumber,
+      },
+    ];
+  });
+}
+
 /** Panel for entering attendance field answers for a single registrant. */
 export function AttendanceDataEntryPanel({
   isOpen,
@@ -59,6 +143,7 @@ export function AttendanceDataEntryPanel({
   registrant,
   fields,
   onClose,
+  onSaveSuccess,
 }: AttendanceDataEntryPanelProps) {
   const upsertMutation = useUpsertAttendanceAnswersMutation();
   const [openMultiSelectFieldId, setOpenMultiSelectFieldId] = useState<string | null>(null);
@@ -147,40 +232,7 @@ export function AttendanceDataEntryPanel({
 
       setRequiredMultiSelectErrors({});
 
-      const answers = fields.map((field) => {
-        const rawValue = values[field.id] ?? '';
-
-        if (field.field_type === 'number') {
-          const parsedValue = Array.isArray(rawValue) ? (rawValue[0] ?? '') : rawValue;
-          const num = parsedValue.trim() === '' ? null : Number(parsedValue);
-
-          return {
-            attendance_field_id: field.id,
-            answer_text: null as string | null,
-            answer_number: num !== null && !Number.isNaN(num) ? num : null,
-          };
-        }
-
-        if (field.field_type === 'multi_select') {
-          const selectedValues = Array.isArray(rawValue)
-            ? rawValue.filter((value) => value.trim().length > 0)
-            : [];
-
-          return {
-            attendance_field_id: field.id,
-            answer_text: selectedValues.length > 0 ? JSON.stringify(selectedValues) : null,
-            answer_number: null as number | null,
-          };
-        }
-
-        const parsedValue = Array.isArray(rawValue) ? (rawValue[0] ?? '') : rawValue;
-
-        return {
-          attendance_field_id: field.id,
-          answer_text: parsedValue.trim().length > 0 ? parsedValue.trim() : (null as string | null),
-          answer_number: null as number | null,
-        };
-      });
+      const answers = buildMutationAnswers(fields, values);
 
       await upsertMutation.mutateAsync({
         event_id: eventId,
@@ -188,6 +240,13 @@ export function AttendanceDataEntryPanel({
         registration_id: registrant.registration_id ?? undefined,
         public_registration_id: registrant.public_registration_id ?? undefined,
         answers,
+      });
+
+      onSaveSuccess?.({
+        attendeeKind: registrant.attendee_kind,
+        registrationId: registrant.registration_id,
+        publicRegistrationId: registrant.public_registration_id,
+        attendanceAnswers: buildAttendanceAnswerSummaries(fields, answers),
       });
 
       toast.success(`Attendance data saved for ${registrant.full_name}.`);

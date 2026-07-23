@@ -73,6 +73,7 @@ export function AdminAttendanceDataPage() {
     isLoading: attendeesLoading,
     isFetching: attendeesFetching,
     refresh,
+    updateAttendanceAnswers,
   } = useAttendeesLocalCacheQuery(id);
 
   const cachedAttendees = useMemo(() => attendees ?? [], [attendees]);
@@ -490,6 +491,7 @@ export function AdminAttendanceDataPage() {
             registrationFields={registrationFields}
             visibleFields={viewConfig.visibleFields}
             canWrite={canWrite}
+            onRegistrantAttendanceSaved={updateAttendanceAnswers}
           />
         )}
       </AdminPageShell.Content>

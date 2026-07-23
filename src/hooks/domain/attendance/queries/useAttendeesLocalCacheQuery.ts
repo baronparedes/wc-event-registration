@@ -7,6 +7,7 @@ import { QUERY_KEYS } from '@/config/constants';
 import { useAttendanceCheckInRealtime } from '@/hooks/domain/attendance/state/useAttendanceCheckInRealtime';
 import { useLocalStorage } from '@/hooks/utils';
 import type {
+  AttendanceAnswerSummary,
   AttendanceCheckInRealtimeEvent,
   AttendeeKind,
   AttendeeSearchResult,
@@ -39,6 +40,13 @@ type AttendeeCheckInPatch = {
   checkedInAt: string;
   registrationId: string | null;
   publicRegistrationId: string | null;
+};
+
+type AttendeeAttendanceAnswersPatch = {
+  attendeeKind: AttendeeKind;
+  registrationId: string | null;
+  publicRegistrationId: string | null;
+  attendanceAnswers: AttendanceAnswerSummary[];
 };
 
 const CACHE_KEY_PREFIX = 'wc:attendees';
@@ -88,6 +96,17 @@ function matchesAttendeePatch(
   );
 }
 
+function matchesAttendanceAnswersPatch(
+  attendee: AttendeeSearchResult,
+  patch: AttendeeAttendanceAnswersPatch,
+): boolean {
+  if (patch.attendeeKind === 'public') {
+    return attendee.public_registration_id === patch.publicRegistrationId;
+  }
+
+  return attendee.registration_id === patch.registrationId;
+}
+
 export function applyCheckInPatchToAttendees(
   attendees: AttendeeSearchResult[],
   patch: AttendeeCheckInPatch,
@@ -116,6 +135,27 @@ export function applyCheckInPatchToAttendees(
       check_in_status: 'checked_in',
       official_check_in_time: nextOfficialCheckInTime,
     } as AttendeeSearchResult;
+  });
+
+  return { attendees: nextAttendees, didUpdate };
+}
+
+export function applyAttendanceAnswersPatchToAttendees(
+  attendees: AttendeeSearchResult[],
+  patch: AttendeeAttendanceAnswersPatch,
+): { attendees: AttendeeSearchResult[]; didUpdate: boolean } {
+  let didUpdate = false;
+
+  const nextAttendees: AttendeeSearchResult[] = attendees.map((attendee) => {
+    if (!matchesAttendanceAnswersPatch(attendee, patch)) {
+      return attendee;
+    }
+
+    didUpdate = true;
+    return {
+      ...attendee,
+      attendance_answers: patch.attendanceAnswers,
+    };
   });
 
   return { attendees: nextAttendees, didUpdate };
@@ -200,6 +240,25 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
     queryClient.setQueryData(QUERY_KEYS.adminAttendeesLocalCache(eventId), newEntry);
   }
 
+  function updateAttendanceAnswers(patch: AttendeeAttendanceAnswersPatch): void {
+    if (!eventId) return;
+
+    const current = queryClient.getQueryData<LocalCacheEntry>(
+      QUERY_KEYS.adminAttendeesLocalCache(eventId),
+    );
+    if (!current) return;
+
+    const { attendees: patchedAttendees, didUpdate } = applyAttendanceAnswersPatchToAttendees(
+      current.attendees,
+      patch,
+    );
+    if (!didUpdate) return;
+
+    const updatedEntry = buildCacheEntry(patchedAttendees);
+    cacheStorage.set(updatedEntry);
+    queryClient.setQueryData(QUERY_KEYS.adminAttendeesLocalCache(eventId), updatedEntry);
+  }
+
   const handleRealtimeCheckIn = useCallback(
     (checkInEvent: AttendanceCheckInRealtimeEvent) => {
       if (!eventId) return;
@@ -256,6 +315,7 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
     error: query.error,
     refresh,
     updateAttendee,
+    updateAttendanceAnswers,
   };
 }
 
