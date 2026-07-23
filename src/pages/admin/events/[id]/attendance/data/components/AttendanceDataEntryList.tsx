@@ -159,7 +159,7 @@ export function AttendanceDataEntryList({
               <div className="border-b border-border px-3 py-3">
                 <h3 className="inline-flex items-center gap-2 font-heading text-base font-semibold text-text">
                   <span>{group.label}</span>
-                  <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
                     {group.registrants.length} attendee{group.registrants.length === 1 ? '' : 's'}
                   </span>
                 </h3>
