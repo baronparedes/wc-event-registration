@@ -11,6 +11,10 @@ vi.mock('@/pages/admin/events/[id]/attendance/data/components/AttendanceDataEntr
   ),
 }));
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name }: { name: string }) => <div aria-label={name} />,
+}));
+
 const baseFields: AttendanceField[] = [
   {
     id: 'field-1',
