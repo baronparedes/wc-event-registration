@@ -4,7 +4,7 @@ import { useMemberAvatarQuery } from '@/hooks/domain/members';
 
 interface AvatarProps {
   name: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   className?: string;
 }
 
@@ -21,7 +21,10 @@ export const Avatar: React.FC<AvatarProps> = ({ name, size = 'md', className = '
   const sizeClasses = {
     sm: 'w-10 h-10 text-sm',
     md: 'w-12 h-12 text-base',
-    lg: 'w-14 h-14 text-lg',
+    lg: 'w-24 h-24 text-lg',
+    xl: 'w-48 h-48 text-xl',
+    '2xl': 'w-64 h-64 text-2xl',
+    '3xl': 'w-128 h-128 text-3xl',
   };
 
   const colors = [

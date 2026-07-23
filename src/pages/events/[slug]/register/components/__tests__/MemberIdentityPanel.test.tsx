@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import { MemberIdentityPanel } from '../MemberIdentityPanel';
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name }: { name: string }) => <div aria-label={name} />,
+}));
+
 const baseProfile = {
   user_id: 'user-1',
   member_id: 'WC-001',

@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/ui/Avatar';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
 type MemberIdentityPanelProps = {
@@ -24,8 +25,18 @@ function MemberDetailRow({ label, value, className }: MemberDetailRowProps) {
 }
 
 export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps) {
+  const avatarName =
+    matchedMember.nickname && matchedMember.last_name
+      ? `${matchedMember.nickname} ${matchedMember.last_name}`
+      : null;
+
   return (
     <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {avatarName && (
+        <div className="sm:col-span-2 flex justify-center pb-1 pt-2">
+          <Avatar name={avatarName} size="2xl" />
+        </div>
+      )}
       <MemberDetailRow label="Name" value={matchedMember.full_name} className="sm:col-span-2" />
       <MemberDetailRow label="Member ID" value={matchedMember.member_id} />
       <MemberDetailRow label="Role" value={matchedMember.role} />

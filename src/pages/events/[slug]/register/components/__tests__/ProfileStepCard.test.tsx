@@ -5,6 +5,10 @@ import { makeMemberLookupProfile } from '@/__tests__/factories';
 
 import { ProfileStepCard } from '../ProfileStepCard';
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name }: { name: string }) => <div aria-label={name} />,
+}));
+
 const matchedMember = makeMemberLookupProfile();
 
 describe('ProfileStepCard', () => {
