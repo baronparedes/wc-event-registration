@@ -144,7 +144,7 @@ export function AdminSubNavLink({ to, children }: AdminSubNavLinkProps) {
       end
       className={({ isActive }) =>
         cx(
-          'whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors',
+          'print:hidden whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors',
           isActive
             ? 'border-primary text-primary'
             : 'border-transparent text-muted hover:border-border hover:text-text',
