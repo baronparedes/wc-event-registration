@@ -5,6 +5,8 @@ import { useFieldAnswerTextFormatter } from '@/hooks/utils';
 import type { AttendeeSearchResult, CheckInResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
 
+import { Avatar } from '../../../../../../../components/ui/Avatar';
+
 function getAnswerCardsItemClass(cardCount: number): string {
   if (cardCount <= 1) {
     return 'w-full';
@@ -53,6 +55,11 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
     Boolean(checkInResult) ||
     (attendee?.check_in_status === 'checked_in' && !requiresTimeslotSelection);
 
+  const avatarName =
+    attendee && attendee.nickname && attendee.last_name
+      ? `${attendee.nickname} ${attendee.last_name}`
+      : null;
+
   return (
     <WizardStep
       title="Step 3: Confirm Check-In"
@@ -66,6 +73,11 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
       )}
       {attendee && (
         <div className="space-y-4">
+          {avatarName && attendee.attendee_kind == 'registered' && (
+            <div className="flex items-center justify-center">
+              <Avatar size="xl" name={avatarName} />
+            </div>
+          )}
           <div
             className={`rounded-xl border px-4 py-3 text-base font-semibold shadow-sm ${
               attendee.check_in_status === 'checked_in'

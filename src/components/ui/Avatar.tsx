@@ -11,6 +11,7 @@ interface AvatarProps {
 export const Avatar: React.FC<AvatarProps> = ({ name, size = 'md', className = '' }) => {
   const { data: avatarUrl } = useMemberAvatarQuery(name);
   const [failedAvatarUrl, setFailedAvatarUrl] = React.useState<string | null>(null);
+  const [loadedAvatarUrl, setLoadedAvatarUrl] = React.useState<string | null>(null);
 
   const initials = name
     .split(' ')
@@ -42,25 +43,25 @@ export const Avatar: React.FC<AvatarProps> = ({ name, size = 'md', className = '
   const bgColor = colors[colorIndex];
 
   const shouldShowImage = avatarUrl && failedAvatarUrl !== avatarUrl;
-
-  if (shouldShowImage) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={name}
-        title={name}
-        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
-        onError={() => setFailedAvatarUrl(avatarUrl)}
-      />
-    );
-  }
+  const isImageLoaded = shouldShowImage && loadedAvatarUrl === avatarUrl;
 
   return (
     <div
-      className={`${sizeClasses[size]} ${bgColor} rounded-full flex items-center justify-center font-semibold text-white ${className}`}
+      className={`${sizeClasses[size]} ${bgColor} relative rounded-full flex items-center justify-center overflow-hidden font-semibold text-white ${className}`}
       title={name}
     >
       {initials}
+      {shouldShowImage && (
+        <img
+          src={avatarUrl}
+          alt={name}
+          className={`absolute inset-0 h-full w-full rounded-full object-cover transition-opacity duration-200 ${
+            isImageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setLoadedAvatarUrl(avatarUrl)}
+          onError={() => setFailedAvatarUrl(avatarUrl)}
+        />
+      )}
     </div>
   );
 };

@@ -103,7 +103,7 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
               })}
             </div>
 
-            <div className="hidden rounded-2xl border border-border bg-surface lg:block">
+            <div className="hidden rounded-2xl border border-border bg-surface lg:block overflow-x-auto">
               <ListTable className="text-lg">
                 <ListTableHead>
                   <ListTableHeaderRow className="text-base normal-case tracking-normal">
