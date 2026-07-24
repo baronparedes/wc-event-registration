@@ -4,6 +4,7 @@ import { Columns, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
 import type { DynamicFieldOption, DynamicFieldRef } from '@/lib/domain/attendance-views';
 
 import { AttendanceViewFieldSelector } from './AttendanceViewFieldSelector';
@@ -25,6 +26,7 @@ export function AttendanceColumnsButton({
 }: AttendanceColumnsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedCount = selectedFields.length;
+  const isMobile = useIsMobileViewport();
 
   return (
     <>
@@ -35,8 +37,8 @@ export function AttendanceColumnsButton({
         onClick={() => setIsOpen(true)}
         aria-label="Columns"
       >
-        <Columns aria-hidden="true" className="h-4 w-4" />
-        Columns
+        <Columns aria-hidden="true" className="h-4 w-4" aria-label="Columns" />
+        {!isMobile && 'Columns'}
         {selectedCount > 0 && (
           <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs text-white leading-none">
             {selectedCount}

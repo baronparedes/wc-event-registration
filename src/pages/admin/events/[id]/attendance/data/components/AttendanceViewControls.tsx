@@ -13,6 +13,7 @@ import type {
 import { AttendanceAdvancedFiltersCard } from './AttendanceAdvancedFiltersCard';
 import { AttendanceGroupLevelsCard } from './AttendanceGroupLevelsCard';
 import { AttendancePrimaryFilters } from './AttendancePrimaryFilters';
+import { AttendanceSecondaryFilters } from './AttendanceSecondaryFilters';
 
 export type AttendanceViewControlsProps = {
   viewConfig: AttendeeViewConfig;
@@ -150,7 +151,14 @@ export function AttendanceViewControls({
     }
   }
 
-  const advancedRulesCount = viewConfig.groupBy.length + viewConfig.dynamicFilters.length;
+  const filtersAndGroupingsCount =
+    viewConfig.groupBy.length +
+    viewConfig.dynamicFilters.length +
+    viewConfig.role.length +
+    (viewConfig.category !== 'all' ? 1 : 0) +
+    (viewConfig.checkInStatus !== 'all' ? 1 : 0);
+
+  console.info(viewConfig, 'viewConfig');
 
   return (
     <div className="print:hidden">
@@ -181,10 +189,10 @@ export function AttendanceViewControls({
           title={
             <span className="inline-flex items-center gap-2 text-xs uppercase tracking-wide">
               <SlidersHorizontal aria-hidden="true" className="h-3.5 w-3.5" />
-              <span>Advanced filtering & rules</span>
-              {advancedRulesCount > 0 && (
+              <span>FILTERS & GROUPINGS</span>
+              {filtersAndGroupingsCount > 0 && (
                 <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold leading-none text-white">
-                  {advancedRulesCount}
+                  {filtersAndGroupingsCount}
                 </span>
               )}
             </span>
@@ -196,6 +204,20 @@ export function AttendanceViewControls({
           titleClassName="font-heading text-sm font-semibold text-muted"
         >
           <div className="grid gap-3 pt-4 md:grid-cols-3">
+            <AttendanceSecondaryFilters
+              viewConfig={viewConfig}
+              roleOptions={roleOptions}
+              categoryOptions={categoryOptions}
+              selectedRoleLabel={selectedRoleLabel}
+              isRoleDropdownOpen={isRoleDropdownOpen}
+              roleDropdownRef={roleDropdownRef}
+              onToggleRoleDropdown={() => setIsRoleDropdownOpen((current) => !current)}
+              onCloseRoleDropdown={() => setIsRoleDropdownOpen(false)}
+              onRoleChange={onRoleChange}
+              onToggleRoleSelection={toggleRoleSelection}
+              onCategoryChange={onCategoryChange}
+              onCheckInStatusChange={onCheckInStatusChange}
+            />
             <AttendanceGroupLevelsCard
               groupBy={viewConfig.groupBy}
               dynamicFieldOptions={dynamicFieldOptions}

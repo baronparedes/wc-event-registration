@@ -95,6 +95,10 @@ export function AdminAttendanceCheckInPage() {
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const enforceCheckInEventWindow = settings?.enforce_check_in_event_window ?? true;
+  const isOutsideEventWindow = event ? !isWithinEventWindow(event, nowMs) : false;
+  const isCheckInBlockedByWindow =
+    attendanceEnabled && enforceCheckInEventWindow && isOutsideEventWindow;
+  const shouldListenRealtime = attendanceEnabled && !isCheckInBlockedByWindow;
   const timeslotEnabled = settings?.timeslot_enabled ?? false;
   const timeslots = useMemo(() => settings?.timeslots ?? [], [settings]);
   const {
@@ -106,7 +110,7 @@ export function AdminAttendanceCheckInPage() {
     error: cacheError,
     refresh: refreshCache,
     updateAttendee,
-  } = useAttendeesLocalCacheQuery(eventId);
+  } = useAttendeesLocalCacheQuery(eventId, { realtimeEnabled: shouldListenRealtime });
   const checkInMutation = useCheckInAttendeeMutation();
   const updateEventMutation = useUpdateEventMutation();
   const canWrite = canWriteAdminData(authState?.adminRole);
@@ -126,9 +130,6 @@ export function AdminAttendanceCheckInPage() {
         nowMs,
       })
     : false;
-  const isOutsideEventWindow = event ? !isWithinEventWindow(event, nowMs) : false;
-  const isCheckInBlockedByWindow =
-    attendanceEnabled && enforceCheckInEventWindow && isOutsideEventWindow;
   const showCheckInWizard = attendanceEnabled && !isCheckInBlockedByWindow;
   const suggestedSlot = useMemo(() => {
     if (!timeslotEnabled || timeslots.length === 0) {

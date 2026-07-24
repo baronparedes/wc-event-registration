@@ -55,6 +55,13 @@ describe('useAttendanceCheckInRealtime', () => {
     expect(mockSupabaseChannel).not.toHaveBeenCalled();
   });
 
+  it('does not subscribe when realtime listening is disabled', () => {
+    const onCheckIn = vi.fn();
+    renderHook(() => useAttendanceCheckInRealtime('event-123', { onCheckIn, enabled: false }));
+
+    expect(mockSupabaseChannel).not.toHaveBeenCalled();
+  });
+
   it('subscribes to the correct channel when eventId is provided', () => {
     const onCheckIn = vi.fn();
     renderHook(() => useAttendanceCheckInRealtime('event-123', { onCheckIn }));

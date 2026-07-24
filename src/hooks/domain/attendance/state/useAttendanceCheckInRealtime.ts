@@ -15,6 +15,7 @@ type AttendanceCheckInRow = {
 
 type UseAttendanceCheckInRealtimeOptions = {
   onCheckIn: (event: AttendanceCheckInRealtimeEvent) => void;
+  enabled?: boolean;
 };
 
 function isAttendeeKind(value: unknown): value is AttendeeKind {
@@ -56,10 +57,10 @@ export function useAttendanceCheckInRealtime(
   eventId: string | undefined,
   options: UseAttendanceCheckInRealtimeOptions,
 ) {
-  const { onCheckIn } = options;
+  const { onCheckIn, enabled = true } = options;
 
   useEffect(() => {
-    if (!eventId) {
+    if (!eventId || !enabled) {
       return;
     }
 
@@ -96,5 +97,5 @@ export function useAttendanceCheckInRealtime(
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [eventId, onCheckIn]);
+  }, [enabled, eventId, onCheckIn]);
 }

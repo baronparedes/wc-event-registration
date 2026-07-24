@@ -49,6 +49,10 @@ type AttendeeAttendanceAnswersPatch = {
   attendanceAnswers: AttendanceAnswerSummary[];
 };
 
+type UseAttendeesLocalCacheQueryOptions = {
+  realtimeEnabled?: boolean;
+};
+
 const CACHE_KEY_PREFIX = 'wc:attendees';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const REFRESH_THROTTLE_MS = 2000;
@@ -182,7 +186,11 @@ async function fetchAllAttendees(eventId: string): Promise<AttendeeSearchResult[
  * Call `refresh()` to force a re-fetch from the server.
  * Call `updateAttendee()` to patch a single attendee in the cache (e.g. after check-in).
  */
-export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
+export function useAttendeesLocalCacheQuery(
+  eventId: string | undefined,
+  options?: UseAttendeesLocalCacheQueryOptions,
+) {
+  const realtimeEnabled = options?.realtimeEnabled ?? true;
   const queryClient = useQueryClient();
   const cacheStorage = useLocalStorage<LocalCacheEntry>(eventId ? getStorageKey(eventId) : null);
   const lastRefreshAtRef = useRef<number>(0);
@@ -304,6 +312,7 @@ export function useAttendeesLocalCacheQuery(eventId: string | undefined) {
 
   useAttendanceCheckInRealtime(eventId, {
     onCheckIn: handleRealtimeCheckIn,
+    enabled: realtimeEnabled,
   });
 
   return {

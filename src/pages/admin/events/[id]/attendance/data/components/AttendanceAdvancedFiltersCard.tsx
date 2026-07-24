@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 import { Filter } from 'lucide-react';
 
+import { FormInputField, FormSelectField } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
-import { FormSelectField } from '@/components/ui/FormSelectField';
 import type {
   AttendeeViewConfig,
   DynamicFieldOption,
@@ -109,31 +109,31 @@ export function AttendanceAdvancedFiltersCard({
             />
 
             <div className="flex items-end gap-2 lg:col-span-2">
-              <input
-                aria-label="Field value"
-                type="text"
-                value={dynamicFilterValue}
-                onChange={(event) => onDynamicFilterValueChange(event.target.value)}
-                disabled={!dynamicFilterFieldLabel}
-                placeholder={
-                  dynamicFilterFieldLabel
-                    ? `Enter value for ${dynamicFilterFieldLabel}`
-                    : 'Select a field first'
-                }
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
-              />
+              <div className="min-w-0 flex-1">
+                <FormInputField
+                  ariaLabel="Field value"
+                  value={dynamicFilterValue}
+                  onChange={(event) => onDynamicFilterValueChange(event.target.value)}
+                  disabled={!dynamicFilterFieldLabel}
+                  placeholder={
+                    dynamicFilterFieldLabel
+                      ? `Enter value for ${dynamicFilterFieldLabel}`
+                      : 'Select a field first'
+                  }
+                  inputClassName="rounded-xl py-2"
+                />
+              </div>
 
               <Button
                 type="button"
                 variant="default"
-                size="sm"
                 onClick={onApplyDynamicFilter}
                 disabled={!dynamicFilterFieldLabel || dynamicFilterValue.trim().length === 0}
                 aria-label="Apply field filter"
                 title="Apply field filter"
                 className="h-10 w-10 min-h-10 shrink-0 px-0"
               >
-                <Filter aria-hidden="true" className="h-4 w-4" />
+                <Filter aria-hidden="true" className="h-10 w-10" />
               </Button>
             </div>
 

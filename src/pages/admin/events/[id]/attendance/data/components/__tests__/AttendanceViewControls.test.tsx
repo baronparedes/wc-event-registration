@@ -89,6 +89,7 @@ describe('AttendanceViewControls', () => {
     const handlers = renderControls();
 
     fireEvent.change(screen.getByLabelText('Name or Member ID'), { target: { value: 'MID-42' } });
+    fireEvent.click(screen.getByRole('button', { name: /filters & groupings/i }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Volunteer' }));
@@ -107,8 +108,6 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onRoleChange).toHaveBeenNthCalledWith(2, ['Member']);
     expect(handlers.onCategoryChange).toHaveBeenCalledWith('Youth');
     expect(handlers.onCheckInStatusChange).toHaveBeenCalledWith('checked_in');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
 
     expect(screen.getByRole('button', { name: 'Apply field filter' })).toBeDisabled();
   });
@@ -295,6 +294,7 @@ describe('AttendanceViewControls', () => {
   it('closes the role dropdown on outside click and Escape key', () => {
     renderControls({ canClearFilters: true });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
 
     expect(screen.getByLabelText('Role options')).toBeInTheDocument();
@@ -315,8 +315,8 @@ describe('AttendanceViewControls', () => {
       viewConfig: { ...baseViewConfig, role: ['Member'] },
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
-
     fireEvent.click(screen.getByRole('button', { name: 'All roles' }));
 
     expect(handlers.onRoleChange).toHaveBeenCalledWith([]);
@@ -339,15 +339,25 @@ describe('AttendanceViewControls', () => {
       },
     });
 
-    const heading = screen.getByText('Advanced filtering & rules').parentElement;
+    const heading = screen.getByText('FILTERS & GROUPINGS').parentElement;
     expect(heading).not.toBeNull();
     expect(within(heading as HTMLElement).getByText('2')).toBeInTheDocument();
   });
 
   it('hides advanced rules indicator count when no advanced criteria are active', () => {
-    renderControls({ viewConfig: { ...baseViewConfig, groupBy: [], dynamicFilters: [] } });
+    renderControls({
+      viewConfig: {
+        ...baseViewConfig,
+        groupBy: [],
+        dynamicFilters: [],
+        role: [],
+        category: 'all',
+        checkInStatus: 'all',
+      },
+    });
 
-    const heading = screen.getByText('Advanced filtering & rules').parentElement;
+    const heading = screen.getByText('FILTERS & GROUPINGS').parentElement;
+
     expect(heading).not.toBeNull();
     expect(within(heading as HTMLElement).queryByText(/^\d+$/)).not.toBeInTheDocument();
   });

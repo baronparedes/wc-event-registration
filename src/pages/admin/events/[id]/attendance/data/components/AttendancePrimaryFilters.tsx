@@ -1,8 +1,6 @@
 import { RotateCcw, Search } from 'lucide-react';
 
 import { FormInputField } from '@/components/ui/FormInputField';
-import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
-import { FormSelectField } from '@/components/ui/FormSelectField';
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
 
 import { AttendanceColumnsButton } from './AttendanceColumnsButton';
@@ -34,21 +32,10 @@ type AttendancePrimaryFiltersProps = {
 
 export function AttendancePrimaryFilters({
   viewConfig,
-  roleOptions,
-  categoryOptions,
   registrationDynamicFieldOptions,
   attendanceDynamicFieldOptions,
   memberDynamicFieldOptions,
-  selectedRoleLabel,
-  isRoleDropdownOpen,
-  roleDropdownRef,
   onNameOrMemberQueryChange,
-  onToggleRoleDropdown,
-  onCloseRoleDropdown,
-  onRoleChange,
-  onToggleRoleSelection,
-  onCategoryChange,
-  onCheckInStatusChange,
   onToggleVisibleField,
   canClearFilters,
   onClearViewControls,
@@ -67,6 +54,13 @@ export function AttendancePrimaryFilters({
               inputClassName="rounded-xl px-3 py-2 leading-normal pl-11"
             />
           </div>
+          <AttendanceColumnsButton
+            selectedFields={viewConfig.visibleFields}
+            registrationFieldOptions={registrationDynamicFieldOptions}
+            attendanceFieldOptions={attendanceDynamicFieldOptions}
+            memberFieldOptions={memberDynamicFieldOptions}
+            onToggleField={onToggleVisibleField}
+          />
           <button
             type="button"
             onClick={onClearViewControls}
@@ -79,56 +73,6 @@ export function AttendancePrimaryFilters({
           </button>
         </div>
       </div>
-
-      <FormMultiSelectDropdownField
-        triggerAriaLabel="Role"
-        optionsAriaLabel="Role options"
-        selectedLabel={selectedRoleLabel}
-        options={roleOptions}
-        selectedValues={viewConfig.role}
-        isOpen={isRoleDropdownOpen}
-        containerRef={roleDropdownRef}
-        clearButtonLabel="All roles"
-        onToggleDropdown={onToggleRoleDropdown}
-        onCloseDropdown={onCloseRoleDropdown}
-        onClearSelection={() => onRoleChange([])}
-        onToggleSelection={onToggleRoleSelection}
-      />
-
-      <div>
-        <FormSelectField
-          value={viewConfig.category}
-          onChange={onCategoryChange}
-          ariaLabel="Category"
-          options={[
-            { value: 'all', label: 'All categories' },
-            ...categoryOptions.map((category) => ({ value: category, label: category })),
-          ]}
-          selectClassName="h-10 rounded-xl px-3 py-2 leading-normal"
-        />
-      </div>
-
-      <div>
-        <FormSelectField
-          value={viewConfig.checkInStatus}
-          onChange={(value) => onCheckInStatusChange(value as AttendeeViewConfig['checkInStatus'])}
-          ariaLabel="Check-in status"
-          options={[
-            { value: 'all', label: 'All check-in states' },
-            { value: 'checked_in', label: 'Checked in' },
-            { value: 'not_checked_in', label: 'Not checked in' },
-          ]}
-          selectClassName="h-10 rounded-xl px-3 py-2 leading-normal"
-        />
-      </div>
-
-      <AttendanceColumnsButton
-        selectedFields={viewConfig.visibleFields}
-        registrationFieldOptions={registrationDynamicFieldOptions}
-        attendanceFieldOptions={attendanceDynamicFieldOptions}
-        memberFieldOptions={memberDynamicFieldOptions}
-        onToggleField={onToggleVisibleField}
-      />
     </div>
   );
 }
