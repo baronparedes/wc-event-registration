@@ -1,10 +1,11 @@
-import type { ComponentProps } from 'react';
-
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
-import { AttendanceViewControls } from '@/pages/admin/events/[id]/attendance/data/components/AttendanceViewControls';
+import {
+  AttendanceViewControls,
+  type AttendanceViewControlsProps,
+} from '@/pages/admin/events/[id]/attendance/data/components/AttendanceViewControls';
 
 function makeOption(
   source: DynamicFieldOption['source'],
@@ -39,7 +40,7 @@ const baseViewConfig: AttendeeViewConfig = {
   visibleFields: [],
 };
 
-function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceViewControls>>) {
+function renderControls(overrides?: Partial<AttendanceViewControlsProps>) {
   const handlers = {
     onNameOrMemberQueryChange: vi.fn(),
     onRoleChange: vi.fn(),
@@ -63,7 +64,7 @@ function renderControls(overrides?: Partial<ComponentProps<typeof AttendanceView
   render(
     <AttendanceViewControls
       viewConfig={baseViewConfig}
-      hasActiveFilters={false}
+      canClearFilters={false}
       roleOptions={['Member', 'Volunteer']}
       categoryOptions={['Adult', 'Youth']}
       dynamicFieldOptions={[registrationOption, registrationTeamOption, attendanceOption]}
@@ -114,7 +115,7 @@ describe('AttendanceViewControls', () => {
 
   it('renders grouping controls and calls grouping handlers for level actions', () => {
     const handlers = renderControls({
-      hasActiveFilters: true,
+      canClearFilters: true,
       viewConfig: {
         ...baseViewConfig,
         groupBy: [
@@ -154,7 +155,7 @@ describe('AttendanceViewControls', () => {
       dynamicFilterFieldToken: 'registration:service',
       dynamicFilterFieldLabel: 'Service',
       dynamicFilterValue: '9AM',
-      hasActiveFilters: true,
+      canClearFilters: true,
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
@@ -182,7 +183,7 @@ describe('AttendanceViewControls', () => {
       .mockReturnValueOnce({ ok: true as const });
 
     renderControls({
-      hasActiveFilters: true,
+      canClearFilters: true,
       onApplyCustomFilterJson: customJsonHandler,
     });
 
@@ -211,7 +212,7 @@ describe('AttendanceViewControls', () => {
   });
 
   it('toggles displayed field checkboxes from registration, attendance, and member groups', () => {
-    const handlers = renderControls({ hasActiveFilters: true });
+    const handlers = renderControls({ canClearFilters: true });
 
     fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
 
@@ -231,7 +232,7 @@ describe('AttendanceViewControls', () => {
       dynamicFilterFieldToken: 'registration:service',
       dynamicFilterFieldLabel: 'Service',
       dynamicFilterFieldType: 'date',
-      hasActiveFilters: true,
+      canClearFilters: true,
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
@@ -248,7 +249,7 @@ describe('AttendanceViewControls', () => {
       dynamicFilterFieldToken: 'registration:team',
       dynamicFilterFieldLabel: 'Team',
       dynamicFilterFieldType: 'text',
-      hasActiveFilters: true,
+      canClearFilters: true,
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
@@ -271,7 +272,7 @@ describe('AttendanceViewControls', () => {
           },
         ],
       },
-      hasActiveFilters: true,
+      canClearFilters: true,
     });
 
     // Expand filters to access the filter controls section
@@ -292,7 +293,7 @@ describe('AttendanceViewControls', () => {
   });
 
   it('closes the role dropdown on outside click and Escape key', () => {
-    renderControls({ hasActiveFilters: true });
+    renderControls({ canClearFilters: true });
 
     fireEvent.click(screen.getByRole('button', { name: 'Role' }));
 
@@ -310,7 +311,7 @@ describe('AttendanceViewControls', () => {
 
   it('closes the role dropdown when All roles is clicked', () => {
     const handlers = renderControls({
-      hasActiveFilters: true,
+      canClearFilters: true,
       viewConfig: { ...baseViewConfig, role: ['Member'] },
     });
 

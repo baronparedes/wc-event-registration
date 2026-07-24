@@ -14,9 +14,9 @@ import { AttendanceAdvancedFiltersCard } from './AttendanceAdvancedFiltersCard';
 import { AttendanceGroupLevelsCard } from './AttendanceGroupLevelsCard';
 import { AttendancePrimaryFilters } from './AttendancePrimaryFilters';
 
-type AttendanceViewControlsProps = {
+export type AttendanceViewControlsProps = {
   viewConfig: AttendeeViewConfig;
-  hasActiveFilters: boolean;
+  canClearFilters: boolean;
   roleOptions: string[];
   categoryOptions: string[];
   dynamicFieldOptions: DynamicFieldOption[];
@@ -49,7 +49,7 @@ type AttendanceViewControlsProps = {
 
 export function AttendanceViewControls({
   viewConfig,
-  hasActiveFilters,
+  canClearFilters,
   roleOptions,
   categoryOptions,
   dynamicFieldOptions,
@@ -173,7 +173,7 @@ export function AttendanceViewControls({
           onCategoryChange={onCategoryChange}
           onCheckInStatusChange={onCheckInStatusChange}
           onToggleVisibleField={onToggleVisibleField}
-          hasActiveFilters={hasActiveFilters}
+          canClearFilters={canClearFilters}
           onClearViewControls={onClearViewControls}
         />
 

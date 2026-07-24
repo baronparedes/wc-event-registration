@@ -119,11 +119,11 @@ vi.mock('@/hooks/domain/event-fields', async () => {
   };
 });
 
-function renderPage() {
+function renderPage(initialEntries?: string[]) {
   const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <AdminAttendanceDataPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -504,6 +504,31 @@ describe('AdminAttendanceDataPage', () => {
     await waitFor(() => {
       expect(localStorage.getItem(selectedViewStorageKey)).toBeNull();
       expect(screen.queryByText('Viewing saved filter:')).not.toBeInTheDocument();
+    });
+  });
+
+  it('restores the active saved view when Clear filters is clicked', async () => {
+    renderPage([`/?viewId=${savedView.id}`]);
+
+    const input = (await screen.findByLabelText('Name or Member ID')) as HTMLInputElement;
+    const clearFiltersButton = screen.getByRole('button', { name: 'Clear filters' });
+
+    await waitFor(() => {
+      expect(input.value).toBe('Jane');
+      expect(screen.getByText(savedView.name)).toBeInTheDocument();
+      expect(clearFiltersButton).toBeDisabled();
+    });
+
+    fireEvent.change(input, { target: { value: 'MID-001' } });
+    expect(input.value).toBe('MID-001');
+    expect(clearFiltersButton).toBeEnabled();
+
+    fireEvent.click(clearFiltersButton);
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Name or Member ID') as HTMLInputElement).value).toBe('Jane');
+      expect(screen.getByText('Viewing saved filter:')).toBeInTheDocument();
+      expect(clearFiltersButton).toBeDisabled();
     });
   });
 

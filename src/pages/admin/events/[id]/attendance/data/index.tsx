@@ -27,7 +27,12 @@ import {
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useLocalStorage } from '@/hooks/utils';
-import { buildAttendeeView, collectDynamicFieldOptions } from '@/lib/domain/attendance-views';
+import {
+  type AttendeeViewConfig,
+  attendeeViewConfigSchema,
+  buildAttendeeView,
+  collectDynamicFieldOptions,
+} from '@/lib/domain/attendance-views';
 import { canWriteAdminData } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -50,6 +55,9 @@ export function AdminAttendanceDataPage() {
   const { data: authState } = useAdminAuthQuery();
   const [searchParams] = useSearchParams();
   const [savedViewsModalOpen, setSavedViewsModalOpen] = useState(false);
+  const [activeSavedViewConfig, setActiveSavedViewConfig] = useState<AttendeeViewConfig | null>(
+    null,
+  );
   const appliedViewIdRef = useRef<string | null>(null);
   const persistedViewIdRef = useRef<string | null>(null);
   const selectedViewStorage = useLocalStorage<string>(id ? getSelectedViewStorageKey(id) : null, {
@@ -233,6 +241,39 @@ export function AdminAttendanceDataPage() {
     moveGroupingLevel,
   } = useAttendanceViewControlsState(dynamicFieldOptions);
 
+  const handleApplyViewConfig = useCallback(
+    (config: AttendeeViewConfig) => {
+      const normalizedConfig = attendeeViewConfigSchema.parse(config);
+      setActiveSavedViewConfig(normalizedConfig);
+      applyViewConfig(normalizedConfig);
+    },
+    [applyViewConfig],
+  );
+
+  const clearFiltersTargetConfig = useMemo(
+    () =>
+      activeSavedViewConfig ??
+      (savedView?.view_config ? attendeeViewConfigSchema.parse(savedView.view_config) : null),
+    [activeSavedViewConfig, savedView],
+  );
+
+  const handleClearFilters = useCallback(() => {
+    if (clearFiltersTargetConfig) {
+      applyViewConfig(clearFiltersTargetConfig);
+      return;
+    }
+
+    clearViewControls();
+  }, [applyViewConfig, clearFiltersTargetConfig, clearViewControls]);
+
+  const canClearFilters = useMemo(() => {
+    if (clearFiltersTargetConfig) {
+      return JSON.stringify(viewConfig) !== JSON.stringify(clearFiltersTargetConfig);
+    }
+
+    return hasActiveFilters;
+  }, [clearFiltersTargetConfig, hasActiveFilters, viewConfig]);
+
   // Auto-apply saved view only once when viewId param changes
   useEffect(() => {
     if (
@@ -241,10 +282,10 @@ export function AdminAttendanceDataPage() {
       savedView &&
       savedView.view_config
     ) {
-      applyViewConfig(savedView.view_config);
+      handleApplyViewConfig(savedView.view_config);
       appliedViewIdRef.current = viewIdParam;
     }
-  }, [viewIdParam, savedView, applyViewConfig]);
+  }, [viewIdParam, savedView, handleApplyViewConfig]);
 
   // Persist the selected saved view ID locally and restore it when the URL is empty.
   useEffect(() => {
@@ -282,6 +323,7 @@ export function AdminAttendanceDataPage() {
   const handleClearView = useCallback(() => {
     clearViewControls();
     appliedViewIdRef.current = null;
+    setActiveSavedViewConfig(null);
     if (id) {
       selectedViewStorage.remove();
     }
@@ -441,7 +483,7 @@ export function AdminAttendanceDataPage() {
       {!isLoading && attendanceEnabled && (
         <AttendanceViewControls
           viewConfig={viewConfig}
-          hasActiveFilters={hasActiveFilters}
+          canClearFilters={canClearFilters}
           roleOptions={roleOptions}
           categoryOptions={categoryOptions}
           dynamicFieldOptions={dynamicFieldOptions}
@@ -462,7 +504,7 @@ export function AdminAttendanceDataPage() {
           onGroupingSortChange={changeGroupingSort}
           onMoveGroupingLevel={moveGroupingLevel}
           onRemoveGroupingLevel={removeGroupingLevel}
-          onClearViewControls={clearViewControls}
+          onClearViewControls={handleClearFilters}
           onDynamicFilterFieldTokenChange={setFilterFieldToken}
           onDynamicFilterValueChange={setDynamicFilterValue}
           onDynamicFilterCombinationChange={setDynamicFilterCombination}
@@ -503,7 +545,7 @@ export function AdminAttendanceDataPage() {
           eventId={id ?? ''}
           currentViewConfig={viewConfig}
           currentViewId={viewIdParam}
-          onApplyView={applyViewConfig}
+          onApplyView={handleApplyViewConfig}
           canUpdate={canWrite}
           canDelete={canWrite}
           onViewDeleted={() => {
@@ -511,6 +553,7 @@ export function AdminAttendanceDataPage() {
               selectedViewStorage.remove();
             }
             appliedViewIdRef.current = null;
+            setActiveSavedViewConfig(null);
             clearViewControls();
           }}
         />

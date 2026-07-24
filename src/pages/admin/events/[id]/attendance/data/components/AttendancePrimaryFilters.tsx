@@ -28,7 +28,7 @@ type AttendancePrimaryFiltersProps = {
   onCategoryChange: (value: string) => void;
   onCheckInStatusChange: (value: AttendeeViewConfig['checkInStatus']) => void;
   onToggleVisibleField: (token: string) => void;
-  hasActiveFilters: boolean;
+  canClearFilters: boolean;
   onClearViewControls: () => void;
 };
 
@@ -50,7 +50,7 @@ export function AttendancePrimaryFilters({
   onCategoryChange,
   onCheckInStatusChange,
   onToggleVisibleField,
-  hasActiveFilters,
+  canClearFilters,
   onClearViewControls,
 }: AttendancePrimaryFiltersProps) {
   return (
@@ -70,9 +70,9 @@ export function AttendancePrimaryFilters({
           <button
             type="button"
             onClick={onClearViewControls}
-            disabled={!hasActiveFilters}
-            aria-label="Reset all filters"
-            title="Reset all filters"
+            disabled={!canClearFilters}
+            aria-label="Clear filters"
+            title="Clear filters"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary bg-primary text-white outline-none transition hover:bg-primary/90 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RotateCcw aria-hidden="true" className="h-4 w-4" />
