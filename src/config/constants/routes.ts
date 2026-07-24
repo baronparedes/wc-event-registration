@@ -1,3 +1,5 @@
+import { matchPath } from 'react-router-dom';
+
 export const ROUTE_PATHS = {
   home: '/',
   notFound: '*',
@@ -28,6 +30,18 @@ export const ROUTE_PATHS = {
 export const ROUTE_PREFIXES = {
   admin: '/admin/',
 } as const;
+
+const MINIMIZED_APP_SHELL_PATTERNS = [
+  ROUTE_PATHS.eventRegisterPattern,
+  ROUTE_PATHS.eventPublicRegisterPattern,
+  ROUTE_PATHS.adminEventAttendanceCheckInPattern,
+] as const;
+
+export function isMinimizedAppShellRoute(pathname: string): boolean {
+  return MINIMIZED_APP_SHELL_PATTERNS.some((pattern) =>
+    Boolean(matchPath({ path: pattern, end: true }, pathname)),
+  );
+}
 
 export function toEventRegistration(slug: string): string {
   return `/events/${slug}/register`;

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { Check, Users } from 'lucide-react';
 
-import { Badge, Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState } from '@/components/ui';
 import {
   ListTable,
   ListTableBody,
@@ -40,8 +40,9 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
   } = props;
 
   const checkedInBadgeClass =
-    'bg-emerald-800 text-white text-base px-5 py-2 font-semibold border border-emerald-950/30 shadow-none';
-  const readyBadgeClass = 'text-sm px-4 py-1.5 font-semibold';
+    'inline-flex items-center rounded-full border border-emerald-950/30 bg-emerald-800 px-4 py-1.5 text-sm font-semibold text-white shadow-none';
+  const readyBadgeClass =
+    'inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-white';
   const lastAutoConfirmedRegistrationId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -104,8 +105,7 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-2xl font-semibold text-text">{result.full_name}</p>
-                      <Badge
-                        variant={result.check_in_status === 'checked_in' ? 'closed' : 'open'}
+                      <span
                         className={
                           result.check_in_status === 'checked_in'
                             ? checkedInBadgeClass
@@ -113,7 +113,7 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                         }
                       >
                         {result.check_in_status === 'checked_in' ? 'Checked In' : 'Ready'}
-                      </Badge>
+                      </span>
                     </div>
                     <p className="mt-2 text-base text-muted">
                       Member ID: {result.member_id ?? '—'}
@@ -158,8 +158,7 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                           </span>
                         </ListTableCell>
                         <ListTableCell>
-                          <Badge
-                            variant={result.check_in_status === 'checked_in' ? 'closed' : 'open'}
+                          <span
                             className={
                               result.check_in_status === 'checked_in'
                                 ? checkedInBadgeClass
@@ -167,7 +166,7 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                             }
                           >
                             {result.check_in_status === 'checked_in' ? 'Checked In' : 'Ready'}
-                          </Badge>
+                          </span>
                         </ListTableCell>
                         <ListTableCell>
                           {result.official_check_in_time

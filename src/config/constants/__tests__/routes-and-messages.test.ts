@@ -4,6 +4,7 @@ import { TOAST_MESSAGES } from '@/config/constants/messages';
 import {
   ROUTE_PATHS,
   ROUTE_PREFIXES,
+  isMinimizedAppShellRoute,
   toAdminEventAttendanceUnregisteredMembers,
   toAdminEventDetail,
   toAdminEventFields,
@@ -43,6 +44,15 @@ describe('route constants and builders', () => {
     expect(toAdminRegistrationDetail('event-1', 'reg-1')).toBe(
       '/admin/events/event-1/registrations/reg-1',
     );
+  });
+
+  it('detects only kiosk-minimized shell routes', () => {
+    expect(isMinimizedAppShellRoute('/events/summer-2026/register')).toBe(true);
+    expect(isMinimizedAppShellRoute('/events/summer-2026/register-public')).toBe(true);
+    expect(isMinimizedAppShellRoute('/admin/events/event-1/attendance/check-in')).toBe(true);
+    expect(isMinimizedAppShellRoute('/admin/events/event-1/attendance')).toBe(false);
+    expect(isMinimizedAppShellRoute('/admin/events/event-1/registrations')).toBe(false);
+    expect(isMinimizedAppShellRoute('/events/summer-2026')).toBe(false);
   });
 
   describe('toAdminRegistrationNames', () => {

@@ -27,7 +27,12 @@ import { canWriteAdminData } from '@/lib/domain/auth';
 import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
-import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
+import {
+  AttendeeCacheStatusBar,
+  AttendeeConfirmStep,
+  AttendeeSearchStep,
+  AttendeeSelectStep,
+} from './components';
 
 function toDatetimeLocal(value: string | null | undefined): string {
   if (!value) return '';
@@ -192,6 +197,24 @@ export function AdminAttendanceCheckInPage() {
 
     return 1;
   }, [confirmedAttendee, submittedSearchToken, results.length]);
+
+  const cacheStatusMessage = useMemo(() => {
+    if (cacheLoading || cacheFetching) {
+      return 'Loading attendee list...';
+    }
+
+    if (isCacheError) {
+      return cacheError instanceof Error ? cacheError.message : 'Failed to load attendee cache.';
+    }
+
+    if (cachedAttendees) {
+      return `${cachedAttendees.length} attendees cached${
+        cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''
+      }`;
+    }
+
+    return null;
+  }, [cacheError, cacheFetching, cacheLoading, cachedAt, cachedAttendees, isCacheError]);
 
   useWizardStepScroll(activeStep, [searchStepRef, selectStepRef, confirmStepRef]);
 
@@ -434,28 +457,12 @@ export function AdminAttendanceCheckInPage() {
       )}
 
       {showCheckInWizard && attendanceEnabled && (
-        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted">
-          {cacheLoading || cacheFetching ? (
-            <span>Loading attendee list...</span>
-          ) : isCacheError ? (
-            <span className="text-red-600">
-              {cacheError instanceof Error ? cacheError.message : 'Failed to load attendee cache.'}
-            </span>
-          ) : cachedAttendees ? (
-            <span>
-              {cachedAttendees.length} attendees cached
-              {cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''}
-            </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={refreshCache}
-            disabled={cacheFetching}
-            className="ml-4 rounded px-2 py-1 text-primary underline hover:no-underline disabled:opacity-50"
-          >
-            {cacheFetching ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
+        <AttendeeCacheStatusBar
+          message={cacheStatusMessage}
+          isError={isCacheError}
+          isRefreshing={cacheFetching}
+          onRefresh={refreshCache}
+        />
       )}
 
       {showCheckInWizard && (

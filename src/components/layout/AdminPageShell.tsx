@@ -2,16 +2,26 @@ import type { ReactNode } from 'react';
 
 import { cx } from 'class-variance-authority';
 import { ChevronRight } from 'lucide-react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+
+import { isMinimizedAppShellRoute } from '@/config/constants';
 
 type AdminPageShellProps = {
   children: ReactNode;
 };
 
 export function AdminPageShell({ children }: AdminPageShellProps) {
+  const location = useLocation();
+  const isMinimizedShell = isMinimizedAppShellRoute(location.pathname);
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 print:px-8 print:py-8">
-      <div className="space-y-5">{children}</div>
+    <div
+      className={cx(
+        'mx-auto w-full max-w-6xl print:px-8 print:py-8',
+        isMinimizedShell ? 'px-1 py-3 sm:px-2' : 'px-4 py-6',
+      )}
+    >
+      <div className={cx(isMinimizedShell ? 'space-y-4' : 'space-y-5')}>{children}</div>
     </div>
   );
 }

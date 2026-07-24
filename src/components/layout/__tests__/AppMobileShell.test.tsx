@@ -113,6 +113,21 @@ describe('AppMobileShell', () => {
     expect(screen.getByText('Signed in as admin@example.com (admin)')).toBeInTheDocument();
   });
 
+  it('uses minimized shell chrome on kiosk check-in routes', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: false } });
+
+    renderShell('/admin/events/event-1/attendance/check-in');
+
+    expect(screen.queryByText('WC Event Registrations')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
+
+    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminLogin,
+    );
+  });
+
   it('handles successful mobile sign out', async () => {
     mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
 

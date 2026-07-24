@@ -124,6 +124,21 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 
+  it('uses minimized shell chrome on kiosk registration routes', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: false } });
+
+    renderShell('/events/sample-event/register');
+
+    expect(screen.queryByText('WC Event Registrations')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
+
+    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminLogin,
+    );
+  });
+
   it('handles successful sign out', async () => {
     mockUseAdminAuthQuery.mockReturnValue({ data: { isAuthenticated: true } });
 

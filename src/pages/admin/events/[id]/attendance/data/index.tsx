@@ -36,6 +36,7 @@ import {
 import { canWriteAdminData } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
+import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
 import {
   AttendanceDataEntryList,
   AttendanceViewControls,
@@ -350,6 +351,16 @@ export function AdminAttendanceDataPage() {
     registrationFieldsLoading ||
     attendeesLoading;
 
+  const cacheStatusMessage = useMemo(() => {
+    if (attendeesFetching) {
+      return 'Loading attendee details...';
+    }
+
+    return `${cachedAttendees.length} attendees cached${
+      cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''
+    }`;
+  }, [attendeesFetching, cachedAt, cachedAttendees.length]);
+
   function handleRefreshCache() {
     refresh();
   }
@@ -444,24 +455,12 @@ export function AdminAttendanceDataPage() {
       )}
 
       {!isLoading && attendanceEnabled && (
-        <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 text-xs text-muted print:hidden">
-          {attendeesFetching ? (
-            <span>Loading attendee details...</span>
-          ) : (
-            <span>
-              {cachedAttendees.length} attendees cached
-              {cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={handleRefreshCache}
-            disabled={attendeesFetching}
-            className="ml-4 rounded px-2 py-1 text-primary underline hover:no-underline disabled:opacity-50"
-          >
-            {attendeesFetching ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
+        <AttendeeCacheStatusBar
+          message={cacheStatusMessage}
+          isRefreshing={attendeesFetching}
+          onRefresh={handleRefreshCache}
+          className="print:hidden"
+        />
       )}
 
       {!isLoading && attendanceEnabled && viewIdParam && savedView && (
