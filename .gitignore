@@ -33,3 +33,5 @@ supabase/seeds/*.local.sql
 .env
 .env.*
 *.env
+
+.vscodecounter
