@@ -54,6 +54,14 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     await onLookupSubmit({ memberId: undefined, name });
   };
 
+  const handleDismissLookupError = () => {
+    onDismissLookupError?.();
+    requestAnimationFrame(() => {
+      memberIdInputRef.current?.focus();
+      memberIdInputRef.current?.select();
+    });
+  };
+
   return (
     <>
       <WizardStep
@@ -174,7 +182,7 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
         <MemberLookupErrorAlert
           message={lookupErrorMessage}
           suppress={suppressLookupWarning}
-          onDismiss={onDismissLookupError}
+          onDismiss={handleDismissLookupError}
         />
       </WizardStep>
 

@@ -48,3 +48,9 @@ export {
   type ParseCsvResult,
   type BuildBulkRowsResult,
 } from './csv-parser';
+
+export {
+  convertHexToDecimal,
+  tryConvertRfidInput,
+  searchAttendeesWithRfidFallback,
+} from './utils/rfid';

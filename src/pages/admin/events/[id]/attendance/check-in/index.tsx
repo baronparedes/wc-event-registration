@@ -15,16 +15,15 @@ import {
 } from '@/config/constants';
 import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
-  searchAttendeesLocally,
   useAttendanceSettingsQuery,
   useAttendeesLocalCacheQuery,
 } from '@/hooks/domain/attendance/queries';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
-import { useAdminEventQuery, useUpdateEventMutation } from '@/hooks/domain/events';
+import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
+import { searchAttendeesWithRfidFallback } from '@/lib/domain/attendance';
 import { canWriteAdminData } from '@/lib/domain/auth';
-import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
 import {
@@ -33,13 +32,6 @@ import {
   AttendeeSearchStep,
   AttendeeSelectStep,
 } from './components';
-
-function toDatetimeLocal(value: string | null | undefined): string {
-  if (!value) return '';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '';
-  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T');
-}
 
 function isRegistrationOpenNow(event: {
   registration_mode: 'open' | 'closed';
@@ -117,7 +109,6 @@ export function AdminAttendanceCheckInPage() {
     updateAttendee,
   } = useAttendeesLocalCacheQuery(eventId, { realtimeEnabled: shouldListenRealtime });
   const checkInMutation = useCheckInAttendeeMutation();
-  const updateEventMutation = useUpdateEventMutation();
   const canWrite = canWriteAdminData(authState?.adminRole);
 
   const isLoading = eventLoading || settingsLoading;
@@ -125,7 +116,7 @@ export function AdminAttendanceCheckInPage() {
 
   const results = useMemo(() => {
     if (!submittedSearchToken.trim() || !cachedAttendees) return [];
-    return searchAttendeesLocally(cachedAttendees, submittedSearchToken);
+    return searchAttendeesWithRfidFallback(cachedAttendees, submittedSearchToken);
   }, [cachedAttendees, submittedSearchToken]);
   const registrationOpen = event
     ? isRegistrationOpenNow({
@@ -253,6 +244,7 @@ export function AdminAttendanceCheckInPage() {
   }
 
   const handleBackToLookup = useCallback(() => {
+    setSearchToken('');
     setSubmittedSearchToken('');
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
@@ -332,43 +324,6 @@ export function AdminAttendanceCheckInPage() {
 
   function handleCheckIn() {
     void submitCheckIn();
-  }
-
-  async function handleReopenRegistration() {
-    if (!eventId || !event) {
-      return;
-    }
-
-    const eventEndMs = event.ends_at ? Date.parse(event.ends_at) : Number.NaN;
-    const hasFutureEventEnd = Number.isFinite(eventEndMs) && eventEndMs > Date.now();
-    const reopenCloseValue = hasFutureEventEnd ? toDatetimeLocal(event.ends_at) : '';
-
-    try {
-      await updateEventMutation.mutateAsync({
-        id: eventId,
-        title: event.title,
-        description: event.description ?? '',
-        location: event.location ?? '',
-        starts_at: toDatetimeLocal(event.starts_at),
-        ends_at: toDatetimeLocal(event.ends_at),
-        registration_opens_at: '',
-        registration_closes_at: reopenCloseValue,
-        status: event.status,
-        duplicate_policy: event.duplicate_policy,
-        registration_mode: 'open',
-        public_registration_access: derivePublicRegistrationAccess({
-          allow_public_registrations: event.allow_public_registrations,
-          require_id_lookup: event.require_id_lookup,
-        }),
-        allow_name_lookup: Boolean(event.metadata?.allow_name_lookup),
-      });
-      toast.success(
-        'Registration reopened for event day. Ask attendee to complete registration, then retry lookup.',
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to reopen registration.';
-      toast.error(message);
-    }
   }
 
   if (!eventId) {
@@ -503,16 +458,6 @@ export function AdminAttendanceCheckInPage() {
                     >
                       Open Registration Page
                     </Button>
-                  ) : canWrite ? (
-                    <Button
-                      type="button"
-                      onClick={handleReopenRegistration}
-                      disabled={updateEventMutation.isPending}
-                    >
-                      {updateEventMutation.isPending
-                        ? 'Reopening Registration...'
-                        : 'Reopen Registration (Admin)'}
-                    </Button>
                   ) : (
                     <p className="text-sm text-muted">
                       Registration is closed. Ask an admin to reopen registration before check-in.
@@ -570,9 +515,11 @@ export function AdminAttendanceCheckInPage() {
             />
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={handleBackToMatches}>
-                Back to Matches
-              </Button>
+              {results.length > 1 && (
+                <Button type="button" variant="outline" onClick={handleBackToMatches}>
+                  Back to Matches
+                </Button>
+              )}
               <Button type="button" variant="outline" onClick={handleBackToLookup}>
                 Start New Lookup
               </Button>

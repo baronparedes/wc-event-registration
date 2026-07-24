@@ -1,4 +1,5 @@
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
+import { tryConvertRfidInput } from '@/lib/domain/attendance';
 
 import type {
   AttendeeViewConfig,
@@ -29,10 +30,12 @@ export function matchesBaseFilters(
     const fullName = normalizeValue(attendee.full_name);
     const nickname = normalizeValue(attendee.nickname ?? EMPTY_VALUE);
     const memberId = normalizeValue(attendee.member_id ?? EMPTY_VALUE);
+
     if (
       !fullName.includes(normalizedQuery) &&
       !nickname.includes(normalizedQuery) &&
-      !memberId.includes(normalizedQuery)
+      !memberId.includes(normalizedQuery) &&
+      !memberId.includes(tryConvertRfidInput(normalizedQuery))
     ) {
       return false;
     }

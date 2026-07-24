@@ -1,4 +1,4 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 import { Info, Search } from 'lucide-react';
 
@@ -55,8 +55,26 @@ export function AttendeeSearchStep(props: AttendeeSearchStepProps) {
       ? `No attendees found matching "${submittedSearchToken}". Unregistered attendees must complete registration first.`
       : null;
 
+  // Refocus input when error message appears (e.g. after failed search via button click)
+  useEffect(() => {
+    if (lookupErrorMessage) {
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      });
+    }
+  }, [lookupErrorMessage]);
+
   const handleSearchTokenChange = (nextValue: string) => {
     onSearchTokenChange(nextValue);
+  };
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    });
   };
 
   const handleSubmit = () => {
@@ -114,7 +132,7 @@ export function AttendeeSearchStep(props: AttendeeSearchStepProps) {
         <AttendeeLookupErrorAlert
           message={lookupErrorMessage}
           actions={notFoundActions}
-          onDismiss={() => setIsDismissed(true)}
+          onDismiss={handleDismiss}
         />
 
         <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
