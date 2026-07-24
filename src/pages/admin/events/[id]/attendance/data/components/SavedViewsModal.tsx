@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +43,13 @@ export function SavedViewsModal({
   const { data: savedViews = [] } = useAttendanceSavedViewsQuery(eventId);
   const upsertMutation = useUpsertAttendanceSavedViewMutation();
   const deleteMutation = useDeleteAttendanceSavedViewMutation();
+  const sortedSavedViews = useMemo(
+    () =>
+      [...savedViews].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
+      ),
+    [savedViews],
+  );
   const currentSavedView = currentViewId
     ? savedViews.find((view) => view.id === currentViewId)
     : null;
@@ -145,13 +152,13 @@ export function SavedViewsModal({
             </p>
           </div>
 
-          {savedViews.length === 0 ? (
+          {sortedSavedViews.length === 0 ? (
             <div className="rounded-md border border-border bg-surface p-4 text-center text-sm text-muted">
               <p>No saved views yet.</p>
             </div>
           ) : (
             <div className="max-h-64 space-y-2 overflow-y-auto">
-              {savedViews.map((view) => (
+              {sortedSavedViews.map((view) => (
                 <div
                   key={view.id}
                   className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2 text-sm"

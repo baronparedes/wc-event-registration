@@ -5,6 +5,20 @@ import { matchesBaseFilters, matchesDynamicFilters } from './filtering';
 import { buildGroupKeys, buildGroupLabel, sortGroups } from './grouping';
 import { attendeeToRegistrant } from './mappers';
 
+function compareRegistrantsByDisplayName(
+  a: RegistrantViewGroup['registrants'][number],
+  b: RegistrantViewGroup['registrants'][number],
+): number {
+  const aDisplayName = `${a.nickname} ${a.last_name}`.trim();
+  const bDisplayName = `${b.nickname} ${b.last_name}`.trim();
+  const displayNameComparison = aDisplayName.localeCompare(bDisplayName);
+  if (displayNameComparison !== 0) {
+    return displayNameComparison;
+  }
+
+  return a.full_name.localeCompare(b.full_name);
+}
+
 export function buildAttendeeView(
   attendees: AttendeeSearchResult[],
   config: AttendeeViewConfig,
@@ -42,9 +56,7 @@ export function buildAttendeeView(
     ([key, groupAttendees]) => ({
       key,
       label: buildGroupLabel(key, config),
-      registrants: groupAttendees
-        .map(attendeeToRegistrant)
-        .sort((a, b) => a.full_name.localeCompare(b.full_name)),
+      registrants: groupAttendees.map(attendeeToRegistrant).sort(compareRegistrantsByDisplayName),
     }),
   );
 

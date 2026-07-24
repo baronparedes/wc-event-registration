@@ -8,6 +8,7 @@ export type CollapsibleSectionCardProps = {
   subtitle?: ReactNode;
   children: ReactNode;
   defaultExpanded?: boolean;
+  animateContent?: boolean;
   collapseLabel?: string;
   expandLabel?: string;
   wrapperClassName?: string;
@@ -24,6 +25,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
   const {
     children,
     defaultExpanded = true,
+    animateContent = true,
     collapseLabel = 'Collapse section',
     expandLabel = 'Expand section',
     title,
@@ -122,7 +124,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
       </div>
 
       <AnimatePresence initial={false}>
-        {isExpanded && (
+        {isExpanded && animateContent && (
           <motion.div
             id={contentId}
             key={contentId}
@@ -149,6 +151,8 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {isExpanded && !animateContent && <div id={contentId}>{children}</div>}
     </div>
   );
 }

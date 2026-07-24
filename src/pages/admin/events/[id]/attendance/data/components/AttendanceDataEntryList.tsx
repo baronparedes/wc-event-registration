@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { Users } from 'lucide-react';
 
-import { EmptyState } from '@/components/ui';
+import { CollapsibleSectionCard, EmptyState } from '@/components/ui';
 import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
 import type {
   AttendanceAnswer,
@@ -159,20 +159,24 @@ export function AttendanceDataEntryList({
     <>
       <div className="space-y-3">
         {resolvedGroups.map((group) => (
-          <section
+          <CollapsibleSectionCard
             key={group.key}
-            className="overflow-hidden rounded-2xl border border-border bg-surface print:[break-inside:avoid] print:[page-break-inside:avoid]"
+            title={
+              <span className="inline-flex items-center gap-2">
+                <span>{group.label || 'All attendees'}</span>
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                  {group.registrants.length} attendee{group.registrants.length === 1 ? '' : 's'}
+                </span>
+              </span>
+            }
+            defaultExpanded={true}
+            animateContent={false}
+            collapseLabel="Collapse attendee group"
+            expandLabel="Expand attendee group"
+            wrapperClassName="overflow-hidden rounded-2xl border border-border bg-surface print:[break-inside:avoid] print:[page-break-inside:avoid]"
+            headerWrapperClassName="border-b border-border px-3 py-3"
+            titleClassName="font-heading text-base font-semibold text-text"
           >
-            {group.label && (
-              <div className="border-b border-border px-3 py-3">
-                <h3 className="inline-flex items-center gap-2 font-heading text-base font-semibold text-text">
-                  <span>{group.label}</span>
-                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                    {group.registrants.length} attendee{group.registrants.length === 1 ? '' : 's'}
-                  </span>
-                </h3>
-              </div>
-            )}
             {isMobileViewport ? (
               <AttendanceDataMobileView
                 registrants={group.registrants}
@@ -200,7 +204,7 @@ export function AttendanceDataEntryList({
                 getVisibleFieldValue={getVisibleFieldValue}
               />
             )}
-          </section>
+          </CollapsibleSectionCard>
         ))}
       </div>
 

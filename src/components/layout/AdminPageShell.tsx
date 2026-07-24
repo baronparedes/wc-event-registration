@@ -45,7 +45,7 @@ function AdminPageHeader({
   navLinks,
 }: AdminPageHeaderProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 print:hidden">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted print:hidden">
           {breadcrumbs.map((crumb, index) => (

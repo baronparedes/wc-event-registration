@@ -536,11 +536,13 @@ describe('attendance-views transforms', () => {
     expect(filtered.filteredAttendees).toHaveLength(1);
   });
 
-  it('applies category/check-in filters and keeps grouped registrants sorted by full name', () => {
+  it('applies category/check-in filters and keeps grouped registrants sorted by nickname then last name', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        full_name: 'Zulu Member',
+        nickname: 'Zulu',
+        last_name: 'Anderson',
+        full_name: 'Aaron Zed',
         category: 'Adult',
         check_in_status: 'checked_in',
         attendance_answers: [
@@ -556,7 +558,9 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'Alpha Member',
+        nickname: 'Alpha',
+        last_name: 'Zimmer',
+        full_name: 'Zack Aed',
         category: 'Adult',
         check_in_status: 'checked_in',
         attendance_answers: [
@@ -604,9 +608,9 @@ describe('attendance-views transforms', () => {
     ]);
     expect(result.groups).toHaveLength(1);
     expect(result.groups[0].key).toBe('North');
-    expect(result.groups[0].registrants.map((item) => item.full_name)).toEqual([
-      'Alpha Member',
-      'Zulu Member',
+    expect(result.groups[0].registrants.map((item) => item.registration_id)).toEqual([
+      'reg-2',
+      'reg-1',
     ]);
   });
 
