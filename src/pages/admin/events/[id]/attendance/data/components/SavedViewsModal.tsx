@@ -39,6 +39,7 @@ export function SavedViewsModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteViewId, setDeleteViewId] = useState<string | null>(null);
   const [newViewName, setNewViewName] = useState('');
+  const [viewFilter, setViewFilter] = useState('');
 
   const { data: savedViews = [] } = useAttendanceSavedViewsQuery(eventId);
   const upsertMutation = useUpsertAttendanceSavedViewMutation();
@@ -50,6 +51,41 @@ export function SavedViewsModal({
       ),
     [savedViews],
   );
+  const filteredSavedViews = useMemo(() => {
+    const query = viewFilter.trim().toLowerCase();
+    if (!query) return sortedSavedViews;
+
+    return sortedSavedViews.filter((view) => view.name.toLowerCase().includes(query));
+  }, [sortedSavedViews, viewFilter]);
+  const groupedSavedViews = useMemo(() => {
+    const groups = new Map<string, Array<{ id: string; name: string; created_at: string }>>();
+
+    filteredSavedViews.forEach((view) => {
+      const segments = view.name
+        .split(' - ')
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+
+      const hasIdentifierSegments = segments.length > 1;
+      const groupName = hasIdentifierSegments ? segments[0] : 'Views';
+      const segmentedLeafName = hasIdentifierSegments ? segments.slice(1).join(' - ') : view.name;
+      const leafName = segmentedLeafName || view.name;
+      const currentGroup = groups.get(groupName) ?? [];
+
+      currentGroup.push({
+        id: view.id,
+        name: leafName,
+        created_at: view.created_at,
+      });
+
+      groups.set(groupName, currentGroup);
+    });
+
+    return Array.from(groups.entries()).map(([groupName, views]) => ({
+      groupName,
+      views,
+    }));
+  }, [filteredSavedViews]);
   const currentSavedView = currentViewId
     ? savedViews.find((view) => view.id === currentViewId)
     : null;
@@ -143,8 +179,8 @@ export function SavedViewsModal({
 
   return (
     <>
-      <Dialog isOpen={isOpen} onClose={() => onOpenChange(false)} maxWidthClass="max-w-md">
-        <div className="space-y-4">
+      <Dialog isOpen={isOpen} onClose={() => onOpenChange(false)} maxWidthClass="max-w-3xl">
+        <div className="flex max-h-[85vh] min-h-0 flex-col gap-4">
           <div>
             <h2 className="font-heading text-lg font-semibold">Saved Views</h2>
             <p className="mt-1 text-sm text-muted">
@@ -157,45 +193,83 @@ export function SavedViewsModal({
               <p>No saved views yet.</p>
             </div>
           ) : (
-            <div className="max-h-64 space-y-2 overflow-y-auto">
-              {sortedSavedViews.map((view) => (
-                <div
-                  key={view.id}
-                  className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{view.name}</p>
-                    <p className="text-xs text-muted">
-                      {new Date(view.created_at).toLocaleDateString()}
-                    </p>
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <FormInputField
+                id="saved-view-filter"
+                label="Filter Views"
+                placeholder="Type to filter saved views"
+                value={viewFilter}
+                onChange={(event) => setViewFilter(event.target.value)}
+              />
+
+              <div className="min-h-0 max-h-[52vh] flex-1 overflow-y-auto pr-1 sm:max-h-[60vh]">
+                {filteredSavedViews.length === 0 ? (
+                  <div className="rounded-md border border-border bg-surface p-4 text-center text-sm text-muted">
+                    <p>No saved views match your filter.</p>
                   </div>
-                  <div className="ml-2 flex items-center gap-1 flex-shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleApplyView(view.id)}
-                      className="text-xs px-2"
-                    >
-                      Apply
-                    </Button>
-                    {canDelete && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteView(view.id)}
-                        className="text-xs px-2 text-red-600 hover:text-red-700"
+                ) : (
+                  <div className="space-y-3" role="tree" aria-label="Saved views tree">
+                    {groupedSavedViews.map((group) => (
+                      <div
+                        key={group.groupName}
+                        className="rounded-md border border-border bg-surface"
+                        role="treeitem"
+                        aria-expanded="true"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
+                        <div className="border-b border-border px-3 py-2 text-sm font-semibold">
+                          {group.groupName}
+                        </div>
+                        <div role="group">
+                          {group.views.map((view) => (
+                            <div
+                              key={view.id}
+                              className="flex flex-col gap-2 border-b border-border px-3 py-2 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between lg:pl-6"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-medium" title={view.name}>
+                                  {view.name}
+                                </p>
+                                <p className="text-xs text-muted">
+                                  {new Date(view.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex w-full items-center justify-end gap-1 sm:w-auto">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleApplyView(view.id)}
+                                  className="text-xs px-2"
+                                >
+                                  Apply
+                                </Button>
+                                {canDelete && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteView(view.id)}
+                                    className="text-xs px-2 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:flex-1"
+            >
               Close
             </Button>
             {canUpdate && currentViewId && (
@@ -203,12 +277,16 @@ export function SavedViewsModal({
                 variant="outline"
                 onClick={handleUpdateCurrentView}
                 disabled={!currentSavedView || upsertMutation.isPending}
-                className="flex-1"
+                className="w-full sm:flex-1"
               >
                 {upsertMutation.isPending ? 'Updating...' : 'Update Current'}
               </Button>
             )}
-            <Button variant="default" onClick={() => setShowSaveDialog(true)} className="flex-1">
+            <Button
+              variant="default"
+              onClick={() => setShowSaveDialog(true)}
+              className="w-full sm:flex-1"
+            >
               Save Current
             </Button>
           </div>
