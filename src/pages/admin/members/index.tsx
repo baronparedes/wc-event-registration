@@ -4,7 +4,7 @@ import { Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
-import { Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -137,20 +137,16 @@ export function AdminMembersPage() {
       </AdminPageShell.SubNav>
 
       <AdminPageShell.Filters>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
-            Search members
-            <input
-              type="search"
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+          <label className="flex w-full flex-col gap-1 text-sm text-muted">
+            <FormInputField
               value={searchTerm}
               onChange={(event) => handleSearchTermChange(event.target.value)}
               placeholder="Search by first name, last name, nickname, or member ID"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+              inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
             />
           </label>
-
-          <div className="flex flex-col gap-1 text-sm text-muted sm:min-w-48">
-            <span>Status</span>
+          <div className="flex w-full flex-col gap-1 text-sm text-muted">
             <FormSelectField
               ariaLabel="Status"
               value={statusFilter}
@@ -163,11 +159,10 @@ export function AdminMembersPage() {
               selectClassName="rounded-xl py-2"
             />
           </div>
-
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            className="w-full sm:w-auto"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
           >

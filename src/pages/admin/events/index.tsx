@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
-import { Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import {
@@ -123,21 +123,16 @@ export function AdminEventsPage() {
       </AdminPageShell.SubNav>
 
       <AdminPageShell.Filters>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
-            Search events
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(event) => handleSearchTermChange(event.target.value)}
-              placeholder="Search by event title or slug"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            />
-          </label>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+          <FormInputField
+            value={searchTerm}
+            onChange={(event) => handleSearchTermChange(event.target.value)}
+            placeholder="Search by event title or slug"
+            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+          />
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
           >
