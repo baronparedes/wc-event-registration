@@ -151,4 +151,31 @@ describe('usePublicEventListingQuery', () => {
       expect.objectContaining({ slug: 'open-no-close', listingStatus: 'open' }),
     ]);
   });
+
+  it('keeps same-day in-progress events as open instead of past', async () => {
+    mockQueryBuilder.order.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'evt-same-day',
+          slug: 'same-day',
+          title: 'Same Day',
+          starts_at: '2026-06-24T23:00:00.000Z',
+          ends_at: '2026-06-25T01:00:00.000Z',
+          registration_opens_at: '2026-06-01T00:00:00.000Z',
+          registration_closes_at: null,
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => usePublicEventListingQuery());
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual([
+      expect.objectContaining({ slug: 'same-day', listingStatus: 'open' }),
+    ]);
+  });
 });

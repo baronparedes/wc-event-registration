@@ -61,7 +61,13 @@ describe('useAttendanceSettingsQuery', () => {
       attendance_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
-      timeslots: ['2026-07-10T10:30+08:00'],
+      timeslots: [
+        {
+          slot_at: '2026-07-10T10:30+08:00',
+          opens_at: null,
+          closes_at: null,
+        },
+      ],
       updated_at: '2026-07-01T01:00:00.000Z',
     });
   });
@@ -116,12 +122,26 @@ describe('useAttendanceSettingsQuery', () => {
       attendance_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
-      timeslots: ['2026-07-10T09:00+08:00', '2026-07-10T14:00+08:00'],
+      timeslots: [
+        {
+          slot_at: '2026-07-10T09:00+08:00',
+          opens_at: null,
+          closes_at: null,
+        },
+        {
+          slot_at: '2026-07-10T14:00+08:00',
+          opens_at: null,
+          closes_at: null,
+        },
+      ],
       updated_at: '2026-07-02T12:00:00.000Z',
     };
 
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
-      data: settingsData,
+      data: {
+        ...settingsData,
+        timeslots: ['2026-07-10T09:00+08:00', '2026-07-10T14:00+08:00'],
+      },
       error: null,
     });
 
@@ -195,9 +215,21 @@ describe('useAttendanceSettingsQuery', () => {
 
   it('handles multiple timeslots correctly', async () => {
     const timeslots = [
-      '2026-07-10T09:00+08:00',
-      '2026-07-10T13:00+08:00',
-      '2026-07-10T17:00+08:00',
+      {
+        slot_at: '2026-07-10T09:00+08:00',
+        opens_at: null,
+        closes_at: null,
+      },
+      {
+        slot_at: '2026-07-10T13:00+08:00',
+        opens_at: null,
+        closes_at: null,
+      },
+      {
+        slot_at: '2026-07-10T17:00+08:00',
+        opens_at: null,
+        closes_at: null,
+      },
     ];
 
     mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
@@ -206,7 +238,7 @@ describe('useAttendanceSettingsQuery', () => {
         attendance_enabled: true,
         timeslot_enabled: true,
         enforce_check_in_event_window: true,
-        timeslots,
+        timeslots: timeslots.map((slot) => slot.slot_at),
         updated_at: '2026-07-01T00:00:00Z',
       },
       error: null,

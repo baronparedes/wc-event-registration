@@ -7,12 +7,7 @@ import { AdminPageShell } from '@/components/layout';
 import { Button, EventHeaderCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { StepIndicator } from '@/components/ui/StepIndicator';
-import {
-  ROUTE_PATHS,
-  TIMING,
-  toAdminEventAttendance,
-  toEventRegistration,
-} from '@/config/constants';
+import { ROUTE_PATHS, TIMING, toAdminEventAttendance } from '@/config/constants';
 import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
   useAttendanceSettingsQuery,
@@ -20,9 +15,13 @@ import {
 } from '@/hooks/domain/attendance/queries';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { useWizardStepScroll } from '@/hooks/utils';
+import { useScanBuffer, useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
-import { searchAttendeesWithRfidFallback } from '@/lib/domain/attendance';
+import {
+  isAutoWindowModeEnabled,
+  resolveActiveTimeslot,
+  searchAttendeesWithRfidFallback,
+} from '@/lib/domain/attendance';
 import { canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -80,7 +79,6 @@ export function AdminAttendanceCheckInPage() {
   const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null);
   const [confirmedRegistrationId, setConfirmedRegistrationId] = useState<string | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResult | null>(null);
-  const [suggestedSlotNowMs, setSuggestedSlotNowMs] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const searchStepRef = useRef<HTMLDivElement | null>(null);
@@ -98,6 +96,18 @@ export function AdminAttendanceCheckInPage() {
   const shouldListenRealtime = attendanceEnabled && !isCheckInBlockedByWindow;
   const timeslotEnabled = settings?.timeslot_enabled ?? false;
   const timeslots = useMemo(() => settings?.timeslots ?? [], [settings]);
+  const autoWindowModeEnabled = useMemo(
+    () =>
+      isAutoWindowModeEnabled({
+        timeslot_enabled: timeslotEnabled,
+        timeslots,
+      }),
+    [timeslotEnabled, timeslots],
+  );
+  const activeTimeslot = useMemo(
+    () => resolveActiveTimeslot(new Date(nowMs).toISOString(), timeslots),
+    [nowMs, timeslots],
+  );
   const {
     attendees: cachedAttendees,
     cachedAt,
@@ -132,28 +142,26 @@ export function AdminAttendanceCheckInPage() {
       return '';
     }
 
+    if (autoWindowModeEnabled) {
+      return activeTimeslot?.slot_at ?? '';
+    }
+
     const validSlots = timeslots
-      .map((slot) => ({ slot, time: Date.parse(slot) }))
+      .map((slot) => ({ slot: slot.slot_at, time: Date.parse(slot.slot_at) }))
       .filter((entry) => Number.isFinite(entry.time))
       .sort((a, b) => a.time - b.time);
 
     if (validSlots.length === 0) {
-      return timeslots[0] ?? '';
+      return timeslots[0]?.slot_at ?? '';
     }
 
-    if (suggestedSlotNowMs === null) {
-      return validSlots[0].slot;
-    }
-
-    const latestPastOrCurrent = [...validSlots]
-      .reverse()
-      .find((entry) => entry.time <= suggestedSlotNowMs);
+    const latestPastOrCurrent = [...validSlots].reverse().find((entry) => entry.time <= nowMs);
     if (latestPastOrCurrent) {
       return latestPastOrCurrent.slot;
     }
 
     return validSlots[0].slot;
-  }, [timeslotEnabled, timeslots, suggestedSlotNowMs]);
+  }, [activeTimeslot, autoWindowModeEnabled, nowMs, timeslotEnabled, timeslots]);
   const selectedResultId = useMemo(() => {
     if (selectedRegistrationId) {
       return results.some((result) => result.registration_id === selectedRegistrationId)
@@ -166,10 +174,6 @@ export function AdminAttendanceCheckInPage() {
   const confirmedAttendee = useMemo(
     () => results.find((result) => result.registration_id === confirmedRegistrationId) ?? null,
     [confirmedRegistrationId, results],
-  );
-  const selectedAttendee = useMemo(
-    () => results.find((result) => result.registration_id === selectedResultId) ?? null,
-    [results, selectedResultId],
   );
 
   const activeStep = useMemo(() => {
@@ -188,6 +192,10 @@ export function AdminAttendanceCheckInPage() {
 
     return 1;
   }, [confirmedAttendee, submittedSearchToken, results.length]);
+
+  const isAwaitingNextAttendee =
+    activeStep === 3 &&
+    (Boolean(checkInResult) || confirmedAttendee?.check_in_status === 'checked_in');
 
   const cacheStatusMessage = useMemo(() => {
     if (cacheLoading || cacheFetching) {
@@ -208,6 +216,21 @@ export function AdminAttendanceCheckInPage() {
   }, [cacheError, cacheFetching, cacheLoading, cachedAt, cachedAttendees, isCacheError]);
 
   useWizardStepScroll(activeStep, [searchStepRef, selectStepRef, confirmStepRef]);
+
+  const handleScanFromConfirmation = useCallback((scanValue: string) => {
+    const normalized = scanValue.trim();
+    if (!normalized) {
+      return;
+    }
+
+    setSearchToken(normalized);
+    setSubmittedSearchToken(normalized);
+    setSelectedRegistrationId(null);
+    setConfirmedRegistrationId(null);
+    setCheckInResult(null);
+  }, []);
+
+  useScanBuffer(handleScanFromConfirmation, isAwaitingNextAttendee);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -240,7 +263,6 @@ export function AdminAttendanceCheckInPage() {
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
-    setSuggestedSlotNowMs(null);
   }
 
   const handleBackToLookup = useCallback(() => {
@@ -249,7 +271,6 @@ export function AdminAttendanceCheckInPage() {
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
-    setSuggestedSlotNowMs(null);
   }, []);
 
   function handleReadyForNext() {
@@ -259,23 +280,32 @@ export function AdminAttendanceCheckInPage() {
   function handleBackToMatches() {
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
-    setSuggestedSlotNowMs(null);
   }
 
-  function handleConfirmSelection() {
-    if (!selectedResultId) {
+  function handleConfirmSelection(registrationId: string) {
+    if (!registrationId) {
       return;
     }
 
-    setConfirmedRegistrationId(selectedResultId);
+    setConfirmedRegistrationId(registrationId);
     setCheckInResult(null);
-    setSuggestedSlotNowMs(Date.now());
   }
 
   async function submitCheckIn(slotOverride?: string) {
     if (!eventId || !confirmedAttendee) return;
 
     const finalSlot = slotOverride?.trim() ?? '';
+    const selectedSlot = finalSlot
+      ? (timeslots.find((slot) => slot.slot_at === finalSlot) ?? null)
+      : null;
+    const isSelectedSlotUnrestricted = Boolean(
+      selectedSlot && (!selectedSlot.opens_at || !selectedSlot.closes_at),
+    );
+
+    if (autoWindowModeEnabled && !activeTimeslot && !isSelectedSlotUnrestricted) {
+      toast.error('No active timeslot window right now.');
+      return;
+    }
 
     if (timeslotEnabled && timeslots.length > 0 && !finalSlot) {
       toast.error('Timeslot selection is required for this event.');
@@ -442,23 +472,7 @@ export function AdminAttendanceCheckInPage() {
               onSubmit={handleSubmitSearch}
               notFoundActions={
                 <div className="flex flex-wrap gap-2">
-                  {registrationOpen ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (event) {
-                          window.open(
-                            toEventRegistration(event.slug),
-                            '_blank',
-                            'noopener,noreferrer',
-                          );
-                        }
-                      }}
-                    >
-                      Open Registration Page
-                    </Button>
-                  ) : (
+                  {!registrationOpen && (
                     <p className="text-sm text-muted">
                       Registration is closed. Ask an admin to reopen registration before check-in.
                     </p>
@@ -474,7 +488,6 @@ export function AdminAttendanceCheckInPage() {
             <AttendeeSelectStep
               results={results}
               selectedResultId={selectedResultId}
-              selectedAttendee={selectedAttendee}
               searchError={
                 isCacheError && cacheError && cacheError instanceof Error
                   ? new Error('Failed to load attendee cache')
@@ -501,9 +514,12 @@ export function AdminAttendanceCheckInPage() {
             <AttendeeConfirmStep
               attendee={confirmedAttendee}
               checkInResult={checkInResult}
+              currentTimeMs={nowMs}
               isSubmitting={checkInMutation.isPending}
               timeslotEnabled={timeslotEnabled}
               timeslots={timeslots}
+              autoWindowModeEnabled={autoWindowModeEnabled}
+              activeSlot={activeTimeslot?.slot_at ?? null}
               suggestedSlot={suggestedSlot}
               onTimeslotConfirm={(slot) => {
                 void submitCheckIn(slot);

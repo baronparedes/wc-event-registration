@@ -27,6 +27,7 @@ export function usePublicEventListingQuery() {
 
       return rows.flatMap((event) => {
         const startsAt = event.starts_at ? Date.parse(event.starts_at) : null;
+        const endsAt = event.ends_at ? Date.parse(event.ends_at) : null;
         const opensAt = event.registration_opens_at
           ? Date.parse(event.registration_opens_at)
           : null;
@@ -34,7 +35,11 @@ export function usePublicEventListingQuery() {
           ? Date.parse(event.registration_closes_at)
           : null;
         const isRegistrationOpen = closesAt === null || nowMs < closesAt;
-        const isRecentPast = startsAt !== null && startsAt >= threeMonthsAgoMs && startsAt < nowMs;
+        const pastReferenceAt = endsAt ?? startsAt;
+        const isRecentPast =
+          pastReferenceAt !== null &&
+          pastReferenceAt >= threeMonthsAgoMs &&
+          pastReferenceAt < nowMs;
 
         const listingStatus: PublicEventListingItem['listingStatus'] | null = isRecentPast
           ? 'past'

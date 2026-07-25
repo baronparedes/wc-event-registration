@@ -53,6 +53,7 @@ export const Avatar: React.FC<AvatarProps> = ({ name, size = 'md', className = '
       {initials}
       {shouldShowImage && (
         <img
+          aria-label={`Avatar of ${name}`}
           src={avatarUrl}
           alt={name}
           className={`absolute inset-0 h-full w-full rounded-full object-cover transition-opacity duration-200 ${

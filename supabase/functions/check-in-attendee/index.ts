@@ -13,6 +13,58 @@ const checkInAttendeeRequestSchema = z.object({
 
 type CheckInAttendeeRequest = z.infer<typeof checkInAttendeeRequestSchema>;
 
+type AttendanceTimeslotConfig = {
+  slot_at: string;
+  opens_at: string | null;
+  closes_at: string | null;
+};
+
+function normalizeAttendanceTimeslots(
+  timeslots: Array<string | AttendanceTimeslotConfig> | null | undefined,
+): AttendanceTimeslotConfig[] {
+  if (!Array.isArray(timeslots)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+
+  return timeslots
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        const slotAt = entry.trim();
+
+        return slotAt.length > 0 ? { slot_at: slotAt, opens_at: null, closes_at: null } : null;
+      }
+
+      if (!entry || typeof entry !== 'object' || typeof entry.slot_at !== 'string') {
+        return null;
+      }
+
+      const slotAt = entry.slot_at.trim();
+
+      if (slotAt.length === 0) {
+        return null;
+      }
+
+      return {
+        slot_at: slotAt,
+        opens_at: typeof entry.opens_at === 'string' ? entry.opens_at.trim() || null : null,
+        closes_at: typeof entry.closes_at === 'string' ? entry.closes_at.trim() || null : null,
+      };
+    })
+    .filter((entry): entry is AttendanceTimeslotConfig => entry !== null)
+    .filter((entry) => {
+      const key = `${entry.slot_at}|${entry.opens_at ?? ''}|${entry.closes_at ?? ''}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+}
+
 Deno.serve(async (req) => {
   const guard = await useEdgeHook({
     req,
@@ -145,8 +197,8 @@ Deno.serve(async (req) => {
 
     const normalizedSlot = slot?.trim();
     const shouldRecordSlot = Boolean(normalizedSlot);
-    const configuredSlots = (settings.timeslots ?? []).map((entry) => entry.trim()).filter(Boolean);
-    const configuredSlotSet = new Set(configuredSlots);
+    const configuredSlots = normalizeAttendanceTimeslots(settings.timeslots);
+    const configuredSlotSet = new Set(configuredSlots.map((entry) => entry.slot_at));
 
     if (settings.timeslot_enabled) {
       if (!normalizedSlot) {

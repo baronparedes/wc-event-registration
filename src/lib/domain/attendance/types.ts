@@ -5,12 +5,18 @@ export type AttendeeKind = 'registered' | 'public';
 
 export type CheckInStatus = 'checked_in' | 'already_checked_in' | 'rejected';
 
+export type AttendanceTimeslotConfig = {
+  slot_at: string;
+  opens_at: string | null;
+  closes_at: string | null;
+};
+
 export type AttendanceSettings = {
   event_id: string;
   attendance_enabled: boolean;
   timeslot_enabled: boolean;
   enforce_check_in_event_window: boolean;
-  timeslots: string[];
+  timeslots: AttendanceTimeslotConfig[];
   updated_at: string;
 };
 

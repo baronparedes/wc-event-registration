@@ -3,13 +3,21 @@ import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
 
+const isoDateTimeStringSchema = z.string().trim().datetime({ offset: true });
+
+const attendanceTimeslotConfigSchema = z.object({
+  slot_at: isoDateTimeStringSchema,
+  opens_at: isoDateTimeStringSchema.nullable(),
+  closes_at: isoDateTimeStringSchema.nullable(),
+});
+
 const updateAttendanceSettingsSchema = z
   .object({
     event_id: z.string().uuid('Invalid event ID.'),
     attendance_enabled: z.boolean(),
     timeslot_enabled: z.boolean(),
     enforce_check_in_event_window: z.boolean().default(true),
-    timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
+    timeslots: z.array(attendanceTimeslotConfigSchema).default([]),
   })
   .superRefine((value, context) => {
     if (!value.attendance_enabled && value.timeslot_enabled) {
@@ -27,24 +35,92 @@ const updateAttendanceSettingsSchema = z
         path: ['timeslots'],
       });
     }
+
+    value.timeslots.forEach((slot, index) => {
+      const hasOpen = Boolean(slot.opens_at);
+      const hasClose = Boolean(slot.closes_at);
+
+      if (hasOpen !== hasClose) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Timeslot windows require both open and close date-times.',
+          path: ['timeslots', index, hasOpen ? 'closes_at' : 'opens_at'],
+        });
+      }
+
+      if (!hasOpen || !hasClose) {
+        return;
+      }
+
+      const opensAt = Date.parse(slot.opens_at!);
+      const slotAt = Date.parse(slot.slot_at);
+      const closesAt = Date.parse(slot.closes_at!);
+
+      if (opensAt > slotAt || slotAt > closesAt) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Timeslot open, slot, and close date-times must satisfy opens_at <= slot_at <= closes_at.',
+          path: ['timeslots', index, 'slot_at'],
+        });
+      }
+    });
+
+    const sortedWindows = value.timeslots
+      .map((slot, index) => ({ slot, index }))
+      .filter(({ slot }) => Boolean(slot.opens_at && slot.closes_at))
+      .map(({ slot, index }) => ({
+        index,
+        opensAt: Date.parse(slot.opens_at!),
+        closesAt: Date.parse(slot.closes_at!),
+      }))
+      .sort((left, right) => left.opensAt - right.opensAt);
+
+    for (let index = 1; index < sortedWindows.length; index += 1) {
+      if (sortedWindows[index].opensAt <= sortedWindows[index - 1].closesAt) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Timeslot windows cannot overlap.',
+          path: ['timeslots', sortedWindows[index].index, 'opens_at'],
+        });
+      }
+    }
   });
 
-function normalizeTimeslots(timeslots: string[]): string[] {
+type AttendanceTimeslotConfig = z.infer<typeof attendanceTimeslotConfigSchema>;
+
+function normalizeOptionalIsoString(value: string | null): string | null {
+  if (value === null) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeTimeslots(timeslots: AttendanceTimeslotConfig[]): AttendanceTimeslotConfig[] {
   const seen = new Set<string>();
 
   return timeslots
-    .map((slot) => slot.trim())
+    .map((slot) => ({
+      slot_at: slot.slot_at.trim(),
+      opens_at: normalizeOptionalIsoString(slot.opens_at),
+      closes_at: normalizeOptionalIsoString(slot.closes_at),
+    }))
     .filter((slot) => {
-      if (slot.length === 0 || seen.has(slot)) {
+      const key = `${slot.slot_at}|${slot.opens_at ?? ''}|${slot.closes_at ?? ''}`;
+
+      if (slot.slot_at.length === 0 || seen.has(key)) {
         return false;
       }
-      seen.add(slot);
+      seen.add(key);
       return true;
-    });
+    })
+    .sort((left, right) => Date.parse(left.slot_at) - Date.parse(right.slot_at));
 }
 
-function isWithinEventWindow(slot: string, startsAt: string, endsAt: string): boolean {
-  const slotMs = new Date(slot).getTime();
+function isWithinEventWindow(value: string, startsAt: string, endsAt: string): boolean {
+  const slotMs = new Date(value).getTime();
   const startMs = new Date(startsAt).getTime();
   const endMs = new Date(endsAt).getTime();
 
@@ -123,7 +199,12 @@ Deno.serve(async (req) => {
       }
 
       const hasOutOfRangeTimeslot = normalizedTimeslots.some(
-        (slot) => !isWithinEventWindow(slot, event.starts_at, event.ends_at),
+        (slot) =>
+          !isWithinEventWindow(slot.slot_at, event.starts_at, event.ends_at) ||
+          (slot.opens_at !== null &&
+            !isWithinEventWindow(slot.opens_at, event.starts_at, event.ends_at)) ||
+          (slot.closes_at !== null &&
+            !isWithinEventWindow(slot.closes_at, event.starts_at, event.ends_at)),
       );
 
       if (hasOutOfRangeTimeslot) {
@@ -132,7 +213,7 @@ Deno.serve(async (req) => {
           {
             success: false,
             error:
-              'Timeslots must be valid date-time values within the event start and end date-time window.',
+              'Timeslots and optional window bounds must be valid date-time values within the event start and end date-time window.',
             error_code: 'INVALID_TIMESLOT_RANGE',
           },
           400,

@@ -50,7 +50,13 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       attendance_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
-      timeslots: ['2026-07-10T10:30+08:00'],
+      timeslots: [
+        {
+          slot_at: '2026-07-10T10:30+08:00',
+          opens_at: null,
+          closes_at: null,
+        },
+      ],
     };
 
     const response = await act(async () => result.current.mutateAsync(payload));
@@ -62,7 +68,13 @@ describe('useUpdateAttendanceSettingsMutation', () => {
       attendance_enabled: true,
       timeslot_enabled: true,
       enforce_check_in_event_window: true,
-      timeslots: ['2026-07-10T10:30+08:00'],
+      timeslots: [
+        {
+          slot_at: '2026-07-10T10:30+08:00',
+          opens_at: null,
+          closes_at: null,
+        },
+      ],
       updated_at: '2026-07-01T01:00:00.000Z',
     });
 

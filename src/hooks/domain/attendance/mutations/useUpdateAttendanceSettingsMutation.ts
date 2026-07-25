@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import type { AttendanceSettings, UpdateAttendanceSettingsInput } from '@/lib/domain/attendance';
+import {
+  type AttendanceSettings,
+  type UpdateAttendanceSettingsInput,
+  normalizeAttendanceTimeslots,
+} from '@/lib/domain/attendance';
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 type UpdateAttendanceSettingsSuccess = {
@@ -32,7 +36,10 @@ export function useUpdateAttendanceSettingsMutation() {
         throw new Error(response.error || 'Failed to update attendance settings.');
       }
 
-      return response.settings;
+      return {
+        ...response.settings,
+        timeslots: normalizeAttendanceTimeslots(response.settings.timeslots),
+      };
     },
     onSuccess: (_settings, variables) => {
       queryClient.invalidateQueries({

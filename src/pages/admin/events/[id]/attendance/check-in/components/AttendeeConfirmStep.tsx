@@ -3,8 +3,14 @@ import { Avatar } from '@/components/ui/Avatar';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { WizardStep } from '@/components/ui/WizardStep';
 import { useFieldAnswerTextFormatter } from '@/hooks/utils';
-import type { AttendeeSearchResult, CheckInResult } from '@/lib/domain/attendance';
+import type {
+  AttendanceTimeslotConfig,
+  AttendeeSearchResult,
+  CheckInResult,
+} from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
+
+import { AttendeeTimeslotSelectionPanel } from './AttendeeTimeslotSelectionPanel';
 
 function getAnswerCardsItemClass(cardCount: number): string {
   if (cardCount <= 1) {
@@ -21,9 +27,12 @@ function getAnswerCardsItemClass(cardCount: number): string {
 type AttendeeConfirmStepProps = {
   attendee: AttendeeSearchResult | null;
   checkInResult: CheckInResult | null;
+  currentTimeMs: number;
   isSubmitting: boolean;
   timeslotEnabled: boolean;
-  timeslots: string[];
+  timeslots: AttendanceTimeslotConfig[];
+  autoWindowModeEnabled: boolean;
+  activeSlot: string | null;
   suggestedSlot: string;
   onTimeslotConfirm: (slot: string) => void;
   onCheckIn: () => void;
@@ -36,9 +45,12 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
   const {
     attendee,
     checkInResult,
+    currentTimeMs,
     isSubmitting,
     timeslotEnabled,
     timeslots,
+    autoWindowModeEnabled,
+    activeSlot,
     suggestedSlot,
     onTimeslotConfirm,
     onCheckIn,
@@ -138,11 +150,9 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
             </dl>
           </div>
 
-          <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-4 shadow-sm">
-            <p className="text-xl font-semibold text-text">Registration answers</p>
-            {attendee.registration_answers.length === 0 ? (
-              <p className="mt-2 text-base text-muted">No registration answers available.</p>
-            ) : (
+          {attendee.registration_answers.length > 0 && (
+            <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-4 shadow-sm">
+              <p className="text-xl font-semibold text-text">Registration answers</p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {attendee.registration_answers.map((answer) => {
                   const answerText = getAnswerText(answer.field_type, answer);
@@ -165,16 +175,12 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                   );
                 })}
               </ul>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-4 shadow-sm">
-            <p className="text-xl font-semibold text-text">Attendance details</p>
-            {attendee.attendance_answers.length === 0 ? (
-              <p className="mt-2 text-base text-muted">
-                No pre-event attendance details saved yet.
-              </p>
-            ) : (
+          {attendee.attendance_answers.length > 0 && (
+            <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-4 shadow-sm">
+              <p className="text-xl font-semibold text-text">Attendance details</p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {attendee.attendance_answers.map((answer) => {
                   const answerText = getAnswerText(answer.field_type, answer);
@@ -197,8 +203,8 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                   );
                 })}
               </ul>
-            )}
-          </div>
+            </div>
+          )}
 
           {checkInResult && (
             <div
@@ -220,38 +226,15 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
           )}
 
           {!shouldShowReadyForNext && requiresTimeslotSelection && (
-            <div className="rounded-xl border border-border bg-background p-3">
-              <p className="text-sm font-medium text-text">Timeslot</p>
-              <p className="mt-1 text-xs text-muted">
-                Tap one timeslot to confirm attendance immediately.
-              </p>
-
-              <div className="mt-2 flex flex-col gap-1.5">
-                {timeslots.map((slot) => {
-                  const isSuggested = suggestedSlot === slot;
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => onTimeslotConfirm(slot)}
-                      disabled={isSubmitting}
-                      className={`min-h-10 w-full rounded-xl border-2 px-3 py-2 text-center text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                        isSuggested
-                          ? 'border-primary bg-primary text-white shadow-xs hover:bg-primary/90'
-                          : 'border-text/40 bg-surface text-text hover:border-primary/70 hover:bg-blue-50'
-                      }`}
-                    >
-                      <span className="block">{formatDateTime(slot, slot)}</span>
-                      {isSuggested && (
-                        <span className="mt-1.5 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                          Suggested
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <AttendeeTimeslotSelectionPanel
+              autoWindowModeEnabled={autoWindowModeEnabled}
+              activeSlot={activeSlot}
+              currentTimeMs={currentTimeMs}
+              isSubmitting={isSubmitting}
+              suggestedSlot={suggestedSlot}
+              timeslots={timeslots}
+              onTimeslotConfirm={onTimeslotConfirm}
+            />
           )}
 
           <div className="sticky bottom-1.5 space-y-1.5 rounded-xl bg-surface/95 p-1.5 backdrop-blur sm:static sm:bg-transparent sm:p-0">
@@ -263,7 +246,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
               <Button
                 type="button"
                 fullWidth={true}
-                size="md"
+                size="lg"
                 onClick={onCheckIn}
                 disabled={isSubmitting}
               >

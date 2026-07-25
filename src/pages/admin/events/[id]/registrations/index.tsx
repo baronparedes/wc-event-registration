@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
+import { FormInputField } from '@/components/ui';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { Button } from '@/components/ui/Button';
 import {
@@ -171,21 +172,16 @@ export function AdminRegistrationsPage() {
       )}
 
       <AdminPageShell.Filters>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
-            Search registrations
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(event) => handleSearchTermChange(event.target.value)}
-              placeholder="Search by name, member ID, or email"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            />
-          </label>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+          <FormInputField
+            value={searchTerm}
+            onChange={(event) => handleSearchTermChange(event.target.value)}
+            placeholder="Search by name, member ID, or email"
+            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+          />
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
           >

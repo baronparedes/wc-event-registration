@@ -187,8 +187,8 @@ export function AdminUnregisteredMembersPage() {
       )}
 
       <AdminPageShell.Filters>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted sm:max-w-md">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <label className="flex w-full flex-col gap-1 text-sm text-muted">
             Search members
             <input
               type="search"
@@ -202,7 +202,7 @@ export function AdminUnregisteredMembersPage() {
             type="button"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
-            className="min-h-10 rounded-md border border-border px-3 py-2 text-sm font-medium text-text transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-10 w-full rounded-md border border-border px-3 py-2 text-sm font-medium text-text transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             Clear
           </button>

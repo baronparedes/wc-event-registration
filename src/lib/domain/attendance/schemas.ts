@@ -3,12 +3,85 @@ import { z } from 'zod';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import { buildDynamicAttendanceResponseSchema } from '@/lib/domain/attendance-fields';
 
+import type { AttendanceTimeslotConfig } from './types';
+
+const isoDateTimeStringSchema = z.string().trim().datetime({ offset: true });
+
+export const attendanceTimeslotConfigSchema = z.object({
+  slot_at: isoDateTimeStringSchema,
+  opens_at: isoDateTimeStringSchema.nullable(),
+  closes_at: isoDateTimeStringSchema.nullable(),
+});
+
+function isCompleteWindow(slot: AttendanceTimeslotConfig): boolean {
+  return Boolean(slot.opens_at && slot.closes_at);
+}
+
+function getTimestamp(value: string): number {
+  return Date.parse(value);
+}
+
+function validateTimeslotWindows(timeslots: AttendanceTimeslotConfig[], context: z.RefinementCtx) {
+  const completeWindows = timeslots
+    .map((slot, index) => ({ slot, index }))
+    .filter(({ slot }) => isCompleteWindow(slot));
+
+  timeslots.forEach((slot, index) => {
+    const hasOpen = Boolean(slot.opens_at);
+    const hasClose = Boolean(slot.closes_at);
+
+    if (hasOpen !== hasClose) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Timeslot windows require both open and close date-times.',
+        path: ['timeslots', index, hasOpen ? 'closes_at' : 'opens_at'],
+      });
+    }
+  });
+
+  completeWindows.forEach(({ slot, index }) => {
+    const opensAt = getTimestamp(slot.opens_at!);
+    const slotAt = getTimestamp(slot.slot_at);
+    const closesAt = getTimestamp(slot.closes_at!);
+
+    if (opensAt > slotAt || slotAt > closesAt) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Timeslot open, slot, and close date-times must satisfy opens_at <= slot_at <= closes_at.',
+        path: ['timeslots', index, 'slot_at'],
+      });
+    }
+  });
+
+  const sortedWindows = completeWindows
+    .map(({ slot, index }) => ({
+      index,
+      opensAt: getTimestamp(slot.opens_at!),
+      closesAt: getTimestamp(slot.closes_at!),
+    }))
+    .sort((left, right) => left.opensAt - right.opensAt);
+
+  for (let index = 1; index < sortedWindows.length; index += 1) {
+    const previous = sortedWindows[index - 1];
+    const current = sortedWindows[index];
+
+    if (current.opensAt <= previous.closesAt) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Timeslot windows cannot overlap.',
+        path: ['timeslots', current.index, 'opens_at'],
+      });
+    }
+  }
+}
+
 const attendanceSettingsBaseSchema = z.object({
   event_id: z.string().uuid('Invalid event ID'),
   attendance_enabled: z.boolean(),
   timeslot_enabled: z.boolean(),
   enforce_check_in_event_window: z.boolean().default(true),
-  timeslots: z.array(z.string().trim().min(1, 'Timeslot value cannot be blank')).default([]),
+  timeslots: z.array(attendanceTimeslotConfigSchema).default([]),
   updated_at: z.string().optional(),
 });
 
@@ -16,7 +89,7 @@ function applyAttendanceSettingsRules(
   value: {
     attendance_enabled: boolean;
     timeslot_enabled: boolean;
-    timeslots: string[];
+    timeslots: AttendanceTimeslotConfig[];
   },
   context: z.RefinementCtx,
 ) {
@@ -35,6 +108,8 @@ function applyAttendanceSettingsRules(
       path: ['timeslots'],
     });
   }
+
+  validateTimeslotWindows(value.timeslots, context);
 }
 
 export const attendanceSettingsSchema = attendanceSettingsBaseSchema.superRefine(
@@ -65,9 +140,8 @@ export const attendanceSlotPayloadSchema = z.object({
 
 export type AttendanceSlotPayloadInput = z.infer<typeof attendanceSlotPayloadSchema>;
 
-export function buildTimeslotSelectionSchema(configuredSlots: string[]) {
-  const normalizedSlots = configuredSlots.map((slot) => slot.trim()).filter(Boolean);
-  const allowedSlots = new Set(normalizedSlots);
+export function buildTimeslotSelectionSchema(configuredSlots: AttendanceTimeslotConfig[]) {
+  const allowedSlots = new Set(configuredSlots.map((slot) => slot.slot_at.trim()).filter(Boolean));
 
   return attendanceSlotPayloadSchema.refine((value) => allowedSlots.has(value.slot), {
     message: 'Selected timeslot is not configured for this event.',
