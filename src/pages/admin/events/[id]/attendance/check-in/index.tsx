@@ -8,7 +8,7 @@ import { Button, EventHeaderCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { ROUTE_PATHS, TIMING, toAdminEventAttendance } from '@/config/constants';
-import { useCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
+import { useQueuedCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
   useAttendanceSettingsQuery,
   useAttendeesLocalCacheQuery,
@@ -118,8 +118,13 @@ export function AdminAttendanceCheckInPage() {
     refresh: refreshCache,
     updateAttendee,
   } = useAttendeesLocalCacheQuery(eventId, { realtimeEnabled: shouldListenRealtime });
-  const checkInMutation = useCheckInAttendeeMutation();
+  const {
+    enqueueCheckIn,
+    pendingCount: pendingCheckInCount,
+    lastError: lastQueueError,
+  } = useQueuedCheckInAttendeeMutation(eventId, { refreshCache, updateAttendee });
   const canWrite = canWriteAdminData(authState?.adminRole);
+  const showQueueStatusBanner = pendingCheckInCount > 0 || Boolean(lastQueueError);
 
   const isLoading = eventLoading || settingsLoading;
   const registeredCount = cachedAttendees?.length ?? 0;
@@ -207,13 +212,22 @@ export function AdminAttendanceCheckInPage() {
     }
 
     if (cachedAttendees) {
-      return `${cachedAttendees.length} attendees cached${
+      const queueSuffix = pendingCheckInCount > 0 ? ` · ${pendingCheckInCount} queued` : '';
+      return `${cachedAttendees.length} attendees cached${queueSuffix}${
         cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''
       }`;
     }
 
     return null;
-  }, [cacheError, cacheFetching, cacheLoading, cachedAt, cachedAttendees, isCacheError]);
+  }, [
+    cacheError,
+    cacheFetching,
+    cacheLoading,
+    cachedAt,
+    cachedAttendees,
+    isCacheError,
+    pendingCheckInCount,
+  ]);
 
   useWizardStepScroll(activeStep, [searchStepRef, selectStepRef, confirmStepRef]);
 
@@ -313,7 +327,7 @@ export function AdminAttendanceCheckInPage() {
     }
 
     try {
-      const result = await checkInMutation.mutateAsync({
+      const payload = {
         event_id: eventId,
         attendee_kind: confirmedAttendee.attendee_kind,
         registration_id:
@@ -325,29 +339,20 @@ export function AdminAttendanceCheckInPage() {
             ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
             : undefined,
         slot: timeslotEnabled ? finalSlot || undefined : undefined,
-      });
+      };
 
-      setCheckInResult(result);
+      const { queued } = enqueueCheckIn(payload, confirmedAttendee.registration_id);
 
-      if (result.status === 'checked_in' || result.status === 'already_checked_in') {
-        updateAttendee(confirmedAttendee.registration_id, {
-          check_in_status: 'checked_in',
-          official_check_in_time: result.official_check_in_time,
-        });
-      }
-
-      if (result.status === 'checked_in') {
-        toast.success('Attendee checked in successfully.');
-        setTimeout(() => {
-          handleReadyForNext();
-        }, TIMING.registrationWizardStepThreeTimeoutMs);
-      } else if (result.status === 'already_checked_in') {
-        toast.info('Attendee was already checked in.');
+      if (!queued) {
+        toast.info('This check-in is already queued for sync.');
       } else {
-        toast.error(result.message);
+        toast.success('Check-in queued. Syncing in the background.');
       }
+
+      setCheckInResult(null);
+      handleReadyForNext();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to check in attendee.';
+      const message = error instanceof Error ? error.message : 'Failed to queue check-in.';
       toast.error(message);
     }
   }
@@ -450,6 +455,19 @@ export function AdminAttendanceCheckInPage() {
         />
       )}
 
+      {showCheckInWizard && showQueueStatusBanner && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+          <p className="text-sm font-medium text-blue-800">
+            {pendingCheckInCount > 0
+              ? `${pendingCheckInCount} check-in${pendingCheckInCount === 1 ? '' : 's'} queued for background sync.`
+              : 'A queued check-in needs attention.'}
+          </p>
+          {lastQueueError && (
+            <p className="mt-1 text-xs text-blue-700">Last sync issue: {lastQueueError}</p>
+          )}
+        </div>
+      )}
+
       {showCheckInWizard && (
         <StepIndicator
           currentStep={activeStep}
@@ -515,7 +533,7 @@ export function AdminAttendanceCheckInPage() {
               attendee={confirmedAttendee}
               checkInResult={checkInResult}
               currentTimeMs={nowMs}
-              isSubmitting={checkInMutation.isPending}
+              isSubmitting={false}
               timeslotEnabled={timeslotEnabled}
               timeslots={timeslots}
               autoWindowModeEnabled={autoWindowModeEnabled}
