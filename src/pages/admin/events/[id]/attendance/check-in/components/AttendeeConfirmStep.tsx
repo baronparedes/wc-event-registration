@@ -74,7 +74,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
         <div className="space-y-3">
           {avatarName && attendee.attendee_kind == 'registered' && (
             <div className="flex items-center justify-center">
-              <Avatar size="xl" name={avatarName} />
+              <Avatar size="2xl" name={avatarName} />
             </div>
           )}
           <div
