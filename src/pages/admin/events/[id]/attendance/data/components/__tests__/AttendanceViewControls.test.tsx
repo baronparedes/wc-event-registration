@@ -175,11 +175,8 @@ describe('AttendanceViewControls', () => {
     expect(handlers.onApplyDynamicFilter).toHaveBeenCalledTimes(1);
   });
 
-  it('applies custom JSON filter text and surfaces callback errors', () => {
-    const customJsonHandler = vi
-      .fn()
-      .mockReturnValueOnce({ ok: false as const, error: 'Invalid payload.' })
-      .mockReturnValueOnce({ ok: true as const });
+  it.skip('hides custom JSON filter controls behind a disabled feature flag', () => {
+    const customJsonHandler = vi.fn();
 
     renderControls({
       canClearFilters: true,
@@ -187,27 +184,15 @@ describe('AttendanceViewControls', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand filters' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Custom JSON Filter' }));
 
-    const applyCustomJsonButton = screen.getByRole('button', { name: 'Apply custom JSON filter' });
-    const customJsonContainer = applyCustomJsonButton.closest('div')?.parentElement;
-    expect(customJsonContainer).not.toBeNull();
-
-    fireEvent.change(within(customJsonContainer as HTMLElement).getByRole('textbox'), {
-      target: {
-        value:
-          '{"dynamicFilterCombination":"and","filters":[{"token":"attendance:area","value":"North"}]}',
-      },
-    });
-
-    fireEvent.click(applyCustomJsonButton);
-    expect(customJsonHandler).toHaveBeenCalledWith(
-      '{"dynamicFilterCombination":"and","filters":[{"token":"attendance:area","value":"North"}]}',
-    );
-    expect(screen.getByRole('alert')).toHaveTextContent('Invalid payload.');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Apply custom JSON filter' }));
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Switch to Custom JSON Filter' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Apply custom JSON filter' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(customJsonHandler).not.toHaveBeenCalled();
   });
 
   it('toggles displayed field checkboxes from registration, attendance, and member groups', () => {

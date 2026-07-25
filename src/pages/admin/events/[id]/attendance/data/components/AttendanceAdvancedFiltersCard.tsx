@@ -11,6 +11,8 @@ import type {
 } from '@/lib/domain/attendance-views';
 import { toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
+const ENABLE_CUSTOM_JSON_FILTER = false;
+
 type AttendanceAdvancedFiltersCardProps = {
   dynamicFilterCombination: DynamicFilterCombination;
   dynamicFilterFieldToken: string;
@@ -55,17 +57,19 @@ export function AttendanceAdvancedFiltersCard({
   return (
     <>
       <div className="grid gap-2 border-t border-border pt-3 md:col-span-3 lg:grid-cols-4 lg:items-end">
-        <div className="flex justify-end lg:col-span-4">
-          <button
-            type="button"
-            className="p-0 text-xs font-medium leading-none text-primary underline-offset-2 transition hover:underline"
-            onClick={() => setIsCustomJsonMode((current) => !current)}
-          >
-            {isCustomJsonMode ? 'Switch to Field Filter' : 'Switch to Custom JSON Filter'}
-          </button>
-        </div>
+        {ENABLE_CUSTOM_JSON_FILTER && (
+          <div className="flex justify-end lg:col-span-4">
+            <button
+              type="button"
+              className="p-0 text-xs font-medium leading-none text-primary underline-offset-2 transition hover:underline"
+              onClick={() => setIsCustomJsonMode((current) => !current)}
+            >
+              {isCustomJsonMode ? 'Switch to Field Filter' : 'Switch to Custom JSON Filter'}
+            </button>
+          </div>
+        )}
 
-        {!isCustomJsonMode && (
+        {(!ENABLE_CUSTOM_JSON_FILTER || !isCustomJsonMode) && (
           <>
             <FormSelectField
               ariaLabel="Field-Based Conditions"
@@ -146,7 +150,7 @@ export function AttendanceAdvancedFiltersCard({
           </>
         )}
 
-        {isCustomJsonMode && (
+        {ENABLE_CUSTOM_JSON_FILTER && isCustomJsonMode && (
           <div className="md:col-span-3 lg:col-span-4">
             <label className="flex flex-col gap-1 text-sm text-muted">
               <textarea
