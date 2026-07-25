@@ -81,10 +81,14 @@ export function SavedViewsModal({
       groups.set(groupName, currentGroup);
     });
 
-    return Array.from(groups.entries()).map(([groupName, views]) => ({
-      groupName,
-      views,
-    }));
+    return Array.from(groups.entries())
+      .sort(([leftGroupName], [rightGroupName]) =>
+        leftGroupName.localeCompare(rightGroupName, undefined, { sensitivity: 'base' }),
+      )
+      .map(([groupName, views]) => ({
+        groupName,
+        views,
+      }));
   }, [filteredSavedViews]);
   const currentSavedView = currentViewId
     ? savedViews.find((view) => view.id === currentViewId)
