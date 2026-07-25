@@ -45,6 +45,7 @@ export function EventRegistrationPage() {
     handleCancelUpdate,
     enterWizardConfirmStep,
     isEffectiveRegistrationBlocked,
+    shouldBypassDynamicFieldsStepCard,
   } = useEventRegistrationPageState();
 
   const publicRegistrationAccess =
@@ -136,32 +137,41 @@ export function EventRegistrationPage() {
 
           {activeWizardStep === 3 && (
             <div ref={dynamicFieldsStepRef} className="space-y-4 scroll-mt-24">
-              <DynamicFieldsStepCard
-                matchedMember={memberLookup.matchedMember}
-                isLocked={memberLookup.isRegistrationBlocked}
-                shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
-                lockedMessage={memberLookup.lockedStepMessage}
-                onCancelUpdate={handleCancelUpdate}
-                isLoadingFields={eventFieldsQuery.isLoading}
-                isFieldsError={eventFieldsQuery.isError}
-                fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
-                activeFields={activeFields}
-                remainingSlotsByFieldOption={remainingSlotsByFieldOption}
-                remainingSlotsByRoleByFieldOption={remainingSlotsByRoleByFieldOption}
-                dynamicForm={dynamicForm}
-                onSubmit={handleSubmitRegistration}
-                fieldErrorMessage={fieldErrorMessage}
-                isSubmitPending={submitMutation.isPending}
-                submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
-                submitErrorMessage={submitErrorMessage}
-                submitSuccessMessage={submitSuccessMessage}
-                isRegistrationConfirmed={isRegistrationConfirmed}
-                onConfirmAcknowledged={resetToStepOne}
-                countdownMs={TIMING.registrationWizardConfirmedResetMs}
-                onCountdownTimeout={resetToStepOne}
-                inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
-                onInactivityTimeout={resetToStepOne}
-              />
+              {shouldBypassDynamicFieldsStepCard ? (
+                <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+                  <p className="text-lg font-semibold text-text">Submitting registration...</p>
+                  <p className="mt-1 text-sm text-muted">
+                    No additional questions are required for this event.
+                  </p>
+                </div>
+              ) : (
+                <DynamicFieldsStepCard
+                  matchedMember={memberLookup.matchedMember}
+                  isLocked={memberLookup.isRegistrationBlocked}
+                  shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+                  lockedMessage={memberLookup.lockedStepMessage}
+                  onCancelUpdate={handleCancelUpdate}
+                  isLoadingFields={eventFieldsQuery.isLoading}
+                  isFieldsError={eventFieldsQuery.isError}
+                  fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
+                  activeFields={activeFields}
+                  remainingSlotsByFieldOption={remainingSlotsByFieldOption}
+                  remainingSlotsByRoleByFieldOption={remainingSlotsByRoleByFieldOption}
+                  dynamicForm={dynamicForm}
+                  onSubmit={handleSubmitRegistration}
+                  fieldErrorMessage={fieldErrorMessage}
+                  isSubmitPending={submitMutation.isPending}
+                  submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
+                  submitErrorMessage={submitErrorMessage}
+                  submitSuccessMessage={submitSuccessMessage}
+                  isRegistrationConfirmed={isRegistrationConfirmed}
+                  onConfirmAcknowledged={resetToStepOne}
+                  countdownMs={TIMING.registrationWizardConfirmedResetMs}
+                  onCountdownTimeout={resetToStepOne}
+                  inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+                  onInactivityTimeout={resetToStepOne}
+                />
+              )}
 
               {!isRegistrationConfirmed && (
                 <Button

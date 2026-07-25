@@ -593,4 +593,65 @@ describe('useEventRegistrationPageState', () => {
 
     titleAnchor.remove();
   });
+
+  it('does not bypass dynamic step when user has not explicitly entered step 3', () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    };
+    memberLookupState.verifiedMemberId = 'WC-001';
+    mockUsePublicEventFieldsQuery.mockReturnValue({
+      data: {
+        validFields: [],
+        issues: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    expect(result.current.shouldBypassDynamicFieldsStepCard).toBe(false);
+    expect(mockSubmitMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('auto-submits once when user enters step 3 and there are no active fields', async () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    };
+    memberLookupState.verifiedMemberId = 'WC-001';
+    mockUsePublicEventFieldsQuery.mockReturnValue({
+      data: {
+        validFields: [],
+        issues: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+    mockSubmitMutateAsync.mockResolvedValueOnce({
+      success: true,
+      registration_id: 'reg-no-fields',
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    act(() => {
+      result.current.enterWizardCompleteStep();
+    });
+
+    await waitFor(() => {
+      expect(mockSubmitMutateAsync).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isRegistrationConfirmed).toBe(true);
+    });
+  });
 });

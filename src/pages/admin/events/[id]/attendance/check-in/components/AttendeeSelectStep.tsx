@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-import { Check, Users } from 'lucide-react';
+import { Check, ChevronsRight, Users } from 'lucide-react';
 
-import { Button, EmptyState } from '@/components/ui';
+import { EmptyState } from '@/components/ui';
 import {
   ListTable,
   ListTableBody,
@@ -13,16 +13,18 @@ import {
   ListTableRow,
 } from '@/components/ui/ListTable';
 import { WizardStep } from '@/components/ui/WizardStep';
+import { useIsMobileViewport } from '@/hooks/utils';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
+
+import { Avatar } from '../../../../../../../components/ui/Avatar';
 
 type AttendeeSelectStepProps = {
   results: AttendeeSearchResult[];
   selectedResultId: string | null;
-  selectedAttendee: AttendeeSearchResult | null;
   searchError?: Error | null;
   onSelect: (registrationId: string) => void;
-  onConfirmSelection: () => void;
+  onConfirmSelection: (registrationId: string) => void;
   inactivityTimeoutMs?: number;
   onInactivityTimeout?: () => void;
 };
@@ -31,7 +33,6 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
   const {
     results,
     selectedResultId,
-    selectedAttendee,
     searchError,
     onSelect,
     onConfirmSelection,
@@ -40,10 +41,17 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
   } = props;
 
   const checkedInBadgeClass =
-    'inline-flex items-center rounded-full border border-emerald-950/30 bg-emerald-800 px-4 py-1.5 text-sm font-semibold text-white shadow-none';
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-emerald-950/30 bg-emerald-800 text-white shadow-none';
   const readyBadgeClass =
-    'inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-white';
+    'inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white';
   const lastAutoConfirmedRegistrationId = useRef<string | null>(null);
+
+  const handleSelectAndConfirm = (registrationId: string) => {
+    onSelect(registrationId);
+    onConfirmSelection(registrationId);
+  };
+
+  const isMobile = useIsMobileViewport();
 
   useEffect(() => {
     if (results.length !== 1) {
@@ -61,7 +69,7 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
     }
 
     lastAutoConfirmedRegistrationId.current = onlyResultId;
-    onConfirmSelection();
+    onConfirmSelection(onlyResultId);
   }, [onConfirmSelection, results, selectedResultId]);
 
   return (
@@ -89,138 +97,148 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="space-y-3 lg:hidden">
-              {results.map((result) => {
-                const isSelected = result.registration_id === selectedResultId;
-                return (
-                  <button
-                    key={result.registration_id}
-                    type="button"
-                    onClick={() => onSelect(result.registration_id)}
-                    className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                      isSelected
-                        ? 'border-primary bg-blue-50 shadow-md'
-                        : 'border-border bg-surface hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-2xl font-semibold text-text">{result.full_name}</p>
-                      <span
-                        className={
-                          result.check_in_status === 'checked_in'
-                            ? checkedInBadgeClass
-                            : readyBadgeClass
-                        }
-                      >
-                        {result.check_in_status === 'checked_in' ? 'Checked In' : 'Ready'}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-base text-muted">
-                      Member ID: {result.member_id ?? '—'}
-                    </p>
-                    <p className="text-base text-muted">
-                      Checked In At:{' '}
-                      {result.official_check_in_time
-                        ? formatDateTime(result.official_check_in_time)
-                        : '—'}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="hidden rounded-2xl border border-border bg-surface lg:block overflow-x-auto">
-              <ListTable className="text-lg">
-                <ListTableHead>
-                  <ListTableHeaderRow className="text-base normal-case tracking-normal">
-                    <ListTableHeaderCell className="px-6">Attendee</ListTableHeaderCell>
-                    <ListTableHeaderCell>Member ID</ListTableHeaderCell>
-                    <ListTableHeaderCell>Status</ListTableHeaderCell>
-                    <ListTableHeaderCell>Checked In At</ListTableHeaderCell>
-                    <ListTableHeaderCell></ListTableHeaderCell>
-                  </ListTableHeaderRow>
-                </ListTableHead>
-                <ListTableBody>
-                  {results.map((result) => {
-                    const isSelected = result.registration_id === selectedResultId;
-                    return (
-                      <ListTableRow
-                        key={result.registration_id}
-                        className={isSelected ? 'bg-blue-50' : undefined}
-                        onClick={() => onSelect(result.registration_id)}
-                      >
-                        <ListTableCell className="px-6 text-xl font-semibold text-text">
-                          {result.full_name}
-                        </ListTableCell>
-                        <ListTableCell>
-                          <span className="font-mono text-base text-muted">
-                            {result.member_id ?? '—'}
-                          </span>
-                        </ListTableCell>
-                        <ListTableCell>
-                          <span
-                            className={
-                              result.check_in_status === 'checked_in'
-                                ? checkedInBadgeClass
-                                : readyBadgeClass
-                            }
-                          >
-                            {result.check_in_status === 'checked_in' ? 'Checked In' : 'Ready'}
-                          </span>
-                        </ListTableCell>
-                        <ListTableCell>
-                          {result.official_check_in_time
-                            ? formatDateTime(result.official_check_in_time)
-                            : '—'}
-                        </ListTableCell>
-                        <ListTableCell
-                          className="text-center"
-                          onClick={(event) => event.stopPropagation()}
+            {isMobile && (
+              <div className="space-y-3">
+                {results.map((result) => {
+                  const isSelected = result.registration_id === selectedResultId;
+                  const attendeeFullname = `${result.nickname} ${result.last_name}`.trim();
+                  return (
+                    <button
+                      key={result.registration_id}
+                      type="button"
+                      onClick={() => handleSelectAndConfirm(result.registration_id)}
+                      className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                        isSelected
+                          ? 'border-primary bg-blue-50 shadow-md'
+                          : 'border-border bg-surface hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <Avatar name={attendeeFullname} size="md" />
+                        <p className="text-2xl font-semibold text-text">{attendeeFullname}</p>
+                        <span
+                          className={
+                            result.check_in_status === 'checked_in'
+                              ? checkedInBadgeClass
+                              : readyBadgeClass
+                          }
+                          aria-label={
+                            result.check_in_status === 'checked_in' ? 'Checked in' : 'Ready'
+                          }
+                          title={result.check_in_status === 'checked_in' ? 'Checked in' : 'Ready'}
                         >
-                          <button
-                            type="button"
-                            aria-label={isSelected ? 'Selected attendee' : 'Select attendee'}
-                            title={isSelected ? 'Selected' : 'Select attendee'}
-                            onClick={() => onSelect(result.registration_id)}
-                            className={`inline-flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                              isSelected
-                                ? 'border-primary bg-primary text-white shadow-md shadow-primary/30'
-                                : 'border-border bg-surface text-muted hover:border-primary/60 hover:text-primary'
-                            }`}
+                          {result.check_in_status === 'checked_in' ? (
+                            <Check className="h-5 w-5" />
+                          ) : (
+                            <ChevronsRight className="h-5 w-5" />
+                          )}
+                          <span className="sr-only">
+                            {result.check_in_status === 'checked_in' ? 'Checked in' : 'Ready'}
+                          </span>
+                        </span>
+                      </div>
+                      <p className="mt-2 text-base text-muted">
+                        Member ID: {result.member_id ?? '—'}
+                      </p>
+                      <p className="text-base text-muted">
+                        Checked In At:{' '}
+                        {result.official_check_in_time
+                          ? formatDateTime(result.official_check_in_time)
+                          : '—'}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {!isMobile && (
+              <div className="rounded-2xl border border-border bg-surface lg:block overflow-x-auto">
+                <ListTable className="text-lg">
+                  <ListTableHead>
+                    <ListTableHeaderRow className="text-base normal-case tracking-normal">
+                      <ListTableHeaderCell className="px-6">Attendee</ListTableHeaderCell>
+                      <ListTableHeaderCell></ListTableHeaderCell>
+                      <ListTableHeaderCell>Member ID</ListTableHeaderCell>
+                      <ListTableHeaderCell>Status</ListTableHeaderCell>
+                      <ListTableHeaderCell>Checked In At</ListTableHeaderCell>
+                    </ListTableHeaderRow>
+                  </ListTableHead>
+                  <ListTableBody>
+                    {results.map((result) => {
+                      const isSelected = result.registration_id === selectedResultId;
+                      const attendeeFullname = `${result.nickname} ${result.last_name}`.trim();
+
+                      return (
+                        <ListTableRow
+                          key={result.registration_id}
+                          className={isSelected ? 'bg-blue-50' : undefined}
+                          onClick={() => handleSelectAndConfirm(result.registration_id)}
+                        >
+                          <ListTableCell
+                            className="text-center"
+                            onClick={(event) => event.stopPropagation()}
                           >
-                            <Check className="h-7 w-7" />
-                            <span className="sr-only">
-                              {isSelected ? 'Selected attendee' : 'Select attendee'}
+                            <button
+                              type="button"
+                              aria-label={isSelected ? 'Selected attendee' : 'Select attendee'}
+                              title={isSelected ? 'Selected' : 'Select attendee'}
+                              onClick={() => handleSelectAndConfirm(result.registration_id)}
+                              className={`inline-flex items-center justify-center rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                                isSelected
+                                  ? 'border-primary bg-primary text-white shadow-md shadow-primary/30'
+                                  : 'border-border bg-surface text-muted hover:border-primary/60 hover:text-primary'
+                              }`}
+                            >
+                              <Avatar name={attendeeFullname} size="md" />
+                            </button>
+                          </ListTableCell>
+                          <ListTableCell className="px-6 text-xl font-semibold text-text">
+                            {attendeeFullname}
+                          </ListTableCell>
+                          <ListTableCell>
+                            <span className="font-mono text-base text-muted">
+                              {result.member_id ?? '—'}
                             </span>
-                          </button>
-                        </ListTableCell>
-                      </ListTableRow>
-                    );
-                  })}
-                </ListTableBody>
-              </ListTable>
-            </div>
+                          </ListTableCell>
+                          <ListTableCell>
+                            <span
+                              className={
+                                result.check_in_status === 'checked_in'
+                                  ? checkedInBadgeClass
+                                  : readyBadgeClass
+                              }
+                              aria-label={
+                                result.check_in_status === 'checked_in' ? 'Checked in' : 'Ready'
+                              }
+                              title={
+                                result.check_in_status === 'checked_in' ? 'Checked in' : 'Ready'
+                              }
+                            >
+                              {result.check_in_status === 'checked_in' ? (
+                                <Check className="h-5 w-5" />
+                              ) : (
+                                <ChevronsRight className="h-5 w-5" />
+                              )}
+                              <span className="sr-only">
+                                {result.check_in_status === 'checked_in' ? 'Checked in' : 'Ready'}
+                              </span>
+                            </span>
+                          </ListTableCell>
+                          <ListTableCell>
+                            {result.official_check_in_time
+                              ? formatDateTime(result.official_check_in_time)
+                              : '—'}
+                          </ListTableCell>
+                        </ListTableRow>
+                      );
+                    })}
+                  </ListTableBody>
+                </ListTable>
+              </div>
+            )}
           </div>
         )}
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            fullWidth={true}
-            size="lg"
-            onClick={onConfirmSelection}
-            disabled={!selectedResultId}
-          >
-            {selectedAttendee ? (
-              <span className="flex flex-col items-center leading-tight">
-                <span>Confirm Selection</span>
-                <span>({selectedAttendee.full_name})</span>
-              </span>
-            ) : (
-              'Confirm Selection'
-            )}
-          </Button>
-        </div>
       </div>
     </WizardStep>
   );

@@ -1,6 +1,7 @@
 export type {
   AttendeeKind,
   CheckInStatus,
+  AttendanceTimeslotConfig,
   AttendanceSettings,
   CheckInResult,
   AttendanceCheckInRealtimeEvent,
@@ -33,6 +34,7 @@ export type {
 export { ATTENDEE_KINDS, CHECK_IN_STATUSES, CHECK_IN_STATUS_LABELS } from './metadata';
 export {
   attendanceSettingsSchema,
+  attendanceTimeslotConfigSchema,
   updateAttendanceSettingsSchema,
   attendanceSlotPayloadSchema,
   buildTimeslotSelectionSchema,
@@ -41,6 +43,13 @@ export {
   buildBulkAttendanceCsvRowsSchema,
   bulkUpsertAttendanceAnswersSchema,
 } from './schemas';
+
+export {
+  hasAnyActiveWindow,
+  isAutoWindowModeEnabled,
+  normalizeAttendanceTimeslots,
+  resolveActiveTimeslot,
+} from './transforms';
 
 export {
   parseCsvText,

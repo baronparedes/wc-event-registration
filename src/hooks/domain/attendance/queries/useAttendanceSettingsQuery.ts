@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import type { AttendanceSettings } from '@/lib/domain/attendance';
+import { type AttendanceSettings, normalizeAttendanceTimeslots } from '@/lib/domain/attendance';
 import { supabase } from '@/lib/infrastructure';
 
 function buildDefaultSettings(eventId: string): AttendanceSettings {
@@ -34,7 +34,15 @@ export function useAttendanceSettingsQuery(eventId: string | undefined, enabled 
         .maybeSingle();
 
       if (error) throw error;
-      return (data as AttendanceSettings | null) ?? buildDefaultSettings(eventId);
+
+      if (!data) {
+        return buildDefaultSettings(eventId);
+      }
+
+      return {
+        ...(data as AttendanceSettings),
+        timeslots: normalizeAttendanceTimeslots(data.timeslots),
+      };
     },
     enabled: Boolean(eventId) && enabled,
   });

@@ -139,6 +139,7 @@ export function useEventRegistrationPageState() {
   const [isRegistrationConfirmed, setIsRegistrationConfirmed] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false);
+  const isAutoSubmittingNoFieldsRef = useRef(false);
 
   const eventQuery = usePublicEventQuery(slug ?? null);
   const submitMutation = useSubmitRegistrationMutation(
@@ -185,6 +186,9 @@ export function useEventRegistrationPageState() {
     activeWizardStep === 1 &&
     memberLookup.matchedMember === null &&
     !memberLookup.isLookupPending;
+  const isConfirmedStepScanCaptureActive =
+    isGateReady && activeWizardStep === 3 && isRegistrationConfirmed;
+  const isScanCaptureActive = isRfidCaptureActive || isConfirmedStepScanCaptureActive;
   const focusMemberIdInput = useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive);
 
   const {
@@ -304,7 +308,7 @@ export function useEventRegistrationPageState() {
     },
     [clearLookupError, runMemberLookupSubmit, handleLookupFailure, handleLookupSuccess],
   );
-  useScanBuffer(handleScan, isRfidCaptureActive, memberIdInputRef);
+  useScanBuffer(handleScan, isScanCaptureActive, memberIdInputRef);
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event.id : undefined,
@@ -528,6 +532,38 @@ export function useEventRegistrationPageState() {
     ],
   );
 
+  const shouldBypassDynamicFieldsStepCard =
+    wizardStep === 3 &&
+    Boolean(memberLookup.matchedMember) &&
+    !isEffectiveRegistrationBlocked &&
+    !eventFieldsQuery.isLoading &&
+    !eventFieldsQuery.isError &&
+    (eventFieldsQuery.data?.issues?.length ?? 0) === 0 &&
+    activeFields.length === 0 &&
+    !isRegistrationConfirmed;
+
+  useEffect(() => {
+    const shouldAutoSubmitNoFields =
+      shouldBypassDynamicFieldsStepCard &&
+      !submitMutation.isPending &&
+      submitErrorMessage === null &&
+      !isAutoSubmittingNoFieldsRef.current;
+
+    if (!shouldAutoSubmitNoFields) {
+      return;
+    }
+
+    isAutoSubmittingNoFieldsRef.current = true;
+    void handleSubmitRegistration({} as DynamicFieldResponseValues).finally(() => {
+      isAutoSubmittingNoFieldsRef.current = false;
+    });
+  }, [
+    handleSubmitRegistration,
+    shouldBypassDynamicFieldsStepCard,
+    submitErrorMessage,
+    submitMutation.isPending,
+  ]);
+
   const fieldErrorMessage = useCallback(
     (fieldKey: string): string | undefined => {
       const maybeError = dynamicForm.formState.errors[fieldKey];
@@ -588,5 +624,6 @@ export function useEventRegistrationPageState() {
     enterWizardCompleteStep,
     setWizardStep,
     scrollToDynamicFieldsStep,
+    shouldBypassDynamicFieldsStepCard,
   };
 }
