@@ -343,7 +343,7 @@ describe('AdminMembersPage', () => {
     expect(screen.queryByRole('button', { name: 'Upload CSV' })).not.toBeInTheDocument();
     expect(screen.queryByText('Add Member Dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Update Member ID Dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'View' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'View Member' })).toHaveAttribute(
       'href',
       '/admin/members/user-1',
     );

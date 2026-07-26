@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Plus } from 'lucide-react';
+import { ClipboardList, Edit, Form, Plus, Settings, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
@@ -110,7 +110,7 @@ export function AdminEventsPage() {
               onClick={() => navigate(ROUTE_PATHS.adminEventNew)}
               className="w-full sm:w-auto sm:inline-flex"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
               New Event
             </Button>
           ) : undefined
@@ -210,19 +210,45 @@ export function AdminEventsPage() {
                     <ListTableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
                         {canWrite && (
-                          <ActionLink to={toAdminEventDetail(event.id)}>Edit</ActionLink>
+                          <ActionLink
+                            to={toAdminEventDetail(event.id)}
+                            title="Edit"
+                            aria-label="Edit"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </ActionLink>
                         )}
                         {canWrite && (
-                          <ActionLink to={toAdminEventAttendance(event.id)}>Attendance</ActionLink>
+                          <ActionLink
+                            to={toAdminEventAttendance(event.id)}
+                            title="Attendance"
+                            aria-label="Attendance"
+                          >
+                            <Settings className="h-5 w-5" />
+                          </ActionLink>
                         )}
                         {canWrite && (
-                          <ActionLink to={toAdminEventFields(event.id)}>Fields</ActionLink>
+                          <ActionLink
+                            to={toAdminEventFields(event.id)}
+                            title="Fields"
+                            aria-label="Fields"
+                          >
+                            <Form className="h-5 w-5" aria-label="Fields" />
+                          </ActionLink>
                         )}
-                        <ActionLink to={toAdminEventAttendanceData(event.id)}>
-                          Attendee Details
+                        <ActionLink
+                          to={toAdminEventAttendanceData(event.id)}
+                          title="Attendee Details"
+                          aria-label="Attendee Details"
+                        >
+                          <Users className="h-5 w-5" />
                         </ActionLink>
-                        <ActionLink to={toAdminEventRegistrations(event.id)}>
-                          Registrations
+                        <ActionLink
+                          to={toAdminEventRegistrations(event.id)}
+                          title="Registrations"
+                          aria-label="Registrations"
+                        >
+                          <ClipboardList className="h-5 w-5" />
                         </ActionLink>
                       </div>
                     </ListTableCell>

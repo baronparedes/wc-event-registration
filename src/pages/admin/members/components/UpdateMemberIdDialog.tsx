@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 
+import { IdCardLanyard } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ActionButton } from '@/components/ui/ActionLink';
@@ -55,8 +56,13 @@ export function UpdateMemberIdDialog({
 
   return (
     <>
-      <ActionButton type="button" onClick={handleOpen}>
-        Update Member ID
+      <ActionButton
+        type="button"
+        onClick={handleOpen}
+        title="Update Member ID"
+        aria-label="Update Member ID"
+      >
+        <IdCardLanyard className="h-5 w-5" />
       </ActionButton>
 
       {isOpen && (

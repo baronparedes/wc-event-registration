@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Users } from 'lucide-react';
+import { Edit, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
@@ -249,8 +249,18 @@ export function AdminMembersPage() {
                       </ListTableCell>
                       <ListTableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-3">
-                          <ActionLink to={toAdminMemberDetail(member.id)}>
-                            {canWrite && member.is_active ? 'Edit' : 'View'}
+                          <ActionLink
+                            to={toAdminMemberDetail(member.id)}
+                            title={canWrite && member.is_active ? 'Edit Member' : 'View Member'}
+                            aria-label={
+                              canWrite && member.is_active ? 'Edit Member' : 'View Member'
+                            }
+                          >
+                            {canWrite && member.is_active ? (
+                              <Edit className="h-5 w-5" />
+                            ) : (
+                              <User className="h-5 w-5" />
+                            )}
                           </ActionLink>
                           {canWrite && member.is_active && (
                             <UpdateMemberIdDialog
