@@ -21,6 +21,7 @@ import { canWriteAdminData } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 
+import { Avatar } from '../../../../components/ui/Avatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
 import { MetadataEntriesEditor } from './components/MetadataEntriesEditor';
 
@@ -193,6 +194,13 @@ export function AdminMemberDetailPage() {
             title="Member Profile"
             subtitle="Member ID stays read-only because it is used for lookup and registration linking."
           >
+            <div className="flex items-center justify-center">
+              <Avatar
+                size="xl"
+                name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                className="mb-4"
+              />
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <FormInputField
                 id="member-id"

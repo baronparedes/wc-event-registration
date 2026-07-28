@@ -32,6 +32,10 @@ const {
   mockToastError: vi.fn(),
 }));
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name }: { name: string }) => <div>{name}</div>,
+}));
+
 vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {

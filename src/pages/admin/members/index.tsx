@@ -30,6 +30,7 @@ import { useAdminMembersQuery } from '@/hooks/domain/members';
 import { canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
+import { Avatar } from '../../../components/ui/Avatar';
 import { AddMemberDialog } from './components/AddMemberDialog';
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
 
@@ -194,6 +195,7 @@ export function AdminMembersPage() {
               <ListTable>
                 <ListTableHead>
                   <ListTableHeaderRow>
+                    <ListTableHeaderCell></ListTableHeaderCell>
                     <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                     <ListTableHeaderCell>Full Name</ListTableHeaderCell>
                     <ListTableHeaderCell>Status</ListTableHeaderCell>
@@ -212,6 +214,13 @@ export function AdminMembersPage() {
                       className={`cursor-pointer ${member.is_active ? '' : 'opacity-70'}`}
                       onClick={() => navigate(toAdminMemberDetail(member.id))}
                     >
+                      <ListTableCell>
+                        <Avatar
+                          size="sm"
+                          name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                          className="mr-2"
+                        />
+                      </ListTableCell>
                       <ListTableCell className="px-6">
                         <p className="font-mono text-sm text-text">{member.member_id}</p>
                       </ListTableCell>
