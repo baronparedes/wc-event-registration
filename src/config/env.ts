@@ -11,5 +11,8 @@ function requiredAny(names: string[]): string {
 
 export const env = {
   supabaseUrl: requiredAny(['VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL']),
-  supabaseAnonKey: requiredAny(['VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY']),
+  supabasePublishableKey: requiredAny([
+    'VITE_SUPABASE_PUBLISHABLE_KEY',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  ]),
 };

@@ -2,7 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 
 import { env } from '@/config/env';
 
-export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey);
+export const supabase = createClient(env.supabaseUrl, env.supabasePublishableKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
 const EDGE_FUNCTION_BASE_URL = `${env.supabaseUrl}/functions/v1`;
 

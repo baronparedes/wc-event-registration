@@ -8,24 +8,24 @@ describe('config env', () => {
 
   it('uses VITE Supabase vars when present', async () => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://vite.supabase.co');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'vite-anon');
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'vite-anon');
 
     const { env } = await import('@/config/env');
 
     expect(env.supabaseUrl).toBe('https://vite.supabase.co');
-    expect(env.supabaseAnonKey).toBe('vite-anon');
+    expect(env.supabasePublishableKey).toBe('vite-anon');
   });
 
   it('falls back to NEXT_PUBLIC vars', async () => {
     vi.stubEnv('VITE_SUPABASE_URL', undefined);
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', undefined);
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', undefined);
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://next.supabase.co');
-    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'next-anon');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'next-anon');
 
     const { env } = await import('@/config/env');
 
     expect(env.supabaseUrl).toBe('https://next.supabase.co');
-    expect(env.supabaseAnonKey).toBe('next-anon');
+    expect(env.supabasePublishableKey).toBe('next-anon');
   });
 
   it('throws when required Supabase vars are missing', async () => {
