@@ -56,10 +56,10 @@ describe('ProfileStepCard', () => {
 
     expect(screen.getByText('Review your details below.')).toBeInTheDocument();
     expect(screen.getByText('Tap "Yes, I confirm" to continue to Step 3.')).toBeInTheDocument();
+    expect(screen.getByText('First name')).toBeInTheDocument();
+    expect(screen.getByText('Last initial')).toBeInTheDocument();
     expect(screen.getByText('Role')).toBeInTheDocument();
     expect(screen.getByText(matchedMember.role)).toBeInTheDocument();
-    expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText(matchedMember.category)).toBeInTheDocument();
   });
 
   describe('countdown timer message branches', () => {

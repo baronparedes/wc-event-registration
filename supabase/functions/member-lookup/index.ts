@@ -21,14 +21,10 @@ const memberLookupRequestSchema = z
 type MemberLookupRequest = z.infer<typeof memberLookupRequestSchema>;
 
 interface MemberLookupProfile {
-  user_id: string;
   member_id: string;
   role: string;
-  category: string;
-  full_name: string;
-  nickname: string | null;
   first_name: string | null;
-  last_name: string | null;
+  last_initial: string | null;
 }
 
 interface ExistingRegistrationState {
@@ -148,17 +144,22 @@ function readString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function getLastInitial(value: string | null): string | null {
+  const normalizedValue = readString(value).trim();
+  if (!normalizedValue) {
+    return null;
+  }
+
+  return normalizedValue.charAt(0).toUpperCase();
+}
+
 function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
   if (!row) return null;
   return {
-    user_id: row.id,
     member_id: row.member_id,
     role: readString(row.role),
-    category: readString(row.category),
-    full_name: row.full_name,
-    nickname: row.nickname,
     first_name: row.first_name,
-    last_name: row.last_name,
+    last_initial: getLastInitial(row.last_name),
   };
 }
 
@@ -444,7 +445,7 @@ Deno.serve(async (req) => {
     const registrationResult = await getExistingRegistrationState(
       supabase,
       eventData.id,
-      profile.user_id,
+      filteredData.id,
       eventData.duplicate_policy,
     );
 

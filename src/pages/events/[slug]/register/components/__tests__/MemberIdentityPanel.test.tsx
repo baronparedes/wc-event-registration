@@ -8,49 +8,36 @@ vi.mock('@/components/ui/Avatar', () => ({
 }));
 
 const baseProfile = {
-  user_id: 'user-1',
   member_id: 'WC-001',
   role: 'usher',
-  category: 'regular',
-  full_name: 'Jane Doe',
-  nickname: 'Janie',
   first_name: 'Jane',
-  last_name: 'Doe',
+  last_initial: 'D',
 };
 
 describe('MemberIdentityPanel', () => {
-  it('renders all member fields in the panel', () => {
+  it('renders only confirmation identity fields', () => {
     render(<MemberIdentityPanel matchedMember={baseProfile} />);
 
-    expect(screen.getByText('Name')).toBeInTheDocument();
-    expect(screen.getByText('Member ID')).toBeInTheDocument();
-    expect(screen.getByText('Role')).toBeInTheDocument();
-    expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('Nickname')).toBeInTheDocument();
     expect(screen.getByText('First name')).toBeInTheDocument();
-    expect(screen.getByText('Last name')).toBeInTheDocument();
+    expect(screen.getByText('Last initial')).toBeInTheDocument();
+    expect(screen.getByText('Role')).toBeInTheDocument();
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
-    expect(screen.getByText('WC-001')).toBeInTheDocument();
-    expect(screen.getByText('usher')).toBeInTheDocument();
-    expect(screen.getByText('regular')).toBeInTheDocument();
-    expect(screen.getByText('Janie')).toBeInTheDocument();
     expect(screen.getByText('Jane')).toBeInTheDocument();
-    expect(screen.getByText('Doe')).toBeInTheDocument();
+    expect(screen.getByText('D')).toBeInTheDocument();
+    expect(screen.getByText('usher')).toBeInTheDocument();
   });
 
-  it('falls back to Not set for missing optional values', () => {
+  it('falls back to Not set for missing name parts', () => {
     render(
       <MemberIdentityPanel
         matchedMember={{
           ...baseProfile,
-          nickname: null,
           first_name: null,
-          last_name: null,
+          last_initial: null,
         }}
       />,
     );
 
-    expect(screen.getAllByText('Not set')).toHaveLength(3);
+    expect(screen.getAllByText('Not set')).toHaveLength(2);
   });
 });

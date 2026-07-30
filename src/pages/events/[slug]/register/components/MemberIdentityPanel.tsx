@@ -25,10 +25,9 @@ function MemberDetailRow({ label, value, className }: MemberDetailRowProps) {
 }
 
 export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps) {
-  const avatarName =
-    matchedMember.nickname && matchedMember.last_name
-      ? `${matchedMember.nickname} ${matchedMember.last_name}`
-      : null;
+  const firstName = matchedMember.first_name?.trim() || null;
+  const lastInitial = matchedMember.last_initial?.trim() || null;
+  const avatarName = [firstName, lastInitial].filter(Boolean).join(' ');
 
   return (
     <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -37,13 +36,9 @@ export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps)
           <Avatar name={avatarName} size="2xl" />
         </div>
       )}
-      <MemberDetailRow label="Name" value={matchedMember.full_name} className="sm:col-span-2" />
-      <MemberDetailRow label="Member ID" value={matchedMember.member_id} />
-      <MemberDetailRow label="Role" value={matchedMember.role} />
-      <MemberDetailRow label="Category" value={matchedMember.category} />
-      <MemberDetailRow label="Nickname" value={matchedMember.nickname} />
-      <MemberDetailRow label="First name" value={matchedMember.first_name} />
-      <MemberDetailRow label="Last name" value={matchedMember.last_name} />
+      <MemberDetailRow label="First name" value={firstName} />
+      <MemberDetailRow label="Last initial" value={lastInitial} />
+      <MemberDetailRow label="Role" value={matchedMember.role} className="sm:col-span-2" />
     </dl>
   );
 }

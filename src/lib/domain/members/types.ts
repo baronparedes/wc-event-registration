@@ -1,12 +1,13 @@
 export type MemberLookupProfile = {
-  user_id: string;
   member_id: string;
   role: string;
-  category: string;
-  full_name: string;
-  nickname: string | null;
   first_name: string | null;
-  last_name: string | null;
+  last_initial: string | null;
+  user_id?: string;
+  category?: string;
+  full_name?: string;
+  nickname?: string | null;
+  last_name?: string | null;
 };
 
 export type ExistingRegistrationState = {

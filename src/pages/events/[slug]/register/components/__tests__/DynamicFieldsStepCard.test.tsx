@@ -16,6 +16,7 @@ const matchedMember: MemberLookupProfile = {
   nickname: null,
   first_name: 'Jane',
   last_name: 'Doe',
+  last_initial: 'D',
 };
 
 const baseFields: PublicEventField[] = [

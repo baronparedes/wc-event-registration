@@ -178,6 +178,7 @@ export function makeMemberLookupProfile(
     nickname: faker.helpers.maybe(() => faker.internet.username(), { probability: 0.4 }) ?? null,
     first_name: firstName,
     last_name: lastName,
+    last_initial: lastName.charAt(0).toUpperCase(),
     ...overrides,
   };
 }
