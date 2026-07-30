@@ -29,6 +29,7 @@ export type CheckInResult = {
 };
 
 export type AttendanceCheckInRealtimeEvent = {
+  check_in_id: string | null;
   event_id: string;
   attendee_kind: AttendeeKind;
   registration_id: string | null;
@@ -126,8 +127,15 @@ export type AttendeeSearchResult = {
   submitted_at: string;
   check_in_status: 'checked_in' | 'not_checked_in';
   official_check_in_time: string | null;
+  check_in_id?: string | null;
   registration_answers: RegistrationAnswerSummary[];
   attendance_answers: AttendanceAnswerSummary[];
+  slot_records?: AttendanceSlotRecord[];
+};
+
+export type AttendanceSlotRecord = {
+  slot: string;
+  recorded_at: string;
 };
 
 export type SearchAttendeesInput = {
@@ -161,4 +169,10 @@ export type UnregisteredMembersReportInput = {
 
 export type ExportUnregisteredMembersCsvInput = {
   event_id: string;
+};
+
+export type AttendanceSlotRecordInsertEvent = {
+  event_id: string;
+  check_in_id: string;
+  slot_record: AttendanceSlotRecord;
 };

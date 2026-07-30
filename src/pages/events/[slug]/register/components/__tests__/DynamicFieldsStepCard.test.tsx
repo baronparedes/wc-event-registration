@@ -385,9 +385,9 @@ describe('DynamicFieldsStepCard', () => {
     expect(
       screen.queryByText('A confirmation toast was also sent. You can now scan the next attendee.'),
     ).toBeNull();
-    expect(screen.getByRole('button', { name: 'Ok' })).toHaveClass('w-full');
+    expect(screen.getByRole('button', { name: 'Ready for Next Attendee' })).toHaveClass('w-full');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ok' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ready for Next Attendee' }));
     expect(onConfirmAcknowledged).toHaveBeenCalledTimes(1);
 
     expect(screen.queryByRole('button', { name: 'Submit Registration' })).toBeNull();

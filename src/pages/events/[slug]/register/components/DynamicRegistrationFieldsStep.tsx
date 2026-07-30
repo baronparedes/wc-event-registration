@@ -261,7 +261,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               type="button"
               variant="default"
             >
-              Ok
+              Ready for Next Attendee
             </Button>
           )}
         </div>

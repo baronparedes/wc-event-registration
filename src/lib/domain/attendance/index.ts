@@ -7,6 +7,7 @@ export type {
   AttendanceCheckInRealtimeEvent,
   AttendanceSlotPayload,
   TimeslotAttendanceRecord,
+  AttendanceSlotRecord,
   AttendanceSlotAttendee,
   AttendanceSlotSummary,
   AttendanceAnswer,
@@ -19,6 +20,7 @@ export type {
   UnregisteredMember,
   UnregisteredMembersReportInput,
   ExportUnregisteredMembersCsvInput,
+  AttendanceSlotRecordInsertEvent,
 } from './types';
 
 export type {

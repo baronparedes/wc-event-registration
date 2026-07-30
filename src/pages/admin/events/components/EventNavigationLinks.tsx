@@ -2,6 +2,7 @@ import { AdminSubNavLink } from '@/components/layout';
 import {
   toAdminEventAttendance,
   toAdminEventAttendanceCheckIn,
+  toAdminEventAttendanceDashboard,
   toAdminEventAttendanceData,
   toAdminEventDetail,
   toAdminEventFields,
@@ -20,6 +21,7 @@ type EventNavigationSection =
   | 'public-registrations-detail'
   | 'attendance'
   | 'attendance-check-in'
+  | 'attendance-dashboard'
   | 'attendance-fields'
   | 'attendance-data'
   | 'attendance-unregistered-members';
@@ -50,6 +52,9 @@ export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
       )}
       {canRead && (
         <AdminSubNavLink to={toAdminEventAttendanceData(eventId)}>Attendee Details</AdminSubNavLink>
+      )}
+      {canRead && (
+        <AdminSubNavLink to={toAdminEventAttendanceDashboard(eventId)}>Dashboard</AdminSubNavLink>
       )}
       {canAccessCheckIn && (
         <AdminSubNavLink to={toAdminEventAttendanceCheckIn(eventId)}>Check-In</AdminSubNavLink>

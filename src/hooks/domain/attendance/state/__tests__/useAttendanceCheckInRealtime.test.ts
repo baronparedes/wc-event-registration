@@ -97,6 +97,7 @@ describe('useAttendanceCheckInRealtime', () => {
     });
 
     expect(onCheckIn).toHaveBeenCalledWith({
+      check_in_id: null,
       event_id: 'event-1',
       attendee_kind: 'registered',
       registration_id: 'reg-001',
@@ -113,6 +114,7 @@ describe('useAttendanceCheckInRealtime', () => {
 
     payloadHandler({
       new: {
+        id: 'checkin-002',
         event_id: 'event-2',
         attendee_kind: 'public',
         registration_id: null,
@@ -122,6 +124,7 @@ describe('useAttendanceCheckInRealtime', () => {
     });
 
     expect(onCheckIn).toHaveBeenCalledWith({
+      check_in_id: 'checkin-002',
       event_id: 'event-2',
       attendee_kind: 'public',
       registration_id: null,
