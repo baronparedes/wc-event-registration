@@ -12,6 +12,7 @@ type SearchAttendeesRequest = z.infer<typeof searchAttendeesRequestSchema>;
 
 type UserSearchRow = {
   id: string;
+  avatar_object_key: string | null;
   member_id: string | null;
   last_name: string | null;
   full_name: string;
@@ -325,7 +326,7 @@ Deno.serve(async (req) => {
     const registrationsQuery = adminClient
       .from('registrations')
       .select(
-        'id, user_id, status, submitted_at, users!inner(id, member_id, last_name, full_name, email, role, category, nickname)',
+        'id, user_id, status, submitted_at, users!inner(id, avatar_object_key, member_id, last_name, full_name, email, role, category, nickname)',
       )
       .eq('event_id', event_id)
       .neq('status', 'cancelled')
@@ -595,6 +596,7 @@ Deno.serve(async (req) => {
           registration_id: registration.id,
           public_registration_id: null,
           user_id: registration.user_id,
+          avatar_object_key: user.avatar_object_key,
           member_id: user.member_id,
           nickname: user.nickname ?? '',
           last_name: user.last_name ?? '',
@@ -648,6 +650,7 @@ Deno.serve(async (req) => {
         registration_id: registration.id,
         public_registration_id: registration.id,
         user_id: null,
+        avatar_object_key: null,
         member_id: 'Guest',
         nickname: registration.nickname ?? '',
         last_name: registration.last_name ?? '',

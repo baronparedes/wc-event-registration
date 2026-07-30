@@ -33,7 +33,7 @@ export function MemberIdentityPanel({ matchedMember }: MemberIdentityPanelProps)
     <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {avatarName && (
         <div className="sm:col-span-2 flex justify-center pb-1 pt-2">
-          <Avatar name={avatarName} size="2xl" />
+          <Avatar name={avatarName} avatarObjectKey={matchedMember.avatar_object_key} size="2xl" />
         </div>
       )}
       <MemberDetailRow label="First name" value={firstName} />

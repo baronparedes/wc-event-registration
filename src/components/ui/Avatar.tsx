@@ -4,12 +4,18 @@ import { useMemberAvatarQuery } from '@/hooks/domain/members';
 
 interface AvatarProps {
   name: string;
+  avatarObjectKey?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   className?: string;
 }
 
-export const Avatar: React.FC<AvatarProps> = ({ name, size = 'md', className = '' }) => {
-  const { data: avatarUrl } = useMemberAvatarQuery(name);
+export const Avatar: React.FC<AvatarProps> = ({
+  name,
+  avatarObjectKey,
+  size = 'md',
+  className = '',
+}) => {
+  const { data: avatarUrl } = useMemberAvatarQuery(avatarObjectKey);
   const [failedAvatarUrl, setFailedAvatarUrl] = React.useState<string | null>(null);
   const [loadedAvatarUrl, setLoadedAvatarUrl] = React.useState<string | null>(null);
 

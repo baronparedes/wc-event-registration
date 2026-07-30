@@ -173,6 +173,7 @@ export function makeMemberLookupProfile(
     user_id: faker.string.uuid(),
     member_id: `WC-${faker.string.numeric(3)}`,
     role: 'member',
+    avatar_object_key: `avatars/member/${faker.string.uuid()}.jpg`,
     category: 'regular',
     full_name: `${firstName} ${lastName}`,
     nickname: faker.helpers.maybe(() => faker.internet.username(), { probability: 0.4 }) ?? null,
@@ -190,6 +191,7 @@ export function makeAdminMember(overrides: Partial<AdminMember> = {}): AdminMemb
   return {
     id: faker.string.uuid(),
     member_id: `WC-${faker.string.numeric(3)}`,
+    avatar_object_key: `avatars/member/${faker.string.uuid()}.jpg`,
     is_active: true,
     full_name: `${firstName} ${lastName}`,
     first_name: firstName,

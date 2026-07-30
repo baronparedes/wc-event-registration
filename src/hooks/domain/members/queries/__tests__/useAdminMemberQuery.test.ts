@@ -55,6 +55,7 @@ describe('useAdminMemberQuery', () => {
       data: {
         id: member.id,
         member_id: member.member_id,
+        avatar_object_key: member.avatar_object_key,
         is_active: true,
         full_name: member.full_name,
         first_name: member.first_name,
@@ -104,6 +105,7 @@ describe('useAdminMemberQuery', () => {
       data: {
         id: member.id,
         member_id: member.member_id,
+        avatar_object_key: member.avatar_object_key,
         is_active: true,
         full_name: member.full_name,
         first_name: member.first_name,
@@ -137,6 +139,7 @@ describe('useAdminMemberQuery', () => {
       data: {
         id: member.id,
         member_id: member.member_id,
+        avatar_object_key: member.avatar_object_key,
         is_active: true,
         full_name: member.full_name,
         first_name: member.first_name,
@@ -203,6 +206,7 @@ describe('useAdminMemberQuery', () => {
       data: {
         id: member.id,
         member_id: member.member_id,
+        avatar_object_key: member.avatar_object_key,
         is_active: false,
         full_name: member.full_name,
         first_name: member.first_name,

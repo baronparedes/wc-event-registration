@@ -218,6 +218,7 @@ export function AdminMembersPage() {
                         <Avatar
                           size="sm"
                           name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                          avatarObjectKey={member.avatar_object_key}
                           className="mr-2"
                         />
                       </ListTableCell>
