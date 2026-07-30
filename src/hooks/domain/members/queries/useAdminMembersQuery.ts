@@ -55,7 +55,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
       let query = supabase
         .from('users')
         .select(
-          'id, member_id, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
+          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
           { count: 'exact' },
         );
 
@@ -109,6 +109,8 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         return {
           id: member.id,
           member_id: member.member_id,
+          avatar_object_key:
+            typeof member.avatar_object_key === 'string' ? member.avatar_object_key : null,
           is_active: member.is_active,
           full_name: member.full_name,
           first_name: member.first_name,

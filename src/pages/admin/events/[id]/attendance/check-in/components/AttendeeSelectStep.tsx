@@ -114,7 +114,11 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <Avatar name={attendeeFullname} size="md" />
+                        <Avatar
+                          name={attendeeFullname}
+                          avatarObjectKey={result.avatar_object_key}
+                          size="md"
+                        />
                         <p className="text-2xl font-semibold text-text">{attendeeFullname}</p>
                         <span
                           className={
@@ -190,7 +194,11 @@ export function AttendeeSelectStep(props: AttendeeSelectStepProps) {
                                   : 'border-border bg-surface text-muted hover:border-primary/60 hover:text-primary'
                               }`}
                             >
-                              <Avatar name={attendeeFullname} size="md" />
+                              <Avatar
+                                name={attendeeFullname}
+                                avatarObjectKey={result.avatar_object_key}
+                                size="md"
+                              />
                             </button>
                           </ListTableCell>
                           <ListTableCell className="px-6 text-xl font-semibold text-text">

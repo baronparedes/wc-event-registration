@@ -83,6 +83,7 @@ export function AttendanceDataMobileView({
                   {shouldShowAvatar && (
                     <Avatar
                       name={`${registrant.nickname} ${registrant.last_name}`}
+                      avatarObjectKey={attendee?.avatar_object_key}
                       size="md"
                       className="shrink-0"
                     />

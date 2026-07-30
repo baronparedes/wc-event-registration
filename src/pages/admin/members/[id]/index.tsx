@@ -198,6 +198,7 @@ export function AdminMemberDetailPage() {
               <Avatar
                 size="xl"
                 name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                avatarObjectKey={member.avatar_object_key}
                 className="mb-4"
               />
             </div>

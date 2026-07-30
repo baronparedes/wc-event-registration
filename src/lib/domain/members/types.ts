@@ -3,6 +3,7 @@ export type MemberLookupProfile = {
   role: string;
   first_name: string | null;
   last_initial: string | null;
+  avatar_object_key?: string | null;
   user_id?: string;
   category?: string;
   full_name?: string;
@@ -25,6 +26,7 @@ export type MemberLookupResult = {
 export type AdminMember = {
   id: string;
   member_id: string;
+  avatar_object_key: string | null;
   is_active: boolean;
   full_name: string;
   first_name: string | null;

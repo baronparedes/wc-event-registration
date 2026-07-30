@@ -114,6 +114,7 @@ export type AttendeeSearchResult = {
   registration_id: string;
   public_registration_id: string | null;
   user_id: string | null;
+  avatar_object_key?: string | null;
   member_id: string | null;
   nickname: string;
   last_name: string;

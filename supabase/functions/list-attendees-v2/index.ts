@@ -14,6 +14,7 @@ type ListAttendeesAttendeeRow = {
   registration_id: string;
   public_registration_id: string | null;
   user_id: string | null;
+  avatar_object_key?: string | null;
   member_id: string | null;
   member_metadata?: unknown;
   nickname: string;

@@ -103,6 +103,7 @@ export function AttendanceDataTableView({
                   {shouldShowAvatar && (
                     <Avatar
                       name={`${registrant.nickname} ${registrant.last_name}`}
+                      avatarObjectKey={attendee?.avatar_object_key}
                       size="lg"
                       className="shrink-0"
                     />

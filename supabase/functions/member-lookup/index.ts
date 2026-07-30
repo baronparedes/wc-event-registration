@@ -25,6 +25,7 @@ interface MemberLookupProfile {
   role: string;
   first_name: string | null;
   last_initial: string | null;
+  avatar_object_key: string | null;
 }
 
 interface ExistingRegistrationState {
@@ -49,6 +50,7 @@ type AnswerRow = {
 type UserLookupRow = {
   id: string;
   member_id: string;
+  avatar_object_key: string | null;
   role: string;
   category: string;
   full_name: string;
@@ -160,6 +162,7 @@ function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
     role: readString(row.role),
     first_name: row.first_name,
     last_initial: getLastInitial(row.last_name),
+    avatar_object_key: row.avatar_object_key,
   };
 }
 
@@ -231,7 +234,9 @@ async function findUserByNameOrNickname(
 
   const { data: users, error } = await supabase
     .from('users')
-    .select('id, member_id, role, category, full_name, nickname, first_name, last_name')
+    .select(
+      'id, member_id, avatar_object_key, role, category, full_name, nickname, first_name, last_name',
+    )
     .eq('is_active', true)
     .not('last_name', 'is', null)
     .or(nameFilter)
@@ -414,7 +419,9 @@ Deno.serve(async (req) => {
     if (isIdLookup) {
       const { data } = await supabase
         .from('users')
-        .select('id, member_id, role, category, full_name, nickname, first_name, last_name')
+        .select(
+          'id, member_id, avatar_object_key, role, category, full_name, nickname, first_name, last_name',
+        )
         .eq('is_active', true)
         .eq('member_id', searchValue)
         .maybeSingle();

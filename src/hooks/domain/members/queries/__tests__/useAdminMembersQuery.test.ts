@@ -58,6 +58,7 @@ describe('useAdminMembersQuery', () => {
     const dbRow = {
       id: member.id,
       member_id: member.member_id,
+      avatar_object_key: member.avatar_object_key,
       is_active: true,
       full_name: member.full_name,
       first_name: member.first_name,
@@ -141,6 +142,7 @@ describe('useAdminMembersQuery', () => {
         {
           id: 'user-9',
           member_id: 'WC-009',
+          avatar_object_key: null,
           is_active: true,
           full_name: 'A_B,Name%Here',
           first_name: 'A_B',
@@ -221,6 +223,7 @@ describe('useAdminMembersQuery', () => {
         {
           id: 'user-1',
           member_id: 'WC-001',
+          avatar_object_key: null,
           is_active: true,
           full_name: 'Jane Doe',
           first_name: 'Jane',

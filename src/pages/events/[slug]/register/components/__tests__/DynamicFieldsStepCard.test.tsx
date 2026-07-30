@@ -10,6 +10,7 @@ import { DynamicFieldsStepCard } from '../index';
 const matchedMember: MemberLookupProfile = {
   user_id: 'user-1',
   member_id: 'member-1',
+  avatar_object_key: 'avatars/member/user-1.jpg',
   role: 'usher',
   category: 'regular',
   full_name: 'Jane Doe',
