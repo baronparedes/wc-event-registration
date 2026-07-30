@@ -4,11 +4,16 @@ import { useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import { useAttendanceCheckInRealtime } from '@/hooks/domain/attendance/state/useAttendanceCheckInRealtime';
+import {
+  useAttendanceCheckInRealtime,
+  useAttendanceSlotRecordRealtime,
+} from '@/hooks/domain/attendance/state';
 import { useLocalStorage } from '@/hooks/utils';
 import type {
   AttendanceAnswerSummary,
   AttendanceCheckInRealtimeEvent,
+  AttendanceSlotRecord,
+  AttendanceSlotRecordInsertEvent,
   AttendeeKind,
   AttendeeSearchResult,
 } from '@/lib/domain/attendance/types';
@@ -36,6 +41,7 @@ type LocalCacheEntry = {
 
 type AttendeeCheckInPatch = {
   id: string;
+  checkInId?: string | null;
   kind: AttendeeKind;
   checkedInAt: string;
   registrationId: string | null;
@@ -47,6 +53,11 @@ type AttendeeAttendanceAnswersPatch = {
   registrationId: string | null;
   publicRegistrationId: string | null;
   attendanceAnswers: AttendanceAnswerSummary[];
+};
+
+type AttendeeSlotRecordPatch = {
+  checkInId: string;
+  slotRecord: AttendanceSlotRecord;
 };
 
 type UseAttendeesLocalCacheQueryOptions = {
@@ -138,6 +149,7 @@ export function applyCheckInPatchToAttendees(
       ...attendee,
       check_in_status: 'checked_in',
       official_check_in_time: nextOfficialCheckInTime,
+      check_in_id: patch.checkInId ?? attendee.check_in_id,
     } as AttendeeSearchResult;
   });
 
@@ -159,6 +171,37 @@ export function applyAttendanceAnswersPatchToAttendees(
     return {
       ...attendee,
       attendance_answers: patch.attendanceAnswers,
+    };
+  });
+
+  return { attendees: nextAttendees, didUpdate };
+}
+
+export function applySlotRecordPatchToAttendees(
+  attendees: AttendeeSearchResult[],
+  patch: AttendeeSlotRecordPatch,
+): { attendees: AttendeeSearchResult[]; didUpdate: boolean } {
+  let didUpdate = false;
+
+  const nextAttendees: AttendeeSearchResult[] = attendees.map((attendee) => {
+    if (attendee.check_in_id !== patch.checkInId) {
+      return attendee;
+    }
+
+    const currentRecords = attendee.slot_records ?? [];
+    const isDuplicate = currentRecords.some(
+      (sr) => sr.slot === patch.slotRecord.slot && sr.recorded_at === patch.slotRecord.recorded_at,
+    );
+
+    if (isDuplicate) {
+      return attendee;
+    }
+
+    didUpdate = true;
+
+    return {
+      ...attendee,
+      slot_records: [...currentRecords, patch.slotRecord],
     };
   });
 
@@ -282,6 +325,7 @@ export function useAttendeesLocalCacheQuery(
 
       const patch: AttendeeCheckInPatch = {
         id: checkInEvent.public_registration_id ?? checkInEvent.registration_id ?? '',
+        checkInId: checkInEvent.check_in_id,
         kind: checkInEvent.attendee_kind,
         checkedInAt: checkInEvent.first_checked_in_at,
         registrationId: checkInEvent.registration_id,
@@ -312,6 +356,46 @@ export function useAttendeesLocalCacheQuery(
 
   useAttendanceCheckInRealtime(eventId, {
     onCheckIn: handleRealtimeCheckIn,
+    enabled: realtimeEnabled,
+  });
+
+  const handleRealtimeSlotRecord = useCallback(
+    (slotEvent: AttendanceSlotRecordInsertEvent) => {
+      if (!eventId) return;
+
+      const current = queryClient.getQueryData<LocalCacheEntry>(
+        QUERY_KEYS.adminAttendeesLocalCache(eventId),
+      );
+
+      if (!current?.attendees?.length) {
+        refreshThrottled();
+        return;
+      }
+
+      const patch: AttendeeSlotRecordPatch = {
+        checkInId: slotEvent.check_in_id,
+        slotRecord: slotEvent.slot_record,
+      };
+
+      const { attendees: patchedAttendees, didUpdate } = applySlotRecordPatchToAttendees(
+        current.attendees,
+        patch,
+      );
+
+      if (!didUpdate) {
+        refreshThrottled();
+        return;
+      }
+
+      const updatedEntry = buildCacheEntry(patchedAttendees);
+      cacheStorage.set(updatedEntry);
+      queryClient.setQueryData(QUERY_KEYS.adminAttendeesLocalCache(eventId), updatedEntry);
+    },
+    [cacheStorage, eventId, queryClient, refreshThrottled],
+  );
+
+  useAttendanceSlotRecordRealtime(eventId, {
+    onSlotRecord: handleRealtimeSlotRecord,
     enabled: realtimeEnabled,
   });
 

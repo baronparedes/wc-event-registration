@@ -6,6 +6,7 @@ import type { AttendanceCheckInRealtimeEvent, AttendeeKind } from '@/lib/domain/
 import { supabase } from '@/lib/infrastructure';
 
 type AttendanceCheckInRow = {
+  id?: unknown;
   event_id?: unknown;
   attendee_kind?: unknown;
   registration_id?: unknown;
@@ -36,11 +37,13 @@ function toCheckInEvent(
     return null;
   }
 
+  const checkInId = typeof row.id === 'string' ? row.id : null;
   const registrationId = typeof row.registration_id === 'string' ? row.registration_id : null;
   const publicRegistrationId =
     typeof row.public_registration_id === 'string' ? row.public_registration_id : null;
 
   return {
+    check_in_id: checkInId,
     event_id: row.event_id,
     attendee_kind: row.attendee_kind,
     registration_id: registrationId,
