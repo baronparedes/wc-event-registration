@@ -6,19 +6,11 @@ import { usePublicEventListingQuery } from '@/hooks/domain/events/queries/usePub
 
 const FIXED_NOW = new Date('2026-06-25T00:00:00.000Z').getTime();
 
-const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
-  const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-    select: vi.fn(),
-    eq: vi.fn(),
-    order: vi.fn(),
-  };
-
-  queryBuilder.select.mockReturnValue(queryBuilder);
-  queryBuilder.eq.mockReturnValue(queryBuilder);
-
+const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const caller = vi.fn();
   return {
-    mockQueryBuilder: queryBuilder,
-    mockFrom: vi.fn(() => queryBuilder),
+    mockCaller: caller,
+    mockCreateEdgeFunctionCaller: vi.fn(() => caller),
   };
 });
 
@@ -28,9 +20,7 @@ vi.mock('@/lib/infrastructure', async () => {
 
   return {
     ...actual,
-    supabase: {
-      from: mockFrom,
-    },
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
   };
 });
 
@@ -45,8 +35,9 @@ describe('usePublicEventListingQuery', () => {
   });
 
   it('maps events to listing statuses and filters closed ones', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+      events: [
         {
           id: 'evt-open',
           slug: 'open-event',
@@ -72,7 +63,6 @@ describe('usePublicEventListingQuery', () => {
           registration_closes_at: '2026-06-19T00:00:00.000Z',
         },
       ],
-      error: null,
     });
 
     const { result } = renderHookWithClient(() => usePublicEventListingQuery());
@@ -89,10 +79,7 @@ describe('usePublicEventListingQuery', () => {
   });
 
   it('returns query error state when listing query fails', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: null,
-      error: new Error('listing failed'),
-    });
+    mockCaller.mockRejectedValueOnce(new Error('listing failed'));
 
     const { result } = renderHookWithClient(() => usePublicEventListingQuery());
 
@@ -103,11 +90,8 @@ describe('usePublicEventListingQuery', () => {
     expect(result.current.error).toBeInstanceOf(Error);
   });
 
-  it('handles null listing rows and resolves with an empty list', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: null,
-      error: null,
-    });
+  it('handles empty events list and resolves with an empty list', async () => {
+    mockCaller.mockResolvedValueOnce({ success: true, events: [] });
 
     const { result } = renderHookWithClient(() => usePublicEventListingQuery());
 
@@ -119,8 +103,9 @@ describe('usePublicEventListingQuery', () => {
   });
 
   it('filters out events that are closed and not recent past while keeping open events with null close date', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+      events: [
         {
           id: 'evt-filtered',
           slug: 'filtered',
@@ -138,7 +123,6 @@ describe('usePublicEventListingQuery', () => {
           registration_closes_at: null,
         },
       ],
-      error: null,
     });
 
     const { result } = renderHookWithClient(() => usePublicEventListingQuery());
@@ -153,8 +137,9 @@ describe('usePublicEventListingQuery', () => {
   });
 
   it('keeps same-day in-progress events as open instead of past', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({
-      data: [
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+      events: [
         {
           id: 'evt-same-day',
           slug: 'same-day',
@@ -165,7 +150,6 @@ describe('usePublicEventListingQuery', () => {
           registration_closes_at: null,
         },
       ],
-      error: null,
     });
 
     const { result } = renderHookWithClient(() => usePublicEventListingQuery());

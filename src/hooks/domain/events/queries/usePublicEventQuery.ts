@@ -2,16 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminEvent, EventAvailability } from '@/lib/domain/events';
-import { supabase } from '@/lib/infrastructure';
-import { logger } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
-/**
- * Hook to fetch a public event by slug with availability checks.
- * Handles event status validation, registration window checks, and gate states.
- *
- * @param slug - The event slug (URL-friendly identifier)
- * @returns React Query result with availability status and event data
- */
+interface GetPublicEventRequest {
+  slug: string;
+}
+
+interface GetPublicEventResponse {
+  success: true;
+  event: AdminEvent | null;
+  registration_count: number;
+}
+
 export function usePublicEventQuery(slug: string | null) {
   return useQuery({
     queryKey: QUERY_KEYS.publicEventBySlug(slug),
@@ -20,24 +22,16 @@ export function usePublicEventQuery(slug: string | null) {
         throw new Error('Event slug is required');
       }
 
-      logger.debug('Fetching event by slug:', slug);
+      const caller = createEdgeFunctionCaller<GetPublicEventRequest, GetPublicEventResponse>(
+        'get-public-event',
+      );
+      const payload = await caller({ slug });
 
-      const { data, error } = await supabase
-        .from('events')
-        .select(
-          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, require_id_lookup, registration_mode, allow_public_registrations, metadata, created_by_admin_id, created_at, updated_at',
-        )
-        .eq('slug', slug)
-        .maybeSingle<AdminEvent>();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data) {
+      if (!payload.event) {
         return { status: 'unavailable', reason: 'not_found_or_unpublished' } as EventAvailability;
       }
 
+      const data = payload.event;
       const now = Date.now();
       const opensAt = data.registration_opens_at ? Date.parse(data.registration_opens_at) : null;
       const closesAt = data.registration_closes_at ? Date.parse(data.registration_closes_at) : null;
@@ -62,18 +56,10 @@ export function usePublicEventQuery(slug: string | null) {
         } as EventAvailability;
       }
 
-      const { data: countData, error: countError } = await supabase.rpc(
-        'get_total_event_registration_count',
-        { p_event_id: data.id },
-      );
-      if (countError) {
-        logger.warn('Could not fetch registration count:', countError);
-      }
-
       return {
         status: 'available',
         event: data,
-        registration_count: (countData as number | null) ?? 0,
+        registration_count: payload.registration_count,
       } as EventAvailability;
     },
     enabled: Boolean(slug),

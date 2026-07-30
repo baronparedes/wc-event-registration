@@ -102,6 +102,18 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 12,
   },
+  getPublicEvent: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
+  getPublicEventFields: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
+  getPublicEventListing: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
 } as const;
 
 export const ERROR_CODES = {

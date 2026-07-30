@@ -2,7 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
+
+interface GetPublicEventListingResponse {
+  success: true;
+  events: Omit<PublicEventListingItem, 'listingStatus'>[];
+}
 
 export function usePublicEventListingQuery() {
   return useQuery({
@@ -13,17 +18,12 @@ export function usePublicEventListingQuery() {
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       const threeMonthsAgoMs = threeMonthsAgo.getTime();
 
-      const { data, error } = await supabase
-        .from('events')
-        .select(
-          'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, allow_public_registrations',
-        )
-        .eq('status', 'published')
-        .order('starts_at', { ascending: true });
+      const caller = createEdgeFunctionCaller<Record<string, never>, GetPublicEventListingResponse>(
+        'get-public-event-listing',
+      );
+      const payload = await caller({} as Record<string, never>);
 
-      if (error) throw error;
-
-      const rows = (data ?? []) as Omit<PublicEventListingItem, 'listingStatus'>[];
+      const rows = payload.events;
 
       return rows.flatMap((event) => {
         const startsAt = event.starts_at ? Date.parse(event.starts_at) : null;

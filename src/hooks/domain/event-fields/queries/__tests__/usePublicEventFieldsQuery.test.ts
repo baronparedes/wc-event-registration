@@ -5,23 +5,12 @@ import { makePublicEventField } from '@/__tests__/factories';
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields/queries/usePublicEventFieldsQuery';
 
-const { mockQueryBuilder, mockFrom, mockLogger, mockValidatePublicEventFieldConfig } = vi.hoisted(
+const { mockCaller, mockCreateEdgeFunctionCaller, mockValidatePublicEventFieldConfig } = vi.hoisted(
   () => {
-    const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-      select: vi.fn(),
-      eq: vi.fn(),
-      order: vi.fn(),
-      returns: vi.fn(),
-    };
-
-    queryBuilder.select.mockReturnValue(queryBuilder);
-    queryBuilder.eq.mockReturnValue(queryBuilder);
-    queryBuilder.order.mockReturnValue(queryBuilder);
-
+    const caller = vi.fn();
     return {
-      mockQueryBuilder: queryBuilder,
-      mockFrom: vi.fn(() => queryBuilder),
-      mockLogger: { debug: vi.fn() },
+      mockCaller: caller,
+      mockCreateEdgeFunctionCaller: vi.fn(() => caller),
       mockValidatePublicEventFieldConfig: vi.fn(),
     };
   },
@@ -33,10 +22,7 @@ vi.mock('@/lib/infrastructure', async () => {
 
   return {
     ...actual,
-    supabase: {
-      from: mockFrom,
-    },
-    logger: mockLogger,
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
   };
 });
 
@@ -59,10 +45,8 @@ describe('usePublicEventFieldsQuery', () => {
   it('returns validated public field config', async () => {
     const field = makePublicEventField();
     const rawRow = { id: field.id, event_id: field.event_id, field_key: field.field_key };
-    mockQueryBuilder.returns.mockResolvedValueOnce({
-      data: [rawRow],
-      error: null,
-    });
+
+    mockCaller.mockResolvedValueOnce({ success: true, fields: [rawRow] });
     mockValidatePublicEventFieldConfig.mockReturnValueOnce({
       validFields: [{ id: field.id }],
       issues: [],
@@ -74,15 +58,13 @@ describe('usePublicEventFieldsQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
+    expect(mockCaller).toHaveBeenCalledWith({ event_id: field.event_id });
     expect(mockValidatePublicEventFieldConfig).toHaveBeenCalledWith([rawRow]);
     expect(result.current.data).toEqual({ validFields: [{ id: field.id }], issues: [] });
   });
 
   it('returns query error state when field fetch fails', async () => {
-    mockQueryBuilder.returns.mockResolvedValueOnce({
-      data: null,
-      error: new Error('public fields failed'),
-    });
+    mockCaller.mockRejectedValueOnce(new Error('public fields failed'));
 
     const { result } = renderHookWithClient(() => usePublicEventFieldsQuery('event-1'));
 
@@ -99,8 +81,7 @@ describe('usePublicEventFieldsQuery', () => {
     const response = await result.current.refetch();
 
     expect(response.data).toEqual({ validFields: [], issues: [] });
-    expect(mockFrom).not.toHaveBeenCalled();
-    expect(mockLogger.debug).not.toHaveBeenCalled();
+    expect(mockCaller).not.toHaveBeenCalled();
     expect(mockValidatePublicEventFieldConfig).not.toHaveBeenCalled();
   });
 });
