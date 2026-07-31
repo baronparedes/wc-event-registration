@@ -5,6 +5,7 @@ import {
   ROUTE_PATHS,
   toAdminEventAttendance,
   toAdminEventAttendanceCheckIn,
+  toAdminEventAttendanceDashboard,
   toAdminEventAttendanceData,
   toAdminEventAttendanceFields,
   toAdminEventAttendanceUnregisteredMembers,
@@ -208,6 +209,13 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toAdminEventAttendanceData(eventId)}
                     label="Attendee Details"
+                    onClose={onClose}
+                  />
+                )}
+                {canRead && (
+                  <DrawerNavLink
+                    to={toAdminEventAttendanceDashboard(eventId)}
+                    label="Attendance Dashboard"
                     onClose={onClose}
                   />
                 )}

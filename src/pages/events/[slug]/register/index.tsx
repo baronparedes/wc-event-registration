@@ -59,6 +59,17 @@ export function EventRegistrationPage() {
 
   useWizardStepScroll(activeWizardStep, [stepOneRef, stepTwoRef, dynamicFieldsStepRef]);
 
+  if (eventQuery.isLoading) {
+    return (
+      <section className="mx-auto max-w-3xl space-y-6">
+        {/* create a loading spinner div */}
+        <div className="flex items-center justify-center rounded-2xl border border-border bg-surface p-6 shadow-sm">
+          <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-3xl space-y-6">
       <EventHeaderCard

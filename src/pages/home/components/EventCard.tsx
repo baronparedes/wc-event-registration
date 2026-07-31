@@ -1,5 +1,5 @@
 import { Users } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { Badge, Button } from '@/components/ui';
 import { toEventRegistration } from '@/config/constants';
@@ -15,8 +15,37 @@ type EventCardProps = {
  * Used in event listing pages to show available and past events.
  */
 export function EventCard({ event }: EventCardProps) {
+  const navigate = useNavigate();
+  const registrationPath = toEventRegistration(event.slug);
+  const isOpen = event.listingStatus === 'open';
+
+  const handleCardClick = () => {
+    if (!isOpen) {
+      return;
+    }
+
+    navigate(registrationPath);
+  };
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!isOpen) {
+      return;
+    }
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      navigate(registrationPath);
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-md hover:scale-[1.02]">
+    <div
+      className={`flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-md hover:scale-[1.02] ${isOpen ? 'cursor-pointer' : ''}`}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role={isOpen ? 'link' : undefined}
+      tabIndex={isOpen ? 0 : undefined}
+    >
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-heading text-base font-semibold text-text">{event.title}</h3>
         <Badge
@@ -65,9 +94,9 @@ export function EventCard({ event }: EventCardProps) {
         <dd>{formatDateOnly(event.registration_closes_at)}</dd>
       </dl>
 
-      {event.listingStatus === 'open' && (
+      {isOpen && (
         <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">
-          <Link to={toEventRegistration(event.slug)}>Register Now</Link>
+          <Link to={registrationPath}>Register Now</Link>
         </Button>
       )}
     </div>
