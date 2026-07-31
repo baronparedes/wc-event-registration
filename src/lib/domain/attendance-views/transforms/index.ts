@@ -1,5 +1,5 @@
 export { buildAttendeeView } from './build-attendee-view';
-export { collectDynamicFieldOptions } from './field-access';
+export { collectDynamicFieldOptions, getVisibleFieldValue } from './field-access';
 export { buildGroupKeys, buildGroupLabel, compareBySortMode, sortGroups } from './grouping';
 export { attendeeToRegistrant } from './mappers';
 export {

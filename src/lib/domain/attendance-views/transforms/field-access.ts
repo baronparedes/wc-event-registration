@@ -3,6 +3,7 @@ import type {
   AttendeeSearchResult,
   RegistrationAnswerSummary,
 } from '@/lib/domain/attendance';
+import { formatCompactCheckedInSlotLabels } from '@/lib/domain/attendance';
 
 import type { DynamicFieldOption, DynamicFieldRef, DynamicFieldSource } from '../types';
 import {
@@ -181,4 +182,36 @@ export function collectDynamicFieldOptions(
 export function matchesRole(attendeeRole: string | null, allowedRoles: string[]): boolean {
   const roleTokens = new Set(allowedRoles.map((role) => normalizeValue(role)));
   return roleTokens.has(normalizeValue(attendeeRole ?? ''));
+}
+
+export function getVisibleFieldValue(
+  attendee: AttendeeSearchResult | undefined,
+  field: DynamicFieldRef,
+): string {
+  if (!attendee) return '—';
+
+  if (field.source === 'member') {
+    if (field.fieldKey === 'member_id') return attendee.member_id?.trim() || '—';
+    if (field.fieldKey === 'email') return attendee.email?.trim() || '—';
+    if (field.fieldKey === 'full_name') return attendee.full_name?.trim() || '—';
+    if (field.fieldKey === 'checked_in_slot') {
+      const labels = formatCompactCheckedInSlotLabels(attendee);
+      return labels.length > 0 ? labels.join(', ') : '—';
+    }
+    if (field.fieldKey === 'check_in_status')
+      return attendee.check_in_status === 'checked_in' ? 'Checked In' : 'Not Checked In';
+    return '—';
+  }
+
+  if (field.source === 'role') return attendee.role?.trim() || '—';
+  if (field.source === 'category') return attendee.category?.trim() || '—';
+
+  const answers =
+    field.source === 'registration' ? attendee.registration_answers : attendee.attendance_answers;
+  const answer = answers.find((item) => item.field_key === field.fieldKey);
+  if (!answer) return '—';
+  if (answer.answer_text !== null && answer.answer_text.trim().length > 0)
+    return answer.answer_text;
+  if (answer.answer_number !== null) return String(answer.answer_number);
+  return '—';
 }

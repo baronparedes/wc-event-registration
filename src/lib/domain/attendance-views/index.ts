@@ -22,6 +22,7 @@ export {
   toDynamicFieldToken,
   fromDynamicFieldToken,
   collectDynamicFieldOptions,
+  getVisibleFieldValue,
   attendeeToRegistrant,
   buildAttendeeView,
 } from './transforms';

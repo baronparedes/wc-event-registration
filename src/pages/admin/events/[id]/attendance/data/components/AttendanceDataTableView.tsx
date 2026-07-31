@@ -134,43 +134,52 @@ export function AttendanceDataTableView({
                   )}
                 </div>
               </ListTableCell>
-              {renderableFields.map((field) => (
-                <ListTableCell
-                  key={`${rowKey}:${field.source}:${field.fieldKey}`}
-                  className="whitespace-nowrap !px-2 !py-2 align-middle"
-                >
-                  {toDynamicFieldToken(field) === 'member:checked_in_slot' ? (
-                    checkedInSlotLabels.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {checkedInSlotLabels.map((label, labelIndex) => (
-                          <span
-                            key={`${rowKey}:checked-slot:${label}:${labelIndex}`}
-                            className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
-                          >
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-500">—</span>
-                    )
-                  ) : field.fieldType === 'color_picker' ? (
-                    <span className="text-sm text-text">
-                      <ColorSwatchDisplay value={getVisibleFieldValue(attendee, field)} />
-                    </span>
-                  ) : (
-                    <span
-                      className={
-                        toDynamicFieldToken(field) === 'member:member_id'
-                          ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700'
-                          : 'text-sm text-text'
-                      }
-                    >
-                      {getVisibleFieldValue(attendee, field)}
-                    </span>
-                  )}
-                </ListTableCell>
-              ))}
+              {renderableFields.map((field) => {
+                const fieldToken = toDynamicFieldToken(field);
+                const isCheckedInSlotField = fieldToken === 'member:checked_in_slot';
+                const isColorPickerField = field.fieldType === 'color_picker';
+
+                return (
+                  <ListTableCell
+                    key={`${rowKey}:${field.source}:${field.fieldKey}`}
+                    className="whitespace-nowrap !px-2 !py-2 align-middle"
+                  >
+                    {isCheckedInSlotField &&
+                      (checkedInSlotLabels.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {checkedInSlotLabels.map((label, labelIndex) => (
+                            <span
+                              key={`${rowKey}:checked-slot:${label}:${labelIndex}`}
+                              className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">—</span>
+                      ))}
+
+                    {isColorPickerField && !isCheckedInSlotField && (
+                      <span className="text-sm text-text">
+                        <ColorSwatchDisplay value={getVisibleFieldValue(attendee, field)} />
+                      </span>
+                    )}
+
+                    {!isCheckedInSlotField && !isColorPickerField && (
+                      <span
+                        className={
+                          fieldToken === 'member:member_id'
+                            ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700'
+                            : 'text-sm text-text'
+                        }
+                      >
+                        {getVisibleFieldValue(attendee, field)}
+                      </span>
+                    )}
+                  </ListTableCell>
+                );
+              })}
               {canWrite && (
                 <ListTableCell className="whitespace-nowrap !px-2 !py-2 align-middle print:hidden">
                   <div onClick={(e) => e.stopPropagation()}>

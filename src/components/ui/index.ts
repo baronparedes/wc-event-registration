@@ -28,3 +28,5 @@ export { Switch } from './Switch';
 export { WizardStep } from './WizardStep';
 export type { WizardStepProps } from './WizardStep';
 export { EventHeaderCard } from './EventHeaderCard';
+export { Avatar } from './Avatar';
+export { ColorSwatchDisplay } from './ColorSwatchDisplay';
