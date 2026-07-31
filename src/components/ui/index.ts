@@ -30,3 +30,4 @@ export type { WizardStepProps } from './WizardStep';
 export { EventHeaderCard } from './EventHeaderCard';
 export { Avatar } from './Avatar';
 export { ColorSwatchDisplay } from './ColorSwatchDisplay';
+export { StepIndicator } from './StepIndicator';

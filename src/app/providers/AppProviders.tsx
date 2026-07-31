@@ -3,9 +3,8 @@ import type { PropsWithChildren } from 'react';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { ADMIN_AUTH_QUERY_KEY } from '@/hooks/domain/auth';
 import { supabase } from '@/lib/infrastructure';
-
-import { ADMIN_AUTH_QUERY_KEY } from '../../hooks/domain/auth';
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(

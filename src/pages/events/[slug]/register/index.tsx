@@ -1,9 +1,8 @@
 import { useRef } from 'react';
 
+import { SectionCard, StepIndicator } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { StepIndicator } from '@/components/ui/StepIndicator';
 import { TIMING } from '@/config/constants';
 import { useWizardStepScroll } from '@/hooks/utils';
 import { derivePublicRegistrationAccess } from '@/lib/domain/events';
@@ -62,10 +61,13 @@ export function EventRegistrationPage() {
   if (eventQuery.isLoading) {
     return (
       <section className="mx-auto max-w-3xl space-y-6">
-        {/* create a loading spinner div */}
-        <div className="flex items-center justify-center rounded-2xl border border-border bg-surface p-6 shadow-sm">
-          <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        </div>
+        <SectionCard title="Loading...">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-3/4 rounded bg-muted" />
+            <div className="h-4 w-full rounded bg-muted" />
+            <div className="h-4 w-full rounded bg-muted" />
+          </div>
+        </SectionCard>
       </section>
     );
   }
