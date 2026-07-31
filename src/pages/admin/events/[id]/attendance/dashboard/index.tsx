@@ -351,7 +351,7 @@ export function AdminAttendanceDashboardPage() {
                       <span
                         className={[
                           'rounded-full px-1.5 py-0.5 text-xs font-semibold',
-                          isActive ? 'bg-primary/10 text-primary' : 'bg-border text-muted',
+                          isActive ? 'bg-primary text-white' : 'bg-border text-muted',
                         ].join(' ')}
                       >
                         {tab.count}
