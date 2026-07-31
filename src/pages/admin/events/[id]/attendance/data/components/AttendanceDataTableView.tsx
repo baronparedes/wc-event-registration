@@ -142,7 +142,7 @@ export function AttendanceDataTableView({
                 return (
                   <ListTableCell
                     key={`${rowKey}:${field.source}:${field.fieldKey}`}
-                    className="whitespace-nowrap !px-2 !py-2 align-middle"
+                    className="whitespace-nowrap !px-2 !py-2 align-middle text-wrap min-w-[100px]"
                   >
                     {isCheckedInSlotField &&
                       (checkedInSlotLabels.length > 0 ? (
