@@ -8,23 +8,29 @@ import { Button } from '../../../../../../../components/ui';
 type AttendeeTimeslotSelectionPanelProps = {
   autoWindowModeEnabled: boolean;
   activeSlot: string | null;
+  checkedInSlots: string[];
   currentTimeMs: number;
   isSubmitting: boolean;
   suggestedSlot: string;
   timeslots: AttendanceTimeslotConfig[];
   onTimeslotConfirm: (slot: string) => void;
+  onReadyForNext: () => void;
 };
 
 export function AttendeeTimeslotSelectionPanel(props: AttendeeTimeslotSelectionPanelProps) {
   const {
     autoWindowModeEnabled,
     activeSlot,
+    checkedInSlots,
     currentTimeMs,
     isSubmitting,
     suggestedSlot,
     timeslots,
     onTimeslotConfirm,
+    onReadyForNext,
   } = props;
+
+  const checkedInSlotSet = new Set(checkedInSlots);
 
   function isUnrestrictedSlot(slot: AttendanceTimeslotConfig): boolean {
     return !slot.opens_at || !slot.closes_at;
@@ -63,13 +69,29 @@ export function AttendeeTimeslotSelectionPanel(props: AttendeeTimeslotSelectionP
     return null;
   }
 
+  const remainingActionableTimeslots = actionableTimeslots.filter(
+    (slot) => !checkedInSlotSet.has(slot.slot_at),
+  );
+
+  if (remainingActionableTimeslots.length === 0) {
+    return (
+      <div className="space-y-2.5 rounded-xl border border-border bg-background p-3">
+        <p className="text-sm font-semibold text-text">Already checked in for this timeslot.</p>
+        <Button type="button" onClick={onReadyForNext} fullWidth={true} disabled={isSubmitting}>
+          Ready for Next Attendee
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2.5 rounded-xl border border-border bg-background p-3">
       <p className="text-sm font-semibold text-text">Choose check-in time</p>
       <div className="flex flex-col gap-2.5">
-        {actionableTimeslots.map((slot) => {
+        {remainingActionableTimeslots.map((slot) => {
           const isUnrestricted = isUnrestrictedSlot(slot);
-          const isSuggested = suggestedSlot === slot.slot_at || actionableTimeslots.length === 1;
+          const isSuggested =
+            suggestedSlot === slot.slot_at || remainingActionableTimeslots.length === 1;
           const isDisabled = isSubmitting;
 
           return (

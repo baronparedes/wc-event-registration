@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AttendeeTimeslotSelectionPanel } from '@/pages/admin/events/[id]/attendance/check-in/components/AttendeeTimeslotSelectionPanel';
@@ -9,6 +9,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
       <AttendeeTimeslotSelectionPanel
         autoWindowModeEnabled={false}
         activeSlot={null}
+        checkedInSlots={[]}
         currentTimeMs={Date.parse('2026-07-10T09:00:00+08:00')}
         isSubmitting={false}
         suggestedSlot=""
@@ -25,6 +26,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
           },
         ]}
         onTimeslotConfirm={vi.fn()}
+        onReadyForNext={vi.fn()}
       />,
     );
 
@@ -36,6 +38,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
       <AttendeeTimeslotSelectionPanel
         autoWindowModeEnabled={false}
         activeSlot={null}
+        checkedInSlots={[]}
         currentTimeMs={Date.parse('2026-07-10T09:00:00+08:00')}
         isSubmitting={false}
         suggestedSlot=""
@@ -47,6 +50,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
           },
         ]}
         onTimeslotConfirm={vi.fn()}
+        onReadyForNext={vi.fn()}
       />,
     );
 
@@ -59,6 +63,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
       <AttendeeTimeslotSelectionPanel
         autoWindowModeEnabled={false}
         activeSlot={null}
+        checkedInSlots={[]}
         currentTimeMs={Date.parse('2026-07-10T09:00:00+08:00')}
         isSubmitting={false}
         suggestedSlot=""
@@ -70,6 +75,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
           },
         ]}
         onTimeslotConfirm={vi.fn()}
+        onReadyForNext={vi.fn()}
       />,
     );
 
@@ -81,6 +87,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
       <AttendeeTimeslotSelectionPanel
         autoWindowModeEnabled={true}
         activeSlot={null}
+        checkedInSlots={[]}
         currentTimeMs={Date.parse('2026-07-10T09:00:00+08:00')}
         isSubmitting={false}
         suggestedSlot=""
@@ -92,11 +99,43 @@ describe('AttendeeTimeslotSelectionPanel', () => {
           },
         ]}
         onTimeslotConfirm={vi.fn()}
+        onReadyForNext={vi.fn()}
       />,
     );
 
     const buttons = screen.getAllByRole('button');
     expect(buttons).toHaveLength(1);
     expect(buttons[0]).not.toBeDisabled();
+  });
+
+  it('shows Ready for Next Attendee when all actionable timeslots are already checked in', () => {
+    const onReadyForNext = vi.fn();
+
+    render(
+      <AttendeeTimeslotSelectionPanel
+        autoWindowModeEnabled={true}
+        activeSlot={'2026-07-10T09:00:00+08:00'}
+        checkedInSlots={['2026-07-10T09:00:00+08:00']}
+        currentTimeMs={Date.parse('2026-07-10T09:00:00+08:00')}
+        isSubmitting={false}
+        suggestedSlot="2026-07-10T09:00:00+08:00"
+        timeslots={[
+          {
+            slot_at: '2026-07-10T09:00:00+08:00',
+            opens_at: '2026-07-10T08:30:00+08:00',
+            closes_at: '2026-07-10T09:30:00+08:00',
+          },
+        ]}
+        onTimeslotConfirm={vi.fn()}
+        onReadyForNext={onReadyForNext}
+      />,
+    );
+
+    expect(screen.getByText('Already checked in for this timeslot.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ready for Next Attendee' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ready for Next Attendee' }));
+    expect(onReadyForNext).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Confirm Check-In' })).not.toBeInTheDocument();
   });
 });

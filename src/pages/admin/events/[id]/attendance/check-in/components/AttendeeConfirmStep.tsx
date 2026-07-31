@@ -64,9 +64,34 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
   const { getAnswerText } = useFieldAnswerTextFormatter();
 
   const requiresTimeslotSelection = timeslotEnabled && timeslots.length > 0;
+  const isAlreadyCheckedIn = attendee?.check_in_status === 'checked_in';
+  const checkedInSlots = (attendee?.slot_records ?? []).map((record) => record.slot);
   const shouldShowReadyForNext =
-    Boolean(checkInResult) ||
-    (attendee?.check_in_status === 'checked_in' && !requiresTimeslotSelection);
+    Boolean(checkInResult) || (isAlreadyCheckedIn && !requiresTimeslotSelection);
+
+  const actionContent = (() => {
+    if (shouldShowReadyForNext) {
+      return (
+        <Button type="button" fullWidth={true} size="md" onClick={onReadyForNext}>
+          Ready for Next Attendee
+        </Button>
+      );
+    }
+
+    if (requiresTimeslotSelection) {
+      return null;
+    }
+
+    return (
+      <Button type="button" fullWidth={true} size="lg" onClick={onCheckIn} disabled={isSubmitting}>
+        {isSubmitting ? 'Checking In...' : 'Confirm Check-In'}
+        <ChevronsRight
+          aria-hidden="true"
+          className="h-5 w-5 opacity-85 transition-transform group-hover:translate-x-0.5"
+        />
+      </Button>
+    );
+  })();
 
   const avatarName =
     attendee && attendee.nickname && attendee.last_name
@@ -93,14 +118,12 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
           )}
           <div
             className={`rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm ${
-              attendee.check_in_status === 'checked_in'
+              isAlreadyCheckedIn
                 ? 'border-green-300 bg-green-100 text-green-900'
                 : 'border-primary/40 bg-blue-100 text-primary'
             }`}
           >
-            {attendee.check_in_status === 'checked_in'
-              ? 'Already Checked In'
-              : 'Ready for Check-In'}
+            {isAlreadyCheckedIn ? 'Already Checked In' : 'Ready for Check-In'}
           </div>
 
           <div className="rounded-xl border border-border bg-background p-3 lg:p-4">
@@ -231,34 +254,18 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
             <AttendeeTimeslotSelectionPanel
               autoWindowModeEnabled={autoWindowModeEnabled}
               activeSlot={activeSlot}
+              checkedInSlots={checkedInSlots}
               currentTimeMs={currentTimeMs}
               isSubmitting={isSubmitting}
               suggestedSlot={suggestedSlot}
               timeslots={timeslots}
               onTimeslotConfirm={onTimeslotConfirm}
+              onReadyForNext={onReadyForNext}
             />
           )}
 
           <div className="sticky bottom-1.5 space-y-1.5 rounded-xl bg-surface/95 p-1.5 backdrop-blur sm:static sm:bg-transparent sm:p-0">
-            {shouldShowReadyForNext ? (
-              <Button type="button" fullWidth={true} size="md" onClick={onReadyForNext}>
-                Ready for Next Attendee
-              </Button>
-            ) : requiresTimeslotSelection ? null : (
-              <Button
-                type="button"
-                fullWidth={true}
-                size="lg"
-                onClick={onCheckIn}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Checking In...' : 'Confirm Check-In'}
-                <ChevronsRight
-                  aria-hidden="true"
-                  className="h-5 w-5 opacity-85 transition-transform group-hover:translate-x-0.5"
-                />
-              </Button>
-            )}
+            {actionContent}
           </div>
         </div>
       )}

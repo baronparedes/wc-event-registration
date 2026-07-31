@@ -41,6 +41,38 @@ const timeslots = [
 ];
 
 describe('AttendeeConfirmStep', () => {
+  it('shows ready-for-next action for already checked-in attendees in non-timeslot flow', () => {
+    const onReadyForNext = vi.fn();
+
+    render(
+      <AttendeeConfirmStep
+        attendee={{
+          ...attendee,
+          check_in_status: 'checked_in',
+          official_check_in_time: '2026-07-10T09:05:00+08:00',
+        }}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={onReadyForNext}
+      />,
+    );
+
+    expect(screen.getByText('Already Checked In')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirm Check-In' })).not.toBeInTheDocument();
+
+    const readyButton = screen.getByRole('button', { name: 'Ready for Next Attendee' });
+    fireEvent.click(readyButton);
+    expect(onReadyForNext).toHaveBeenCalledTimes(1);
+  });
+
   it('hides the generic confirm button in auto-window mode', () => {
     render(
       <AttendeeConfirmStep
@@ -138,5 +170,80 @@ describe('AttendeeConfirmStep', () => {
     );
 
     expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('shows ready-for-next in timeslot mode when attendee is already checked in for the active slot', () => {
+    const onReadyForNext = vi.fn();
+
+    render(
+      <AttendeeConfirmStep
+        attendee={{
+          ...attendee,
+          check_in_status: 'checked_in',
+          official_check_in_time: '2026-07-10T09:05:00+08:00',
+          slot_records: [
+            {
+              slot: '2026-07-10T11:00:00+08:00',
+              recorded_at: '2026-07-10T11:03:00+08:00',
+            },
+          ],
+        }}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={true}
+        timeslots={timeslots}
+        autoWindowModeEnabled={true}
+        activeSlot="2026-07-10T11:00:00+08:00"
+        suggestedSlot="2026-07-10T11:00:00+08:00"
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={onReadyForNext}
+      />,
+    );
+
+    expect(screen.getByText('Already checked in for this timeslot.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirm Check-In' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ready for Next Attendee' }));
+    expect(onReadyForNext).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps active timeslot check-in available when attendee checked into a different slot', () => {
+    const onTimeslotConfirm = vi.fn();
+
+    render(
+      <AttendeeConfirmStep
+        attendee={{
+          ...attendee,
+          check_in_status: 'checked_in',
+          official_check_in_time: '2026-07-10T09:05:00+08:00',
+          slot_records: [
+            {
+              slot: '2026-07-10T09:00:00+08:00',
+              recorded_at: '2026-07-10T09:01:00+08:00',
+            },
+          ],
+        }}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={true}
+        timeslots={timeslots}
+        autoWindowModeEnabled={true}
+        activeSlot="2026-07-10T11:00:00+08:00"
+        suggestedSlot="2026-07-10T11:00:00+08:00"
+        onTimeslotConfirm={onTimeslotConfirm}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    const activeSlotButton = screen.getByRole('button', {
+      name: /Select timeslot/i,
+    });
+    fireEvent.click(activeSlotButton);
+
+    expect(onTimeslotConfirm).toHaveBeenCalledWith('2026-07-10T11:00:00+08:00');
   });
 });
