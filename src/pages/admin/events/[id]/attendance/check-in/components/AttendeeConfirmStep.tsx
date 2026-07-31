@@ -1,3 +1,5 @@
+import { ChevronsRight } from 'lucide-react';
+
 import { Button } from '@/components/ui';
 import { Avatar } from '@/components/ui/Avatar';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
@@ -251,6 +253,10 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Checking In...' : 'Confirm Check-In'}
+                <ChevronsRight
+                  aria-hidden="true"
+                  className="h-5 w-5 opacity-85 transition-transform group-hover:translate-x-0.5"
+                />
               </Button>
             )}
           </div>

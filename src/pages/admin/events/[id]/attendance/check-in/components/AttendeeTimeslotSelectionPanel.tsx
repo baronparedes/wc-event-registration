@@ -81,15 +81,13 @@ export function AttendeeTimeslotSelectionPanel(props: AttendeeTimeslotSelectionP
               variant={isSuggested ? 'default' : 'outline'}
               aria-label={
                 isUnrestricted
-                  ? 'Check in without timeslot'
+                  ? 'Confirm Check-In'
                   : `Select timeslot ${formatDateTime(slot.slot_at, slot.slot_at)}`
               }
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="block text-lg leading-tight md:text-xl">
-                  {isUnrestricted
-                    ? 'Check in without timeslot'
-                    : formatDateTime(slot.slot_at, slot.slot_at)}
+                  {isUnrestricted ? 'Confirm Check-In' : formatDateTime(slot.slot_at, slot.slot_at)}
                 </span>
                 {isSuggested && (
                   <ChevronsRight

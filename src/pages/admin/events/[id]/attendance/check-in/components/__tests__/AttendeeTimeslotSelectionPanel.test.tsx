@@ -51,7 +51,7 @@ describe('AttendeeTimeslotSelectionPanel', () => {
     );
 
     expect(screen.getAllByRole('button')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Check in without timeslot' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm Check-In' })).toBeInTheDocument();
   });
 
   it('renders no buttons when all slots are not yet open', () => {
