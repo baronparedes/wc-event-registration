@@ -43,9 +43,13 @@ export function AttendanceDataMobileView({
   getRegistrantKey,
   getVisibleFieldValue,
 }: AttendanceDataMobileViewProps) {
-  const renderableFields = visibleFields.filter(
-    (field) => toDynamicFieldToken(field) !== 'member:avatar',
+  const shouldShowCheckInIndicator = visibleFields.some(
+    (field) => toDynamicFieldToken(field) === 'member:check_in_status',
   );
+  const renderableFields = visibleFields.filter((field) => {
+    const token = toDynamicFieldToken(field);
+    return token !== 'member:avatar' && token !== 'member:check_in_status';
+  });
 
   return (
     <div className="space-y-2 p-2">
@@ -91,18 +95,20 @@ export function AttendanceDataMobileView({
                   <p className="break-words font-semibold text-text self-center">
                     {registrant.nickname} {registrant.last_name}
                   </p>
-                  <span
-                    role="img"
-                    aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                    title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                    className={`mt-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center self-center justify-center rounded-full print:hidden ${
-                      isCheckedIn
-                        ? 'bg-primary text-white'
-                        : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
-                    }`}
-                  >
-                    {isCheckedIn ? <Check className="h-2 w-2" /> : <Minus className="h-2 w-2" />}
-                  </span>
+                  {shouldShowCheckInIndicator && (
+                    <span
+                      role="img"
+                      aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+                      title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
+                      className={`mt-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center self-center justify-center rounded-full print:hidden ${
+                        isCheckedIn
+                          ? 'bg-primary text-white'
+                          : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
+                      }`}
+                    >
+                      {isCheckedIn ? <Check className="h-2 w-2" /> : <Minus className="h-2 w-2" />}
+                    </span>
+                  )}
                 </div>
                 {attendee?.email && (
                   <p className="mt-0.5 break-words text-xs text-muted">{attendee.email}</p>
@@ -150,7 +156,35 @@ export function AttendanceDataMobileView({
                     {field.label}
                   </dt>
                   <dd className="mt-0.5 break-words whitespace-normal">
-                    {field.fieldType === 'color_picker' ? (
+                    {toDynamicFieldToken(field) === 'member:checked_in_slot' ? (
+                      (() => {
+                        const rawValue = getVisibleFieldValue(attendee, field);
+                        const slotLabels =
+                          rawValue === '—'
+                            ? []
+                            : rawValue
+                                .split(',')
+                                .map((value) => value.trim())
+                                .filter((value) => value.length > 0);
+
+                        if (slotLabels.length === 0) {
+                          return <span className="text-sm text-slate-500">—</span>;
+                        }
+
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {slotLabels.map((label, labelIndex) => (
+                              <span
+                                key={`${rowKey}:mobile-checked-slot:${label}:${labelIndex}`}
+                                className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()
+                    ) : field.fieldType === 'color_picker' ? (
                       <ColorSwatchDisplay value={getVisibleFieldValue(attendee, field)} fullWidth />
                     ) : (
                       <span

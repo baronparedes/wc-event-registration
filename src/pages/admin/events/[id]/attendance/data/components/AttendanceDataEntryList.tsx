@@ -42,6 +42,92 @@ const DEFAULT_VISIBLE_FIELDS: DynamicFieldRef[] = [
   { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
 ];
 
+const MANILA_TIME_ZONE = 'Asia/Manila';
+
+const MANILA_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: MANILA_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const MANILA_MONTH_DAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: MANILA_TIME_ZONE,
+  month: 'short',
+  day: '2-digit',
+});
+
+const MANILA_HOUR_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: MANILA_TIME_ZONE,
+  hour: 'numeric',
+  hour12: true,
+});
+
+function parseSlotTime(isoString: string): Date | null {
+  const parsed = new Date(isoString);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getManilaDayKey(date: Date): string {
+  const parts = MANILA_DATE_PARTS_FORMATTER.formatToParts(date);
+  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '';
+  const day = parts.find((part) => part.type === 'day')?.value ?? '';
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatCompactSlotLabel(date: Date, includeDatePrefix: boolean): string {
+  const hourLabel = MANILA_HOUR_FORMATTER.format(date).replace(/\s+/g, '').toUpperCase();
+
+  if (!includeDatePrefix) {
+    return hourLabel;
+  }
+
+  const monthDayParts = MANILA_MONTH_DAY_FORMATTER.formatToParts(date);
+  const month = (monthDayParts.find((part) => part.type === 'month')?.value ?? '').toUpperCase();
+  const day = monthDayParts.find((part) => part.type === 'day')?.value ?? '';
+
+  if (!month || !day) {
+    return hourLabel;
+  }
+
+  return `${month}-${day} ${hourLabel}`;
+}
+
+function getCheckedInSlotLabels(attendee: AttendeeSearchResult | undefined): string[] {
+  if (!attendee || attendee.check_in_status !== 'checked_in' || !attendee.slot_records?.length) {
+    return [];
+  }
+
+  const normalizedSlots = attendee.slot_records
+    .map((record) => {
+      const parsed = parseSlotTime(record.slot);
+      return parsed ? { slot: record.slot, parsed } : null;
+    })
+    .filter((entry): entry is { slot: string; parsed: Date } => entry !== null)
+    .sort((left, right) => left.parsed.getTime() - right.parsed.getTime());
+
+  if (normalizedSlots.length === 0) {
+    return [];
+  }
+
+  const uniqueBySlot = new Set<string>();
+  const uniqueSortedSlots = normalizedSlots.filter((entry) => {
+    if (uniqueBySlot.has(entry.slot)) {
+      return false;
+    }
+
+    uniqueBySlot.add(entry.slot);
+    return true;
+  });
+
+  const dayKeys = new Set(uniqueSortedSlots.map((entry) => getManilaDayKey(entry.parsed)));
+  const includeDatePrefix = dayKeys.size > 1;
+
+  return uniqueSortedSlots.map((entry) => formatCompactSlotLabel(entry.parsed, includeDatePrefix));
+}
+
 function countFilledAnswers(answers: AttendanceAnswer[], fields: AttendanceField[]): number {
   return fields.filter((f) => {
     const answer = answers.find((a) => a.attendance_field_id === f.id);
@@ -76,6 +162,15 @@ function getVisibleFieldValue(attendee: AttendeeSearchResult | undefined, field:
 
     if (field.fieldKey === 'full_name') {
       return attendee.full_name?.trim() || '—';
+    }
+
+    if (field.fieldKey === 'checked_in_slot') {
+      const labels = getCheckedInSlotLabels(attendee);
+      return labels.length > 0 ? labels.join(', ') : '—';
+    }
+
+    if (field.fieldKey === 'check_in_status') {
+      return attendee.check_in_status === 'checked_in' ? 'Checked In' : 'Not Checked In';
     }
 
     return '—';

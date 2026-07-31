@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -283,7 +283,150 @@ describe('AdminAttendanceDataPage', () => {
     expect(mockUseAttendanceFieldsQuery).toHaveBeenCalledWith(EVENT_ID, { activeOnly: true });
     expect(screen.getByText('Role')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
+    expect(screen.queryByText('Checked In Slot')).not.toBeInTheDocument();
     expect(screen.queryByText('Shirt Size')).not.toBeInTheDocument();
+  });
+
+  it('toggles the Checked In Slot column from the Columns selector', async () => {
+    renderPage();
+
+    expect(screen.queryByText('Checked In Slot')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    fireEvent.click(screen.getByLabelText('Checked In Slot'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Checked In Slot')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    fireEvent.click(screen.getByLabelText('Checked In Slot'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Checked In Slot')).not.toBeInTheDocument();
+    });
+  });
+
+  it('toggles the check-in indicator beside attendee name from the Columns selector', async () => {
+    renderPage();
+
+    expect(screen.queryByLabelText('Not Checked In')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    fireEvent.click(screen.getByLabelText('Check-In Indicator'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Not Checked In')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    fireEvent.click(screen.getByLabelText('Check-In Indicator'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Not Checked In')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders compact checked-in slot badges and expands labels when slots span multiple days', () => {
+    mockUseAttendeesLocalCacheQuery.mockReturnValue({
+      attendees: [
+        {
+          attendee_kind: 'registered',
+          registration_id: 'reg-same-day',
+          public_registration_id: null,
+          user_id: 'user-same-day',
+          member_id: 'MID-101',
+          full_name: 'Same Day',
+          email: 'same-day@example.com',
+          role: 'Member',
+          category: 'Adult',
+          registration_status: 'submitted',
+          submitted_at: '2026-07-04T00:00:00Z',
+          check_in_status: 'checked_in',
+          official_check_in_time: '2026-08-30T01:05:00.000Z',
+          slot_records: [
+            { slot: '2026-08-30T01:00:00.000Z', recorded_at: '2026-08-30T01:05:00.000Z' },
+            { slot: '2026-08-30T03:00:00.000Z', recorded_at: '2026-08-30T03:05:00.000Z' },
+          ],
+          registration_answers: [],
+          attendance_answers: [],
+        },
+        {
+          attendee_kind: 'registered',
+          registration_id: 'reg-multi-day',
+          public_registration_id: null,
+          user_id: 'user-multi-day',
+          member_id: 'MID-202',
+          full_name: 'Multi Day',
+          email: 'multi-day@example.com',
+          role: 'Member',
+          category: 'Adult',
+          registration_status: 'submitted',
+          submitted_at: '2026-07-04T00:00:00Z',
+          check_in_status: 'checked_in',
+          official_check_in_time: '2026-08-31T01:05:00.000Z',
+          slot_records: [
+            { slot: '2026-08-30T01:00:00.000Z', recorded_at: '2026-08-30T01:05:00.000Z' },
+            { slot: '2026-08-31T01:00:00.000Z', recorded_at: '2026-08-31T01:05:00.000Z' },
+          ],
+          registration_answers: [],
+          attendance_answers: [],
+        },
+        {
+          attendee_kind: 'registered',
+          registration_id: 'reg-no-slot',
+          public_registration_id: null,
+          user_id: 'user-no-slot',
+          member_id: 'MID-303',
+          full_name: 'No Slot',
+          email: 'no-slot@example.com',
+          role: 'Member',
+          category: 'Adult',
+          registration_status: 'submitted',
+          submitted_at: '2026-07-04T00:00:00Z',
+          check_in_status: 'not_checked_in',
+          official_check_in_time: null,
+          slot_records: [
+            { slot: '2026-08-30T01:00:00.000Z', recorded_at: '2026-08-30T01:05:00.000Z' },
+          ],
+          registration_answers: [],
+          attendance_answers: [],
+        },
+      ],
+      cachedAt: Date.now(),
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refresh: vi.fn(),
+      updateAttendee: vi.fn(),
+    });
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    fireEvent.click(screen.getByLabelText('Checked In Slot'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(screen.getByText('Checked In Slot')).toBeInTheDocument();
+
+    const sameDayRow = screen.getByText('MID-101').closest('tr');
+    expect(sameDayRow).not.toBeNull();
+    expect(within(sameDayRow as HTMLTableRowElement).getByText('9AM')).toBeInTheDocument();
+    expect(within(sameDayRow as HTMLTableRowElement).getByText('11AM')).toBeInTheDocument();
+
+    const multiDayRow = screen.getByText('MID-202').closest('tr');
+    expect(multiDayRow).not.toBeNull();
+    expect(within(multiDayRow as HTMLTableRowElement).getByText('AUG-30 9AM')).toBeInTheDocument();
+    expect(within(multiDayRow as HTMLTableRowElement).getByText('AUG-31 9AM')).toBeInTheDocument();
+
+    const noSlotRow = screen.getByText('MID-303').closest('tr');
+    expect(noSlotRow).not.toBeNull();
+    expect(within(noSlotRow as HTMLTableRowElement).getByText('—')).toBeInTheDocument();
   });
 
   it('shows no-fields warning when all attendance fields are inactive', () => {

@@ -152,6 +152,22 @@ export function AdminAttendanceDataPage() {
         token: 'member:avatar',
         values: [],
       },
+      {
+        source: 'member' as const,
+        fieldKey: 'checked_in_slot',
+        label: 'Checked In Slot',
+        sortOrder: 5,
+        token: 'member:checked_in_slot',
+        values: [],
+      },
+      {
+        source: 'member' as const,
+        fieldKey: 'check_in_status',
+        label: 'Check-In Indicator',
+        sortOrder: 6,
+        token: 'member:check_in_status',
+        values: [],
+      },
     ],
     [cachedAttendees],
   );
