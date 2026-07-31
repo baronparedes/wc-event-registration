@@ -65,3 +65,8 @@ export {
   tryConvertRfidInput,
   searchAttendeesWithRfidFallback,
 } from './utils/rfid';
+
+export {
+  formatCompactSlotLabelsFromSlotRecords,
+  formatCompactCheckedInSlotLabels,
+} from './slot-labels';

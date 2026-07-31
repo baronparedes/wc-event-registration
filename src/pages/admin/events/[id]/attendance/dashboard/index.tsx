@@ -19,6 +19,7 @@ import {
 } from '@/hooks/domain/attendance/queries';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
+import { formatCompactSlotLabelsFromSlotRecords } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -59,11 +60,26 @@ function AllCheckInsTable({ rows }: { rows: AllCheckInRow[] }) {
             <ListTableCell className="font-medium">{row.full_name}</ListTableCell>
             <ListTableCell className="text-muted">{row.member_id ?? '—'}</ListTableCell>
             <ListTableCell className="text-muted">
-              {row.slot_records && row.slot_records.length > 0
-                ? row.slot_records
-                    .map((record) => formatDateTime(record.slot, record.slot))
-                    .join(', ')
-                : '—'}
+              {(() => {
+                const slotRecordLabels = formatCompactSlotLabelsFromSlotRecords(row.slot_records);
+
+                if (slotRecordLabels.length === 0) {
+                  return '—';
+                }
+
+                return (
+                  <div className="flex flex-wrap gap-1">
+                    {slotRecordLabels.map((label, labelIndex) => (
+                      <span
+                        key={`${row.registration_id}:slot-record:${label}:${labelIndex}`}
+                        className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
             </ListTableCell>
             <ListTableCell className="text-muted">
               {row.official_check_in_time
