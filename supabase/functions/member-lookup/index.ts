@@ -155,12 +155,49 @@ function getLastInitial(value: string | null): string | null {
   return normalizedValue.charAt(0).toUpperCase();
 }
 
+function maskFirstName(firstName: string | null): string | null {
+  if (!firstName) {
+    return null;
+  }
+
+  const trimmedFirstName = firstName.trim();
+  if (trimmedFirstName.length === 0) {
+    return null;
+  }
+
+  const nameParts = trimmedFirstName.split(' ');
+  const maskedParts = nameParts.map((part) => {
+    if (part.length <= 2) {
+      return part.charAt(0) + '*'.repeat(part.length - 1);
+    }
+    return part.substring(0, 2) + '*'.repeat(part.length - 2);
+  });
+
+  return maskedParts.join(' ');
+}
+
+function maskMemberId(memberId: string | null): string {
+  if (!memberId) {
+    return '';
+  }
+
+  const trimmedMemberId = memberId.trim();
+  if (trimmedMemberId.length <= 4) {
+    return '*'.repeat(trimmedMemberId.length);
+  }
+
+  const lastFourDigits = trimmedMemberId.slice(-4);
+  const maskedPart = '*'.repeat(trimmedMemberId.length - 4);
+
+  return maskedPart + lastFourDigits;
+}
+
 function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
   if (!row) return null;
   return {
-    member_id: row.member_id,
+    member_id: maskMemberId(row.member_id),
     role: readString(row.role),
-    first_name: row.first_name,
+    first_name: maskFirstName(row.first_name),
     last_initial: getLastInitial(row.last_name),
     avatar_object_key: row.avatar_object_key,
   };

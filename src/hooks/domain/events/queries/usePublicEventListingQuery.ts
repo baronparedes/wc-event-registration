@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { QUERY_KEYS } from '@/config/constants';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
@@ -12,6 +12,7 @@ interface GetPublicEventListingResponse {
 export function usePublicEventListingQuery() {
   return useQuery({
     queryKey: QUERY_KEYS.publicEventListing(),
+    staleTime: QUERY_STALE_TIME_MS.short,
     queryFn: async (): Promise<PublicEventListingItem[]> => {
       const nowMs = Date.now();
       const threeMonthsAgo = new Date();

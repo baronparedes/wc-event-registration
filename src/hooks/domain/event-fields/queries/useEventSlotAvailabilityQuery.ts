@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { QUERY_KEYS } from '@/config/constants';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { EventSlotAvailabilityResponse } from '@/lib/domain/event-fields';
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
@@ -21,7 +21,6 @@ export function useEventSlotAvailabilityQuery(eventId: string | undefined) {
   return useQuery({
     queryKey: QUERY_KEYS.eventSlotAvailability(eventId),
     enabled: Boolean(eventId),
-    staleTime: 15 * 1000,
     queryFn: async () => {
       if (!eventId) {
         return null;
@@ -39,5 +38,6 @@ export function useEventSlotAvailabilityQuery(eventId: string | undefined) {
 
       return payload;
     },
+    staleTime: QUERY_STALE_TIME_MS.long,
   });
 }
