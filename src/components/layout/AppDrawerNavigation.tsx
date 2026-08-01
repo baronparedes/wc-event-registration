@@ -124,7 +124,7 @@ export function AppDrawerNavigation({
               <SectionHeading label="Admin" />
               {isAuthenticated ? (
                 <>
-                  {canRead && (
+                  {(canRead || canAccessCheckIn) && (
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminEvents}
                       label="Manage Events"

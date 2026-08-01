@@ -4,7 +4,8 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS } from '@/config/constants';
-import { canAccessAttendanceCheckIn, canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
+import type { AdminRole } from '@/lib/domain/auth';
+import { canReadAdminData } from '@/lib/domain/auth';
 
 import { AppMobileShell, AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
@@ -143,7 +144,13 @@ function ResponsiveShellLayout() {
   return isMobile ? <AppMobileShell /> : <AppShell />;
 }
 
-function RequireAdminAuth({ children }: { children: ReactElement }) {
+function RequireAdminAuth({
+  children,
+  allowedRoles,
+}: {
+  children: ReactElement;
+  allowedRoles?: AdminRole[];
+}) {
   const { data, isLoading } = useAdminAuthQuery();
   const location = useLocation();
 
@@ -167,70 +174,12 @@ function RequireAdminAuth({ children }: { children: ReactElement }) {
     return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
   }
 
-  if (!canReadAdminData(data?.adminRole)) {
+  if (allowedRoles) {
+    if (!data?.adminRole || !allowedRoles.includes(data.adminRole)) {
+      return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
+    }
+  } else if (!canReadAdminData(data?.adminRole)) {
     return <Navigate to={ROUTE_PATHS.home} replace />;
-  }
-
-  return children;
-}
-
-function RequireAdminCheckInAccess({ children }: { children: ReactElement }) {
-  const { data, isLoading } = useAdminAuthQuery();
-  const location = useLocation();
-
-  if (isLoading) {
-    return (
-      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6">
-        <div className="space-y-3" aria-hidden="true">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-4/5" />
-        </div>
-      </section>
-    );
-  }
-
-  const isAuthenticated = data?.isAuthenticated ?? false;
-
-  if (!isAuthenticated) {
-    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
-    const searchParams = new URLSearchParams({ redirect: redirectTarget });
-    return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
-  }
-
-  if (!canAccessAttendanceCheckIn(data?.adminRole)) {
-    return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
-  }
-
-  return children;
-}
-
-function RequireAdminWriteAccess({ children }: { children: ReactElement }) {
-  const { data, isLoading } = useAdminAuthQuery();
-  const location = useLocation();
-
-  if (isLoading) {
-    return (
-      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6">
-        <div className="space-y-3" aria-hidden="true">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-4/5" />
-        </div>
-      </section>
-    );
-  }
-
-  const isAuthenticated = data?.isAuthenticated ?? false;
-
-  if (!isAuthenticated) {
-    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
-    const searchParams = new URLSearchParams({ redirect: redirectTarget });
-    return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
-  }
-
-  if (!canWriteAdminData(data?.adminRole)) {
-    return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
   }
 
   return children;
@@ -286,11 +235,11 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMembersImport}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminMembersImportPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
@@ -306,7 +255,7 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEvents}
           element={
-            <RequireAdminAuth>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin', 'slod', 'kiosk']}>
               <LazyRoute>
                 <AdminEventsPage />
               </LazyRoute>
@@ -316,51 +265,51 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEventNew}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminNewEventPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventDetailPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminEditEventPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventFieldsPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminEventFieldsPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendancePattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminEventAttendancePage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendanceFieldsPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminAttendanceFieldsPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
@@ -376,21 +325,21 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEventAttendanceDataBulkUploadPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminAttendanceDataBulkUploadPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
           path={ROUTE_PATHS.adminEventAttendanceCheckInPattern}
           element={
-            <RequireAdminCheckInAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin', 'kiosk']}>
               <LazyRoute>
                 <AdminAttendanceCheckInPage />
               </LazyRoute>
-            </RequireAdminCheckInAccess>
+            </RequireAdminAuth>
           }
         />
         <Route
@@ -406,11 +355,11 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminEventRegistrationsUnregisteredMembersPattern}
           element={
-            <RequireAdminWriteAccess>
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
               <LazyRoute>
                 <AdminAttendanceUnregisteredMembersPage />
               </LazyRoute>
-            </RequireAdminWriteAccess>
+            </RequireAdminAuth>
           }
         />
         <Route

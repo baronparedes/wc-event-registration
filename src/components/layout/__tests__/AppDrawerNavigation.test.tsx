@@ -204,7 +204,7 @@ describe('AppDrawerNavigation', () => {
       'href',
       '/admin/events/event-1/attendance/check-in',
     );
-    expect(screen.queryByRole('link', { name: 'Manage Events' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Events' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Manage Members' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Manage Event' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Manage Attendance' })).not.toBeInTheDocument();
@@ -214,6 +214,7 @@ describe('AppDrawerNavigation', () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Attendee Details' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Attendance Fields' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance Dashboard' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Unregistered Members' })).not.toBeInTheDocument();
   });
 });

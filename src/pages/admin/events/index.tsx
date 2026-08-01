@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { ClipboardList, Edit, Form, Plus, Settings, Users } from 'lucide-react';
+import { CalendarCheck, ClipboardList, Edit, Form, Plus, Settings, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
@@ -23,6 +23,7 @@ import {
   TIMING,
   UI_MESSAGES,
   toAdminEventAttendance,
+  toAdminEventAttendanceCheckIn,
   toAdminEventAttendanceData,
   toAdminEventDetail,
   toAdminEventFields,
@@ -30,7 +31,7 @@ import {
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAccessAttendanceCheckIn, canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
 import { DuplicatePolicyLabel, EventStatusBadge } from './components';
@@ -64,6 +65,8 @@ export function AdminEventsPage() {
   const isLoading = eventsQuery.isLoading;
   const error = eventsQuery.error;
   const canWrite = canWriteAdminData(authState?.adminRole);
+  const canRead = canReadAdminData(authState?.adminRole);
+  const canAccessCheckIn = canAccessAttendanceCheckIn(authState?.adminRole);
 
   function handleNextPage() {
     if (!nextCursor) return;
@@ -119,7 +122,9 @@ export function AdminEventsPage() {
 
       <AdminPageShell.SubNav>
         <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
-        <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
+        {(canWrite || canRead) && (
+          <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
+        )}
       </AdminPageShell.SubNav>
 
       <AdminPageShell.Filters>
@@ -236,20 +241,33 @@ export function AdminEventsPage() {
                             <Form className="h-5 w-5" aria-label="Fields" />
                           </ActionLink>
                         )}
-                        <ActionLink
-                          to={toAdminEventAttendanceData(event.id)}
-                          title="Attendee Details"
-                          aria-label="Attendee Details"
-                        >
-                          <Users className="h-5 w-5" />
-                        </ActionLink>
-                        <ActionLink
-                          to={toAdminEventRegistrations(event.id)}
-                          title="Registrations"
-                          aria-label="Registrations"
-                        >
-                          <ClipboardList className="h-5 w-5" />
-                        </ActionLink>
+                        {canRead && (
+                          <ActionLink
+                            to={toAdminEventAttendanceData(event.id)}
+                            title="Attendee Details"
+                            aria-label="Attendee Details"
+                          >
+                            <Users className="h-5 w-5" />
+                          </ActionLink>
+                        )}
+                        {canRead && (
+                          <ActionLink
+                            to={toAdminEventRegistrations(event.id)}
+                            title="Registrations"
+                            aria-label="Registrations"
+                          >
+                            <ClipboardList className="h-5 w-5" />
+                          </ActionLink>
+                        )}
+                        {canAccessCheckIn && (
+                          <ActionLink
+                            to={toAdminEventAttendanceCheckIn(event.id)}
+                            title="Check-In"
+                            aria-label="Check-In"
+                          >
+                            <CalendarCheck className="h-5 w-5" />
+                          </ActionLink>
+                        )}
                       </div>
                     </ListTableCell>
                   </ListTableRow>
