@@ -176,26 +176,10 @@ function maskFirstName(firstName: string | null): string | null {
   return maskedParts.join(' ');
 }
 
-function maskMemberId(memberId: string | null): string {
-  if (!memberId) {
-    return '';
-  }
-
-  const trimmedMemberId = memberId.trim();
-  if (trimmedMemberId.length <= 4) {
-    return '*'.repeat(trimmedMemberId.length);
-  }
-
-  const lastFourDigits = trimmedMemberId.slice(-4);
-  const maskedPart = '*'.repeat(trimmedMemberId.length - 4);
-
-  return maskedPart + lastFourDigits;
-}
-
 function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
   if (!row) return null;
   return {
-    member_id: maskMemberId(row.member_id),
+    member_id: row.member_id,
     role: readString(row.role),
     first_name: maskFirstName(row.first_name),
     last_initial: getLastInitial(row.last_name),
