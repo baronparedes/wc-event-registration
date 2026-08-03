@@ -23,6 +23,7 @@ describe('EventHeaderCard', () => {
         eventWindowText={{ opens: 'June 1', closes: 'June 30' }}
         availability={{
           status: 'available',
+          reason: 'available',
           event: {
             id: '3bfc2d8f-067f-4f6f-9403-f420f819eca7',
             slug: 'summer-sprint',
@@ -65,6 +66,7 @@ describe('EventHeaderCard', () => {
         eventWindowText={{ opens: 'June 1', closes: 'June 30' }}
         availability={{
           status: 'available',
+          reason: 'available',
           event: {
             id: '3bfc2d8f-067f-4f6f-9403-f420f819eca7',
             slug: 'summer-sprint',
@@ -120,6 +122,7 @@ describe('EventHeaderCard', () => {
         eventWindowText={{ opens: 'June 1', closes: 'June 30' }}
         availability={{
           status: 'available',
+          reason: 'available',
           event: {
             id: '3bfc2d8f-067f-4f6f-9403-f420f819eca7',
             slug: 'summer-sprint',

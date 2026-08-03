@@ -143,7 +143,7 @@ export function useEventRegistrationPageState() {
 
   const eventQuery = usePublicEventQuery(slug ?? null);
   const submitMutation = useSubmitRegistrationMutation(
-    eventQuery.data?.status === 'available' ? eventQuery.data.event.id : undefined,
+    eventQuery.data?.status === 'available' ? eventQuery.data!.event!.id : undefined,
   );
   const memberLookup = useMemberLookupState(slug);
   const dynamicForm = useForm<DynamicFieldResponseValues>({
@@ -176,8 +176,8 @@ export function useEventRegistrationPageState() {
     }
 
     return {
-      opens: formatUtcDateTime(availability.event.registration_opens_at),
-      closes: formatUtcDateTime(availability.event.registration_closes_at),
+      opens: formatUtcDateTime(availability!.event!.registration_opens_at),
+      closes: formatUtcDateTime(availability!.event!.registration_closes_at),
     };
   }, [availability]);
 
@@ -311,10 +311,10 @@ export function useEventRegistrationPageState() {
   useScanBuffer(handleScan, isScanCaptureActive, memberIdInputRef);
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
-    isDynamicFieldGateReady ? availability?.event.id : undefined,
+    isDynamicFieldGateReady ? availability?.event!.id : undefined,
   );
   const slotAvailabilityQuery = useEventSlotAvailabilityQuery(
-    availability?.status === 'available' ? availability.event.id : undefined,
+    availability?.status === 'available' ? availability!.event!.id : undefined,
   );
 
   const activeFields = useMemo(

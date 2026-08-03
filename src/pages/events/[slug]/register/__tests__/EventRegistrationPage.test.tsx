@@ -22,6 +22,7 @@ const {
   mockDynamicFieldsStepCard,
   mockProfileStepCard,
   memberLookupState,
+  mockNavigate,
 } = vi.hoisted(() => {
   const lookupState = {
     matchedMember: {
@@ -72,6 +73,7 @@ const {
     mockDynamicFieldsStepCard: vi.fn(),
     mockProfileStepCard: vi.fn(),
     memberLookupState: lookupState,
+    mockNavigate: vi.fn(),
   };
 });
 
@@ -81,6 +83,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useParams: () => mockUseParams(),
+    useNavigate: () => mockNavigate,
   };
 });
 

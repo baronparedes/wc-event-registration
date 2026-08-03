@@ -1,9 +1,12 @@
 import { useRef } from 'react';
 
-import { SectionCard, StepIndicator } from '@/components/ui';
+import { AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+import { EmptyState, SectionCard, StepIndicator } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
-import { TIMING } from '@/config/constants';
+import { ROUTE_PATHS, TIMING } from '@/config/constants';
 import { useWizardStepScroll } from '@/hooks/utils';
 import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 
@@ -13,6 +16,8 @@ import { useEventRegistrationPageState } from './hooks';
 export function EventRegistrationPage() {
   const stepOneRef = useRef<HTMLDivElement | null>(null);
   const stepTwoRef = useRef<HTMLDivElement | null>(null);
+
+  const navigate = useNavigate();
 
   const {
     slug,
@@ -50,9 +55,9 @@ export function EventRegistrationPage() {
   const publicRegistrationAccess =
     availability?.status === 'available'
       ? derivePublicRegistrationAccess({
-          public_registration_access: availability.event.metadata?.public_registration_access,
-          allow_public_registrations: availability.event.allow_public_registrations,
-          require_id_lookup: availability.event.require_id_lookup,
+          public_registration_access: availability!.event!.metadata?.public_registration_access,
+          allow_public_registrations: availability!.event!.allow_public_registrations,
+          require_id_lookup: availability!.event!.require_id_lookup,
         })
       : 'members';
 
@@ -68,6 +73,31 @@ export function EventRegistrationPage() {
             <div className="h-4 w-full rounded bg-muted" />
           </div>
         </SectionCard>
+      </section>
+    );
+  }
+
+  if (
+    eventQuery.data?.status === 'unavailable' &&
+    eventQuery.data?.reason === 'not_found_or_unpublished'
+  ) {
+    return (
+      <section className="mx-auto max-w-3xl space-y-6">
+        <EmptyState
+          icon={<AlertCircle />}
+          title="Registration Unavailable"
+          description="This event is not available."
+          action={
+            <div className="flex gap-3 pt-2">
+              <Button onClick={() => navigate(ROUTE_PATHS.home)} variant="default">
+                Go Home
+              </Button>
+              <Button onClick={() => navigate(-1)} variant="outline">
+                Go Back
+              </Button>
+            </div>
+          }
+        />
       </section>
     );
   }

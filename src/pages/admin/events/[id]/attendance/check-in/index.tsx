@@ -412,6 +412,7 @@ export function AdminAttendanceCheckInPage() {
           status: 'available',
           event,
           registration_count: registeredCount,
+          reason: 'available',
         }}
       />
 

@@ -26,11 +26,12 @@ export type AdminEvent = {
   updated_at: string;
 };
 
-export type EventAvailability =
-  | { status: 'available'; event: AdminEvent; registration_count: number }
-  | { status: 'unavailable'; reason: 'not_found_or_unpublished' }
-  | { status: 'unavailable'; reason: 'not_open_yet'; event: AdminEvent }
-  | { status: 'unavailable'; reason: 'registration_closed'; event: AdminEvent };
+export type EventAvailability = {
+  status: 'available' | 'unavailable';
+  reason: 'available' | 'not_found_or_unpublished' | 'not_open_yet' | 'registration_closed';
+  event?: AdminEvent;
+  registration_count?: number;
+};
 
 export type PublicEventListingItem = {
   id: string;

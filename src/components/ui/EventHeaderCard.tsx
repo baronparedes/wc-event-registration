@@ -21,11 +21,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
   const { slug, isLoading, isError, availability, isGateReady, eventWindowText, defaultExpanded } =
     props;
 
-  const event =
-    availability?.status === 'available' ||
-    (availability?.status === 'unavailable' && availability.reason !== 'not_found_or_unpublished')
-      ? (availability as Extract<EventAvailability, { event: unknown }>).event
-      : null;
+  const event = availability?.event;
 
   const title = event?.title ?? 'Register for This Event';
   const statusBadgeVariant =

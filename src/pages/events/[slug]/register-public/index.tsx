@@ -108,8 +108,8 @@ export function PublicEventRegistrationPage() {
         const existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
         const allowsExistingRegistrationUpdate =
           eventQuery.data?.status === 'available' &&
-          (eventQuery.data.event.duplicate_policy === 'allow_update' ||
-            eventQuery.data.event.duplicate_policy === 'allow_multiple_update');
+          (eventQuery.data?.event?.duplicate_policy === 'allow_update' ||
+            eventQuery.data?.event?.duplicate_policy === 'allow_multiple_update');
 
         if (existingRegistration && !allowsExistingRegistrationUpdate) {
           setAttendeeEmailErrorMessage('This email is already registered for this event.');
@@ -264,7 +264,10 @@ export function PublicEventRegistrationPage() {
     );
   }
 
-  if (eventQuery.data.status !== 'available' || !eventQuery.data.event.allow_public_registrations) {
+  if (
+    eventQuery.data.status !== 'available' ||
+    !eventQuery.data.event?.allow_public_registrations
+  ) {
     return (
       <section className="mx-auto max-w-3xl space-y-6">
         <EmptyState
