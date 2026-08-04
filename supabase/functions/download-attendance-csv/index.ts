@@ -48,6 +48,7 @@ type EventAttendeeRow = {
   registration_id: string | null;
   public_registration_id: string | null;
   member_id: string | null;
+  avatar_object_key: string | null;
   nickname: string;
   last_name: string;
   member_metadata: unknown;
@@ -265,6 +266,7 @@ Deno.serve(async (req) => {
       'registration_id',
       'public_registration_id',
       'member_id',
+      'avatar_object_key',
       'member_metadata',
       'full_name',
       'email',
@@ -298,6 +300,7 @@ Deno.serve(async (req) => {
           ? (attendee.public_registration_id ?? attendee.registration_id ?? '')
           : (attendee.public_registration_id ?? ''),
         isPublicAttendee ? '' : (attendee.member_id ?? ''),
+        attendee.avatar_object_key ?? '',
         formatMetadataForCsv(attendee.member_metadata),
         attendee.full_name ?? (isPublicAttendee ? 'Guest Attendee' : ''),
         attendee.email ?? '',
