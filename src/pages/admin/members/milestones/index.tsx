@@ -409,7 +409,7 @@ export function AdminMemberMilestonesPage() {
                     className="flex items-center gap-3 p-3 border-b border-border last:border-b-0"
                   >
                     <Avatar
-                      size="sm"
+                      size="lg"
                       name={entry.member.full_name}
                       avatarObjectKey={entry.member.avatar_object_key}
                       className="h-11 w-11 border-2 border-surface shadow-sm"

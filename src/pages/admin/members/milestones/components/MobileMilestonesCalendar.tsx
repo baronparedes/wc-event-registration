@@ -94,7 +94,7 @@ export function MobileMilestonesCalendar({
                     {cell.entries.slice(0, 3).map((entry) => (
                       <Avatar
                         key={entry.id}
-                        size="sm"
+                        size="md"
                         name={entry.member.full_name}
                         avatarObjectKey={entry.member.avatar_object_key}
                         className="h-8 w-8 border-2 border-background shadow-sm"
