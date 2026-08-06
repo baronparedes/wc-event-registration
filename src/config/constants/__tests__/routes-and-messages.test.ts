@@ -10,6 +10,7 @@ import {
   toAdminEventFields,
   toAdminEventRegistrations,
   toAdminMemberDetail,
+  toAdminMemberMilestones,
   toAdminMembersImport,
   toAdminRegistrationDetail,
   toAdminRegistrationNames,
@@ -20,6 +21,7 @@ describe('route constants and builders', () => {
   it('exposes stable route constants', () => {
     expect(ROUTE_PATHS.home).toBe('/');
     expect(ROUTE_PATHS.adminEvents).toBe('/admin/events');
+    expect(ROUTE_PATHS.adminMemberMilestones).toBe('/admin/members/milestones');
     expect(ROUTE_PATHS.adminMembersImport).toBe('/admin/members/import');
     expect(ROUTE_PATHS.adminRegistrationDetailPattern).toBe(
       '/admin/events/:id/registrations/:registration_id',
@@ -34,6 +36,7 @@ describe('route constants and builders', () => {
   it('builds route paths from identifiers', () => {
     expect(toEventRegistration('summer-2026')).toBe('/events/summer-2026/register');
     expect(toAdminMembersImport()).toBe('/admin/members/import');
+    expect(toAdminMemberMilestones()).toBe('/admin/members/milestones');
     expect(toAdminMemberDetail('member-1')).toBe('/admin/members/member-1');
     expect(toAdminEventDetail('event-1')).toBe('/admin/events/event-1');
     expect(toAdminEventFields('event-1')).toBe('/admin/events/event-1/fields');
