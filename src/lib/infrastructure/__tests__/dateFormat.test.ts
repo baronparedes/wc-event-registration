@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { formatDateOnly, formatDateTime, localDateTimeToUTC8ISO } from '../dateFormat';
+import {
+  formatDateOnly,
+  formatDateTime,
+  formatDayMonth,
+  localDateTimeToUTC8ISO,
+} from '../dateFormat';
 
 describe('dateFormat', () => {
   it('formats valid dates and returns fallbacks for empty or invalid values', () => {
@@ -27,5 +32,15 @@ describe('dateFormat', () => {
     expect(localDateTimeToUTC8ISO(undefined)).toBeNull();
     expect(localDateTimeToUTC8ISO('   ')).toBeNull();
     expect(localDateTimeToUTC8ISO('2026-08-15T21:00:00')).toBe('2026-08-15T21:00:00+08:00');
+  });
+
+  it('formats day-month values and returns fallbacks for empty or invalid values', () => {
+    const dayMonthSpy = vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('15 Jun');
+
+    expect(formatDayMonth('2026-06-15T00:00:00.000Z')).toBe('15 Jun');
+    expect(formatDayMonth(null)).toBe('—');
+    expect(formatDayMonth('not-a-date')).toBe('—');
+
+    dayMonthSpy.mockRestore();
   });
 });

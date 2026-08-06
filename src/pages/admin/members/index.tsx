@@ -122,6 +122,13 @@ export function AdminMembersPage() {
               <Button
                 type="button"
                 variant="outline"
+                onClick={() => navigate(ROUTE_PATHS.adminMemberMilestones)}
+              >
+                Milestones
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
               >
                 Upload CSV

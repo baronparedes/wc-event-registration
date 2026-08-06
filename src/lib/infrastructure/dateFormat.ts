@@ -18,6 +18,17 @@ export function formatDateOnly(isoString: string | null, fallback = '—'): stri
   });
 }
 
+export function formatDayMonth(isoString: string | null, fallback = '—'): string {
+  if (!isoString) return fallback;
+  const parsed = new Date(isoString);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    timeZone: 'Asia/Manila',
+  });
+}
+
 /**
  * Format an ISO datetime string to a localized datetime string in Asia/Manila timezone (UTC+8).
  * Used for displaying full datetime with time component.

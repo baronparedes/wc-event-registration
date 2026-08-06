@@ -7,6 +7,7 @@ export const ROUTE_PATHS = {
   eventPublicRegisterPattern: '/events/:slug/register-public',
   adminLogin: '/admin/login',
   adminMembers: '/admin/members',
+  adminMemberMilestones: '/admin/members/milestones',
   adminMembersImport: '/admin/members/import',
   adminMemberDetailPattern: '/admin/members/:id',
   adminEvents: '/admin/events',
@@ -58,6 +59,10 @@ export function toAdminMemberDetail(memberId: string): string {
 
 export function toAdminMembersImport(): string {
   return '/admin/members/import';
+}
+
+export function toAdminMemberMilestones(): string {
+  return '/admin/members/milestones';
 }
 
 export function toAdminEventDetail(eventId: string): string {
