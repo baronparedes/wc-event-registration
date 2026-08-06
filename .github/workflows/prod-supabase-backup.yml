@@ -1,0 +1,184 @@
+name: Supabase Prod Backup
+
+on:
+  schedule:
+    # Saturday 01:00 PH time (UTC+8) = Friday 17:00 UTC
+    - cron: '0 17 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            SUPABASE_DB_URL
+            BACKUP_ENCRYPTION_PASSPHRASE
+            R2_ENDPOINT
+            R2_BUCKET
+            AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
+          )
+          for key in "${required[@]}"; do
+            if [[ -z "${!key:-}" ]]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client awscli
+
+      - name: Build backup artifacts
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          timestamp="$(date -u +'%Y%m%dT%H%M%SZ')"
+          year="$(date -u +'%Y')"
+          month="$(date -u +'%m')"
+          day="$(date -u +'%d')"
+          prefix="supabase-prod/${year}/${month}/${day}"
+
+          workdir="backup-${timestamp}"
+          mkdir -p "$workdir"
+
+          schema_sql="supabase-prod-${timestamp}-schema.sql"
+          data_sql="supabase-prod-${timestamp}-data.sql"
+
+          pg_dump "$SUPABASE_DB_URL" \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            --file "$workdir/$schema_sql"
+
+          pg_dump "$SUPABASE_DB_URL" \
+            --data-only \
+            --no-owner \
+            --no-privileges \
+            --file "$workdir/$data_sql"
+
+          gzip -9 "$workdir/$schema_sql"
+          gzip -9 "$workdir/$data_sql"
+
+          schema_gz="$schema_sql.gz"
+          data_gz="$data_sql.gz"
+          schema_enc="$schema_gz.enc"
+          data_enc="$data_gz.enc"
+
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in "$workdir/$schema_gz" \
+            -out "$workdir/$schema_enc" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in "$workdir/$data_gz" \
+            -out "$workdir/$data_enc" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+
+          rm -f "$workdir/$schema_gz" "$workdir/$data_gz"
+
+          checksum_file="supabase-prod-${timestamp}-checksums.sha256"
+          manifest_file="supabase-prod-${timestamp}-manifest.json"
+
+          (
+            cd "$workdir"
+            sha256sum "$schema_enc" "$data_enc" > "$checksum_file"
+          )
+
+          cat > "$workdir/$manifest_file" <<EOF
+          {
+            "generated_at_utc": "${timestamp}",
+            "prefix": "${prefix}",
+            "schema_file": "${schema_enc}",
+            "data_file": "${data_enc}",
+            "checksum_file": "${checksum_file}"
+          }
+          EOF
+
+          echo "timestamp=$timestamp" >> "$GITHUB_OUTPUT"
+          echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+          echo "workdir=$workdir" >> "$GITHUB_OUTPUT"
+          echo "schema_enc=$schema_enc" >> "$GITHUB_OUTPUT"
+          echo "data_enc=$data_enc" >> "$GITHUB_OUTPUT"
+          echo "checksum_file=$checksum_file" >> "$GITHUB_OUTPUT"
+          echo "manifest_file=$manifest_file" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to Cloudflare R2
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workdir="${{ steps.build.outputs.workdir }}"
+          prefix="${{ steps.build.outputs.prefix }}"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "$workdir/${{ steps.build.outputs.schema_enc }}" \
+            "s3://$R2_BUCKET/$prefix/${{ steps.build.outputs.schema_enc }}"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "$workdir/${{ steps.build.outputs.data_enc }}" \
+            "s3://$R2_BUCKET/$prefix/${{ steps.build.outputs.data_enc }}"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "$workdir/${{ steps.build.outputs.checksum_file }}" \
+            "s3://$R2_BUCKET/$prefix/${{ steps.build.outputs.checksum_file }}"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "$workdir/${{ steps.build.outputs.manifest_file }}" \
+            "s3://$R2_BUCKET/$prefix/${{ steps.build.outputs.manifest_file }}"
+
+      - name: Write summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workdir="${{ steps.build.outputs.workdir }}"
+          prefix="${{ steps.build.outputs.prefix }}"
+          schema_enc="${{ steps.build.outputs.schema_enc }}"
+          data_enc="${{ steps.build.outputs.data_enc }}"
+          checksum_file="${{ steps.build.outputs.checksum_file }}"
+          manifest_file="${{ steps.build.outputs.manifest_file }}"
+
+          schema_size="$(stat -c%s "$workdir/$schema_enc")"
+          data_size="$(stat -c%s "$workdir/$data_enc")"
+
+          {
+            echo "## Supabase Production Backup"
+            echo
+            echo "- Timestamp (UTC): ${{ steps.build.outputs.timestamp }}"
+            echo "- Storage target: s3://$R2_BUCKET/$prefix"
+            echo "- Schema backup: $schema_enc ($schema_size bytes)"
+            echo "- Data backup: $data_enc ($data_size bytes)"
+            echo "- Checksum file: $checksum_file"
+            echo "- Manifest file: $manifest_file"
+            echo
+            echo "Retention policy target: 30 daily / 12 weekly / 12 monthly (enforce in R2 lifecycle rules)."
+          } >> "$GITHUB_STEP_SUMMARY"

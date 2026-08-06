@@ -1,0 +1,231 @@
+name: Supabase Prod Restore Drill
+
+on:
+  schedule:
+    # Monthly drill on the 1st day at 18:00 UTC
+    - cron: '0 18 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-supabase-restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore-drill:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      RESTORE_DB_URL: postgresql://postgres:postgres@localhost:5432/restore_validation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            BACKUP_ENCRYPTION_PASSPHRASE
+            R2_ENDPOINT
+            R2_BUCKET
+            AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
+          )
+          for key in "${required[@]}"; do
+            if [[ -z "${!key:-}" ]]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client awscli
+
+      - name: Find latest manifest
+        id: latest
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          manifest_key="$(
+            (aws --endpoint-url "$R2_ENDPOINT" s3 ls "s3://$R2_BUCKET/supabase-prod/" --recursive || true) \
+              | awk '/manifest.json$/ { print $4 }' \
+              | sort \
+              | tail -n 1
+          )"
+
+          if [[ -z "$manifest_key" ]]; then
+            echo "No backup manifest found in s3://$R2_BUCKET/supabase-prod/" >&2
+            exit 1
+          fi
+
+          prefix="${manifest_key%/*}"
+
+          echo "manifest_key=$manifest_key" >> "$GITHUB_OUTPUT"
+          echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+
+      - name: Download backup set
+        id: download
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p restore-drill
+          manifest_key="${{ steps.latest.outputs.manifest_key }}"
+          prefix="${{ steps.latest.outputs.prefix }}"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "s3://$R2_BUCKET/$manifest_key" \
+            "restore-drill/manifest.json"
+
+          readarray -t files < <(python3 - <<'PY'
+          import json
+          with open("restore-drill/manifest.json", "r", encoding="utf-8") as f:
+              manifest = json.load(f)
+          print(manifest["schema_file"])
+          print(manifest["data_file"])
+          print(manifest["checksum_file"])
+          PY
+          )
+
+          schema_file="${files[0]}"
+          data_file="${files[1]}"
+          checksum_file="${files[2]}"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "s3://$R2_BUCKET/$prefix/$schema_file" \
+            "restore-drill/$schema_file"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "s3://$R2_BUCKET/$prefix/$data_file" \
+            "restore-drill/$data_file"
+
+          aws --endpoint-url "$R2_ENDPOINT" s3 cp \
+            "s3://$R2_BUCKET/$prefix/$checksum_file" \
+            "restore-drill/$checksum_file"
+
+          echo "schema_file=$schema_file" >> "$GITHUB_OUTPUT"
+          echo "data_file=$data_file" >> "$GITHUB_OUTPUT"
+          echo "checksum_file=$checksum_file" >> "$GITHUB_OUTPUT"
+
+      - name: Verify checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd restore-drill
+          sha256sum -c "${{ steps.download.outputs.checksum_file }}"
+
+      - name: Decrypt and decompress
+        id: decrypt
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd restore-drill
+
+          schema_enc="${{ steps.download.outputs.schema_file }}"
+          data_enc="${{ steps.download.outputs.data_file }}"
+
+          schema_gz="${schema_enc%.enc}"
+          data_gz="${data_enc%.enc}"
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in "$schema_enc" \
+            -out "$schema_gz" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in "$data_enc" \
+            -out "$data_gz" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+
+          gunzip -f "$schema_gz"
+          gunzip -f "$data_gz"
+
+          echo "schema_sql=${schema_gz%.gz}" >> "$GITHUB_OUTPUT"
+          echo "data_sql=${data_gz%.gz}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore into isolated database
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          createdb -h localhost -p 5432 -U postgres restore_validation || true
+
+          psql "$RESTORE_DB_URL" -v ON_ERROR_STOP=1 -f "restore-drill/${{ steps.decrypt.outputs.schema_sql }}"
+          psql "$RESTORE_DB_URL" -v ON_ERROR_STOP=1 -f "restore-drill/${{ steps.decrypt.outputs.data_sql }}"
+        env:
+          PGPASSWORD: postgres
+
+      - name: Validate restored data
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          psql "$RESTORE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF to_regclass('public.users') IS NULL THEN
+              RAISE EXCEPTION 'Missing table public.users';
+            END IF;
+            IF to_regclass('public.events') IS NULL THEN
+              RAISE EXCEPTION 'Missing table public.events';
+            END IF;
+            IF to_regclass('public.registrations') IS NULL THEN
+              RAISE EXCEPTION 'Missing table public.registrations';
+            END IF;
+          END $$;
+          SQL
+
+          users_count="$(psql "$RESTORE_DB_URL" -t -A -c "select count(*) from public.users;")"
+          events_count="$(psql "$RESTORE_DB_URL" -t -A -c "select count(*) from public.events;")"
+          registrations_count="$(psql "$RESTORE_DB_URL" -t -A -c "select count(*) from public.registrations;")"
+
+          echo "users_count=$users_count" >> "$GITHUB_OUTPUT"
+          echo "events_count=$events_count" >> "$GITHUB_OUTPUT"
+          echo "registrations_count=$registrations_count" >> "$GITHUB_OUTPUT"
+
+      - name: Write summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Supabase Production Restore Drill"
+            echo
+            echo "- Backup manifest: ${{ steps.latest.outputs.manifest_key }}"
+            echo "- Restored database: restore_validation"
+            echo "- users rows: ${{ steps.validate.outputs.users_count }}"
+            echo "- events rows: ${{ steps.validate.outputs.events_count }}"
+            echo "- registrations rows: ${{ steps.validate.outputs.registrations_count }}"
+            echo
+            echo "Result: checksum validation, decryption, restore, and schema sanity checks passed."
+          } >> "$GITHUB_STEP_SUMMARY"

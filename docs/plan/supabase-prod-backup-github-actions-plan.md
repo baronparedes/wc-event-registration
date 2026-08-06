@@ -129,3 +129,49 @@ Establish a low-cost, repeatable backup process for production Supabase data usi
 1. Add Supabase Storage bucket backup (if object files are business critical).
 1. Add immutable object lock policy for ransomware resistance.
 1. Add dashboard metrics for backup age, size drift, and restore success trend.
+
+## Implementation Status (2026-08-06)
+
+Implemented in repository:
+
+1. `.github/workflows/prod-supabase-backup.yml`
+1. `.github/workflows/prod-supabase-restore-drill.yml`
+
+Final decisions applied:
+
+1. Storage target: Cloudflare R2 (S3-compatible endpoint)
+1. Backup cadence: Weekly Saturday 01:00 PH time (`0 17 * * 5` UTC)
+1. Scope: Postgres schema and data only
+1. Retention target: 30 daily / 12 weekly / 12 monthly (enforce with R2 lifecycle policy)
+1. Restore drill target: GitHub Actions ephemeral Postgres service
+
+Required GitHub repository secrets:
+
+1. `SUPABASE_DB_URL`
+1. `BACKUP_ENCRYPTION_PASSPHRASE`
+1. `R2_ENDPOINT`
+1. `R2_BUCKET`
+1. `R2_ACCESS_KEY_ID`
+1. `R2_SECRET_ACCESS_KEY`
+
+Backup workflow behavior:
+
+1. Produces separate schema-only and data-only dumps via `pg_dump`.
+1. Compresses with `gzip -9`.
+1. Encrypts with OpenSSL AES-256-CBC + PBKDF2 (`-iter 200000`).
+1. Generates SHA-256 checksums and a manifest file.
+1. Uploads encrypted files + checksums + manifest to R2 prefix `supabase-prod/YYYY/MM/DD/`.
+
+Restore drill behavior:
+
+1. Runs monthly plus manual dispatch.
+1. Downloads latest manifest and artifacts from R2.
+1. Verifies checksums before decryption.
+1. Restores schema and data into isolated Postgres.
+1. Validates required tables and row-count extraction for key tables.
+
+Operational notes:
+
+1. Keep `SUPABASE_DB_URL` as a direct Postgres connection string with `sslmode=require`.
+1. Rotate backup encryption passphrase and R2 keys quarterly.
+1. Do not reuse backup credentials in application runtime.

@@ -298,3 +298,77 @@ Current members CSV contract comes from members_info.csv:
 - full_name is derived from Firstname + Surname
 - Nickname is stored in users.nickname
 - Role, Category, SR_PWD, IsOIC, and Sunday availability are stored in users.metadata
+
+## Production Backup Runbook (Supabase Free Plan)
+
+Automated production database backup is implemented using GitHub Actions with encrypted artifacts uploaded to Cloudflare R2.
+
+Workflows:
+
+- `.github/workflows/prod-supabase-backup.yml`
+- `.github/workflows/prod-supabase-restore-drill.yml`
+
+Backup schedule:
+
+- Weekly: Saturday 01:00 PH time (UTC+8)
+- Cron in workflow (UTC): `0 17 * * 5`
+
+Restore drill schedule:
+
+- Monthly: 1st day of month at 18:00 UTC
+- Manual dispatch is also enabled for both workflows
+
+### Required GitHub Secrets
+
+Configure the following repository secrets before enabling schedules:
+
+- `SUPABASE_DB_URL` (direct production Postgres URL with sslmode=require)
+- `BACKUP_ENCRYPTION_PASSPHRASE`
+- `R2_ENDPOINT` (for example: `https://your-account-id.r2.cloudflarestorage.com`)
+- `R2_BUCKET`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+
+### What the Backup Workflow Produces
+
+- Schema dump: schema-only SQL
+- Data dump: data-only SQL
+- Encryption: OpenSSL AES-256-CBC with PBKDF2 and 200000 iterations
+- Integrity: SHA-256 checksum file
+- Metadata: JSON manifest per run
+
+Uploaded object prefix:
+
+- `supabase-prod/YYYY/MM/DD/`
+
+### Retention Policy
+
+Retention target is:
+
+- 30 daily backups
+- 12 weekly backups
+- 12 monthly backups
+
+Enforce this with Cloudflare R2 lifecycle rules at the bucket level.
+
+### Manual Operations
+
+1. Run backup now:
+   - GitHub > Actions > Supabase Prod Backup > Run workflow
+2. Run restore drill now:
+   - GitHub > Actions > Supabase Prod Restore Drill > Run workflow
+3. Verify backup summary includes:
+   - uploaded object prefix
+   - encrypted schema/data file names and sizes
+   - checksum and manifest file names
+4. Verify restore summary includes:
+   - source manifest key
+   - successful checksum verification
+   - restored table sanity checks
+
+### Security Notes
+
+- Never log or print connection strings, keys, or passphrases.
+- Keep backup credentials separate from application credentials.
+- Rotate backup passphrase and R2 credentials quarterly.
+- If credential leakage is suspected, rotate secrets immediately and run a fresh backup + restore drill.
