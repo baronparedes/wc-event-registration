@@ -117,7 +117,7 @@ export function AdminMembersPage() {
             : 'View member profiles and details.'
         }
         actions={
-          canWrite ? (
+          <>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -126,16 +126,20 @@ export function AdminMembersPage() {
               >
                 Milestones
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
-              >
-                Upload CSV
-              </Button>
-              <AddMemberDialog />
+              {canWrite && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
+                  >
+                    Upload CSV
+                  </Button>
+                  <AddMemberDialog />
+                </>
+              )}
             </div>
-          ) : undefined
+          </>
         }
       />
 
