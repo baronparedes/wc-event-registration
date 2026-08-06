@@ -33,7 +33,7 @@ export function DesktopMilestonesCalendar({
                 return (
                   <div
                     key={`blank-${index}`}
-                    className="min-h-24 rounded-2xl border border-dashed border-border/60 bg-muted/30 sm:min-h-28"
+                    className="min-h-36 rounded-2xl border border-dashed border-border/60 bg-muted/30"
                   />
                 );
               }
@@ -47,14 +47,16 @@ export function DesktopMilestonesCalendar({
                   key={cell.monthDayKey}
                   type="button"
                   onClick={() => onSelectDay(cell.dayNumber ?? 1)}
-                  className={`min-h-24 rounded-2xl border p-3 text-left transition sm:min-h-28 ${
+                  className={`flex min-h-36 flex-col rounded-2xl border p-3 text-left transition ${
                     isSelected
                       ? 'border-primary bg-primary/5 shadow-sm'
                       : 'border-border bg-background hover:border-primary/40 hover:bg-primary/[0.03]'
                   } ${hasMilestones ? 'ring-1 ring-primary/10' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-semibold text-text">{cell.dayNumber}</span>
+                    <span className="text-sm font-semibold leading-none text-text">
+                      {cell.dayNumber}
+                    </span>
                     {hasMilestones && (
                       <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                         {entriesForDay.length}
@@ -64,18 +66,17 @@ export function DesktopMilestonesCalendar({
 
                   {hasMilestones ? (
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      {entriesForDay.slice(0, 3).map((entry) => (
+                      {entriesForDay.slice(0, 4).map((entry) => (
                         <Avatar
                           key={entry.id}
-                          size="md"
+                          size="sm"
                           name={entry.member.full_name}
                           avatarObjectKey={entry.member.avatar_object_key}
-                          className="h-8 w-8 border-2 border-background shadow-sm"
                         />
                       ))}
-                      {entriesForDay.length > 3 && (
+                      {entriesForDay.length > 4 && (
                         <span className="inline-flex h-8 items-center rounded-full border border-border bg-surface px-2 text-xs font-medium text-muted">
-                          +{entriesForDay.length - 3}
+                          +{entriesForDay.length - 4}
                         </span>
                       )}
                     </div>
