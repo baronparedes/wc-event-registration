@@ -65,37 +65,40 @@ export function MetadataEntriesEditor({
               <input
                 {...register(`metadata_entries.${index}.value`)}
                 placeholder="Value"
-                disabled={disabled}
+                readOnly={disabled}
                 className={inputClass}
                 aria-label={`Metadata value ${index + 1}`}
               />
               {valueError && <p className="text-xs text-danger">{valueError}</p>}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={disabled}
-              onClick={() => remove(index)}
-              aria-label="Remove metadata field"
-              className="mt-0.5 shrink-0"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {!disabled && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={disabled}
+                onClick={() => remove(index)}
+                aria-label="Remove metadata field"
+                className="mt-0.5 shrink-0"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         );
       })}
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={disabled}
-        onClick={() => append({ key: '', value: '' } satisfies MetadataEntry)}
-      >
-        <Plus className="mr-1.5 h-4 w-4" />
-        Add field
-      </Button>
+      {!disabled && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          onClick={() => append({ key: '', value: '' } satisfies MetadataEntry)}
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Add field
+        </Button>
+      )}
     </div>
   );
 }

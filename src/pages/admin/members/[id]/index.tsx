@@ -209,7 +209,6 @@ export function AdminMemberDetailPage() {
                 value={memberQuery.data.member_id}
                 onChange={() => undefined}
                 readOnly
-                disabled
               />
               <FormInputField
                 id="full-name"
@@ -218,7 +217,6 @@ export function AdminMemberDetailPage() {
                 onChange={() => undefined}
                 error={errors.full_name?.message}
                 readOnly
-                disabled
                 helperText="Auto-generated from First Name + Last Name"
               />
               <FormInputField
@@ -227,7 +225,7 @@ export function AdminMemberDetailPage() {
                 registration={register('first_name')}
                 error={errors.first_name?.message}
                 required
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="last-name"
@@ -235,7 +233,7 @@ export function AdminMemberDetailPage() {
                 registration={register('last_name')}
                 error={errors.last_name?.message}
                 required
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="nickname"
@@ -243,7 +241,7 @@ export function AdminMemberDetailPage() {
                 registration={register('nickname')}
                 error={errors.nickname?.message}
                 required
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="date-of-birth"
@@ -251,7 +249,7 @@ export function AdminMemberDetailPage() {
                 registration={register('date_of_birth')}
                 error={errors.date_of_birth?.message}
                 type="date"
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="email"
@@ -259,14 +257,14 @@ export function AdminMemberDetailPage() {
                 registration={register('email')}
                 error={errors.email?.message}
                 type="email"
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="phone"
                 label="Phone"
                 registration={register('phone')}
                 error={errors.phone?.message}
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="role"
@@ -274,7 +272,7 @@ export function AdminMemberDetailPage() {
                 registration={register('role')}
                 error={errors.role?.message}
                 required
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
               <FormInputField
                 id="category"
@@ -282,7 +280,7 @@ export function AdminMemberDetailPage() {
                 registration={register('category')}
                 error={errors.category?.message}
                 required
-                disabled={!canWrite || isDeletedMember}
+                readOnly={!canWrite || isDeletedMember}
               />
             </div>
           </SectionCard>

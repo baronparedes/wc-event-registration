@@ -105,9 +105,9 @@ describe('MetadataEntriesEditor', () => {
     render(<TestWrapper initialEntries={[{ key: 'foo', value: 'bar' }]} disabled={true} />);
 
     expect(screen.getByLabelText('Metadata key 1')).toBeDisabled();
-    expect(screen.getByLabelText('Metadata value 1')).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Remove metadata field' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /add field/i })).toBeDisabled();
+    expect(screen.getByLabelText('Metadata value 1')).toHaveAttribute('readOnly', '');
+    expect(screen.queryByRole('button', { name: 'Remove metadata field' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add field/i })).not.toBeInTheDocument();
   });
 
   it('does not show empty state when entries are present', () => {

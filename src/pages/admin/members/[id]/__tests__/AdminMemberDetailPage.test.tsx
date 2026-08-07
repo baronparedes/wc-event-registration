@@ -480,7 +480,7 @@ describe('AdminMemberDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete Member' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Restore Member' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText('First Name *')).toBeDisabled();
-    expect(screen.getByLabelText('Role *')).toBeDisabled();
+    expect(screen.getByLabelText('First Name *')).toHaveAttribute('readOnly', '');
+    expect(screen.getByLabelText('Role *')).toHaveAttribute('readOnly', '');
   });
 });
