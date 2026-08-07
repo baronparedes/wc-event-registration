@@ -126,6 +126,25 @@ function normalizeText(value: string | null | undefined): string {
   return (value ?? '').trim();
 }
 
+// Converts M/D/YY or M/D/YYYY to YYYY-MM-DD; returns input unchanged if already ISO or unrecognized.
+function normalizeDateOfBirth(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(trimmed);
+  if (!match) return trimmed;
+
+  const month = parseInt(match[1], 10);
+  const day = parseInt(match[2], 10);
+  let year = parseInt(match[3], 10);
+  if (match[3].length === 2) {
+    year = year <= 25 ? 2000 + year : 1900 + year;
+  }
+
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 function normalizeTriplet(firstName: string, lastName: string, nickname: string): string {
   return [firstName, lastName, nickname]
     .map((value) => normalizeText(value).toLowerCase())
@@ -314,8 +333,11 @@ export function buildMemberCsvPreparedRows(
       const normalized = normalizeText(rawValue);
 
       if (coreField) {
-        if (coreField === 'email' || coreField === 'phone' || coreField === 'date_of_birth') {
+        if (coreField === 'email' || coreField === 'phone') {
           prepared[coreField] = normalized.length > 0 ? normalized : null;
+        } else if (coreField === 'date_of_birth') {
+          const iso = normalizeDateOfBirth(normalized);
+          prepared.date_of_birth = iso.length > 0 ? iso : null;
         } else {
           prepared[coreField] = normalized;
         }

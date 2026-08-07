@@ -185,7 +185,7 @@ describe('buildMemberCsvPreparedRows', () => {
         Role: '',
         Category: '',
         Email: 'not-an-email',
-        DateOfBirth: '01/01/1990',
+        DateOfBirth: 'not-a-date',
       },
     ]);
 
