@@ -34,6 +34,9 @@ export function MetadataEntriesEditor({
   disabled,
 }: MetadataEntriesEditorProps) {
   const entryErrors = errors.metadata_entries;
+  const sortedFields = [...fields]
+    .map((field, index) => ({ field, index }))
+    .sort((a, b) => a.field.key.localeCompare(b.field.key));
 
   return (
     <div className="space-y-3">
@@ -43,7 +46,7 @@ export function MetadataEntriesEditor({
         </p>
       )}
 
-      {fields.map((field, index) => {
+      {sortedFields.map(({ field, index }) => {
         const keyError = Array.isArray(entryErrors) ? entryErrors[index]?.key?.message : undefined;
         const valueError = Array.isArray(entryErrors)
           ? entryErrors[index]?.value?.message
