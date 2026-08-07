@@ -50,7 +50,7 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
     labelPlural: 'Birthdays',
     icon: Cake,
     sourceDate: (member) => member.date_of_birth,
-    badgeClassName: 'border border-primary/20 bg-primary/10 text-primary',
+    badgeClassName: 'border border-primary/20 bg-primary/10',
   },
   {
     type: 'wedding_anniversary',
@@ -59,7 +59,7 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
     icon: HeartIcon,
     sourceDate: (member) =>
       member.extra_metadata[MEMBER_EXTRA_METADATA_KEYS.weddingAnniversaryDate] ?? null,
-    badgeClassName: 'border border-red-200 bg-red-50 text-red-700 text-black',
+    badgeClassName: 'border border-red-200 bg-red-50 !text-red-800',
   },
 ];
 
