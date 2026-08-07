@@ -322,6 +322,28 @@ export function AdminMemberMilestonesPage() {
     return (
       <div className="grid gap-6 grid-cols-1">
         <SectionCard>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="font-heading text-xl font-semibold text-text">
+                {viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+              </h2>
+              <p className="mt-2 text-sm text-muted">Quick totals for the month in view.</p>
+            </div>
+
+            <ExportMonthBirthdaysButton
+              members={currentMonthEntries.map((entry) => entry.member)}
+              year={viewYear}
+              monthIndex={viewMonthIndex}
+            />
+          </div>
+          <div className="grid gap-3 xs:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Birthdays</p>
+              <p className="mt-2 text-3xl font-bold text-text">{birthdayCount}</p>
+            </div>
+          </div>
+        </SectionCard>
+        <SectionCard>
           <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <h2 className="font-heading text-xl font-semibold text-text">Calendar</h2>
@@ -329,6 +351,14 @@ export function AdminMemberMilestonesPage() {
             </div>
 
             <div className="w-full min-w-0 sm:w-[22rem]">
+              <Button
+                type="button"
+                onClick={handleToday}
+                disabled={isAtToday}
+                className="h-12 w-full rounded-lg px-3 text-sm font-semibold mb-2"
+              >
+                Today
+              </Button>
               <div className="grid w-full grid-cols-[3rem_minmax(0,1fr)_3rem] items-center gap-2">
                 <Button
                   type="button"
@@ -340,10 +370,9 @@ export function AdminMemberMilestonesPage() {
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
-                <div className="min-w-0 truncate rounded-lg border border-border bg-surface px-4 py-2 text-center text-base font-medium text-text sm:text-lg">
+                <label className="min-w-0 truncate rounded-lg border border-border bg-surface px-4 py-2 text-center text-base font-medium text-text sm:text-lg">
                   {viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                </div>
-
+                </label>
                 <Button
                   type="button"
                   variant="outline"
@@ -355,18 +384,10 @@ export function AdminMemberMilestonesPage() {
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>
-              <Button
-                type="button"
-                onClick={handleToday}
-                disabled={isAtToday}
-                className="mt-2 h-12 w-full rounded-lg px-3 text-sm font-semibold"
-              >
-                Today
-              </Button>
             </div>
           </div>
 
-          <div>
+          <div className="mt-4 min-w-0">
             {isMobileViewport ? (
               <MobileMilestonesCalendar
                 viewYear={viewYear}
@@ -388,77 +409,53 @@ export function AdminMemberMilestonesPage() {
             )}
           </div>
         </SectionCard>
-
-        <div className="space-y-6">
-          <SectionCard
-            title="Selected Day"
-            subtitle={formatSelectedDate(viewYear, viewMonthIndex, selectedDayNumber)}
-          >
-            {selectedEntries.length === 0 ? (
-              <EmptyState
-                icon={<CalendarDays className="h-6 w-6" />}
-                title="No birthdays on this date"
-                description="Pick another day in the month to inspect member birthdays."
-                className="px-4 py-10"
-              />
-            ) : (
-              <div className="space-y-1">
-                {selectedEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-center gap-3 p-3 border-b border-border last:border-b-0"
-                  >
-                    <Avatar
-                      size="lg"
-                      name={entry.member.full_name}
-                      avatarObjectKey={entry.member.avatar_object_key}
-                      className="h-11 w-11 border-2 border-surface shadow-sm"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate font-medium text-text">{entry.member.full_name}</p>
-                        <Badge
-                          className={getMilestoneTypeBadgeClass(entry.type)}
-                          icon={getMilestoneTypeIcon(entry.type)}
-                        >
-                          {getMilestoneTypeLabel(entry.type)}
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-xs text-muted">
-                        {entry.member.member_id} • {entry.member.nickname || 'No nickname'}
-                      </p>
-                      <p className="mt-1 text-xs text-muted">
-                        {entry.type === 'birthday' &&
-                          `Birthday: ${formatDayMonth(entry.member.date_of_birth)}`}
-                      </p>
+        <SectionCard
+          title="Selected Day"
+          subtitle={formatSelectedDate(viewYear, viewMonthIndex, selectedDayNumber)}
+        >
+          {selectedEntries.length === 0 ? (
+            <EmptyState
+              icon={<CalendarDays className="h-6 w-6" />}
+              title="No birthdays on this date"
+              description="Pick another day in the month to inspect member birthdays."
+              className="px-4 py-10"
+            />
+          ) : (
+            <div className="space-y-1">
+              {selectedEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-center gap-3 p-3 border-b border-border last:border-b-0"
+                >
+                  <Avatar
+                    size="lg"
+                    name={entry.member.full_name}
+                    avatarObjectKey={entry.member.avatar_object_key}
+                    className="h-11 w-11 border-2 border-surface shadow-sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-medium text-text">{entry.member.full_name}</p>
+                      <Badge
+                        className={getMilestoneTypeBadgeClass(entry.type)}
+                        icon={getMilestoneTypeIcon(entry.type)}
+                      >
+                        {getMilestoneTypeLabel(entry.type)}
+                      </Badge>
                     </div>
+                    <p className="mt-1 text-xs text-muted">
+                      {entry.member.member_id} • {entry.member.nickname || 'No nickname'}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {entry.type === 'birthday' &&
+                        `Birthday: ${formatDayMonth(entry.member.date_of_birth)}`}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
-
-          <SectionCard>
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="font-heading text-xl font-semibold text-text">This Month</h2>
-                <p className="mt-2 text-sm text-muted">Quick totals for the month in view.</p>
-              </div>
-
-              <ExportMonthBirthdaysButton
-                members={currentMonthEntries.map((entry) => entry.member)}
-                year={viewYear}
-                monthIndex={viewMonthIndex}
-              />
+                </div>
+              ))}
             </div>
-            <div className="grid gap-3 xs:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-background p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted">Birthdays</p>
-                <p className="mt-2 text-3xl font-bold text-text">{birthdayCount}</p>
-              </div>
-            </div>
-          </SectionCard>
-        </div>
+          )}
+        </SectionCard>
       </div>
     );
   };

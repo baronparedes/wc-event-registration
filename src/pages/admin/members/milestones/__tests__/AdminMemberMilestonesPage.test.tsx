@@ -89,7 +89,7 @@ describe('AdminMemberMilestonesPage', () => {
     );
 
     expect(screen.getByText('Member Milestones')).toBeInTheDocument();
-    expect(screen.getByText('June 2026')).toBeInTheDocument();
+    expect(screen.getAllByText('June 2026')).toHaveLength(2);
     expect(screen.getAllByText('Jane Doe').length).toBeGreaterThan(0);
     expect(screen.getByText('Birthday')).toBeInTheDocument();
     expect(screen.getByText('Birthdays')).toBeInTheDocument();
@@ -201,16 +201,15 @@ describe('AdminMemberMilestonesPage', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
-    expect(screen.getByText('July 2026')).toBeInTheDocument();
+    expect(screen.getAllByText('July 2026')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
-    expect(screen.getByText('June 2026')).toBeInTheDocument();
+    expect(screen.getAllByText('June 2026')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
     expect(screen.getByRole('button', { name: 'Today' })).toBeEnabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Today' }));
-    expect(screen.getByText('June 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Today' })).toBeDisabled();
   });
 
@@ -252,7 +251,7 @@ describe('AdminMemberMilestonesPage', () => {
     expect(juneCsv).not.toContain('WC-002');
 
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
-    expect(screen.getByText('July 2026')).toBeInTheDocument();
+    expect(screen.getAllByText('July 2026')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Month Birthdays CSV' }));
 

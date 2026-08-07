@@ -66,41 +66,44 @@ export function ExportMonthBirthdaysButton({
   const [isExporting, setIsExporting] = useState(false);
   const isDisabled = members.length === 0 || isExporting;
 
-  async function handleExport() {
+  function handleExport() {
     if (isDisabled) {
       return;
     }
 
+    setIsExporting(true);
+    let url: string | null = null;
+    let link: HTMLAnchorElement | null = null;
+
     try {
-      setIsExporting(true);
       const { csvText, filename } = buildMonthBirthdayCsvExport({ members, year, monthIndex });
       const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      url = URL.createObjectURL(blob);
+      link = document.createElement('a');
 
       link.href = url;
       link.download = filename;
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to export birthdays CSV.';
       toast.error(message);
-    } finally {
-      setIsExporting(false);
     }
+
+    if (link && document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+
+    setIsExporting(false);
   }
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={handleExport}
-      disabled={isDisabled}
-      className="w-full sm:w-auto"
-    >
+    <Button type="button" onClick={handleExport} disabled={isDisabled} className="w-full sm:w-auto">
       {isExporting ? 'Exporting...' : 'Export Month Birthdays CSV'}
     </Button>
   );
