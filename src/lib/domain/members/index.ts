@@ -21,3 +21,4 @@ export {
   buildMemberCsvPreparedRows,
   buildMemberCsvImportPreview,
 } from './csv-import';
+export { MEMBER_EXTRA_METADATA_KEYS } from './constants';

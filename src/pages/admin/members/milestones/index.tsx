@@ -1,20 +1,20 @@
 import { useMemo, useState } from 'react';
 
-import { Cake, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Cake, CalendarDays, ChevronLeft, ChevronRight, HeartIcon } from 'lucide-react';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
 import { Avatar, Badge, Button, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminMembersMilestonesQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
-import type { AdminMember } from '@/lib/domain/members';
+import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
 import { formatDayMonth } from '@/lib/infrastructure';
 
 import { DesktopMilestonesCalendar } from './components/DesktopMilestonesCalendar';
-import { ExportMonthBirthdaysButton } from './components/ExportMonthBirthdaysButton';
+import { ExportMonthMilestonesButton } from './components/ExportMonthMilestonesButton';
 import { MobileMilestonesCalendar } from './components/MobileMilestonesCalendar';
 
-export type MilestoneType = 'birthday';
+export type MilestoneType = 'birthday' | 'wedding_anniversary';
 
 export type MilestoneEntry = {
   id: string;
@@ -51,6 +51,15 @@ const MILESTONE_DEFINITIONS: MilestoneDefinition[] = [
     icon: Cake,
     sourceDate: (member) => member.date_of_birth,
     badgeClassName: 'border border-primary/20 bg-primary/10 text-primary',
+  },
+  {
+    type: 'wedding_anniversary',
+    label: 'Wedding Anniversary',
+    labelPlural: 'Wedding Anniversaries',
+    icon: HeartIcon,
+    sourceDate: (member) =>
+      member.extra_metadata[MEMBER_EXTRA_METADATA_KEYS.weddingAnniversaryDate] ?? null,
+    badgeClassName: 'border border-red-200 bg-red-50 text-red-700 text-black',
   },
 ];
 
@@ -175,6 +184,16 @@ function getMilestoneTypeBadgeClass(type: MilestoneType): string {
   );
 }
 
+function getMilestoneTypeDateText(entry: MilestoneEntry): string {
+  const monthDayKey = getMonthDayKeyFromMember(entry.member, entry.type);
+  if (!monthDayKey) {
+    return '';
+  }
+
+  const [month, day] = monthDayKey.split('-').map(Number);
+  return formatDayMonth(`2000-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+}
+
 function formatSelectedDate(year: number, monthIndex: number, dayNumber: number): string {
   return new Date(year, monthIndex, dayNumber).toLocaleDateString(undefined, {
     weekday: 'long',
@@ -243,7 +262,10 @@ export function AdminMemberMilestonesPage() {
     return key?.startsWith(toMonthDayKey(viewMonthIndex + 1, 1).slice(0, 2)) ?? false;
   });
 
-  const birthdayCount = currentMonthEntries.length;
+  const birthdayCount = currentMonthEntries.filter((entry) => entry.type === 'birthday').length;
+  const weddingAnniversaryCount = currentMonthEntries.filter(
+    (entry) => entry.type === 'wedding_anniversary',
+  ).length;
   const isAtMinimumMonth = viewYear === minViewDate.getFullYear() && viewMonthIndex === 0;
   const isAtMaximumMonth =
     viewYear === maxViewDate.getFullYear() && viewMonthIndex === maxViewDate.getMonth();
@@ -313,7 +335,7 @@ export function AdminMemberMilestonesPage() {
           <EmptyState
             icon={<CalendarDays className="h-6 w-6" />}
             title="No active members"
-            description="Add active members first, then their birthdays will appear here."
+            description="Add active members first, then their milestones will appear here."
           />
         </div>
       );
@@ -327,11 +349,13 @@ export function AdminMemberMilestonesPage() {
               <h2 className="font-heading text-xl font-semibold text-text">
                 {viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
               </h2>
-              <p className="mt-2 text-sm text-muted">Quick totals for the month in view.</p>
+              <p className="mt-2 text-sm text-muted">
+                Quick milestone totals for the month in view.
+              </p>
             </div>
 
-            <ExportMonthBirthdaysButton
-              members={currentMonthEntries.map((entry) => entry.member)}
+            <ExportMonthMilestonesButton
+              milestoneEntries={currentMonthEntries}
               year={viewYear}
               monthIndex={viewMonthIndex}
             />
@@ -341,13 +365,21 @@ export function AdminMemberMilestonesPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Birthdays</p>
               <p className="mt-2 text-3xl font-bold text-text">{birthdayCount}</p>
             </div>
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                Wedding Anniversaries
+              </p>
+              <p className="mt-2 text-3xl font-bold text-text">{weddingAnniversaryCount}</p>
+            </div>
           </div>
         </SectionCard>
         <SectionCard>
           <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <h2 className="font-heading text-xl font-semibold text-text">Calendar</h2>
-              <p className="mt-2 text-sm text-muted">Select a day to see the matching birthdays.</p>
+              <p className="mt-2 text-sm text-muted">
+                Select a day to see the matching milestones.
+              </p>
             </div>
 
             <div className="w-full min-w-0 sm:w-[22rem]">
@@ -416,8 +448,8 @@ export function AdminMemberMilestonesPage() {
           {selectedEntries.length === 0 ? (
             <EmptyState
               icon={<CalendarDays className="h-6 w-6" />}
-              title="No birthdays on this date"
-              description="Pick another day in the month to inspect member birthdays."
+              title="No milestones on this date"
+              description="Pick another day in the month to inspect member milestones."
               className="px-4 py-10"
             />
           ) : (
@@ -447,8 +479,7 @@ export function AdminMemberMilestonesPage() {
                       {entry.member.member_id} • {entry.member.nickname || 'No nickname'}
                     </p>
                     <p className="mt-1 text-xs text-muted">
-                      {entry.type === 'birthday' &&
-                        `Birthday: ${formatDayMonth(entry.member.date_of_birth)}`}
+                      {`${getMilestoneTypeLabel(entry.type)}: ${getMilestoneTypeDateText(entry)}`}
                     </p>
                   </div>
                 </div>

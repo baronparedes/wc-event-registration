@@ -106,7 +106,7 @@ export function MobileMilestonesCalendar({
                     )}
                   </div>
                 ) : (
-                  <p className="mt-2 text-xs text-muted">No birthdays</p>
+                  <p className="mt-2 text-xs text-muted">No milestones</p>
                 )}
               </div>
             </button>

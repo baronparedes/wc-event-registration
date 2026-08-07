@@ -93,9 +93,10 @@ describe('AdminMemberMilestonesPage', () => {
     expect(screen.getAllByText('Jane Doe').length).toBeGreaterThan(0);
     expect(screen.getByText('Birthday')).toBeInTheDocument();
     expect(screen.getByText('Birthdays')).toBeInTheDocument();
+    expect(screen.getByText('Wedding Anniversaries')).toBeInTheDocument();
   });
 
-  it('exports current month birthdays as csv', async () => {
+  it('exports current month milestones as csv', async () => {
     const createdAnchors: HTMLAnchorElement[] = [];
     const originalCreateElement = document.createElement.bind(document);
 
@@ -120,7 +121,7 @@ describe('AdminMemberMilestonesPage', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Month Birthdays CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export Month Milestones CSV' }));
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
 
     const createObjectURLMock = URL.createObjectURL as unknown as {
@@ -129,12 +130,14 @@ describe('AdminMemberMilestonesPage', () => {
     const exportedBlob = createObjectURLMock.mock.calls[0]?.[0];
     const csvText = await exportedBlob.text();
 
-    expect(csvText).toContain('Member ID,Full Name,Nickname,Birthday,Email,Phone,Role,Category');
-    expect(csvText).toContain('WC-001,Jane Doe,J,1990-06-15,,,member,adult');
+    expect(csvText).toContain(
+      'Member ID,Full Name,Nickname,Milestone Type,Milestone Date,Email,Phone,Role,Category',
+    );
+    expect(csvText).toContain('WC-001,Jane Doe,J,Birthday,1990-06-15,,,member,adult');
 
     const exportAnchor = createdAnchors.find(
       (anchor) =>
-        anchor.download === 'member-birthdays-2026-06.csv' &&
+        anchor.download === 'member-milestones-2026-06.csv' &&
         typeof anchor.click === 'function' &&
         vi.mocked(anchor.click).mock.calls.length > 0,
     );
@@ -176,7 +179,7 @@ describe('AdminMemberMilestonesPage', () => {
 
     expect(screen.getByText('No active members')).toBeInTheDocument();
     expect(
-      screen.getByText('Add active members first, then their birthdays will appear here.'),
+      screen.getByText('Add active members first, then their milestones will appear here.'),
     ).toBeInTheDocument();
   });
 
@@ -190,7 +193,7 @@ describe('AdminMemberMilestonesPage', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Go to week 1' }));
-    expect(screen.getByText('No birthdays on this date')).toBeInTheDocument();
+    expect(screen.getByText('No milestones on this date')).toBeInTheDocument();
   });
 
   it('navigates months and allows returning to today', () => {
@@ -239,7 +242,7 @@ describe('AdminMemberMilestonesPage', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Month Birthdays CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export Month Milestones CSV' }));
 
     const createObjectURLMockJune = URL.createObjectURL as unknown as {
       mock: { calls: Array<[Blob]> };
@@ -253,7 +256,7 @@ describe('AdminMemberMilestonesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
     expect(screen.getAllByText('July 2026')).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Month Birthdays CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export Month Milestones CSV' }));
 
     const createObjectURLMockJuly = URL.createObjectURL as unknown as {
       mock: { calls: Array<[Blob]> };
@@ -263,5 +266,79 @@ describe('AdminMemberMilestonesPage', () => {
 
     expect(julyCsv).toContain('WC-002');
     expect(julyCsv).not.toContain('WC-001');
+  });
+
+  it('renders birthday and wedding anniversary milestones on the same selected date', () => {
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
+      data: [
+        makeMember({
+          id: 'member-1',
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          date_of_birth: '1990-06-15',
+          extra_metadata: {},
+        }),
+        makeMember({
+          id: 'member-2',
+          member_id: 'WC-002',
+          full_name: 'John Roe',
+          date_of_birth: null,
+          extra_metadata: { wedanniv_date: '2005-06-15' },
+        }),
+      ],
+      isLoading: false,
+      error: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMemberMilestonesPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Birthday')).toBeInTheDocument();
+    expect(screen.getByText('Wedding Anniversary')).toBeInTheDocument();
+    expect(screen.getByText(/^Birthday:/)).toBeInTheDocument();
+    expect(screen.getByText(/^Wedding Anniversary:/)).toBeInTheDocument();
+  });
+
+  it('ignores missing or invalid wedding anniversary metadata values', () => {
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
+      data: [
+        makeMember({
+          id: 'member-1',
+          member_id: 'WC-001',
+          full_name: 'Jane Doe',
+          date_of_birth: '1990-06-15',
+          extra_metadata: {},
+        }),
+        makeMember({
+          id: 'member-2',
+          member_id: 'WC-002',
+          full_name: 'John Roe',
+          date_of_birth: null,
+          extra_metadata: { wedanniv_date: 'not-a-date' },
+        }),
+      ],
+      isLoading: false,
+      error: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMemberMilestonesPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Birthdays')).toBeInTheDocument();
+    expect(screen.getByText('Wedding Anniversaries')).toBeInTheDocument();
+    const birthdaysCardLabel = screen.getByText('Birthdays');
+    const birthdaysCard = birthdaysCardLabel.parentElement;
+    expect(birthdaysCard?.textContent).toContain('1');
+
+    const weddingCardLabel = screen.getByText('Wedding Anniversaries');
+    const weddingCard = weddingCardLabel.parentElement;
+    expect(weddingCard?.textContent).toContain('0');
+    expect(screen.queryByText('Wedding Anniversary')).not.toBeInTheDocument();
   });
 });
