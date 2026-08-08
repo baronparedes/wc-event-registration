@@ -52,13 +52,15 @@ describe('usePublicEventFieldsQuery', () => {
       issues: [],
     });
 
-    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery(field.event_id));
+    const { result } = renderHookWithClient(() =>
+      usePublicEventFieldsQuery(field.event_id, 'members'),
+    );
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(mockCaller).toHaveBeenCalledWith({ event_id: field.event_id });
+    expect(mockCaller).toHaveBeenCalledWith({ event_id: field.event_id, audience: 'members' });
     expect(mockValidatePublicEventFieldConfig).toHaveBeenCalledWith([rawRow]);
     expect(result.current.data).toEqual({ validFields: [{ id: field.id }], issues: [] });
   });
@@ -66,7 +68,7 @@ describe('usePublicEventFieldsQuery', () => {
   it('returns query error state when field fetch fails', async () => {
     mockCaller.mockRejectedValueOnce(new Error('public fields failed'));
 
-    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery('event-1'));
+    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery('event-1', 'guests'));
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);
@@ -76,7 +78,7 @@ describe('usePublicEventFieldsQuery', () => {
   });
 
   it('returns empty validated result when refetched without an event id', async () => {
-    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery(undefined));
+    const { result } = renderHookWithClient(() => usePublicEventFieldsQuery(undefined, 'members'));
 
     const response = await result.current.refetch();
 

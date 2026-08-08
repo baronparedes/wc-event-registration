@@ -27,6 +27,7 @@ function buildField(fieldKey: string, placeholder: string | null): PublicEventFi
     options: [],
     validation_rules: {},
     display_order: 0,
+    applicability: 'both',
   };
 }
 

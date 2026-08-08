@@ -18,7 +18,11 @@ import {
   fieldTypeHasValidation,
   toValidationRules,
 } from '@/lib/domain/event-fields';
-import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields';
+import type {
+  EventFieldApplicability,
+  EventFieldFormValues,
+  EventFieldTypeEnum,
+} from '@/lib/domain/event-fields';
 import type { AdminEventField } from '@/lib/domain/event-fields';
 import type { EventStatus } from '@/lib/domain/events';
 
@@ -73,6 +77,8 @@ export function EventFieldEditPanel({
   const { fields: optionFields, append, remove } = useFieldArray({ control, name: 'options' });
 
   const selectedFieldType = useWatch({ control, name: 'field_type' }) as EventFieldTypeEnum;
+  const selectedApplicability =
+    (useWatch({ control, name: 'applicability' }) as EventFieldApplicability | undefined) ?? 'both';
   const showOptions = fieldTypeHasOptions(selectedFieldType);
   const showTextValidation = fieldTypeHasTextValidation(selectedFieldType);
   const showNumberValidation = fieldTypeHasNumberValidation(selectedFieldType);
@@ -125,11 +131,12 @@ export function EventFieldEditPanel({
         }
 
         const updatePayload = isPublished
-          ? // Published: cosmetic fields + option capacity
+          ? // Published: cosmetic fields + registrant type + option capacity
             {
               id: field.id,
               event_id: eventId,
               label: values.label,
+              applicability: values.applicability,
               placeholder: values.placeholder || null,
               help_text: values.help_text || null,
               validation_rules: publishedCapacityRules,
@@ -139,6 +146,7 @@ export function EventFieldEditPanel({
               id: field.id,
               event_id: eventId,
               label: values.label,
+              applicability: values.applicability,
               is_required: values.is_required,
               is_active: values.is_active,
               placeholder: values.placeholder || null,
@@ -155,6 +163,7 @@ export function EventFieldEditPanel({
           field_key: values.field_key,
           label: values.label,
           field_type: values.field_type,
+          applicability: values.applicability,
           is_required: values.is_required,
           is_active: values.is_active,
           placeholder: values.placeholder || null,
@@ -218,6 +227,8 @@ export function EventFieldEditPanel({
             field={field}
             fieldKeyRegistration={register('field_key')}
             labelRegistration={register('label')}
+            applicabilityRegistration={register('applicability')}
+            applicabilityValue={selectedApplicability}
             isRequiredRegistration={register('is_required')}
             isActiveRegistration={register('is_active')}
             errors={errors}

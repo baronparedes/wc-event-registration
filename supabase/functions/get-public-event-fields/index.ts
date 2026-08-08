@@ -8,6 +8,7 @@ import { z } from '@/shared/validation.ts';
 
 const schema = z.object({
   event_id: z.string().uuid('event_id must be a valid UUID'),
+  audience: z.enum(['members', 'guests']).optional(),
 });
 
 Deno.serve(async (req) => {
@@ -22,17 +23,27 @@ Deno.serve(async (req) => {
   const corsHeaders = guard.corsHeaders;
   if (!guard.valid) return guard.response;
 
-  const { event_id } = guard.data;
+  const { event_id, audience } = guard.data;
   const client = guard.client;
 
-  const { data: fields, error } = await client
+  let query = client
     .from('event_fields')
     .select(
-      'id, event_id, field_key, label, field_type, is_required, is_active, placeholder, help_text, options, validation_rules, display_order',
+      'id, event_id, field_key, label, field_type, applicability, is_required, is_active, placeholder, help_text, options, validation_rules, display_order',
     )
     .eq('event_id', event_id)
     .eq('is_active', true)
     .order('display_order', { ascending: true });
+
+  if (audience === 'members') {
+    query = query.in('applicability', ['members', 'both']);
+  }
+
+  if (audience === 'guests') {
+    query = query.in('applicability', ['guests', 'both']);
+  }
+
+  const { data: fields, error } = await query;
 
   if (error) {
     return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event fields', error.message);

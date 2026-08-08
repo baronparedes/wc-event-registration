@@ -14,6 +14,8 @@ export type EventFieldType =
   | 'boolean'
   | 'color_picker';
 
+export type EventFieldApplicability = 'members' | 'guests' | 'both';
+
 export type PublicEventFieldOption = {
   label: string;
   value: string;
@@ -80,6 +82,7 @@ export type PublicEventField = {
   field_key: string;
   label: string;
   field_type: EventFieldType;
+  applicability: EventFieldApplicability;
   is_required: boolean;
   is_active: boolean;
   placeholder: string | null;
@@ -95,6 +98,7 @@ export type AdminEventField = {
   field_key: string;
   label: string;
   field_type: EventFieldType;
+  applicability: EventFieldApplicability;
   is_required: boolean;
   is_active: boolean;
   placeholder: string | null;

@@ -49,6 +49,7 @@ interface EventFieldRow {
   field_key: string;
   label: string;
   field_type: string;
+  applicability: 'members' | 'guests' | 'both';
   is_required: boolean;
   options: unknown;
   validation_rules: unknown;
@@ -206,9 +207,12 @@ Deno.serve(async (req) => {
     // Step 2: Fetch event fields for validation
     const { data: fieldsData, error: fieldsError } = await supabase
       .from('event_fields')
-      .select('id, field_key, label, field_type, is_required, options, validation_rules')
+      .select(
+        'id, field_key, label, field_type, applicability, is_required, options, validation_rules',
+      )
       .eq('event_id', eventId)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .in('applicability', ['guests', 'both']);
 
     if (fieldsError) {
       console.error('Fields lookup error:', fieldsError);

@@ -67,7 +67,7 @@ export function PublicEventRegistrationPage() {
       ? eventQuery.data.event.id
       : undefined;
 
-  const fieldsQuery = usePublicEventFieldsQuery(availableEventId);
+  const fieldsQuery = usePublicEventFieldsQuery(availableEventId, 'guests');
   const submitMutation = useSubmitPublicRegistrationMutation();
 
   useEffect(() => {

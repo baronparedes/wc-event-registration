@@ -9,7 +9,7 @@ import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 /**
  * Updates an existing event field.
  * On draft events: all properties can be changed.
- * On published events: only label, placeholder, help_text, and option capacity rules can be changed.
+ * On published events: label, applicability, placeholder/help text, and option capacity rules can be changed.
  * On archived events: no changes are permitted.
  */
 export function useUpdateEventFieldMutation() {
@@ -35,6 +35,7 @@ export function useUpdateEventFieldMutation() {
         const allowedPublishedKeys = new Set([
           'event_id',
           'label',
+          'applicability',
           'placeholder',
           'help_text',
           'validation_rules',
@@ -42,7 +43,7 @@ export function useUpdateEventFieldMutation() {
         const lockedKeys = Object.keys(updates).filter((k) => !allowedPublishedKeys.has(k));
         if (lockedKeys.length > 0) {
           throw new Error(
-            'Published events can only have field labels, placeholders, help text, and option capacity edited. To change field types or validation rules, archive this event and create a new one.',
+            'Published events can only have field labels, registrant type, placeholders/help text, and option capacity edited. To change field types or validation rules, archive this event and create a new one.',
           );
         }
 

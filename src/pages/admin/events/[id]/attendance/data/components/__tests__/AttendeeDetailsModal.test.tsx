@@ -35,6 +35,7 @@ describe('AttendeeDetailsModal', () => {
     placeholder: null,
     help_text: null,
     display_order: 1,
+    applicability: 'both',
     options: [],
     validation_rules: {},
     created_at: '2026-01-01T00:00:00Z',

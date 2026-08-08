@@ -45,6 +45,12 @@ const STATUS_COLORS: Record<string, string> = {
   boolean: 'bg-amber-100 text-amber-800',
 };
 
+const APPLICABILITY_LABELS: Record<AdminEventField['applicability'], string> = {
+  both: 'Members + Guests',
+  members: 'Members only',
+  guests: 'Guests only',
+};
+
 /** List of registration form fields with reorder, edit, and delete actions. */
 export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventFieldsListProps) {
   const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
@@ -110,6 +116,7 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
               <ListTableHeaderCell>Order</ListTableHeaderCell>
               <ListTableHeaderCell>Field Label</ListTableHeaderCell>
               <ListTableHeaderCell>Type</ListTableHeaderCell>
+              <ListTableHeaderCell>Registrant Type</ListTableHeaderCell>
               <ListTableHeaderCell>Required</ListTableHeaderCell>
               <ListTableHeaderCell>Active</ListTableHeaderCell>
               <ListTableHeaderCell className="text-right">Actions</ListTableHeaderCell>
@@ -163,6 +170,11 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[field.field_type] ?? 'bg-muted text-text'}`}
                   >
                     {FIELD_TYPE_LABELS[field.field_type as EventFieldTypeEnum] ?? field.field_type}
+                  </span>
+                </ListTableCell>
+                <ListTableCell>
+                  <span className="text-xs font-medium text-text">
+                    {APPLICABILITY_LABELS[field.applicability]}
                   </span>
                 </ListTableCell>
                 <ListTableCell>

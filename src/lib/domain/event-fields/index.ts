@@ -1,5 +1,6 @@
 export type {
   EventFieldType,
+  EventFieldApplicability,
   AdminEventField,
   AdminEventFieldOption,
   AdminEventFieldValidationRules,
@@ -16,6 +17,7 @@ export type {
 
 export type {
   EventFieldTypeEnum,
+  EventFieldApplicabilityEnum,
   FieldOption,
   CreateEventFieldInput,
   UpdateEventFieldInput,
@@ -35,6 +37,7 @@ export {
 } from './transforms';
 export {
   FIELD_TYPES,
+  FIELD_APPLICABILITY,
   buildDynamicFieldResponseSchema,
   createEventFieldSchema,
   updateEventFieldSchema,

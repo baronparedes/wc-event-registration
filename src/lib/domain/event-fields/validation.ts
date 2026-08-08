@@ -346,9 +346,23 @@ export function validatePublicEventFieldConfig(
       return;
     }
 
+    const normalizedApplicability =
+      row.applicability === 'members' ||
+      row.applicability === 'guests' ||
+      row.applicability === 'both'
+        ? row.applicability
+        : 'both';
+
+    if (normalizedApplicability !== row.applicability) {
+      issues.push(
+        `Field "${row.field_key}" has unsupported applicability "${String(row.applicability)}". Defaulting to both.`,
+      );
+    }
+
     validFields.push({
       ...row,
       field_type: parsedType.data,
+      applicability: normalizedApplicability,
       options: parsedOptions.options,
       validation_rules: parseFieldValidationRules(row),
     });

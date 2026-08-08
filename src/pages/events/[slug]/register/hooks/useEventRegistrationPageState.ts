@@ -312,6 +312,7 @@ export function useEventRegistrationPageState() {
 
   const eventFieldsQuery = usePublicEventFieldsQuery(
     isDynamicFieldGateReady ? availability?.event!.id : undefined,
+    'members',
   );
   const slotAvailabilityQuery = useEventSlotAvailabilityQuery(
     availability?.status === 'available' ? availability!.event!.id : undefined,

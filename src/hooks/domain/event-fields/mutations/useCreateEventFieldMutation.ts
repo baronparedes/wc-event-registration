@@ -46,6 +46,7 @@ export function useCreateEventFieldMutation() {
           field_key: input.field_key,
           label: input.label,
           field_type: input.field_type,
+          applicability: input.applicability,
           is_required: input.is_required,
           is_active: input.is_active,
           placeholder: input.placeholder ?? null,

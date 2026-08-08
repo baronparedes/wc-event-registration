@@ -100,7 +100,9 @@ describe('useUpdateEventFieldMutation', () => {
         label: 'New Label',
         field_type: field.field_type,
       }),
-    ).rejects.toThrow('Published events can only have field labels, placeholders, help text');
+    ).rejects.toThrow(
+      'Published events can only have field labels, registrant type, placeholders/help text',
+    );
   });
 
   it('allows capacity-only validation updates on published events', async () => {
@@ -137,6 +139,31 @@ describe('useUpdateEventFieldMutation', () => {
           option_a: [{ role: 'Coach', alloted_slots: 10 }],
         },
       },
+    });
+  });
+
+  it('allows applicability updates on published events', async () => {
+    const field = makeAdminEventField({ field_type: 'text' });
+    mockEventsBuilder.single.mockResolvedValueOnce({ data: { status: 'published' }, error: null });
+    mockUpdateBuilder.single.mockResolvedValueOnce({
+      data: { id: field.id, applicability: 'guests' },
+      error: null,
+    });
+
+    const { result } = renderHookWithClient(() => useUpdateEventFieldMutation());
+
+    const updated = await act(async () =>
+      result.current.mutateAsync({
+        id: field.id,
+        event_id: field.event_id,
+        applicability: 'guests',
+      }),
+    );
+
+    expect(updated).toEqual({ id: field.id, applicability: 'guests' });
+    expect(mockUpdateBuilder.update).toHaveBeenCalledWith({
+      event_id: field.event_id,
+      applicability: 'guests',
     });
   });
 

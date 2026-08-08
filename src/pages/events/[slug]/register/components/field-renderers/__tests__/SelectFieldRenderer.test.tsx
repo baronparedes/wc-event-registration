@@ -36,6 +36,7 @@ function createField(overrides: Partial<PublicEventField>): PublicEventField {
     ],
     validation_rules: {},
     display_order: 0,
+    applicability: 'both',
     ...overrides,
   };
 }

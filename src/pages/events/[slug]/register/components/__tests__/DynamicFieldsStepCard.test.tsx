@@ -34,6 +34,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 0,
+    applicability: 'both',
   },
   {
     id: 'field-2',
@@ -48,6 +49,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 1,
+    applicability: 'both',
   },
   {
     id: 'field-3',
@@ -62,6 +64,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 2,
+    applicability: 'both',
   },
   {
     id: 'field-4',
@@ -76,6 +79,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 3,
+    applicability: 'both',
   },
   {
     id: 'field-5',
@@ -90,6 +94,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 4,
+    applicability: 'both',
   },
   {
     id: 'field-6',
@@ -104,6 +109,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 5,
+    applicability: 'both',
   },
   {
     id: 'field-7',
@@ -118,6 +124,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 6,
+    applicability: 'both',
   },
   {
     id: 'field-8',
@@ -135,6 +142,7 @@ const baseFields: PublicEventField[] = [
     ],
     validation_rules: {},
     display_order: 7,
+    applicability: 'both',
   },
   {
     id: 'field-9',
@@ -152,6 +160,7 @@ const baseFields: PublicEventField[] = [
     ],
     validation_rules: {},
     display_order: 8,
+    applicability: 'both',
   },
   {
     id: 'field-10',
@@ -169,6 +178,7 @@ const baseFields: PublicEventField[] = [
     ],
     validation_rules: {},
     display_order: 9,
+    applicability: 'both',
   },
   {
     id: 'field-11',
@@ -183,6 +193,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 10,
+    applicability: 'both',
   },
   {
     id: 'field-13',
@@ -200,6 +211,7 @@ const baseFields: PublicEventField[] = [
     ],
     validation_rules: {},
     display_order: 11,
+    applicability: 'both',
   },
   {
     id: 'field-12',
@@ -214,6 +226,7 @@ const baseFields: PublicEventField[] = [
     options: [],
     validation_rules: {},
     display_order: 12,
+    applicability: 'both',
   },
 ];
 
@@ -416,6 +429,7 @@ describe('DynamicFieldsStepCard', () => {
           },
         },
         display_order: 0,
+        applicability: 'both',
       },
       {
         id: 'field-role-radio',
@@ -438,6 +452,7 @@ describe('DynamicFieldsStepCard', () => {
           },
         },
         display_order: 1,
+        applicability: 'both',
       },
       {
         id: 'field-role-multi',
@@ -460,6 +475,7 @@ describe('DynamicFieldsStepCard', () => {
           },
         },
         display_order: 2,
+        applicability: 'both',
       },
       {
         id: 'field-role-toggle',
@@ -469,6 +485,7 @@ describe('DynamicFieldsStepCard', () => {
         field_type: 'multi_select_toggle',
         is_required: false,
         is_active: true,
+        applicability: 'both',
         placeholder: null,
         help_text: null,
         options: [
@@ -553,6 +570,7 @@ describe('DynamicFieldsStepCard', () => {
         },
       },
       display_order: 0,
+      applicability: 'both',
     };
 
     renderCard({
@@ -608,6 +626,7 @@ describe('DynamicFieldsStepCard', () => {
         },
       },
       display_order: 0,
+      applicability: 'both',
     };
 
     renderCard({

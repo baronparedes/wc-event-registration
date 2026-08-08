@@ -118,6 +118,7 @@ function toPublicEventFields(fields: AttendanceField[]): PublicEventField[] {
       field_key: field.field_key,
       label: field.label,
       field_type: field.field_type,
+      applicability: 'both',
       is_required: field.is_required,
       is_active: true,
       placeholder: null,

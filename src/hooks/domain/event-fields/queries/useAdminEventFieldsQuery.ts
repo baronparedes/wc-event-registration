@@ -18,7 +18,7 @@ export function useAdminEventFieldsQuery(eventId: string | undefined) {
       const { data, error } = await supabase
         .from('event_fields')
         .select(
-          'id, event_id, field_key, label, field_type, is_required, is_active, placeholder, help_text, options, validation_rules, display_order, created_at, updated_at',
+          'id, event_id, field_key, label, field_type, applicability, is_required, is_active, placeholder, help_text, options, validation_rules, display_order, created_at, updated_at',
         )
         .eq('event_id', eventId)
         .order('display_order', { ascending: true });

@@ -10,6 +10,7 @@ function buildRow(overrides: Partial<PublicEventFieldRow>): PublicEventFieldRow 
     field_key: 'team_name',
     label: 'Team Name',
     field_type: 'text',
+    applicability: 'both',
     is_required: true,
     is_active: true,
     placeholder: null,

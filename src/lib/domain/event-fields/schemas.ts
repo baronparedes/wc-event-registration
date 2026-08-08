@@ -21,7 +21,10 @@ export const FIELD_TYPES = [
   'color_picker',
 ] as const;
 
+export const FIELD_APPLICABILITY = ['members', 'guests', 'both'] as const;
+
 export type EventFieldTypeEnum = (typeof FIELD_TYPES)[number];
+export type EventFieldApplicabilityEnum = (typeof FIELD_APPLICABILITY)[number];
 
 const fieldOptionSchema = z.object({
   label: z.string().min(1, 'Option label is required'),
@@ -47,6 +50,7 @@ export const createEventFieldSchema = z.object({
     .min(1, 'Field label is required')
     .max(200, 'Field label must be 200 characters or less'),
   field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
+  applicability: z.enum(FIELD_APPLICABILITY).default('both'),
   is_required: z.boolean().default(false),
   is_active: z.boolean().default(true),
   placeholder: z
@@ -71,6 +75,7 @@ export const updateEventFieldSchema = z.object({
     .max(200, 'Field label must be 200 characters or less')
     .optional(),
   field_type: z.enum(FIELD_TYPES).optional(),
+  applicability: z.enum(FIELD_APPLICABILITY).optional(),
   is_required: z.boolean().optional(),
   is_active: z.boolean().optional(),
   placeholder: z.string().max(200).nullable().optional(),
@@ -101,6 +106,9 @@ export const eventFieldFormSchema = z
       ),
     label: z.string().min(1, 'Field label is required').max(200, 'Maximum 200 characters'),
     field_type: z.enum(FIELD_TYPES, { error: 'Please select a field type' }),
+    applicability: z.enum(FIELD_APPLICABILITY, {
+      error: 'Please select who can see this field',
+    }),
     is_required: z.boolean(),
     is_active: z.boolean(),
     placeholder: z.string().max(200, 'Maximum 200 characters').nullable(),

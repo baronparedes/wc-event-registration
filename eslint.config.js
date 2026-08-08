@@ -6,7 +6,15 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage']),
+  globalIgnores([
+    'dist',
+    'coverage',
+    'node_modules',
+    'public',
+    'build',
+    'vite.config.ts',
+    './supabase/.temp',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

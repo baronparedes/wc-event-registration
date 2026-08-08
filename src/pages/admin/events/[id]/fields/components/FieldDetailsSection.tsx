@@ -1,6 +1,8 @@
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
 import { CheckboxField, FormInputField, SectionCard } from '@/components/ui';
+import { FormSelectField } from '@/components/ui/FormSelectField';
+import type { EventFieldApplicability } from '@/lib/domain/event-fields';
 import type { AdminEventField } from '@/lib/domain/event-fields';
 
 type FieldDetailsSectionProps = {
@@ -10,13 +12,22 @@ type FieldDetailsSectionProps = {
   field: AdminEventField | null;
   fieldKeyRegistration: UseFormRegisterReturn;
   labelRegistration: UseFormRegisterReturn;
+  applicabilityRegistration: UseFormRegisterReturn;
+  applicabilityValue: EventFieldApplicability;
   isRequiredRegistration: UseFormRegisterReturn;
   isActiveRegistration: UseFormRegisterReturn;
   errors: {
     field_key?: { message?: string };
     label?: { message?: string };
+    applicability?: { message?: string };
   };
 };
+
+const APPLICABILITY_OPTIONS = [
+  { value: 'both', label: 'Members and Guests' },
+  { value: 'members', label: 'Members only' },
+  { value: 'guests', label: 'Guests only' },
+] as const;
 
 /** Section for field name, label, and required/active checkboxes. */
 export function FieldDetailsSection({
@@ -26,6 +37,8 @@ export function FieldDetailsSection({
   field,
   fieldKeyRegistration,
   labelRegistration,
+  applicabilityRegistration,
+  applicabilityValue,
   isRequiredRegistration,
   isActiveRegistration,
   errors,
@@ -64,6 +77,18 @@ export function FieldDetailsSection({
           placeholder="e.g., Team Name"
           helperText="The label shown to registrants on the form."
           disabled={isFullyLocked}
+        />
+
+        <FormSelectField
+          id="applicability"
+          label="Registrant Type"
+          registration={applicabilityRegistration}
+          value={applicabilityValue}
+          options={[...APPLICABILITY_OPTIONS]}
+          error={errors.applicability?.message ?? null}
+          helperText="Choose whether this field is shown for member registrations, guest registrations, or both."
+          disabled={isFullyLocked}
+          required
         />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
