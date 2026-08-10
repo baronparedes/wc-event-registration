@@ -1,5 +1,6 @@
-import { Users } from 'lucide-react';
+import { Share2, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { Badge, Button } from '@/components/ui';
 import { toEventRegistration } from '@/config/constants';
@@ -17,6 +18,7 @@ type EventCardProps = {
 export function EventCard({ event }: EventCardProps) {
   const navigate = useNavigate();
   const registrationPath = toEventRegistration(event.slug);
+  const shareUrl = new URL(registrationPath, window.location.origin).toString();
   const isOpen = event.listingStatus === 'open';
 
   const handleCardClick = () => {
@@ -38,6 +40,18 @@ export function EventCard({ event }: EventCardProps) {
     }
   };
 
+  const handleShareClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Event link copied to clipboard.');
+    } catch {
+      toast.error('Failed to share event link.');
+    }
+  };
+
   return (
     <div
       className={`flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-md hover:scale-[1.02] ${isOpen ? 'cursor-pointer' : ''}`}
@@ -48,21 +62,36 @@ export function EventCard({ event }: EventCardProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-heading text-base font-semibold text-text">{event.title}</h3>
-        <Badge
-          variant={
-            event.listingStatus === 'open'
-              ? 'open'
+        <div className="flex items-start gap-2">
+          <Badge
+            variant={
+              event.listingStatus === 'open'
+                ? 'open'
+                : event.listingStatus === 'upcoming'
+                  ? 'upcoming'
+                  : 'closed'
+            }
+          >
+            {event.listingStatus === 'open'
+              ? 'Open'
               : event.listingStatus === 'upcoming'
-                ? 'upcoming'
-                : 'closed'
-          }
-        >
-          {event.listingStatus === 'open'
-            ? 'Open'
-            : event.listingStatus === 'upcoming'
-              ? 'Upcoming'
-              : 'Past'}
-        </Badge>
+                ? 'Upcoming'
+                : 'Past'}
+          </Badge>
+          {isOpen && (
+            <div>
+              <Button
+                aria-label={`Share ${event.title}`}
+                className="shrink-0"
+                onClick={handleShareClick}
+                size="sm"
+                variant="primaryOutline"
+              >
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {event.description && <p className="line-clamp-2 text-sm text-muted">{event.description}</p>}
