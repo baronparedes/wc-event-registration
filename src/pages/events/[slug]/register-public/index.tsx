@@ -113,6 +113,7 @@ export function PublicEventRegistrationPage() {
 
         if (existingRegistration && !allowsExistingRegistrationUpdate) {
           setAttendeeEmailErrorMessage('This email is already registered for this event.');
+          setIsCheckingAttendee(false);
           return;
         }
 
@@ -137,16 +138,17 @@ export function PublicEventRegistrationPage() {
           });
           setFieldResponses(hydratedFieldResponses);
           setCurrentStep('event-fields');
+          setIsCheckingAttendee(false);
           return;
         }
 
         setAttendeeInfo(data);
         setFieldResponses({});
         setCurrentStep('event-fields');
+        setIsCheckingAttendee(false);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to check attendee';
         toast.error(message);
-      } finally {
         setIsCheckingAttendee(false);
       }
     },

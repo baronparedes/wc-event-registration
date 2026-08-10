@@ -53,10 +53,10 @@ export function NameLookupModal({
     setIsLoading(true);
     try {
       await onSubmit(data.name);
+      setIsLoading(false);
       handleClose();
     } catch {
       setErrorMessage('Unable to search by name. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

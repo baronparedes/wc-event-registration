@@ -64,11 +64,11 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
     try {
       await deleteMutation.mutateAsync({ fieldId, eventId });
       toast.success(`"${fieldLabel}" removed.`);
+      setDeletingFieldId(null);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to remove field. Please try again.';
       toast.error(message);
-    } finally {
       setDeletingFieldId(null);
     }
   }

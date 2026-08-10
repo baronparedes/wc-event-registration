@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/Button';
 import {
   type AttendeeViewConfig,
@@ -50,11 +52,10 @@ export function ExportAttendanceViewButton({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      setIsExporting(false);
     } catch (error) {
-      const { toast } = await import('sonner');
       const message = error instanceof Error ? error.message : 'Failed to export attendance CSV.';
       toast.error(message);
-    } finally {
       setIsExporting(false);
     }
   };

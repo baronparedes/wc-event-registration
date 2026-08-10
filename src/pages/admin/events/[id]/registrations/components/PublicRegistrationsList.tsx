@@ -136,10 +136,10 @@ export function PublicRegistrationsList({
       await cancelMutation.mutateAsync({ registration_id: selectedRegistration.id });
     } catch (error) {
       showError(error instanceof Error ? error.message : 'Failed to cancel public registration');
-    } finally {
-      setShowCancelDialog(false);
-      setSelectedRegistration(null);
     }
+
+    setShowCancelDialog(false);
+    setSelectedRegistration(null);
   };
 
   const handleConfirmReactivate = async () => {
@@ -151,10 +151,10 @@ export function PublicRegistrationsList({
       showError(
         error instanceof Error ? error.message : 'Failed to reactivate public registration',
       );
-    } finally {
-      setShowReactivateDialog(false);
-      setSelectedRegistration(null);
     }
+
+    setShowReactivateDialog(false);
+    setSelectedRegistration(null);
   };
 
   return (
