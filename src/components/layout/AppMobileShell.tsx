@@ -54,11 +54,7 @@ export function AppMobileShell() {
         <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-1">
             <div className="flex items-center gap-3">
-              <img
-                src={brandLogo}
-                alt="Welcome Hub"
-                className="h-20 w-40 object-cover object-center"
-              />
+              <img src={brandLogo} alt="Welcome Hub" className="h-20 object-cover object-center" />
             </div>
 
             <div className="flex items-center gap-3">
