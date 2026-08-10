@@ -3,8 +3,45 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AttendeeConfirmStep } from '@/pages/admin/events/[id]/attendance/check-in/components/AttendeeConfirmStep';
 
+const { mockGetAnswerText, mockFormatDateTime, mockAvatar } = vi.hoisted(() => ({
+  mockGetAnswerText: vi.fn(
+    (fieldType: string, answer: { answer_text?: string | null; answer_number?: number | null }) =>
+      fieldType === 'color_picker'
+        ? (answer.answer_text ?? '—')
+        : `formatted:${answer.answer_text ?? answer.answer_number ?? ''}`,
+  ),
+  mockFormatDateTime: vi.fn((value: string, fallback?: string) =>
+    fallback ? fallback : `formatted-date:${value}`,
+  ),
+  mockAvatar: vi.fn(({ name }: { name: string }) => <div>{name}</div>),
+}));
+
+vi.mock('@/hooks/utils', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/utils')>('@/hooks/utils');
+
+  return {
+    ...actual,
+    useFieldAnswerTextFormatter: () => ({
+      getAnswerText: mockGetAnswerText,
+    }),
+  };
+});
+
+vi.mock('@/lib/infrastructure', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
+
+  return {
+    ...actual,
+    formatDateTime: mockFormatDateTime,
+  };
+});
+
 vi.mock('@/components/ui/Avatar', () => ({
-  Avatar: ({ name }: { name: string }) => <div>{name}</div>,
+  Avatar: (props: { name: string; avatarObjectKey?: string | null; size?: string }) => {
+    mockAvatar(props);
+    return <div>{props.name}</div>;
+  },
 }));
 
 const attendee = {
@@ -41,6 +78,55 @@ const timeslots = [
 ];
 
 describe('AttendeeConfirmStep', () => {
+  it('shows the empty-state prompt when no attendee is selected', () => {
+    render(
+      <AttendeeConfirmStep
+        attendee={null}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('Select an attendee from search results to continue.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the confirm action and submitting state for non-timeslot check-in', () => {
+    const onCheckIn = vi.fn();
+
+    render(
+      <AttendeeConfirmStep
+        attendee={attendee}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={true}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={onCheckIn}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    const confirmButton = screen.getByRole('button', { name: 'Checking In...' });
+    expect(confirmButton).toBeDisabled();
+    fireEvent.click(confirmButton);
+    expect(onCheckIn).not.toHaveBeenCalled();
+  });
+
   it('shows ready-for-next action for already checked-in attendees in non-timeslot flow', () => {
     const onReadyForNext = vi.fn();
 
@@ -71,6 +157,208 @@ describe('AttendeeConfirmStep', () => {
     const readyButton = screen.getByRole('button', { name: 'Ready for Next Attendee' });
     fireEvent.click(readyButton);
     expect(onReadyForNext).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders avatar, formatted dates, and answer cards for registration and attendance answers', () => {
+    render(
+      <AttendeeConfirmStep
+        attendee={{
+          ...attendee,
+          avatar_object_key: 'avatars/alex.jpg',
+          registration_answers: [
+            {
+              event_field_id: 'field-1',
+              label: 'Team Color',
+              field_key: 'team_color',
+              field_type: 'color_picker',
+              answer_text: '#22c55e',
+              answer_number: null,
+            },
+            {
+              event_field_id: 'field-2',
+              label: 'Notes',
+              field_key: 'notes',
+              field_type: 'text',
+              answer_text: 'Bring badge',
+              answer_number: null,
+            },
+            {
+              event_field_id: 'field-3',
+              label: 'Group',
+              field_key: 'group',
+              field_type: 'text',
+              answer_text: 'North',
+              answer_number: null,
+            },
+          ],
+          attendance_answers: [
+            {
+              attendance_field_id: 'attendance-1',
+              label: 'Lane',
+              field_key: 'lane',
+              field_type: 'text',
+              answer_text: 'A1',
+              answer_number: null,
+            },
+            {
+              attendance_field_id: 'attendance-2',
+              label: 'Vest Color',
+              field_key: 'vest_color',
+              field_type: 'color_picker',
+              answer_text: '#0f172a',
+              answer_number: null,
+            },
+          ],
+        }}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    expect(mockAvatar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Alex Rivera',
+        avatarObjectKey: 'avatars/alex.jpg',
+        size: '2xl',
+      }),
+    );
+    expect(screen.getByText('formatted-date:2026-07-10T08:00:00+08:00')).toBeInTheDocument();
+    expect(screen.getByText('Registration answers')).toBeInTheDocument();
+    expect(screen.getByText('Attendance details')).toBeInTheDocument();
+    expect(screen.getByTitle('#22c55e')).toBeInTheDocument();
+    expect(screen.getByTitle('#0f172a')).toBeInTheDocument();
+    expect(screen.getByText('formatted:Bring badge')).toBeInTheDocument();
+    expect(screen.getByText('formatted:North')).toBeInTheDocument();
+    expect(screen.getByText('formatted:A1')).toBeInTheDocument();
+
+    const teamColorCard = screen.getByText('Team Color').closest('li');
+    const laneCard = screen.getByText('Lane').closest('li');
+
+    expect(teamColorCard).toHaveClass('xl:w-[calc(33.333%-0.5rem)]');
+    expect(laneCard).toHaveClass('md:w-[calc(50%-0.375rem)]');
+  });
+
+  it('renders a full-width answer card when only one answer exists', () => {
+    render(
+      <AttendeeConfirmStep
+        attendee={{
+          ...attendee,
+          registration_answers: [
+            {
+              event_field_id: 'field-1',
+              label: 'Notes',
+              field_key: 'notes',
+              field_type: 'text',
+              answer_text: 'Only one',
+              answer_number: null,
+            },
+          ],
+          attendance_answers: [],
+        }}
+        checkInResult={null}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Notes').closest('li')).toHaveClass('w-full');
+  });
+
+  it('renders check-in result banners for success, already-checked-in, and failure states', () => {
+    const { rerender } = render(
+      <AttendeeConfirmStep
+        attendee={attendee}
+        checkInResult={{
+          success: true,
+          status: 'checked_in',
+          attendee_kind: 'registered',
+          message: 'Checked in successfully.',
+          official_check_in_time: '2026-07-10T11:02:00+08:00',
+        }}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Checked in successfully.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Official time: formatted-date:2026-07-10T11:02:00+08:00'),
+    ).toBeInTheDocument();
+
+    rerender(
+      <AttendeeConfirmStep
+        attendee={attendee}
+        checkInResult={{
+          success: true,
+          status: 'already_checked_in',
+          attendee_kind: 'registered',
+          message: 'Already checked in.',
+          official_check_in_time: null,
+        }}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Already checked in.')).toBeInTheDocument();
+
+    rerender(
+      <AttendeeConfirmStep
+        attendee={attendee}
+        checkInResult={{
+          success: false,
+          status: 'rejected',
+          attendee_kind: 'registered',
+          message: 'Check-in failed.',
+          official_check_in_time: null,
+        }}
+        currentTimeMs={Date.parse('2026-07-10T11:00:00+08:00')}
+        isSubmitting={false}
+        timeslotEnabled={false}
+        timeslots={[]}
+        autoWindowModeEnabled={false}
+        activeSlot={null}
+        suggestedSlot=""
+        onTimeslotConfirm={vi.fn()}
+        onCheckIn={vi.fn()}
+        onReadyForNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Check-in failed.')).toBeInTheDocument();
   });
 
   it('hides the generic confirm button in auto-window mode', () => {
