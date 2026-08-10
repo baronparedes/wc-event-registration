@@ -59,7 +59,7 @@ vi.mock('../AppDrawerNavigation', () => ({
           </>
         ) : (
           <>
-            <a href={ROUTE_PATHS.adminLogin}>Sign In</a>
+            <a href={ROUTE_PATHS.login}>Sign In</a>
             <button onClick={props.onClose} type="button">
               Close
             </button>
@@ -95,7 +95,7 @@ describe('AppShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
     const signInLink = screen.getByRole('link', { name: 'Sign In' });
-    expect(signInLink).toHaveAttribute('href', ROUTE_PATHS.adminLogin);
+    expect(signInLink).toHaveAttribute('href', ROUTE_PATHS.login);
     expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
   });
 
@@ -135,7 +135,7 @@ describe('AppShell', () => {
 
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
-      ROUTE_PATHS.adminLogin,
+      ROUTE_PATHS.login,
     );
   });
 

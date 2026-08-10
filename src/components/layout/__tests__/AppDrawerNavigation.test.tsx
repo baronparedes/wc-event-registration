@@ -58,7 +58,7 @@ describe('AppDrawerNavigation', () => {
 
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
-      ROUTE_PATHS.adminLogin,
+      ROUTE_PATHS.login,
     );
     expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
   });

@@ -140,7 +140,7 @@ export function AppDrawerNavigation({
                   )}
                 </>
               ) : (
-                <DrawerNavLink to={ROUTE_PATHS.adminLogin} label="Sign In" onClose={onClose} />
+                <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
               )}
             </div>
 

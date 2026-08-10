@@ -3,9 +3,9 @@ import { matchPath } from 'react-router-dom';
 export const ROUTE_PATHS = {
   home: '/',
   notFound: '*',
+  login: '/login',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
-  adminLogin: '/admin/login',
   adminMembers: '/admin/members',
   adminMemberMilestones: '/admin/members/milestones',
   adminMembersImport: '/admin/members/import',

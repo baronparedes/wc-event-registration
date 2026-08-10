@@ -26,14 +26,14 @@ function getSafeRedirectTarget(search: string): string {
     return ROUTE_PATHS.adminEvents;
   }
 
-  if (redirectTarget.startsWith(ROUTE_PATHS.adminLogin)) {
+  if (redirectTarget.startsWith(ROUTE_PATHS.login)) {
     return ROUTE_PATHS.adminEvents;
   }
 
   return redirectTarget;
 }
 
-export function AdminLoginPage() {
+export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useAdminLoginMutation();
@@ -72,8 +72,8 @@ export function AdminLoginPage() {
 
   return (
     <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <h1 className="font-heading text-2xl font-semibold text-text">Admin Login</h1>
-      <p className="mt-2 text-sm text-muted">Sign in with your admin credentials.</p>
+      <h1 className="font-heading text-2xl font-semibold text-text">Login</h1>
+      <p className="mt-2 text-sm text-muted">Sign in with your credentials.</p>
 
       <form className="mt-6 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
         <FormInputField

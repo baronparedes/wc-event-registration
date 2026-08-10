@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AdminLoginPage } from '@/pages/admin/login';
+import { LoginPage } from '@/pages/login';
 
 const {
   mockNavigate,
@@ -46,11 +46,11 @@ vi.mock('@/hooks/domain/auth', async () => {
   };
 });
 
-describe('AdminLoginPage', () => {
+describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseLocation.mockReturnValue({
-      pathname: '/admin/login',
+      pathname: '/login',
       search: '',
       hash: '',
       state: null,
@@ -68,7 +68,7 @@ describe('AdminLoginPage', () => {
   });
 
   it('submits admin credentials and navigates on success', async () => {
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -91,7 +91,7 @@ describe('AdminLoginPage', () => {
 
   it('navigates to redirect target from query param after successful login', async () => {
     mockUseLocation.mockReturnValue({
-      pathname: '/admin/login',
+      pathname: '/login',
       search:
         '?redirect=%2Fadmin%2Fevents%2F95de6bf2-def7-462b-917e-2a3961f5b51c%2Fattendance%2Fdata',
       hash: '',
@@ -99,7 +99,7 @@ describe('AdminLoginPage', () => {
       key: 'redirect',
     });
 
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -128,14 +128,14 @@ describe('AdminLoginPage', () => {
       isLoading: false,
     });
 
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
   });
 
   it('falls back to admin events for unsafe redirect targets', () => {
     mockUseLocation.mockReturnValue({
-      pathname: '/admin/login',
+      pathname: '/login',
       search: '?redirect=https%3A%2F%2Fevil.example.com%2Fsteal',
       hash: '',
       state: null,
@@ -146,7 +146,7 @@ describe('AdminLoginPage', () => {
       isLoading: false,
     });
 
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
   });
@@ -154,7 +154,7 @@ describe('AdminLoginPage', () => {
   it('shows API error message when login fails with an Error instance', async () => {
     mockLoginMutateAsync.mockRejectedValueOnce(new Error('Invalid credentials'));
 
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -172,7 +172,7 @@ describe('AdminLoginPage', () => {
   it('falls back to default error toast for non-Error rejections', async () => {
     mockLoginMutateAsync.mockRejectedValueOnce('bad response');
 
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -193,7 +193,7 @@ describe('AdminLoginPage', () => {
       isPending: true,
     });
 
-    render(<AdminLoginPage />);
+    render(<LoginPage />);
 
     expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled();
   });

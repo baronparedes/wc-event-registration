@@ -59,7 +59,7 @@ vi.mock('../AppDrawerNavigation', () => ({
             </button>
           </>
         ) : (
-          <a href={ROUTE_PATHS.adminLogin}>Sign In</a>
+          <a href={ROUTE_PATHS.login}>Sign In</a>
         )}
       </div>
     ) : null,
@@ -92,7 +92,7 @@ describe('AppMobileShell', () => {
 
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
-      ROUTE_PATHS.adminLogin,
+      ROUTE_PATHS.login,
     );
   });
 
@@ -124,7 +124,7 @@ describe('AppMobileShell', () => {
 
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
-      ROUTE_PATHS.adminLogin,
+      ROUTE_PATHS.login,
     );
   });
 

@@ -24,8 +24,8 @@ const PublicEventRegistrationPage = lazy(() =>
     default: module.PublicEventRegistrationPage,
   })),
 );
-const AdminLoginPage = lazy(() =>
-  import('../pages/admin/login').then((module) => ({ default: module.AdminLoginPage })),
+const LoginPage = lazy(() =>
+  import('../pages/login').then((module) => ({ default: module.LoginPage })),
 );
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
@@ -176,7 +176,7 @@ function RequireAdminAuth({
   if (!isAuthenticated) {
     const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
     const searchParams = new URLSearchParams({ redirect: redirectTarget });
-    return <Navigate to={`${ROUTE_PATHS.adminLogin}?${searchParams.toString()}`} replace />;
+    return <Navigate to={`${ROUTE_PATHS.login}?${searchParams.toString()}`} replace />;
   }
 
   if (allowedRoles) {
@@ -220,10 +220,10 @@ export function AppRouter() {
         />
 
         <Route
-          path={ROUTE_PATHS.adminLogin}
+          path={ROUTE_PATHS.login}
           element={
             <LazyRoute>
-              <AdminLoginPage />
+              <LoginPage />
             </LazyRoute>
           }
         />
