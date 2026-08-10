@@ -1,4 +1,4 @@
-import { Share2, Users } from 'lucide-react';
+import { Share, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -44,6 +44,25 @@ export function EventCard({ event }: EventCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
+    const canUseNativeShare =
+      typeof navigator.share === 'function' &&
+      (!navigator.canShare || navigator.canShare({ url: shareUrl }));
+
+    if (canUseNativeShare) {
+      try {
+        await navigator.share({
+          title: event.title,
+          url: shareUrl,
+        });
+        return;
+      } catch (error) {
+        // Ignore user-cancelled native share and avoid showing fallback errors.
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast.success('Event link copied to clipboard.');
@@ -82,12 +101,11 @@ export function EventCard({ event }: EventCardProps) {
             <div>
               <Button
                 aria-label={`Share ${event.title}`}
-                className="shrink-0"
                 onClick={handleShareClick}
                 size="sm"
-                variant="primaryOutline"
+                variant="outline"
               >
-                <Share2 className="h-4 w-4" aria-hidden="true" />
+                <Share className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           )}
