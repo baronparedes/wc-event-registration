@@ -114,11 +114,14 @@ export function AppDrawerNavigation({
             <div className="space-y-2">
               <SectionHeading label="General" />
               <DrawerNavLink to={ROUTE_PATHS.home} label="Events" onClose={onClose} />
+              {!isAuthenticated && (
+                <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
+              )}
             </div>
 
-            <div className="space-y-2">
-              <SectionHeading label="Admin" />
-              {isAuthenticated ? (
+            {isAuthenticated && (
+              <div className="space-y-2">
+                <SectionHeading label="Admin" />
                 <>
                   {(canRead || canAccessCheckIn) && (
                     <DrawerNavLink
@@ -135,10 +138,8 @@ export function AppDrawerNavigation({
                     />
                   )}
                 </>
-              ) : (
-                <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
-              )}
-            </div>
+              </div>
+            )}
 
             {eventId && (
               <div className="space-y-2">
