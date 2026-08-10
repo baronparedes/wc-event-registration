@@ -56,7 +56,7 @@ export function AppShell() {
         </div>
       ) : (
         <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5">
             <div className="flex items-center gap-3">
               <img
                 src={brandLogo}
