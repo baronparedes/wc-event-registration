@@ -16,7 +16,7 @@ import {
   type UpdateAttendanceSettingsInput,
   updateAttendanceSettingsSchema,
 } from '@/lib/domain/attendance';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import { localDateTimeToUTC8ISO } from '@/lib/infrastructure';
 
 const ATTENDANCE_TOAST_MESSAGES = {
@@ -120,7 +120,7 @@ export function useAdminEventAttendancePageState(eventId: string | undefined) {
   }, [timeslotEnabled, isDirty, settings, setValue]);
 
   const isArchived = event?.status === 'archived';
-  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const eventStartLocal = toDatetimeLocal(event?.starts_at);
   const eventEndLocal = toDatetimeLocal(event?.ends_at);
 

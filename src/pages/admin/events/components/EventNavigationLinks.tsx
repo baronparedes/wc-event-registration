@@ -10,7 +10,7 @@ import {
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useIsMobileViewport } from '@/hooks/utils';
-import { canAccessAttendanceCheckIn, canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 
 type EventNavigationSection =
   | 'event'
@@ -33,9 +33,9 @@ type EventNavigationLinksProps = {
 
 export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
   const { data: authState } = useAdminAuthQuery();
-  const canWrite = canWriteAdminData(authState?.adminRole);
-  const canRead = canReadAdminData(authState?.adminRole);
-  const canAccessCheckIn = canAccessAttendanceCheckIn(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const canAccessCheckIn = canAdminPerform(authState?.adminRole, 'canAccessAttendanceCheckIn');
   const isMobile = useIsMobileViewport();
 
   if (isMobile) return null;

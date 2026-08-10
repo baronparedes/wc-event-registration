@@ -1,8 +1,6 @@
 export {
   ADMIN_AUTH_QUERY_KEY,
-  canExportAdminReports,
-  canManageAttendanceSavedViews,
-  canWriteAdminData,
+  canAdminPerform,
   type AdminAuthState,
   type AdminRole,
 } from '@/lib/domain/auth';

@@ -22,7 +22,7 @@ import {
   resolveActiveTimeslot,
   searchAttendeesWithRfidFallback,
 } from '@/lib/domain/attendance';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import { formatDateTime } from '@/lib/infrastructure';
 
 import {
@@ -123,7 +123,7 @@ export function AdminAttendanceCheckInPage() {
     pendingCount: pendingCheckInCount,
     lastError: lastQueueError,
   } = useQueuedCheckInAttendeeMutation(eventId, { refreshCache, updateAttendee });
-  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const showQueueStatusBanner = pendingCheckInCount > 0 || Boolean(lastQueueError);
 
   const isLoading = eventLoading || settingsLoading;

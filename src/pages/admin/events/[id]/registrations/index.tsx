@@ -15,10 +15,9 @@ import {
   toAdminEventDetail,
   toAdminEventPublicRegistrations,
 } from '@/config/constants';
-import { canExportAdminReports, useAdminAuthQuery } from '@/hooks/domain/auth';
+import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
-import { canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -74,9 +73,9 @@ export function AdminRegistrationsPage() {
   const isLoading = eventQuery.isLoading || registrationsQuery.isLoading;
   const error = eventQuery.error || registrationsQuery.error;
   const hasRegistrations = totalRegistrations > 0;
-  const canRead = canReadAdminData(authState?.adminRole);
-  const canWrite = canWriteAdminData(authState?.adminRole);
-  const canExport = canExportAdminReports(authState?.adminRole);
+  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canExport = canAdminPerform(authState?.adminRole, 'canExportAdminReports');
 
   if (error) {
     return (

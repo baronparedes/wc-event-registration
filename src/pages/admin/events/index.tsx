@@ -31,7 +31,7 @@ import {
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
-import { canAccessAttendanceCheckIn, canReadAdminData, canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
 import { DuplicatePolicyLabel, EventStatusBadge } from './components';
@@ -64,9 +64,9 @@ export function AdminEventsPage() {
 
   const isLoading = eventsQuery.isLoading;
   const error = eventsQuery.error;
-  const canWrite = canWriteAdminData(authState?.adminRole);
-  const canRead = canReadAdminData(authState?.adminRole);
-  const canAccessCheckIn = canAccessAttendanceCheckIn(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const canAccessCheckIn = canAdminPerform(authState?.adminRole, 'canAccessAttendanceCheckIn');
 
   function handleNextPage() {
     if (!nextCursor) return;

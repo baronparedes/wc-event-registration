@@ -1,9 +1,7 @@
 export type { AdminAuthState, AdminRole } from './types';
 export {
-  canAccessAttendanceCheckIn,
-  canExportAdminReports,
-  canManageAttendanceSavedViews,
-  canReadAdminData,
-  canWriteAdminData,
+  ADMIN_PERMISSION_POLICIES,
+  canAdminPerform,
+  getAdminPermissionPolicy,
 } from './permissions';
 export { ADMIN_AUTH_QUERY_KEY, fetchAdminAuthState } from './queries';

@@ -27,7 +27,7 @@ import {
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
 import { Avatar } from '../../../components/ui/Avatar';
@@ -68,7 +68,7 @@ export function AdminMembersPage() {
 
   const isLoading = membersQuery.isLoading;
   const error = membersQuery.error;
-  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);

@@ -15,12 +15,7 @@ import {
   toAdminEventRegistrations,
 } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import {
-  type AdminRole,
-  canAccessAttendanceCheckIn,
-  canReadAdminData,
-  canWriteAdminData,
-} from '@/lib/domain/auth';
+import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
 
@@ -80,9 +75,10 @@ export function AppDrawerNavigation({
   const location = useLocation();
   const eventId = getEventIdFromPath(location.pathname);
   const { data: selectedEvent } = useAdminEventQuery(eventId ?? undefined);
-  const canWrite = canWriteAdminData(adminRole);
-  const canRead = canReadAdminData(adminRole);
-  const canAccessCheckIn = canAccessAttendanceCheckIn(adminRole);
+  const canWrite = canAdminPerform(adminRole, 'canWriteAdminData');
+  const canRead = canAdminPerform(adminRole, 'canReadAdminData');
+  const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
+  const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
 
   return (
     <>
@@ -131,7 +127,7 @@ export function AppDrawerNavigation({
                       onClose={onClose}
                     />
                   )}
-                  {canRead && (
+                  {canReadMembers && (
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminMembers}
                       label="Manage Members"

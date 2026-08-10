@@ -5,7 +5,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { AdminRole } from '@/lib/domain/auth';
-import { canReadAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 
 import { AppMobileShell, AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
@@ -152,9 +152,11 @@ function ResponsiveShellLayout() {
 function RequireAdminAuth({
   children,
   allowedRoles,
+  requiredPermission,
 }: {
   children: ReactElement;
   allowedRoles?: AdminRole[];
+  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
 }) {
   const { data, isLoading } = useAdminAuthQuery();
   const location = useLocation();
@@ -183,7 +185,11 @@ function RequireAdminAuth({
     if (!data?.adminRole || !allowedRoles.includes(data.adminRole)) {
       return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
     }
-  } else if (!canReadAdminData(data?.adminRole)) {
+  } else if (
+    requiredPermission
+      ? !canAdminPerform(data?.adminRole, requiredPermission)
+      : !canAdminPerform(data?.adminRole, 'canReadAdminData')
+  ) {
     return <Navigate to={ROUTE_PATHS.home} replace />;
   }
 
@@ -230,7 +236,7 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMembers}
           element={
-            <RequireAdminAuth>
+            <RequireAdminAuth requiredPermission="canReadAdminMemberData">
               <LazyRoute>
                 <AdminMembersPage />
               </LazyRoute>
@@ -240,7 +246,7 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMemberMilestones}
           element={
-            <RequireAdminAuth>
+            <RequireAdminAuth requiredPermission="canReadAdminMemberData">
               <LazyRoute>
                 <AdminMemberMilestonesPage />
               </LazyRoute>
@@ -260,7 +266,7 @@ export function AppRouter() {
         <Route
           path={ROUTE_PATHS.adminMemberDetailPattern}
           element={
-            <RequireAdminAuth>
+            <RequireAdminAuth requiredPermission="canReadAdminMemberData">
               <LazyRoute>
                 <AdminMemberDetailPage />
               </LazyRoute>

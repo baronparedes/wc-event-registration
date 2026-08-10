@@ -21,7 +21,7 @@ import {
   useReactivatePublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 function formatDate(dateString: string): string {
@@ -109,7 +109,7 @@ export function AdminPublicRegistrationDetailPage() {
   const { data: authState } = useAdminAuthQuery();
   const cancelMutation = useCancelPublicRegistrationMutation(eventId ?? '');
   const reactivateMutation = useReactivatePublicRegistrationMutation(eventId ?? '');
-  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
 
   if (!eventId || !registrationId) {
     return (

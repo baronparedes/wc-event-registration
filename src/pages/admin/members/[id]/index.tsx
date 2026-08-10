@@ -17,7 +17,7 @@ import {
   useSoftDeleteMemberMutation,
   useUpdateMemberMutation,
 } from '@/hooks/domain/members';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 
@@ -89,7 +89,8 @@ export function AdminMemberDetailPage() {
     .map((value) => value.trim())
     .filter(Boolean)
     .join(' ');
-  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
 
   useEffect(() => {
     if (memberQuery.data) {
@@ -285,19 +286,21 @@ export function AdminMemberDetailPage() {
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Additional Metadata"
-            subtitle="Custom key-value fields stored alongside this member's profile. Keys should be unique and use snake_case."
-          >
-            <MetadataEntriesEditor
-              fields={metadataFields}
-              register={register}
-              errors={errors}
-              remove={removeMetadata}
-              append={appendMetadata}
-              disabled={!canWrite || isDeletedMember}
-            />
-          </SectionCard>
+          {(canWrite || canRead) && (
+            <SectionCard
+              title="Additional Metadata"
+              subtitle="Custom key-value fields stored alongside this member's profile. Keys should be unique and use snake_case."
+            >
+              <MetadataEntriesEditor
+                fields={metadataFields}
+                register={register}
+                errors={errors}
+                remove={removeMetadata}
+                append={appendMetadata}
+                disabled={!canWrite || isDeletedMember}
+              />
+            </SectionCard>
+          )}
 
           <div className="flex items-center justify-end gap-3">
             {canWrite && (

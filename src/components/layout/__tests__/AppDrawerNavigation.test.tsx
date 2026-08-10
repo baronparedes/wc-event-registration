@@ -18,7 +18,7 @@ function renderDrawer(options?: {
   path?: string;
   isOpen?: boolean;
   isAuthenticated?: boolean;
-  adminRole?: 'admin' | 'super_admin' | 'slod' | 'kiosk' | null;
+  adminRole?: 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk' | null;
   currentUserLabel?: string | null;
   onClose?: () => void;
   onLogout?: () => Promise<void>;
@@ -86,6 +86,18 @@ describe('AppDrawerNavigation', () => {
       expect(onLogout).toHaveBeenCalledTimes(1);
       expect(onClose).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows member navigation for imt users without admin write links', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: null });
+
+    renderDrawer({ isAuthenticated: true, adminRole: 'imt' });
+
+    expect(screen.getByRole('link', { name: 'Manage Members' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminMembers,
+    );
+    expect(screen.queryByRole('link', { name: 'Manage Events' })).not.toBeInTheDocument();
   });
 
   it('renders event workspace and attendance links with event title when on event routes', () => {

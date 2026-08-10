@@ -18,7 +18,7 @@ import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations';
 import type { AdminPublicRegistrationsPage } from '@/hooks/domain/public-registrations/queries/useAdminPublicRegistrationsQuery';
-import { canWriteAdminData } from '@/lib/domain/auth';
+import { canAdminPerform } from '@/lib/domain/auth';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
@@ -75,7 +75,7 @@ export function AdminPublicRegistrationsPage() {
   const isLoading = eventQuery.isLoading || publicRegistrationsQuery.isLoading;
   const error = eventQuery.error || publicRegistrationsQuery.error;
   const isEventArchived = event?.status === 'archived';
-  const canWrite = canWriteAdminData(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);

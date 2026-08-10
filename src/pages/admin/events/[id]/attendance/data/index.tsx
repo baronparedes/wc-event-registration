@@ -19,11 +19,7 @@ import {
   useAttendeesLocalCacheQuery,
 } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
-import {
-  canExportAdminReports,
-  canManageAttendanceSavedViews,
-  useAdminAuthQuery,
-} from '@/hooks/domain/auth';
+import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useLocalStorage } from '@/hooks/utils';
@@ -33,7 +29,6 @@ import {
   buildAttendeeView,
   collectDynamicFieldOptions,
 } from '@/lib/domain/attendance-views';
-import { canWriteAdminData } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
@@ -382,9 +377,9 @@ export function AdminAttendanceDataPage() {
   }
 
   const attendanceEnabled = settings?.attendance_enabled ?? false;
-  const canWrite = canWriteAdminData(authState?.adminRole);
-  const canManageViews = canManageAttendanceSavedViews(authState?.adminRole);
-  const canExport = canExportAdminReports(authState?.adminRole);
+  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canManageViews = canAdminPerform(authState?.adminRole, 'canManageAttendanceSavedViews');
+  const canExport = canAdminPerform(authState?.adminRole, 'canExportAdminReports');
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
 
