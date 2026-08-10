@@ -55,22 +55,19 @@ export function LoginPage() {
   }, [adminAuth?.isAuthenticated, isLoading, navigate, redirectTarget]);
 
   async function handleSubmit(values: AdminLoginForm) {
-    let authState: Awaited<ReturnType<typeof loginMutation.mutateAsync>>;
-
     try {
-      authState = await loginMutation.mutateAsync(values);
+      const authState = await loginMutation.mutateAsync(values);
+      const resolvedRedirectTarget =
+        authState.adminRole === 'kiosk' && redirectTarget === ROUTE_PATHS.adminEvents
+          ? ROUTE_PATHS.home
+          : redirectTarget;
+
+      toast.success(TOAST_MESSAGES.adminSignInSuccess);
+      navigate(resolvedRedirectTarget, { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure;
       toast.error(message);
-      return;
     }
-
-    const isKioskRedirectToAdminEvents =
-      authState.adminRole === 'kiosk' && redirectTarget === ROUTE_PATHS.adminEvents;
-    const resolvedRedirectTarget = isKioskRedirectToAdminEvents ? ROUTE_PATHS.home : redirectTarget;
-
-    toast.success(TOAST_MESSAGES.adminSignInSuccess);
-    navigate(resolvedRedirectTarget, { replace: true });
   }
 
   return (

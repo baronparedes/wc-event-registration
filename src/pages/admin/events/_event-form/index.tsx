@@ -149,9 +149,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     } catch (error) {
       const message = error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.saveFailed;
       toast.error(message);
+    } finally {
+      cancelSave();
     }
-
-    cancelSave();
   }
 
   async function handlePublish(eventId: string, eventTitle: string) {

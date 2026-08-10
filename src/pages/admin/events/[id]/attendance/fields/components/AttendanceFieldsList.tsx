@@ -55,11 +55,11 @@ export function AttendanceFieldsList({ fields, eventId, onEdit }: AttendanceFiel
     try {
       await deleteMutation.mutateAsync({ id: fieldId, event_id: eventId });
       toast.success(`"${fieldLabel}" removed.`);
-      setDeletingFieldId(null);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to remove field. Please try again.';
       toast.error(message);
+    } finally {
       setDeletingFieldId(null);
     }
   }
