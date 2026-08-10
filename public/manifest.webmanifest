@@ -1,6 +1,6 @@
 {
-  "name": "WC Event Registration",
-  "short_name": "WC Events",
+  "name": "Welcome Hub",
+  "short_name": "WC Hub",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
