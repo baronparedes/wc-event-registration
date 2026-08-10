@@ -5,15 +5,15 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #0b5fff;
-  --color-secondary: #0f766e;
-  --color-accent: #f59e0b;
+  --color-primary: #1ca0b3;
+  --color-secondary: #51a29a;
+  --color-accent: #f5bd5c;
   --color-background: #f8fafc;
   --color-surface: #ffffff;
   --color-text: #0f172a;
   --color-muted: #475569;
   --color-border: #d7e0eb;
-  --color-danger: #dc2626;
+  --color-danger: #f2685c;
 }
 
 * {

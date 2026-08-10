@@ -4,7 +4,7 @@ import { ChevronDown, Menu } from 'lucide-react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import brandLogo from '@/assets/wc-events-brand.png';
+import brandLogo from '@/assets/wc-hub-brand-white.png';
 import { TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
 
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
@@ -56,18 +56,13 @@ export function AppShell() {
         </div>
       ) : (
         <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={brandLogo} alt="WC Events" className="h-12 w-12" />
-              <div>
-                <p
-                  id="app-shell-title-anchor"
-                  className="font-heading text-2xl font-semibold text-text"
-                >
-                  WC Event Registrations
-                </p>
-                <p className="text-sm text-muted">{new Date().toDateString()}</p>
-              </div>
+              <img
+                src={brandLogo}
+                alt="Welcome Hub"
+                className="h-32 w-64 object-cover object-center"
+              />
             </div>
 
             <div className="flex items-center gap-3">

@@ -118,7 +118,7 @@ describe('AppMobileShell', () => {
 
     renderShell('/admin/events/event-1/attendance/check-in');
 
-    expect(screen.queryByText('WC Event Registrations')).not.toBeInTheDocument();
+    expect(screen.queryByText('Welcome Hub')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 

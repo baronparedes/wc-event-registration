@@ -129,7 +129,7 @@ describe('AppShell', () => {
 
     renderShell('/events/sample-event/register');
 
-    expect(screen.queryByText('WC Event Registrations')).not.toBeInTheDocument();
+    expect(screen.queryByText('Welcome Hub')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
