@@ -99,38 +99,28 @@ The following items are implementation gaps, prioritized for remediation.
 
 ### High priority
 
-1. Public event detail endpoint can return unpublished event data.
+High-priority findings from the previous revision have been remediated:
 
-- Observation:
-  - The public event detail function resolves events by slug without enforcing `status = 'published'` in the function query itself.
-- Risk:
-  - If a draft or archived slug is known, metadata and event details may be exposed.
+1. Public event detail endpoint now enforces `status = 'published'` server-side.
+2. Public event-fields endpoint now verifies the parent event is published before returning fields.
+3. Public/member registration submit handlers now enforce server-side event availability gates:
+   - `status = 'published'`
+   - registration mode open/closed
+   - registration open/close window checks.
+4. Scheduled email export endpoint now requires JWT verification (`verify_jwt = true`) in function config.
 
-2. Public event-fields endpoint does not enforce event publication state.
+Residual note:
 
-- Observation:
-  - The endpoint fetches fields by `event_id` and active status, without validating that the parent event is published.
-- Risk:
-  - Form schema for non-public events may be exposed if an internal `event_id` is discovered.
-
-3. Registration submission endpoints do not enforce event availability windows server-side.
-
-- Observation:
-  - Public/member submit handlers resolve event by slug and process registration logic, but do not enforce server-side checks for:
-    - `status = 'published'`
-    - registration mode open/closed
-    - registration open/close time window
-- Risk:
-  - A direct API caller can potentially submit when UI gates would otherwise block.
-
-4. Scheduled email export function is unauthenticated and lacks a function-level secret check.
-
-- Observation:
-  - The cron function is configured with `verify_jwt = false` and does not validate an internal secret token.
-- Risk:
-  - Endpoint can be invoked by external callers, increasing abuse and cost risk (email trigger workload).
+- The cron hardening uses signed scheduler identity (JWT verification) rather than a separate custom function secret, which is acceptable when the caller is Supabase-managed.
 
 ### Medium priority
+
+1. Public event detail payload includes broad event fields.
+
+- Observation:
+  - The public event detail endpoint still returns fields beyond minimum public display needs (for example internal metadata and audit-adjacent fields).
+- Risk:
+  - Increases blast radius if a public endpoint behavior regresses elsewhere.
 
 1. Some public endpoints rely on CORS allowlist as a traffic gate.
 
@@ -139,14 +129,14 @@ The following items are implementation gaps, prioritized for remediation.
 - Risk:
   - CORS should not be treated as strong authentication for abuse prevention.
 
-2. In-memory rate limiting is per runtime instance.
+1. In-memory rate limiting is per runtime instance.
 
 - Observation:
   - Rate-limit buckets are maintained in-memory in each function runtime.
 - Risk:
   - Limits may be bypassed in multi-instance scenarios or after cold starts.
 
-3. Public avatar bucket is configured as public.
+1. Public avatar bucket is configured as public.
 
 - Observation:
   - `member_avatars` is a public bucket (with file type and size limits).
@@ -158,9 +148,8 @@ The following items are implementation gaps, prioritized for remediation.
 
 ### Immediate (before wider user rollout)
 
-1. Enforce publication and registration-window checks in all public-facing read and submit Edge Functions.
-2. Add an internal function secret (or signed scheduler identity) to the cron email endpoint, and reject requests without it.
-3. Review and trim event payload fields returned by public endpoints to minimum required fields.
+1. Review and trim event payload fields returned by public endpoints to minimum required fields.
+2. Add explicit regression tests for blocked behavior on unpublished and closed events, and unauthorized scheduler access.
 
 ### Near-term hardening
 
@@ -200,37 +189,41 @@ Total possible score: 100 points
 
 ### Current score
 
-1. Authentication and identity verification: 15/20
+1. Authentication and identity verification: 19/20
 
 - Strong token and admin-role verification in shared edge guard.
-- Deduction for unauthenticated cron endpoint path.
+- Cron endpoint now requires JWT verification in function config.
+- Minor deduction for remaining public endpoints that intentionally run without end-user auth and therefore rely on other controls.
 
-2. Authorization and RLS policy posture: 18/20
+1. Authorization and RLS policy posture: 19/20
 
 - Strong table-level RLS adoption and role helper usage.
-- Deduction for business-state enforcement gaps in selected public function logic.
+- Public event/event-field read paths now enforce publication state in function logic.
+- Minor deduction for ongoing payload-minimization hardening opportunity.
 
-3. Secure write-path architecture: 13/15
+1. Secure write-path architecture: 15/15
 
 - Public writes are routed through Edge Functions and direct anon writes are revoked.
-- Deduction for missing server-side event availability gates in submit flows.
+- Registration submit handlers now enforce server-side event availability gates.
 
-4. Input/data validation and integrity constraints: 13/15
+1. Input/data validation and integrity constraints: 14/15
 
 - Strong boundary validation and DB constraints for core integrity.
-- Deduction for inconsistent server-side business-rule enforcement on event publication/window checks.
+- Business-rule enforcement for event publication/window checks is now consistently applied in submit paths.
+- Minor deduction for remaining assurance gap until explicit regression tests are added for all blocked scenarios.
 
-5. Abuse resistance and anti-automation controls: 7/15
+1. Abuse resistance and anti-automation controls: 7/15
 
 - Positive: endpoint rate limiting and strict origin handling.
 - Deduction: in-memory limiter is instance-local; CORS is not a strong caller identity control.
 
-6. Operational controls (auditability, scheduler hardening, security observability readiness): 7/15
+1. Operational controls (auditability, scheduler hardening, security observability readiness): 10/15
 
 - Positive: admin action audit logging exists for sensitive flows.
-- Deduction: scheduler endpoint lacks request authentication hardening.
+- Positive: scheduler endpoint now enforces JWT verification.
+- Deduction: security observability and distributed abuse controls are still limited.
 
-Overall score: 73/100
+Overall score: 86/100
 
 ### Score interpretation
 
@@ -239,21 +232,22 @@ Overall score: 73/100
 - 70-79: good foundation, but important hardening items should be addressed before broad exposure.
 - Below 70: elevated risk; major controls or enforcement layers are incomplete.
 
-Current band: 70-79 (good foundation, targeted hardening required before wider rollout).
+Current band: 80-89 (solid production posture with limited, manageable hardening backlog).
 
-### Expected score after high-priority remediations
+### Expected score after remaining hardening
 
-If the High priority items in this document are completed, expected score range is 85-89.
+If remaining medium-priority hardening items in this document are completed, expected score range is 90-93.
 
 Expected uplift drivers:
 
-- server-side event publication and window enforcement in public read/submit paths,
-- authenticated scheduler endpoint invocation,
-- stronger abuse-prevention posture for public endpoints.
+- payload minimization for public responses,
+- distributed (cross-instance) rate limiting,
+- stronger anti-automation controls for public endpoints,
+- improved security observability and recurring regression coverage.
 
 ## Residual Risk Statement
 
-Current implementation has strong foundational controls (RLS, role checks, validated backend write paths, and common middleware). The primary residual risk is not foundational weakness, but missing server-side business gate enforcement in selected public endpoints and an unauthenticated scheduler endpoint. Addressing these items materially improves confidentiality and abuse resistance.
+Current implementation has strong foundational controls (RLS, role checks, validated backend write paths, middleware controls, and server-side business gate enforcement on public reads/submits). The primary residual risk has shifted from missing core gate checks to hardening depth: payload minimization, anti-automation maturity, and cross-instance rate-limit consistency.
 
 ## Scope Notes
 
