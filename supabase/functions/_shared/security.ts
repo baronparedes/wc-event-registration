@@ -10,6 +10,7 @@ import {
   LOCALHOST_HOSTNAMES,
   MIME_TYPES,
   RATE_LIMIT,
+  SUSPICIOUS_USER_AGENT_PATTERNS,
 } from './constants.ts';
 
 const LOCALHOST_HOSTNAMES_SET = new Set(LOCALHOST_HOSTNAMES);
@@ -176,6 +177,18 @@ export function enforceInMemoryRateLimit(options: RateLimitOptions): RateLimitRe
   };
 }
 
+function isSuspiciousRequest(req: Request): boolean {
+  const userAgent = req.headers.get('user-agent')?.toLowerCase() ?? '';
+
+  // Missing User-Agent is suspicious (not a browser)
+  if (!userAgent) {
+    return true;
+  }
+
+  // Check for known bot/CLI patterns
+  return SUSPICIOUS_USER_AGENT_PATTERNS.some((pattern) => pattern.test(userAgent));
+}
+
 export function getRequestIdentityForRateLimit(req: Request, origin: string | null): string {
   const xForwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
   const xRealIp = req.headers.get('x-real-ip')?.trim();
@@ -186,10 +199,18 @@ export function getRequestIdentityForRateLimit(req: Request, origin: string | nu
 
 export function enforcePublicRateLimit(options: PublicRateLimitGuardOptions): Response | null {
   const sourceIdentity = getRequestIdentityForRateLimit(options.req, options.origin);
+
+  // Apply stricter rate limits to suspicious requests (missing/bot User-Agent).
+  // This mitigates non-browser abuse while legitimate browser requests remain unaffected.
+  const isSuspicious = isSuspiciousRequest(options.req);
+  const effectiveMaxHits = isSuspicious
+    ? Math.max(1, Math.ceil(options.maxHits * RATE_LIMIT.suspiciousRequestMultiplier))
+    : options.maxHits;
+
   const rateLimit = enforceInMemoryRateLimit({
     key: `${options.scope}:${sourceIdentity}`,
     windowMs: options.windowMs,
-    maxHits: options.maxHits,
+    maxHits: effectiveMaxHits,
   });
 
   if (rateLimit.allowed) {
@@ -416,6 +437,18 @@ export function readAllowedOrigins(): string[] {
   return allowedOrigins;
 }
 
+/**
+ * Check if an origin is in the allowlist.
+ *
+ * ⚠️ IMPORTANT: This provides browser-level CORS protection only.
+ * Origin headers can be spoofed by non-browser clients (scripts, bots, etc.).
+ * CORS allowlist should NOT be treated as standalone authentication or authorization.
+ *
+ * This is one layer of defense. Additional abuse controls are needed:
+ * - TODO: Implement proof-of-human (CAPTCHA) for high-risk public endpoints
+ * - TODO: Consider distributed rate limiting for multi-instance deployments
+ * See: docs/security/data-security-implementation-and-gaps.md (Medium priority section)
+ */
 export function isOriginAllowed(origin: string | null, allowedOrigins: string[]): origin is string {
   if (!origin) {
     return false;

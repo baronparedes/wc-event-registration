@@ -43,6 +43,9 @@ export const LOCALHOST_HOSTNAMES = ['localhost', '127.0.0.1', '::1'] as const;
 
 export const RATE_LIMIT = {
   cleanupIntervalMs: 60_000,
+  // Multiplier applied to rate limits for suspicious requests (missing/bot User-Agent).
+  // Reduces abuse surface for non-browser clients attempting to bypass CORS.
+  suspiciousRequestMultiplier: 0.2,
 } as const;
 
 export const RATE_LIMIT_PRESETS = {
@@ -115,6 +118,12 @@ export const RATE_LIMIT_PRESETS = {
     maxHits: 30,
   },
 } as const;
+
+export const SUSPICIOUS_USER_AGENT_PATTERNS = [
+  /^(curl|wget|python|perl|ruby|java|go|node|requests)/i,
+  /^mozilla\/\d+\.\d+ \(compatible; ?(bot|crawler|spider|scraper)/i,
+  /^(bot|crawler|spider|scraper|indexer)(?:\s|$)/i,
+] as const;
 
 export const ERROR_CODES = {
   unauthorized: 'UNAUTHORIZED',

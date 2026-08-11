@@ -92,6 +92,10 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   const origin = options.req.headers.get('origin');
   const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
 
+  // ⚠️ CORS allowlist is one layer of defense.
+  // Non-browser clients can spoof Origin headers or bypass CORS entirely.
+  // Rate limiting and request validation below are additional layers.
+
   if (options.req.method === 'OPTIONS') {
     if (!isOriginAllowed(origin, allowedOrigins)) {
       return {
