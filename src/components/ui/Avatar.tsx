@@ -67,6 +67,8 @@ export const Avatar: React.FC<AvatarProps> = ({
           }`}
           onLoad={() => setLoadedAvatarUrl(avatarUrl)}
           onError={() => setFailedAvatarUrl(avatarUrl)}
+          referrerPolicy="no-referrer-when-downgrade"
+          crossOrigin="anonymous"
         />
       )}
     </div>
