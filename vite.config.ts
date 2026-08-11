@@ -54,22 +54,7 @@ function getVendorChunkName(id: string) {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    {
-      name: 'inject-csp-meta-for-production',
-      apply: 'build',
-      transformIndexHtml(html) {
-        const csp =
-          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co;";
-
-        return html.replace(
-          '<meta charset="UTF-8" />',
-          `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${csp}" />`,
-        );
-      },
-    },
-  ],
+  plugins: [react()],
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   build: {
     chunkSizeWarningLimit: 200,
