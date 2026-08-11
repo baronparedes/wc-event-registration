@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
       'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, require_id_lookup, registration_mode, allow_public_registrations, metadata, created_by_admin_id, created_at, updated_at',
     )
     .eq('slug', slug)
+    .eq('status', 'published')
     .maybeSingle();
 
   if (error) {

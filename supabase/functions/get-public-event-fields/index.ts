@@ -26,6 +26,21 @@ Deno.serve(async (req) => {
   const { event_id, audience } = guard.data;
   const client = guard.client;
 
+  const { data: event, error: eventError } = await client
+    .from('events')
+    .select('id')
+    .eq('id', event_id)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (eventError) {
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event', eventError.message);
+  }
+
+  if (!event) {
+    return sharedSuccessResponse(corsHeaders, { fields: [] });
+  }
+
   let query = client
     .from('event_fields')
     .select(

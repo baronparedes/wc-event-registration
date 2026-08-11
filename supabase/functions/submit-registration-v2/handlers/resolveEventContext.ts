@@ -1,10 +1,14 @@
 import type { HandlerResult, SupabaseClient } from '@/shared/handler.ts';
+import { isRegistrationOpenNow } from '@/shared/registrationAvailability.ts';
 import type { EventFieldWithValidation } from '@/shared/validation.ts';
 import { normalizePrimaryRoleValue } from '@/shared/validation.ts';
 
 interface EventRow {
   id: string;
   duplicate_policy: string;
+  registration_mode: 'open' | 'closed';
+  registration_opens_at: string | null;
+  registration_closes_at: string | null;
 }
 
 interface UserRow {
@@ -36,7 +40,14 @@ export async function resolveEventContext(
   memberId: string,
 ): Promise<HandlerResult<EventContext>> {
   const [eventResult, userResult] = await Promise.all([
-    supabase.from('events').select('id, duplicate_policy').eq('slug', eventSlug).maybeSingle(),
+    supabase
+      .from('events')
+      .select(
+        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at',
+      )
+      .eq('slug', eventSlug)
+      .eq('status', 'published')
+      .maybeSingle(),
     supabase.from('users').select('id, role').eq('member_id', memberId).maybeSingle<UserRow>(),
   ]);
 
@@ -51,6 +62,15 @@ export async function resolveEventContext(
 
   if (!eventResult.data) {
     return { ok: false, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found', httpStatus: 200 };
+  }
+
+  if (!isRegistrationOpenNow(eventResult.data as EventRow)) {
+    return {
+      ok: false,
+      errorCode: 'REGISTRATION_CLOSED',
+      message: 'Registration is currently closed for this event',
+      httpStatus: 200,
+    };
   }
 
   if (userResult.error) {

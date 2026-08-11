@@ -1,5 +1,6 @@
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import { isRegistrationOpenNow } from '@/shared/registrationAvailability.ts';
 import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
 import {
   EventFieldWithValidation,
@@ -150,8 +151,11 @@ Deno.serve(async (req) => {
     // Step 1: Look up event by slug
     const { data: eventData, error: eventError } = await supabase
       .from('events')
-      .select('id, duplicate_policy')
+      .select(
+        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at',
+      )
       .eq('slug', event_slug)
+      .eq('status', 'published')
       .maybeSingle();
 
     if (eventError) {
@@ -175,6 +179,20 @@ Deno.serve(async (req) => {
           success: false,
           error: 'Event not found',
           error_code: 'EVENT_NOT_FOUND',
+        } as SubmitRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    if (!isRegistrationOpenNow(eventData)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Registration is currently closed for this event',
+          error_code: 'REGISTRATION_CLOSED',
         } as SubmitRegistrationError),
         {
           status: 200,

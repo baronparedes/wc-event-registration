@@ -1,5 +1,6 @@
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import { isRegistrationOpenNow } from '@/shared/registrationAvailability.ts';
 import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
 import {
   EventFieldWithValidation,
@@ -53,6 +54,15 @@ interface EventFieldRow {
   is_required: boolean;
   options: unknown;
   validation_rules: unknown;
+}
+
+interface EventLookupRow {
+  id: string;
+  duplicate_policy: string;
+  allow_public_registrations: boolean;
+  registration_mode: 'open' | 'closed';
+  registration_opens_at: string | null;
+  registration_closes_at: string | null;
 }
 
 interface PostgrestErrorLike {
@@ -149,9 +159,12 @@ Deno.serve(async (req) => {
     // Step 1: Look up event by slug
     const { data: eventData, error: eventError } = await supabase
       .from('events')
-      .select('id, duplicate_policy, allow_public_registrations')
+      .select(
+        'id, duplicate_policy, allow_public_registrations, registration_mode, registration_opens_at, registration_closes_at',
+      )
       .eq('slug', event_slug)
-      .maybeSingle();
+      .eq('status', 'published')
+      .maybeSingle<EventLookupRow>();
 
     if (eventError) {
       console.error('Event lookup error:', eventError);
@@ -189,6 +202,20 @@ Deno.serve(async (req) => {
           success: false,
           error: 'Public registrations are not allowed for this event',
           error_code: 'PUBLIC_REGISTRATION_NOT_ALLOWED',
+        } as SubmitPublicRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    if (!isRegistrationOpenNow(eventData)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Registration is currently closed for this event',
+          error_code: 'REGISTRATION_CLOSED',
         } as SubmitPublicRegistrationError),
         {
           status: 200,
@@ -237,7 +264,7 @@ Deno.serve(async (req) => {
       field_type: f.field_type,
       is_required: f.is_required,
       options: Array.isArray(f.options) ? f.options : [],
-      validation_rules: f.validation_rules || {},
+      validation_rules: (f.validation_rules ?? {}) as Record<string, unknown>,
     }));
 
     const uniquenessFields = selectUniquenessComponentFields(fieldsData || []);
