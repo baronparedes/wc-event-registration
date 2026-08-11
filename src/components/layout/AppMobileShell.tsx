@@ -8,6 +8,7 @@ import brandLogo from '@/assets/wc-hub-brand-white.png';
 import { TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
 
 import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
+import { Button } from '../ui';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 
 function getCurrentUserLabel(email?: string | null, phone?: string | null, userId?: string) {
@@ -58,15 +59,13 @@ export function AppMobileShell() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                type="button"
+              <Button
                 aria-label="Open app navigation drawer"
                 className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-text shadow-xs transition hover:bg-primary/10"
                 onClick={() => setDrawerOpen(true)}
               >
                 <Menu className="h-6 w-6" />
-                <span>Menu</span>
-              </button>
+              </Button>
             </div>
           </div>
         </header>
