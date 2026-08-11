@@ -139,13 +139,22 @@ Residual note:
 - Risk:
   - Limits may be bypassed in multi-instance scenarios or after cold starts.
 
-1. Public avatar bucket is configured as public.
+1. ✅ **APPROVED (RISK ACCEPTED WITH CONTROLS)**: Public avatar bucket remains configured as public.
 
-- Observation:
-  - `member_avatars` is a public bucket (with file type and size limits).
-- Risk:
+- Decision:
+  - `member_avatars` remains a public bucket to maximize CDN caching and minimize backend resource consumption on the Supabase free tier.
+- Business rationale:
+  - Public, cacheable avatar delivery reduces repeated origin fetch/processing and keeps operational cost and latency low.
+- Accepted risk:
   - Object URLs are publicly retrievable if discovered.
-  - This may be acceptable by policy, but should be explicitly approved and documented.
+- Compensating controls (Option 1):
+  - Use high-entropy, non-enumerable object keys (no member ID, email, or predictable naming in paths).
+  - Enforce strict upload validation (MIME allowlist, file-size cap, and image dimension limits).
+  - Re-encode uploads and strip image metadata (including EXIF) before persistence.
+  - Treat avatars as low-sensitivity display assets; provide default avatar fallback for users who opt out of photo exposure.
+  - Rotate object keys on avatar replacement to reduce long-lived URL reuse.
+- Governance note:
+  - This is an explicit policy-approved tradeoff for low-sensitivity profile photos under current free-tier constraints.
 
 ## Recommended Remediation Plan
 
@@ -260,6 +269,8 @@ Expected uplift drivers:
 ## Residual Risk Statement
 
 Current implementation has strong foundational controls (RLS, role checks, validated backend write paths, middleware controls, and server-side business gate enforcement on public reads/submits). Recent improvements include payload minimization and suspicious request detection for abuse mitigation. The primary residual risk remains distributed attacks and sophisticated adversaries with spoofed User-Agents; CAPTCHA and distributed rate limiting are recommended for final hardening before broad exposure.
+
+Avatar storage is intentionally public for CDN and free-tier efficiency. This is a documented and approved low-sensitivity risk with compensating controls (unguessable keys, strict upload limits, and metadata stripping).
 
 ## Scope Notes
 
