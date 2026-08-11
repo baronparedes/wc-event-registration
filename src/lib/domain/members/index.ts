@@ -3,6 +3,10 @@ export type {
   ExistingRegistrationState,
   MemberLookupResult,
   AdminMember,
+  MemberEventHistoryItem,
+  MemberEventHistoryAttendanceAnswer,
+  MemberEventHistoryRegistrationAnswer,
+  MemberEventHistorySlotRecord,
 } from './types';
 export {
   updateMemberSchema,

@@ -2,14 +2,14 @@ import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES, toMemberDetail } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import {
   useAdminMemberQuery,
@@ -181,6 +181,15 @@ export function AdminMemberDetailPage() {
           canWrite
             ? 'Update the member profile, contact details, and admin metadata.'
             : 'View the member profile, contact details, and admin metadata.'
+        }
+        actions={
+          <>
+            {(canWrite || canRead) && (
+              <Button variant="outline" asChild>
+                <Link to={toMemberDetail(id)}>View Event History</Link>
+              </Button>
+            )}
+          </>
         }
       />
 

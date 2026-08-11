@@ -10,6 +10,7 @@ export const ROUTE_PATHS = {
   adminMemberMilestones: '/admin/members/milestones',
   adminMembersImport: '/admin/members/import',
   adminMemberDetailPattern: '/admin/members/:id',
+  memberDetailPattern: '/member/:id',
   adminEvents: '/admin/events',
   adminEventNew: '/admin/events/new',
   adminEventDetailPattern: '/admin/events/:id',
@@ -55,6 +56,10 @@ export function toEventPublicRegistration(slug: string): string {
 
 export function toAdminMemberDetail(memberId: string): string {
   return `/admin/members/${memberId}`;
+}
+
+export function toMemberDetail(userId: string): string {
+  return `/member/${userId}`;
 }
 
 export function toAdminMembersImport(): string {

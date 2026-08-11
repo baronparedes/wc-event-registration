@@ -18,6 +18,7 @@ describe('admin permission policies', () => {
           canManageAttendanceSavedViews: true,
           canExportAdminReports: true,
           canAccessAttendanceCheckIn: true,
+          canViewMemberHistory: true,
         },
       },
       {
@@ -29,6 +30,7 @@ describe('admin permission policies', () => {
           canManageAttendanceSavedViews: true,
           canExportAdminReports: true,
           canAccessAttendanceCheckIn: true,
+          canViewMemberHistory: true,
         },
       },
       {
@@ -40,6 +42,7 @@ describe('admin permission policies', () => {
           canManageAttendanceSavedViews: true,
           canExportAdminReports: true,
           canAccessAttendanceCheckIn: false,
+          canViewMemberHistory: true,
         },
       },
       {
@@ -51,6 +54,7 @@ describe('admin permission policies', () => {
           canManageAttendanceSavedViews: false,
           canExportAdminReports: false,
           canAccessAttendanceCheckIn: false,
+          canViewMemberHistory: false,
         },
       },
       {
@@ -62,6 +66,7 @@ describe('admin permission policies', () => {
           canManageAttendanceSavedViews: false,
           canExportAdminReports: false,
           canAccessAttendanceCheckIn: true,
+          canViewMemberHistory: false,
         },
       },
     ]);
@@ -77,6 +82,7 @@ describe('admin permission policies', () => {
         canManageAttendanceSavedViews: true,
         canExportAdminReports: true,
         canAccessAttendanceCheckIn: false,
+        canViewMemberHistory: true,
       },
     });
   });

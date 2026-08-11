@@ -22,6 +22,7 @@ import type {
 import type {
   AdminMember,
   ExistingRegistrationState,
+  MemberEventHistoryItem,
   MemberLookupProfile,
 } from '@/lib/domain/members';
 import type {
@@ -182,6 +183,29 @@ export function makeMemberLookupProfile(
     first_name: firstName,
     last_name: lastName,
     last_initial: lastName.charAt(0).toUpperCase(),
+    ...overrides,
+  };
+}
+
+export function makeMemberEventHistoryItem(
+  overrides: Partial<MemberEventHistoryItem> = {},
+): MemberEventHistoryItem {
+  return {
+    event_id: faker.string.uuid(),
+    event_title: faker.lorem.words(4),
+    event_slug: faker.helpers.slugify(faker.lorem.words(3)).toLowerCase(),
+    starts_at: pastIso(),
+    ends_at: pastIso(),
+    location: faker.location.city(),
+    registration_id: faker.string.uuid(),
+    registration_status: 'submitted',
+    submitted_at: pastIso(),
+    check_in_status: 'not_checked_in',
+    official_check_in_time: null,
+    attendance_enabled: false,
+    registration_answers: [],
+    attendance_answers: [],
+    slot_records: [],
     ...overrides,
   };
 }

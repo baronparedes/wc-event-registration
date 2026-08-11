@@ -122,6 +122,9 @@ const AdminRegistrationNamesPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('../pages/not-found').then((module) => ({ default: module.NotFoundPage })),
 );
+const MemberProfilePage = lazy(() =>
+  import('../pages/member/[id]').then((module) => ({ default: module.MemberProfilePage })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -269,6 +272,16 @@ export function AppRouter() {
             <RequireAdminAuth requiredPermission="canReadAdminMemberData">
               <LazyRoute>
                 <AdminMemberDetailPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.memberDetailPattern}
+          element={
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin', 'slod']}>
+              <LazyRoute>
+                <MemberProfilePage />
               </LazyRoute>
             </RequireAdminAuth>
           }

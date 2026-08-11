@@ -4,6 +4,7 @@ export { useAdminMembersMilestonesQuery } from './useAdminMembersMilestonesQuery
 export { useAdminMemberQuery } from './useAdminMemberQuery';
 export { useAdminMembersImportSnapshotQuery } from './useAdminMembersImportSnapshotQuery';
 export { useMemberAvatarQuery } from './useMemberAvatarQuery';
+export { useMemberEventHistoryQuery } from './useMemberEventHistoryQuery';
 
 export type {
   MemberLookupProfile,
