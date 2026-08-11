@@ -1,3 +1,4 @@
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
@@ -36,6 +37,7 @@ function App() {
               },
             }}
           />
+          <SpeedInsights />
         </BrowserRouter>
       </AppProviders>
     </ErrorBoundary>
