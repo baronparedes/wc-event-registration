@@ -174,7 +174,7 @@ export function makeMemberLookupProfile(
   const lastName = faker.person.lastName();
   return {
     user_id: faker.string.uuid(),
-    member_id: `WC-${faker.string.numeric(3)}`,
+    member_token: `mlt2.${faker.string.alphanumeric(16)}.${faker.string.alphanumeric(24)}`,
     role: 'member',
     avatar_object_key: `avatars/member/${faker.string.uuid()}.jpg`,
     category: 'regular',

@@ -32,7 +32,7 @@ const {
       first_name: 'Jane',
       last_name: 'Doe',
     },
-    verifiedMemberId: 'WC-001',
+    verifiedMemberCredential: 'WC-001',
     memberIdHighlight: false,
     isRegistrationBlocked: false,
     isUpdateMode: false,
@@ -345,7 +345,7 @@ describe('EventRegistrationPage', () => {
     await waitFor(() => {
       expect(mockSubmitMutateAsync).toHaveBeenCalledWith({
         event_slug: 'sample-event',
-        member_id: 'WC-001',
+        member_token: 'WC-001',
         responses: { team_name: 'A-Team' },
         idempotency_key: '11111111-1111-1111-1111-111111111111',
       });

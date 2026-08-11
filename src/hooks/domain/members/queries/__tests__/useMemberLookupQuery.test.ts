@@ -41,7 +41,7 @@ describe('useMemberLookupQuery', () => {
       success: true,
       profile: {
         user_id: profile.user_id,
-        member_id: profile.member_id,
+        member_token: profile.member_token,
         role: profile.role,
         category: profile.category,
       },
@@ -52,17 +52,17 @@ describe('useMemberLookupQuery', () => {
     const slug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     const response = await act(async () =>
-      result.current.mutateAsync({ memberId: `  ${profile.member_id}  `, eventSlug: slug }),
+      result.current.mutateAsync({ memberId: '  WC-001  ', eventSlug: slug }),
     );
 
     expect(mockLookupCaller).toHaveBeenCalledWith({
-      memberId: profile.member_id,
+      memberId: 'WC-001',
       eventSlug: slug,
     });
     expect(response).toEqual({
       profile: {
         user_id: profile.user_id,
-        member_id: profile.member_id,
+        member_token: profile.member_token,
         role: profile.role,
         category: profile.category,
       },
@@ -88,7 +88,7 @@ describe('useMemberLookupQuery', () => {
       success: true,
       profile: {
         user_id: profile.user_id,
-        member_id: profile.member_id,
+        member_token: profile.member_token,
         role: profile.role,
         category: profile.category,
       },
@@ -109,7 +109,7 @@ describe('useMemberLookupQuery', () => {
     expect(response).toEqual({
       profile: {
         user_id: profile.user_id,
-        member_id: profile.member_id,
+        member_token: profile.member_token,
         role: profile.role,
         category: profile.category,
       },

@@ -1,5 +1,5 @@
 export type MemberLookupProfile = {
-  member_id: string;
+  member_token: string;
   role: string;
   first_name: string | null;
   last_initial: string | null;

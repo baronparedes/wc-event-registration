@@ -36,7 +36,7 @@ const {
       first_name: string;
       last_name: string;
     } | null,
-    verifiedMemberId: null as string | null,
+    verifiedMemberCredential: null as string | null,
     memberIdHighlight: false,
     isRegistrationBlocked: false,
     isUpdateMode: false,
@@ -132,7 +132,7 @@ describe('useEventRegistrationPageState', () => {
     vi.clearAllMocks();
 
     memberLookupState.matchedMember = null;
-    memberLookupState.verifiedMemberId = null;
+    memberLookupState.verifiedMemberCredential = null;
     memberLookupState.isRegistrationBlocked = false;
     memberLookupState.isUpdateMode = false;
     memberLookupState.prefillResponses = null;
@@ -293,7 +293,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
 
     const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
@@ -373,7 +373,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventQuery.mockReturnValue({
       data: { status: 'unavailable', reason: 'registration_closed' },
       isLoading: false,
@@ -396,7 +396,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockSubmitMutateAsync
       .mockResolvedValueOnce({
         success: false,
@@ -446,7 +446,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockSubmitMutateAsync.mockResolvedValueOnce({
       success: false,
       error_code: 'duplicate_blocked',
@@ -471,7 +471,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
       data: {
         validFields: [
@@ -525,7 +525,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockSubmitMutateAsync.mockResolvedValueOnce({
       success: false,
       error_code: 'VALIDATION_FAILED',
@@ -568,7 +568,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     memberLookupState.isUpdateMode = true;
     mockSubmitMutateAsync.mockResolvedValueOnce({
       success: true,
@@ -602,7 +602,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
       data: {
         validFields: [],
@@ -626,7 +626,7 @@ describe('useEventRegistrationPageState', () => {
       first_name: 'Jane',
       last_name: 'Doe',
     };
-    memberLookupState.verifiedMemberId = 'WC-001';
+    memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
       data: {
         validFields: [],

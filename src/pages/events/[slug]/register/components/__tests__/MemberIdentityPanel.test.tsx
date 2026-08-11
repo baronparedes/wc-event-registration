@@ -8,7 +8,7 @@ vi.mock('@/components/ui/Avatar', () => ({
 }));
 
 const baseProfile = {
-  member_id: 'WC-001',
+  member_token: 'mlt2.token.payload',
   role: 'usher',
   first_name: 'Jane',
   last_initial: 'D',

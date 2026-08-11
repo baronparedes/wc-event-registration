@@ -39,6 +39,10 @@ export const ENVIRONMENT = {
   local: 'local',
 } as const;
 
+export const ENV_KEYS = {
+  edgeTokenEncryptionSecret: 'EDGE_TOKEN_ENCRYPTION_SECRET',
+} as const;
+
 export const LOCALHOST_HOSTNAMES = ['localhost', '127.0.0.1', '::1'] as const;
 
 export const RATE_LIMIT = {

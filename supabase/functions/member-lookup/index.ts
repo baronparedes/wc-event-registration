@@ -1,9 +1,11 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import type { SupabaseClient } from '@/shared/handler.ts';
 import {
   errorResponse as sharedErrorResponse,
   successResponse as sharedSuccessResponse,
 } from '@/shared/http.ts';
+import { createMemberLookupToken } from '@/shared/memberLookupToken.ts';
 import { tryConvertRfidInput } from '@/shared/rfid.ts';
 import { parseRequestBody, z } from '@/shared/validation.ts';
 
@@ -21,7 +23,7 @@ const memberLookupRequestSchema = z
 type MemberLookupRequest = z.infer<typeof memberLookupRequestSchema>;
 
 interface MemberLookupProfile {
-  member_id: string;
+  member_token: string;
   role: string;
   first_name: string | null;
   last_initial: string | null;
@@ -68,6 +70,11 @@ type EventLookupRow = {
 type ExistingRegistrationLookupResult = {
   data: ExistingRegistrationState | null;
   error: string | null;
+};
+
+type ExistingRegistrationRow = {
+  id: string;
+  status: ExistingRegistrationState['status'];
 };
 
 function normalizeName(value: string | null | undefined) {
@@ -176,10 +183,13 @@ function maskFirstName(firstName: string | null): string | null {
   return maskedParts.join(' ');
 }
 
-function toProfile(row: UserLookupRow | null): MemberLookupProfile | null {
-  if (!row) return null;
+function toProfile(
+  row: UserLookupRow | null,
+  memberToken: string | null,
+): MemberLookupProfile | null {
+  if (!row || !memberToken) return null;
   return {
-    member_id: row.member_id,
+    member_token: memberToken,
     role: readString(row.role),
     first_name: maskFirstName(row.first_name),
     last_initial: getLastInitial(row.last_name),
@@ -242,10 +252,7 @@ function mapAnswerRowsToResponses(rows: AnswerRow[] | null | undefined): Record<
   return responses;
 }
 
-async function findUserByNameOrNickname(
-  supabase: ReturnType<typeof createClient>,
-  normalizedSearchValue: string,
-) {
+async function findUserByNameOrNickname(supabase: SupabaseClient, normalizedSearchValue: string) {
   const searchTokens = tokenizeName(normalizedSearchValue);
   if (searchTokens.length === 0) {
     return { data: null as UserLookupRow | null, error: null };
@@ -267,7 +274,7 @@ async function findUserByNameOrNickname(
     return { data: null as UserLookupRow | null, error: error.message };
   }
 
-  const matches = (users ?? []).filter((user) => {
+  const matches = ((users ?? []) as UserLookupRow[]).filter((user: UserLookupRow) => {
     const firstNameWithLastName = normalizeName(`${user.first_name ?? ''} ${user.last_name ?? ''}`);
     const nicknameWithLastName = normalizeName(`${user.nickname ?? ''} ${user.last_name ?? ''}`);
 
@@ -286,7 +293,7 @@ async function findUserByNameOrNickname(
 }
 
 async function getEventBySlug(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   slug: string,
 ): Promise<{ data: EventLookupRow | null; error: string | null }> {
   const { data, error } = await supabase
@@ -303,7 +310,7 @@ async function getEventBySlug(
 }
 
 async function getExistingRegistrationState(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   eventId: string,
   userId: string,
   duplicatePolicy: string,
@@ -325,7 +332,7 @@ async function getExistingRegistrationState(
   }
 
   const { data: existingRegistration, error: registrationError } =
-    await registrationQuery.maybeSingle();
+    await registrationQuery.maybeSingle<ExistingRegistrationRow>();
 
   if (registrationError) {
     return { data: null, error: `registration_lookup:${registrationError.message}` };
@@ -458,9 +465,17 @@ Deno.serve(async (req) => {
     }
 
     // 2.2 Map DB row to API profile shape and early-return when no profile/event.
-    const profile = toProfile(filteredData);
+    const memberToken = filteredData
+      ? await createMemberLookupToken(filteredData.member_id, normalizedEventSlug ?? null)
+      : null;
 
-    if (!profile || !normalizedEventSlug) {
+    if (filteredData && !memberToken) {
+      return sharedErrorResponse(corsHeaders, 500, 'Failed to issue member lookup token');
+    }
+
+    const profile = toProfile(filteredData, memberToken);
+
+    if (!profile || !filteredData || !normalizedEventSlug) {
       return sharedSuccessResponse(corsHeaders, { profile, existing_registration: null }, 200);
     }
 

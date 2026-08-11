@@ -449,7 +449,7 @@ export function useEventRegistrationPageState() {
         return;
       }
 
-      if (!memberLookup.matchedMember || !memberLookup.verifiedMemberId) {
+      if (!memberLookup.matchedMember || !memberLookup.verifiedMemberCredential) {
         setSubmitErrorMessage(FORM_MESSAGES.memberLookupRequired);
         logger.error('Member lookup missing at submission time');
         return;
@@ -465,13 +465,13 @@ export function useEventRegistrationPageState() {
 
       logger.info('Submitting registration:', {
         event_slug: slug,
-        member_id: memberLookup.verifiedMemberId,
+        member_credential: memberLookup.verifiedMemberCredential,
         idempotency_key: idempotencyKey,
       });
 
       const result = await submitMutation.mutateAsync({
         event_slug: slug,
-        member_id: memberLookup.verifiedMemberId,
+        member_token: memberLookup.verifiedMemberCredential,
         responses: parsed.data,
         idempotency_key: idempotencyKey,
       });

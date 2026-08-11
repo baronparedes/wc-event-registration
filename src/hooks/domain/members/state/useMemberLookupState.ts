@@ -26,7 +26,7 @@ type MemberLookupResult =
 
 export type MemberLookupState = {
   matchedMember: MemberLookupProfile | null;
-  verifiedMemberId: string | null;
+  verifiedMemberCredential: string | null;
   memberIdHighlight: boolean;
   isRegistrationBlocked: boolean;
   isUpdateMode: boolean;
@@ -46,7 +46,7 @@ export type MemberLookupActions = {
  */
 export function useMemberLookupState(eventSlug: string | undefined, onMemberCleared?: () => void) {
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null);
-  const [verifiedMemberId, setVerifiedMemberId] = useState<string | null>(null);
+  const [verifiedMemberCredential, setVerifiedMemberCredential] = useState<string | null>(null);
   const [memberIdHighlight, setMemberIdHighlight] = useState(false);
   const [isRegistrationBlocked, setIsRegistrationBlocked] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
@@ -65,7 +65,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
 
   const clearMember = useCallback(() => {
     setMatchedMember(null);
-    setVerifiedMemberId(null);
+    setVerifiedMemberCredential(null);
     setMemberIdHighlight(false);
     setIsRegistrationBlocked(false);
     setIsUpdateMode(false);
@@ -95,7 +95,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
 
         if (!result.profile) {
           setMatchedMember(null);
-          setVerifiedMemberId(null);
+          setVerifiedMemberCredential(null);
           lookupForm.reset();
           logger.warn('Member lookup returned null');
           // Return error state to caller via hook state
@@ -108,7 +108,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
 
         if (result.existing_registration?.exists && !result.existing_registration.edit_allowed) {
           setMatchedMember(result.profile);
-          setVerifiedMemberId(null);
+          setVerifiedMemberCredential(null);
           setIsRegistrationBlocked(true);
           setIsUpdateMode(false);
           setPrefillResponses(null);
@@ -123,10 +123,20 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           };
         }
 
+        if (!result.profile.member_token) {
+          setMatchedMember(null);
+          setVerifiedMemberCredential(null);
+          logger.error('Member lookup profile is missing member_token');
+          return {
+            success: false,
+            error: 'Lookup is unavailable right now. Please try again in a moment.',
+            reason: 'lookup_unavailable',
+          };
+        }
+
         // Successful lookup - member found and eligible
         setMatchedMember(result.profile);
-        // Always store the member_id from the profile for submission to Edge Function
-        setVerifiedMemberId(result.profile.member_id);
+        setVerifiedMemberCredential(result.profile.member_token);
         setIsRegistrationBlocked(false);
         setIsUpdateMode(Boolean(result.existing_registration?.edit_allowed));
         setPrefillResponses(result.existing_registration?.responses ?? null);
@@ -141,7 +151,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         };
       } catch (error) {
         setMatchedMember(null);
-        setVerifiedMemberId(null);
+        setVerifiedMemberCredential(null);
         setIsRegistrationBlocked(false);
         logger.error('Member lookup failed:', error);
         return {
@@ -157,7 +167,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
   return {
     // State
     matchedMember,
-    verifiedMemberId,
+    verifiedMemberCredential,
     memberIdHighlight,
     isRegistrationBlocked,
     isUpdateMode,

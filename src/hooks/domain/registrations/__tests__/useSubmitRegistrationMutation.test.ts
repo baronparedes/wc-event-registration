@@ -46,7 +46,7 @@ describe('useSubmitRegistrationMutation', () => {
   it('calls submit-registration with the expected payload and returns success', async () => {
     const registrationId = faker.string.uuid();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
-    const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase();
+    const memberToken = `mlt2.${faker.string.alphanumeric(12)}.${faker.string.alphanumeric(24)}`;
     const idempotencyKey = faker.string.uuid();
     mockSubmitCaller.mockResolvedValueOnce({
       success: true,
@@ -60,7 +60,7 @@ describe('useSubmitRegistrationMutation', () => {
 
     const payload = {
       event_slug: eventSlug,
-      member_id: memberId,
+      member_token: memberToken,
       responses: { team_name: faker.company.name() },
       idempotency_key: idempotencyKey,
     };
@@ -78,7 +78,7 @@ describe('useSubmitRegistrationMutation', () => {
     const registrationId = faker.string.uuid();
     const eventId = faker.string.uuid();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
-    const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase();
+    const memberToken = `mlt2.${faker.string.alphanumeric(12)}.${faker.string.alphanumeric(24)}`;
     const idempotencyKey = faker.string.uuid();
     mockSubmitCaller.mockResolvedValueOnce({
       success: true,
@@ -96,7 +96,7 @@ describe('useSubmitRegistrationMutation', () => {
     await act(async () => {
       await result.current.mutateAsync({
         event_slug: eventSlug,
-        member_id: memberId,
+        member_token: memberToken,
         responses: { team_name: faker.company.name() },
         idempotency_key: idempotencyKey,
       });
@@ -128,7 +128,7 @@ describe('useSubmitRegistrationMutation', () => {
     await act(async () => {
       await result.current.mutateAsync({
         event_slug: faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-        member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
+        member_token: `mlt2.${faker.string.alphanumeric(12)}.${faker.string.alphanumeric(24)}`,
         responses: {},
         idempotency_key: faker.string.uuid(),
       });
@@ -145,7 +145,7 @@ describe('useSubmitRegistrationMutation', () => {
     await expect(
       result.current.mutateAsync({
         event_slug: faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-        member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
+        member_token: `mlt2.${faker.string.alphanumeric(12)}.${faker.string.alphanumeric(24)}`,
         responses: {},
         idempotency_key: faker.string.uuid(),
       }),

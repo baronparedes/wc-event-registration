@@ -8,7 +8,7 @@ import { logger } from '@/lib/infrastructure';
 
 export interface SubmitRegistrationRequest {
   event_slug: string;
-  member_id: string;
+  member_token: string;
   responses: DynamicFieldResponseValues;
   idempotency_key: string;
 }

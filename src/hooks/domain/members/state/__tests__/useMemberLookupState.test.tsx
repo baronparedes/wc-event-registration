@@ -72,12 +72,12 @@ describe('useMemberLookupState', () => {
     });
 
     const outcome = await act(async () => {
-      return await result.current.handleLookupSubmit({ memberId: ` ${profile.member_id} ` });
+      return await result.current.handleLookupSubmit({ memberId: ' WC-001 ' });
     });
 
     expect(outcome).toEqual({ success: true, mode: 'new_registration' });
     expect(result.current.matchedMember?.full_name).toBe(profile.full_name);
-    expect(result.current.verifiedMemberId).toBe(profile.member_id);
+    expect(result.current.verifiedMemberCredential).toBe(profile.member_token);
     expect(result.current.isUpdateMode).toBe(false);
     expect(result.current.prefillResponses).toBeNull();
   });
@@ -99,7 +99,7 @@ describe('useMemberLookupState', () => {
     });
 
     const outcome = await act(async () => {
-      return await result.current.handleLookupSubmit({ memberId: profile.member_id });
+      return await result.current.handleLookupSubmit({ memberId: 'WC-001' });
     });
 
     expect(outcome).toEqual({
@@ -169,7 +169,7 @@ describe('useMemberLookupState', () => {
     });
 
     await act(async () => {
-      await result.current.handleLookupSubmit({ memberId: profile.member_id });
+      await result.current.handleLookupSubmit({ memberId: 'WC-001' });
     });
 
     act(() => {
@@ -177,7 +177,7 @@ describe('useMemberLookupState', () => {
     });
 
     expect(result.current.matchedMember).toBeNull();
-    expect(result.current.verifiedMemberId).toBeNull();
+    expect(result.current.verifiedMemberCredential).toBeNull();
     expect(onMemberCleared).toHaveBeenCalledTimes(2);
 
     act(() => {
