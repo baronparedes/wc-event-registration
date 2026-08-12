@@ -52,12 +52,17 @@ export function AdminRegistrationNamesPage() {
 
   return (
     <div className="min-h-screen bg-white font-body">
+      <title>
+        {payload?.event_title
+          ? `${payload.event_title} \u2014 Registrations \u2014 ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+          : 'Event Registrations'}
+      </title>
       <style>{`@page { margin: 1.5cm; }`}</style>
 
       <div className="mx-auto max-w-5xl px-8 py-10">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-text">Registration Names</h1>
+            <h1 className="font-heading text-2xl font-bold text-text">Event Registrations</h1>
             {payload && (
               <p className="mt-1 text-sm text-muted">
                 {payload.event_title} &bull; {payload.row_count}{' '}
