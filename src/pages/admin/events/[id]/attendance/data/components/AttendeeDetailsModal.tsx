@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { Dialog } from '@/components/ui/Dialog';
 import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
@@ -98,33 +97,34 @@ export function AttendeeDetailsModal({
     );
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-2xl lg:max-w-4xl">
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidthClass="max-w-2xl lg:max-w-4xl"
+      title={registrant.full_name}
+      description={
+        <>
+          <div className="mt-2 space-y-1 text-sm text-muted">
+            <p>Member ID: {registrant.member_id ?? 'Guest'}</p>
+            {registrant.email && <p>Email: {registrant.email}</p>}
+            {registrant.role && <p>Role: {registrant.role}</p>}
+            {registrant.category && <p>Category: {registrant.category}</p>}
+          </div>
+        </>
+      }
+      showCloseIcon
+      showCloseButton
+    >
       <div className="flex flex-col max-h-[80vh] lg:max-h-full lg:h-full">
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          {/* Header */}
-          <div className="border-b border-border pb-4 mb-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="font-heading text-lg font-semibold text-text">
-                  {registrant.full_name}
-                </h2>
-                <div className="mt-2 space-y-1 text-sm text-muted">
-                  <p>Member ID: {registrant.member_id ?? 'Guest'}</p>
-                  {registrant.email && <p>Email: {registrant.email}</p>}
-                  {registrant.role && <p>Role: {registrant.role}</p>}
-                  {registrant.category && <p>Category: {registrant.category}</p>}
-                </div>
-              </div>
-              <div
-                className={`rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm whitespace-nowrap ${
-                  isCheckedIn
-                    ? 'border-green-300 bg-green-100 text-green-900'
-                    : 'border-slate-300 bg-slate-100 text-slate-900'
-                }`}
-              >
-                {isCheckedIn ? 'Checked In' : 'Not Checked In'}
-              </div>
-            </div>
+          <div
+            className={`mb-4 inline-flex rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm ${
+              isCheckedIn
+                ? 'border-green-300 bg-green-100 text-green-900'
+                : 'border-slate-300 bg-slate-100 text-slate-900'
+            }`}
+          >
+            {isCheckedIn ? 'Checked In' : 'Not Checked In'}
           </div>
 
           {/* Registration Answers */}
@@ -190,13 +190,6 @@ export function AttendeeDetailsModal({
               <p className="text-base text-muted">No attendance data recorded yet.</p>
             </div>
           )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex justify-end gap-3 border-t border-border px-4 py-3">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
         </div>
       </div>
     </Dialog>

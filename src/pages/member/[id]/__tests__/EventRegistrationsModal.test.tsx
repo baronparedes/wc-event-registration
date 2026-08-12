@@ -203,11 +203,10 @@ describe('EventRegistrationsModal', () => {
     );
 
     const closeButtons = screen.getAllByRole('button', { name: 'Close' });
-    expect(closeButtons).toHaveLength(2);
+    expect(closeButtons).toHaveLength(1);
 
     fireEvent.click(closeButtons[0]);
-    fireEvent.click(closeButtons[1]);
 
-    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

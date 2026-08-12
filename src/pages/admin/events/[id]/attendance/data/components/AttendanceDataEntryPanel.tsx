@@ -260,24 +260,27 @@ export function AttendanceDataEntryPanel({
     }
   }
 
-  return (
-    <Dialog isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-lg">
-      <div className="overflow-visible">
-        <div className="border-b border-border pb-4 mb-4">
-          <h2 className="font-heading text-lg font-semibold text-text">
-            Attendance Data: {registrant.full_name}
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            {registrant.member_id && (
-              <span className="mr-3">Member ID: {registrant.member_id}</span>
-            )}
-            {registrant.attendee_kind === 'public' && (
-              <span className="mr-3">Attendee Type: Guest</span>
-            )}
-            {registrant.email && <span>{registrant.email}</span>}
-          </p>
-        </div>
+  const attendeeMeta: string[] = [];
+  if (registrant.member_id) {
+    attendeeMeta.push(`Member ID: ${registrant.member_id}`);
+  }
+  if (registrant.attendee_kind === 'public') {
+    attendeeMeta.push('Attendee Type: Guest');
+  }
+  if (registrant.email) {
+    attendeeMeta.push(registrant.email);
+  }
 
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidthClass="max-w-lg"
+      title={`Attendance Data: ${registrant.full_name}`}
+      description={attendeeMeta.join(' · ')}
+      showCloseIcon
+    >
+      <div className="overflow-visible">
         <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
           {fields.map((field) => {
             const inputId = `field-${field.id}`;

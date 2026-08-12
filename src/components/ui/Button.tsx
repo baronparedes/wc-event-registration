@@ -10,7 +10,7 @@ import {
 type ButtonVariant = 'default' | 'outline' | 'primaryOutline' | 'destructive';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;

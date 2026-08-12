@@ -1,6 +1,5 @@
-import { CalendarDays, MapPin, X } from 'lucide-react';
+import { CalendarDays, MapPin } from 'lucide-react';
 
-import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import type { MemberEventHistoryItem } from '@/lib/domain/members';
 
@@ -100,35 +99,30 @@ export function EventRegistrationsModal({ group, isOpen, onClose, formatDateTime
   if (!group) return null;
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-2xl">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1.5">
-          <h2 className="text-base font-semibold text-text">{group.event_title}</h2>
-          <div className="space-y-1.5 text-sm text-muted">
-            {group.starts_at && (
-              <span className="flex min-w-0 items-start gap-1.5">
-                <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span className="break-words">
-                  {formatDateTime(group.starts_at)}
-                  {group.ends_at && <> - {formatDateTime(group.ends_at)}</>}
-                </span>
-              </span>
-            )}
-            {group.location && (
-              <span className="flex min-w-0 items-start gap-1.5">
-                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span className="break-words">{group.location}</span>
-              </span>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="shrink-0 rounded-md p-1 text-muted hover:bg-muted/10 hover:text-text"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidthClass="max-w-2xl"
+      title={group.event_title}
+      showCloseIcon
+      showCloseButton
+    >
+      <div className="mt-0.5 space-y-1.5 text-sm text-muted">
+        {group.starts_at && (
+          <span className="flex min-w-0 items-start gap-1.5">
+            <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span className="break-words">
+              {formatDateTime(group.starts_at)}
+              {group.ends_at && <> - {formatDateTime(group.ends_at)}</>}
+            </span>
+          </span>
+        )}
+        {group.location && (
+          <span className="flex min-w-0 items-start gap-1.5">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span className="break-words">{group.location}</span>
+          </span>
+        )}
       </div>
 
       <div className="mt-2.5 space-y-1.5">
@@ -146,12 +140,6 @@ export function EventRegistrationsModal({ group, isOpen, onClose, formatDateTime
               formatDateTime={formatDateTime}
             />
           ))}
-      </div>
-
-      <div className="mt-2.5 flex justify-end border-t border-primary/20 pt-2">
-        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
-          Close
-        </Button>
       </div>
     </Dialog>
   );

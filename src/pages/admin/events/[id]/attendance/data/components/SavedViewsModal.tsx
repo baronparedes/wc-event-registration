@@ -183,15 +183,15 @@ export function SavedViewsModal({
 
   return (
     <>
-      <Dialog isOpen={isOpen} onClose={() => onOpenChange(false)} maxWidthClass="max-w-3xl">
+      <Dialog
+        isOpen={isOpen}
+        onClose={() => onOpenChange(false)}
+        maxWidthClass="max-w-3xl"
+        title="Saved Views"
+        description="Load a saved view or save the current configuration."
+        showCloseIcon
+      >
         <div className="flex max-h-[85vh] min-h-0 flex-col gap-4">
-          <div>
-            <h2 className="font-heading text-lg font-semibold">Saved Views</h2>
-            <p className="mt-1 text-sm text-muted">
-              Load a saved view or save the current configuration.
-            </p>
-          </div>
-
           {sortedSavedViews.length === 0 ? (
             <div className="rounded-md border border-border bg-surface p-4 text-center text-sm text-muted">
               <p>No saved views yet.</p>
@@ -302,15 +302,11 @@ export function SavedViewsModal({
         isOpen={showSaveDialog}
         onClose={() => setShowSaveDialog(false)}
         maxWidthClass="max-w-sm"
+        title="Save Current View"
+        description="Give your view a name to save the current filters, grouping, and displayed fields."
+        showCloseIcon
       >
         <div className="space-y-4">
-          <div>
-            <h2 className="font-heading text-lg font-semibold">Save Current View</h2>
-            <p className="mt-1 text-sm text-muted">
-              Give your view a name to save the current filters, grouping, and displayed fields.
-            </p>
-          </div>
-
           <FormInputField
             id="view-name"
             label="View Name"
