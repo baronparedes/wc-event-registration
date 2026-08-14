@@ -11,26 +11,120 @@ import {
 } from '@/hooks/domain/attendance/queries';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import type { AttendeeSearchResult } from '@/lib/domain/attendance';
+import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import {
   type DynamicFieldRef,
   collectDynamicFieldOptions,
   fromDynamicFieldToken,
   toDynamicFieldToken,
 } from '@/lib/domain/attendance-views';
+import type { AdminEventField } from '@/lib/domain/event-fields';
 import { formatDateTime } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
+import { SectionCard } from '../../../../../../components/ui';
 import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
-import { AttendanceColumnsButton } from '../data/components/AttendanceColumnsButton';
+import { AttendancePrimaryFilters } from '../data/components/AttendancePrimaryFilters';
 import { AllCheckInsTable } from './components/AllCheckInsTable';
 import { type SlotCheckInRow, SlotTabPanel } from './components/SlotTabPanel';
 
 const ALL_TAB = '__all__';
 
+type SlotSummary = {
+  slot: string;
+  count: number;
+  attendees: SlotCheckInRow[];
+};
+
+function buildSlotSummaries(
+  attendees: AttendeeSearchResult[] | null | undefined,
+  timeslotEnabled: boolean,
+): SlotSummary[] {
+  if (!attendees || !timeslotEnabled) return [];
+
+  const attendeesBySlot = new Map<string, SlotCheckInRow[]>();
+
+  for (const attendee of attendees) {
+    if (!attendee.slot_records || attendee.slot_records.length === 0) continue;
+
+    for (const slotRecord of attendee.slot_records) {
+      const slotAttendee: SlotCheckInRow = {
+        full_name: attendee.full_name,
+        member_id: attendee.member_id,
+        recorded_at: slotRecord.recorded_at,
+        registration_id: attendee.registration_id,
+        public_registration_id: attendee.public_registration_id,
+        attendee,
+      };
+
+      const current = attendeesBySlot.get(slotRecord.slot) ?? [];
+      current.push(slotAttendee);
+      attendeesBySlot.set(slotRecord.slot, current);
+    }
+  }
+
+  const summaries = Array.from(attendeesBySlot.entries()).map(([slot, attendeesList]) => ({
+    slot,
+    count: attendeesList.length,
+    attendees: attendeesList.sort((a, b) => a.full_name.localeCompare(b.full_name)),
+  }));
+
+  return summaries.sort((a, b) => {
+    const aTime = Date.parse(a.slot);
+    const bTime = Date.parse(b.slot);
+
+    if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
+      return aTime - bTime;
+    }
+
+    return a.slot.localeCompare(b.slot);
+  });
+}
+
+function buildSeededFields(
+  registrationFields: AdminEventField[],
+  attendanceFields: AttendanceField[],
+): DynamicFieldRef[] {
+  return [
+    ...registrationFields
+      .filter((field) => field.is_active)
+      .map((field) => ({
+        source: 'registration' as const,
+        fieldKey: field.field_key,
+        label: field.label,
+        sortOrder: field.display_order,
+        fieldType: field.field_type,
+      })),
+    ...attendanceFields.map((field) => ({
+      source: 'attendance' as const,
+      fieldKey: field.field_key,
+      label: field.label,
+      sortOrder: field.display_order,
+      fieldType: field.field_type,
+    })),
+    { source: 'member' as const, fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
+    { source: 'role' as const, fieldKey: 'role', label: 'Role', sortOrder: 1 },
+    { source: 'category' as const, fieldKey: 'category', label: 'Category', sortOrder: 2 },
+    { source: 'member' as const, fieldKey: 'email', label: 'Email', sortOrder: 3 },
+    { source: 'member' as const, fieldKey: 'avatar', label: 'Avatar', sortOrder: 4 },
+  ];
+}
+
 export function AdminAttendanceDashboardPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(ALL_TAB);
   const [selectedFields, setSelectedFields] = useState<DynamicFieldRef[]>([]);
+  const [nameOrMemberQuery, setNameOrMemberQuery] = useState('');
+
+  const onNameOrMemberQueryChange = useCallback((value: string) => {
+    setNameOrMemberQuery(value);
+  }, []);
+
+  const onClearViewControls = useCallback(() => {
+    setSelectedFields([]);
+    setNameOrMemberQuery('');
+  }, []);
 
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
   const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
@@ -48,48 +142,10 @@ export function AdminAttendanceDashboardPage() {
     refresh: refreshCache,
   } = useAttendeesLocalCacheQuery(eventId, { realtimeEnabled: true });
 
-  // Derive slot summaries from attendees.slot_records
-  const slotSummaries = useMemo(() => {
-    if (!attendees || !timeslotEnabled) return [];
-
-    const attendeesBySlot = new Map<string, SlotCheckInRow[]>();
-
-    for (const attendee of attendees) {
-      if (!attendee.slot_records || attendee.slot_records.length === 0) continue;
-
-      for (const slotRecord of attendee.slot_records) {
-        const slotAttendee: SlotCheckInRow = {
-          full_name: attendee.full_name,
-          member_id: attendee.member_id,
-          recorded_at: slotRecord.recorded_at,
-          registration_id: attendee.registration_id,
-          public_registration_id: attendee.public_registration_id,
-          attendee,
-        };
-
-        const current = attendeesBySlot.get(slotRecord.slot) ?? [];
-        current.push(slotAttendee);
-        attendeesBySlot.set(slotRecord.slot, current);
-      }
-    }
-
-    const summaries = Array.from(attendeesBySlot.entries()).map(([slot, attendeesList]) => ({
-      slot,
-      count: attendeesList.length,
-      attendees: attendeesList.sort((a, b) => a.full_name.localeCompare(b.full_name)),
-    }));
-
-    return summaries.sort((a, b) => {
-      const aTime = Date.parse(a.slot);
-      const bTime = Date.parse(b.slot);
-
-      if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
-        return aTime - bTime;
-      }
-
-      return a.slot.localeCompare(b.slot);
-    });
-  }, [attendees, timeslotEnabled]);
+  const slotSummaries = useMemo(
+    () => buildSlotSummaries(attendees, timeslotEnabled),
+    [attendees, timeslotEnabled],
+  );
 
   const checkedInAttendees = useMemo(
     () => (attendees ?? []).filter((a) => a.check_in_status === 'checked_in'),
@@ -97,35 +153,7 @@ export function AdminAttendanceDashboardPage() {
   );
 
   const seededFields = useMemo(
-    () => [
-      ...registrationFields
-        .filter((f) => f.is_active)
-        .map((f) => ({
-          source: 'registration' as const,
-          fieldKey: f.field_key,
-          label: f.label,
-          sortOrder: f.display_order,
-          fieldType: f.field_type,
-        })),
-      ...attendanceFields.map((f) => ({
-        source: 'attendance' as const,
-        fieldKey: f.field_key,
-        label: f.label,
-        sortOrder: f.display_order,
-        fieldType: f.field_type,
-      })),
-      { source: 'member' as const, fieldKey: 'member_id', label: 'RFID', sortOrder: 0 },
-      { source: 'role' as const, fieldKey: 'role', label: 'Role', sortOrder: 1 },
-      { source: 'category' as const, fieldKey: 'category', label: 'Category', sortOrder: 2 },
-      { source: 'member' as const, fieldKey: 'email', label: 'Email', sortOrder: 3 },
-      {
-        source: 'member' as const,
-        fieldKey: 'avatar',
-        label: 'Avatar',
-        sortOrder: 4,
-        token: 'member:avatar',
-      },
-    ],
+    () => buildSeededFields(registrationFields, attendanceFields),
     [registrationFields, attendanceFields],
   );
 
@@ -246,7 +274,7 @@ export function AdminAttendanceDashboardPage() {
           />
 
           {/* Stats */}
-          <section className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <SectionCard wrapperClassName="" contentClassName="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <article className="rounded-2xl border border-border bg-surface p-5 text-center">
               <p className="text-3xl font-bold text-primary">{checkedInCount}</p>
               <p className="mt-1 text-sm text-muted">Checked In</p>
@@ -261,10 +289,24 @@ export function AdminAttendanceDashboardPage() {
               </p>
               <p className="mt-1 text-sm text-muted">Attendance Rate</p>
             </article>
-          </section>
+          </SectionCard>
 
-          {/* Tabbed attendee list */}
-          <section className="rounded-2xl border border-border bg-surface p-1">
+          <SectionCard>
+            <AttendancePrimaryFilters
+              viewConfig={{
+                visibleFields: selectedFields,
+                nameOrMemberQuery,
+              }}
+              registrationDynamicFieldOptions={registrationDynamicFieldOptions}
+              attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
+              memberDynamicFieldOptions={memberDynamicFieldOptions}
+              onNameOrMemberQueryChange={onNameOrMemberQueryChange}
+              onToggleVisibleField={toggleField}
+              canClearFilters={selectedFields.length > 0 || nameOrMemberQuery.length > 0}
+              onClearViewControls={onClearViewControls}
+            />
+          </SectionCard>
+          <SectionCard wrapperClassName="rounded-2xl border border-border bg-surface p-1">
             {/* Tab bar */}
             <div className="flex items-center justify-between gap-2 border-b border-border pr-4">
               <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -299,13 +341,6 @@ export function AdminAttendanceDashboardPage() {
                   })}
                 </nav>
               </div>
-              <AttendanceColumnsButton
-                selectedFields={selectedFields}
-                registrationFieldOptions={registrationDynamicFieldOptions}
-                attendanceFieldOptions={attendanceDynamicFieldOptions}
-                memberFieldOptions={memberDynamicFieldOptions}
-                onToggleField={toggleField}
-              />
             </div>
 
             {/* Tab panel */}
@@ -320,7 +355,7 @@ export function AdminAttendanceDashboardPage() {
                 />
               )}
             </div>
-          </section>
+          </SectionCard>
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

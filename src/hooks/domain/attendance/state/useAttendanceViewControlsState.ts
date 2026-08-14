@@ -147,6 +147,109 @@ function normalizeGroupingSortByLevel(groupBy: AttendeeViewConfig['groupBy']) {
   });
 }
 
+type MapCustomFilterResult =
+  | { ok: true; filter: AttendeeViewConfig['dynamicFilters'][number] }
+  | { ok: false; error: string };
+
+type MapExpressionNodeResult =
+  | { ok: true; node: NonNullable<AttendeeViewConfig['dynamicFilterExpression']> }
+  | { ok: false; error: string };
+
+function resolveCustomFilterField(
+  filter: ParsedCustomJsonFilter,
+  dynamicFieldOptions: DynamicFieldOption[],
+) {
+  if (filter.token) {
+    return fromDynamicFieldToken(filter.token, dynamicFieldOptions);
+  }
+
+  return dynamicFieldOptions.find(
+    (field) => field.source === filter.source && field.fieldKey === filter.fieldKey,
+  );
+}
+
+function mapCustomFilter(
+  filter: ParsedCustomJsonFilter,
+  dynamicFieldOptions: DynamicFieldOption[],
+): MapCustomFilterResult {
+  const field = resolveCustomFilterField(filter, dynamicFieldOptions);
+  if (!field) {
+    const descriptor = filter.token ?? `${filter.source}:${filter.fieldKey}`;
+    return {
+      ok: false,
+      error: `Unknown filter field: ${descriptor}`,
+    };
+  }
+
+  return {
+    ok: true,
+    filter: {
+      field: {
+        source: field.source,
+        fieldKey: field.fieldKey,
+        label: field.label,
+        sortOrder: field.sortOrder,
+        fieldType: field.fieldType,
+      },
+      value: filter.value.trim(),
+    },
+  };
+}
+
+function mapExpressionNode(
+  node: ParsedCustomJsonExpressionNode,
+  dynamicFieldOptions: DynamicFieldOption[],
+): MapExpressionNodeResult {
+  if (node.type === 'condition') {
+    const mappedCondition = mapCustomFilter(node.filter, dynamicFieldOptions);
+    if (!mappedCondition.ok) {
+      return mappedCondition;
+    }
+
+    return {
+      ok: true,
+      node: {
+        type: 'condition',
+        filter: mappedCondition.filter,
+      },
+    };
+  }
+
+  if (node.type === 'not') {
+    const mappedChild = mapExpressionNode(node.child, dynamicFieldOptions);
+    if (!mappedChild.ok) {
+      return mappedChild;
+    }
+
+    return {
+      ok: true,
+      node: {
+        type: 'not',
+        child: mappedChild.node,
+      },
+    };
+  }
+
+  const mappedChildren: NonNullable<AttendeeViewConfig['dynamicFilterExpression']>[] = [];
+  for (const child of node.children) {
+    const mappedChild = mapExpressionNode(child, dynamicFieldOptions);
+    if (!mappedChild.ok) {
+      return mappedChild;
+    }
+
+    mappedChildren.push(mappedChild.node);
+  }
+
+  return {
+    ok: true,
+    node: {
+      type: 'group',
+      op: node.op,
+      children: mappedChildren,
+    },
+  };
+}
+
 /**
  * Manages filter and grouping UI state for admin attendance data views.
  */
@@ -227,96 +330,6 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
     setDynamicFilterValue('');
   }
 
-  function resolveCustomFilterField(filter: ParsedCustomJsonFilter) {
-    if (filter.token) {
-      return fromDynamicFieldToken(filter.token, dynamicFieldOptions);
-    }
-
-    return dynamicFieldOptions.find(
-      (field) => field.source === filter.source && field.fieldKey === filter.fieldKey,
-    );
-  }
-
-  function mapCustomFilter(filter: ParsedCustomJsonFilter) {
-    const field = resolveCustomFilterField(filter);
-    if (!field) {
-      const descriptor = filter.token ?? `${filter.source}:${filter.fieldKey}`;
-      return {
-        ok: false as const,
-        error: `Unknown filter field: ${descriptor}`,
-      };
-    }
-
-    return {
-      ok: true as const,
-      filter: {
-        field: {
-          source: field.source,
-          fieldKey: field.fieldKey,
-          label: field.label,
-          sortOrder: field.sortOrder,
-          fieldType: field.fieldType,
-        },
-        value: filter.value.trim(),
-      },
-    };
-  }
-
-  function mapExpressionNode(
-    node: ParsedCustomJsonExpressionNode,
-  ):
-    | { ok: true; node: NonNullable<AttendeeViewConfig['dynamicFilterExpression']> }
-    | { ok: false; error: string } {
-    if (node.type === 'condition') {
-      const mappedCondition = mapCustomFilter(node.filter);
-      if (!mappedCondition.ok) {
-        return mappedCondition;
-      }
-
-      return {
-        ok: true,
-        node: {
-          type: 'condition',
-          filter: mappedCondition.filter,
-        },
-      };
-    }
-
-    if (node.type === 'not') {
-      const mappedChild = mapExpressionNode(node.child);
-      if (!mappedChild.ok) {
-        return mappedChild;
-      }
-
-      return {
-        ok: true,
-        node: {
-          type: 'not',
-          child: mappedChild.node,
-        },
-      };
-    }
-
-    const mappedChildren: NonNullable<AttendeeViewConfig['dynamicFilterExpression']>[] = [];
-    for (const child of node.children) {
-      const mappedChild = mapExpressionNode(child);
-      if (!mappedChild.ok) {
-        return mappedChild;
-      }
-
-      mappedChildren.push(mappedChild.node);
-    }
-
-    return {
-      ok: true,
-      node: {
-        type: 'group',
-        op: node.op,
-        children: mappedChildren,
-      },
-    };
-  }
-
   function applyCustomFilterJson(rawJson: string): ApplyCustomFilterJsonResult {
     const trimmedJson = rawJson.trim();
     if (!trimmedJson) {
@@ -356,7 +369,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
     const mappedFilters: AttendeeViewConfig['dynamicFilters'] = [];
     for (const filter of filters) {
-      const mappedFilter = mapCustomFilter(filter);
+      const mappedFilter = mapCustomFilter(filter, dynamicFieldOptions);
       if (!mappedFilter.ok) {
         return mappedFilter;
       }
@@ -377,7 +390,7 @@ export function useAttendanceViewControlsState(dynamicFieldOptions: DynamicField
 
     let mappedExpression: AttendeeViewConfig['dynamicFilterExpression'] = undefined;
     if (nextExpression) {
-      const expressionResult = mapExpressionNode(nextExpression);
+      const expressionResult = mapExpressionNode(nextExpression, dynamicFieldOptions);
       if (!expressionResult.ok) {
         return expressionResult;
       }

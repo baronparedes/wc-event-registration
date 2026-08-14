@@ -6,25 +6,11 @@ import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attend
 import { AttendanceColumnsButton } from './AttendanceColumnsButton';
 
 type AttendancePrimaryFiltersProps = {
-  viewConfig: Pick<
-    AttendeeViewConfig,
-    'nameOrMemberQuery' | 'role' | 'category' | 'checkInStatus' | 'visibleFields'
-  >;
-  roleOptions: string[];
-  categoryOptions: string[];
+  viewConfig: Pick<AttendeeViewConfig, 'nameOrMemberQuery' | 'visibleFields'>;
   registrationDynamicFieldOptions: DynamicFieldOption[];
   attendanceDynamicFieldOptions: DynamicFieldOption[];
   memberDynamicFieldOptions: DynamicFieldOption[];
-  selectedRoleLabel: string;
-  isRoleDropdownOpen: boolean;
-  roleDropdownRef: React.RefObject<HTMLDivElement | null>;
   onNameOrMemberQueryChange: (value: string) => void;
-  onToggleRoleDropdown: () => void;
-  onCloseRoleDropdown: () => void;
-  onRoleChange: (value: string[]) => void;
-  onToggleRoleSelection: (role: string) => void;
-  onCategoryChange: (value: string) => void;
-  onCheckInStatusChange: (value: AttendeeViewConfig['checkInStatus']) => void;
   onToggleVisibleField: (token: string) => void;
   canClearFilters: boolean;
   onClearViewControls: () => void;

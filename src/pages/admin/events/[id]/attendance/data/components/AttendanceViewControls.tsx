@@ -165,21 +165,10 @@ export function AttendanceViewControls({
       <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
         <AttendancePrimaryFilters
           viewConfig={viewConfig}
-          roleOptions={roleOptions}
-          categoryOptions={categoryOptions}
           registrationDynamicFieldOptions={registrationDynamicFieldOptions}
           attendanceDynamicFieldOptions={attendanceDynamicFieldOptions}
           memberDynamicFieldOptions={memberDynamicFieldOptions}
-          selectedRoleLabel={selectedRoleLabel}
-          isRoleDropdownOpen={isRoleDropdownOpen}
-          roleDropdownRef={roleDropdownRef}
           onNameOrMemberQueryChange={onNameOrMemberQueryChange}
-          onToggleRoleDropdown={() => setIsRoleDropdownOpen((current) => !current)}
-          onCloseRoleDropdown={() => setIsRoleDropdownOpen(false)}
-          onRoleChange={onRoleChange}
-          onToggleRoleSelection={toggleRoleSelection}
-          onCategoryChange={onCategoryChange}
-          onCheckInStatusChange={onCheckInStatusChange}
           onToggleVisibleField={onToggleVisibleField}
           canClearFilters={canClearFilters}
           onClearViewControls={onClearViewControls}
