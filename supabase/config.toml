@@ -172,7 +172,13 @@ verify_jwt = true
 [functions.download-registrations-template]
 verify_jwt = true
 
+[functions.download-public-registrations-template]
+verify_jwt = true
+
 [functions.bulk-upsert-registrations]
+verify_jwt = true
+
+[functions.bulk-upsert-public-registrations]
 verify_jwt = true
 
 [functions.event-slot-availability]

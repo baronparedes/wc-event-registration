@@ -11,6 +11,7 @@ const {
   mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseAdminPublicRegistrationsQuery,
+  mockUseDownloadPublicRegistrationsTemplateMutation,
   mockGetCurrentPageFromCursor,
   mockGetPageCursor,
 } = vi.hoisted(() => ({
@@ -19,6 +20,7 @@ const {
   mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminPublicRegistrationsQuery: vi.fn(),
+  mockUseDownloadPublicRegistrationsTemplateMutation: vi.fn(),
   mockGetCurrentPageFromCursor: vi.fn(),
   mockGetPageCursor: vi.fn(),
 }));
@@ -57,6 +59,8 @@ vi.mock('@/hooks/domain/public-registrations', async () => {
     ...actual,
     useAdminPublicRegistrationsQuery: (...args: unknown[]) =>
       mockUseAdminPublicRegistrationsQuery(...args),
+    useDownloadPublicRegistrationsTemplateMutation: (...args: unknown[]) =>
+      mockUseDownloadPublicRegistrationsTemplateMutation(...args),
   };
 });
 
@@ -93,6 +97,10 @@ describe('AdminPublicRegistrationsPage', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: { isAuthenticated: true, session: null, adminRole: 'admin' },
       isLoading: false,
+    });
+    mockUseDownloadPublicRegistrationsTemplateMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
     });
     mockGetCurrentPageFromCursor.mockReturnValue(1);
     mockGetPageCursor.mockReturnValue(null);

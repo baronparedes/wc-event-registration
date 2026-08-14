@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { VALIDATION_PATTERNS } from '@/config/constants';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 import type { PublicEventField } from '@/lib/domain/event-fields';
+import type { AdminEventField } from '@/lib/domain/event-fields';
 
 import type { SubmitPublicRegistrationRequest } from './types';
 
@@ -67,3 +68,27 @@ export const cancelPublicRegistrationSchema = z.object({
 });
 
 export type CancelPublicRegistrationInput = z.infer<typeof cancelPublicRegistrationSchema>;
+
+export function buildBulkPublicRegistrationCsvRowSchema(fields: AdminEventField[]) {
+  const optionalFields = fields.map((field) => ({ ...field, is_required: false }));
+
+  return z.object({
+    first_name: z.string().trim().min(1, 'first_name is required'),
+    last_name: z.string().trim().min(1, 'last_name is required'),
+    nickname: z.string().trim().optional(),
+    email: z.string().trim().email('email must be a valid email address'),
+    phone: z.string().trim().optional(),
+    public_registration_id: z.string().trim().optional(),
+    answers: buildDynamicFieldResponseSchema(optionalFields),
+  });
+}
+
+export function buildBulkPublicRegistrationCsvRowsSchema(fields: AdminEventField[]) {
+  return z
+    .array(buildBulkPublicRegistrationCsvRowSchema(fields))
+    .min(1, 'At least one CSV row is required for bulk upload.');
+}
+
+export type BulkPublicRegistrationCsvRow = z.infer<
+  ReturnType<typeof buildBulkPublicRegistrationCsvRowSchema>
+>;

@@ -22,7 +22,19 @@ export {
   buildSubmitPublicRegistrationSchema,
   publicAttendeeCheckSchema,
   cancelPublicRegistrationSchema,
+  buildBulkPublicRegistrationCsvRowSchema,
+  buildBulkPublicRegistrationCsvRowsSchema,
+  type BulkPublicRegistrationCsvRow,
   type PublicAttendeeInfoInput,
   type PublicAttendeeCheckInput,
   type CancelPublicRegistrationInput,
 } from './schemas';
+
+export {
+  parsePublicRegistrationCsvText,
+  buildBulkPublicRegistrationRowsFromCsv,
+  type ParsedPublicRegistrationCsv,
+  type ParsePublicRegistrationCsvResult,
+  type BulkPublicRegistrationCsvRowInput,
+  type BuildBulkPublicRegistrationRowsResult,
+} from './csv-parser';

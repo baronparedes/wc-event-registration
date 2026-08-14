@@ -109,6 +109,11 @@ const AdminPublicRegistrationsPage = lazy(() =>
     default: module.AdminPublicRegistrationsPage,
   })),
 );
+const AdminPublicRegistrationsBulkUploadPage = lazy(() =>
+  import('../pages/admin/events/[id]/public-registrations/bulk-upload').then((module) => ({
+    default: module.AdminPublicRegistrationsBulkUploadPage,
+  })),
+);
 const AdminPublicRegistrationDetailPage = lazy(() =>
   import('../pages/admin/events/[id]/public-registrations/[registration_id]').then((module) => ({
     default: module.AdminPublicRegistrationDetailPage,
@@ -437,6 +442,16 @@ export function AppRouter() {
             <RequireAdminAuth>
               <LazyRoute>
                 <AdminPublicRegistrationsPage />
+              </LazyRoute>
+            </RequireAdminAuth>
+          }
+        />
+        <Route
+          path={ROUTE_PATHS.adminEventPublicRegistrationsBulkUploadPattern}
+          element={
+            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
+              <LazyRoute>
+                <AdminPublicRegistrationsBulkUploadPage />
               </LazyRoute>
             </RequireAdminAuth>
           }

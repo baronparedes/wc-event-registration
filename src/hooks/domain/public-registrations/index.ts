@@ -13,6 +13,8 @@ export {
 } from './queries';
 
 export {
+  useBulkUpsertPublicRegistrationsMutation,
   useCancelPublicRegistrationMutation,
+  useDownloadPublicRegistrationsTemplateMutation,
   useReactivatePublicRegistrationMutation,
 } from './mutations';

@@ -12,6 +12,7 @@ import {
   ROUTE_PATHS,
   TIMING,
   toAdminEventDetail,
+  toAdminEventPublicRegistrationsBulkUpload,
   toAdminEventRegistrations,
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
@@ -124,13 +125,23 @@ export function AdminPublicRegistrationsPage() {
   }
 
   const navActions = (
-    <Button
-      asChild
-      variant="primaryOutline"
-      onClick={() => navigate(toAdminEventRegistrations(eventId))}
-    >
-      View Member Registrations
-    </Button>
+    <>
+      <Button
+        asChild
+        variant="primaryOutline"
+        onClick={() => navigate(toAdminEventRegistrations(eventId))}
+      >
+        View Member Registrations
+      </Button>
+      {canWrite && (
+        <Button
+          variant="outline"
+          onClick={() => navigate(toAdminEventPublicRegistrationsBulkUpload(eventId))}
+        >
+          Upload CSV
+        </Button>
+      )}
+    </>
   );
 
   return (
