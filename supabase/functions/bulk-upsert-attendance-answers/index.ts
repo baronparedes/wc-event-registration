@@ -63,6 +63,16 @@ type PreparedAnswerRow = {
   answer_number: number | null;
 };
 
+const IN_FILTER_CHUNK_SIZE = 200;
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
 function parseBoolean(value: unknown): boolean | null {
   if (typeof value === 'boolean') return value;
 
@@ -391,48 +401,56 @@ Deno.serve(async (req) => {
     const fieldsByKey = new Map(safeFields.map((field) => [field.field_key, field]));
     const requestedFieldKeySet = new Set((uploaded_field_keys ?? []).map((key) => key.trim()));
 
-    const registrationIds = rows
-      .filter((row) => row.attendee_kind === 'registered')
-      .map((row) => row.registration_id as string);
+    const registrationIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.attendee_kind === 'registered')
+          .map((row) => row.registration_id as string),
+      ),
+    ];
 
-    const publicRegistrationIds = rows
-      .filter((row) => row.attendee_kind === 'public')
-      .map((row) => row.public_registration_id as string);
+    const publicRegistrationIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.attendee_kind === 'public')
+          .map((row) => row.public_registration_id as string),
+      ),
+    ];
 
-    const { data: validRegistrations, error: validRegistrationsError } =
-      registrationIds.length > 0
-        ? await adminClient
-            .from('registrations')
-            .select('id')
-            .eq('event_id', event_id)
-            .in('id', registrationIds)
-            .in('status', ['submitted', 'updated'])
-        : { data: [], error: null };
+    const validRegistrations: RegistrationRefRow[] = [];
+    for (const chunk of chunkArray(registrationIds, IN_FILTER_CHUNK_SIZE)) {
+      const { data, error } = await adminClient
+        .from('registrations')
+        .select('id')
+        .eq('event_id', event_id)
+        .in('id', chunk)
+        .in('status', ['submitted', 'updated']);
 
-    if (validRegistrationsError) {
-      return errorResponse(corsHeaders, 500, 'Failed to validate registrations');
+      if (error) {
+        return errorResponse(corsHeaders, 500, 'Failed to validate registrations');
+      }
+
+      validRegistrations.push(...((data ?? []) as RegistrationRefRow[]));
     }
 
-    const { data: validPublicRegistrations, error: validPublicError } =
-      publicRegistrationIds.length > 0
-        ? await adminClient
-            .from('public_registrations')
-            .select('id')
-            .eq('event_id', event_id)
-            .in('id', publicRegistrationIds)
-            .neq('status', 'cancelled')
-        : { data: [], error: null };
+    const validPublicRegistrations: PublicRegistrationRefRow[] = [];
+    for (const chunk of chunkArray(publicRegistrationIds, IN_FILTER_CHUNK_SIZE)) {
+      const { data, error } = await adminClient
+        .from('public_registrations')
+        .select('id')
+        .eq('event_id', event_id)
+        .in('id', chunk)
+        .neq('status', 'cancelled');
 
-    if (validPublicError) {
-      return errorResponse(corsHeaders, 500, 'Failed to validate public registrations');
+      if (error) {
+        return errorResponse(corsHeaders, 500, 'Failed to validate public registrations');
+      }
+
+      validPublicRegistrations.push(...((data ?? []) as PublicRegistrationRefRow[]));
     }
 
-    const validRegistrationIdSet = new Set(
-      ((validRegistrations ?? []) as RegistrationRefRow[]).map((row) => row.id),
-    );
-    const validPublicRegistrationIdSet = new Set(
-      ((validPublicRegistrations ?? []) as PublicRegistrationRefRow[]).map((row) => row.id),
-    );
+    const validRegistrationIdSet = new Set(validRegistrations.map((row) => row.id));
+    const validPublicRegistrationIdSet = new Set(validPublicRegistrations.map((row) => row.id));
 
     const errors: string[] = [];
     const preparedAnswerRows: PreparedAnswerRow[] = [];
