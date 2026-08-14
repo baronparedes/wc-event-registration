@@ -523,70 +523,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    const fieldIds = targetFields.map((field) => field.id);
+    const rpc = adminClient.rpc.bind(adminClient) as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => PromiseLike<{ error: { message?: string } | null }>;
 
-    if (registrationIds.length > 0 && fieldIds.length > 0) {
-      const { error: deleteRegisteredError } = await adminClient
-        .from('attendance_answers')
-        .delete()
-        .in('registration_id', registrationIds)
-        .in('attendance_field_id', fieldIds);
+    const { error: upsertError } = await rpc('apply_bulk_attendance_answer_upsert', {
+      p_event_id: event_id,
+      p_rows: rows.map((row) => ({
+        attendee_kind: row.attendee_kind,
+        registration_id: row.registration_id ?? null,
+        public_registration_id: row.public_registration_id ?? null,
+      })),
+      p_field_ids: targetFields.map((field) => field.id),
+      p_answers: preparedAnswerRows,
+    });
 
-      if (deleteRegisteredError) {
-        return errorResponse(corsHeaders, 500, 'Failed to clear existing registered answers');
-      }
-    }
-
-    if (publicRegistrationIds.length > 0 && fieldIds.length > 0) {
-      const { error: deletePublicError } = await adminClient
-        .from('public_attendance_answers')
-        .delete()
-        .in('public_registration_id', publicRegistrationIds)
-        .in('attendance_field_id', fieldIds);
-
-      if (deletePublicError) {
-        return errorResponse(corsHeaders, 500, 'Failed to clear existing public answers');
-      }
-    }
-
-    const registeredInsertRows = preparedAnswerRows
-      .filter((row) => row.attendee_kind === 'registered' && row.registration_id)
-      .map((row) => ({
-        id: crypto.randomUUID(),
-        registration_id: row.registration_id,
-        attendance_field_id: row.attendance_field_id,
-        answer_text: row.answer_text,
-        answer_number: row.answer_number,
-      }));
-
-    if (registeredInsertRows.length > 0) {
-      const { error: insertRegisteredError } = await adminClient
-        .from('attendance_answers')
-        .insert(registeredInsertRows);
-
-      if (insertRegisteredError) {
-        return errorResponse(corsHeaders, 500, 'Failed to write registered attendance answers');
-      }
-    }
-
-    const publicInsertRows = preparedAnswerRows
-      .filter((row) => row.attendee_kind === 'public' && row.public_registration_id)
-      .map((row) => ({
-        id: crypto.randomUUID(),
-        public_registration_id: row.public_registration_id,
-        attendance_field_id: row.attendance_field_id,
-        answer_text: row.answer_text,
-        answer_number: row.answer_number,
-      }));
-
-    if (publicInsertRows.length > 0) {
-      const { error: insertPublicError } = await adminClient
-        .from('public_attendance_answers')
-        .insert(publicInsertRows);
-
-      if (insertPublicError) {
-        return errorResponse(corsHeaders, 500, 'Failed to write public attendance answers');
-      }
+    if (upsertError) {
+      return errorResponse(
+        corsHeaders,
+        500,
+        upsertError.message || 'Failed to apply attendance answer import',
+      );
     }
 
     return successResponse(corsHeaders, {

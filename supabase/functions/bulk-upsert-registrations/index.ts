@@ -35,14 +35,8 @@ type UserRow = {
   is_active: boolean;
 };
 
-type RegistrationRow = {
-  id: string;
-  user_id: string;
-  status: string;
-};
-
 type PreparedAnswer = {
-  registrationId: string;
+  rowIndex: number;
   eventFieldId: string;
   answerText: string;
 };
@@ -315,10 +309,9 @@ Deno.serve(async (req) => {
       memberIdCounts.set(row.member_id, (memberIdCounts.get(row.member_id) ?? 0) + 1);
     });
 
-    const uniqueMemberIds = [...memberIdCounts.keys()];
     const users: UserRow[] = [];
-    for (const chunk of chunkArray(uniqueMemberIds, IN_FILTER_CHUNK_SIZE)) {
-      const { data: chunkUsers, error: usersError } = await adminClient
+    for (const chunk of chunkArray([...memberIdCounts.keys()], IN_FILTER_CHUNK_SIZE)) {
+      const { data: usersData, error: usersError } = await adminClient
         .from('users')
         .select('id, member_id, is_active')
         .in('member_id', chunk);
@@ -327,40 +320,13 @@ Deno.serve(async (req) => {
         return errorResponse(corsHeaders, 500, 'Failed to resolve members', usersError.message);
       }
 
-      users.push(...((chunkUsers ?? []) as UserRow[]));
+      users.push(...((usersData ?? []) as UserRow[]));
     }
 
     const userByMemberId = new Map(users.map((user) => [user.member_id, user]));
 
-    const resolvedUserIds = [...userByMemberId.values()].map((user) => user.id);
-    const existingRegistrations: RegistrationRow[] = [];
-    for (const chunk of chunkArray(resolvedUserIds, IN_FILTER_CHUNK_SIZE)) {
-      if (chunk.length === 0) continue;
-
-      const { data: chunkRegistrations, error: existingRegistrationsError } = await adminClient
-        .from('registrations')
-        .select('id, user_id, status')
-        .eq('event_id', event_id)
-        .in('user_id', chunk);
-
-      if (existingRegistrationsError) {
-        return errorResponse(
-          corsHeaders,
-          500,
-          'Failed to read existing registrations',
-          existingRegistrationsError.message,
-        );
-      }
-
-      existingRegistrations.push(...((chunkRegistrations ?? []) as RegistrationRow[]));
-    }
-
-    const registrationByUserId = new Map(
-      existingRegistrations.map((registration) => [registration.user_id, registration]),
-    );
-
     const errors: string[] = [];
-    type ResolvedRow = { userId: string; row: BulkRow };
+    type ResolvedRow = { rowIndex: number; userId: string; row: BulkRow };
     const resolvedRows: ResolvedRow[] = [];
 
     rows.forEach((row, index) => {
@@ -384,7 +350,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      resolvedRows.push({ userId: user.id, row });
+      resolvedRows.push({ rowIndex: index, userId: user.id, row });
     });
 
     if (errors.length > 0) {
@@ -395,122 +361,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    const rowsToInsert = resolvedRows.filter(({ userId }) => !registrationByUserId.has(userId));
-    const rowsToUpdate = resolvedRows.filter(({ userId }) => registrationByUserId.has(userId));
-
-    const insertedRegistrationIdByUserId = new Map<string, string>();
-    if (rowsToInsert.length > 0) {
-      const { data: inserted, error: insertError } = await adminClient
-        .from('registrations')
-        .insert(
-          rowsToInsert.map(({ userId }) => ({
-            event_id,
-            user_id: userId,
-            status: 'submitted',
-            source: 'admin_bulk_import',
-          })),
-        )
-        .select('id, user_id');
-
-      if (insertError) {
-        return errorResponse(
-          corsHeaders,
-          500,
-          'Failed to create registrations',
-          insertError.message,
-        );
+    const preparedAnswers: PreparedAnswer[] = [];
+    resolvedRows.forEach(({ rowIndex, row }) => {
+      for (const field of targetFields) {
+        const normalized = normalizeAnswer(field, row.answers[field.field_key]);
+        if (normalized.hasValue && normalized.answerText !== null) {
+          preparedAnswers.push({
+            rowIndex,
+            eventFieldId: field.id,
+            answerText: normalized.answerText,
+          });
+        }
       }
+    });
 
-      for (const row of (inserted ?? []) as Array<{ id: string; user_id: string }>) {
-        insertedRegistrationIdByUserId.set(row.user_id, row.id);
-      }
-    }
+    const rpc = adminClient.rpc.bind(adminClient) as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
 
-    if (rowsToUpdate.length > 0) {
-      const registrationIdsToUpdate = rowsToUpdate.map(
-        ({ userId }) => registrationByUserId.get(userId)!.id,
+    const { data: upsertResult, error: upsertError } = await rpc('apply_bulk_registration_upsert', {
+      p_event_id: event_id,
+      p_rows: resolvedRows.map(({ rowIndex, userId }) => ({
+        row_index: rowIndex,
+        user_id: userId,
+      })),
+      p_field_ids: targetFields.map((field) => field.id),
+      p_answers: preparedAnswers.map((answer) => ({
+        row_index: answer.rowIndex,
+        event_field_id: answer.eventFieldId,
+        answer_text: answer.answerText,
+      })),
+    });
+
+    if (upsertError) {
+      return errorResponse(
+        corsHeaders,
+        500,
+        upsertError.message || 'Failed to apply registration import',
       );
-      for (const chunk of chunkArray(registrationIdsToUpdate, IN_FILTER_CHUNK_SIZE)) {
-        const { error: updateError } = await adminClient
-          .from('registrations')
-          .update({ status: 'updated', submitted_at: new Date().toISOString() })
-          .in('id', chunk);
-
-        if (updateError) {
-          return errorResponse(
-            corsHeaders,
-            500,
-            'Failed to update registrations',
-            updateError.message,
-          );
-        }
-      }
     }
 
-    if (targetFields.length > 0) {
-      const registrationIdByUserId = new Map<string, string>([
-        ...insertedRegistrationIdByUserId,
-        ...[...registrationByUserId.entries()].map(
-          ([userId, registration]) => [userId, registration.id] as [string, string],
-        ),
-      ]);
-
-      const allRegistrationIds = [...registrationIdByUserId.values()];
-      const fieldIds = targetFields.map((field) => field.id);
-
-      for (const chunk of chunkArray(allRegistrationIds, IN_FILTER_CHUNK_SIZE)) {
-        const { error: deleteError } = await adminClient
-          .from('registration_answers')
-          .delete()
-          .in('registration_id', chunk)
-          .in('event_field_id', fieldIds);
-
-        if (deleteError) {
-          return errorResponse(
-            corsHeaders,
-            500,
-            'Failed to clear existing answers',
-            deleteError.message,
-          );
-        }
-      }
-
-      const preparedAnswers: PreparedAnswer[] = [];
-      resolvedRows.forEach(({ userId, row }) => {
-        const registrationId = registrationIdByUserId.get(userId);
-        if (!registrationId) return;
-
-        for (const field of targetFields) {
-          const normalized = normalizeAnswer(field, row.answers[field.field_key]);
-          if (normalized.hasValue && normalized.answerText !== null) {
-            preparedAnswers.push({
-              registrationId,
-              eventFieldId: field.id,
-              answerText: normalized.answerText,
-            });
-          }
-        }
-      });
-
-      if (preparedAnswers.length > 0) {
-        const { error: insertAnswersError } = await adminClient.from('registration_answers').insert(
-          preparedAnswers.map((answer) => ({
-            registration_id: answer.registrationId,
-            event_field_id: answer.eventFieldId,
-            answer_text: answer.answerText,
-          })),
-        );
-
-        if (insertAnswersError) {
-          return errorResponse(
-            corsHeaders,
-            500,
-            'Failed to write registration answers',
-            insertAnswersError.message,
-          );
-        }
-      }
-    }
+    const summary = (Array.isArray(upsertResult) ? upsertResult[0] : upsertResult) as
+      | { inserted_count?: number; updated_count?: number }
+      | undefined;
+    const createdCount = Number(summary?.inserted_count ?? 0);
+    const updatedCount = Number(summary?.updated_count ?? 0);
 
     if (guard.userId) {
       await logAdminAction({
@@ -522,16 +418,16 @@ Deno.serve(async (req) => {
         metadata: {
           event_id,
           imported_count: resolvedRows.length,
-          created_count: rowsToInsert.length,
-          updated_count: rowsToUpdate.length,
+          created_count: createdCount,
+          updated_count: updatedCount,
         },
       });
     }
 
     return successResponse(corsHeaders, {
       imported_count: resolvedRows.length,
-      created_count: rowsToInsert.length,
-      updated_count: rowsToUpdate.length,
+      created_count: createdCount,
+      updated_count: updatedCount,
     });
   } catch (error) {
     console.error('[bulk-upsert-registrations] unhandled error', error);
