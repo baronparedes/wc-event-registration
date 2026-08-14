@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { FormInputField } from '@/components/ui';
@@ -14,6 +14,7 @@ import {
   toAdminEventAttendanceUnregisteredMembers,
   toAdminEventDetail,
   toAdminEventPublicRegistrations,
+  toAdminEventRegistrationsBulkUpload,
 } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -132,7 +133,14 @@ export function AdminRegistrationsPage() {
         disabled={isLoading || !hasRegistrations}
       />
       <ViewNamesButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
-      {canExport && <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />}
+      {!canWrite && canExport && (
+        <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
+      )}
+      {canWrite && (
+        <Button asChild variant="outline">
+          <Link to={toAdminEventRegistrationsBulkUpload(eventId)}>Upload CSV</Link>
+        </Button>
+      )}
     </div>
   );
 

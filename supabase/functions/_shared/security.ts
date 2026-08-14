@@ -73,7 +73,8 @@ export interface AdminAuditLogOptions {
     | 'archive_event'
     | 'cancel_registration'
     | 'reactivate_registration'
-    | 'export_registrations_csv';
+    | 'export_registrations_csv'
+    | 'bulk_import_registrations';
   resourceType: 'event' | 'registration' | 'export';
   resourceId?: string | null;
   metadata?: Record<string, unknown>;

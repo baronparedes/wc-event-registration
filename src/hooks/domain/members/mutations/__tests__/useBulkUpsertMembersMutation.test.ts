@@ -62,7 +62,23 @@ describe('useBulkUpsertMembersMutation', () => {
 
     expect(response.success).toBe(true);
     expect(mockCreateEdgeFunctionCaller).toHaveBeenCalledWith('bulk-upsert-members');
-    expect(mockBulkCaller).toHaveBeenCalledTimes(1);
+    expect(mockBulkCaller).toHaveBeenCalledWith({
+      rows: [
+        {
+          row_number: 2,
+          member_id: 'RFID-1',
+          first_name: 'John',
+          last_name: 'Doe',
+          nickname: 'JD',
+          email: null,
+          phone: null,
+          date_of_birth: null,
+          role: 'Prayer Coach',
+          category: 'Adults',
+          metadata: {},
+        },
+      ],
+    });
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });

@@ -6,3 +6,5 @@ export {
 export { useCancelRegistrationMutation } from './useCancelRegistrationMutation';
 export { useReactivateRegistrationMutation } from './useReactivateRegistrationMutation';
 export { useExportRegistrationsCSVMutation } from './useExportRegistrationsCSVMutation';
+export { useDownloadRegistrationsTemplateMutation } from './useDownloadRegistrationsTemplateMutation';
+export { useBulkUpsertRegistrationsMutation } from './useBulkUpsertRegistrationsMutation';

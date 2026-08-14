@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
+
 import { REGISTRATION_SHARE_FIELDS } from './types';
 
 export const registrationShareFieldSchema = z.enum(REGISTRATION_SHARE_FIELDS);
@@ -30,3 +33,21 @@ export const exportRegistrationNamesResponseSchema = z.object({
   answer_fields: z.array(registrationShareAnswerFieldSchema),
   rows: z.array(registrationShareRowSchema),
 });
+
+export function buildBulkRegistrationCsvRowSchema(fields: AdminEventField[]) {
+  const optionalFields = fields.map((field) => ({ ...field, is_required: false }));
+
+  return z.object({
+    member_id: z.string().trim().min(1, 'member_id is required'),
+    registration_id: z.string().trim().optional(),
+    answers: buildDynamicFieldResponseSchema(optionalFields),
+  });
+}
+
+export function buildBulkRegistrationCsvRowsSchema(fields: AdminEventField[]) {
+  return z
+    .array(buildBulkRegistrationCsvRowSchema(fields))
+    .min(1, 'At least one CSV row is required for bulk upload.');
+}
+
+export type BulkRegistrationCsvRow = z.infer<ReturnType<typeof buildBulkRegistrationCsvRowSchema>>;

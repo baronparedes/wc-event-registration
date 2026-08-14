@@ -454,6 +454,6 @@ describe('AdminRegistrationsPage', () => {
     renderWithRouter();
 
     expect(screen.getByRole('button', { name: 'Copy Names' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Export as CSV' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Export as CSV' })).not.toBeInTheDocument();
   });
 });

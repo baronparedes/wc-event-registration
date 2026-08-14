@@ -1,0 +1,396 @@
+import { useState } from 'react';
+
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FormSelectField } from '@/components/ui/FormSelectField';
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable';
+import { useBulkUpsertRegistrationsMutation } from '@/hooks/domain/registrations';
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import {
+  type BulkRegistrationCsvRowInput,
+  buildBulkRegistrationCsvRowsSchema,
+  buildBulkRegistrationRowsFromCsv,
+  parseRegistrationCsvText,
+} from '@/lib/domain/registrations';
+
+type BulkUploadPanelProps = {
+  eventId: string;
+  fields: AdminEventField[];
+  onClose: () => void;
+  displayMode?: 'overlay' | 'page';
+};
+
+function extractBulkUploadErrorMessages(error: unknown): string[] {
+  if (!(error instanceof Error)) {
+    return ['Bulk upload failed.'];
+  }
+
+  try {
+    const parsed = JSON.parse(error.message) as {
+      error?: unknown;
+      detail?: unknown;
+      details?: unknown;
+    };
+
+    if (Array.isArray(parsed.details)) {
+      const details = parsed.details.filter((value): value is string => typeof value === 'string');
+      if (details.length > 0) {
+        return details;
+      }
+    }
+
+    if (typeof parsed.detail === 'string' && parsed.detail.trim().length > 0) {
+      return parsed.detail
+        .split(/;\s+/)
+        .map((message) => message.trim())
+        .filter((message) => message.length > 0);
+    }
+
+    if (typeof parsed.error === 'string' && parsed.error.trim().length > 0) {
+      return [parsed.error];
+    }
+  } catch {
+    // Fall through to raw error message.
+  }
+
+  return [error.message || 'Bulk upload failed.'];
+}
+
+function getCellInputType(field: AdminEventField): 'number' | 'text' | 'date' | 'datetime-local' {
+  if (field.field_type === 'number') return 'number';
+  if (field.field_type === 'date') return 'date';
+  if (field.field_type === 'datetime') return 'datetime-local';
+  return 'text';
+}
+
+const previewInputClassName =
+  'w-full min-w-24 rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30';
+
+/** Bulk CSV upload UI for registrations. Can render either as an overlay or a standalone page section. */
+export function BulkUploadPanel({
+  eventId,
+  fields,
+  onClose,
+  displayMode = 'overlay',
+}: BulkUploadPanelProps) {
+  const bulkUpsertMutation = useBulkUpsertRegistrationsMutation();
+  const [fileName, setFileName] = useState<string>('');
+  const [preparedRows, setPreparedRows] = useState<BulkRegistrationCsvRowInput[]>([]);
+  const [parsedPreviewRows, setParsedPreviewRows] = useState<Record<string, string>[]>([]);
+  const [uploadedFieldKeys, setUploadedFieldKeys] = useState<string[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const hasSelectedFile = fileName.trim().length > 0;
+  const uploadedFields = fields.filter((field) => uploadedFieldKeys.includes(field.field_key));
+
+  function applyPreviewRowValidation(rows: Record<string, string>[], activeFieldKeys: string[]) {
+    const builtRows = buildBulkRegistrationRowsFromCsv(rows, fields, activeFieldKeys);
+    if (builtRows.errors.length > 0) {
+      setPreparedRows([]);
+      setErrors(builtRows.errors);
+      return;
+    }
+
+    const rowsForValidation = builtRows.rows.map((row) => ({
+      member_id: row.member_id,
+      registration_id: row.registration_id,
+      answers: row.answers,
+    }));
+
+    const validator = buildBulkRegistrationCsvRowsSchema(fields);
+    const validation = validator.safeParse(rowsForValidation);
+    if (!validation.success) {
+      setPreparedRows([]);
+      setErrors(
+        validation.error.issues.map((issue) => {
+          const path = issue.path.join('.');
+          return path.length > 0 ? `${path}: ${issue.message}` : issue.message;
+        }),
+      );
+      return;
+    }
+
+    setPreparedRows(builtRows.rows);
+    setErrors([]);
+  }
+
+  function handleCellChange(rowIndex: number, fieldKey: string, nextValue: string) {
+    const nextRows = parsedPreviewRows.map((row, index) =>
+      index === rowIndex ? { ...row, [fieldKey]: nextValue } : row,
+    );
+
+    setParsedPreviewRows(nextRows);
+    applyPreviewRowValidation(nextRows, uploadedFieldKeys);
+  }
+
+  async function handleFileChange(file: File | null) {
+    if (!file) {
+      setFileName('');
+      setPreparedRows([]);
+      setParsedPreviewRows([]);
+      setUploadedFieldKeys([]);
+      setErrors([]);
+      return;
+    }
+
+    setFileName(file.name);
+    setErrors([]);
+
+    const fileText = await file.text();
+    const parsedCsv = parseRegistrationCsvText(fileText);
+
+    if (!parsedCsv.success) {
+      setPreparedRows([]);
+      setParsedPreviewRows([]);
+      setUploadedFieldKeys([]);
+      setErrors([parsedCsv.error]);
+      return;
+    }
+
+    const nextUploadedFieldKeys = fields
+      .filter((field) => parsedCsv.data.headers.includes(field.field_key))
+      .map((field) => field.field_key);
+
+    setUploadedFieldKeys(nextUploadedFieldKeys);
+    setParsedPreviewRows(parsedCsv.data.rows);
+    applyPreviewRowValidation(parsedCsv.data.rows, nextUploadedFieldKeys);
+  }
+
+  async function handleImport() {
+    if (preparedRows.length === 0) {
+      setErrors(['Upload a valid CSV file before importing.']);
+      return;
+    }
+
+    try {
+      const result = await bulkUpsertMutation.mutateAsync({
+        event_id: eventId,
+        rows: preparedRows,
+        uploaded_field_keys: uploadedFieldKeys,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error ?? 'Bulk import failed.');
+      }
+
+      setIsConfirmOpen(false);
+      toast.success(
+        `Imported ${result.imported_count} registration(s) — ${result.created_count} created, ${result.updated_count} updated.`,
+      );
+      onClose();
+    } catch (error) {
+      setErrors(extractBulkUploadErrorMessages(error));
+    }
+  }
+
+  const content = (
+    <>
+      {displayMode === 'overlay' && (
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="font-heading text-lg font-semibold text-text">Bulk CSV Upload</h2>
+          <p className="mt-1 text-sm text-muted">
+            Upload a CSV generated from the registrations template to create or update registrations
+            in bulk.
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-4 px-6 py-4">
+        <div className="rounded-lg border border-border bg-background p-3">
+          <label htmlFor="registrations-csv-file" className="text-sm font-medium text-text">
+            CSV file
+          </label>
+          <input
+            id="registrations-csv-file"
+            type="file"
+            accept=".csv,text/csv"
+            className="mt-2 block w-full text-sm"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              void handleFileChange(file);
+            }}
+            disabled={bulkUpsertMutation.isPending}
+          />
+          {fileName && <p className="mt-2 text-xs text-muted">Loaded file: {fileName}</p>}
+        </div>
+
+        {errors.length > 0 && (
+          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2">
+            <p className="text-sm font-medium text-danger">CSV validation failed</p>
+            <ul className="mt-1 max-h-40 list-disc overflow-y-auto pl-5 text-xs text-danger">
+              {errors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {parsedPreviewRows.length > 0 && (
+          <div>
+            <p className="font-heading text-lg font-semibold text-text">
+              Preview ({parsedPreviewRows.length} row{parsedPreviewRows.length === 1 ? '' : 's'})
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              Edit the staged values below before confirming the import.
+            </p>
+            <div className="mt-3 overflow-hidden rounded-xl border border-border bg-surface">
+              <ListTable density="dense">
+                <ListTableHead>
+                  <ListTableHeaderRow variant="plain">
+                    <ListTableHeaderCell className="w-72">Member ID</ListTableHeaderCell>
+                    {uploadedFields.map((field) => (
+                      <ListTableHeaderCell key={field.id} className="min-w-44">
+                        {field.label}
+                      </ListTableHeaderCell>
+                    ))}
+                  </ListTableHeaderRow>
+                </ListTableHead>
+                <ListTableBody divider="default">
+                  {parsedPreviewRows.map((row, index) => {
+                    const rowKey = `${row.member_id ?? 'member'}-${index}`;
+
+                    return (
+                      <ListTableRow key={rowKey} hover="none">
+                        <ListTableCell className="align-top text-sm font-medium text-text">
+                          {row.member_id?.trim() || '—'}
+                        </ListTableCell>
+                        {uploadedFields.map((field) => {
+                          const value = row[field.field_key] ?? '';
+                          const fieldId = `preview-${index}-${field.field_key}`;
+
+                          if (
+                            (field.field_type === 'select' || field.field_type === 'radio') &&
+                            field.options.length > 0
+                          ) {
+                            return (
+                              <ListTableCell key={field.id} className="align-top">
+                                <FormSelectField
+                                  id={fieldId}
+                                  ariaLabel={field.label}
+                                  value={value}
+                                  onChange={(nextValue) =>
+                                    handleCellChange(index, field.field_key, nextValue)
+                                  }
+                                  placeholder="-- Select --"
+                                  options={field.options.map((option) => ({
+                                    value: option.value,
+                                    label: option.label,
+                                  }))}
+                                  selectClassName={previewInputClassName}
+                                />
+                              </ListTableCell>
+                            );
+                          }
+
+                          if (field.field_type === 'boolean' || field.field_type === 'checkbox') {
+                            return (
+                              <ListTableCell key={field.id} className="align-top">
+                                <FormSelectField
+                                  id={fieldId}
+                                  ariaLabel={field.label}
+                                  value={value}
+                                  onChange={(nextValue) =>
+                                    handleCellChange(index, field.field_key, nextValue)
+                                  }
+                                  placeholder="--"
+                                  options={[
+                                    { value: 'true', label: 'True' },
+                                    { value: 'false', label: 'False' },
+                                  ]}
+                                  selectClassName={previewInputClassName}
+                                />
+                              </ListTableCell>
+                            );
+                          }
+
+                          return (
+                            <ListTableCell key={field.id} className="align-top">
+                              <input
+                                id={fieldId}
+                                type={getCellInputType(field)}
+                                value={value}
+                                onChange={(event) =>
+                                  handleCellChange(index, field.field_key, event.target.value)
+                                }
+                                className={previewInputClassName}
+                              />
+                            </ListTableCell>
+                          );
+                        })}
+                      </ListTableRow>
+                    );
+                  })}
+                </ListTableBody>
+              </ListTable>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          disabled={bulkUpsertMutation.isPending}
+          type="button"
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={() => setIsConfirmOpen(true)}
+          disabled={bulkUpsertMutation.isPending || !hasSelectedFile}
+          type="button"
+        >
+          {bulkUpsertMutation.isPending ? 'Importing...' : 'Import CSV'}
+        </Button>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {displayMode === 'overlay' ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-3xl overflow-y-auto rounded-2xl bg-surface shadow-xl">
+            {content}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-border bg-surface shadow-sm">{content}</div>
+      )}
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Import Registrations CSV"
+        description={
+          <div className="space-y-2">
+            <p>
+              This will create or update registrations for the {preparedRows.length} member
+              {preparedRows.length === 1 ? '' : 's'} included in this CSV.
+            </p>
+            <p>Continue only if you want to replace the existing answers for those members.</p>
+          </div>
+        }
+        confirmLabel="Confirm Import"
+        confirmLoadingLabel="Importing..."
+        confirmVariant="default"
+        isPending={bulkUpsertMutation.isPending}
+        disabled={preparedRows.length === 0}
+        onConfirm={() => {
+          void handleImport();
+        }}
+        onCancel={() => setIsConfirmOpen(false)}
+      />
+    </>
+  );
+}

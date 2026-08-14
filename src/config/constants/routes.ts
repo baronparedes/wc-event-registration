@@ -22,6 +22,7 @@ export const ROUTE_PATHS = {
   adminEventAttendanceDataBulkUploadPattern: '/admin/events/:id/attendance/data/bulk-upload',
   adminEventFieldsPattern: '/admin/events/:id/fields',
   adminEventRegistrationsPattern: '/admin/events/:id/registrations',
+  adminEventRegistrationsBulkUploadPattern: '/admin/events/:id/registrations/bulk-upload',
   adminEventRegistrationsUnregisteredMembersPattern:
     '/admin/events/:id/registrations/unregistered-members',
   adminRegistrationNamesPattern: '/admin/events/:id/registrations/names',
@@ -108,6 +109,10 @@ export function toAdminEventAttendanceDataBulkUpload(eventId: string): string {
 
 export function toAdminEventRegistrations(eventId: string): string {
   return `/admin/events/${eventId}/registrations`;
+}
+
+export function toAdminEventRegistrationsBulkUpload(eventId: string): string {
+  return `/admin/events/${eventId}/registrations/bulk-upload`;
 }
 
 export function toAdminRegistrationNames(
