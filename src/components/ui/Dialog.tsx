@@ -47,7 +47,7 @@ export function Dialog({
             <div className="flex items-start justify-between gap-4">
               <div>
                 {title && <h2 className="font-heading text-lg font-semibold text-text">{title}</h2>}
-                {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
+                {description && <div className="mt-0.5 text-xs text-muted">{description}</div>}
               </div>
 
               {showCloseIcon && (
