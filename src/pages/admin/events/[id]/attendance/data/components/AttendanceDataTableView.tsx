@@ -1,4 +1,4 @@
-import { Check, Minus } from 'lucide-react';
+import { Check, Minus, Pencil } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
@@ -183,8 +183,15 @@ export function AttendanceDataTableView({
               {canWrite && (
                 <ListTableCell className="whitespace-nowrap !px-2 !py-2 align-middle print:hidden">
                   <div onClick={(e) => e.stopPropagation()}>
-                    <ActionButton onClick={() => onEditRegistrant(registrant)}>
-                      {filled > 0 ? 'Edit' : 'Fill In'}
+                    <ActionButton
+                      aria-label={
+                        filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'
+                      }
+                      title={filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md no-underline hover:no-underline"
+                      onClick={() => onEditRegistrant(registrant)}
+                    >
+                      <Pencil aria-hidden="true" className="h-4 w-4" />
                     </ActionButton>
                   </div>
                 </ListTableCell>

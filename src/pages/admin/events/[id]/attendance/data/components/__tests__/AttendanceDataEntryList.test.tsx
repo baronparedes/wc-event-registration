@@ -171,7 +171,7 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.getByText('Volunteer')).toBeInTheDocument();
     expect(screen.getByText('North Team')).toBeInTheDocument();
     expect(screen.getByText('MID-001')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit attendance details' })).toBeInTheDocument();
   });
 
   it('renders selected registration and attendance fields as columns', () => {
@@ -276,7 +276,7 @@ describe('AttendanceDataEntryList', () => {
     );
 
     expect(screen.getAllByText('—').length).toBeGreaterThan(1);
-    expect(screen.getByRole('button', { name: 'Fill In' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fill in attendance details' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('John Smith'));
 
@@ -363,7 +363,7 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit attendance details' })).toBeInTheDocument();
   });
 
   it('renders groups with labels and attendee counts', () => {
@@ -466,7 +466,7 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    const editButton = screen.getByRole('button', { name: 'Edit' });
+    const editButton = screen.getByRole('button', { name: 'Edit attendance details' });
     fireEvent.click(editButton);
 
     expect(screen.getByText('Panel for Charlie Brown')).toBeInTheDocument();

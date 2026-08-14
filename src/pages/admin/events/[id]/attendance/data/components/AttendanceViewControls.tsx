@@ -158,8 +158,6 @@ export function AttendanceViewControls({
     (viewConfig.category !== 'all' ? 1 : 0) +
     (viewConfig.checkInStatus !== 'all' ? 1 : 0);
 
-  console.info(viewConfig, 'viewConfig');
-
   return (
     <div className="print:hidden">
       <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">

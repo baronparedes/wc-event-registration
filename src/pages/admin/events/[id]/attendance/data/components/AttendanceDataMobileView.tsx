@@ -1,4 +1,4 @@
-import { Check, EditIcon, Minus } from 'lucide-react';
+import { Check, Minus, Pencil } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
@@ -36,10 +36,12 @@ type AttendanceDataMobileViewProps = {
 export function AttendanceDataMobileView({
   registrants,
   visibleFields,
+  fields,
   attendeesByRegistrantKey,
   canWrite,
   onViewRegistrant,
   onEditRegistrant,
+  countFilledAnswers,
   getRegistrantKey,
   getVisibleFieldValue,
 }: AttendanceDataMobileViewProps) {
@@ -55,6 +57,7 @@ export function AttendanceDataMobileView({
     <div className="space-y-2 p-2">
       {registrants.map((registrant) => {
         const rowKey = getRegistrantKey(registrant);
+        const filled = countFilledAnswers(registrant.answers, fields);
         const isCheckedIn = registrant.check_in_status === 'checked_in';
         const attendee = attendeesByRegistrantKey.get(rowKey);
         const shouldShowAvatar = visibleFields.some(
@@ -139,8 +142,15 @@ export function AttendanceDataMobileView({
               </div>
               {canWrite && (
                 <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <ActionButton onClick={() => onEditRegistrant(registrant)}>
-                    <EditIcon className="h-5 w-5" />
+                  <ActionButton
+                    aria-label={
+                      filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'
+                    }
+                    title={filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md no-underline hover:no-underline"
+                    onClick={() => onEditRegistrant(registrant)}
+                  >
+                    <Pencil aria-hidden="true" className="h-4 w-4" />
                   </ActionButton>
                 </div>
               )}
