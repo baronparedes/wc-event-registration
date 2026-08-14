@@ -15,6 +15,8 @@ import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import {
   type DynamicFieldRef,
+  attendeeViewConfigSchema,
+  buildAttendeeView,
   collectDynamicFieldOptions,
   fromDynamicFieldToken,
   toDynamicFieldToken,
@@ -142,14 +144,21 @@ export function AdminAttendanceDashboardPage() {
     refresh: refreshCache,
   } = useAttendeesLocalCacheQuery(eventId, { realtimeEnabled: true });
 
+  const filteredAttendees = useMemo(
+    () =>
+      buildAttendeeView(attendees ?? [], attendeeViewConfigSchema.parse({ nameOrMemberQuery }))
+        .filteredAttendees,
+    [attendees, nameOrMemberQuery],
+  );
+
   const slotSummaries = useMemo(
-    () => buildSlotSummaries(attendees, timeslotEnabled),
-    [attendees, timeslotEnabled],
+    () => buildSlotSummaries(filteredAttendees, timeslotEnabled),
+    [filteredAttendees, timeslotEnabled],
   );
 
   const checkedInAttendees = useMemo(
-    () => (attendees ?? []).filter((a) => a.check_in_status === 'checked_in'),
-    [attendees],
+    () => filteredAttendees.filter((attendee) => attendee.check_in_status === 'checked_in'),
+    [filteredAttendees],
   );
 
   const seededFields = useMemo(
@@ -203,7 +212,7 @@ export function AdminAttendanceDashboardPage() {
     [checkedInAttendees],
   );
 
-  const totalCount = (attendees ?? []).length;
+  const totalCount = filteredAttendees.length;
   const checkedInCount = checkedInAttendees.length;
 
   const isLoading = eventLoading || settingsLoading || attendeesLoading;
