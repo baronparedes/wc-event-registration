@@ -1429,17 +1429,20 @@ describe('attendance-views transforms', () => {
     expect(emptyToggle.filteredAttendees).toHaveLength(0);
   });
 
-  it('drops grouped rows when toggle filter matches a false key but grouping needs true keys', () => {
+  it('keeps public attendees grouped by selected toggle keys regardless of boolean value', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
-        registration_id: 'reg-1',
+        attendee_kind: 'public',
+        registration_id: 'public-reg-1',
+        public_registration_id: 'public-reg-1',
+        member_id: null,
         registration_answers: [
           {
             event_field_id: 'field-slot',
             field_type: 'multi_select_toggle',
             field_key: 'slot_choice',
             label: 'Slots',
-            answer_text: '{"12NN":false}',
+            answer_text: '{"3PM": false}',
             answer_number: null,
           },
         ],
@@ -1451,15 +1454,20 @@ describe('attendance-views transforms', () => {
 
     const grouped = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      dynamicFilters: [{ field: slotField, value: '12NN' }],
+      dynamicFilters: [{ field: slotField, value: '3PM' }],
       groupBy: [slotField],
     });
 
-    expect(grouped.filteredAttendees).toHaveLength(1);
-    expect(grouped.groups).toEqual([{ key: 'all', label: 'All attendees', registrants: [] }]);
+    expect(grouped.filteredAttendees.map((attendee) => attendee.registration_id)).toEqual([
+      'public-reg-1',
+    ]);
+    expect(grouped.groups.map((group) => group.label)).toEqual(['3PM']);
+    expect(grouped.groups[0].registrants.map((item) => item.public_registration_id)).toEqual([
+      'public-reg-1',
+    ]);
   });
 
-  it('excludes malformed toggle grouping values while preserving valid deduped true-key groups', () => {
+  it('excludes malformed toggle grouping values while preserving valid deduped selected keys', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
@@ -1524,8 +1532,10 @@ describe('attendance-views transforms', () => {
     });
 
     expect(grouped.filteredAttendees).toHaveLength(4);
-    expect(grouped.groups.map((group) => group.label)).toEqual(['9AM']);
-    expect(grouped.groups[0].registrants.map((item) => item.registration_id)).toEqual(['reg-4']);
+    expect(grouped.groups.map((group) => group.label)).toEqual(['12NN', '9AM']);
+    expect(
+      grouped.groups.map((group) => group.registrants.map((item) => item.registration_id)),
+    ).toEqual([['reg-4'], ['reg-4']]);
   });
 
   it('excludes attendees from grouped output when the grouped field answer is missing', () => {

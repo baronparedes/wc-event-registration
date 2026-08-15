@@ -10,7 +10,6 @@ import {
   answerValue,
   normalizeValue,
   parseMultiSelectToggleKeys,
-  parseMultiSelectToggleTrueKeys,
   parseMultiSelectValues,
 } from './parsing';
 import { toDynamicFieldToken } from './tokens';
@@ -96,7 +95,7 @@ export function findFieldGroupingValues(
   }
 
   if (answer.field_type === 'multi_select_toggle') {
-    return parseMultiSelectToggleTrueKeys(answer);
+    return parseMultiSelectToggleKeys(answer);
   }
 
   const value = answerValue(answer);
