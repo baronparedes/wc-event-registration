@@ -36,35 +36,41 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
         ? 'Opens Soon'
         : 'Closed';
+  const titleContent = event ? (
+    <div className="flex min-w-0 flex-col items-stretch gap-2 pr-10 sm:flex-row sm:items-center sm:justify-between">
+      <span className="min-w-0 truncate">{title}</span>
+      <div className="flex min-w-0 max-w-full flex-wrap items-center justify-start gap-2 sm:justify-end">
+        {availability?.status === 'available' && (
+          <span className="max-w-full break-words text-right text-xs font-medium text-muted">
+            Registered: <span className="text-text">{availability.registration_count}</span>
+          </span>
+        )}
+        {event.allow_public_registrations && (
+          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
+            Open to Guests
+          </Badge>
+        )}
+        <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
+      </div>
+    </div>
+  ) : (
+    title
+  );
 
   return (
     <CollapsibleSectionCard
       defaultExpanded={defaultExpanded}
       collapseLabel="Collapse event registration info"
       expandLabel="Expand event registration info"
-      title={title}
+      title={titleContent}
       subtitle={
-        event ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
-            {event.allow_public_registrations && (
-              <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
-                Open to Guests
-              </Badge>
-            )}
-            {availability?.status === 'available' && (
-              <span className="text-xs font-medium text-muted">
-                Registered: <span className="text-text">{availability.registration_count}</span>
-              </span>
-            )}
-          </div>
-        ) : (
+        !event && (
           <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
             Event Registration
           </span>
         )
       }
-      wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
+      wrapperClassName="rounded-2xl border border-border bg-surface p-3 shadow-sm"
     >
       {isLoading && (
         <div className="mt-4 space-y-3" aria-hidden="true">

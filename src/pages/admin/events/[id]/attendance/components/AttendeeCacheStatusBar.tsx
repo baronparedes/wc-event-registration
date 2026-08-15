@@ -1,3 +1,7 @@
+import { RefreshCw } from 'lucide-react';
+
+import { Button } from '@/components/ui';
+
 type AttendeeCacheStatusBarProps = {
   message: string | null;
   isError?: boolean;
@@ -21,14 +25,18 @@ export function AttendeeCacheStatusBar(props: AttendeeCacheStatusBarProps) {
       <span className={`min-w-0 flex-1 truncate ${isError ? 'text-red-600' : ''}`.trim()}>
         {message}
       </span>
-      <button
+      <Button
         type="button"
+        size="xs"
+        variant="ghost"
+        aria-label={isRefreshing ? 'Refreshing attendee cache' : 'Refresh attendee cache'}
+        aria-busy={isRefreshing}
+        title={isRefreshing ? 'Refreshing...' : 'Refresh'}
         onClick={onRefresh}
         disabled={isRefreshing}
-        className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium text-primary underline underline-offset-2 hover:no-underline disabled:opacity-50"
       >
-        {isRefreshing ? 'Refreshing...' : 'Refresh'}
-      </button>
+        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+      </Button>
     </div>
   );
 }

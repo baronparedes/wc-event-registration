@@ -171,7 +171,13 @@ export function EventRegistrationPage() {
               />
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={resetToStepOne} size="lg" type="button" variant="outline">
+                <Button
+                  className="w-full"
+                  onClick={resetToStepOne}
+                  size="lg"
+                  type="button"
+                  variant="accent"
+                >
                   Scan Another Member
                 </Button>
               </div>

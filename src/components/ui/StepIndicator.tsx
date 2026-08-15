@@ -41,11 +41,11 @@ export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicator
   });
 
   return (
-    <div className="rounded-xl border border-border bg-surface px-5 py-4 shadow-xs">
-      <p className="text-sm font-semibold uppercase tracking-wide text-muted">
+    <div className="rounded-xl border border-border bg-surface px-4 py-3 shadow-xs">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         {labels ? 'Registration steps' : `Step ${currentStep} of ${totalSteps}`}
       </p>
-      <div className="mt-3 flex items-center gap-3 text-base">
+      <div className="mt-2 flex items-center gap-2 text-sm">
         {elements.map((element, i) => {
           if (element.type === 'line') {
             return <div key={`line-${i}`} className="h-px flex-1 bg-border" aria-hidden="true" />;
@@ -55,10 +55,10 @@ export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicator
           const index = element.index!;
 
           return (
-            <div key={`step-${stepNumber}`} className="flex items-center gap-2">
+            <div key={`step-${stepNumber}`} className="flex items-center gap-1.5">
               <span
                 className={cx(
-                  'inline-flex h-8 w-8 items-center justify-center rounded-full text-base font-semibold transition-colors',
+                  'inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold transition-colors',
                   getBadgeClassName(stepNumber),
                 )}
               >
@@ -67,7 +67,7 @@ export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicator
               {labels && (
                 <span
                   className={cx(
-                    'text-sm font-medium',
+                    'text-xs font-medium',
                     currentStep === stepNumber ? 'text-primary' : 'text-text',
                   )}
                 >

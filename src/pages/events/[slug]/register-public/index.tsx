@@ -4,6 +4,7 @@ import { AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { Button } from '@/components/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -104,51 +105,66 @@ export function PublicEventRegistrationPage() {
       setAttendeeEmailErrorMessage(null);
       setIsCheckingAttendee(true);
 
+      const eventStatus = eventQuery.data?.status;
+      const duplicatePolicy = eventQuery.data?.event?.duplicate_policy;
+      const allowsExistingRegistrationUpdate =
+        eventStatus === 'available' &&
+        (duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update');
+
+      let existingRegistration: Awaited<ReturnType<typeof fetchPublicAttendeeCheck>>;
       try {
-        const existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
-        const allowsExistingRegistrationUpdate =
-          eventQuery.data?.status === 'available' &&
-          (eventQuery.data?.event?.duplicate_policy === 'allow_update' ||
-            eventQuery.data?.event?.duplicate_policy === 'allow_multiple_update');
-
-        if (existingRegistration && !allowsExistingRegistrationUpdate) {
-          setAttendeeEmailErrorMessage('This email is already registered for this event.');
-          return;
-        }
-
-        if (existingRegistration && allowsExistingRegistrationUpdate) {
-          const detail = await fetchPublicRegistrationDetail(existingRegistration.id);
-          const hydratedFieldResponses = detail.fieldResponses.reduce(
-            (acc: DynamicFieldResponseValues, response) => {
-              if (response.field_name) {
-                acc[response.field_name] = response.answer;
-              }
-              return acc;
-            },
-            {} as DynamicFieldResponseValues,
-          );
-
-          setAttendeeInfo({
-            first_name: detail.registration.first_name,
-            last_name: detail.registration.last_name,
-            nickname: detail.registration.nickname,
-            email: detail.registration.email,
-            phone: detail.registration.phone,
-          });
-          setFieldResponses(hydratedFieldResponses);
-          setCurrentStep('event-fields');
-          return;
-        }
-
-        setAttendeeInfo(data);
-        setFieldResponses({});
-        setCurrentStep('event-fields');
+        existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to check attendee';
         toast.error(message);
-      } finally {
         setIsCheckingAttendee(false);
+        return;
       }
+
+      if (existingRegistration && !allowsExistingRegistrationUpdate) {
+        setAttendeeEmailErrorMessage('This email is already registered for this event.');
+        setIsCheckingAttendee(false);
+        return;
+      }
+
+      if (existingRegistration && allowsExistingRegistrationUpdate) {
+        let detail: Awaited<ReturnType<typeof fetchPublicRegistrationDetail>>;
+        try {
+          detail = await fetchPublicRegistrationDetail(existingRegistration.id);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to check attendee';
+          toast.error(message);
+          setIsCheckingAttendee(false);
+          return;
+        }
+
+        const hydratedFieldResponses = detail.fieldResponses.reduce(
+          (acc: DynamicFieldResponseValues, response) => {
+            if (response.field_name) {
+              acc[response.field_name] = response.answer;
+            }
+            return acc;
+          },
+          {} as DynamicFieldResponseValues,
+        );
+
+        setAttendeeInfo({
+          first_name: detail.registration.first_name,
+          last_name: detail.registration.last_name,
+          nickname: detail.registration.nickname,
+          email: detail.registration.email,
+          phone: detail.registration.phone,
+        });
+        setFieldResponses(hydratedFieldResponses);
+        setCurrentStep('event-fields');
+        setIsCheckingAttendee(false);
+        return;
+      }
+
+      setAttendeeInfo(data);
+      setFieldResponses({});
+      setCurrentStep('event-fields');
+      setIsCheckingAttendee(false);
     },
     [slug, eventQuery.data],
   );
@@ -159,52 +175,60 @@ export function PublicEventRegistrationPage() {
 
       setFieldResponses(responses);
 
-      try {
-        // Build proper response object (exclude attendee fields)
-        const fieldResponses = Object.entries(responses).reduce((acc, [key, value]) => {
-          if (
-            key !== 'first_name' &&
-            key !== 'last_name' &&
-            key !== 'nickname' &&
-            key !== 'email' &&
-            key !== 'phone'
-          ) {
-            acc[key] = value;
-          }
-          return acc;
-        }, {} as DynamicFieldResponseValues);
-
-        // Build and validate request data with proper structure
-        const requestData = {
-          event_slug: slug,
-          attendee: {
-            first_name: attendeeInfo.first_name,
-            last_name: attendeeInfo.last_name,
-            nickname: attendeeInfo.nickname || undefined,
-            email: attendeeInfo.email,
-            phone: attendeeInfo.phone || undefined,
-          },
-          responses: fieldResponses,
-          idempotency_key: `${attendeeInfo.email}-${slug}-${Date.now()}`,
-        };
-
-        // Validate request structure
-        const schema = buildSubmitPublicRegistrationSchema(fieldsQuery.data?.validFields || []);
-        schema.parse(requestData);
-
-        const result = await submitMutation.mutateAsync(requestData);
-
-        if (result.success) {
-          setConfirmationData({
-            registrationId: result.registration_id,
-            email: attendeeInfo.email,
-          });
-          setCurrentStep('confirmation');
+      // Build proper response object (exclude attendee fields)
+      const fieldResponses = Object.entries(responses).reduce((acc, [key, value]) => {
+        if (
+          key !== 'first_name' &&
+          key !== 'last_name' &&
+          key !== 'nickname' &&
+          key !== 'email' &&
+          key !== 'phone'
+        ) {
+          acc[key] = value;
         }
+        return acc;
+      }, {} as DynamicFieldResponseValues);
+
+      const attendeePayload = {
+        first_name: attendeeInfo.first_name,
+        last_name: attendeeInfo.last_name,
+        nickname: attendeeInfo.nickname || undefined,
+        email: attendeeInfo.email,
+        phone: attendeeInfo.phone || undefined,
+      };
+      const requestData = {
+        event_slug: slug,
+        attendee: attendeePayload,
+        responses: fieldResponses,
+        idempotency_key: `${attendeeInfo.email}-${slug}-${Date.now()}`,
+      };
+      const schema = buildSubmitPublicRegistrationSchema(fieldsQuery.data?.validFields || []);
+
+      try {
+        schema.parse(requestData);
       } catch (error) {
         const message =
           error instanceof Error ? error.message : TOAST_MESSAGES.registration.submitFailed;
         toast.error(message);
+        return;
+      }
+
+      let result: Awaited<ReturnType<typeof submitMutation.mutateAsync>>;
+      try {
+        result = await submitMutation.mutateAsync(requestData);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : TOAST_MESSAGES.registration.submitFailed;
+        toast.error(message);
+        return;
+      }
+
+      if (result.success) {
+        setConfirmationData({
+          registrationId: result.registration_id,
+          email: attendeeInfo.email,
+        });
+        setCurrentStep('confirmation');
       }
     },
     [attendeeInfo, eventQuery.data, slug, fieldsQuery.data, submitMutation],
@@ -327,13 +351,14 @@ export function PublicEventRegistrationPage() {
           />
           <div className="flex items-center justify-start">
             {canReturnToMemberRegistration && (
-              <button
+              <Button
                 type="button"
                 onClick={() => slug && navigate(`/events/${slug}/register`)}
-                className="text-sm text-muted underline transition hover:text-text"
+                variant="accent"
+                className="w-full"
               >
                 ← Back to member registration
-              </button>
+              </Button>
             )}
           </div>
         </div>

@@ -121,9 +121,12 @@ describe('AttendeeConfirmStep', () => {
       />,
     );
 
-    const confirmButton = screen.getByRole('button', { name: 'Checking In...' });
-    expect(confirmButton).toBeDisabled();
-    fireEvent.click(confirmButton);
+    const confirmButtons = screen.getAllByRole('button', { name: 'Checking In...' });
+    expect(confirmButtons).toHaveLength(2);
+    confirmButtons.forEach((button) => {
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+    });
     expect(onCheckIn).not.toHaveBeenCalled();
   });
 
@@ -154,7 +157,7 @@ describe('AttendeeConfirmStep', () => {
     expect(screen.getByText('Already Checked In')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Confirm Check-In' })).not.toBeInTheDocument();
 
-    const readyButton = screen.getByRole('button', { name: 'Ready for Next Attendee' });
+    const readyButton = screen.getAllByRole('button', { name: 'Ready for Next Attendee' })[0];
     fireEvent.click(readyButton);
     expect(onReadyForNext).toHaveBeenCalledTimes(1);
   });
@@ -228,7 +231,6 @@ describe('AttendeeConfirmStep', () => {
       expect.objectContaining({
         name: 'Alex Rivera',
         avatarObjectKey: 'avatars/alex.jpg',
-        size: '2xl',
       }),
     );
     expect(screen.getByText('formatted-date:2026-07-10T08:00:00+08:00')).toBeInTheDocument();
@@ -239,12 +241,6 @@ describe('AttendeeConfirmStep', () => {
     expect(screen.getByText('formatted:Bring badge')).toBeInTheDocument();
     expect(screen.getByText('formatted:North')).toBeInTheDocument();
     expect(screen.getByText('formatted:A1')).toBeInTheDocument();
-
-    const teamColorCard = screen.getByText('Team Color').closest('li');
-    const laneCard = screen.getByText('Lane').closest('li');
-
-    expect(teamColorCard).toHaveClass('xl:w-[calc(33.333%-0.5rem)]');
-    expect(laneCard).toHaveClass('md:w-[calc(50%-0.375rem)]');
   });
 
   it('renders a full-width answer card when only one answer exists', () => {

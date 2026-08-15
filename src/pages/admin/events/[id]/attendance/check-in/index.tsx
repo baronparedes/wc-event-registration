@@ -326,21 +326,23 @@ export function AdminAttendanceCheckInPage() {
       return;
     }
 
-    try {
-      const payload = {
-        event_id: eventId,
-        attendee_kind: confirmedAttendee.attendee_kind,
-        registration_id:
-          confirmedAttendee.attendee_kind === 'registered'
-            ? confirmedAttendee.registration_id
-            : undefined,
-        public_registration_id:
-          confirmedAttendee.attendee_kind === 'public'
-            ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
-            : undefined,
-        slot: timeslotEnabled ? finalSlot || undefined : undefined,
-      };
+    const registrationId =
+      confirmedAttendee.attendee_kind === 'registered'
+        ? confirmedAttendee.registration_id
+        : undefined;
+    const publicRegistrationId =
+      confirmedAttendee.attendee_kind === 'public'
+        ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
+        : undefined;
+    const payload = {
+      event_id: eventId,
+      attendee_kind: confirmedAttendee.attendee_kind,
+      registration_id: registrationId,
+      public_registration_id: publicRegistrationId,
+      slot: timeslotEnabled ? finalSlot || undefined : undefined,
+    };
 
+    try {
       const { queued } = enqueueCheckIn(payload, confirmedAttendee.registration_id);
 
       if (!queued) {
@@ -479,7 +481,7 @@ export function AdminAttendanceCheckInPage() {
 
       <AdminPageShell.Content>
         {showCheckInWizard && activeStep === 1 && (
-          <div ref={searchStepRef} className="space-y-4 scroll-mt-24">
+          <div ref={searchStepRef} className="space-y-2 scroll-mt-24">
             <AttendeeSearchStep
               searchToken={searchToken}
               submittedSearchToken={submittedSearchToken}
@@ -503,7 +505,7 @@ export function AdminAttendanceCheckInPage() {
         )}
 
         {showCheckInWizard && activeStep === 2 && (
-          <div ref={selectStepRef} className="space-y-4 scroll-mt-24">
+          <div ref={selectStepRef} className="space-y-2 scroll-mt-24">
             <AttendeeSelectStep
               results={results}
               selectedResultId={selectedResultId}
@@ -522,14 +524,20 @@ export function AdminAttendanceCheckInPage() {
               onInactivityTimeout={handleBackToLookup}
             />
 
-            <Button type="button" size="lg" variant="outline" onClick={handleBackToLookup}>
+            <Button
+              type="button"
+              size="lg"
+              variant="accent"
+              onClick={handleBackToLookup}
+              className="w-full"
+            >
               Back to Lookup
             </Button>
           </div>
         )}
 
         {showCheckInWizard && activeStep === 3 && (
-          <div ref={confirmStepRef} className="space-y-4 scroll-mt-24">
+          <div ref={confirmStepRef} className="space-y-2 scroll-mt-24">
             <AttendeeConfirmStep
               attendee={confirmedAttendee}
               checkInResult={checkInResult}
@@ -551,13 +559,29 @@ export function AdminAttendanceCheckInPage() {
 
             <div className="flex flex-wrap gap-2">
               {results.length > 1 && (
-                <Button type="button" variant="outline" onClick={handleBackToMatches}>
+                <Button
+                  type="button"
+                  variant="primaryOutline"
+                  onClick={handleBackToMatches}
+                  className="w-full"
+                >
                   Back to Matches
                 </Button>
               )}
-              <Button type="button" variant="outline" onClick={handleBackToLookup}>
-                Start New Lookup
-              </Button>
+              {!(
+                checkInResult ||
+                (confirmedAttendee?.check_in_status === 'checked_in' &&
+                  !(timeslotEnabled && timeslots.length > 0))
+              ) && (
+                <Button
+                  type="button"
+                  variant="accent"
+                  onClick={handleBackToLookup}
+                  className="w-full"
+                >
+                  Start New Lookup
+                </Button>
+              )}
             </div>
           </div>
         )}

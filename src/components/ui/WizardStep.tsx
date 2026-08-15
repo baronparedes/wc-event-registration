@@ -9,6 +9,7 @@ const NOOP = () => {};
 export type WizardStepProps = {
   title: string;
   subtitle?: ReactNode;
+  headerAction?: ReactNode;
   children: ReactNode;
   /**
    * Inactivity timer — resets on any user interaction (keydown/click/input).
@@ -74,6 +75,7 @@ export function WizardStep(props: WizardStepProps) {
   const {
     title,
     subtitle,
+    headerAction,
     children,
     inactivityTimeoutMs,
     onInactivityTimeout,
@@ -104,13 +106,25 @@ export function WizardStep(props: WizardStepProps) {
     inactivityTimerMessage ?? ((s: number) => `Resetting in ${s}s.`);
   const resolvedCountdownMessage = countdownTimerMessage ?? ((s: number) => `Resetting in ${s}s.`);
 
+  const headerActionWithTimer = headerAction ? (
+    <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
+      {headerAction}
+      {hasInactivityTimer && inactivitySeconds !== null && (
+        <span aria-live="polite" className="text-right text-xs text-muted">
+          {resolvedInactivityMessage(inactivitySeconds)}
+        </span>
+      )}
+    </div>
+  ) : undefined;
+
   return (
     <SectionCard
       title={title}
       subtitle={subtitle}
+      headerAction={headerActionWithTimer}
       wrapperClassName="wizard-step step-card rounded-2xl border border-border bg-surface p-6 shadow-sm"
       titleClassName="step-card__title font-heading text-2xl font-semibold text-text"
-      subtitleClassName="step-card__subtitle mt-3 text-base text-muted"
+      subtitleClassName="step-card__subtitle mt-1 text-base text-muted"
       contentClassName="step-card__content mt-3"
     >
       {children}
@@ -120,7 +134,7 @@ export function WizardStep(props: WizardStepProps) {
         </p>
       )}
       {hasInactivityTimer && inactivitySeconds !== null && (
-        <p aria-live="polite" className="mt-2 text-sm text-muted">
+        <p aria-live="polite" className="mt-2 text-sm text-muted text-center">
           {resolvedInactivityMessage(inactivitySeconds)}
         </p>
       )}

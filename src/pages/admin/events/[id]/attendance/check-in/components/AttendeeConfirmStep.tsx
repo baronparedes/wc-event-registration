@@ -20,10 +20,10 @@ function getAnswerCardsItemClass(cardCount: number): string {
   }
 
   if (cardCount === 2) {
-    return 'w-full md:w-[calc(50%-0.375rem)]';
+    return 'w-full sm:w-[calc(50%-0.375rem)]';
   }
 
-  return 'w-full md:w-[calc(50%-0.375rem)] xl:w-[calc(33.333%-0.5rem)]';
+  return 'w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]';
 }
 
 type AttendeeConfirmStepProps = {
@@ -72,7 +72,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
   const actionContent = (() => {
     if (shouldShowReadyForNext) {
       return (
-        <Button type="button" fullWidth={true} size="md" onClick={onReadyForNext}>
+        <Button type="button" fullWidth={true} size="lg" onClick={onReadyForNext}>
           Ready for Next Attendee
         </Button>
       );
@@ -101,7 +101,8 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
   return (
     <WizardStep
       title="Step 3: Confirm Check-In"
-      subtitle="Review attendee details, then confirm the official check-in timestamp."
+      subtitle="Review details before confirming official attendance."
+      headerAction={actionContent}
       inactivityTimeoutMs={inactivityTimeoutMs}
       onInactivityTimeout={onInactivityTimeout}
       inactivityTimerMessage={(s) => `Returning to Step 1 in ${s}s due to inactivity.`}
@@ -110,14 +111,9 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
         <p className="text-sm text-muted">Select an attendee from search results to continue.</p>
       )}
       {attendee && (
-        <div className="space-y-3">
-          {avatarName && attendee.attendee_kind == 'registered' && (
-            <div className="flex items-center justify-center">
-              <Avatar size="2xl" name={avatarName} avatarObjectKey={attendee.avatar_object_key} />
-            </div>
-          )}
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           <div
-            className={`rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm ${
+            className={`w-full rounded-lg border px-3 py-2 text-sm font-semibold lg:col-span-2 ${
               isAlreadyCheckedIn
                 ? 'border-green-300 bg-green-100 text-green-900'
                 : 'border-primary/40 bg-blue-100 text-primary'
@@ -125,115 +121,125 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
           >
             {isAlreadyCheckedIn ? 'Already Checked In' : 'Ready for Check-In'}
           </div>
-
-          <div className="rounded-xl border border-border bg-background p-3 lg:p-4">
-            <h3 className="text-xl font-semibold text-text">{attendee.full_name}</h3>
-
-            <dl className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-lg border border-border/60 bg-surface p-2.5">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Member ID
-                </dt>
-                <dd className="mt-0.5 text-sm font-semibold text-text">
-                  {attendee.member_id ?? 'Guest'}
-                </dd>
+          <div className="space-y-3 lg:col-start-1">
+            <div className="rounded-xl border border-border bg-background p-3 lg:p-4">
+              <div className="flex items-center gap-3">
+                {avatarName && attendee.attendee_kind == 'registered' && (
+                  <Avatar
+                    size="lg"
+                    name={avatarName}
+                    avatarObjectKey={attendee.avatar_object_key}
+                  />
+                )}
+                <div className="min-w-0">
+                  <h3 className="truncate text-xl font-semibold text-text">{attendee.full_name}</h3>
+                  <p className="text-sm text-muted">{attendee.member_id ?? 'Guest attendee'}</p>
+                </div>
               </div>
 
-              <div className="rounded-lg border border-border/60 bg-surface p-2.5">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Role</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-text">{attendee.role ?? 'N/A'}</dd>
-              </div>
-
-              <div className="rounded-lg border border-border/60 bg-surface p-2.5">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Category
-                </dt>
-                <dd className="mt-0.5 text-sm font-semibold text-text">
-                  {attendee.category ?? 'N/A'}
-                </dd>
-              </div>
-
-              <div className="rounded-lg border border-border/60 bg-surface p-2.5 md:col-span-2 xl:col-span-2">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Registered
-                </dt>
-                <dd className="mt-0.5 text-sm font-semibold text-text">
-                  {formatDateTime(attendee.submitted_at)}
-                </dd>
-              </div>
-
-              {attendee.official_check_in_time && (
-                <div className="rounded-lg border border-green-200 bg-green-50 p-2.5 md:col-span-2 xl:col-span-1">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-green-800">
-                    Official check-in time
-                  </dt>
-                  <dd className="mt-0.5 text-sm font-semibold text-green-900">
-                    {formatDateTime(attendee.official_check_in_time)}
+              <dl className="mt-3 divide-y divide-border/60">
+                <div className="flex items-baseline justify-between gap-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Role</dt>
+                  <dd className="text-right text-sm font-semibold text-text">
+                    {attendee.role ?? 'N/A'}
                   </dd>
                 </div>
-              )}
-            </dl>
+
+                <div className="flex items-baseline justify-between gap-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Category
+                  </dt>
+                  <dd className="text-right text-sm font-semibold text-text">
+                    {attendee.category ?? 'N/A'}
+                  </dd>
+                </div>
+
+                <div className="flex items-baseline justify-between gap-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Registered
+                  </dt>
+                  <dd className="text-right text-sm font-semibold text-text">
+                    {formatDateTime(attendee.submitted_at)}
+                  </dd>
+                </div>
+
+                {attendee.official_check_in_time && (
+                  <div className="flex items-baseline justify-between gap-3 py-2">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      Official check-in time
+                    </dt>
+                    <dd className="text-right text-sm font-semibold text-text">
+                      {formatDateTime(attendee.official_check_in_time)}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
           </div>
 
-          {attendee.registration_answers.length > 0 && (
-            <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-4 shadow-sm">
-              <p className="text-xl font-semibold text-text">Registration answers</p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {attendee.registration_answers.map((answer) => {
-                  const answerText = getAnswerText(answer.field_type, answer);
-                  return (
-                    <li
-                      key={answer.event_field_id}
-                      className={`${getAnswerCardsItemClass(attendee.registration_answers.length)} rounded-xl border border-secondary/20 bg-surface p-3 shadow-xs`}
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        {answer.label}
-                      </p>
-                      <p className="mt-1.5 break-words text-lg font-semibold text-text">
-                        {answer.field_type === 'color_picker' ? (
-                          <ColorSwatchDisplay value={answerText} fullWidth />
-                        ) : (
-                          answerText
-                        )}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
+          <div className="space-y-3 lg:col-start-2 lg:row-span-2 lg:max-h-[32rem] lg:overflow-y-auto lg:pr-1">
+            {attendee.registration_answers.length > 0 && (
+              <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-4 shadow-sm">
+                <p className="text-sm font-semibold text-text">Registration answers</p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {attendee.registration_answers.map((answer) => {
+                    const answerText = getAnswerText(answer.field_type, answer);
+                    return (
+                      <li
+                        key={answer.event_field_id}
+                        className={`${getAnswerCardsItemClass(attendee.registration_answers.length)} rounded-lg border border-secondary/20 bg-surface p-2 shadow-xs`}
+                      >
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                          {answer.label}
+                        </p>
+                        <p className="mt-1 break-words text-base font-semibold text-text">
+                          {answer.field_type === 'color_picker' ? (
+                            <ColorSwatchDisplay value={answerText} fullWidth />
+                          ) : (
+                            answerText
+                          )}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
 
-          {attendee.attendance_answers.length > 0 && (
-            <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-4 shadow-sm">
-              <p className="text-xl font-semibold text-text">Attendance details</p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {attendee.attendance_answers.map((answer) => {
-                  const answerText = getAnswerText(answer.field_type, answer);
-                  return (
-                    <li
-                      key={answer.attendance_field_id}
-                      className={`${getAnswerCardsItemClass(attendee.attendance_answers.length)} rounded-xl border border-primary/20 bg-surface p-3 shadow-xs`}
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        {answer.label}
-                      </p>
-                      <p className="mt-1.5 break-words text-lg font-semibold text-text">
-                        {answer.field_type === 'color_picker' ? (
-                          <ColorSwatchDisplay value={answerText} fullWidth />
-                        ) : (
-                          answerText
-                        )}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
+            {attendee.attendance_answers.length > 0 && (
+              <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-4 shadow-sm">
+                <p className="text-sm font-semibold text-text">Attendance details</p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {attendee.attendance_answers.map((answer) => {
+                    const answerText = getAnswerText(answer.field_type, answer);
+                    return (
+                      <li
+                        key={answer.attendance_field_id}
+                        className={`${getAnswerCardsItemClass(attendee.attendance_answers.length)} rounded-lg border border-primary/20 bg-surface p-2 shadow-xs`}
+                      >
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                          {answer.label}
+                        </p>
+                        <p className="mt-1 break-words text-base font-semibold text-text">
+                          {answer.field_type === 'color_picker' ? (
+                            <ColorSwatchDisplay value={answerText} fullWidth />
+                          ) : (
+                            answerText
+                          )}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {actionContent && <div className="lg:col-span-2">{actionContent}</div>}
 
           {checkInResult && (
             <div
-              className={`rounded-xl border px-3 py-2 text-sm ${
+              className={`rounded-xl border px-3 py-2 text-sm lg:col-span-2 ${
                 checkInResult.status === 'checked_in'
                   ? 'border-green-200 bg-green-50 text-green-800'
                   : checkInResult.status === 'already_checked_in'
@@ -251,22 +257,20 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
           )}
 
           {!shouldShowReadyForNext && requiresTimeslotSelection && (
-            <AttendeeTimeslotSelectionPanel
-              autoWindowModeEnabled={autoWindowModeEnabled}
-              activeSlot={activeSlot}
-              checkedInSlots={checkedInSlots}
-              currentTimeMs={currentTimeMs}
-              isSubmitting={isSubmitting}
-              suggestedSlot={suggestedSlot}
-              timeslots={timeslots}
-              onTimeslotConfirm={onTimeslotConfirm}
-              onReadyForNext={onReadyForNext}
-            />
+            <div className="lg:col-span-2">
+              <AttendeeTimeslotSelectionPanel
+                autoWindowModeEnabled={autoWindowModeEnabled}
+                activeSlot={activeSlot}
+                checkedInSlots={checkedInSlots}
+                currentTimeMs={currentTimeMs}
+                isSubmitting={isSubmitting}
+                suggestedSlot={suggestedSlot}
+                timeslots={timeslots}
+                onTimeslotConfirm={onTimeslotConfirm}
+                onReadyForNext={onReadyForNext}
+              />
+            </div>
           )}
-
-          <div className="sticky bottom-1.5 space-y-1.5 rounded-xl bg-surface/95 p-1.5 backdrop-blur sm:static sm:bg-transparent sm:p-0">
-            {actionContent}
-          </div>
         </div>
       )}
     </WizardStep>

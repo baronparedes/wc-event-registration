@@ -28,7 +28,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   const sizeClasses = {
     sm: 'w-10 h-10 text-sm',
     md: 'w-16 h-16 text-base',
-    lg: 'w-24 h-24 text-lg',
+    lg: 'w-32 h-32 text-lg',
     xl: 'w-48 h-48 text-xl',
     '2xl': 'w-64 h-64 text-2xl',
     '3xl': 'w-128 h-128 text-3xl',
