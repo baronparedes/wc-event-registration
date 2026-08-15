@@ -1,6 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-import { parseFunctionEnvironment, z } from '@/shared/validation.ts';
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
 
 const CRON_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000; // Asia/Manila (UTC+8)
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -222,6 +221,10 @@ async function sendEmailWithAttachment(options: {
   });
 
   if (!response.ok) {
+    console.error('[cron_upcoming_sunday_excused_export_email] Resend API request failed', {
+      status: response.status,
+      body: await response.text(),
+    });
     return {
       ok: false,
       status: response.status,
@@ -233,95 +236,202 @@ async function sendEmailWithAttachment(options: {
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== 'POST') {
-    return jsonResponse(405, {
-      success: false,
-      error: 'Method not allowed',
-    });
-  }
-
-  const functionEnv = parseFunctionEnvironment();
-  if (!functionEnv) {
-    return jsonResponse(500, {
-      success: false,
-      error: 'Supabase environment not configured',
-    });
-  }
-
-  const cronEnv = parseCronEnvironment();
-  if (!cronEnv) {
-    return jsonResponse(500, {
-      success: false,
-      error: 'Cron email environment not configured',
-    });
-  }
-
-  const supabase = createClient(functionEnv.supabaseUrl, functionEnv.supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'cron-upcoming-sunday-excused-export-email',
+    method: 'POST',
+    publicRateLimit: {
+      scope: 'cron-upcoming-sunday-excused-export-email',
+      windowMs: RATE_LIMIT_PRESETS.cron.upcomingSundayExcusedExportEmail.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.cron.upcomingSundayExcusedExportEmail.maxHits,
+    },
   });
 
-  const targetSundayDate = computeForthcomingSundayDateInPht();
-
-  const { data: eventFields, error: eventFieldsError } = await supabase
-    .from('event_fields')
-    .select('id, field_key')
-    .eq('event_id', cronEnv.eventId)
-    .in('field_key', [...REQUIRED_FIELD_KEYS])
-    .returns<EventFieldRow[]>();
-
-  if (eventFieldsError) {
-    console.error(
-      '[cron_upcoming_sunday_excused_export_email] Event fields lookup failed',
-      eventFieldsError,
-    );
-    return jsonResponse(500, {
-      success: false,
-      error: 'Failed to load event fields',
-    });
+  if (!guard.valid) {
+    return guard.response;
   }
 
-  const fieldIdToKey = new Map<string, FieldKey>();
-  for (const field of eventFields ?? []) {
-    fieldIdToKey.set(field.id, field.field_key);
-  }
+  try {
+    const targetSundayDate = computeForthcomingSundayDateInPht();
 
-  const requestedFieldIds = (eventFields ?? []).map((field) => field.id);
+    const cronEnv = parseCronEnvironment();
+    if (!cronEnv) {
+      return jsonResponse(500, {
+        success: false,
+        error: 'Cron email environment not configured',
+      });
+    }
 
-  // Find the event_field ID for 'request_date'
-  const requestDateFieldId = (eventFields ?? []).find((f) => f.field_key === 'request_date')?.id;
+    const { data: eventFields, error: eventFieldsError } = await guard.client
+      .from('event_fields')
+      .select('id, field_key')
+      .eq('event_id', cronEnv.eventId)
+      .in('field_key', [...REQUIRED_FIELD_KEYS])
+      .returns<EventFieldRow[]>();
 
-  if (!requestDateFieldId) {
-    console.error('[cron_upcoming_sunday_excused_export_email] request_date field not found');
-    return jsonResponse(500, {
-      success: false,
-      error: 'request_date field not configured for event',
-    });
-  }
+    if (eventFieldsError) {
+      console.error(
+        '[cron_upcoming_sunday_excused_export_email] Event fields lookup failed',
+        eventFieldsError,
+      );
+      return jsonResponse(500, {
+        success: false,
+        error: 'Failed to load event fields',
+      });
+    }
 
-  // Filter by request_date at database level to reduce result set
-  const { data: requestDateAnswers, error: requestDateAnswersError } = await supabase
-    .from('registration_answers')
-    .select('registration_id')
-    .eq('event_field_id', requestDateFieldId)
-    .or(`answer_text.ilike.%${targetSundayDate}%,answer_date.eq.${targetSundayDate}`)
-    .returns<{ registration_id: string }[]>();
+    const fieldIdToKey = new Map<string, FieldKey>();
+    for (const field of eventFields ?? []) {
+      fieldIdToKey.set(field.id, field.field_key);
+    }
 
-  if (requestDateAnswersError) {
-    console.error(
-      '[cron_upcoming_sunday_excused_export_email] Request date filter lookup failed',
-      requestDateAnswersError,
-    );
-    return jsonResponse(500, {
-      success: false,
-      error: 'Failed to filter by request_date',
-    });
-  }
+    const requestedFieldIds = (eventFields ?? []).map((field) => field.id);
 
-  const registrationIds = (requestDateAnswers ?? []).map((answer) => answer.registration_id);
+    // Find the event_field ID for 'request_date'
+    const requestDateFieldId = (eventFields ?? []).find((f) => f.field_key === 'request_date')?.id;
 
-  if (registrationIds.length === 0) {
-    // No matching requests for this Sunday, send empty report
-    const jsonAttachment = JSON.stringify([], null, 2);
+    if (!requestDateFieldId) {
+      console.error('[cron_upcoming_sunday_excused_export_email] request_date field not found');
+      return jsonResponse(500, {
+        success: false,
+        error: 'request_date field not configured for event',
+      });
+    }
+
+    // Filter by request_date at database level to reduce result set
+    const { data: requestDateAnswers, error: requestDateAnswersError } = await guard.client
+      .from('registration_answers')
+      .select('registration_id')
+      .eq('event_field_id', requestDateFieldId)
+      .or(`answer_text.ilike.%${targetSundayDate}%,answer_date.eq.${targetSundayDate}`)
+      .returns<{ registration_id: string }[]>();
+
+    if (requestDateAnswersError) {
+      console.error(
+        '[cron_upcoming_sunday_excused_export_email] Request date filter lookup failed',
+        requestDateAnswersError,
+      );
+      return jsonResponse(500, {
+        success: false,
+        error: 'Failed to filter by request_date',
+      });
+    }
+
+    const registrationIds = (requestDateAnswers ?? []).map((answer) => answer.registration_id);
+
+    if (registrationIds.length === 0) {
+      // No matching requests for this Sunday, send empty report
+      const jsonAttachment = JSON.stringify([], null, 2);
+      const filename = `sunday-excuse-requests-${targetSundayDate}.json`;
+
+      const emailResult = await sendEmailWithAttachment({
+        resendApiKey: cronEnv.resendApiKey,
+        fromEmail: cronEnv.fromEmail,
+        toEmail: cronEnv.targetEmail,
+        subject: `Sunday Excuse Requests (${targetSundayDate} - ${new Date().toLocaleTimeString()})`,
+        html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>0</strong></p>`,
+        filename,
+        content: jsonAttachment,
+      });
+
+      if (!emailResult.ok) {
+        console.error('[cron_upcoming_sunday_excused_export_email] Resend send failed', {
+          status: emailResult.status,
+          body: emailResult.body,
+        });
+
+        return jsonResponse(502, {
+          success: false,
+          error: 'Failed to send email attachment',
+          resend_status: emailResult.status,
+        });
+      }
+
+      return jsonResponse(200, {
+        success: true,
+        records: 0,
+        targetDate: targetSundayDate,
+      });
+    }
+
+    // Fetch full registrations and answers only for filtered registration IDs
+    const { data: registrations, error: registrationsError } = await guard.client
+      .from('registrations')
+      .select('id, users!inner(first_name, last_name, email)')
+      .eq('event_id', cronEnv.eventId)
+      .neq('status', 'cancelled')
+      .in('id', registrationIds)
+      .returns<RegistrationRow[]>();
+
+    if (registrationsError) {
+      console.error(
+        '[cron_upcoming_sunday_excused_export_email] Registrations lookup failed',
+        registrationsError,
+      );
+      return jsonResponse(500, {
+        success: false,
+        error: 'Failed to load registrations',
+      });
+    }
+
+    let answers: RegistrationAnswerRow[] = [];
+    if (registrationIds.length > 0 && requestedFieldIds.length > 0) {
+      const { data: answerRows, error: answersError } = await guard.client
+        .from('registration_answers')
+        .select(
+          'registration_id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json',
+        )
+        .in('registration_id', registrationIds)
+        .in('event_field_id', requestedFieldIds)
+        .returns<RegistrationAnswerRow[]>();
+
+      if (answersError) {
+        console.error(
+          '[cron_upcoming_sunday_excused_export_email] Registration answers lookup failed',
+          answersError,
+        );
+        return jsonResponse(500, {
+          success: false,
+          error: 'Failed to load registration answers',
+        });
+      }
+
+      answers = answerRows ?? [];
+    }
+
+    const answersByRegistration = new Map<string, Partial<Record<FieldKey, unknown>>>();
+    for (const answer of answers) {
+      const fieldKey = fieldIdToKey.get(answer.event_field_id);
+      if (!fieldKey) {
+        continue;
+      }
+
+      const current = answersByRegistration.get(answer.registration_id) ?? {};
+      current[fieldKey] = readAnswerValue(answer);
+      answersByRegistration.set(answer.registration_id, current);
+    }
+
+    const payload: SundayRequestRecord[] = [];
+
+    for (const registration of registrations ?? []) {
+      const user = getRegistrationUser(registration.users);
+      if (!user) {
+        continue;
+      }
+
+      const answerMap = answersByRegistration.get(registration.id) ?? {};
+
+      payload.push({
+        firstName: (user.first_name ?? '').trim(),
+        lastName: (user.last_name ?? '').trim(),
+        requestDate: targetSundayDate,
+        services: normalizeValueToText(answerMap.services),
+        reason: normalizeValueToText(answerMap.reason),
+        email: (user.email ?? '').trim(),
+      });
+    }
+
+    const jsonAttachment = JSON.stringify(payload, null, 2);
     const filename = `sunday-excuse-requests-${targetSundayDate}.json`;
 
     const emailResult = await sendEmailWithAttachment({
@@ -329,7 +439,7 @@ Deno.serve(async (req) => {
       fromEmail: cronEnv.fromEmail,
       toEmail: cronEnv.targetEmail,
       subject: `Sunday Excuse Requests (${targetSundayDate} - ${new Date().toLocaleTimeString()})`,
-      html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>0</strong></p>`,
+      html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>${payload.length}</strong></p>`,
       filename,
       content: jsonAttachment,
     });
@@ -349,120 +459,19 @@ Deno.serve(async (req) => {
 
     return jsonResponse(200, {
       success: true,
-      records: 0,
-      targetDate: targetSundayDate,
+      event_id: cronEnv.eventId,
+      target_sunday_date: targetSundayDate,
+      recipient: cronEnv.targetEmail,
+      row_count: payload.length,
+      filename,
     });
-  }
-
-  // Fetch full registrations and answers only for filtered registration IDs
-  const { data: registrations, error: registrationsError } = await supabase
-    .from('registrations')
-    .select('id, users!inner(first_name, last_name, email)')
-    .eq('event_id', cronEnv.eventId)
-    .neq('status', 'cancelled')
-    .in('id', registrationIds)
-    .returns<RegistrationRow[]>();
-
-  if (registrationsError) {
-    console.error(
-      '[cron_upcoming_sunday_excused_export_email] Registrations lookup failed',
-      registrationsError,
-    );
+  } catch (error) {
+    console.error('[cron_upcoming_sunday_excused_export_email] Unexpected error', {
+      error,
+    });
     return jsonResponse(500, {
-      success: false,
-      error: 'Failed to load registrations',
+      error: 'Internal Server Error',
+      message: 'An unexpected error occurred while processing the request.',
     });
   }
-
-  let answers: RegistrationAnswerRow[] = [];
-  if (registrationIds.length > 0 && requestedFieldIds.length > 0) {
-    const { data: answerRows, error: answersError } = await supabase
-      .from('registration_answers')
-      .select(
-        'registration_id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json',
-      )
-      .in('registration_id', registrationIds)
-      .in('event_field_id', requestedFieldIds)
-      .returns<RegistrationAnswerRow[]>();
-
-    if (answersError) {
-      console.error(
-        '[cron_upcoming_sunday_excused_export_email] Registration answers lookup failed',
-        answersError,
-      );
-      return jsonResponse(500, {
-        success: false,
-        error: 'Failed to load registration answers',
-      });
-    }
-
-    answers = answerRows ?? [];
-  }
-
-  const answersByRegistration = new Map<string, Partial<Record<FieldKey, unknown>>>();
-  for (const answer of answers) {
-    const fieldKey = fieldIdToKey.get(answer.event_field_id);
-    if (!fieldKey) {
-      continue;
-    }
-
-    const current = answersByRegistration.get(answer.registration_id) ?? {};
-    current[fieldKey] = readAnswerValue(answer);
-    answersByRegistration.set(answer.registration_id, current);
-  }
-
-  const payload: SundayRequestRecord[] = [];
-
-  for (const registration of registrations ?? []) {
-    const user = getRegistrationUser(registration.users);
-    if (!user) {
-      continue;
-    }
-
-    const answerMap = answersByRegistration.get(registration.id) ?? {};
-
-    payload.push({
-      firstName: (user.first_name ?? '').trim(),
-      lastName: (user.last_name ?? '').trim(),
-      requestDate: targetSundayDate,
-      services: normalizeValueToText(answerMap.services),
-      reason: normalizeValueToText(answerMap.reason),
-      email: (user.email ?? '').trim(),
-    });
-  }
-
-  const jsonAttachment = JSON.stringify(payload, null, 2);
-  const filename = `sunday-excuse-requests-${targetSundayDate}.json`;
-
-  const emailResult = await sendEmailWithAttachment({
-    resendApiKey: cronEnv.resendApiKey,
-    fromEmail: cronEnv.fromEmail,
-    toEmail: cronEnv.targetEmail,
-    subject: `Sunday Excuse Requests (${targetSundayDate} - ${new Date().toLocaleTimeString()})`,
-    html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>${payload.length}</strong></p>`,
-    filename,
-    content: jsonAttachment,
-  });
-
-  if (!emailResult.ok) {
-    console.error('[cron_upcoming_sunday_excused_export_email] Resend send failed', {
-      status: emailResult.status,
-      body: emailResult.body,
-    });
-
-    return jsonResponse(502, {
-      success: false,
-      error: 'Failed to send email attachment',
-      resend_status: emailResult.status,
-    });
-  }
-
-  return jsonResponse(200, {
-    success: true,
-    event_id: cronEnv.eventId,
-    target_sunday_date: targetSundayDate,
-    recipient: cronEnv.targetEmail,
-    row_count: payload.length,
-    filename,
-  });
 });

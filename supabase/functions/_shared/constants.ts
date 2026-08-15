@@ -129,6 +129,12 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 6,
   },
+  cron: {
+    upcomingSundayExcusedExportEmail: {
+      windowMs: 60_000,
+      maxHits: 1,
+    },
+  },
 } as const;
 
 export const SUSPICIOUS_USER_AGENT_PATTERNS = [
