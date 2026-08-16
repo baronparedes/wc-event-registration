@@ -6,12 +6,20 @@ type AttendeeCacheStatusBarProps = {
   message: string | null;
   isError?: boolean;
   isRefreshing?: boolean;
+  disabled?: boolean;
   onRefresh: () => void;
   className?: string;
 };
 
 export function AttendeeCacheStatusBar(props: AttendeeCacheStatusBarProps) {
-  const { message, isError = false, isRefreshing = false, onRefresh, className = '' } = props;
+  const {
+    message,
+    isError = false,
+    isRefreshing = false,
+    disabled = false,
+    onRefresh,
+    className = '',
+  } = props;
 
   const wrapperClassName = [
     'flex items-center justify-between gap-2 rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] leading-tight text-muted',
@@ -31,9 +39,15 @@ export function AttendeeCacheStatusBar(props: AttendeeCacheStatusBarProps) {
         variant="ghost"
         aria-label={isRefreshing ? 'Refreshing attendee cache' : 'Refresh attendee cache'}
         aria-busy={isRefreshing}
-        title={isRefreshing ? 'Refreshing...' : 'Refresh'}
+        title={
+          disabled
+            ? 'Refresh unavailable while offline'
+            : isRefreshing
+              ? 'Refreshing...'
+              : 'Refresh'
+        }
         onClick={onRefresh}
-        disabled={isRefreshing}
+        disabled={isRefreshing || disabled}
       >
         <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
       </Button>

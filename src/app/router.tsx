@@ -178,7 +178,8 @@ function ResponsiveShellLayout() {
 
 function isOfflineSupportedPath(pathname: string): boolean {
   return Boolean(
-    matchPath({ path: ROUTE_PATHS.adminEventAttendanceDataPattern, end: true }, pathname),
+    matchPath({ path: ROUTE_PATHS.adminEventAttendanceDataPattern, end: true }, pathname) ||
+    matchPath({ path: ROUTE_PATHS.adminEventAttendanceCheckInPattern, end: true }, pathname),
   );
 }
 

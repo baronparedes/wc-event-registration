@@ -13,9 +13,10 @@ import {
   useAttendanceSettingsQuery,
   useAttendeesLocalCacheQuery,
 } from '@/hooks/domain/attendance/queries';
+import { useOfflineCheckInEventSettings } from '@/hooks/domain/attendance/state';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { useScanBuffer, useWizardStepScroll } from '@/hooks/utils';
+import { useOnlineStatus, useScanBuffer, useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import {
   isAutoWindowModeEnabled,
@@ -85,9 +86,12 @@ export function AdminAttendanceCheckInPage() {
   const selectStepRef = useRef<HTMLDivElement | null>(null);
   const confirmStepRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
+  const { data: onlineEvent, isLoading: eventLoading } = useAdminEventQuery(eventId);
   const { data: authState } = useAdminAuthQuery();
-  const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
+  const { data: onlineSettings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
+  const { event, settings, isUsingCachedEvent, isUsingCachedSettings } =
+    useOfflineCheckInEventSettings({ eventId, event: onlineEvent, settings: onlineSettings });
+  const isUsingCachedEventOrSettings = isUsingCachedEvent || isUsingCachedSettings;
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const enforceCheckInEventWindow = settings?.enforce_check_in_event_window ?? true;
   const isOutsideEventWindow = event ? !isWithinEventWindow(event, nowMs) : false;
@@ -125,8 +129,18 @@ export function AdminAttendanceCheckInPage() {
   } = useQueuedCheckInAttendeeMutation(eventId, { refreshCache, updateAttendee });
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const showQueueStatusBanner = pendingCheckInCount > 0 || Boolean(lastQueueError);
+  const isOnline = useOnlineStatus();
 
-  const isLoading = eventLoading || settingsLoading;
+  const handleRefreshCache = useCallback(() => {
+    if (!isOnline) {
+      toast.error('Cannot refresh the attendee list while offline.');
+      return;
+    }
+
+    refreshCache();
+  }, [isOnline, refreshCache]);
+
+  const isLoading = isUsingCachedEventOrSettings ? false : eventLoading || settingsLoading;
   const registeredCount = cachedAttendees?.length ?? 0;
 
   const results = useMemo(() => {
@@ -451,12 +465,23 @@ export function AdminAttendanceCheckInPage() {
         </div>
       )}
 
+      {showCheckInWizard && isUsingCachedEventOrSettings && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-800">Offline — using last synced data</p>
+          <p className="mt-1 text-xs text-amber-700">
+            Event and attendance settings are from the last time this device was online. Check-ins
+            will queue and sync once connection returns.
+          </p>
+        </div>
+      )}
+
       {showCheckInWizard && attendanceEnabled && (
         <AttendeeCacheStatusBar
           message={cacheStatusMessage}
           isError={isCacheError}
           isRefreshing={cacheFetching}
-          onRefresh={refreshCache}
+          disabled={!isOnline}
+          onRefresh={handleRefreshCache}
         />
       )}
 

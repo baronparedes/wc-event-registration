@@ -258,6 +258,9 @@ export function useAttendeesLocalCacheQuery(
     enabled: Boolean(eventId),
     staleTime: CACHE_TTL_MS, // 24 hours — cache is valid for one event day
     gcTime: CACHE_TTL_MS,
+    // Always run queryFn (even offline) so a cold start can still read the localStorage cache
+    // instead of being paused before ever checking it.
+    networkMode: 'always',
   });
 
   const refresh = useCallback(() => {
