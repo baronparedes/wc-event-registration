@@ -12,7 +12,7 @@ import {
   ROUTE_PATHS,
   TIMING,
   UI_MESSAGES,
-  toAdminEventDetail,
+  toRoute,
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
@@ -181,7 +181,7 @@ export function AdminEventsPage() {
                 canWrite={canWrite}
                 canRead={canRead}
                 canAccessCheckIn={canAccessCheckIn}
-                onEventSelect={(eventId) => navigate(toAdminEventDetail(eventId))}
+                onEventSelect={(eventId) => navigate(toRoute('adminEventDetail', { id: eventId }))}
               />
             )}
 

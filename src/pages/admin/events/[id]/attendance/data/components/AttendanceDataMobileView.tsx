@@ -18,6 +18,7 @@ type AttendanceDataMobileViewProps = {
   fields: AttendanceField[];
   attendeesByRegistrantKey: Map<string, AttendeeSearchResult>;
   canWrite: boolean;
+  fetchImage?: boolean;
   onViewRegistrant: (registrant: RegistrantAttendanceRow) => void;
   onEditRegistrant: (registrant: RegistrantAttendanceRow) => void;
   countFilledAnswers: (answers: AttendanceAnswer[], fields: AttendanceField[]) => number;
@@ -39,6 +40,7 @@ export function AttendanceDataMobileView({
   fields,
   attendeesByRegistrantKey,
   canWrite,
+  fetchImage = true,
   onViewRegistrant,
   onEditRegistrant,
   countFilledAnswers,
@@ -90,7 +92,7 @@ export function AttendanceDataMobileView({
                   {shouldShowAvatar && (
                     <Avatar
                       name={`${registrant.nickname} ${registrant.last_name}`}
-                      avatarObjectKey={attendee?.avatar_object_key}
+                      avatarObjectKey={fetchImage ? attendee?.avatar_object_key : undefined}
                       size="md"
                       className="shrink-0"
                     />

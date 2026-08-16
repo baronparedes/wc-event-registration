@@ -1,4 +1,6 @@
-import { matchPath } from 'react-router-dom';
+import { generatePath, matchPath } from 'react-router-dom';
+
+import type { AdminRole } from '@/lib/domain/auth';
 
 export const ROUTE_PATHS = {
   home: '/',
@@ -33,6 +35,189 @@ export const ROUTE_PATHS = {
   adminPublicRegistrationDetailPattern: '/admin/events/:id/public-registrations/:registration_id',
 } as const;
 
+export type AppRouteKey =
+  | 'home'
+  | 'eventRegister'
+  | 'eventPublicRegister'
+  | 'login'
+  | 'adminMembers'
+  | 'adminMemberMilestones'
+  | 'adminMembersImport'
+  | 'adminMemberDetail'
+  | 'memberProfile'
+  | 'adminEvents'
+  | 'adminEventNew'
+  | 'adminEventDetail'
+  | 'adminEventFields'
+  | 'adminEventAttendance'
+  | 'adminAttendanceFields'
+  | 'adminAttendanceData'
+  | 'adminAttendanceDataBulkUpload'
+  | 'adminAttendanceCheckIn'
+  | 'adminAttendanceDashboard'
+  | 'adminAttendanceUnregisteredMembers'
+  | 'adminRegistrationsBulkUpload'
+  | 'adminRegistrations'
+  | 'adminPublicRegistrationDetail'
+  | 'adminPublicRegistrations'
+  | 'adminPublicRegistrationsBulkUpload'
+  | 'adminRegistrationDetail'
+  | 'adminRegistrationNames';
+
+export type AppRouteDefinition = {
+  key: AppRouteKey;
+  path: string;
+  layout: 'shell' | 'standalone';
+  requiresAuth?: boolean;
+  allowedRoles?: readonly AdminRole[];
+  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
+};
+
+export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
+  { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
+  { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
+  { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
+  { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },
+  {
+    key: 'adminMembers',
+    path: ROUTE_PATHS.adminMembers,
+    layout: 'shell',
+    requiredPermission: 'canReadAdminMemberData',
+  },
+  {
+    key: 'adminMemberMilestones',
+    path: ROUTE_PATHS.adminMemberMilestones,
+    layout: 'shell',
+    requiredPermission: 'canReadAdminMemberData',
+  },
+  {
+    key: 'adminMembersImport',
+    path: ROUTE_PATHS.adminMembersImport,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminMemberDetail',
+    path: ROUTE_PATHS.adminMemberDetailPattern,
+    layout: 'shell',
+    requiredPermission: 'canReadAdminMemberData',
+  },
+  {
+    key: 'memberProfile',
+    path: ROUTE_PATHS.memberDetailPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+  },
+  {
+    key: 'adminEvents',
+    path: ROUTE_PATHS.adminEvents,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod', 'kiosk'],
+  },
+  {
+    key: 'adminEventNew',
+    path: ROUTE_PATHS.adminEventNew,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminEventDetail',
+    path: ROUTE_PATHS.adminEventDetailPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminEventFields',
+    path: ROUTE_PATHS.adminEventFieldsPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminEventAttendance',
+    path: ROUTE_PATHS.adminEventAttendancePattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminAttendanceFields',
+    path: ROUTE_PATHS.adminEventAttendanceFieldsPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminAttendanceData',
+    path: ROUTE_PATHS.adminEventAttendanceDataPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
+  {
+    key: 'adminAttendanceDataBulkUpload',
+    path: ROUTE_PATHS.adminEventAttendanceDataBulkUploadPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminAttendanceCheckIn',
+    path: ROUTE_PATHS.adminEventAttendanceCheckInPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'kiosk'],
+  },
+  {
+    key: 'adminAttendanceDashboard',
+    path: ROUTE_PATHS.adminEventAttendanceDashboardPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
+  {
+    key: 'adminAttendanceUnregisteredMembers',
+    path: ROUTE_PATHS.adminEventRegistrationsUnregisteredMembersPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminRegistrationsBulkUpload',
+    path: ROUTE_PATHS.adminEventRegistrationsBulkUploadPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminRegistrations',
+    path: ROUTE_PATHS.adminEventRegistrationsPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
+  {
+    key: 'adminPublicRegistrationDetail',
+    path: ROUTE_PATHS.adminPublicRegistrationDetailPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
+  {
+    key: 'adminPublicRegistrations',
+    path: ROUTE_PATHS.adminEventPublicRegistrationsPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
+  {
+    key: 'adminPublicRegistrationsBulkUpload',
+    path: ROUTE_PATHS.adminEventPublicRegistrationsBulkUploadPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminRegistrationDetail',
+    path: ROUTE_PATHS.adminRegistrationDetailPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
+  {
+    key: 'adminRegistrationNames',
+    path: ROUTE_PATHS.adminRegistrationNamesPattern,
+    layout: 'standalone',
+    requiresAuth: true,
+  },
+];
+
 export const ROUTE_PREFIXES = {
   admin: '/admin/',
 } as const;
@@ -49,98 +234,35 @@ export function isMinimizedAppShellRoute(pathname: string): boolean {
   );
 }
 
-export function toEventRegistration(slug: string): string {
-  return `/events/${slug}/register`;
+type RouteParams = Record<string, string>;
+type RouteQuery = Record<string, string | undefined>;
+
+function getAppRoutePath(routeKey: AppRouteKey): string {
+  const route = APP_ROUTE_DEFINITIONS.find((definition) => definition.key === routeKey);
+  if (!route) {
+    throw new Error(`Unknown application route: ${routeKey}`);
+  }
+
+  return route.path;
 }
 
-export function toEventPublicRegistration(slug: string): string {
-  return `/events/${slug}/register-public`;
+export function toRoute(routeKey: AppRouteKey, params: RouteParams = {}): string {
+  return generatePath(getAppRoutePath(routeKey), params);
 }
 
-export function toAdminMemberDetail(memberId: string): string {
-  return `/admin/members/${memberId}`;
-}
-
-export function toMemberDetail(userId: string): string {
-  return `/member/${userId}`;
-}
-
-export function toAdminMembersImport(): string {
-  return '/admin/members/import';
-}
-
-export function toAdminMemberMilestones(): string {
-  return '/admin/members/milestones';
-}
-
-export function toAdminEventDetail(eventId: string): string {
-  return `/admin/events/${eventId}`;
-}
-
-export function toAdminEventFields(eventId: string): string {
-  return `/admin/events/${eventId}/fields`;
-}
-
-export function toAdminEventAttendance(eventId: string): string {
-  return `/admin/events/${eventId}/attendance`;
-}
-
-export function toAdminEventAttendanceCheckIn(eventId: string): string {
-  return `/admin/events/${eventId}/attendance/check-in`;
-}
-
-export function toAdminEventAttendanceUnregisteredMembers(eventId: string): string {
-  return `/admin/events/${eventId}/registrations/unregistered-members`;
-}
-
-export function toAdminEventAttendanceDashboard(eventId: string): string {
-  return `/admin/events/${eventId}/attendance/dashboard`;
-}
-
-export function toAdminEventAttendanceFields(eventId: string): string {
-  return `/admin/events/${eventId}/attendance/fields`;
-}
-
-export function toAdminEventAttendanceData(eventId: string): string {
-  return `/admin/events/${eventId}/attendance/data`;
-}
-
-export function toAdminEventAttendanceDataBulkUpload(eventId: string): string {
-  return `/admin/events/${eventId}/attendance/data/bulk-upload`;
-}
-
-export function toAdminEventRegistrations(eventId: string): string {
-  return `/admin/events/${eventId}/registrations`;
-}
-
-export function toAdminEventRegistrationsBulkUpload(eventId: string): string {
-  return `/admin/events/${eventId}/registrations/bulk-upload`;
-}
-
-export function toAdminRegistrationNames(
-  eventId: string,
-  params: { fields: string[]; answerFields: string[] },
+export function toRouteWithQuery(
+  routeKey: AppRouteKey,
+  params: RouteParams,
+  query: RouteQuery,
 ): string {
   const searchParams = new URLSearchParams();
-  searchParams.set('fields', params.fields.join(','));
-  if (params.answerFields.length > 0) {
-    searchParams.set('answerFields', params.answerFields.join(','));
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined) {
+      searchParams.set(key, value);
+    }
   }
-  return `/admin/events/${eventId}/registrations/names?${searchParams.toString()}`;
-}
 
-export function toAdminEventPublicRegistrations(eventId: string): string {
-  return `/admin/events/${eventId}/public-registrations`;
-}
-
-export function toAdminEventPublicRegistrationsBulkUpload(eventId: string): string {
-  return `/admin/events/${eventId}/public-registrations/bulk-upload`;
-}
-
-export function toAdminRegistrationDetail(eventId: string, registrationId: string): string {
-  return `/admin/events/${eventId}/registrations/${registrationId}`;
-}
-
-export function toAdminPublicRegistrationDetail(eventId: string, registrationId: string): string {
-  return `/admin/events/${eventId}/public-registrations/${registrationId}`;
+  const search = searchParams.toString();
+  return search ? `${toRoute(routeKey, params)}?${search}` : toRoute(routeKey, params);
 }

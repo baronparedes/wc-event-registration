@@ -1,6 +1,6 @@
 import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { ROUTE_PATHS, toAdminEventRegistrations } from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
 import {
   REGISTRATION_SHARE_FIELDS,
@@ -33,7 +33,7 @@ export function AdminRegistrationNamesPage() {
     return (
       <Navigate
         replace
-        to={eventId ? toAdminEventRegistrations(eventId) : ROUTE_PATHS.adminEvents}
+        to={eventId ? toRoute('adminRegistrations', { id: eventId }) : ROUTE_PATHS.adminEvents}
       />
     );
   }

@@ -13,14 +13,7 @@ import {
 import { Button } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/DropdownMenu';
-import {
-  toAdminEventAttendance,
-  toAdminEventAttendanceCheckIn,
-  toAdminEventAttendanceData,
-  toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventRegistrations,
-} from '@/config/constants';
+import { toRoute } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
 import { formatDateOnly } from '@/lib/infrastructure';
 
@@ -82,7 +75,7 @@ export function MobileEventCard({
       >
         {canWrite && (
           <ActionLink
-            to={toAdminEventDetail(event.id)}
+            to={toRoute('adminEventDetail', { id: event.id })}
             title="Edit event"
             aria-label={`Edit ${event.title}`}
             className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-bl-xl text-sm font-medium text-primary no-underline hover:bg-primary/10"
@@ -93,7 +86,7 @@ export function MobileEventCard({
         )}
         {canRead && (
           <ActionLink
-            to={toAdminEventAttendanceData(event.id)}
+            to={toRoute('adminAttendanceData', { id: event.id })}
             title="View attendees"
             aria-label={`View attendees for ${event.title}`}
             className={`flex min-h-11 flex-1 items-center justify-center gap-2 bg-primary text-sm font-semibold text-white no-underline shadow-sm hover:bg-primary/90 hover:shadow-md ${
@@ -124,7 +117,7 @@ export function MobileEventCard({
             }
           >
             {canWrite && (
-              <DropdownMenuItem to={toAdminEventAttendance(event.id)}>
+              <DropdownMenuItem to={toRoute('adminEventAttendance', { id: event.id })}>
                 <span className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   Attendance settings
@@ -132,7 +125,7 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canWrite && (
-              <DropdownMenuItem to={toAdminEventFields(event.id)}>
+              <DropdownMenuItem to={toRoute('adminEventFields', { id: event.id })}>
                 <span className="flex items-center gap-2">
                   <Form className="h-4 w-4" />
                   Registration fields
@@ -140,7 +133,7 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canRead && (
-              <DropdownMenuItem to={toAdminEventRegistrations(event.id)}>
+              <DropdownMenuItem to={toRoute('adminRegistrations', { id: event.id })}>
                 <span className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4" />
                   Registrations
@@ -148,7 +141,7 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canAccessCheckIn && (
-              <DropdownMenuItem to={toAdminEventAttendanceCheckIn(event.id)}>
+              <DropdownMenuItem to={toRoute('adminAttendanceCheckIn', { id: event.id })}>
                 <span className="flex items-center gap-2">
                   <CalendarCheck className="h-4 w-4" />
                   Check-in

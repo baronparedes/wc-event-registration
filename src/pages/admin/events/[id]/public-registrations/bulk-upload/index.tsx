@@ -4,12 +4,7 @@ import { toast } from 'sonner';
 import { AdminPageShell } from '@/components/layout';
 import { Button } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
-import {
-  ROUTE_PATHS,
-  toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventPublicRegistrations,
-} from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useDownloadPublicRegistrationsTemplateMutation } from '@/hooks/domain/public-registrations';
@@ -32,10 +27,13 @@ export function AdminPublicRegistrationsBulkUploadPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
+          {
+            label: event?.title ?? 'Event',
+            to: id ? toRoute('adminEventDetail', { id }) : undefined,
+          },
           {
             label: 'Public Registrations',
-            to: id ? toAdminEventPublicRegistrations(id) : undefined,
+            to: id ? toRoute('adminPublicRegistrations', { id }) : undefined,
           },
           { label: 'Bulk CSV Upload' },
         ]}
@@ -91,7 +89,9 @@ export function AdminPublicRegistrationsBulkUploadPage() {
           <p className="mt-1 text-xs text-blue-700">
             {id ? (
               <>
-                <ActionLink to={toAdminEventFields(id)}>Configure registration fields</ActionLink>{' '}
+                <ActionLink to={toRoute('adminEventFields', { id })}>
+                  Configure registration fields
+                </ActionLink>{' '}
                 first, or upload a CSV with only first_name, last_name, and email to import public
                 registrations without answers.
               </>
@@ -115,7 +115,7 @@ export function AdminPublicRegistrationsBulkUploadPage() {
             eventId={id ?? ''}
             fields={fields}
             onClose={() =>
-              navigate(id ? toAdminEventPublicRegistrations(id) : ROUTE_PATHS.adminEvents)
+              navigate(id ? toRoute('adminPublicRegistrations', { id }) : ROUTE_PATHS.adminEvents)
             }
             displayMode="page"
           />

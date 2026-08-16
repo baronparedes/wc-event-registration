@@ -1,6 +1,7 @@
 import { Check, Minus, Pencil } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
+import { Avatar } from '@/components/ui/Avatar';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import {
   ListTable,
@@ -20,14 +21,13 @@ import { formatCompactSlotLabelsFromSlotRecords } from '@/lib/domain/attendance'
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import { type DynamicFieldRef, toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
-import { Avatar } from '../../../../../../../components/ui/Avatar';
-
 type AttendanceDataTableViewProps = {
   registrants: RegistrantAttendanceRow[];
   visibleFields: DynamicFieldRef[];
   fields: AttendanceField[];
   attendeesByRegistrantKey: Map<string, AttendeeSearchResult>;
   canWrite: boolean;
+  fetchImage?: boolean;
   onViewRegistrant: (registrant: RegistrantAttendanceRow) => void;
   onEditRegistrant: (registrant: RegistrantAttendanceRow) => void;
   countFilledAnswers: (answers: AttendanceAnswer[], fields: AttendanceField[]) => number;
@@ -49,6 +49,7 @@ export function AttendanceDataTableView({
   fields,
   attendeesByRegistrantKey,
   canWrite,
+  fetchImage = true,
   onViewRegistrant,
   onEditRegistrant,
   countFilledAnswers,
@@ -112,7 +113,7 @@ export function AttendanceDataTableView({
                   {shouldShowAvatar && (
                     <Avatar
                       name={`${registrant.nickname} ${registrant.last_name}`}
-                      avatarObjectKey={attendee?.avatar_object_key}
+                      avatarObjectKey={fetchImage ? attendee?.avatar_object_key : undefined}
                       size="lg"
                       className="shrink-0"
                     />

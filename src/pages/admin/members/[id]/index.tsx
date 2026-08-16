@@ -9,7 +9,7 @@ import { AdminPageShell } from '@/components/layout';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES, toMemberDetail } from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import {
   useAdminMemberQuery,
@@ -186,7 +186,7 @@ export function AdminMemberDetailPage() {
           <>
             {(canWrite || canRead) && (
               <Button variant="primaryOutline" asChild>
-                <Link to={toMemberDetail(id)}>View Event History</Link>
+                <Link to={toRoute('memberProfile', { id })}>View Event History</Link>
               </Button>
             )}
           </>

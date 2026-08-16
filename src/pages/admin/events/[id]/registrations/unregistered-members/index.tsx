@@ -22,9 +22,7 @@ import {
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
-  toAdminEventDetail,
-  toAdminEventRegistrations,
-  toAdminMemberDetail,
+  toRoute,
 } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
@@ -150,11 +148,11 @@ export function AdminUnregisteredMembersPage() {
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
           {
             label: eventQuery.data?.title ?? 'Event',
-            to: eventId ? toAdminEventDetail(eventId) : undefined,
+            to: eventId ? toRoute('adminEventDetail', { id: eventId }) : undefined,
           },
           {
             label: 'Registrations',
-            to: eventId ? toAdminEventRegistrations(eventId) : undefined,
+            to: eventId ? toRoute('adminRegistrations', { id: eventId }) : undefined,
           },
           { label: 'Unregistered Members' },
         ]}
@@ -274,7 +272,7 @@ export function AdminUnregisteredMembersPage() {
                     <ListTableCell>
                       <Link
                         className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-                        to={toAdminMemberDetail(member.user_id)}
+                        to={toRoute('adminMemberDetail', { id: member.user_id })}
                       >
                         View Member
                       </Link>

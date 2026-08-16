@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { Avatar } from '@/components/ui/Avatar';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { ROUTE_PATHS, UI_MESSAGES, toAdminMemberDetail } from '@/config/constants';
+import { ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminMemberQuery, useMemberEventHistoryQuery } from '@/hooks/domain/members';
 import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 
@@ -84,7 +84,7 @@ export function MemberProfilePage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Members', to: ROUTE_PATHS.adminMembers },
-          { label: member.full_name, to: toAdminMemberDetail(id) },
+          { label: member.full_name, to: toRoute('adminMemberDetail', { id }) },
           { label: 'Event History' },
         ]}
         title="Event History"

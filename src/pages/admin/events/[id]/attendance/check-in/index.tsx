@@ -7,7 +7,7 @@ import { AdminPageShell } from '@/components/layout';
 import { Button, EventHeaderCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { StepIndicator } from '@/components/ui/StepIndicator';
-import { ROUTE_PATHS, TIMING, toAdminEventAttendance } from '@/config/constants';
+import { ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
 import { useQueuedCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
 import {
   useAttendanceSettingsQuery,
@@ -425,8 +425,10 @@ export function AdminAttendanceCheckInPage() {
             {canWrite ? (
               <>
                 Enable attendance tracking in{' '}
-                <ActionLink to={toAdminEventAttendance(eventId)}>Attendance Settings</ActionLink> to
-                use check-in.
+                <ActionLink to={toRoute('adminEventAttendance', { id: eventId })}>
+                  Attendance Settings
+                </ActionLink>{' '}
+                to use check-in.
               </>
             ) : (
               'Attendance settings must be enabled by an admin before kiosk check-in can be used.'

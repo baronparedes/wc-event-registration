@@ -1,13 +1,5 @@
 import { AdminSubNavLink } from '@/components/layout';
-import {
-  toAdminEventAttendance,
-  toAdminEventAttendanceCheckIn,
-  toAdminEventAttendanceDashboard,
-  toAdminEventAttendanceData,
-  toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventRegistrations,
-} from '@/config/constants';
+import { toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
@@ -42,22 +34,36 @@ export function EventNavigationLinks({ eventId }: EventNavigationLinksProps) {
 
   return (
     <>
-      {canWrite && <AdminSubNavLink to={toAdminEventDetail(eventId)}>Event</AdminSubNavLink>}
-      {canWrite && <AdminSubNavLink to={toAdminEventFields(eventId)}>Fields</AdminSubNavLink>}
-      {canRead && (
-        <AdminSubNavLink to={toAdminEventRegistrations(eventId)}>Registrations</AdminSubNavLink>
+      {canWrite && (
+        <AdminSubNavLink to={toRoute('adminEventDetail', { id: eventId })}>Event</AdminSubNavLink>
       )}
       {canWrite && (
-        <AdminSubNavLink to={toAdminEventAttendance(eventId)}>Attendance</AdminSubNavLink>
+        <AdminSubNavLink to={toRoute('adminEventFields', { id: eventId })}>Fields</AdminSubNavLink>
       )}
       {canRead && (
-        <AdminSubNavLink to={toAdminEventAttendanceData(eventId)}>Attendee Details</AdminSubNavLink>
+        <AdminSubNavLink to={toRoute('adminRegistrations', { id: eventId })}>
+          Registrations
+        </AdminSubNavLink>
+      )}
+      {canWrite && (
+        <AdminSubNavLink to={toRoute('adminEventAttendance', { id: eventId })}>
+          Attendance
+        </AdminSubNavLink>
       )}
       {canRead && (
-        <AdminSubNavLink to={toAdminEventAttendanceDashboard(eventId)}>Dashboard</AdminSubNavLink>
+        <AdminSubNavLink to={toRoute('adminAttendanceData', { id: eventId })}>
+          Attendee Details
+        </AdminSubNavLink>
+      )}
+      {canRead && (
+        <AdminSubNavLink to={toRoute('adminAttendanceDashboard', { id: eventId })}>
+          Dashboard
+        </AdminSubNavLink>
       )}
       {canAccessCheckIn && (
-        <AdminSubNavLink to={toAdminEventAttendanceCheckIn(eventId)}>Check-In</AdminSubNavLink>
+        <AdminSubNavLink to={toRoute('adminAttendanceCheckIn', { id: eventId })}>
+          Check-In
+        </AdminSubNavLink>
       )}
     </>
   );

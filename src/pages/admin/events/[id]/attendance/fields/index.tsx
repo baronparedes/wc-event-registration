@@ -5,7 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
-import { ROUTE_PATHS, toAdminEventAttendance, toAdminEventDetail } from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAttendanceSettingsQuery } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -47,8 +47,11 @@ export function AdminAttendanceFieldsPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
-          { label: 'Attendance', to: id ? toAdminEventAttendance(id) : undefined },
+          {
+            label: event?.title ?? 'Event',
+            to: id ? toRoute('adminEventDetail', { id }) : undefined,
+          },
+          { label: 'Attendance', to: id ? toRoute('adminEventAttendance', { id }) : undefined },
           { label: 'Attendance Fields' },
         ]}
         navLinks={
@@ -79,7 +82,9 @@ export function AdminAttendanceFieldsPage() {
           <p className="mt-1 text-xs text-amber-700">
             Enable attendance tracking in{' '}
             {id ? (
-              <ActionLink to={toAdminEventAttendance(id)}>Attendance Settings</ActionLink>
+              <ActionLink to={toRoute('adminEventAttendance', { id })}>
+                Attendance Settings
+              </ActionLink>
             ) : (
               'Attendance Settings'
             )}{' '}

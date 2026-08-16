@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { URL, fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 function getNodeModulePackageName(id: string) {
   const modulePath = id.split('node_modules/')[1];
@@ -54,7 +55,17 @@ function getVendorChunkName(id: string) {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: false,
+      workbox: {
+        navigateFallback: '/index.html',
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      },
+    }),
+  ],
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   build: {
     chunkSizeWarningLimit: 200,
