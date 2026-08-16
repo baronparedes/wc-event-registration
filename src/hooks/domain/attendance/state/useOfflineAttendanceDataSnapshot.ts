@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { useOnlineStatus } from '@/hooks/utils';
 import type { AttendanceSettings, AttendeeSearchResult } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import type { AdminEventField } from '@/lib/domain/event-fields';
@@ -27,29 +28,15 @@ export function useOfflineAttendanceDataSnapshot({
   registrationFields,
   attendees,
 }: UseOfflineAttendanceDataSnapshotInput) {
+  const isOnline = useOnlineStatus();
   const hasLiveSource = Boolean(
     event && settings && attendanceFields && registrationFields && attendees,
   );
-  const [isOnline, setIsOnline] = useState(
-    () => typeof navigator === 'undefined' || navigator.onLine,
-  );
   const [snapshot, setSnapshot] = useState<AttendanceDataSnapshot | null>(null);
   const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(() =>
-    Boolean(eventId && !hasLiveSource && typeof navigator !== 'undefined' && !navigator.onLine),
+    Boolean(eventId && !hasLiveSource && !isOnline),
   );
   const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

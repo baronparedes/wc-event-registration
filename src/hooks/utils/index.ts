@@ -7,6 +7,7 @@ export { useScanBuffer } from './useScanBuffer';
 export { useKioskInactivityReset } from './useKioskInactivityReset';
 export { useStepCountdown } from './useStepCountdown';
 export { useIsMobileViewport } from './useIsMobileViewport';
+export { useOnlineStatus } from './useOnlineStatus';
 export { useFieldAnswerTextFormatter } from './useFieldAnswerTextFormatter';
 export { useWizardStepScroll } from './useWizardStepScroll';
 export { useLocalStorage } from './useLocalStorage';

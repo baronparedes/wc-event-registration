@@ -1,12 +1,4 @@
-import {
-  type ComponentType,
-  type ReactElement,
-  Suspense,
-  lazy,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type ComponentType, type ReactElement, Suspense, lazy, useEffect, useRef } from 'react';
 
 import { WifiOff } from 'lucide-react';
 import {
@@ -31,7 +23,7 @@ import { canAdminPerform } from '@/lib/domain/auth';
 
 import { AppMobileShell, AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
-import { useIsMobileViewport } from '../hooks/utils';
+import { useIsMobileViewport, useOnlineStatus } from '../hooks/utils';
 
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
@@ -184,26 +176,6 @@ function ResponsiveShellLayout() {
   return isMobile ? <AppMobileShell /> : <AppShell />;
 }
 
-function useBrowserOnlineStatus(): boolean {
-  const [isOnline, setIsOnline] = useState(
-    () => typeof navigator === 'undefined' || navigator.onLine,
-  );
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  return isOnline;
-}
-
 function isOfflineSupportedPath(pathname: string): boolean {
   return Boolean(
     matchPath({ path: ROUTE_PATHS.adminEventAttendanceDataPattern, end: true }, pathname),
@@ -257,7 +229,7 @@ function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {
 }
 
 function OfflineNavigationGuard() {
-  const isOnline = useBrowserOnlineStatus();
+  const isOnline = useOnlineStatus();
   const location = useLocation();
   const navigate = useNavigate();
   const lastSupportedPathRef = useRef<string | null>(null);
@@ -295,11 +267,9 @@ function RequireAdminAuth({
   requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
 }) {
   const { data, isLoading } = useAdminAuthQuery();
+  const isOnline = useOnlineStatus();
   const location = useLocation();
-  const isOfflineAttendanceRoute =
-    typeof navigator !== 'undefined' &&
-    navigator.onLine === false &&
-    isOfflineSupportedPath(location.pathname);
+  const isOfflineAttendanceRoute = !isOnline && isOfflineSupportedPath(location.pathname);
 
   if (isOfflineAttendanceRoute) {
     return children;
