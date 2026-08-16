@@ -1,40 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { CalendarCheck, ClipboardList, Edit, Form, Plus, Settings, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
-import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
-import {
-  ListTable,
-  ListTableBody,
-  ListTableCell,
-  ListTableHead,
-  ListTableHeaderCell,
-  ListTableHeaderRow,
-  ListTableRow,
-} from '@/components/ui/ListTable';
 import {
   PAGINATION_DEFAULTS,
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
   UI_MESSAGES,
-  toAdminEventAttendance,
-  toAdminEventAttendanceCheckIn,
-  toAdminEventAttendanceData,
   toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventRegistrations,
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
+import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
-import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
-import { DuplicatePolicyLabel, EventStatusBadge } from './components';
+import { AdminEventsTable, MobileEventCard } from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
@@ -67,6 +53,7 @@ export function AdminEventsPage() {
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
   const canAccessCheckIn = canAdminPerform(authState?.adminRole, 'canAccessAttendanceCheckIn');
+  const isMobileViewport = useIsMobileViewport();
 
   function handleNextPage() {
     if (!nextCursor) return;
@@ -176,106 +163,29 @@ export function AdminEventsPage() {
 
         {!error && events.length > 0 && (
           <div className="rounded-2xl border border-border bg-surface">
-            <ListTable>
-              <ListTableHead>
-                <ListTableHeaderRow>
-                  <ListTableHeaderCell className="px-6">Event</ListTableHeaderCell>
-                  <ListTableHeaderCell>Status</ListTableHeaderCell>
-                  <ListTableHeaderCell>Duplicate Policy</ListTableHeaderCell>
-                  <ListTableHeaderCell>Reg. Mode</ListTableHeaderCell>
-                  <ListTableHeaderCell>Starts</ListTableHeaderCell>
-                  <ListTableHeaderCell>Actions</ListTableHeaderCell>
-                </ListTableHeaderRow>
-              </ListTableHead>
-              <ListTableBody>
+            {isMobileViewport ? (
+              <div className="space-y-3 p-3">
                 {events.map((event) => (
-                  <ListTableRow
+                  <MobileEventCard
                     key={event.id}
-                    className={canWrite ? 'cursor-pointer' : undefined}
-                    onClick={canWrite ? () => navigate(toAdminEventDetail(event.id)) : undefined}
-                  >
-                    <ListTableCell className="px-6">
-                      <p className="font-medium text-text">{event.title}</p>
-                      <p className="mt-0.5 text-xs text-muted">{event.slug}</p>
-                    </ListTableCell>
-                    <ListTableCell>
-                      <EventStatusBadge status={event.status} />
-                    </ListTableCell>
-                    <ListTableCell>
-                      <DuplicatePolicyLabel policy={event.duplicate_policy} />
-                    </ListTableCell>
-                    <ListTableCell>
-                      <span className="text-sm capitalize text-text">
-                        {event.registration_mode}
-                      </span>
-                    </ListTableCell>
-                    <ListTableCell>
-                      <span className="text-sm text-text">{formatDateOnly(event.starts_at)}</span>
-                    </ListTableCell>
-                    <ListTableCell onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-3">
-                        {canWrite && (
-                          <ActionLink
-                            to={toAdminEventDetail(event.id)}
-                            title="Edit"
-                            aria-label="Edit"
-                          >
-                            <Edit className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                        {canWrite && (
-                          <ActionLink
-                            to={toAdminEventAttendance(event.id)}
-                            title="Attendance"
-                            aria-label="Attendance"
-                          >
-                            <Settings className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                        {canWrite && (
-                          <ActionLink
-                            to={toAdminEventFields(event.id)}
-                            title="Fields"
-                            aria-label="Fields"
-                          >
-                            <Form className="h-5 w-5" aria-label="Fields" />
-                          </ActionLink>
-                        )}
-                        {canRead && (
-                          <ActionLink
-                            to={toAdminEventAttendanceData(event.id)}
-                            title="Attendee Details"
-                            aria-label="Attendee Details"
-                          >
-                            <Users className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                        {canRead && (
-                          <ActionLink
-                            to={toAdminEventRegistrations(event.id)}
-                            title="Registrations"
-                            aria-label="Registrations"
-                          >
-                            <ClipboardList className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                        {canAccessCheckIn && (
-                          <ActionLink
-                            to={toAdminEventAttendanceCheckIn(event.id)}
-                            title="Check-In"
-                            aria-label="Check-In"
-                          >
-                            <CalendarCheck className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                      </div>
-                    </ListTableCell>
-                  </ListTableRow>
+                    event={event}
+                    canWrite={canWrite}
+                    canRead={canRead}
+                    canAccessCheckIn={canAccessCheckIn}
+                  />
                 ))}
-              </ListTableBody>
-            </ListTable>
+              </div>
+            ) : (
+              <AdminEventsTable
+                events={events}
+                canWrite={canWrite}
+                canRead={canRead}
+                canAccessCheckIn={canAccessCheckIn}
+                onEventSelect={(eventId) => navigate(toAdminEventDetail(eventId))}
+              />
+            )}
 
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="hidden text-xs text-muted sm:block">
                 {normalizedSearchTerm.length > 0
                   ? `Showing up to ${pageSize} matching events per page`

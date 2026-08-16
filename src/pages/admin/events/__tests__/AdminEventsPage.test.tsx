@@ -35,6 +35,14 @@ vi.mock('@/hooks/domain/events', async () => {
   };
 });
 
+vi.mock('@/hooks/utils', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/utils')>('@/hooks/utils');
+  return {
+    ...actual,
+    useIsMobileViewport: () => false,
+  };
+});
+
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
@@ -81,10 +89,17 @@ vi.mock('@/components/ui/AdminPaginationControls', () => ({
   },
 }));
 
-vi.mock('@/pages/admin/events/components', () => ({
-  EventStatusBadge: (props: { status: string }) => <div>{props.status}</div>,
-  DuplicatePolicyLabel: (props: { policy: string }) => <div>{props.policy}</div>,
-}));
+vi.mock('@/pages/admin/events/components', async () => {
+  const actual = await vi.importActual<typeof import('@/pages/admin/events/components')>(
+    '@/pages/admin/events/components',
+  );
+
+  return {
+    ...actual,
+    EventStatusBadge: (props: { status: string }) => <div>{props.status}</div>,
+    DuplicatePolicyLabel: (props: { policy: string }) => <div>{props.policy}</div>,
+  };
+});
 
 describe('AdminEventsPage', () => {
   beforeEach(() => {
