@@ -5,7 +5,8 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useAdminLogoutMutation } from '@/hooks/domain/auth/useAdminLogoutMutation';
 import { ADMIN_AUTH_QUERY_KEY } from '@/lib/domain/auth';
 
-const { mockSignOut } = vi.hoisted(() => ({
+const { mockClearOfflineAttendanceData, mockSignOut } = vi.hoisted(() => ({
+  mockClearOfflineAttendanceData: vi.fn(),
   mockSignOut: vi.fn(),
 }));
 
@@ -14,6 +15,7 @@ vi.mock('@/lib/infrastructure', async () => {
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
+    clearOfflineAttendanceData: mockClearOfflineAttendanceData,
     supabase: {
       auth: {
         signOut: mockSignOut,
@@ -25,6 +27,7 @@ vi.mock('@/lib/infrastructure', async () => {
 describe('useAdminLogoutMutation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockClearOfflineAttendanceData.mockResolvedValue(undefined);
     mockSignOut.mockResolvedValue({ error: null });
   });
 
@@ -41,6 +44,8 @@ describe('useAdminLogoutMutation', () => {
     await act(async () => {
       await result.current.mutateAsync();
     });
+
+    expect(mockClearOfflineAttendanceData).toHaveBeenCalledOnce();
 
     expect(queryClient.getQueryData(ADMIN_AUTH_QUERY_KEY)).toEqual({
       isAuthenticated: false,
@@ -61,6 +66,7 @@ describe('useAdminLogoutMutation', () => {
 
     await expect(result.current.mutateAsync()).rejects.toThrow('network issue');
 
+    expect(mockClearOfflineAttendanceData).not.toHaveBeenCalled();
     expect(queryClient.getQueryData(ADMIN_AUTH_QUERY_KEY)).toBeUndefined();
   });
 });

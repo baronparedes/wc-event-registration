@@ -47,6 +47,24 @@ export function AdminAttendanceDataPage() {
   });
   const { data: onlineRegistrationFields = [], isLoading: registrationFieldsLoading } =
     useAdminEventFieldsQuery(id);
+  const offlinePreparation = useMemo(() => {
+    if (!authState?.isAuthenticated || !authState.session || !authState.adminRole) {
+      return undefined;
+    }
+
+    if (!onlineEvent || !onlineSettings) {
+      return undefined;
+    }
+
+    return {
+      owner: {
+        userId: authState.session.user.id,
+        role: authState.adminRole,
+      },
+      event: onlineEvent,
+      settings: onlineSettings,
+    };
+  }, [authState, onlineEvent, onlineSettings]);
   const {
     attendees: onlineAttendees,
     cachedAt,
@@ -54,7 +72,18 @@ export function AdminAttendanceDataPage() {
     isFetching: attendeesFetching,
     refresh,
     updateAttendanceAnswers,
-  } = useAttendeesLocalCacheQuery(id);
+  } = useAttendeesLocalCacheQuery(id, {
+    offlinePreparation,
+    attendanceDataSnapshot:
+      onlineEvent && onlineSettings
+        ? {
+            event: onlineEvent,
+            settings: onlineSettings,
+            attendanceFields: onlineFields,
+            registrationFields: onlineRegistrationFields,
+          }
+        : undefined,
+  });
 
   const offlineSnapshot = useOfflineAttendanceDataSnapshot({
     eventId: id,

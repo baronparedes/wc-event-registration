@@ -13,9 +13,9 @@ function App() {
   const isMobileToastLayout = useIsMobileViewport();
 
   return (
-    <ErrorBoundary>
-      <AppProviders>
-        <BrowserRouter>
+    <AppProviders>
+      <BrowserRouter>
+        <ErrorBoundary>
           <AppRouter />
           <Toaster
             richColors
@@ -38,9 +38,9 @@ function App() {
             }}
           />
           <SpeedInsights />
-        </BrowserRouter>
-      </AppProviders>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </AppProviders>
   );
 }
 

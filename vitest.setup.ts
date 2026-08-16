@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import dotenv from 'dotenv';
+import 'fake-indexeddb/auto';
 import path from 'path';
 import { afterAll, beforeAll } from 'vitest';
 

@@ -5,11 +5,7 @@ import type { AttendanceSettings, AttendeeSearchResult } from '@/lib/domain/atte
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import type { AdminEventField } from '@/lib/domain/event-fields';
 import type { AdminEvent } from '@/lib/domain/events';
-import {
-  type AttendanceDataSnapshot,
-  readAttendanceDataSnapshot,
-  writeAttendanceDataSnapshot,
-} from '@/lib/infrastructure';
+import { type AttendanceDataSnapshot, readAttendanceDataSnapshot } from '@/lib/infrastructure';
 
 type UseOfflineAttendanceDataSnapshotInput = {
   eventId: string | undefined;
@@ -74,40 +70,6 @@ export function useOfflineAttendanceDataSnapshot({
 
     return { event, settings, attendanceFields, registrationFields, attendees };
   }, [attendanceFields, attendees, event, registrationFields, settings]);
-
-  useEffect(() => {
-    if (!eventId || !source) return;
-
-    let cancelled = false;
-
-    void writeAttendanceDataSnapshot({
-      eventId,
-      event: source.event,
-      settings: source.settings,
-      attendanceFields: source.attendanceFields,
-      registrationFields: source.registrationFields,
-      attendees: source.attendees,
-    })
-      .then((nextSnapshot) => {
-        if (!cancelled) {
-          setSnapshot(nextSnapshot);
-          setError(null);
-        }
-      })
-      .catch((snapshotError: unknown) => {
-        if (!cancelled) {
-          setError(
-            snapshotError instanceof Error
-              ? snapshotError
-              : new Error('Unable to prepare offline data.'),
-          );
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId, source]);
 
   const resolved = source ?? snapshot;
 

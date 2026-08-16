@@ -6,7 +6,7 @@ import { supabase } from '@/lib/infrastructure';
 export const adminEventQueryKey = (id: string) => ['admin-event', id] as const;
 
 /** Fetches a single event by ID for the admin edit form. Only runs when id is defined. */
-export function useAdminEventQuery(id: string | undefined) {
+export function useAdminEventQuery(id: string | undefined, enabled = true) {
   return useQuery({
     queryKey: id ? adminEventQueryKey(id) : ['admin-event', ''],
     queryFn: async (): Promise<AdminEvent | null> => {
@@ -16,6 +16,6 @@ export function useAdminEventQuery(id: string | undefined) {
       if (error) throw error;
       return data as AdminEvent | null;
     },
-    enabled: !!id,
+    enabled: Boolean(id) && enabled,
   });
 }

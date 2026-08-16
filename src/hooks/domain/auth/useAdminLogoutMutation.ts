@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { ADMIN_AUTH_QUERY_KEY, type AdminAuthState } from '@/lib/domain/auth';
-import { supabase } from '@/lib/infrastructure';
+import { clearOfflineAttendanceData, supabase } from '@/lib/infrastructure';
 
 export function useAdminLogoutMutation() {
   const queryClient = useQueryClient();
@@ -14,7 +14,8 @@ export function useAdminLogoutMutation() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearOfflineAttendanceData();
       queryClient.setQueryData<AdminAuthState>(ADMIN_AUTH_QUERY_KEY, {
         isAuthenticated: false,
         session: null,

@@ -178,7 +178,8 @@ function ResponsiveShellLayout() {
 
 function isOfflineSupportedPath(pathname: string): boolean {
   return Boolean(
-    matchPath({ path: ROUTE_PATHS.adminEventAttendanceDataPattern, end: true }, pathname),
+    matchPath({ path: ROUTE_PATHS.adminEventAttendanceDataPattern, end: true }, pathname) ||
+    matchPath({ path: ROUTE_PATHS.adminEventAttendanceCheckInPattern, end: true }, pathname),
   );
 }
 
@@ -218,8 +219,8 @@ function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {
       <WifiOff className="h-10 w-10 text-amber-700" aria-hidden="true" />
       <h1 className="text-2xl font-semibold text-amber-950">You are offline</h1>
       <p className="text-sm text-amber-800">
-        Only the prepared Attendance Data view is available without a connection. Return to the
-        previous page or reconnect to continue.
+        Only prepared Attendance Data and Check-In views are available without a connection. Return
+        to the previous page or reconnect to continue.
       </p>
       <Button onClick={onGoBack} variant="primaryOutline">
         Go Back
@@ -266,8 +267,8 @@ function RequireAdminAuth({
   allowedRoles?: readonly AdminRole[];
   requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
 }) {
-  const { data, isLoading } = useAdminAuthQuery();
   const isOnline = useOnlineStatus();
+  const { data, isLoading } = useAdminAuthQuery(isOnline);
   const location = useLocation();
   const isOfflineAttendanceRoute = !isOnline && isOfflineSupportedPath(location.pathname);
 

@@ -8,14 +8,23 @@ import { Button, EventHeaderCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
-import { useQueuedCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
+import {
+  useEnqueueOfflineCheckInMutation,
+  useQueuedCheckInAttendeeMutation,
+} from '@/hooks/domain/attendance/mutations';
 import {
   useAttendanceSettingsQuery,
   useAttendeesLocalCacheQuery,
 } from '@/hooks/domain/attendance/queries';
+import {
+  useOfflineCheckInOutboxReplay,
+  useOfflineCheckInOutboxState,
+  useOfflineSessionUserQuery,
+  usePreparedOfflineAttendanceEventQuery,
+} from '@/hooks/domain/attendance/state';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { useScanBuffer, useWizardStepScroll } from '@/hooks/utils';
+import { useOnlineStatus, useScanBuffer, useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import {
   isAutoWindowModeEnabled,
@@ -85,9 +94,49 @@ export function AdminAttendanceCheckInPage() {
   const selectStepRef = useRef<HTMLDivElement | null>(null);
   const confirmStepRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: event, isLoading: eventLoading } = useAdminEventQuery(eventId);
-  const { data: authState } = useAdminAuthQuery();
-  const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
+  const isOnline = useOnlineStatus();
+  const { data: onlineEvent, isLoading: eventLoading } = useAdminEventQuery(eventId, isOnline);
+  const { data: authState } = useAdminAuthQuery(isOnline);
+  const onlineOwner = useMemo(() => {
+    if (!authState?.isAuthenticated || !authState.session || !authState.adminRole) {
+      return null;
+    }
+
+    return {
+      userId: authState.session.user.id,
+      role: authState.adminRole,
+    };
+  }, [authState]);
+  const offlineSessionUserQuery = useOfflineSessionUserQuery(!isOnline);
+  const preparedOfflineEventQuery = usePreparedOfflineAttendanceEventQuery(
+    eventId,
+    onlineOwner,
+    offlineSessionUserQuery.data?.id,
+  );
+  const preparedOfflineEvent = !isOnline ? preparedOfflineEventQuery.data : null;
+  const isUsingPreparedOfflineEvent = Boolean(preparedOfflineEvent);
+  const offlineOwner =
+    onlineOwner ??
+    (preparedOfflineEvent
+      ? {
+          userId: preparedOfflineEvent.ownerUserId,
+          role: preparedOfflineEvent.ownerRole,
+        }
+      : null);
+  const offlineCheckInOutbox = useOfflineCheckInOutboxState(
+    preparedOfflineEventQuery.data ? eventId : undefined,
+    preparedOfflineEvent ? offlineOwner : null,
+  );
+  useOfflineCheckInOutboxReplay(eventId, offlineOwner, Boolean(preparedOfflineEvent), () => {
+    void offlineCheckInOutbox.refresh();
+    void preparedOfflineEventQuery.refetch();
+  });
+  const event = preparedOfflineEvent?.event ?? onlineEvent;
+  const { data: onlineSettings, isLoading: settingsLoading } = useAttendanceSettingsQuery(
+    eventId,
+    isOnline,
+  );
+  const settings = preparedOfflineEvent?.settings ?? onlineSettings;
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const enforceCheckInEventWindow = settings?.enforce_check_in_event_window ?? true;
   const isOutsideEventWindow = event ? !isWithinEventWindow(event, nowMs) : false;
@@ -109,7 +158,7 @@ export function AdminAttendanceCheckInPage() {
     [nowMs, timeslots],
   );
   const {
-    attendees: cachedAttendees,
+    attendees: onlineAttendees,
     cachedAt,
     isLoading: cacheLoading,
     isFetching: cacheFetching,
@@ -117,16 +166,35 @@ export function AdminAttendanceCheckInPage() {
     error: cacheError,
     refresh: refreshCache,
     updateAttendee,
-  } = useAttendeesLocalCacheQuery(eventId, { realtimeEnabled: shouldListenRealtime });
+  } = useAttendeesLocalCacheQuery(eventId, {
+    enabled: isOnline,
+    realtimeEnabled: shouldListenRealtime,
+    offlinePreparation:
+      onlineOwner && onlineEvent && onlineSettings
+        ? { owner: onlineOwner, event: onlineEvent, settings: onlineSettings }
+        : undefined,
+  });
+  const cachedAttendees = preparedOfflineEvent?.attendees ?? onlineAttendees;
   const {
     enqueueCheckIn,
     pendingCount: pendingCheckInCount,
     lastError: lastQueueError,
   } = useQueuedCheckInAttendeeMutation(eventId, { refreshCache, updateAttendee });
+  const enqueueOfflineCheckInMutation = useEnqueueOfflineCheckInMutation();
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const showQueueStatusBanner = pendingCheckInCount > 0 || Boolean(lastQueueError);
+  const activePendingCheckInCount = isUsingPreparedOfflineEvent
+    ? offlineCheckInOutbox.pendingCount
+    : pendingCheckInCount;
+  const activeQueueError = isUsingPreparedOfflineEvent
+    ? offlineCheckInOutbox.lastError
+    : lastQueueError;
+  const showQueueStatusBanner = activePendingCheckInCount > 0 || Boolean(activeQueueError);
 
-  const isLoading = eventLoading || settingsLoading;
+  const isLoading = isUsingPreparedOfflineEvent
+    ? false
+    : isOnline
+      ? eventLoading || settingsLoading
+      : preparedOfflineEventQuery.isLoading;
   const registeredCount = cachedAttendees?.length ?? 0;
 
   const results = useMemo(() => {
@@ -203,6 +271,12 @@ export function AdminAttendanceCheckInPage() {
     (Boolean(checkInResult) || confirmedAttendee?.check_in_status === 'checked_in');
 
   const cacheStatusMessage = useMemo(() => {
+    if (isUsingPreparedOfflineEvent && cachedAttendees) {
+      const queueSuffix =
+        activePendingCheckInCount > 0 ? ` · ${activePendingCheckInCount} queued` : '';
+      return `${cachedAttendees.length} attendees prepared for offline check-in${queueSuffix}`;
+    }
+
     if (cacheLoading || cacheFetching) {
       return 'Loading attendee list...';
     }
@@ -226,6 +300,8 @@ export function AdminAttendanceCheckInPage() {
     cachedAt,
     cachedAttendees,
     isCacheError,
+    isUsingPreparedOfflineEvent,
+    activePendingCheckInCount,
     pendingCheckInCount,
   ]);
 
@@ -343,6 +419,21 @@ export function AdminAttendanceCheckInPage() {
     };
 
     try {
+      if (isUsingPreparedOfflineEvent && offlineOwner && cachedAttendees) {
+        await enqueueOfflineCheckInMutation.mutateAsync({
+          owner: offlineOwner,
+          payload,
+          registrationId: confirmedAttendee.registration_id,
+          attendees: cachedAttendees,
+        });
+        await offlineCheckInOutbox.refresh();
+        await preparedOfflineEventQuery.refetch();
+        toast.success('Check-in queued for sync.');
+        setCheckInResult(null);
+        handleReadyForNext();
+        return;
+      }
+
       const { queued } = enqueueCheckIn(payload, confirmedAttendee.registration_id);
 
       if (!queued) {
@@ -385,15 +476,21 @@ export function AdminAttendanceCheckInPage() {
   }
 
   if (!event) {
+    const message = isOnline
+      ? 'Event not found.'
+      : 'This event is not prepared for offline check-in. Reconnect before opening it again.';
+
     return (
       <AdminPageShell>
         <AdminPageShell.Header title="Check-In" />
         <AdminPageShell.Content>
           <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Event not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminEvents}>
-              Back to events
-            </Link>
+            {message}{' '}
+            {isOnline && (
+              <Link className="underline" to={ROUTE_PATHS.adminEvents}>
+                Back to events
+              </Link>
+            )}
           </div>
         </AdminPageShell.Content>
       </AdminPageShell>
@@ -452,23 +549,25 @@ export function AdminAttendanceCheckInPage() {
       )}
 
       {showCheckInWizard && attendanceEnabled && (
-        <AttendeeCacheStatusBar
-          message={cacheStatusMessage}
-          isError={isCacheError}
-          isRefreshing={cacheFetching}
-          onRefresh={refreshCache}
-        />
+        <div className="space-y-2">
+          <AttendeeCacheStatusBar
+            message={cacheStatusMessage}
+            isError={!isUsingPreparedOfflineEvent && isCacheError}
+            isRefreshing={!isUsingPreparedOfflineEvent && cacheFetching}
+            onRefresh={isUsingPreparedOfflineEvent ? () => undefined : refreshCache}
+          />
+        </div>
       )}
 
       {showCheckInWizard && showQueueStatusBanner && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
           <p className="text-sm font-medium text-blue-800">
-            {pendingCheckInCount > 0
-              ? `${pendingCheckInCount} check-in${pendingCheckInCount === 1 ? '' : 's'} queued for background sync.`
+            {activePendingCheckInCount > 0
+              ? `${activePendingCheckInCount} check-in${activePendingCheckInCount === 1 ? '' : 's'} queued for background sync.`
               : 'A queued check-in needs attention.'}
           </p>
-          {lastQueueError && (
-            <p className="mt-1 text-xs text-blue-700">Last sync issue: {lastQueueError}</p>
+          {activeQueueError && (
+            <p className="mt-1 text-xs text-blue-700">Last sync issue: {activeQueueError}</p>
           )}
         </div>
       )}

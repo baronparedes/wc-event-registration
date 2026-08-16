@@ -9,15 +9,24 @@ import {
   useAttendanceSlotRecordRealtime,
 } from '@/hooks/domain/attendance/state';
 import { useLocalStorage } from '@/hooks/utils';
+import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import type {
   AttendanceAnswerSummary,
   AttendanceCheckInRealtimeEvent,
+  AttendanceSettings,
   AttendanceSlotRecord,
   AttendanceSlotRecordInsertEvent,
   AttendeeKind,
   AttendeeSearchResult,
 } from '@/lib/domain/attendance/types';
-import { createEdgeFunctionCaller } from '@/lib/infrastructure';
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import type { AdminEvent } from '@/lib/domain/events';
+import {
+  type OfflineAttendanceOwner,
+  createEdgeFunctionCaller,
+  prepareOfflineAttendanceEvent,
+  writeAttendanceDataSnapshot,
+} from '@/lib/infrastructure';
 
 type ListAttendeesInput = {
   event_id: string;
@@ -61,7 +70,19 @@ type AttendeeSlotRecordPatch = {
 };
 
 type UseAttendeesLocalCacheQueryOptions = {
+  enabled?: boolean;
   realtimeEnabled?: boolean;
+  offlinePreparation?: {
+    owner: OfflineAttendanceOwner;
+    event: AdminEvent;
+    settings: AttendanceSettings;
+  };
+  attendanceDataSnapshot?: {
+    event: AdminEvent;
+    settings: AttendanceSettings;
+    attendanceFields: AttendanceField[];
+    registrationFields: AdminEventField[];
+  };
 };
 
 const CACHE_KEY_PREFIX = 'wc:attendees';
@@ -75,6 +96,34 @@ function getStorageKey(eventId: string): string {
 function buildCacheEntry(attendees: AttendeeSearchResult[]): LocalCacheEntry {
   const entry: LocalCacheEntry = { attendees, cachedAt: Date.now() };
   return entry;
+}
+
+async function prepareAttendanceDataSnapshot(
+  snapshotContext: UseAttendeesLocalCacheQueryOptions['attendanceDataSnapshot'],
+  attendees: AttendeeSearchResult[],
+): Promise<void> {
+  if (!snapshotContext) return;
+
+  await writeAttendanceDataSnapshot({
+    eventId: snapshotContext.event.id,
+    event: snapshotContext.event,
+    settings: snapshotContext.settings,
+    attendanceFields: snapshotContext.attendanceFields,
+    registrationFields: snapshotContext.registrationFields,
+    attendees,
+  });
+}
+
+async function prepareOfflineAttendanceData(
+  offlinePreparation: UseAttendeesLocalCacheQueryOptions['offlinePreparation'],
+  attendanceDataSnapshot: UseAttendeesLocalCacheQueryOptions['attendanceDataSnapshot'],
+  attendees: AttendeeSearchResult[],
+): Promise<void> {
+  if (offlinePreparation) {
+    await prepareOfflineAttendanceEvent({ ...offlinePreparation, attendees });
+  }
+
+  await prepareAttendanceDataSnapshot(attendanceDataSnapshot, attendees);
 }
 
 function isCacheExpired(cachedAt: number, now = Date.now()): boolean {
@@ -224,8 +273,8 @@ async function fetchAllAttendees(eventId: string): Promise<AttendeeSearchResult[
 }
 
 /**
- * Fetches all attendees for an event once and caches them in localStorage.
- * Subsequent searches are performed locally against the cache.
+ * Resolves all attendees through list-attendees-v2 or a valid local cache.
+ * The resolved attendee set is the single preparation source for offline attendance data.
  * Call `refresh()` to force a re-fetch from the server.
  * Call `updateAttendee()` to patch a single attendee in the cache (e.g. after check-in).
  */
@@ -233,18 +282,36 @@ export function useAttendeesLocalCacheQuery(
   eventId: string | undefined,
   options?: UseAttendeesLocalCacheQueryOptions,
 ) {
+  const enabled = options?.enabled ?? true;
   const realtimeEnabled = options?.realtimeEnabled ?? true;
+  const offlinePreparation = options?.offlinePreparation;
+  const attendanceDataSnapshot = options?.attendanceDataSnapshot;
   const queryClient = useQueryClient();
   const cacheStorage = useLocalStorage<LocalCacheEntry>(eventId ? getStorageKey(eventId) : null);
   const lastRefreshAtRef = useRef<number>(0);
 
   const query = useQuery({
-    queryKey: QUERY_KEYS.adminAttendeesLocalCache(eventId),
+    queryKey: [
+      ...QUERY_KEYS.adminAttendeesLocalCache(eventId),
+      offlinePreparation?.owner.userId,
+      offlinePreparation?.settings.updated_at,
+      attendanceDataSnapshot?.settings.updated_at,
+      attendanceDataSnapshot?.attendanceFields.map((field) => field.updated_at),
+      attendanceDataSnapshot?.registrationFields.map((field) => field.updated_at),
+    ],
     queryFn: async (): Promise<LocalCacheEntry | null> => {
       if (!eventId) return null;
 
       const cached = cacheStorage.get();
-      if (cached && !isCacheExpired(cached.cachedAt)) return cached;
+      if (cached && !isCacheExpired(cached.cachedAt)) {
+        await prepareOfflineAttendanceData(
+          offlinePreparation,
+          attendanceDataSnapshot,
+          cached.attendees,
+        );
+
+        return cached;
+      }
       if (cached) {
         cacheStorage.remove();
       }
@@ -253,9 +320,16 @@ export function useAttendeesLocalCacheQuery(
       const entry = buildCacheEntry(attendees);
       cacheStorage.set(entry);
 
+      await prepareOfflineAttendanceData(offlinePreparation, attendanceDataSnapshot, attendees);
+
       return entry;
     },
-    enabled: Boolean(eventId),
+    enabled: Boolean(
+      eventId &&
+      enabled &&
+      (!offlinePreparation || offlinePreparation.event.id === eventId) &&
+      (!attendanceDataSnapshot || attendanceDataSnapshot.event.id === eventId),
+    ),
     staleTime: CACHE_TTL_MS, // 24 hours — cache is valid for one event day
     gcTime: CACHE_TTL_MS,
   });
