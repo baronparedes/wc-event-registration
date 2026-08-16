@@ -60,7 +60,7 @@ export function ExportAttendanceViewButton({
   };
 
   return (
-    <Button variant="outline" onClick={handleExportCSV} disabled={disabled || isExporting}>
+    <Button variant="primaryOutline" onClick={handleExportCSV} disabled={disabled || isExporting}>
       {isExporting ? 'Exporting...' : 'Export Attendance CSV'}
     </Button>
   );

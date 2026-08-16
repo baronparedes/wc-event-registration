@@ -107,7 +107,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
       <div className="flex w-full flex-nowrap items-center justify-center gap-1.5 sm:w-auto sm:justify-end sm:gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="primaryOutline"
           size="sm"
           onClick={onFirstPage}
           disabled={!canGoPrevious || isLoading}
@@ -119,7 +119,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="primaryOutline"
           size="sm"
           onClick={onPreviousPage}
           disabled={!canGoPrevious || isLoading}
@@ -155,7 +155,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
 
         <Button
           type="button"
-          variant="outline"
+          variant="primaryOutline"
           size="sm"
           onClick={onNextPage}
           disabled={!canGoNext || isLoading}
@@ -167,7 +167,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="primaryOutline"
           size="sm"
           onClick={onLastPage}
           disabled={!canGoNext || isLoading}

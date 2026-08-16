@@ -394,7 +394,7 @@ export function AdminMemberMilestonesPage() {
               <div className="grid w-full grid-cols-[3rem_minmax(0,1fr)_3rem] items-center gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="primaryOutline"
                   onClick={handlePreviousMonth}
                   aria-label="Previous month"
                   disabled={isAtMinimumMonth}
@@ -407,7 +407,7 @@ export function AdminMemberMilestonesPage() {
                 </label>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="primaryOutline"
                   onClick={handleNextMonth}
                   aria-label="Next month"
                   disabled={isAtMaximumMonth}

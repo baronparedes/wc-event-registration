@@ -67,7 +67,7 @@ export function Dialog({
 
           {showCloseButton && (
             <div className="flex justify-end border-t border-border pt-3">
-              <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              <Button type="button" variant="primaryOutline" size="sm" onClick={onClose}>
                 {closeButtonLabel}
               </Button>
             </div>

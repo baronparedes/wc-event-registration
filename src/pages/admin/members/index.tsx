@@ -121,7 +121,7 @@ export function AdminMembersPage() {
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 onClick={() => navigate(ROUTE_PATHS.adminMemberMilestones)}
               >
                 Milestones
@@ -130,7 +130,7 @@ export function AdminMembersPage() {
                 <>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="primaryOutline"
                     onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
                   >
                     Upload CSV
@@ -173,7 +173,7 @@ export function AdminMembersPage() {
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant="primaryOutline"
             className="w-full sm:w-auto"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}

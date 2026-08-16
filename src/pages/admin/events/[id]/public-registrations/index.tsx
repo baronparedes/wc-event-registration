@@ -135,7 +135,7 @@ export function AdminPublicRegistrationsPage() {
       </Button>
       {canWrite && (
         <Button
-          variant="outline"
+          variant="primaryOutline"
           onClick={() => navigate(toAdminEventPublicRegistrationsBulkUpload(eventId))}
         >
           Upload CSV
@@ -188,7 +188,7 @@ export function AdminPublicRegistrationsPage() {
           />
           <Button
             type="button"
-            variant="outline"
+            variant="primaryOutline"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
           >

@@ -1,6 +1,14 @@
 import { useState } from 'react';
 
-import { Edit, MoreHorizontal, Users } from 'lucide-react';
+import {
+  CalendarCheck,
+  ClipboardList,
+  Edit,
+  Form,
+  MoreHorizontal,
+  Settings,
+  Users,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
@@ -116,26 +124,35 @@ export function MobileEventCard({
             }
           >
             {canWrite && (
-              <DropdownMenuItem to={toAdminEventDetail(event.id)}>Edit event</DropdownMenuItem>
-            )}
-            {canWrite && (
               <DropdownMenuItem to={toAdminEventAttendance(event.id)}>
-                Attendance settings
+                <span className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Attendance settings
+                </span>
               </DropdownMenuItem>
             )}
             {canWrite && (
               <DropdownMenuItem to={toAdminEventFields(event.id)}>
-                Registration fields
+                <span className="flex items-center gap-2">
+                  <Form className="h-4 w-4" />
+                  Registration fields
+                </span>
               </DropdownMenuItem>
             )}
             {canRead && (
               <DropdownMenuItem to={toAdminEventRegistrations(event.id)}>
-                Registrations
+                <span className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Registrations
+                </span>
               </DropdownMenuItem>
             )}
             {canAccessCheckIn && (
               <DropdownMenuItem to={toAdminEventAttendanceCheckIn(event.id)}>
-                Check-in
+                <span className="flex items-center gap-2">
+                  <CalendarCheck className="h-4 w-4" />
+                  Check-in
+                </span>
               </DropdownMenuItem>
             )}
           </DropdownMenu>

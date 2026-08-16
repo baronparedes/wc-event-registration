@@ -47,7 +47,13 @@ export function ConfirmDialog({
         <h2 className="font-heading text-lg font-semibold text-text">{title}</h2>
         <div className="mt-2 text-sm text-muted">{description}</div>
         <div className="mt-5 flex justify-end gap-3">
-          <Button disabled={isPending} onClick={onCancel} size="md" type="button" variant="outline">
+          <Button
+            disabled={isPending}
+            onClick={onCancel}
+            size="md"
+            type="button"
+            variant="primaryOutline"
+          >
             {cancelLabel}
           </Button>
           <Button

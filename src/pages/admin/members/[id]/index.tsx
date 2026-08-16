@@ -185,7 +185,7 @@ export function AdminMemberDetailPage() {
         actions={
           <>
             {(canWrite || canRead) && (
-              <Button variant="outline" asChild>
+              <Button variant="primaryOutline" asChild>
                 <Link to={toMemberDetail(id)}>View Event History</Link>
               </Button>
             )}
@@ -324,7 +324,7 @@ export function AdminMemberDetailPage() {
             )}
             <Button
               type="button"
-              variant="outline"
+              variant="primaryOutline"
               onClick={() => navigate(ROUTE_PATHS.adminMembers)}
             >
               {canWrite ? 'Cancel' : 'Back to Members'}

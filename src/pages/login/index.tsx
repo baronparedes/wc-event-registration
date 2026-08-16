@@ -56,14 +56,10 @@ export function LoginPage() {
 
   async function handleSubmit(values: AdminLoginForm) {
     try {
-      const authState = await loginMutation.mutateAsync(values);
-      const resolvedRedirectTarget =
-        authState.adminRole === 'kiosk' && redirectTarget === ROUTE_PATHS.adminEvents
-          ? ROUTE_PATHS.home
-          : redirectTarget;
+      await loginMutation.mutateAsync(values);
 
       toast.success(TOAST_MESSAGES.adminSignInSuccess);
-      navigate(resolvedRedirectTarget, { replace: true });
+      navigate(redirectTarget, { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure;
       toast.error(message);

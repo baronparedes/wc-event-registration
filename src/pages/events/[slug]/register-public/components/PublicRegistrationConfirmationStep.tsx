@@ -72,7 +72,7 @@ export function PublicRegistrationConfirmationStep({
         </div>
 
         <div className="flex w-full flex-col gap-2">
-          <Button asChild className="w-full" variant="outline" size="lg">
+          <Button asChild className="w-full" variant="primaryOutline" size="lg">
             <a href={toEventRegistration(eventSlug)}>Return to Event</a>
           </Button>
         </div>

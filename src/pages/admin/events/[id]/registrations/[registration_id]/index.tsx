@@ -131,7 +131,7 @@ export function AdminRegistrationDetailPage() {
   if (error) {
     return (
       <section className="space-y-4">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="primaryOutline" onClick={() => navigate(-1)}>
           ← Back
         </Button>
         <SectionCard title="Error">
@@ -147,7 +147,7 @@ export function AdminRegistrationDetailPage() {
   if (isLoading) {
     return (
       <section className="space-y-4">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="primaryOutline" onClick={() => navigate(-1)}>
           ← Back
         </Button>
         <SectionCard title="Loading">
@@ -161,7 +161,7 @@ export function AdminRegistrationDetailPage() {
   if (!data) {
     return (
       <section className="space-y-4">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="primaryOutline" onClick={() => navigate(-1)}>
           ← Back
         </Button>
         <SectionCard title="Not Found">

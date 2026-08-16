@@ -434,7 +434,7 @@ export function AttendanceDataEntryPanel({
           <div className="flex justify-end gap-3 border-t border-border mt-4 pt-4">
             <Button
               type="button"
-              variant="outline"
+              variant="primaryOutline"
               onClick={onClose}
               disabled={upsertMutation.isPending}
             >

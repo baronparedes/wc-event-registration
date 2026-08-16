@@ -359,7 +359,7 @@ export function BulkUploadPanel({
 
       <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
         <Button
-          variant="outline"
+          variant="primaryOutline"
           onClick={onClose}
           disabled={bulkUpsertMutation.isPending}
           type="button"

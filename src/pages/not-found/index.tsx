@@ -17,7 +17,7 @@ export function NotFoundPage() {
         <Button onClick={() => navigate(ROUTE_PATHS.home)} variant="default">
           Go Home
         </Button>
-        <Button onClick={() => navigate(-1)} variant="outline">
+        <Button onClick={() => navigate(-1)} variant="primaryOutline">
           Go Back
         </Button>
       </div>

@@ -124,7 +124,7 @@ export function AdminEventsPage() {
           />
           <Button
             type="button"
-            variant="outline"
+            variant="primaryOutline"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
           >

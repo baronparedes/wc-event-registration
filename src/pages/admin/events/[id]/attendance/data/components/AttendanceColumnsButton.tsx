@@ -32,7 +32,7 @@ export function AttendanceColumnsButton({
     <>
       <Button
         type="button"
-        variant="outline"
+        variant="primaryOutline"
         size="sm"
         onClick={() => setIsOpen(true)}
         aria-label="Columns"

@@ -240,7 +240,7 @@ export function SavedViewsModal({
                               <div className="flex w-full items-center justify-end gap-1 sm:w-auto">
                                 <Button
                                   size="sm"
-                                  variant="outline"
+                                  variant="primaryOutline"
                                   onClick={() => handleApplyView(view.id)}
                                   className="text-xs px-2"
                                 >
@@ -249,7 +249,7 @@ export function SavedViewsModal({
                                 {canDelete && (
                                   <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant="primaryOutline"
                                     onClick={() => handleDeleteView(view.id)}
                                     className="text-xs px-2 text-red-600 hover:text-red-700"
                                   >
@@ -270,7 +270,7 @@ export function SavedViewsModal({
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
-              variant="outline"
+              variant="primaryOutline"
               onClick={() => onOpenChange(false)}
               className="w-full sm:flex-1"
             >
@@ -278,7 +278,7 @@ export function SavedViewsModal({
             </Button>
             {canUpdate && currentViewId && (
               <Button
-                variant="outline"
+                variant="primaryOutline"
                 onClick={handleUpdateCurrentView}
                 disabled={!currentSavedView || upsertMutation.isPending}
                 className="w-full sm:flex-1"
@@ -317,7 +317,7 @@ export function SavedViewsModal({
 
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant="primaryOutline"
               onClick={() => {
                 setShowSaveDialog(false);
                 setNewViewName('');

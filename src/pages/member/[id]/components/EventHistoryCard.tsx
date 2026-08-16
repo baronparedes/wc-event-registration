@@ -114,7 +114,7 @@ export function EventGroupCard({ group, formatDateTime, onView }: Props) {
               {activeCount} registration{activeCount !== 1 ? 's' : ''}
             </span>
           </div>
-          <Button size="sm" variant="outline" onClick={onView} className="w-full sm:w-auto">
+          <Button size="sm" variant="primaryOutline" onClick={onView} className="w-full sm:w-auto">
             View
           </Button>
         </div>

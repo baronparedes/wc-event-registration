@@ -22,6 +22,7 @@
 
 html {
   font-size: clamp(16px, 0.2vw + 15.75px, 17.5px);
+  touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
 }
 

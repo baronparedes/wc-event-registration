@@ -163,7 +163,7 @@ export function AddMemberDialog() {
               <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="primaryOutline"
                   onClick={() => setIsOpen(false)}
                   disabled={isLoading}
                 >

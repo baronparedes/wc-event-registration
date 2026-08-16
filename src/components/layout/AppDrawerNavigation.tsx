@@ -236,7 +236,7 @@ export function AppDrawerNavigation({
               )}
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 size="sm"
                 className="w-full"
                 onClick={async () => {

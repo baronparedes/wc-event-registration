@@ -175,7 +175,7 @@ export function AttendanceGroupLevelsCard({
                 <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="primaryOutline"
                     size="sm"
                     onClick={() => onMoveGroupingLevel(index, 'up')}
                     disabled={index === 0}
@@ -187,7 +187,7 @@ export function AttendanceGroupLevelsCard({
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="primaryOutline"
                     size="sm"
                     onClick={() => onMoveGroupingLevel(index, 'down')}
                     disabled={index === groupBy.length - 1}
@@ -199,7 +199,7 @@ export function AttendanceGroupLevelsCard({
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="primaryOutline"
                     size="sm"
                     onClick={() => onRemoveGroupingLevel(index)}
                     aria-label={`Remove level ${index + 1}`}

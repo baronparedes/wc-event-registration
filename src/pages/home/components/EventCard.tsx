@@ -103,7 +103,7 @@ export function EventCard({ event }: EventCardProps) {
                 aria-label={`Share ${event.title}`}
                 onClick={handleShareClick}
                 size="sm"
-                variant="outline"
+                variant="primaryOutline"
               >
                 <Share className="h-4 w-4" aria-hidden="true" />
               </Button>

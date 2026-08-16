@@ -107,7 +107,12 @@ export function UpdateMemberIdDialog({
             </div>
 
             <div className="mt-5 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={isUpdating}>
+              <Button
+                type="button"
+                variant="primaryOutline"
+                onClick={handleClose}
+                disabled={isUpdating}
+              >
                 Cancel
               </Button>
               <Button type="button" onClick={handleConfirm} disabled={!hasChanges || isUpdating}>

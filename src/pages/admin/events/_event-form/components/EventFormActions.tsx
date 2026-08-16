@@ -14,7 +14,7 @@ export function EventFormActions(props: EventFormActionsProps) {
   if (disabled) {
     return (
       <div className="flex justify-end gap-3">
-        <Button onClick={onCancel} size="lg" type="button" variant="outline">
+        <Button onClick={onCancel} size="lg" type="button" variant="primaryOutline">
           Back to Events
         </Button>
       </div>
@@ -23,7 +23,13 @@ export function EventFormActions(props: EventFormActionsProps) {
 
   return (
     <div className="flex justify-end gap-3">
-      <Button disabled={isPending} onClick={onCancel} size="lg" type="button" variant="outline">
+      <Button
+        disabled={isPending}
+        onClick={onCancel}
+        size="lg"
+        type="button"
+        variant="primaryOutline"
+      >
         Cancel
       </Button>
       <Button disabled={isPending || !hasChanges} size="lg" type="submit" variant="default">

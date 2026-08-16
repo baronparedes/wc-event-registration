@@ -81,7 +81,7 @@ export function NameLookupModal({
           type="button"
           onClick={handleOpen}
           disabled={isLookupPending}
-          variant="outline"
+          variant="primaryOutline"
           size="lg"
           className="w-full justify-center"
         >
@@ -163,7 +163,7 @@ export function NameLookupModal({
                     onClick={handleClose}
                     size="lg"
                     type="button"
-                    variant="outline"
+                    variant="primaryOutline"
                   >
                     Cancel
                   </Button>

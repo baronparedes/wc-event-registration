@@ -77,7 +77,7 @@ export function MetadataEntriesEditor({
             {!disabled && (
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 size="sm"
                 disabled={disabled}
                 onClick={() => remove(index)}
@@ -93,7 +93,7 @@ export function MetadataEntriesEditor({
       {!disabled && (
         <Button
           type="button"
-          variant="outline"
+          variant="primaryOutline"
           size="sm"
           disabled={disabled}
           onClick={() => append({ key: '', value: '' } satisfies MetadataEntry)}

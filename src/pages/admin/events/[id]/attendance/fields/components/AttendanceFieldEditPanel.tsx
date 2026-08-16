@@ -384,7 +384,7 @@ export function AttendanceFieldEditPanel({
                 ))}
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="primaryOutline"
                   onClick={() => append({ label: '', value: '' })}
                 >
                   Add Option
@@ -507,7 +507,7 @@ export function AttendanceFieldEditPanel({
             <div className="flex items-center justify-end gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 size="md"
                 onClick={onClose}
                 disabled={isPending}

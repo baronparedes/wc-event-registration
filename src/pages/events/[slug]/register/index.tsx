@@ -92,7 +92,7 @@ export function EventRegistrationPage() {
               <Button onClick={() => navigate(ROUTE_PATHS.home)} variant="default">
                 Go Home
               </Button>
-              <Button onClick={() => navigate(-1)} variant="outline">
+              <Button onClick={() => navigate(-1)} variant="primaryOutline">
                 Go Back
               </Button>
             </div>
@@ -228,7 +228,7 @@ export function EventRegistrationPage() {
                   onClick={enterWizardConfirmStep}
                   size="lg"
                   type="button"
-                  variant="outline"
+                  variant="primaryOutline"
                 >
                   Back to Step 2
                 </Button>

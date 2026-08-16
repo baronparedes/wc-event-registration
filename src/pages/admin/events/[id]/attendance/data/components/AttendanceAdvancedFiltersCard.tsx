@@ -164,7 +164,7 @@ export function AttendanceAdvancedFiltersCard({
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 size="sm"
                 onClick={onApplyCustomJson}
                 disabled={customFilterJson.trim().length === 0}

@@ -388,7 +388,7 @@ export function AdminAttendanceDataPage() {
       {id && (canManageViews || canExport || canWrite) && (
         <>
           {canManageViews && (
-            <Button variant="outline" onClick={() => setSavedViewsModalOpen(true)}>
+            <Button variant="primaryOutline" onClick={() => setSavedViewsModalOpen(true)}>
               Views
             </Button>
           )}
@@ -402,7 +402,7 @@ export function AdminAttendanceDataPage() {
             />
           )}
           {canWrite && canRunBulkOps && (
-            <Button asChild variant="outline">
+            <Button asChild variant="primaryOutline">
               <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
             </Button>
           )}

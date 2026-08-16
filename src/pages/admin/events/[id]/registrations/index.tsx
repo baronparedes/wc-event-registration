@@ -137,7 +137,7 @@ export function AdminRegistrationsPage() {
         <ExportButton eventId={eventId} disabled={isLoading || !hasRegistrations} />
       )}
       {canWrite && (
-        <Button asChild variant="outline">
+        <Button asChild variant="primaryOutline">
           <Link to={toAdminEventRegistrationsBulkUpload(eventId)}>Upload CSV</Link>
         </Button>
       )}
@@ -188,7 +188,7 @@ export function AdminRegistrationsPage() {
           />
           <Button
             type="button"
-            variant="outline"
+            variant="primaryOutline"
             onClick={() => handleSearchTermChange('')}
             disabled={normalizedSearchTerm.length === 0}
           >
@@ -236,7 +236,7 @@ export function AdminRegistrationsPage() {
           {canWrite && (
             <Button
               type="button"
-              variant="outline"
+              variant="primaryOutline"
               onClick={() => navigate(toAdminEventAttendanceUnregisteredMembers(eventId))}
             >
               View Unregistered Members
@@ -244,7 +244,7 @@ export function AdminRegistrationsPage() {
           )}
           {canRead && (
             <Button
-              variant="outline"
+              variant="primaryOutline"
               onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
             >
               View Public Registrations

@@ -60,7 +60,7 @@ describe('LoginPage', () => {
       data: { isAuthenticated: false },
       isLoading: false,
     });
-    mockLoginMutateAsync.mockResolvedValue({ isAuthenticated: true });
+    mockLoginMutateAsync.mockResolvedValue({ isAuthenticated: true, adminRole: 'kiosk' });
     mockUseAdminLoginMutation.mockReturnValue({
       mutateAsync: mockLoginMutateAsync,
       isPending: false,

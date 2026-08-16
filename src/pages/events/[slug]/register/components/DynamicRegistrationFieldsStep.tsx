@@ -338,7 +338,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
                 onClick={onCancelUpdate}
                 size="lg"
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
               >
                 Cancel
               </Button>

@@ -146,7 +146,7 @@ export function AttendanceTimeslotEditor(props: AttendanceTimeslotEditorProps) {
               />
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 disabled={isArchived}
                 onClick={() => onRemoveTimeslot(index)}
                 className="lg:mt-7 lg:self-start"
@@ -158,7 +158,7 @@ export function AttendanceTimeslotEditor(props: AttendanceTimeslotEditorProps) {
         ))}
       </div>
 
-      <Button type="button" variant="outline" disabled={isArchived} onClick={onAddTimeslot}>
+      <Button type="button" variant="primaryOutline" disabled={isArchived} onClick={onAddTimeslot}>
         Add Timeslot
       </Button>
       <p className="text-xs text-muted">

@@ -211,7 +211,7 @@ export function FieldOptionsEditor({
       {!isOptionStructureLocked && (
         <Button
           type="button"
-          variant="outline"
+          variant="primaryOutline"
           onClick={() =>
             append({
               label: '',

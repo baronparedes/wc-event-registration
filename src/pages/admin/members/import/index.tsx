@@ -300,7 +300,7 @@ export function AdminMembersImportPage() {
             <div className="flex justify-end gap-3 border-t border-border pt-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 onClick={() => navigate(ROUTE_PATHS.adminMembers)}
                 disabled={bulkUpsertMutation.isPending}
               >

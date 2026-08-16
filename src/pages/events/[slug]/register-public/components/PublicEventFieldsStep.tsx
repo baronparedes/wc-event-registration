@@ -218,7 +218,7 @@ export function PublicEventFieldsStep({
           </Button>
           <Button
             className="w-full"
-            variant="outline"
+            variant="primaryOutline"
             onClick={onBack}
             disabled={isSubmitting}
             size="lg"

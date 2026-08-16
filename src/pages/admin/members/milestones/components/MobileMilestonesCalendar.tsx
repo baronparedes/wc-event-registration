@@ -34,7 +34,7 @@ export function MobileMilestonesCalendar({
               <Button
                 key={week.weekNumber}
                 type="button"
-                variant="outline"
+                variant="primaryOutline"
                 onClick={() => onSelectWeek(week.weekNumber)}
                 disabled={!week.isAvailable}
                 aria-label={`Go to week ${week.weekNumber}`}
