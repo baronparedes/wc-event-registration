@@ -30,7 +30,7 @@ export interface AdminEventsPage {
   totalPages: number;
 }
 
-/** Fetches all events ordered by created_at descending for admin management. */
+/** Fetches all events ordered by start date descending for admin management. */
 export function useAdminEventsQuery(params?: AdminEventsPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminEventsPageSize;
   const cursor = params?.cursor ?? null;
@@ -51,7 +51,7 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
       }
 
       const { data, error, count } = await eventsQuery
-        .order('created_at', { ascending: false })
+        .order('starts_at', { ascending: false, nullsFirst: false })
         .order('id', { ascending: false })
         .range(offset, offset + pageSize - 1);
 
