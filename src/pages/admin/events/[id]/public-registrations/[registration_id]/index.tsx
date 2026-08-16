@@ -7,12 +7,7 @@ import { ActionLink, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import {
-  ROUTE_PATHS,
-  UI_MESSAGES,
-  toAdminEventDetail,
-  toAdminEventPublicRegistrations,
-} from '@/config/constants';
+import { ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
@@ -128,7 +123,7 @@ export function AdminPublicRegistrationDetailPage() {
         <AdminPageShell.Header
           title="Public Registration"
           navLinks={
-            <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+            <ActionLink to={toRoute('adminPublicRegistrations', { id: eventId })}>
               Back to Public Registrations
             </ActionLink>
           }
@@ -164,7 +159,7 @@ export function AdminPublicRegistrationDetailPage() {
         <AdminPageShell.Header
           title="Public Registration"
           navLinks={
-            <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+            <ActionLink to={toRoute('adminPublicRegistrations', { id: eventId })}>
               Back to Public Registrations
             </ActionLink>
           }
@@ -221,8 +216,14 @@ export function AdminPublicRegistrationDetailPage() {
         <AdminPageShell.Header
           breadcrumbs={[
             { label: 'Events', to: ROUTE_PATHS.adminEvents },
-            { label: eventQuery.data?.title ?? 'Event', to: toAdminEventDetail(eventId) },
-            { label: 'Public Registrations', to: toAdminEventPublicRegistrations(eventId) },
+            {
+              label: eventQuery.data?.title ?? 'Event',
+              to: toRoute('adminEventDetail', { id: eventId }),
+            },
+            {
+              label: 'Public Registrations',
+              to: toRoute('adminPublicRegistrations', { id: eventId }),
+            },
             { label: `${registration.first_name} ${registration.last_name}` },
           ]}
           title="Manage Public Registration"
@@ -232,7 +233,7 @@ export function AdminPublicRegistrationDetailPage() {
                 eventId={eventId}
                 currentSection="public-registrations-detail"
               />
-              <ActionLink to={toAdminEventPublicRegistrations(eventId)}>
+              <ActionLink to={toRoute('adminPublicRegistrations', { id: eventId })}>
                 Back to Public Registrations
               </ActionLink>
             </div>

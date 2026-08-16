@@ -736,7 +736,7 @@ describe('AdminAttendanceDataPage', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Views' }));
-    expect(screen.getByRole('button', { name: 'Save Current' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save Current' })).not.toBeInTheDocument();
     expect(screen.queryByText('Delete Saved View')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Attendance CSV' }));

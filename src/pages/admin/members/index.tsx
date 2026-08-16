@@ -23,7 +23,7 @@ import {
   ROUTE_PATHS,
   TIMING,
   UI_MESSAGES,
-  toAdminMemberDetail,
+  toRoute,
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
@@ -223,7 +223,7 @@ export function AdminMembersPage() {
                     <ListTableRow
                       key={member.id}
                       className={`cursor-pointer ${member.is_active ? '' : 'opacity-70'}`}
-                      onClick={() => navigate(toAdminMemberDetail(member.id))}
+                      onClick={() => navigate(toRoute('adminMemberDetail', { id: member.id }))}
                     >
                       <ListTableCell>
                         <Avatar
@@ -271,7 +271,7 @@ export function AdminMembersPage() {
                       <ListTableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-3">
                           <ActionLink
-                            to={toAdminMemberDetail(member.id)}
+                            to={toRoute('adminMemberDetail', { id: member.id })}
                             title={canWrite && member.is_active ? 'Edit Member' : 'View Member'}
                             aria-label={
                               canWrite && member.is_active ? 'Edit Member' : 'View Member'

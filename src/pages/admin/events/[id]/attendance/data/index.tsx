@@ -1,34 +1,23 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
-import {
-  ROUTE_PATHS,
-  toAdminEventAttendance,
-  toAdminEventAttendanceDataBulkUpload,
-  toAdminEventAttendanceFields,
-  toAdminEventDetail,
-} from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
   useAttendanceSavedViewQuery,
   useAttendanceSettingsQuery,
   useAttendanceViewControlsState,
   useAttendeesLocalCacheQuery,
+  useOfflineAttendanceDataSnapshot,
 } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { useLocalStorage } from '@/hooks/utils';
-import {
-  type AttendeeViewConfig,
-  attendeeViewConfigSchema,
-  buildAttendeeView,
-  collectDynamicFieldOptions,
-} from '@/lib/domain/attendance-views';
+import { attendeeViewConfigSchema, buildAttendeeView } from '@/lib/domain/attendance-views';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
@@ -38,12 +27,8 @@ import {
   ExportAttendanceViewButton,
   SavedViewsModal,
 } from './components';
-
-const SELECTED_VIEW_STORAGE_PREFIX = 'wc:attendance-data:selected-view';
-
-function getSelectedViewStorageKey(eventId: string): string {
-  return `${SELECTED_VIEW_STORAGE_PREFIX}:${eventId}`;
-}
+import { useAttendanceDataViewOptions } from './hooks/useAttendanceDataViewOptions';
+import { useSelectedAttendanceView } from './hooks/useSelectedAttendanceView';
 
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
@@ -51,28 +36,19 @@ export function AdminAttendanceDataPage() {
   const { data: authState } = useAdminAuthQuery();
   const [searchParams] = useSearchParams();
   const [savedViewsModalOpen, setSavedViewsModalOpen] = useState(false);
-  const [activeSavedViewConfig, setActiveSavedViewConfig] = useState<AttendeeViewConfig | null>(
-    null,
-  );
-  const appliedViewIdRef = useRef<string | null>(null);
-  const persistedViewIdRef = useRef<string | null>(null);
-  const selectedViewStorage = useLocalStorage<string>(id ? getSelectedViewStorageKey(id) : null, {
-    parse: (raw) => raw,
-    stringify: (value) => value,
-  });
 
   const viewIdParam = searchParams.get('viewId');
   const { data: savedView } = useAttendanceSavedViewQuery(viewIdParam ?? undefined);
 
-  const { data: event, isLoading: eventLoading } = useAdminEventQuery(id);
-  const { data: settings, isLoading: settingsLoading } = useAttendanceSettingsQuery(id);
-  const { data: fields = [], isLoading: fieldsLoading } = useAttendanceFieldsQuery(id, {
+  const { data: onlineEvent, isLoading: eventLoading } = useAdminEventQuery(id);
+  const { data: onlineSettings, isLoading: settingsLoading } = useAttendanceSettingsQuery(id);
+  const { data: onlineFields = [], isLoading: fieldsLoading } = useAttendanceFieldsQuery(id, {
     activeOnly: true,
   });
-  const { data: registrationFields = [], isLoading: registrationFieldsLoading } =
+  const { data: onlineRegistrationFields = [], isLoading: registrationFieldsLoading } =
     useAdminEventFieldsQuery(id);
   const {
-    attendees,
+    attendees: onlineAttendees,
     cachedAt,
     isLoading: attendeesLoading,
     isFetching: attendeesFetching,
@@ -80,152 +56,40 @@ export function AdminAttendanceDataPage() {
     updateAttendanceAnswers,
   } = useAttendeesLocalCacheQuery(id);
 
+  const offlineSnapshot = useOfflineAttendanceDataSnapshot({
+    eventId: id,
+    event: onlineEvent,
+    settings: onlineSettings,
+    attendanceFields: onlineFields,
+    registrationFields: onlineRegistrationFields,
+    attendees: onlineAttendees,
+  });
+
+  const event = offlineSnapshot.event;
+  const settings = offlineSnapshot.settings;
+  const fields = useMemo(
+    () => offlineSnapshot.attendanceFields ?? [],
+    [offlineSnapshot.attendanceFields],
+  );
+  const registrationFields = useMemo(
+    () => offlineSnapshot.registrationFields ?? [],
+    [offlineSnapshot.registrationFields],
+  );
+  const attendees = offlineSnapshot.attendees;
+
   const cachedAttendees = useMemo(() => attendees ?? [], [attendees]);
-  const memberDynamicFieldOptions = useMemo(
-    () => [
-      {
-        source: 'member' as const,
-        fieldKey: 'member_id',
-        label: 'RFID',
-        sortOrder: 0,
-        token: 'member:member_id',
-        values: [
-          ...new Set(
-            cachedAttendees
-              .map((attendee) => attendee.member_id?.trim())
-              .filter((value): value is string => Boolean(value)),
-          ),
-        ].sort((a, b) => a.localeCompare(b)),
-      },
-      {
-        source: 'role' as const,
-        fieldKey: 'role',
-        label: 'Role',
-        sortOrder: 1,
-        token: 'role:role',
-        values: [
-          ...new Set(
-            cachedAttendees
-              .map((attendee) => attendee.role?.trim())
-              .filter((value): value is string => Boolean(value)),
-          ),
-        ].sort((a, b) => a.localeCompare(b)),
-      },
-      {
-        source: 'category' as const,
-        fieldKey: 'category',
-        label: 'Category',
-        sortOrder: 2,
-        token: 'category:category',
-        values: [
-          ...new Set(
-            cachedAttendees
-              .map((attendee) => attendee.category?.trim())
-              .filter((value): value is string => Boolean(value)),
-          ),
-        ].sort((a, b) => a.localeCompare(b)),
-      },
-      {
-        source: 'member' as const,
-        fieldKey: 'email',
-        label: 'Email',
-        sortOrder: 3,
-        token: 'member:email',
-        values: [
-          ...new Set(
-            cachedAttendees
-              .map((attendee) => attendee.email?.trim())
-              .filter((value): value is string => Boolean(value)),
-          ),
-        ].sort((a, b) => a.localeCompare(b)),
-      },
-      {
-        source: 'member' as const,
-        fieldKey: 'avatar',
-        label: 'Avatar',
-        sortOrder: 4,
-        token: 'member:avatar',
-        values: [],
-      },
-      {
-        source: 'member' as const,
-        fieldKey: 'checked_in_slot',
-        label: 'Checked In Slot',
-        sortOrder: 5,
-        token: 'member:checked_in_slot',
-        values: [],
-      },
-      {
-        source: 'member' as const,
-        fieldKey: 'check_in_status',
-        label: 'Check-In Indicator',
-        sortOrder: 6,
-        token: 'member:check_in_status',
-        values: [],
-      },
-    ],
-    [cachedAttendees],
-  );
-  const seededDynamicFields = useMemo(
-    () => [
-      ...registrationFields
-        .filter((field) => field.is_active)
-        .map((field) => ({
-          source: 'registration' as const,
-          fieldKey: field.field_key,
-          label: field.label,
-          sortOrder: field.display_order,
-          fieldType: field.field_type,
-        })),
-      ...fields.map((field) => ({
-        source: 'attendance' as const,
-        fieldKey: field.field_key,
-        label: field.label,
-        sortOrder: field.display_order,
-        fieldType: field.field_type,
-      })),
-      ...memberDynamicFieldOptions.map((field) => ({
-        source: field.source,
-        fieldKey: field.fieldKey,
-        label: field.label,
-        sortOrder: field.sortOrder,
-      })),
-    ],
-    [registrationFields, fields, memberDynamicFieldOptions],
-  );
-
-  const dynamicFieldOptions = useMemo(
-    () => collectDynamicFieldOptions(cachedAttendees, seededDynamicFields),
-    [cachedAttendees, seededDynamicFields],
-  );
-
-  const registrationDynamicFieldOptions = useMemo(
-    () => dynamicFieldOptions.filter((field) => field.source === 'registration'),
-    [dynamicFieldOptions],
-  );
-
-  const attendanceDynamicFieldOptions = useMemo(
-    () => dynamicFieldOptions.filter((field) => field.source === 'attendance'),
-    [dynamicFieldOptions],
-  );
-
-  const roleOptions = useMemo(
-    () =>
-      [
-        ...new Set(cachedAttendees.map((attendee) => attendee.role).filter(Boolean) as string[]),
-      ].sort((a, b) => a.localeCompare(b)),
-    [cachedAttendees],
-  );
-
-  const categoryOptions = useMemo(
-    () =>
-      [
-        ...new Set(
-          cachedAttendees.map((attendee) => attendee.category).filter(Boolean) as string[],
-        ),
-      ].sort((a, b) => a.localeCompare(b)),
-    [cachedAttendees],
-  );
+  const {
+    dynamicFieldOptions,
+    registrationDynamicFieldOptions,
+    attendanceDynamicFieldOptions,
+    memberDynamicFieldOptions,
+    roleOptions,
+    categoryOptions,
+  } = useAttendanceDataViewOptions({
+    attendees: cachedAttendees,
+    attendanceFields: fields,
+    registrationFields,
+  });
 
   const {
     viewConfig,
@@ -253,14 +117,16 @@ export function AdminAttendanceDataPage() {
     moveGroupingLevel,
   } = useAttendanceViewControlsState(dynamicFieldOptions);
 
-  const handleApplyViewConfig = useCallback(
-    (config: AttendeeViewConfig) => {
-      const normalizedConfig = attendeeViewConfigSchema.parse(config);
-      setActiveSavedViewConfig(normalizedConfig);
-      applyViewConfig(normalizedConfig);
-    },
-    [applyViewConfig],
-  );
+  const { activeSavedViewConfig, handleApplyViewConfig, handleClearView, clearSelectedView } =
+    useSelectedAttendanceView({
+      eventId: id,
+      viewIdParam,
+      savedView,
+      searchParams,
+      navigate,
+      applyViewConfig,
+      clearViewControls,
+    });
 
   const clearFiltersTargetConfig = useMemo(
     () =>
@@ -286,91 +152,45 @@ export function AdminAttendanceDataPage() {
     return hasActiveFilters;
   }, [clearFiltersTargetConfig, hasActiveFilters, viewConfig]);
 
-  // Auto-apply saved view only once when viewId param changes
-  useEffect(() => {
-    if (
-      viewIdParam &&
-      appliedViewIdRef.current !== viewIdParam &&
-      savedView &&
-      savedView.view_config
-    ) {
-      handleApplyViewConfig(savedView.view_config);
-      appliedViewIdRef.current = viewIdParam;
-    }
-  }, [viewIdParam, savedView, handleApplyViewConfig]);
-
-  // Persist the selected saved view ID locally and restore it when the URL is empty.
-  useEffect(() => {
-    if (!id) {
-      return;
-    }
-
-    if (viewIdParam) {
-      if (persistedViewIdRef.current !== viewIdParam) {
-        selectedViewStorage.set(viewIdParam);
-        persistedViewIdRef.current = viewIdParam;
-      }
-      return;
-    }
-
-    persistedViewIdRef.current = null;
-
-    const storedViewId = selectedViewStorage.get()?.trim() || null;
-    if (!storedViewId) {
-      return;
-    }
-
-    const params = new URLSearchParams(searchParams);
-    params.set('viewId', storedViewId);
-
-    navigate(
-      {
-        search: `?${params.toString()}`,
-      },
-      { replace: true },
-    );
-  }, [id, navigate, searchParams, selectedViewStorage, viewIdParam]);
-
-  // Handle clearing the current saved view
-  const handleClearView = useCallback(() => {
-    clearViewControls();
-    appliedViewIdRef.current = null;
-    setActiveSavedViewConfig(null);
-    if (id) {
-      selectedViewStorage.remove();
-    }
-
-    const params = new URLSearchParams(searchParams);
-    params.delete('viewId');
-    navigate(
-      {
-        search: params.toString() ? `?${params.toString()}` : '',
-      },
-      { replace: true },
-    );
-  }, [clearViewControls, id, navigate, searchParams, selectedViewStorage]);
-
   const viewResult = useMemo(
     () => buildAttendeeView(cachedAttendees, viewConfig),
     [cachedAttendees, viewConfig],
   );
 
-  const isLoading =
-    eventLoading ||
-    settingsLoading ||
-    fieldsLoading ||
-    registrationFieldsLoading ||
-    attendeesLoading;
+  const isUsingSnapshot = offlineSnapshot.isUsingSnapshot;
+  const isLoading = isUsingSnapshot
+    ? false
+    : offlineSnapshot.isOnline
+      ? eventLoading ||
+        settingsLoading ||
+        fieldsLoading ||
+        registrationFieldsLoading ||
+        attendeesLoading
+      : offlineSnapshot.isLoadingSnapshot;
 
   const cacheStatusMessage = useMemo(() => {
+    const displayedCachedAt = offlineSnapshot.snapshotCreatedAt ?? cachedAt;
+
+    if (offlineSnapshot.isUsingSnapshot) {
+      return `${cachedAttendees.length} attendees · Offline snapshot from ${new Date(
+        displayedCachedAt ?? 0,
+      ).toLocaleTimeString()}`;
+    }
+
     if (attendeesFetching) {
       return 'Loading attendee details...';
     }
 
     return `${cachedAttendees.length} attendees cached${
-      cachedAt ? ` · Updated ${new Date(cachedAt).toLocaleTimeString()}` : ''
+      displayedCachedAt ? ` · Updated ${new Date(displayedCachedAt).toLocaleTimeString()}` : ''
     }`;
-  }, [attendeesFetching, cachedAt, cachedAttendees.length]);
+  }, [
+    attendeesFetching,
+    cachedAt,
+    cachedAttendees.length,
+    offlineSnapshot.isUsingSnapshot,
+    offlineSnapshot.snapshotCreatedAt,
+  ]);
 
   function handleRefreshCache() {
     refresh();
@@ -378,6 +198,7 @@ export function AdminAttendanceDataPage() {
 
   const attendanceEnabled = settings?.attendance_enabled ?? false;
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canWriteOnline = canWrite && offlineSnapshot.isOnline && !isUsingSnapshot;
   const canManageViews = canAdminPerform(authState?.adminRole, 'canManageAttendanceSavedViews');
   const canExport = canAdminPerform(authState?.adminRole, 'canExportAdminReports');
 
@@ -385,7 +206,7 @@ export function AdminAttendanceDataPage() {
 
   const actions = (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end print:hidden">
-      {id && (canManageViews || canExport || canWrite) && (
+      {id && (canManageViews || canExport || canWrite || offlineSnapshot.isOnline) && (
         <>
           {canManageViews && (
             <Button variant="primaryOutline" onClick={() => setSavedViewsModalOpen(true)}>
@@ -401,9 +222,9 @@ export function AdminAttendanceDataPage() {
               visibleFields={viewConfig.visibleFields}
             />
           )}
-          {canWrite && canRunBulkOps && (
+          {canWriteOnline && canRunBulkOps && (
             <Button asChild variant="primaryOutline">
-              <Link to={toAdminEventAttendanceDataBulkUpload(id)}>Upload CSV</Link>
+              <Link to={toRoute('adminAttendanceDataBulkUpload', { id })}>Upload CSV</Link>
             </Button>
           )}
         </>
@@ -416,8 +237,11 @@ export function AdminAttendanceDataPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
-          { label: 'Attendance', to: id ? toAdminEventAttendance(id) : undefined },
+          {
+            label: event?.title ?? 'Event',
+            to: id ? toRoute('adminEventDetail', { id }) : undefined,
+          },
+          { label: 'Attendance', to: id ? toRoute('adminEventAttendance', { id }) : undefined },
           { label: 'Attendee Details' },
         ]}
         navLinks={
@@ -438,7 +262,9 @@ export function AdminAttendanceDataPage() {
           <p className="mt-1 text-xs text-amber-700">
             Enable attendance tracking in{' '}
             {id && canWrite ? (
-              <ActionLink to={toAdminEventAttendance(id)}>Attendance Settings</ActionLink>
+              <ActionLink to={toRoute('adminEventAttendance', { id })}>
+                Attendance Settings
+              </ActionLink>
             ) : (
               'Attendance Settings'
             )}{' '}
@@ -453,7 +279,7 @@ export function AdminAttendanceDataPage() {
           <p className="mt-1 text-xs text-blue-700">
             {id && canWrite ? (
               <>
-                <ActionLink to={toAdminEventAttendanceFields(id)}>
+                <ActionLink to={toRoute('adminAttendanceFields', { id })}>
                   Configure attendance fields
                 </ActionLink>{' '}
                 first to start collecting data.
@@ -468,10 +294,23 @@ export function AdminAttendanceDataPage() {
       {!isLoading && attendanceEnabled && (
         <AttendeeCacheStatusBar
           message={cacheStatusMessage}
+          isError={Boolean(offlineSnapshot.error)}
           isRefreshing={attendeesFetching}
           onRefresh={handleRefreshCache}
           className="print:hidden"
         />
+      )}
+
+      {!isLoading && attendanceEnabled && (!offlineSnapshot.isOnline || isUsingSnapshot) && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 print:hidden">
+          <p className="text-sm font-medium text-amber-800">Offline snapshot view</p>
+          <p className="mt-1 text-xs text-amber-700">
+            Attendance details are read-only until live data returns.{' '}
+            {offlineSnapshot.isSnapshotAvailable
+              ? `Last snapshot: ${new Date(offlineSnapshot.snapshotCreatedAt ?? 0).toLocaleString()}. This snapshot may be up to 24 hours old.`
+              : 'Reconnect and prepare this event for offline viewing first.'}
+          </p>
+        </div>
       )}
 
       {!isLoading && attendanceEnabled && viewIdParam && savedView && (
@@ -542,7 +381,8 @@ export function AdminAttendanceDataPage() {
             allAttendees={viewResult.filteredAttendees}
             registrationFields={registrationFields}
             visibleFields={viewConfig.visibleFields}
-            canWrite={canWrite}
+            canWrite={canWriteOnline}
+            fetchImage={offlineSnapshot.isOnline}
             onRegistrantAttendanceSaved={updateAttendanceAnswers}
           />
         )}
@@ -556,15 +396,10 @@ export function AdminAttendanceDataPage() {
           currentViewConfig={viewConfig}
           currentViewId={viewIdParam}
           onApplyView={handleApplyViewConfig}
-          canUpdate={canWrite}
-          canDelete={canWrite}
+          canUpdate={canWriteOnline}
+          canDelete={canWriteOnline}
           onViewDeleted={() => {
-            if (id) {
-              selectedViewStorage.remove();
-            }
-            appliedViewIdRef.current = null;
-            setActiveSavedViewConfig(null);
-            clearViewControls();
+            clearSelectedView();
           }}
         />
       )}

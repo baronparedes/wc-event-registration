@@ -1,5 +1,12 @@
 export { supabase, createEdgeFunctionCaller, createEdgeFunctionTextCaller } from './supabase';
 export type { EdgeFunctionTextResponse } from './supabase';
+export {
+  ATTENDANCE_DATA_SNAPSHOT_TTL_MS,
+  clearAttendanceDataSnapshot,
+  readAttendanceDataSnapshot,
+  writeAttendanceDataSnapshot,
+} from './attendanceDataSnapshot';
+export type { AttendanceDataSnapshot } from './attendanceDataSnapshot';
 export { logger } from './logger';
 export {
   formatDateOnly,

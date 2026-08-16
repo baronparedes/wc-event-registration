@@ -4,13 +4,7 @@ import { toast } from 'sonner';
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
-import {
-  ROUTE_PATHS,
-  toAdminEventAttendance,
-  toAdminEventAttendanceData,
-  toAdminEventAttendanceFields,
-  toAdminEventDetail,
-} from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useDownloadAttendanceCSVMutation,
@@ -70,9 +64,15 @@ export function AdminAttendanceDataBulkUploadPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
-          { label: 'Attendance', to: id ? toAdminEventAttendance(id) : undefined },
-          { label: 'Attendee Details', to: id ? toAdminEventAttendanceData(id) : undefined },
+          {
+            label: event?.title ?? 'Event',
+            to: id ? toRoute('adminEventDetail', { id }) : undefined,
+          },
+          { label: 'Attendance', to: id ? toRoute('adminEventAttendance', { id }) : undefined },
+          {
+            label: 'Attendee Details',
+            to: id ? toRoute('adminAttendanceData', { id }) : undefined,
+          },
           { label: 'Bulk CSV Upload' },
         ]}
         navLinks={
@@ -93,7 +93,9 @@ export function AdminAttendanceDataBulkUploadPage() {
           <p className="mt-1 text-xs text-amber-700">
             Enable attendance tracking in{' '}
             {id ? (
-              <ActionLink to={toAdminEventAttendance(id)}>Attendance Settings</ActionLink>
+              <ActionLink to={toRoute('adminEventAttendance', { id })}>
+                Attendance Settings
+              </ActionLink>
             ) : (
               'Attendance Settings'
             )}{' '}
@@ -108,7 +110,7 @@ export function AdminAttendanceDataBulkUploadPage() {
           <p className="mt-1 text-xs text-blue-700">
             {id ? (
               <>
-                <ActionLink to={toAdminEventAttendanceFields(id)}>
+                <ActionLink to={toRoute('adminAttendanceFields', { id })}>
                   Configure attendance fields
                 </ActionLink>{' '}
                 first to start collecting data.
@@ -132,7 +134,9 @@ export function AdminAttendanceDataBulkUploadPage() {
           <BulkUploadPanel
             eventId={id ?? ''}
             fields={fields}
-            onClose={() => navigate(id ? toAdminEventAttendanceData(id) : ROUTE_PATHS.adminEvents)}
+            onClose={() =>
+              navigate(id ? toRoute('adminAttendanceData', { id }) : ROUTE_PATHS.adminEvents)
+            }
             displayMode="page"
           />
         ) : null}

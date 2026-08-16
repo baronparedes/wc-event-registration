@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TOAST_MESSAGES } from '@/config/constants';
-import { toAdminRegistrationNames } from '@/config/constants';
+import { toRouteWithQuery } from '@/config/constants';
 import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
 import { type RegistrationShareField } from '@/lib/domain/registrations';
@@ -84,10 +84,15 @@ export function ViewNamesButton({ eventId, disabled = false }: ViewNamesButtonPr
   };
 
   const handleOpenInNewTab = () => {
-    const url = toAdminRegistrationNames(eventId, {
-      fields: selectedFields,
-      answerFields: selectedAnswerFieldIds,
-    });
+    const url = toRouteWithQuery(
+      'adminRegistrationNames',
+      { id: eventId },
+      {
+        fields: selectedFields.join(','),
+        answerFields:
+          selectedAnswerFieldIds.length > 0 ? selectedAnswerFieldIds.join(',') : undefined,
+      },
+    );
     window.open(url, '_blank', 'noopener,noreferrer');
     setIsDialogOpen(false);
   };

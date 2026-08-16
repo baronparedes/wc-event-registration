@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button } from '@/components/ui/Button';
-import { ROUTE_PATHS, toAdminEventDetail } from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import type { AdminEventField } from '@/lib/domain/event-fields';
@@ -45,7 +45,10 @@ export function AdminEventFieldsPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: id ? toAdminEventDetail(id) : undefined },
+          {
+            label: event?.title ?? 'Event',
+            to: id ? toRoute('adminEventDetail', { id }) : undefined,
+          },
           { label: 'Registration Fields' },
         ]}
         navLinks={id ? <EventNavigationLinks eventId={id} currentSection="fields" /> : undefined}

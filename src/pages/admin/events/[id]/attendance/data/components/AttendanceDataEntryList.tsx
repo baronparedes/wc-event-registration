@@ -32,6 +32,7 @@ type AttendanceDataEntryListProps = {
   registrationFields: AdminEventField[];
   visibleFields?: DynamicFieldRef[];
   canWrite?: boolean;
+  fetchImage?: boolean;
   onRegistrantAttendanceSaved?: (payload: {
     attendeeKind: 'registered' | 'public';
     registrationId: string | null;
@@ -74,6 +75,7 @@ export function AttendanceDataEntryList({
   registrationFields,
   visibleFields = DEFAULT_VISIBLE_FIELDS,
   canWrite = true,
+  fetchImage = true,
   onRegistrantAttendanceSaved,
 }: AttendanceDataEntryListProps) {
   const [viewingRegistrant, setViewingRegistrant] = useState<RegistrantAttendanceRow | null>(null);
@@ -140,6 +142,7 @@ export function AttendanceDataEntryList({
                 fields={fields}
                 attendeesByRegistrantKey={attendeesByRegistrantKey}
                 canWrite={canWrite}
+                fetchImage={fetchImage}
                 onViewRegistrant={setViewingRegistrant}
                 onEditRegistrant={setEditingRegistrant}
                 countFilledAnswers={countFilledAnswers}
@@ -153,6 +156,7 @@ export function AttendanceDataEntryList({
                 fields={fields}
                 attendeesByRegistrantKey={attendeesByRegistrantKey}
                 canWrite={canWrite}
+                fetchImage={fetchImage}
                 onViewRegistrant={setViewingRegistrant}
                 onEditRegistrant={setEditingRegistrant}
                 countFilledAnswers={countFilledAnswers}

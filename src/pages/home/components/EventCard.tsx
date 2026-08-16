@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Badge, Button } from '@/components/ui';
-import { toEventRegistration } from '@/config/constants';
+import { toRoute } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
 import { formatDateOnly } from '@/lib/infrastructure';
 
@@ -17,7 +17,7 @@ type EventCardProps = {
  */
 export function EventCard({ event }: EventCardProps) {
   const navigate = useNavigate();
-  const registrationPath = toEventRegistration(event.slug);
+  const registrationPath = toRoute('eventRegister', { slug: event.slug });
   const shareUrl = new URL(registrationPath, window.location.origin).toString();
   const isOpen = event.listingStatus === 'open';
 

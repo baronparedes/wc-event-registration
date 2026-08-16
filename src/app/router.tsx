@@ -1,9 +1,31 @@
-import { type ReactElement, Suspense, lazy } from 'react';
+import {
+  type ComponentType,
+  type ReactElement,
+  Suspense,
+  lazy,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { WifiOff } from 'lucide-react';
+import {
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  matchPath,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
-import { Skeleton } from '@/components/ui/Skeleton';
-import { ROUTE_PATHS } from '@/config/constants';
+import { Button, Skeleton } from '@/components/ui';
+import {
+  APP_ROUTE_DEFINITIONS,
+  type AppRouteDefinition,
+  type AppRouteKey,
+  ROUTE_PATHS,
+} from '@/config/constants';
 import type { AdminRole } from '@/lib/domain/auth';
 import { canAdminPerform } from '@/lib/domain/auth';
 
@@ -162,17 +184,126 @@ function ResponsiveShellLayout() {
   return isMobile ? <AppMobileShell /> : <AppShell />;
 }
 
+function useBrowserOnlineStatus(): boolean {
+  const [isOnline, setIsOnline] = useState(
+    () => typeof navigator === 'undefined' || navigator.onLine,
+  );
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
+
+function isOfflineSupportedPath(pathname: string): boolean {
+  return Boolean(
+    matchPath({ path: ROUTE_PATHS.adminEventAttendanceDataPattern, end: true }, pathname),
+  );
+}
+
+const routeComponents: Record<AppRouteKey, ComponentType> = {
+  home: HomePage,
+  eventRegister: EventRegistrationPage,
+  eventPublicRegister: PublicEventRegistrationPage,
+  login: LoginPage,
+  adminMembers: AdminMembersPage,
+  adminMemberMilestones: AdminMemberMilestonesPage,
+  adminMembersImport: AdminMembersImportPage,
+  adminMemberDetail: AdminMemberDetailPage,
+  memberProfile: MemberProfilePage,
+  adminEvents: AdminEventsPage,
+  adminEventNew: AdminNewEventPage,
+  adminEventDetail: AdminEditEventPage,
+  adminEventFields: AdminEventFieldsPage,
+  adminEventAttendance: AdminEventAttendancePage,
+  adminAttendanceFields: AdminAttendanceFieldsPage,
+  adminAttendanceData: AdminAttendanceDataPage,
+  adminAttendanceDataBulkUpload: AdminAttendanceDataBulkUploadPage,
+  adminAttendanceCheckIn: AdminAttendanceCheckInPage,
+  adminAttendanceDashboard: AdminAttendanceDashboardPage,
+  adminAttendanceUnregisteredMembers: AdminAttendanceUnregisteredMembersPage,
+  adminRegistrationsBulkUpload: AdminRegistrationsBulkUploadPage,
+  adminRegistrations: AdminRegistrationsPage,
+  adminPublicRegistrationDetail: AdminPublicRegistrationDetailPage,
+  adminPublicRegistrations: AdminPublicRegistrationsPage,
+  adminPublicRegistrationsBulkUpload: AdminPublicRegistrationsBulkUploadPage,
+  adminRegistrationDetail: AdminRegistrationDetailPage,
+  adminRegistrationNames: AdminRegistrationNamesPage,
+};
+
+function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {
+  return (
+    <section className="mx-auto flex max-w-md flex-col items-center justify-center space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+      <WifiOff className="h-10 w-10 text-amber-700" aria-hidden="true" />
+      <h1 className="text-2xl font-semibold text-amber-950">You are offline</h1>
+      <p className="text-sm text-amber-800">
+        Only the prepared Attendance Data view is available without a connection. Return to the
+        previous page or reconnect to continue.
+      </p>
+      <Button onClick={onGoBack} variant="primaryOutline">
+        Go Back
+      </Button>
+    </section>
+  );
+}
+
+function OfflineNavigationGuard() {
+  const isOnline = useBrowserOnlineStatus();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lastSupportedPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isOfflineSupportedPath(location.pathname)) {
+      lastSupportedPathRef.current = `${location.pathname}${location.search}${location.hash}`;
+    }
+  }, [location.hash, location.pathname, location.search]);
+
+  if (isOnline || isOfflineSupportedPath(location.pathname)) {
+    return <Outlet />;
+  }
+
+  function handleGoBack() {
+    const lastSupportedPath = lastSupportedPathRef.current;
+    if (lastSupportedPath) {
+      navigate(lastSupportedPath, { replace: true });
+      return;
+    }
+
+    navigate(-1);
+  }
+
+  return <OfflineNavigationFallback onGoBack={handleGoBack} />;
+}
+
 function RequireAdminAuth({
   children,
   allowedRoles,
   requiredPermission,
 }: {
   children: ReactElement;
-  allowedRoles?: AdminRole[];
+  allowedRoles?: readonly AdminRole[];
   requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
 }) {
   const { data, isLoading } = useAdminAuthQuery();
   const location = useLocation();
+  const isOfflineAttendanceRoute =
+    typeof navigator !== 'undefined' &&
+    navigator.onLine === false &&
+    isOfflineSupportedPath(location.pathname);
+
+  if (isOfflineAttendanceRoute) {
+    return children;
+  }
 
   if (isLoading) {
     return (
@@ -209,275 +340,44 @@ function RequireAdminAuth({
   return children;
 }
 
+function renderAppRoute({
+  key,
+  requiresAuth,
+  allowedRoles,
+  requiredPermission,
+}: AppRouteDefinition): ReactElement {
+  const Component = routeComponents[key];
+  const page = (
+    <LazyRoute>
+      <Component />
+    </LazyRoute>
+  );
+
+  return requiresAuth || allowedRoles || requiredPermission !== undefined ? (
+    <RequireAdminAuth allowedRoles={allowedRoles} requiredPermission={requiredPermission}>
+      {page}
+    </RequireAdminAuth>
+  ) : (
+    page
+  );
+}
+
 export function AppRouter() {
   return (
     <Routes>
       <Route element={<ResponsiveShellLayout />}>
-        <Route
-          path={ROUTE_PATHS.home}
-          element={
-            <LazyRoute>
-              <HomePage />
-            </LazyRoute>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.eventRegisterPattern}
-          element={
-            <LazyRoute>
-              <EventRegistrationPage />
-            </LazyRoute>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.eventPublicRegisterPattern}
-          element={
-            <LazyRoute>
-              <PublicEventRegistrationPage />
-            </LazyRoute>
-          }
-        />
-
-        <Route
-          path={ROUTE_PATHS.login}
-          element={
-            <LazyRoute>
-              <LoginPage />
-            </LazyRoute>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminMembers}
-          element={
-            <RequireAdminAuth requiredPermission="canReadAdminMemberData">
-              <LazyRoute>
-                <AdminMembersPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminMemberMilestones}
-          element={
-            <RequireAdminAuth requiredPermission="canReadAdminMemberData">
-              <LazyRoute>
-                <AdminMemberMilestonesPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminMembersImport}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminMembersImportPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminMemberDetailPattern}
-          element={
-            <RequireAdminAuth requiredPermission="canReadAdminMemberData">
-              <LazyRoute>
-                <AdminMemberDetailPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.memberDetailPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin', 'slod']}>
-              <LazyRoute>
-                <MemberProfilePage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEvents}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin', 'slod', 'kiosk']}>
-              <LazyRoute>
-                <AdminEventsPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventNew}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminNewEventPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventDetailPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminEditEventPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventFieldsPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminEventFieldsPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventAttendancePattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminEventAttendancePage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventAttendanceFieldsPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminAttendanceFieldsPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventAttendanceDataPattern}
-          element={
-            <RequireAdminAuth>
-              <LazyRoute>
-                <AdminAttendanceDataPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventAttendanceDataBulkUploadPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminAttendanceDataBulkUploadPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventAttendanceCheckInPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin', 'kiosk']}>
-              <LazyRoute>
-                <AdminAttendanceCheckInPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventAttendanceDashboardPattern}
-          element={
-            <RequireAdminAuth>
-              <LazyRoute>
-                <AdminAttendanceDashboardPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventRegistrationsUnregisteredMembersPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminAttendanceUnregisteredMembersPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventRegistrationsBulkUploadPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminRegistrationsBulkUploadPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventRegistrationsPattern}
-          element={
-            <RequireAdminAuth>
-              <LazyRoute>
-                <AdminRegistrationsPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminPublicRegistrationDetailPattern}
-          element={
-            <RequireAdminAuth>
-              <LazyRoute>
-                <AdminPublicRegistrationDetailPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventPublicRegistrationsPattern}
-          element={
-            <RequireAdminAuth>
-              <LazyRoute>
-                <AdminPublicRegistrationsPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminEventPublicRegistrationsBulkUploadPattern}
-          element={
-            <RequireAdminAuth allowedRoles={['admin', 'super_admin']}>
-              <LazyRoute>
-                <AdminPublicRegistrationsBulkUploadPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
-        <Route
-          path={ROUTE_PATHS.adminRegistrationDetailPattern}
-          element={
-            <RequireAdminAuth>
-              <LazyRoute>
-                <AdminRegistrationDetailPage />
-              </LazyRoute>
-            </RequireAdminAuth>
-          }
-        />
+        <Route element={<OfflineNavigationGuard />}>
+          {APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'shell').map((route) => (
+            <Route key={route.path} path={route.path} element={renderAppRoute(route)} />
+          ))}
+        </Route>
       </Route>
 
-      <Route
-        path={ROUTE_PATHS.adminRegistrationNamesPattern}
-        element={
-          <RequireAdminAuth>
-            <LazyRoute>
-              <AdminRegistrationNamesPage />
-            </LazyRoute>
-          </RequireAdminAuth>
-        }
-      />
+      <Route element={<OfflineNavigationGuard />}>
+        {APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'standalone').map((route) => (
+          <Route key={route.path} path={route.path} element={renderAppRoute(route)} />
+        ))}
+      </Route>
 
       <Route
         path={ROUTE_PATHS.notFound}

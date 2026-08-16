@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, SectionCard } from '@/components/ui';
-import { ROUTE_PATHS, toAdminEventAttendanceFields, toAdminEventDetail } from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { AttendanceTimeslotEditor } from './components/AttendanceTimeslotEditor';
@@ -87,7 +87,7 @@ export function AdminEventAttendancePage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: activeEvent.title, to: toAdminEventDetail(resolvedEventId) },
+          { label: activeEvent.title, to: toRoute('adminEventDetail', { id: resolvedEventId }) },
           { label: 'Attendance' },
         ]}
         navLinks={<EventNavigationLinks eventId={resolvedEventId} currentSection="attendance" />}
@@ -188,7 +188,7 @@ export function AdminEventAttendancePage() {
               <Button
                 type="button"
                 variant="primaryOutline"
-                onClick={() => navigate(toAdminEventAttendanceFields(resolvedEventId))}
+                onClick={() => navigate(toRoute('adminAttendanceFields', { id: resolvedEventId }))}
               >
                 Manage Attendance Fields
               </Button>

@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { StepIndicator } from '@/components/ui/StepIndicator';
-import { TIMING, TOAST_MESSAGES, toEventRegistration } from '@/config/constants';
+import { TIMING, TOAST_MESSAGES, toRoute } from '@/config/constants';
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields/queries';
 import { usePublicEventQuery } from '@/hooks/domain/events/queries';
 import {
@@ -48,7 +48,7 @@ export function PublicEventRegistrationPage() {
   // Auto-redirect to member registration after 3 minutes of inactivity
   const handleInactivityReset = useCallback(() => {
     if (slug) {
-      navigate(toEventRegistration(slug));
+      navigate(toRoute('eventRegister', { slug }));
     }
   }, [slug, navigate]);
 

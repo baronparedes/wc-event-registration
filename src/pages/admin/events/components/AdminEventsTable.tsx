@@ -10,14 +10,7 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import {
-  toAdminEventAttendance,
-  toAdminEventAttendanceCheckIn,
-  toAdminEventAttendanceData,
-  toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventRegistrations,
-} from '@/config/constants';
+import { toRoute } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
 import { formatDateOnly } from '@/lib/infrastructure';
 
@@ -78,13 +71,17 @@ export function AdminEventsTable({
               <ListTableCell onClick={(eventClick) => eventClick.stopPropagation()}>
                 <div className="flex items-center gap-3">
                   {canWrite && (
-                    <ActionLink to={toAdminEventDetail(event.id)} title="Edit" aria-label="Edit">
+                    <ActionLink
+                      to={toRoute('adminEventDetail', { id: event.id })}
+                      title="Edit"
+                      aria-label="Edit"
+                    >
                       <Edit className="h-5 w-5" />
                     </ActionLink>
                   )}
                   {canWrite && (
                     <ActionLink
-                      to={toAdminEventAttendance(event.id)}
+                      to={toRoute('adminEventAttendance', { id: event.id })}
                       title="Attendance"
                       aria-label="Attendance"
                     >
@@ -93,7 +90,7 @@ export function AdminEventsTable({
                   )}
                   {canWrite && (
                     <ActionLink
-                      to={toAdminEventFields(event.id)}
+                      to={toRoute('adminEventFields', { id: event.id })}
                       title="Fields"
                       aria-label="Fields"
                     >
@@ -102,7 +99,7 @@ export function AdminEventsTable({
                   )}
                   {canRead && (
                     <ActionLink
-                      to={toAdminEventAttendanceData(event.id)}
+                      to={toRoute('adminAttendanceData', { id: event.id })}
                       title="Attendee Details"
                       aria-label="Attendee Details"
                     >
@@ -111,7 +108,7 @@ export function AdminEventsTable({
                   )}
                   {canRead && (
                     <ActionLink
-                      to={toAdminEventRegistrations(event.id)}
+                      to={toRoute('adminRegistrations', { id: event.id })}
                       title="Registrations"
                       aria-label="Registrations"
                     >
@@ -120,7 +117,7 @@ export function AdminEventsTable({
                   )}
                   {canAccessCheckIn && (
                     <ActionLink
-                      to={toAdminEventAttendanceCheckIn(event.id)}
+                      to={toRoute('adminAttendanceCheckIn', { id: event.id })}
                       title="Check-In"
                       aria-label="Check-In"
                     >

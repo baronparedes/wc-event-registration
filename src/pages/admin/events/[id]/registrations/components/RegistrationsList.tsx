@@ -15,7 +15,7 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import { TOAST_MESSAGES, UI_MESSAGES, toAdminRegistrationDetail } from '@/config/constants';
+import { TOAST_MESSAGES, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useReactivateRegistrationMutation } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
@@ -157,7 +157,14 @@ export function RegistrationsList({
             <ListTableRow
               key={registration.id}
               className="cursor-pointer border-b border-gray-100 transition-colors hover:bg-gray-50"
-              onClick={() => navigate(toAdminRegistrationDetail(eventId, registration.id))}
+              onClick={() =>
+                navigate(
+                  toRoute('adminRegistrationDetail', {
+                    id: eventId,
+                    registration_id: registration.id,
+                  }),
+                )
+              }
             >
               <ListTableCell className="text-gray-900">{registration.member_id}</ListTableCell>
               <ListTableCell className="text-gray-900">{registration.full_name}</ListTableCell>
@@ -170,7 +177,12 @@ export function RegistrationsList({
               </ListTableCell>
               <ListTableCell>
                 <div className="flex items-center gap-2">
-                  <ActionLink to={toAdminRegistrationDetail(eventId, registration.id)}>
+                  <ActionLink
+                    to={toRoute('adminRegistrationDetail', {
+                      id: eventId,
+                      registration_id: registration.id,
+                    })}
+                  >
                     View
                   </ActionLink>
                   {canWrite &&

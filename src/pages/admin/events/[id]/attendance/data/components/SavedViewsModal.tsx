@@ -249,9 +249,8 @@ export function SavedViewsModal({
                                 {canDelete && (
                                   <Button
                                     size="sm"
-                                    variant="primaryOutline"
+                                    variant="destructive"
                                     onClick={() => handleDeleteView(view.id)}
-                                    className="text-xs px-2 text-red-600 hover:text-red-700"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -286,13 +285,15 @@ export function SavedViewsModal({
                 {upsertMutation.isPending ? 'Updating...' : 'Update Current'}
               </Button>
             )}
-            <Button
-              variant="default"
-              onClick={() => setShowSaveDialog(true)}
-              className="w-full sm:flex-1"
-            >
-              Save Current
-            </Button>
+            {canUpdate && (
+              <Button
+                variant="default"
+                onClick={() => setShowSaveDialog(true)}
+                className="w-full sm:flex-1"
+              >
+                Save Current
+              </Button>
+            )}
           </div>
         </div>
       </Dialog>

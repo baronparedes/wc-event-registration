@@ -1,19 +1,7 @@
 import { X } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
-import {
-  ROUTE_PATHS,
-  toAdminEventAttendance,
-  toAdminEventAttendanceCheckIn,
-  toAdminEventAttendanceDashboard,
-  toAdminEventAttendanceData,
-  toAdminEventAttendanceFields,
-  toAdminEventAttendanceUnregisteredMembers,
-  toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventPublicRegistrations,
-  toAdminEventRegistrations,
-} from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
@@ -149,35 +137,35 @@ export function AppDrawerNavigation({
                 </p>
                 {canWrite && (
                   <DrawerNavLink
-                    to={toAdminEventDetail(eventId)}
+                    to={toRoute('adminEventDetail', { id: eventId })}
                     label="Manage Event"
                     onClose={onClose}
                   />
                 )}
                 {canWrite && (
                   <DrawerNavLink
-                    to={toAdminEventFields(eventId)}
+                    to={toRoute('adminEventFields', { id: eventId })}
                     label="Manage Registration Fields"
                     onClose={onClose}
                   />
                 )}
                 {canRead && (
                   <DrawerNavLink
-                    to={toAdminEventRegistrations(eventId)}
+                    to={toRoute('adminRegistrations', { id: eventId })}
                     label="Manage Registrations"
                     onClose={onClose}
                   />
                 )}
                 {canRead && (
                   <DrawerNavLink
-                    to={toAdminEventPublicRegistrations(eventId)}
+                    to={toRoute('adminPublicRegistrations', { id: eventId })}
                     label="Manage Public Registrations"
                     onClose={onClose}
                   />
                 )}
                 {canWrite && (
                   <DrawerNavLink
-                    to={toAdminEventAttendance(eventId)}
+                    to={toRoute('adminEventAttendance', { id: eventId })}
                     label="Manage Attendance"
                     onClose={onClose}
                   />
@@ -190,35 +178,35 @@ export function AppDrawerNavigation({
                 <SectionHeading label="Attendance" />
                 {canAccessCheckIn && (
                   <DrawerNavLink
-                    to={toAdminEventAttendanceCheckIn(eventId)}
+                    to={toRoute('adminAttendanceCheckIn', { id: eventId })}
                     label="Check-In"
                     onClose={onClose}
                   />
                 )}
                 {canWrite && (
                   <DrawerNavLink
-                    to={toAdminEventAttendanceFields(eventId)}
+                    to={toRoute('adminAttendanceFields', { id: eventId })}
                     label="Attendance Fields"
                     onClose={onClose}
                   />
                 )}
                 {canRead && (
                   <DrawerNavLink
-                    to={toAdminEventAttendanceData(eventId)}
+                    to={toRoute('adminAttendanceData', { id: eventId })}
                     label="Attendee Details"
                     onClose={onClose}
                   />
                 )}
                 {canRead && (
                   <DrawerNavLink
-                    to={toAdminEventAttendanceDashboard(eventId)}
+                    to={toRoute('adminAttendanceDashboard', { id: eventId })}
                     label="Attendance Dashboard"
                     onClose={onClose}
                   />
                 )}
                 {canWrite && (
                   <DrawerNavLink
-                    to={toAdminEventAttendanceUnregisteredMembers(eventId)}
+                    to={toRoute('adminAttendanceUnregisteredMembers', { id: eventId })}
                     label="Unregistered Members"
                     onClose={onClose}
                   />

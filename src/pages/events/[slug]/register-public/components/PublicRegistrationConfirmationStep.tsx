@@ -2,7 +2,7 @@ import { CheckCircle2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { WizardStep } from '@/components/ui/WizardStep';
-import { toEventRegistration } from '@/config/constants';
+import { toRoute } from '@/config/constants';
 
 type PublicRegistrationConfirmationStepProps = {
   registrationId: string;
@@ -73,7 +73,7 @@ export function PublicRegistrationConfirmationStep({
 
         <div className="flex w-full flex-col gap-2">
           <Button asChild className="w-full" variant="primaryOutline" size="lg">
-            <a href={toEventRegistration(eventSlug)}>Return to Event</a>
+            <a href={toRoute('eventRegister', { slug: eventSlug })}>Return to Event</a>
           </Button>
         </div>
       </div>

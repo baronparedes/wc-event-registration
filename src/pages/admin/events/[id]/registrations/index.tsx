@@ -11,10 +11,7 @@ import {
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
-  toAdminEventAttendanceUnregisteredMembers,
-  toAdminEventDetail,
-  toAdminEventPublicRegistrations,
-  toAdminEventRegistrationsBulkUpload,
+  toRoute,
 } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -138,7 +135,7 @@ export function AdminRegistrationsPage() {
       )}
       {canWrite && (
         <Button asChild variant="primaryOutline">
-          <Link to={toAdminEventRegistrationsBulkUpload(eventId)}>Upload CSV</Link>
+          <Link to={toRoute('adminRegistrationsBulkUpload', { id: eventId })}>Upload CSV</Link>
         </Button>
       )}
     </div>
@@ -149,7 +146,7 @@ export function AdminRegistrationsPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: toAdminEventDetail(eventId) },
+          { label: event?.title ?? 'Event', to: toRoute('adminEventDetail', { id: eventId }) },
           { label: 'Registrations' },
         ]}
         navLinks={<EventNavigationLinks eventId={eventId} currentSection="registrations" />}
@@ -237,7 +234,9 @@ export function AdminRegistrationsPage() {
             <Button
               type="button"
               variant="primaryOutline"
-              onClick={() => navigate(toAdminEventAttendanceUnregisteredMembers(eventId))}
+              onClick={() =>
+                navigate(toRoute('adminAttendanceUnregisteredMembers', { id: eventId }))
+              }
             >
               View Unregistered Members
             </Button>
@@ -245,7 +244,7 @@ export function AdminRegistrationsPage() {
           {canRead && (
             <Button
               variant="primaryOutline"
-              onClick={() => navigate(toAdminEventPublicRegistrations(eventId))}
+              onClick={() => navigate(toRoute('adminPublicRegistrations', { id: eventId }))}
             >
               View Public Registrations
             </Button>

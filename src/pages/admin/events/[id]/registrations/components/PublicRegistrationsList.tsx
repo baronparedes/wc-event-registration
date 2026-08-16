@@ -15,7 +15,7 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import { UI_MESSAGES, toAdminPublicRegistrationDetail } from '@/config/constants';
+import { UI_MESSAGES, toRoute } from '@/config/constants';
 import {
   useCancelPublicRegistrationMutation,
   useReactivatePublicRegistrationMutation,
@@ -176,7 +176,14 @@ export function PublicRegistrationsList({
             <ListTableRow
               key={registration.id}
               className="cursor-pointer border-b border-gray-100 transition-colors hover:bg-gray-50"
-              onClick={() => navigate(toAdminPublicRegistrationDetail(eventId, registration.id))}
+              onClick={() =>
+                navigate(
+                  toRoute('adminPublicRegistrationDetail', {
+                    id: eventId,
+                    registration_id: registration.id,
+                  }),
+                )
+              }
             >
               <ListTableCell className="text-gray-600">Public</ListTableCell>
               <ListTableCell className="text-gray-900">{fullName(registration)}</ListTableCell>
@@ -188,7 +195,12 @@ export function PublicRegistrationsList({
               </ListTableCell>
               <ListTableCell>
                 <div className="flex items-center gap-2">
-                  <ActionLink to={toAdminPublicRegistrationDetail(eventId, registration.id)}>
+                  <ActionLink
+                    to={toRoute('adminPublicRegistrationDetail', {
+                      id: eventId,
+                      registration_id: registration.id,
+                    })}
+                  >
                     View
                   </ActionLink>
                   {canWrite &&

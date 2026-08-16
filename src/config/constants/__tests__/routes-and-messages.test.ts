@@ -5,16 +5,8 @@ import {
   ROUTE_PATHS,
   ROUTE_PREFIXES,
   isMinimizedAppShellRoute,
-  toAdminEventAttendanceUnregisteredMembers,
-  toAdminEventDetail,
-  toAdminEventFields,
-  toAdminEventRegistrations,
-  toAdminMemberDetail,
-  toAdminMemberMilestones,
-  toAdminMembersImport,
-  toAdminRegistrationDetail,
-  toAdminRegistrationNames,
-  toEventRegistration,
+  toRoute,
+  toRouteWithQuery,
 } from '@/config/constants/routes';
 
 describe('route constants and builders', () => {
@@ -34,17 +26,19 @@ describe('route constants and builders', () => {
   });
 
   it('builds route paths from identifiers', () => {
-    expect(toEventRegistration('summer-2026')).toBe('/events/summer-2026/register');
-    expect(toAdminMembersImport()).toBe('/admin/members/import');
-    expect(toAdminMemberMilestones()).toBe('/admin/members/milestones');
-    expect(toAdminMemberDetail('member-1')).toBe('/admin/members/member-1');
-    expect(toAdminEventDetail('event-1')).toBe('/admin/events/event-1');
-    expect(toAdminEventFields('event-1')).toBe('/admin/events/event-1/fields');
-    expect(toAdminEventRegistrations('event-1')).toBe('/admin/events/event-1/registrations');
-    expect(toAdminEventAttendanceUnregisteredMembers('event-1')).toBe(
+    expect(toRoute('eventRegister', { slug: 'summer-2026' })).toBe('/events/summer-2026/register');
+    expect(toRoute('adminMembersImport')).toBe('/admin/members/import');
+    expect(toRoute('adminMemberMilestones')).toBe('/admin/members/milestones');
+    expect(toRoute('adminMemberDetail', { id: 'member-1' })).toBe('/admin/members/member-1');
+    expect(toRoute('adminEventDetail', { id: 'event-1' })).toBe('/admin/events/event-1');
+    expect(toRoute('adminEventFields', { id: 'event-1' })).toBe('/admin/events/event-1/fields');
+    expect(toRoute('adminRegistrations', { id: 'event-1' })).toBe(
+      '/admin/events/event-1/registrations',
+    );
+    expect(toRoute('adminAttendanceUnregisteredMembers', { id: 'event-1' })).toBe(
       '/admin/events/event-1/registrations/unregistered-members',
     );
-    expect(toAdminRegistrationDetail('event-1', 'reg-1')).toBe(
+    expect(toRoute('adminRegistrationDetail', { id: 'event-1', registration_id: 'reg-1' })).toBe(
       '/admin/events/event-1/registrations/reg-1',
     );
   });
@@ -58,29 +52,34 @@ describe('route constants and builders', () => {
     expect(isMinimizedAppShellRoute('/events/summer-2026')).toBe(false);
   });
 
-  describe('toAdminRegistrationNames', () => {
+  describe('toRouteWithQuery', () => {
     it('builds URL with only core fields', () => {
-      const url = toAdminRegistrationNames('event-1', {
-        fields: ['full_name', 'member_id'],
-        answerFields: [],
-      });
+      const url = toRouteWithQuery(
+        'adminRegistrationNames',
+        { id: 'event-1' },
+        { fields: 'full_name,member_id' },
+      );
       expect(url).toBe('/admin/events/event-1/registrations/names?fields=full_name%2Cmember_id');
     });
 
     it('includes answerFields param when provided', () => {
-      const url = toAdminRegistrationNames('event-1', {
-        fields: ['full_name'],
-        answerFields: ['field-uuid-1', 'field-uuid-2'],
-      });
+      const url = toRouteWithQuery(
+        'adminRegistrationNames',
+        { id: 'event-1' },
+        { fields: 'full_name', answerFields: 'field-uuid-1,field-uuid-2' },
+      );
       expect(url).toContain('fields=full_name');
       expect(url).toContain('answerFields=field-uuid-1%2Cfield-uuid-2');
     });
 
     it('omits answerFields param when empty', () => {
-      const url = toAdminRegistrationNames('event-1', {
-        fields: ['full_name'],
-        answerFields: [],
-      });
+      const url = toRouteWithQuery(
+        'adminRegistrationNames',
+        { id: 'event-1' },
+        {
+          fields: 'full_name',
+        },
+      );
       expect(url).not.toContain('answerFields');
     });
   });

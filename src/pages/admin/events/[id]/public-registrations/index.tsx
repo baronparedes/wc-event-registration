@@ -11,9 +11,7 @@ import {
   PAGINATION_OPTIONS,
   ROUTE_PATHS,
   TIMING,
-  toAdminEventDetail,
-  toAdminEventPublicRegistrationsBulkUpload,
-  toAdminEventRegistrations,
+  toRoute,
 } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -129,14 +127,14 @@ export function AdminPublicRegistrationsPage() {
       <Button
         asChild
         variant="primaryOutline"
-        onClick={() => navigate(toAdminEventRegistrations(eventId))}
+        onClick={() => navigate(toRoute('adminRegistrations', { id: eventId }))}
       >
         View Member Registrations
       </Button>
       {canWrite && (
         <Button
           variant="primaryOutline"
-          onClick={() => navigate(toAdminEventPublicRegistrationsBulkUpload(eventId))}
+          onClick={() => navigate(toRoute('adminPublicRegistrationsBulkUpload', { id: eventId }))}
         >
           Upload CSV
         </Button>
@@ -149,7 +147,7 @@ export function AdminPublicRegistrationsPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: toAdminEventDetail(eventId) },
+          { label: event?.title ?? 'Event', to: toRoute('adminEventDetail', { id: eventId }) },
           { label: 'Public Registrations' },
         ]}
         navLinks={<EventNavigationLinks eventId={eventId} currentSection="public-registrations" />}

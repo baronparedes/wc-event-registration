@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ROUTE_PATHS, toAdminEventAttendance, toAdminEventDetail } from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import {
   useAttendanceSettingsQuery,
@@ -265,8 +265,8 @@ export function AdminAttendanceDashboardPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: event?.title ?? 'Event', to: toAdminEventDetail(eventId) },
-          { label: 'Attendance', to: toAdminEventAttendance(eventId) },
+          { label: event?.title ?? 'Event', to: toRoute('adminEventDetail', { id: eventId }) },
+          { label: 'Attendance', to: toRoute('adminEventAttendance', { id: eventId }) },
           { label: 'Dashboard' },
         ]}
         navLinks={<EventNavigationLinks eventId={eventId} currentSection="attendance-dashboard" />}

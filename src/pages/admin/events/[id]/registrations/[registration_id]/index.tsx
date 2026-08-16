@@ -7,13 +7,7 @@ import { ActionLink, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import {
-  ROUTE_PATHS,
-  TOAST_MESSAGES,
-  UI_MESSAGES,
-  toAdminEventDetail,
-  toAdminEventRegistrations,
-} from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import {
@@ -221,15 +215,20 @@ export function AdminRegistrationDetailPage() {
         <AdminPageShell.Header
           breadcrumbs={[
             { label: 'Events', to: ROUTE_PATHS.adminEvents },
-            { label: eventQuery.data?.title ?? 'Event', to: toAdminEventDetail(eventId) },
-            { label: 'Registrations', to: toAdminEventRegistrations(eventId) },
+            {
+              label: eventQuery.data?.title ?? 'Event',
+              to: toRoute('adminEventDetail', { id: eventId }),
+            },
+            { label: 'Registrations', to: toRoute('adminRegistrations', { id: eventId }) },
             { label: member.full_name },
           ]}
           title="Manage Registration"
           navLinks={
             <div className="flex flex-wrap items-center justify-end gap-1.5">
               <EventNavigationLinks eventId={eventId} currentSection="registrations-detail" />
-              <ActionLink to={toAdminEventRegistrations(eventId)}>Back to Registrations</ActionLink>
+              <ActionLink to={toRoute('adminRegistrations', { id: eventId })}>
+                Back to Registrations
+              </ActionLink>
             </div>
           }
           actions={pageActions}
