@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { AdminEventField } from '@/lib/domain/event-fields';
-import type { UpdateEventFieldInput } from '@/lib/domain/event-fields';
+import type { AdminEventField, UpdateEventFieldInput } from '@/lib/domain/event-fields';
 import { supabase } from '@/lib/infrastructure';
 
 import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';

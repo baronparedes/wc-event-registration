@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { TIMING } from '@/config/constants';
 

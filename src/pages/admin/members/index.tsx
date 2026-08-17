@@ -7,6 +7,7 @@ import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
+import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
   ListTable,
@@ -30,7 +31,6 @@ import { useAdminMembersQuery } from '@/hooks/domain/members';
 import { canAdminPerform } from '@/lib/domain/auth';
 import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
-import { Avatar } from '../../../components/ui/Avatar';
 import { AddMemberDialog } from './components/AddMemberDialog';
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
 

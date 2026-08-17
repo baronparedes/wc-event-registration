@@ -1,5 +1,4 @@
-import { Col } from '@/components/ui/Grid';
-import { Grid } from '@/components/ui/Grid';
+import { Col, Grid } from '@/components/ui/Grid';
 import {
   REGISTRATION_SHARE_FIELDS,
   REGISTRATION_SHARE_FIELD_LABELS,

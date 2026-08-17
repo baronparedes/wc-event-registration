@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 
 import brandLogo from '@/assets/wc-hub-brand-white.png';
 import { TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
+import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
 
-import { useAdminAuthQuery, useAdminLogoutMutation } from '../../hooks/domain/auth';
 import { Button } from '../ui';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 

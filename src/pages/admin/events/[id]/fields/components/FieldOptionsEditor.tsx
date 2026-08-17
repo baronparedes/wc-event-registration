@@ -11,8 +11,7 @@ import { useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
 import { FormSelectField } from '@/components/ui/FormSelectField';
-import type { EventFieldFormValues } from '@/lib/domain/event-fields';
-import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
+import type { EventFieldFormValues, EventFieldTypeEnum } from '@/lib/domain/event-fields';
 
 import { FieldOptionsCapacityEditor } from './FieldOptionsCapacityEditor';
 

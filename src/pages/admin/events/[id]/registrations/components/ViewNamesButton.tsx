@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { TOAST_MESSAGES } from '@/config/constants';
-import { toRouteWithQuery } from '@/config/constants';
+import { TOAST_MESSAGES, toRouteWithQuery } from '@/config/constants';
 import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout } from '@/hooks/utils';
 import { type RegistrationShareField } from '@/lib/domain/registrations';

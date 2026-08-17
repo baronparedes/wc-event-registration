@@ -1,8 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
-import type { RegistrationStatus } from '@/lib/domain/registrations';
+import type { AdminRegistrationWithMember, RegistrationStatus } from '@/lib/domain/registrations';
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
 
 function escapeOrFilterValue(value: string): string {

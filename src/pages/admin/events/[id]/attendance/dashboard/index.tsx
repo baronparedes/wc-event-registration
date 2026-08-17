@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
+import { SectionCard } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
 import {
@@ -25,7 +26,6 @@ import type { AdminEventField } from '@/lib/domain/event-fields';
 import { formatDateTime } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
-import { SectionCard } from '../../../../../../components/ui';
 import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
 import { AttendancePrimaryFilters } from '../data/components/AttendancePrimaryFilters';
 import { AllCheckInsTable } from './components/AllCheckInsTable';

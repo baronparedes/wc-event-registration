@@ -1,6 +1,7 @@
 import { Check, Minus, Pencil } from 'lucide-react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
+import { Avatar } from '@/components/ui/Avatar';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import type {
   AttendanceAnswer,
@@ -9,8 +10,6 @@ import type {
 } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import { type DynamicFieldRef, toDynamicFieldToken } from '@/lib/domain/attendance-views';
-
-import { Avatar } from '../../../../../../../components/ui/Avatar';
 
 type AttendanceDataMobileViewProps = {
   registrants: RegistrantAttendanceRow[];

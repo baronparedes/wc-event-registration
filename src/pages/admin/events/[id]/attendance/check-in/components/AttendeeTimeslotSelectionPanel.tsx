@@ -1,9 +1,8 @@
 import { ChevronsRight } from 'lucide-react';
 
+import { Button } from '@/components/ui';
 import type { AttendanceTimeslotConfig } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
-
-import { Button } from '../../../../../../../components/ui';
 
 type AttendeeTimeslotSelectionPanelProps = {
   autoWindowModeEnabled: boolean;

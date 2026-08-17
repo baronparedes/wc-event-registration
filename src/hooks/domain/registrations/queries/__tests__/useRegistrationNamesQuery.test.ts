@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { waitFor } from '@testing-library/react';
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';

@@ -6,6 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
+import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -21,7 +22,6 @@ import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 
-import { Avatar } from '../../../../components/ui/Avatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
 import { MetadataEntriesEditor } from './components/MetadataEntriesEditor';
 

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Check, ChevronsRight, Users } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
+import { Avatar } from '@/components/ui/Avatar';
 import {
   ListTable,
   ListTableBody,
@@ -16,8 +17,6 @@ import { WizardStep } from '@/components/ui/WizardStep';
 import { useIsMobileViewport } from '@/hooks/utils';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
-
-import { Avatar } from '../../../../../../../components/ui/Avatar';
 
 type AttendeeSelectStepProps = {
   results: AttendeeSearchResult[];

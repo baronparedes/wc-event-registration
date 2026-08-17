@@ -3,8 +3,7 @@ import { toast } from 'sonner';
 
 import { QUERY_KEYS } from '@/config/constants';
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
-import { createEdgeFunctionCaller } from '@/lib/infrastructure';
-import { logger } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, logger } from '@/lib/infrastructure';
 
 export interface SubmitRegistrationRequest {
   event_slug: string;

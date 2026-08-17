@@ -18,9 +18,8 @@ import {
   useUpdateEventMutation,
 } from '@/hooks/domain/events';
 import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
-import { createEventSchema } from '@/lib/domain/events';
+import { createEventSchema, derivePublicRegistrationAccess } from '@/lib/domain/events';
 import type { CreateEventInput } from '@/lib/domain/events';
-import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 
 import { EventNavigationLinks, PublishActionButton } from '../components';
 import {

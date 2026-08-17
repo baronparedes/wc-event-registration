@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import importXPlugin from 'eslint-plugin-import-x';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -23,10 +24,27 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    plugins: {
+      'import-x': importXPlugin,
+    },
     languageOptions: {
       globals: globals.browser,
     },
     rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../../**', '../../../**'],
+              message:
+                'Deep relative imports are forbidden. Use your `@/` alias for paths deeper than 1 level.',
+            },
+          ],
+        },
+      ],
+      'import-x/no-duplicates': 'error',
+      'import-x/first': 'error',
       'no-restricted-syntax': [
         'error',
         {

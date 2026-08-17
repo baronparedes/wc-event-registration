@@ -5,8 +5,7 @@ import type {
   MemberLookupProfile,
   MemberLookupResult,
 } from '@/lib/domain/members';
-import { createEdgeFunctionCaller } from '@/lib/infrastructure';
-import { logger } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, logger } from '@/lib/infrastructure';
 
 export type { MemberLookupProfile, ExistingRegistrationState, MemberLookupResult };
 

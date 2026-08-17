@@ -26,12 +26,8 @@ import {
 import { canAdminPerform } from '@/lib/domain/auth';
 import { formatDateTime } from '@/lib/infrastructure';
 
-import {
-  AttendeeCacheStatusBar,
-  AttendeeConfirmStep,
-  AttendeeSearchStep,
-  AttendeeSelectStep,
-} from './components';
+import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
+import { AttendeeConfirmStep, AttendeeSearchStep, AttendeeSelectStep } from './components';
 
 function isRegistrationOpenNow(event: {
   registration_mode: 'open' | 'closed';

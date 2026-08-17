@@ -19,11 +19,11 @@ import {
   toValidationRules,
 } from '@/lib/domain/event-fields';
 import type {
+  AdminEventField,
   EventFieldApplicability,
   EventFieldFormValues,
   EventFieldTypeEnum,
 } from '@/lib/domain/event-fields';
-import type { AdminEventField } from '@/lib/domain/event-fields';
 import type { EventStatus } from '@/lib/domain/events';
 
 import { DisplayTextSection } from './DisplayTextSection';

@@ -1,4 +1,6 @@
 import {
+  Avatar,
+  ColorSwatchDisplay,
   ListTable,
   ListTableBody,
   ListTableCell,
@@ -7,7 +9,6 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui';
-import { Avatar, ColorSwatchDisplay } from '@/components/ui';
 import {
   type AttendeeSearchResult,
   type DynamicFieldRef,

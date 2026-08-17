@@ -17,9 +17,8 @@ import {
   useDeleteEventFieldMutation,
   useReorderEventFieldsMutation,
 } from '@/hooks/domain/event-fields';
-import type { AdminEventField } from '@/lib/domain/event-fields';
+import type { AdminEventField, EventFieldTypeEnum } from '@/lib/domain/event-fields';
 import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields';
-import type { EventFieldTypeEnum } from '@/lib/domain/event-fields';
 import type { EventStatus } from '@/lib/domain/events';
 
 type EventFieldsListProps = {

@@ -2,8 +2,7 @@ import { z } from 'zod';
 
 import { VALIDATION_PATTERNS } from '@/config/constants';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
-import type { PublicEventField } from '@/lib/domain/event-fields';
-import type { AdminEventField } from '@/lib/domain/event-fields';
+import type { AdminEventField, PublicEventField } from '@/lib/domain/event-fields';
 
 import type { SubmitPublicRegistrationRequest } from './types';
 
