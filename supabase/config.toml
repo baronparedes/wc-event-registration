@@ -127,6 +127,9 @@ verify_jwt = true
 [functions.update-member-id]
 verify_jwt = true
 
+[functions.upload-member-avatar]
+verify_jwt = true
+
 [functions.public-attendee-lookup]
 verify_jwt = false
 

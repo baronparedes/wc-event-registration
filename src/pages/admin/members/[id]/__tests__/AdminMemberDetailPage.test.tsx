@@ -12,9 +12,11 @@ const {
   mockUseUpdateMemberMutation,
   mockUseSoftDeleteMemberMutation,
   mockUseRestoreMemberMutation,
+  mockUseUploadMemberAvatarMutation,
   mockUpdateMutateAsync,
   mockDeleteMutateAsync,
   mockRestoreMutateAsync,
+  mockUploadAvatarMutateAsync,
   mockToastSuccess,
   mockToastError,
 } = vi.hoisted(() => ({
@@ -25,9 +27,11 @@ const {
   mockUseUpdateMemberMutation: vi.fn(),
   mockUseSoftDeleteMemberMutation: vi.fn(),
   mockUseRestoreMemberMutation: vi.fn(),
+  mockUseUploadMemberAvatarMutation: vi.fn(),
   mockUpdateMutateAsync: vi.fn(),
   mockDeleteMutateAsync: vi.fn(),
   mockRestoreMutateAsync: vi.fn(),
+  mockUploadAvatarMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
 }));
@@ -69,6 +73,7 @@ vi.mock('@/hooks/domain/members', async () => {
     useUpdateMemberMutation: () => mockUseUpdateMemberMutation(),
     useSoftDeleteMemberMutation: () => mockUseSoftDeleteMemberMutation(),
     useRestoreMemberMutation: () => mockUseRestoreMemberMutation(),
+    useUploadMemberAvatarMutation: () => mockUseUploadMemberAvatarMutation(),
   };
 });
 
@@ -100,6 +105,10 @@ describe('AdminMemberDetailPage', () => {
       mutateAsync: mockRestoreMutateAsync,
       isPending: false,
     });
+    mockUseUploadMemberAvatarMutation.mockReturnValue({
+      mutateAsync: mockUploadAvatarMutateAsync,
+      isPending: false,
+    });
     mockUseAdminMemberQuery.mockReturnValue({
       data: {
         id: 'user-1',
@@ -123,6 +132,19 @@ describe('AdminMemberDetailPage', () => {
     mockUpdateMutateAsync.mockResolvedValue(undefined);
     mockDeleteMutateAsync.mockResolvedValue(undefined);
     mockRestoreMutateAsync.mockResolvedValue(undefined);
+    mockUploadAvatarMutateAsync.mockResolvedValue({
+      success: true,
+      avatar_object_key: 'avatars/member/user-1.jpg',
+    });
+  });
+
+  it('shows the photo upload control for active members when write access is allowed', () => {
+    renderWithRouter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Upload member photo' }));
+
+    expect(screen.getByRole('button', { name: 'Upload photo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Take photo' })).toBeInTheDocument();
   });
 
   it('renders missing id, loading, and not-found states', () => {
@@ -480,7 +502,35 @@ describe('AdminMemberDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete Member' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Restore Member' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Upload member photo' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('First Name *')).toHaveAttribute('readOnly', '');
     expect(screen.getByLabelText('Role *')).toHaveAttribute('readOnly', '');
+  });
+
+  it('does not show the photo upload control for deleted members', () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: {
+        id: 'user-1',
+        member_id: 'WC-001',
+        is_active: false,
+        full_name: 'Jane Doe',
+        first_name: 'Jane',
+        last_name: 'Doe',
+        nickname: 'Janie',
+        email: 'jane@example.com',
+        phone: '',
+        date_of_birth: '',
+        role: 'player',
+        category: 'adult',
+        extra_metadata: {},
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.queryByRole('button', { name: 'Upload member photo' })).not.toBeInTheDocument();
   });
 });

@@ -17,11 +17,13 @@ import {
   useRestoreMemberMutation,
   useSoftDeleteMemberMutation,
   useUpdateMemberMutation,
+  useUploadMemberAvatarMutation,
 } from '@/hooks/domain/members';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 
+import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
 import { MetadataEntriesEditor } from './components/MetadataEntriesEditor';
 
@@ -65,6 +67,7 @@ export function AdminMemberDetailPage() {
   const updateMemberMutation = useUpdateMemberMutation();
   const deleteMemberMutation = useSoftDeleteMemberMutation();
   const restoreMemberMutation = useRestoreMemberMutation();
+  const uploadMemberAvatarMutation = useUploadMemberAvatarMutation();
 
   const {
     register,
@@ -132,6 +135,13 @@ export function AdminMemberDetailPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : TOAST_MESSAGES.member.restoreFailed);
     }
+  }
+
+  async function onSaveAvatar(imageBase64: string) {
+    if (!id) return;
+
+    await uploadMemberAvatarMutation.mutateAsync({ id, image_base64: imageBase64 });
+    toast.success('Member photo updated successfully.');
   }
 
   if (!id) {
@@ -205,12 +215,21 @@ export function AdminMemberDetailPage() {
             subtitle="Member ID stays read-only because it is used for lookup and registration linking."
           >
             <div className="flex items-center justify-center">
-              <Avatar
-                size="xl"
-                name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
-                avatarObjectKey={member.avatar_object_key}
-                className="mb-4"
-              />
+              {canWrite && !isDeletedMember ? (
+                <EditableMemberAvatar
+                  name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                  avatarObjectKey={member.avatar_object_key}
+                  isSaving={uploadMemberAvatarMutation.isPending}
+                  onSave={onSaveAvatar}
+                />
+              ) : (
+                <Avatar
+                  size="xl"
+                  name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                  avatarObjectKey={member.avatar_object_key}
+                  className="mb-4"
+                />
+              )}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <FormInputField

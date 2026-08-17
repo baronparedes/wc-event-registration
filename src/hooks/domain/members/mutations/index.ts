@@ -4,3 +4,4 @@ export { useCreateMemberMutation } from './useCreateMemberMutation';
 export { useBulkUpsertMembersMutation } from './useBulkUpsertMembersMutation';
 export { useSoftDeleteMemberMutation } from './useSoftDeleteMemberMutation';
 export { useRestoreMemberMutation } from './useRestoreMemberMutation';
+export { useUploadMemberAvatarMutation } from './useUploadMemberAvatarMutation';
