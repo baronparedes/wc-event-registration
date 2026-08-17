@@ -84,4 +84,5 @@ export type AttendanceSavedView = {
   view_config: AttendeeViewConfig;
   created_at: string;
   updated_at: string;
+  sort_order: number;
 };

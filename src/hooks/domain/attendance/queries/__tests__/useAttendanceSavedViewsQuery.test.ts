@@ -36,6 +36,7 @@ const mockView: AttendanceSavedView = {
   id: '00000000-0000-0000-0000-000000000001',
   event_id: '00000000-0000-0000-0000-000000000002',
   name: 'All Members',
+  sort_order: 0,
   view_config: {
     nameOrMemberQuery: '',
     role: [],
@@ -65,18 +66,23 @@ describe('useAttendanceSavedViewsQuery', () => {
   });
 
   it('queries attendance_saved_views table filtered by event_id', () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({ data: [], error: null });
+    mockQueryBuilder.order
+      .mockReturnValueOnce(mockQueryBuilder)
+      .mockResolvedValueOnce({ data: [], error: null });
 
     renderHookWithClient(() => useAttendanceSavedViewsQuery('event-1'));
 
     expect(mockFrom).toHaveBeenCalledWith('attendance_saved_views');
     expect(mockQueryBuilder.select).toHaveBeenCalledWith('*');
     expect(mockQueryBuilder.eq).toHaveBeenCalledWith('event_id', 'event-1');
-    expect(mockQueryBuilder.order).toHaveBeenCalledWith('name', { ascending: true });
+    expect(mockQueryBuilder.order).toHaveBeenNthCalledWith(1, 'sort_order', { ascending: true });
+    expect(mockQueryBuilder.order).toHaveBeenNthCalledWith(2, 'name', { ascending: true });
   });
 
   it('returns saved views on success', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({ data: [mockView], error: null });
+    mockQueryBuilder.order
+      .mockReturnValueOnce(mockQueryBuilder)
+      .mockResolvedValueOnce({ data: [mockView], error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceSavedViewsQuery('event-1'));
 
@@ -85,7 +91,9 @@ describe('useAttendanceSavedViewsQuery', () => {
   });
 
   it('returns empty array when data is null', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({ data: null, error: null });
+    mockQueryBuilder.order
+      .mockReturnValueOnce(mockQueryBuilder)
+      .mockResolvedValueOnce({ data: null, error: null });
 
     const { result } = renderHookWithClient(() => useAttendanceSavedViewsQuery('event-1'));
 
@@ -94,7 +102,9 @@ describe('useAttendanceSavedViewsQuery', () => {
   });
 
   it('enters error state when supabase returns an error', async () => {
-    mockQueryBuilder.order.mockResolvedValueOnce({ data: null, error: { message: 'DB error' } });
+    mockQueryBuilder.order
+      .mockReturnValueOnce(mockQueryBuilder)
+      .mockResolvedValueOnce({ data: null, error: { message: 'DB error' } });
 
     const { result } = renderHookWithClient(() => useAttendanceSavedViewsQuery('event-1'));
 

@@ -17,6 +17,7 @@ export function useAttendanceSavedViewsQuery(eventId: string | undefined) {
         .from('attendance_saved_views')
         .select('*')
         .eq('event_id', eventId)
+        .order('sort_order', { ascending: true })
         .order('name', { ascending: true });
 
       if (error) throw error;

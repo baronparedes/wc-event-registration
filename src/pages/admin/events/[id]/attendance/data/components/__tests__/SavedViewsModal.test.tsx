@@ -64,6 +64,7 @@ function makeView(overrides: Partial<AttendanceSavedView> = {}): AttendanceSaved
     view_config: defaultViewConfig,
     created_at: '2026-07-19T00:00:00.000Z',
     updated_at: '2026-07-19T00:00:00.000Z',
+    sort_order: 0,
     ...overrides,
   };
 }

@@ -44,19 +44,12 @@ export function SavedViewsModal({
   const { data: savedViews = [] } = useAttendanceSavedViewsQuery(eventId);
   const upsertMutation = useUpsertAttendanceSavedViewMutation();
   const deleteMutation = useDeleteAttendanceSavedViewMutation();
-  const sortedSavedViews = useMemo(
-    () =>
-      [...savedViews].sort((left, right) =>
-        left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
-      ),
-    [savedViews],
-  );
   const filteredSavedViews = useMemo(() => {
     const query = viewFilter.trim().toLowerCase();
-    if (!query) return sortedSavedViews;
+    if (!query) return savedViews;
 
-    return sortedSavedViews.filter((view) => view.name.toLowerCase().includes(query));
-  }, [sortedSavedViews, viewFilter]);
+    return savedViews.filter((view) => view.name.toLowerCase().includes(query));
+  }, [savedViews, viewFilter]);
   const groupedSavedViews = useMemo(() => {
     const groups = new Map<string, Array<{ id: string; name: string; created_at: string }>>();
 
@@ -192,7 +185,7 @@ export function SavedViewsModal({
         showCloseIcon
       >
         <div className="flex max-h-[85vh] min-h-0 flex-col gap-4">
-          {sortedSavedViews.length === 0 ? (
+          {savedViews.length === 0 ? (
             <div className="rounded-md border border-border bg-surface p-4 text-center text-sm text-muted">
               <p>No saved views yet.</p>
             </div>

@@ -44,6 +44,7 @@ describe('useUpsertAttendanceSavedViewMutation', () => {
       id: faker.string.uuid(),
       event_id: eventId,
       name: 'New View',
+      sort_order: 0,
       view_config: mockViewConfig,
       created_at: '2026-07-19T00:00:00.000Z',
       updated_at: '2026-07-19T00:00:00.000Z',
@@ -75,6 +76,7 @@ describe('useUpsertAttendanceSavedViewMutation', () => {
       view_config: mockViewConfig,
       created_at: '2026-07-19T00:00:00.000Z',
       updated_at: '2026-07-19T00:00:00.000Z',
+      sort_order: 0,
     };
     mockCaller.mockResolvedValueOnce({ success: true, ...savedView });
 
@@ -96,6 +98,7 @@ describe('useUpsertAttendanceSavedViewMutation', () => {
       view_config: mockViewConfig,
       created_at: '2026-07-19T00:00:00.000Z',
       updated_at: '2026-07-19T00:00:00.000Z',
+      sort_order: 0,
     };
     mockCaller.mockResolvedValueOnce({ success: true, ...savedView });
 

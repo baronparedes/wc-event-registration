@@ -36,6 +36,7 @@ const mockView: AttendanceSavedView = {
   id: '00000000-0000-0000-0000-000000000001',
   event_id: '00000000-0000-0000-0000-000000000002',
   name: 'Checked In',
+  sort_order: 0,
   view_config: {
     nameOrMemberQuery: '',
     role: [],
