@@ -1,5 +1,6 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import { z } from '@/shared/validation.ts';
 
 const CRON_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000; // Asia/Manila (UTC+8)
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -177,6 +178,11 @@ function computeForthcomingSundayDateInPht(now = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+function resolveTargetSundayDate(req: Request): string {
+  const requestedDate = new URL(req.url).searchParams.get('target_sunday_date')?.trim();
+  return requestedDate || computeForthcomingSundayDateInPht();
+}
+
 function encodeBase64Utf8(value: string): string {
   const bytes = new TextEncoder().encode(value);
   const chunkSize = 0x8000;
@@ -267,7 +273,7 @@ Deno.serve(async (req) => {
   });
 
   try {
-    const targetSundayDate = computeForthcomingSundayDateInPht();
+    const targetSundayDate = resolveTargetSundayDate(req);
     console.log('[cron_upcoming_sunday_excused_export_email] Computed target date', {
       requestId: guard.requestId,
       targetSundayDate,
