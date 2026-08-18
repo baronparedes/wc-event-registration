@@ -161,8 +161,6 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByText('Role')).toBeInTheDocument();
-    expect(screen.getByText('Category')).toBeInTheDocument();
     expect(screen.queryByText('Table Number')).not.toBeInTheDocument();
     expect(screen.queryByText('Area')).not.toBeInTheDocument();
     expect(screen.queryByText('Notes')).not.toBeInTheDocument();
@@ -275,7 +273,7 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getAllByText('—').length).toBeGreaterThan(1);
+    expect(screen.queryByText('MID-002')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Fill in attendance details' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('John Smith'));

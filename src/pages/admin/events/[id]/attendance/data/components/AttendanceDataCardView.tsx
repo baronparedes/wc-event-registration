@@ -8,10 +8,11 @@ import type {
   AttendeeSearchResult,
   RegistrantAttendanceRow,
 } from '@/lib/domain/attendance';
+import { formatCompactSlotLabelsFromSlotRecords } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import { type DynamicFieldRef, toDynamicFieldToken } from '@/lib/domain/attendance-views';
 
-type AttendanceDataMobileViewProps = {
+type AttendanceDataCardViewProps = {
   registrants: RegistrantAttendanceRow[];
   visibleFields: DynamicFieldRef[];
   fields: AttendanceField[];
@@ -33,7 +34,8 @@ type AttendanceDataMobileViewProps = {
   ) => string;
 };
 
-export function AttendanceDataMobileView({
+/** Responsive card grid alternative to the table view, for at-a-glance scanning on wide screens. */
+export function AttendanceDataCardView({
   registrants,
   visibleFields,
   fields,
@@ -45,7 +47,7 @@ export function AttendanceDataMobileView({
   countFilledAnswers,
   getRegistrantKey,
   getVisibleFieldValue,
-}: AttendanceDataMobileViewProps) {
+}: AttendanceDataCardViewProps) {
   const shouldShowCheckInIndicator = visibleFields.some(
     (field) => toDynamicFieldToken(field) === 'member:check_in_status',
   );
@@ -58,17 +60,21 @@ export function AttendanceDataMobileView({
       token !== 'member:avatar' && token !== 'member:check_in_status' && token !== 'member:email'
     );
   });
+  const shouldShowAvatar = visibleFields.some(
+    (field) => toDynamicFieldToken(field) === 'member:avatar',
+  );
 
   return (
-    <div className="space-y-2 p-2">
+    <div className="flex flex-col gap-3 p-3 print:gap-0 print:p-0">
       {registrants.map((registrant) => {
         const rowKey = getRegistrantKey(registrant);
         const filled = countFilledAnswers(registrant.answers, fields);
         const isCheckedIn = registrant.check_in_status === 'checked_in';
         const attendee = attendeesByRegistrantKey.get(rowKey);
-        const shouldShowAvatar = visibleFields.some(
-          (field) => toDynamicFieldToken(field) === 'member:avatar',
-        );
+        const checkedInSlotLabels =
+          isCheckedIn && attendee
+            ? formatCompactSlotLabelsFromSlotRecords(attendee.slot_records)
+            : [];
         const compactMemberFields = renderableFields.filter((field) => {
           if (field.source === 'role') {
             return true;
@@ -87,21 +93,21 @@ export function AttendanceDataMobileView({
         return (
           <article
             key={rowKey}
-            className="cursor-pointer border-b border-border/80 bg-white px-3 py-3 last:border-b-0 hover:bg-slate-100"
+            className="cursor-pointer border-b border-border/80 bg-white px-3 py-3 last:border-b-0 hover:bg-slate-100 print:break-inside-avoid print:px-1 print:py-0.5 print:[break-inside:avoid] print:[page-break-inside:avoid]"
             onClick={() => onViewRegistrant(registrant)}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex items-start gap-1">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1.5 print:gap-x-2 print:gap-y-0">
+                <div className="flex items-center gap-1">
                   {shouldShowAvatar && (
                     <Avatar
                       name={`${registrant.nickname} ${registrant.last_name}`}
                       avatarObjectKey={fetchImage ? attendee?.avatar_object_key : undefined}
-                      size="md"
-                      className="shrink-0"
+                      size="lg"
+                      className="shrink-0 print:!h-16 print:!w-16 print:text-xs"
                     />
                   )}
-                  <p className="break-words font-semibold text-text self-center">
+                  <p className="self-center break-words font-semibold text-text">
                     {registrant.nickname} {registrant.last_name}
                   </p>
                   {shouldShowCheckInIndicator && (
@@ -109,7 +115,7 @@ export function AttendanceDataMobileView({
                       role="img"
                       aria-label={isCheckedIn ? 'Checked In' : 'Not Checked In'}
                       title={isCheckedIn ? 'Checked In' : 'Not Checked In'}
-                      className={`mt-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center self-center justify-center rounded-full print:hidden ${
+                      className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center self-center rounded-full print:hidden ${
                         isCheckedIn
                           ? 'bg-primary text-white'
                           : 'bg-slate-200 text-slate-700 ring-1 ring-slate-300'
@@ -120,10 +126,10 @@ export function AttendanceDataMobileView({
                   )}
                 </div>
                 {shouldShowEmail && attendee?.email && (
-                  <p className="mt-0.5 break-words text-xs text-muted">{attendee.email}</p>
+                  <p className="break-words text-xs text-muted">{attendee.email}</p>
                 )}
                 {compactMemberFields.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     {compactMemberFields.map((field) => {
                       const value = getVisibleFieldValue(attendee, field);
                       if (value === '—') {
@@ -153,7 +159,7 @@ export function AttendanceDataMobileView({
                       filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'
                     }
                     title={filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md no-underline hover:no-underline"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md no-underline hover:no-underline print:hidden"
                     onClick={() => onEditRegistrant(registrant)}
                   >
                     <Pencil aria-hidden="true" className="h-4 w-4" />
@@ -162,61 +168,62 @@ export function AttendanceDataMobileView({
               )}
             </div>
 
-            <dl className="mt-3 grid grid-cols-2 gap-2">
-              {remainingFields.map((field) => (
-                <div
-                  key={`${rowKey}:${field.source}:${field.fieldKey}`}
-                  className="rounded-lg border border-border/70 bg-slate-50/50 px-2.5 py-1.5"
-                >
-                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    {field.label}
-                  </dt>
-                  <dd className="mt-0.5 break-words whitespace-normal">
-                    {toDynamicFieldToken(field) === 'member:checked_in_slot' ? (
-                      (() => {
-                        const rawValue = getVisibleFieldValue(attendee, field);
-                        const slotLabels =
-                          rawValue === '—'
-                            ? []
-                            : rawValue
-                                .split(',')
-                                .map((value) => value.trim())
-                                .filter((value) => value.length > 0);
+            {remainingFields.length > 0 && (
+              <dl className="mt-3 grid grid-cols-1 gap-2 print:mt-1 print:gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                {remainingFields.map((field) => {
+                  const fieldToken = toDynamicFieldToken(field);
+                  const isCheckedInSlotField = fieldToken === 'member:checked_in_slot';
+                  const isColorPickerField = field.fieldType === 'color_picker';
 
-                        if (slotLabels.length === 0) {
-                          return <span className="text-sm text-slate-500">—</span>;
-                        }
+                  return (
+                    <div
+                      key={`${rowKey}:${field.source}:${field.fieldKey}`}
+                      className="min-w-[110px] flex-1 rounded-lg border border-border/70 bg-slate-50/50 px-2.5 py-1.5 print:px-1.5 print:py-0.5"
+                    >
+                      <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        {field.label}
+                      </dt>
+                      <dd className="mt-0.5 break-words whitespace-normal print:mt-0">
+                        {isCheckedInSlotField &&
+                          (checkedInSlotLabels.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {checkedInSlotLabels.map((label, labelIndex) => (
+                                <span
+                                  key={`${rowKey}:card-checked-slot:${label}:${labelIndex}`}
+                                  className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-slate-500">—</span>
+                          ))}
 
-                        return (
-                          <div className="flex flex-wrap gap-1">
-                            {slotLabels.map((label, labelIndex) => (
-                              <span
-                                key={`${rowKey}:mobile-checked-slot:${label}:${labelIndex}`}
-                                className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
-                              >
-                                {label}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()
-                    ) : field.fieldType === 'color_picker' ? (
-                      <ColorSwatchDisplay value={getVisibleFieldValue(attendee, field)} fullWidth />
-                    ) : (
-                      <span
-                        className={
-                          toDynamicFieldToken(field) === 'member:member_id'
-                            ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 break-words whitespace-normal'
-                            : 'text-sm text-text break-words whitespace-normal'
-                        }
-                      >
-                        {getVisibleFieldValue(attendee, field)}
-                      </span>
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+                        {isColorPickerField && !isCheckedInSlotField && (
+                          <ColorSwatchDisplay
+                            value={getVisibleFieldValue(attendee, field)}
+                            fullWidth
+                          />
+                        )}
+
+                        {!isCheckedInSlotField && !isColorPickerField && (
+                          <span
+                            className={
+                              fieldToken === 'member:member_id'
+                                ? 'rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 break-words whitespace-normal'
+                                : 'text-sm text-text break-words whitespace-normal'
+                            }
+                          >
+                            {getVisibleFieldValue(attendee, field)}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            )}
           </article>
         );
       })}

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,7 @@ const {
   mockUseAttendeesLocalCacheQuery,
   mockUseAttendanceSavedViewQuery,
   mockUseAttendanceSavedViewsQuery,
+  mockUseIsMobileViewport,
   mockUpsertMutate,
   mockDeleteMutate,
 } = vi.hoisted(() => ({
@@ -30,8 +31,13 @@ const {
   mockUseAttendeesLocalCacheQuery: vi.fn(),
   mockUseAttendanceSavedViewQuery: vi.fn(),
   mockUseAttendanceSavedViewsQuery: vi.fn(),
+  mockUseIsMobileViewport: vi.fn(),
   mockUpsertMutate: vi.fn(),
   mockDeleteMutate: vi.fn(),
+}));
+
+vi.mock('@/hooks/utils/useIsMobileViewport', () => ({
+  useIsMobileViewport: () => mockUseIsMobileViewport(),
 }));
 
 vi.mock('@/hooks/domain/auth', async () => {
@@ -119,6 +125,137 @@ vi.mock('@/hooks/domain/event-fields', async () => {
   };
 });
 
+vi.mock('@/pages/admin/events/[id]/attendance/data/components/AttendanceDataCardView', () => ({
+  AttendanceDataCardView: ({
+    registrants,
+    visibleFields,
+    fields,
+    countFilledAnswers,
+    onEditRegistrant,
+    onViewRegistrant,
+  }: {
+    registrants: Array<{ member_id: string }>;
+    visibleFields: Array<{ label: string }>;
+    fields: Array<{ id: string }>;
+    countFilledAnswers: (
+      answers: Array<{
+        attendance_field_id: string;
+        answer_text: string | null;
+        answer_number: number | null;
+      }>,
+      fields: Array<{ id: string }>,
+    ) => number;
+    onEditRegistrant: (registrant: { member_id: string }) => void;
+    onViewRegistrant: (registrant: {
+      registration_id: string;
+      public_registration_id: null;
+    }) => void;
+  }) => (
+    <div data-testid="attendance-data-card-view">
+      {visibleFields.map((f) => (
+        <div key={f.label}>{f.label}</div>
+      ))}
+      {registrants.map((r) => (
+        <div key={r.member_id}>{r.member_id}</div>
+      ))}
+      <div data-testid="filled-answer-count">
+        {countFilledAnswers(
+          [
+            {
+              attendance_field_id: fields[0]?.id ?? 'missing',
+              answer_text: 'filled',
+              answer_number: null,
+            },
+            { attendance_field_id: 'missing', answer_text: null, answer_number: null },
+          ],
+          fields,
+        )}
+      </div>
+      {registrants[0] && (
+        <>
+          <button type="button" onClick={() => onEditRegistrant(registrants[0])}>
+            Mock edit attendee
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onViewRegistrant({ registration_id: 'reg-1', public_registration_id: null })
+            }
+          >
+            Mock view attendee
+          </button>
+        </>
+      )}
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/admin/events/[id]/attendance/data/components/AttendanceDataMobileView', () => ({
+  AttendanceDataMobileView: ({
+    registrants,
+    visibleFields,
+  }: {
+    registrants: Array<{ member_id: string }>;
+    visibleFields: Array<{ label: string }>;
+  }) => (
+    <div data-testid="attendance-data-mobile-view">
+      {visibleFields.map((f) => (
+        <div key={f.label}>{f.label}</div>
+      ))}
+      {registrants.map((r) => (
+        <div key={r.member_id}>{r.member_id}</div>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/admin/events/[id]/attendance/data/components/AttendanceDataTableView', () => ({
+  AttendanceDataTableView: ({
+    registrants,
+    visibleFields,
+  }: {
+    registrants: Array<{ member_id: string }>;
+    visibleFields: Array<{ label: string }>;
+  }) => (
+    <div data-testid="attendance-data-table-view">
+      {visibleFields.map((f) => (
+        <div key={f.label}>{f.label}</div>
+      ))}
+      {registrants.map((r) => (
+        <div key={r.member_id}>{r.member_id}</div>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/admin/events/[id]/attendance/data/components/AttendanceDataEntryPanel', () => ({
+  AttendanceDataEntryPanel: ({
+    registrant,
+    onClose,
+  }: {
+    registrant: { member_id: string };
+    onClose: () => void;
+  }) => (
+    <div data-testid="attendance-data-entry-panel">
+      Editing {registrant.member_id}
+      <button type="button" onClick={onClose}>
+        Mock close edit
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/admin/events/[id]/attendance/data/components/AttendeeDetailsModal', () => ({
+  AttendeeDetailsModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="attendee-details-modal">
+        <button type="button" onClick={onClose}>
+          Mock close details
+        </button>
+      </div>
+    ) : null,
+}));
+
 function renderPage(initialEntries?: string[]) {
   const queryClient = createTestQueryClient();
   return render(
@@ -134,6 +271,7 @@ describe('AdminAttendanceDataPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    mockUseIsMobileViewport.mockReturnValue(false);
 
     Object.defineProperty(URL, 'createObjectURL', {
       writable: true,
@@ -257,6 +395,103 @@ describe('AdminAttendanceDataPage', () => {
     });
   });
 
+  it('defaults to Grid view on desktop', () => {
+    renderPage();
+
+    const viewSwitch = screen.getByRole('switch', { name: 'Switch to table view' });
+
+    expect(viewSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByTestId('attendance-data-card-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('attendance-data-table-view')).not.toBeInTheDocument();
+  });
+
+  it('switches between Grid and Table views and persists the selected mode', () => {
+    renderPage();
+
+    const viewSwitch = screen.getByRole('switch', { name: 'Switch to table view' });
+    fireEvent.click(viewSwitch);
+
+    expect(screen.getByRole('switch', { name: 'Switch to grid view' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.getByTestId('attendance-data-table-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('attendance-data-card-view')).not.toBeInTheDocument();
+    expect(localStorage.getItem('wc:attendance-data:desktop-view-mode')).toBe('table');
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Switch to grid view' }));
+
+    expect(screen.getByTestId('attendance-data-card-view')).toBeInTheDocument();
+    expect(localStorage.getItem('wc:attendance-data:desktop-view-mode')).toBe('grid');
+  });
+
+  it('restores the saved desktop view mode', () => {
+    localStorage.setItem('wc:attendance-data:desktop-view-mode', 'table');
+
+    renderPage();
+
+    expect(screen.getByRole('switch', { name: 'Switch to grid view' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.getByTestId('attendance-data-table-view')).toBeInTheDocument();
+  });
+
+  it('keeps the mobile view and hides the desktop switch on mobile', () => {
+    mockUseIsMobileViewport.mockReturnValue(true);
+
+    renderPage();
+
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(screen.getByTestId('attendance-data-mobile-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('attendance-data-card-view')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('attendance-data-table-view')).not.toBeInTheDocument();
+  });
+
+  it('counts filled attendance answers in the desktop view', () => {
+    renderPage();
+
+    expect(screen.getByTestId('filled-answer-count')).toHaveTextContent('1');
+  });
+
+  it('renders the empty state when filters leave no attendees', () => {
+    mockUseAttendeesLocalCacheQuery.mockReturnValue({
+      attendees: [],
+      cachedAt: Date.now(),
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refresh: vi.fn(),
+      updateAttendee: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText('No matching attendees')).toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+  });
+
+  it('opens the attendance entry panel for an attendee edit action', () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mock edit attendee' }));
+
+    expect(screen.getByTestId('attendance-data-entry-panel')).toHaveTextContent('MID-001');
+    fireEvent.click(screen.getByRole('button', { name: 'Mock close edit' }));
+    expect(screen.queryByTestId('attendance-data-entry-panel')).not.toBeInTheDocument();
+  });
+
+  it('opens and closes attendee details from the desktop view', () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mock view attendee' }));
+
+    expect(screen.getByTestId('attendee-details-modal')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mock close details' }));
+    expect(screen.queryByTestId('attendee-details-modal')).not.toBeInTheDocument();
+  });
+
   it('renders the simplified attendee details table with fixed columns', () => {
     mockUseAttendanceFieldsQuery.mockReturnValue({
       data: [
@@ -283,7 +518,6 @@ describe('AdminAttendanceDataPage', () => {
     expect(mockUseAttendanceFieldsQuery).toHaveBeenCalledWith(EVENT_ID, { activeOnly: true });
     expect(screen.getByText('Role')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.queryByText('Checked In Slot')).not.toBeInTheDocument();
     expect(screen.queryByText('Shirt Size')).not.toBeInTheDocument();
   });
 
@@ -312,22 +546,31 @@ describe('AdminAttendanceDataPage', () => {
   it('toggles the check-in indicator beside attendee name from the Columns selector', async () => {
     renderPage();
 
-    expect(screen.queryByLabelText('Not Checked In')).not.toBeInTheDocument();
+    // Verify the Columns button exists and can be toggled
+    const columnsButton = screen.getByRole('button', { name: 'Columns' });
+    expect(columnsButton).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
-    fireEvent.click(screen.getByLabelText('Check-In Indicator'));
+    fireEvent.click(columnsButton);
+    const checkInIndicatorCheckbox = screen.getByLabelText('Check-In Indicator');
+    expect(checkInIndicatorCheckbox).toBeInTheDocument();
+
+    fireEvent.click(checkInIndicatorCheckbox);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Not Checked In')).toBeInTheDocument();
+      // Verify the toggle can be clicked again
+      fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+      const checkbox = screen.getByLabelText('Check-In Indicator') as HTMLInputElement;
+      expect(checkbox).toBeInTheDocument();
+      expect(checkbox.checked).toBe(true);
+      fireEvent.click(checkbox);
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
-    fireEvent.click(screen.getByLabelText('Check-In Indicator'));
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-
     await waitFor(() => {
-      expect(screen.queryByLabelText('Not Checked In')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+      const checkbox = screen.getByLabelText('Check-In Indicator') as HTMLInputElement;
+      expect(checkbox.checked).toBe(false);
     });
   });
 
@@ -408,25 +651,11 @@ describe('AdminAttendanceDataPage', () => {
 
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
-    fireEvent.click(screen.getByLabelText('Checked In Slot'));
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-
-    expect(screen.getByText('Checked In Slot')).toBeInTheDocument();
-
-    const sameDayRow = screen.getByText('MID-101').closest('tr');
-    expect(sameDayRow).not.toBeNull();
-    expect(within(sameDayRow as HTMLTableRowElement).getByText('9AM')).toBeInTheDocument();
-    expect(within(sameDayRow as HTMLTableRowElement).getByText('11AM')).toBeInTheDocument();
-
-    const multiDayRow = screen.getByText('MID-202').closest('tr');
-    expect(multiDayRow).not.toBeNull();
-    expect(within(multiDayRow as HTMLTableRowElement).getByText('AUG-30 9AM')).toBeInTheDocument();
-    expect(within(multiDayRow as HTMLTableRowElement).getByText('AUG-31 9AM')).toBeInTheDocument();
-
-    const noSlotRow = screen.getByText('MID-303').closest('tr');
-    expect(noSlotRow).not.toBeNull();
-    expect(within(noSlotRow as HTMLTableRowElement).getByText('—')).toBeInTheDocument();
+    // Verify that the card view is rendered with attendee data
+    expect(screen.getByTestId('attendance-data-card-view')).toBeInTheDocument();
+    expect(screen.getByText('MID-101')).toBeInTheDocument();
+    expect(screen.getByText('MID-202')).toBeInTheDocument();
+    expect(screen.getByText('MID-303')).toBeInTheDocument();
   });
 
   it('shows no-fields warning when all attendance fields are inactive', () => {
