@@ -33,6 +33,7 @@ type EdgeHookBaseOptions = {
   req: Request;
   functionName: string;
   allowedOrigins?: string[];
+  allowAnyOrigin?: boolean;
   method?: 'POST' | 'GET' | 'PUT' | 'PATCH' | 'DELETE';
   publicRateLimit?: PublicRateLimitConfig;
 };
@@ -90,14 +91,18 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   const requestId = crypto.randomUUID();
   const allowedOrigins = options.allowedOrigins ?? readAllowedOrigins();
   const origin = options.req.headers.get('origin');
-  const corsHeaders = buildCorsHeaders(origin, allowedOrigins);
+  const corsHeaders = buildCorsHeaders(
+    origin,
+    options.allowAnyOrigin && origin ? [origin] : allowedOrigins,
+  );
+  const originAllowed = options.allowAnyOrigin || isOriginAllowed(origin, allowedOrigins);
 
   // ⚠️ CORS allowlist is one layer of defense.
   // Non-browser clients can spoof Origin headers or bypass CORS entirely.
   // Rate limiting and request validation below are additional layers.
 
   if (options.req.method === 'OPTIONS') {
-    if (!isOriginAllowed(origin, allowedOrigins)) {
+    if (!originAllowed) {
       return {
         valid: false,
         response: createObscuredDenyResponse(corsHeaders),
@@ -114,7 +119,7 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
     };
   }
 
-  if (!isOriginAllowed(origin, allowedOrigins)) {
+  if (!originAllowed) {
     return {
       valid: false,
       response: createObscuredDenyResponse(corsHeaders),

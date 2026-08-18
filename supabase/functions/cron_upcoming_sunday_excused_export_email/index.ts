@@ -252,6 +252,7 @@ Deno.serve(async (req) => {
   const guard = await useEdgeHook({
     req,
     functionName: 'cron-upcoming-sunday-excused-export-email',
+    allowAnyOrigin: true,
     method: 'POST',
     publicRateLimit: {
       scope: 'cron-upcoming-sunday-excused-export-email',
