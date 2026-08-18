@@ -50,10 +50,10 @@ const cronEnvironmentSchema = z.object({
     .trim()
     .email('UPCOMING_SUNDAY_TARGET_EMAIL must be a valid email address'),
   UPCOMING_SUNDAY_EVENT_ID: z.string().trim().uuid('UPCOMING_SUNDAY_EVENT_ID must be a valid UUID'),
-  CRON_RESEND_FROM_EMAIL: z
+  RESEND_FROM_EMAIL: z
     .string()
     .trim()
-    .email('CRON_RESEND_FROM_EMAIL must be a valid email address')
+    .email('RESEND_FROM_EMAIL must be a valid email address')
     .default('onboarding@resend.dev'),
 });
 
@@ -92,7 +92,7 @@ function parseCronEnvironment(): CronEnvironment | null {
     resendApiKey: parsed.data.RESEND_API_KEY,
     targetEmail: parsed.data.UPCOMING_SUNDAY_TARGET_EMAIL,
     eventId: parsed.data.UPCOMING_SUNDAY_EVENT_ID,
-    fromEmail: parsed.data.CRON_RESEND_FROM_EMAIL,
+    fromEmail: parsed.data.RESEND_FROM_EMAIL,
   };
 }
 
