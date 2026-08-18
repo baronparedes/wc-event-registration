@@ -236,6 +236,13 @@ async function sendEmailWithAttachment(options: {
 }
 
 Deno.serve(async (req) => {
+  console.log('[cron_upcoming_sunday_excused_export_email] Request received', {
+    method: req.method,
+    origin: req.headers.get('origin'),
+    hasAuthorizationHeader: req.headers.has('authorization'),
+    contentType: req.headers.get('content-type'),
+  });
+
   const guard = await useEdgeHook({
     req,
     functionName: 'cron-upcoming-sunday-excused-export-email',
@@ -248,14 +255,29 @@ Deno.serve(async (req) => {
   });
 
   if (!guard.valid) {
+    console.error('[cron_upcoming_sunday_excused_export_email] Request rejected by edge hook', {
+      requestId: guard.requestId,
+      status: guard.response.status,
+    });
     return guard.response;
   }
 
+  console.log('[cron_upcoming_sunday_excused_export_email] Edge hook accepted request', {
+    requestId: guard.requestId,
+  });
+
   try {
     const targetSundayDate = computeForthcomingSundayDateInPht();
+    console.log('[cron_upcoming_sunday_excused_export_email] Computed target date', {
+      requestId: guard.requestId,
+      targetSundayDate,
+    });
 
     const cronEnv = parseCronEnvironment();
     if (!cronEnv) {
+      console.error('[cron_upcoming_sunday_excused_export_email] Cron environment is invalid', {
+        requestId: guard.requestId,
+      });
       return jsonResponse(500, {
         success: false,
         error: 'Cron email environment not configured',
@@ -268,6 +290,12 @@ Deno.serve(async (req) => {
       .eq('event_id', cronEnv.eventId)
       .in('field_key', [...REQUIRED_FIELD_KEYS])
       .returns<EventFieldRow[]>();
+
+    console.log('[cron_upcoming_sunday_excused_export_email] Event fields lookup completed', {
+      requestId: guard.requestId,
+      fieldCount: eventFields?.length ?? 0,
+      hasError: Boolean(eventFieldsError),
+    });
 
     if (eventFieldsError) {
       console.error(
@@ -306,6 +334,15 @@ Deno.serve(async (req) => {
       .or(`answer_text.ilike.%${targetSundayDate}%,answer_date.eq.${targetSundayDate}`)
       .returns<{ registration_id: string }[]>();
 
+    console.log(
+      '[cron_upcoming_sunday_excused_export_email] Request date answers lookup completed',
+      {
+        requestId: guard.requestId,
+        matchingAnswerCount: requestDateAnswers?.length ?? 0,
+        hasError: Boolean(requestDateAnswersError),
+      },
+    );
+
     if (requestDateAnswersError) {
       console.error(
         '[cron_upcoming_sunday_excused_export_email] Request date filter lookup failed',
@@ -318,6 +355,10 @@ Deno.serve(async (req) => {
     }
 
     const registrationIds = (requestDateAnswers ?? []).map((answer) => answer.registration_id);
+    console.log('[cron_upcoming_sunday_excused_export_email] Registration IDs resolved', {
+      requestId: guard.requestId,
+      registrationCount: registrationIds.length,
+    });
 
     if (registrationIds.length === 0) {
       // No matching requests for this Sunday, send empty report
@@ -332,6 +373,12 @@ Deno.serve(async (req) => {
         html: `<p>Attached is the Sunday excuse request export for <strong>${targetSundayDate}</strong>.</p><p>Records: <strong>0</strong></p>`,
         filename,
         content: jsonAttachment,
+      });
+
+      console.log('[cron_upcoming_sunday_excused_export_email] Empty export email completed', {
+        requestId: guard.requestId,
+        ok: emailResult.ok,
+        status: emailResult.ok ? 200 : emailResult.status,
       });
 
       if (!emailResult.ok) {
@@ -363,6 +410,12 @@ Deno.serve(async (req) => {
       .in('id', registrationIds)
       .returns<RegistrationRow[]>();
 
+    console.log('[cron_upcoming_sunday_excused_export_email] Registrations lookup completed', {
+      requestId: guard.requestId,
+      registrationCount: registrations?.length ?? 0,
+      hasError: Boolean(registrationsError),
+    });
+
     if (registrationsError) {
       console.error(
         '[cron_upcoming_sunday_excused_export_email] Registrations lookup failed',
@@ -384,6 +437,12 @@ Deno.serve(async (req) => {
         .in('registration_id', registrationIds)
         .in('event_field_id', requestedFieldIds)
         .returns<RegistrationAnswerRow[]>();
+
+      console.log('[cron_upcoming_sunday_excused_export_email] Answers lookup completed', {
+        requestId: guard.requestId,
+        answerCount: answerRows?.length ?? 0,
+        hasError: Boolean(answersError),
+      });
 
       if (answersError) {
         console.error(
@@ -444,6 +503,13 @@ Deno.serve(async (req) => {
       content: jsonAttachment,
     });
 
+    console.log('[cron_upcoming_sunday_excused_export_email] Export email completed', {
+      requestId: guard.requestId,
+      recordCount: payload.length,
+      ok: emailResult.ok,
+      status: emailResult.ok ? 200 : emailResult.status,
+    });
+
     if (!emailResult.ok) {
       console.error('[cron_upcoming_sunday_excused_export_email] Resend send failed', {
         status: emailResult.status,
@@ -467,6 +533,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('[cron_upcoming_sunday_excused_export_email] Unexpected error', {
+      requestId: guard.requestId,
       error,
     });
     return jsonResponse(500, {
