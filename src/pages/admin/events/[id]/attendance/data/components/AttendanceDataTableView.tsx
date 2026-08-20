@@ -118,7 +118,7 @@ export function AttendanceDataTableView({
                       className="shrink-0 print:h-10 print:w-10"
                     />
                   )}
-                  <p className="truncate font-semibold text-text">{`${registrant.nickname} ${registrant.last_name}`}</p>
+                  <p className="truncate font-semibold text-text text-wrap">{`${registrant.nickname} ${registrant.last_name}`}</p>
                   {shouldShowCheckInIndicator && (
                     <span
                       role="img"
