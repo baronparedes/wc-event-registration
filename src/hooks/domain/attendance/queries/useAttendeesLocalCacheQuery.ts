@@ -223,6 +223,19 @@ async function fetchAllAttendees(eventId: string): Promise<AttendeeSearchResult[
   return response.results;
 }
 
+function normalizeData(attendees: AttendeeSearchResult[]): AttendeeSearchResult[] {
+  const publicRegistrations = attendees
+    .filter((a) => a.attendee_kind === 'public')
+    .map((a) => ({
+      ...a,
+      role: a.registration_answers.find((ra) => ra.field_key === 'role')?.answer_text ?? a.role,
+    }));
+  const memberRegistrations = attendees.filter((a) => a.attendee_kind === 'registered');
+  const normalized = [...publicRegistrations, ...memberRegistrations];
+  console.log('Normalized attendees:', normalized, 'from', attendees.length);
+  return normalized;
+}
+
 /**
  * Fetches all attendees for an event once and caches them in localStorage.
  * Subsequent searches are performed locally against the cache.
@@ -250,7 +263,7 @@ export function useAttendeesLocalCacheQuery(
       }
 
       const attendees = await fetchAllAttendees(eventId);
-      const entry = buildCacheEntry(attendees);
+      const entry = buildCacheEntry(normalizeData(attendees));
       cacheStorage.set(entry);
 
       return entry;
