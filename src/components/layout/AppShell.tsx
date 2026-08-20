@@ -56,7 +56,7 @@ export function AppShell() {
           </button>
         </div>
       ) : (
-        <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
+        <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden print:p-0">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5">
             <div className="flex items-center gap-3">
               <img src={brandLogo} alt="Welcome Hub" className="h-28 object-cover object-center" />
@@ -92,7 +92,7 @@ export function AppShell() {
       />
 
       <main
-        className={`relative mx-auto w-full max-w-6xl animate-fadeIn ${
+        className={`relative mx-auto w-full max-w-6xl animate-fadeIn print:p-0 ${
           isMinimizedShell ? 'px-2 py-2 sm:px-3' : 'px-4 py-8'
         }`}
       >

@@ -169,7 +169,7 @@ export function AttendanceDataEntryList({
               collapseLabel="Collapse attendee group"
               expandLabel="Expand attendee group"
               wrapperClassName="overflow-hidden rounded-2xl border border-border bg-surface print:[break-inside:avoid] print:[page-break-inside:avoid]"
-              headerWrapperClassName="border-b border-border px-3 py-3 print:hidden"
+              headerWrapperClassName="border-b border-border px-3 py-3"
               titleClassName="font-heading text-base font-semibold text-text"
             >
               {isMobileViewport ? (

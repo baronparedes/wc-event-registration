@@ -93,7 +93,7 @@ type AdminPageFiltersProps = {
 
 function AdminPageFilters({ children, className }: AdminPageFiltersProps) {
   return (
-    <div className={cx('rounded-2xl border border-border bg-surface p-4', className)}>
+    <div className={cx('rounded-2xl border border-border bg-surface p-4 print:hidden', className)}>
       {children}
     </div>
   );
@@ -114,7 +114,7 @@ function AdminPageContent({
 }: AdminPageContentProps) {
   if (isLoading) {
     return (
-      <div className={className}>
+      <div className={cx(className, 'print:p-0')}>
         <p className="text-sm text-muted">{loadingMessage || 'Loading...'}</p>
       </div>
     );
@@ -129,7 +129,7 @@ type AdminPageSubNavProps = {
 
 function AdminPageSubNav({ children }: AdminPageSubNavProps) {
   return (
-    <div className="border-b border-border">
+    <div className="border-b border-border print:hidden">
       <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <nav className="-mb-px flex gap-6">{children}</nav>
       </div>

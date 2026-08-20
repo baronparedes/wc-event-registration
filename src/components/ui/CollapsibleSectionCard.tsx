@@ -86,7 +86,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
           aria-controls={contentId}
           aria-expanded={isExpanded}
           aria-label={actionLabel}
-          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none"
+          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none print:hidden"
           onClick={toggleExpanded}
           title={actionLabel}
           type="button"
