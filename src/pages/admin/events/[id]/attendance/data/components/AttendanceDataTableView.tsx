@@ -74,7 +74,7 @@ export function AttendanceDataTableView({
           {renderableFields.map((field) => (
             <ListTableHeaderCell
               key={`header:${field.source}:${field.fieldKey}`}
-              className="!px-2 !py-2"
+              className="!px-2 !py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500"
             >
               {field.label}
             </ListTableHeaderCell>
@@ -115,7 +115,7 @@ export function AttendanceDataTableView({
                       name={`${registrant.nickname} ${registrant.last_name}`}
                       avatarObjectKey={fetchImage ? attendee?.avatar_object_key : undefined}
                       size="lg"
-                      className="shrink-0"
+                      className="shrink-0 print:h-10 print:w-10"
                     />
                   )}
                   <p className="truncate font-semibold text-text">{`${registrant.nickname} ${registrant.last_name}`}</p>

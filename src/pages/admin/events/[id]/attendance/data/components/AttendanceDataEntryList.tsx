@@ -136,11 +136,11 @@ export function AttendanceDataEntryList({
             aria-label={`Switch to ${desktopViewMode === 'grid' ? 'table' : 'grid'} view`}
             title={`${desktopViewMode === 'grid' ? 'Grid' : 'Table'} view; click to switch`}
             onClick={() => handleViewModeChange(desktopViewMode === 'grid' ? 'table' : 'grid')}
-            className="relative inline-flex h-6 w-16 items-center rounded-full bg-primary p-0.5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="relative inline-flex h-7 w-20 items-center rounded-full bg-primary p-0.5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <span
-              className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-primary shadow-sm transition-transform ${
-                desktopViewMode === 'table' ? 'translate-x-10' : 'translate-x-0'
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary shadow-sm transition-transform ${
+                desktopViewMode === 'table' ? 'translate-x-11' : 'translate-x-1'
               }`}
             >
               {desktopViewMode === 'table' ? (
