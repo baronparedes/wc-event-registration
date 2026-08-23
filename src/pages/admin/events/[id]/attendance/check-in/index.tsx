@@ -151,7 +151,7 @@ export function AdminAttendanceCheckInPage() {
         nowMs,
       })
     : false;
-  const showCheckInWizard = attendanceEnabled && !isCheckInBlockedByWindow;
+  const showCheckInWizard = attendanceEnabled;
   const suggestedSlot = useMemo(() => {
     if (!timeslotEnabled || timeslots.length === 0) {
       return '';
@@ -267,11 +267,6 @@ export function AdminAttendanceCheckInPage() {
   }, []);
 
   function handleSubmitSearch() {
-    if (isCheckInBlockedByWindow) {
-      toast.error('Check-in is currently blocked outside the event date-time window.');
-      return;
-    }
-
     const normalized = searchToken.trim();
     if (!normalized) return;
 
@@ -450,7 +445,7 @@ export function AdminAttendanceCheckInPage() {
       {isCheckInBlockedByWindow && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-800">
-            Check-in is restricted to the event date-time window.
+            Check-in is read-only outside the event date-time window.
           </p>
           <p className="mt-1 text-xs text-amber-700">
             Allowed window:{' '}
@@ -509,7 +504,7 @@ export function AdminAttendanceCheckInPage() {
               searchToken={searchToken}
               submittedSearchToken={submittedSearchToken}
               isSearching={cacheFetching}
-              disabled={!attendanceEnabled || isCheckInBlockedByWindow || cacheLoading}
+              disabled={!attendanceEnabled || cacheLoading}
               results={results}
               isSearchError={isCacheError}
               onSearchTokenChange={setSearchToken}
@@ -578,6 +573,7 @@ export function AdminAttendanceCheckInPage() {
               onReadyForNext={handleReadyForNext}
               inactivityTimeoutMs={TIMING.registrationWizardStepThreeTimeoutMs}
               onInactivityTimeout={handleBackToLookup}
+              readOnly={isCheckInBlockedByWindow}
             />
 
             <div className="flex flex-wrap gap-2">

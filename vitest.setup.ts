@@ -21,3 +21,25 @@ beforeAll(() => {
 afterAll(() => {
   // Cleanup
 });
+
+const localStorageMock = (() => {
+  let store: Record<string, string> = {}; // 👈 Explicit type for string key-value pairs
+  return {
+    getItem: (key: string): string | null => store[key] || null,
+    setItem: (key: string, value: string): void => {
+      store[key] = String(value);
+    },
+    removeItem: (key: string): void => {
+      delete store[key];
+    },
+    clear: (): void => {
+      store = {};
+    },
+    length: 0, // 👈 Required by the Storage interface
+    key: (index: number): string | null => Object.keys(store)[index] || null, // 👈 Required by the Storage interface
+  };
+})();
+
+// Define it globally before tests run
+Object.defineProperty(global, 'localStorage', { value: localStorageMock });
+Object.defineProperty(global, 'sessionStorage', { value: localStorageMock });

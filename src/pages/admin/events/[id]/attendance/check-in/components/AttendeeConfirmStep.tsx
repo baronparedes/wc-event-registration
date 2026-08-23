@@ -41,6 +41,7 @@ type AttendeeConfirmStepProps = {
   onReadyForNext: () => void;
   inactivityTimeoutMs?: number;
   onInactivityTimeout?: () => void;
+  readOnly?: boolean;
 };
 
 export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
@@ -59,6 +60,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
     onReadyForNext,
     inactivityTimeoutMs,
     onInactivityTimeout,
+    readOnly = false,
   } = props;
 
   const { getAnswerText } = useFieldAnswerTextFormatter();
@@ -70,7 +72,7 @@ export function AttendeeConfirmStep(props: AttendeeConfirmStepProps) {
     Boolean(checkInResult) || (isAlreadyCheckedIn && !requiresTimeslotSelection);
 
   const actionContent = (() => {
-    if (shouldShowReadyForNext) {
+    if (shouldShowReadyForNext || readOnly) {
       return (
         <Button type="button" fullWidth={true} size="lg" onClick={onReadyForNext}>
           Ready for Next Attendee
