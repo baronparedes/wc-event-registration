@@ -44,6 +44,7 @@ export type PublicEventListingItem = {
   registration_opens_at: string | null;
   registration_closes_at: string | null;
   allow_public_registrations: boolean;
+  registration_mode?: RegistrationMode;
   listingStatus: 'open' | 'upcoming' | 'past';
 };
 

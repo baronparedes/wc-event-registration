@@ -35,21 +35,33 @@ export function usePublicEventListingQuery() {
         const closesAt = event.registration_closes_at
           ? Date.parse(event.registration_closes_at)
           : null;
-        const isRegistrationOpen = closesAt === null || nowMs < closesAt;
+
+        // 1. Determine basic boolean states
+        const isRegistrationOpen =
+          closesAt === null || (nowMs < closesAt && event.registration_mode === 'open');
+
         const pastReferenceAt = endsAt ?? startsAt;
         const isRecentPast =
           pastReferenceAt !== null &&
           pastReferenceAt >= threeMonthsAgoMs &&
           pastReferenceAt < nowMs;
 
-        const listingStatus: PublicEventListingItem['listingStatus'] | null = isRecentPast
-          ? 'past'
-          : opensAt !== null && nowMs < opensAt && isRegistrationOpen
-            ? 'upcoming'
-            : isRegistrationOpen
-              ? 'open'
-              : null;
+        // 2. Determine the status based on priority
+        let listingStatus: PublicEventListingItem['listingStatus'] | null = null;
 
+        if (isRecentPast) {
+          listingStatus = 'past';
+        } else if (isRegistrationOpen) {
+          listingStatus = 'open';
+        } else if (
+          (startsAt !== null && nowMs < startsAt) ||
+          (opensAt !== null && nowMs < opensAt)
+        ) {
+          // If it's not "past" and not "open", but it's still in the future
+          listingStatus = 'upcoming';
+        }
+
+        // 3. Filter and return
         if (listingStatus === null) return [];
         return [{ ...event, listingStatus }];
       });

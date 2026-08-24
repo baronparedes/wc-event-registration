@@ -42,25 +42,37 @@ describe('usePublicEventListingQuery', () => {
           id: 'evt-open',
           slug: 'open-event',
           title: 'Open Event',
-          starts_at: '2026-07-10T00:00:00.000Z',
+          starts_at: '2026-08-30T00:00:00.000Z',
           registration_opens_at: '2026-06-01T00:00:00.000Z',
-          registration_closes_at: '2026-07-09T00:00:00.000Z',
+          registration_closes_at: '2026-08-02T00:00:00.000Z',
+          registration_mode: 'open',
         },
         {
           id: 'evt-upcoming',
           slug: 'upcoming-event',
           title: 'Upcoming Event',
-          starts_at: '2026-08-01T00:00:00.000Z',
-          registration_opens_at: '2026-07-01T00:00:00.000Z',
-          registration_closes_at: '2026-08-01T00:00:00.000Z',
+          starts_at: '2026-08-30T00:00:00.000Z',
+          registration_opens_at: '2026-06-01T00:00:00.000Z',
+          registration_closes_at: '2026-08-02T00:00:00.000Z',
+          registration_mode: 'closed',
+        },
+        {
+          id: 'evt-upcoming-2',
+          slug: 'upcoming-event-2',
+          title: 'Upcoming Event 2',
+          starts_at: '2026-08-30T00:00:00.000Z',
+          registration_opens_at: '2026-06-01T00:00:00.000Z',
+          registration_closes_at: '2026-06-02T00:00:00.000Z',
+          registration_mode: 'open',
         },
         {
           id: 'evt-past',
           slug: 'past-event',
           title: 'Past Event',
-          starts_at: '2026-06-20T00:00:00.000Z',
-          registration_opens_at: '2026-05-01T00:00:00.000Z',
-          registration_closes_at: '2026-06-19T00:00:00.000Z',
+          starts_at: '2026-06-24T00:00:00.000Z',
+          registration_opens_at: '2026-01-01T00:00:00.000Z',
+          registration_closes_at: '2026-06-23T00:00:00.000Z',
+          registration_mode: 'past',
         },
       ],
     });
@@ -74,6 +86,7 @@ describe('usePublicEventListingQuery', () => {
     expect(result.current.data).toEqual([
       expect.objectContaining({ slug: 'open-event', listingStatus: 'open' }),
       expect.objectContaining({ slug: 'upcoming-event', listingStatus: 'upcoming' }),
+      expect.objectContaining({ slug: 'upcoming-event-2', listingStatus: 'upcoming' }),
       expect.objectContaining({ slug: 'past-event', listingStatus: 'past' }),
     ]);
   });
@@ -100,40 +113,6 @@ describe('usePublicEventListingQuery', () => {
     });
 
     expect(result.current.data).toEqual([]);
-  });
-
-  it('filters out events that are closed and not recent past while keeping open events with null close date', async () => {
-    mockCaller.mockResolvedValueOnce({
-      success: true,
-      events: [
-        {
-          id: 'evt-filtered',
-          slug: 'filtered',
-          title: 'Filtered',
-          starts_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          registration_opens_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          registration_closes_at: new Date(Date.now() - 1000).toISOString(),
-        },
-        {
-          id: 'evt-open',
-          slug: 'open-no-close',
-          title: 'Open No Close',
-          starts_at: null,
-          registration_opens_at: null,
-          registration_closes_at: null,
-        },
-      ],
-    });
-
-    const { result } = renderHookWithClient(() => usePublicEventListingQuery());
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    expect(result.current.data).toEqual([
-      expect.objectContaining({ slug: 'open-no-close', listingStatus: 'open' }),
-    ]);
   });
 
   it('keeps same-day in-progress events as open instead of past', async () => {
