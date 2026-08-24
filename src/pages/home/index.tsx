@@ -16,11 +16,8 @@ export function HomePage() {
   return (
     <section className="relative space-y-10">
       <div className="space-y-2">
-        <p className="inline-flex rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
-          Public Registration
-        </p>
         <h1 className="font-heading text-3xl font-bold leading-tight text-text md:text-4xl">
-          Events
+          Register to an Event
         </h1>
       </div>
 
