@@ -4,14 +4,14 @@ import { EmptyState } from '@/components/ui';
 import type { AttendanceSlotSummary } from '@/lib/domain/attendance';
 import { formatDateTime } from '@/lib/infrastructure';
 
-type TimeslotAttendanceSummaryProps = {
+type AttendanceTimeslotSummaryProps = {
   summaries: AttendanceSlotSummary[];
   isLoading: boolean;
   isError: boolean;
   errorMessage?: string;
 };
 
-export function TimeslotAttendanceSummary(props: TimeslotAttendanceSummaryProps) {
+export function AttendanceTimeslotSummary(props: AttendanceTimeslotSummaryProps) {
   const { summaries, isLoading, isError, errorMessage } = props;
 
   if (isLoading) {

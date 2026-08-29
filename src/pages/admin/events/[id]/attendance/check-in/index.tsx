@@ -22,6 +22,7 @@ import {
   isAutoWindowModeEnabled,
   resolveActiveTimeslot,
   searchAttendeesWithRfidFallback,
+  tryConvertRfidInput,
 } from '@/lib/domain/attendance';
 import { canAdminPerform } from '@/lib/domain/auth';
 import { formatDateTime } from '@/lib/infrastructure';
@@ -68,6 +69,25 @@ function isWithinEventWindow(
   return nowMs >= startMs && nowMs <= endMs;
 }
 
+/**
+ * Checks if exactly one result has a member ID that matches the direct scan or its
+ * canonical Pass 2 RFID conversion.
+ */
+function isDirectMemberIdMatch(
+  searchToken: string,
+  results: Array<{ member_id: string | null }>,
+): boolean {
+  if (results.length !== 1) return false;
+
+  const normalized = searchToken.trim().toLowerCase();
+  const converted = tryConvertRfidInput(searchToken).trim().toLowerCase();
+  const resultMemberId = (results[0].member_id ?? '').toLowerCase();
+
+  return (
+    resultMemberId.length > 0 && (normalized === resultMemberId || converted === resultMemberId)
+  );
+}
+
 export function AdminAttendanceCheckInPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
@@ -81,6 +101,8 @@ export function AdminAttendanceCheckInPage() {
   const searchStepRef = useRef<HTMLDivElement | null>(null);
   const selectStepRef = useRef<HTMLDivElement | null>(null);
   const confirmStepRef = useRef<HTMLDivElement | null>(null);
+  const lastAutoConfirmedTokenRef = useRef<string>('');
+  const lastAutoSubmittedTokenRef = useRef<string>('');
 
   const { data: onlineEvent, isLoading: eventLoading } = useAdminEventQuery(eventId);
   const { data: authState } = useAdminAuthQuery();
@@ -247,6 +269,8 @@ export function AdminAttendanceCheckInPage() {
       return;
     }
 
+    lastAutoConfirmedTokenRef.current = '';
+    lastAutoSubmittedTokenRef.current = '';
     setSearchToken(normalized);
     setSubmittedSearchToken(normalized);
     setSelectedRegistrationId(null);
@@ -255,16 +279,6 @@ export function AdminAttendanceCheckInPage() {
   }, []);
 
   useScanBuffer(handleScanFromConfirmation, isAwaitingNextAttendee);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, 30_000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, []);
 
   function handleSubmitSearch() {
     const normalized = searchToken.trim();
@@ -276,30 +290,30 @@ export function AdminAttendanceCheckInPage() {
     setCheckInResult(null);
   }
 
-  function handleClearSearch() {
-    setSearchToken('');
-    setSubmittedSearchToken('');
-    setSelectedRegistrationId(null);
-    setConfirmedRegistrationId(null);
-    setCheckInResult(null);
-  }
-
   const handleBackToLookup = useCallback(() => {
     setSearchToken('');
     setSubmittedSearchToken('');
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
+    lastAutoConfirmedTokenRef.current = '';
+    lastAutoSubmittedTokenRef.current = '';
   }, []);
 
-  function handleReadyForNext() {
-    handleClearSearch();
-  }
-
-  function handleBackToMatches() {
+  const handleReadyForNext = useCallback(() => {
+    setSearchToken('');
+    setSubmittedSearchToken('');
+    setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     setCheckInResult(null);
-  }
+    lastAutoConfirmedTokenRef.current = '';
+    lastAutoSubmittedTokenRef.current = '';
+  }, []);
+
+  const handleBackToMatches = useCallback(() => {
+    setConfirmedRegistrationId(null);
+    setCheckInResult(null);
+  }, []);
 
   function handleConfirmSelection(registrationId: string) {
     if (!registrationId) {
@@ -310,59 +324,124 @@ export function AdminAttendanceCheckInPage() {
     setCheckInResult(null);
   }
 
-  async function submitCheckIn(slotOverride?: string) {
-    if (!eventId || !confirmedAttendee) return;
+  const submitCheckIn = useCallback(
+    async (slotOverride?: string, keepConfirmationVisible: boolean = false) => {
+      if (!eventId || !confirmedAttendee) return;
 
-    const finalSlot = slotOverride?.trim() ?? '';
-    const selectedSlot = finalSlot
-      ? (timeslots.find((slot) => slot.slot_at === finalSlot) ?? null)
-      : null;
-    const isSelectedSlotUnrestricted = Boolean(
-      selectedSlot && (!selectedSlot.opens_at || !selectedSlot.closes_at),
-    );
+      const finalSlot = slotOverride?.trim() ?? '';
+      const selectedSlot = finalSlot
+        ? (timeslots.find((slot) => slot.slot_at === finalSlot) ?? null)
+        : null;
+      const isSelectedSlotUnrestricted = Boolean(
+        selectedSlot && (!selectedSlot.opens_at || !selectedSlot.closes_at),
+      );
 
-    if (autoWindowModeEnabled && !activeTimeslot && !isSelectedSlotUnrestricted) {
-      toast.error('No active timeslot window right now.');
-      return;
-    }
-
-    if (timeslotEnabled && timeslots.length > 0 && !finalSlot) {
-      toast.error('Timeslot selection is required for this event.');
-      return;
-    }
-
-    const registrationId =
-      confirmedAttendee.attendee_kind === 'registered'
-        ? confirmedAttendee.registration_id
-        : undefined;
-    const publicRegistrationId =
-      confirmedAttendee.attendee_kind === 'public'
-        ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
-        : undefined;
-    const payload = {
-      event_id: eventId,
-      attendee_kind: confirmedAttendee.attendee_kind,
-      registration_id: registrationId,
-      public_registration_id: publicRegistrationId,
-      slot: timeslotEnabled ? finalSlot || undefined : undefined,
-    };
-
-    try {
-      const { queued } = enqueueCheckIn(payload, confirmedAttendee.registration_id);
-
-      if (!queued) {
-        toast.info('This check-in is already queued for sync.');
-      } else {
-        toast.success('Check-in queued. Syncing in the background.');
+      if (autoWindowModeEnabled && !activeTimeslot && !isSelectedSlotUnrestricted) {
+        toast.error('No active timeslot window right now.');
+        return;
       }
 
+      if (timeslotEnabled && timeslots.length > 0 && !finalSlot) {
+        toast.error('Timeslot selection is required for this event.');
+        return;
+      }
+
+      const registrationId =
+        confirmedAttendee.attendee_kind === 'registered'
+          ? confirmedAttendee.registration_id
+          : undefined;
+      const publicRegistrationId =
+        confirmedAttendee.attendee_kind === 'public'
+          ? (confirmedAttendee.public_registration_id ?? confirmedAttendee.registration_id)
+          : undefined;
+      const payload = {
+        event_id: eventId,
+        attendee_kind: confirmedAttendee.attendee_kind,
+        registration_id: registrationId,
+        public_registration_id: publicRegistrationId,
+        slot: timeslotEnabled ? finalSlot || undefined : undefined,
+      };
+
+      try {
+        const { queued } = enqueueCheckIn(payload, confirmedAttendee.registration_id);
+
+        if (!queued) {
+          toast.info('This check-in is already queued for sync.');
+        } else {
+          toast.success('Check-in queued. Syncing in the background.');
+        }
+
+        setCheckInResult(null);
+        if (!keepConfirmationVisible) {
+          handleReadyForNext();
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to queue check-in.';
+        toast.error(message);
+      }
+    },
+    [
+      eventId,
+      confirmedAttendee,
+      timeslots,
+      autoWindowModeEnabled,
+      activeTimeslot,
+      timeslotEnabled,
+      enqueueCheckIn,
+      handleReadyForNext,
+    ],
+  );
+
+  // Auto-confirm for direct member_id matches
+  useEffect(() => {
+    if (
+      results.length === 1 &&
+      isDirectMemberIdMatch(submittedSearchToken, results) &&
+      lastAutoConfirmedTokenRef.current !== submittedSearchToken
+    ) {
+      lastAutoConfirmedTokenRef.current = submittedSearchToken;
+      setConfirmedRegistrationId(results[0].registration_id);
       setCheckInResult(null);
-      handleReadyForNext();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to queue check-in.';
-      toast.error(message);
     }
-  }
+  }, [results, submittedSearchToken]);
+
+  // Auto-submit check-in for direct member_id matches
+  useEffect(() => {
+    const shouldAutoSubmit =
+      results.length === 1 &&
+      isDirectMemberIdMatch(submittedSearchToken, results) &&
+      confirmedRegistrationId &&
+      confirmedAttendee &&
+      !checkInResult &&
+      lastAutoSubmittedTokenRef.current !== submittedSearchToken;
+
+    if (shouldAutoSubmit) {
+      lastAutoSubmittedTokenRef.current = submittedSearchToken;
+      const timeoutId = setTimeout(() => {
+        void submitCheckIn(suggestedSlot, true);
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    results,
+    submittedSearchToken,
+    confirmedRegistrationId,
+    confirmedAttendee,
+    checkInResult,
+    submitCheckIn,
+    suggestedSlot,
+  ]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 30_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   function handleCheckIn() {
     void submitCheckIn();
