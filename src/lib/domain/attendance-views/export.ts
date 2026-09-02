@@ -1,6 +1,9 @@
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
+import { formatCompactCheckedInSlotLabels } from '@/lib/domain/attendance';
 
-import type { AttendeeViewConfig, BuildAttendeeViewResult } from './types';
+import { getVisibleFieldValue } from './transforms/field-access';
+import { toDynamicFieldToken } from './transforms/tokens';
+import type { AttendeeViewConfig, BuildAttendeeViewResult, DynamicFieldRef } from './types';
 
 type CsvVisibleField = AttendeeViewConfig['visibleFields'][number] & {
   source: 'registration' | 'attendance';
@@ -132,6 +135,69 @@ export function buildAttendanceViewCsvExport({
 
   const timestamp = now.toISOString().replace(/[:.]/g, '-');
   const filename = `event-${eventId}-attendance-view-${timestamp}.csv`;
+
+  return {
+    csvText,
+    filename,
+  };
+}
+
+type BuildDashboardCheckInsCsvExportInput = {
+  eventId: string;
+  checkedInAttendees: AttendeeSearchResult[];
+  selectedFields: DynamicFieldRef[];
+  now?: Date;
+};
+
+type BuildDashboardCheckInsCsvExportResult = {
+  csvText: string;
+  filename: string;
+};
+
+export function buildDashboardCheckInsCsvExport({
+  eventId,
+  checkedInAttendees,
+  selectedFields,
+  now = new Date(),
+}: BuildDashboardCheckInsCsvExportInput): BuildDashboardCheckInsCsvExportResult {
+  const sortedCheckedIn = [...checkedInAttendees].sort((a, b) => {
+    const aMs = a.official_check_in_time ? Date.parse(a.official_check_in_time) : 0;
+    const bMs = b.official_check_in_time ? Date.parse(b.official_check_in_time) : 0;
+    return bMs - aMs;
+  });
+
+  const renderableFields = selectedFields.filter((field) => {
+    const token = toDynamicFieldToken(field);
+    return token !== 'member:avatar';
+  });
+
+  const header = [
+    '#',
+    'Name',
+    'Check-In Time',
+    'Slot Record',
+    ...renderableFields.map((field) => field.label),
+  ];
+
+  const total = sortedCheckedIn.length;
+  const rows = sortedCheckedIn.map((row, index) => {
+    const rowNum = String(total - index);
+    const fullName = `${row.nickname ?? ''} ${row.last_name ?? ''}`.trim() || row.full_name;
+    const checkInTime = row.official_check_in_time ?? '';
+    const slotRecordLabels = formatCompactCheckedInSlotLabels(row);
+    const slotRecord = slotRecordLabels.length > 0 ? slotRecordLabels.join(', ') : '';
+
+    const dynamicValues = renderableFields.map((field) => getVisibleFieldValue(row, field));
+
+    return [rowNum, fullName, checkInTime, slotRecord, ...dynamicValues];
+  });
+
+  const csvText = [header, ...rows]
+    .map((line) => line.map((value) => escapeCsvValue(value)).join(','))
+    .join('\n');
+
+  const timestamp = now.toISOString().replace(/[:.]/g, '-');
+  const filename = `event-${eventId}-checkins-${timestamp}.csv`;
 
   return {
     csvText,
