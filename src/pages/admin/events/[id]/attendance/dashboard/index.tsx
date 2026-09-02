@@ -29,6 +29,7 @@ import { EventNavigationLinks } from '@/pages/admin/events/components';
 import { AttendeeCacheStatusBar } from '../components/AttendeeCacheStatusBar';
 import { AttendancePrimaryFilters } from '../data/components/AttendancePrimaryFilters';
 import { AllCheckInsTable } from './components/AllCheckInsTable';
+import { ExportDashboardCheckInsButton } from './components/ExportDashboardCheckInsButton';
 import { type SlotCheckInRow, SlotTabPanel } from './components/SlotTabPanel';
 
 const ALL_TAB = '__all__';
@@ -156,6 +157,12 @@ export function AdminAttendanceDashboardPage() {
     [filteredAttendees, timeslotEnabled],
   );
 
+  // Requirement: Export all checked-in attendees regardless of nameOrMemberQuery search filter
+  const allCheckedInAttendees = useMemo(
+    () => (attendees ?? []).filter((attendee) => attendee.check_in_status === 'checked_in'),
+    [attendees],
+  );
+
   const checkedInAttendees = useMemo(
     () => filteredAttendees.filter((attendee) => attendee.check_in_status === 'checked_in'),
     [filteredAttendees],
@@ -271,6 +278,14 @@ export function AdminAttendanceDashboardPage() {
         ]}
         navLinks={<EventNavigationLinks eventId={eventId} currentSection="attendance-dashboard" />}
         title="Check-In Dashboard"
+        actions={
+          <ExportDashboardCheckInsButton
+            eventId={eventId}
+            checkedInAttendees={allCheckedInAttendees}
+            selectedFields={selectedFields}
+            disabled={allCheckedInAttendees.length === 0}
+          />
+        }
       />
 
       <AdminPageShell.Content>

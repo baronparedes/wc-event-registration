@@ -27,4 +27,4 @@ export {
   buildAttendeeView,
 } from './transforms';
 
-export { buildAttendanceViewCsvExport } from './export';
+export { buildAttendanceViewCsvExport, buildDashboardCheckInsCsvExport } from './export';

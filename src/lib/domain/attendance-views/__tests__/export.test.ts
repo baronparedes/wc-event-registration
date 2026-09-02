@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 
-import { buildAttendanceViewCsvExport } from '../export';
+import { buildAttendanceViewCsvExport, buildDashboardCheckInsCsvExport } from '../export';
 import type { AttendeeViewConfig } from '../types';
 
 function makeAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchResult {
@@ -266,5 +266,55 @@ describe('attendance-views export', () => {
     expect(lines[1]).toBe(
       'All attendees,registered,reg-missing,,MID-999,Missing Person,,,,not_checked_in,',
     );
+  });
+
+  describe('buildDashboardCheckInsCsvExport', () => {
+    it('builds csv for checked-in attendees in dashboard format', () => {
+      const checkedIn1 = makeAttendee({
+        registration_id: 'reg-1',
+        nickname: 'Alice',
+        last_name: 'Smith',
+        full_name: 'Alice Smith',
+        official_check_in_time: '2026-07-22T08:00:00.000Z',
+        check_in_status: 'checked_in',
+        slot_records: [
+          { slot: '2026-07-22T08:00:00.000Z', recorded_at: '2026-07-22T08:00:00.000Z' },
+        ],
+        role: 'Member',
+      });
+
+      const checkedIn2 = makeAttendee({
+        registration_id: 'reg-2',
+        nickname: 'Bob',
+        last_name: 'Jones',
+        full_name: 'Bob Jones',
+        official_check_in_time: '2026-07-22T09:00:00.000Z',
+        check_in_status: 'checked_in',
+        slot_records: [
+          { slot: '2026-07-22T09:00:00.000Z', recorded_at: '2026-07-22T09:00:00.000Z' },
+        ],
+        role: 'VIP',
+      });
+
+      const result = buildDashboardCheckInsCsvExport({
+        eventId: 'event-dash-1',
+        checkedInAttendees: [checkedIn1, checkedIn2],
+        selectedFields: [
+          { source: 'role', fieldKey: 'role', label: 'Role' },
+          { source: 'member', fieldKey: 'avatar', label: 'Avatar' },
+        ],
+        now: new Date('2026-07-22T10:00:00.000Z'),
+      });
+
+      expect(result.filename).toBe('event-event-dash-1-checkins-2026-07-22T10-00-00-000Z.csv');
+
+      const lines = result.csvText.split('\n');
+      expect(lines[0]).toBe('#,Name,Check-In Time,Slot Record,Role');
+      // Most recent first: Bob (09:00), then Alice (08:00)
+      expect(lines[1]).toContain('2,Bob Jones,2026-07-22T09:00:00.000Z,');
+      expect(lines[1]).toContain('VIP');
+      expect(lines[2]).toContain('1,Alice Smith,2026-07-22T08:00:00.000Z,');
+      expect(lines[2]).toContain('Member');
+    });
   });
 });
