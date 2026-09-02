@@ -4,7 +4,10 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
-import { type DynamicFieldRef, buildDashboardCheckInsCsvExport } from '@/lib/domain/attendance-views';
+import {
+  type DynamicFieldRef,
+  buildDashboardCheckInsCsvExport,
+} from '@/lib/domain/attendance-views';
 
 type ExportDashboardCheckInsButtonProps = {
   eventId: string;
@@ -44,20 +47,16 @@ export function ExportDashboardCheckInsButton({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      setIsExporting(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to export check-ins CSV.';
       toast.error(message);
-    } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <Button
-      variant="primaryOutline"
-      onClick={handleExportCSV}
-      disabled={disabled || isExporting}
-    >
+    <Button variant="primaryOutline" onClick={handleExportCSV} disabled={disabled || isExporting}>
       {isExporting ? 'Exporting...' : 'Export CSV'}
     </Button>
   );

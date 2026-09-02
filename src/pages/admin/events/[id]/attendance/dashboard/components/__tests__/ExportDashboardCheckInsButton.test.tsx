@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 
@@ -29,8 +29,8 @@ function makeAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchR
 }
 
 describe('ExportDashboardCheckInsButton', () => {
-  let createObjectURLSpy: vi.Mock;
-  let revokeObjectURLSpy: vi.Mock;
+  let createObjectURLSpy: Mock;
+  let revokeObjectURLSpy: Mock;
 
   beforeEach(() => {
     vi.clearAllMocks();

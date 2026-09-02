@@ -1,9 +1,9 @@
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 import { formatCompactCheckedInSlotLabels } from '@/lib/domain/attendance';
 
-import type { AttendeeViewConfig, BuildAttendeeViewResult, DynamicFieldRef } from './types';
 import { getVisibleFieldValue } from './transforms/field-access';
 import { toDynamicFieldToken } from './transforms/tokens';
+import type { AttendeeViewConfig, BuildAttendeeViewResult, DynamicFieldRef } from './types';
 
 type CsvVisibleField = AttendeeViewConfig['visibleFields'][number] & {
   source: 'registration' | 'attendance';
