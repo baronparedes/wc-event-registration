@@ -2,8 +2,8 @@ import { act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+
 import { useGoogleLoginMutation } from '../useGoogleLoginMutation';
-import { supabase } from '@/lib/infrastructure';
 
 const { mockSignInWithOAuth } = vi.hoisted(() => ({
   mockSignInWithOAuth: vi.fn(),
@@ -36,7 +36,7 @@ describe('useGoogleLoginMutation', () => {
     const { result } = renderHookWithClient(() => useGoogleLoginMutation());
 
     await act(async () => {
-      await result.current.mutateAsync();
+      await result.current.mutateAsync({});
     });
 
     expect(mockSignInWithOAuth).toHaveBeenCalledWith({
@@ -77,7 +77,7 @@ describe('useGoogleLoginMutation', () => {
 
     await expect(
       act(async () => {
-        await result.current.mutateAsync();
+        await result.current.mutateAsync({});
       }),
     ).rejects.toThrow('OAuth error');
   });

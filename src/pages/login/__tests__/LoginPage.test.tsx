@@ -46,7 +46,8 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  const actual =
+    await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
   return {
     ...actual,
     useQueryClient: () => ({
@@ -56,7 +57,8 @@ vi.mock('@tanstack/react-query', async () => {
 });
 
 vi.mock('@/lib/infrastructure', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
+  const actual =
+    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
     supabase: {

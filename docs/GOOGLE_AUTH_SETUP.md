@@ -35,12 +35,14 @@ This guide explains how to configure Google Sign-In for the application via Supa
 ## Step 2: Configure Google Provider in Supabase
 
 ### Option A: Hosted Supabase Dashboard
+
 1. Open your **Supabase Dashboard** for your project.
 2. Go to **Authentication** > **Providers**.
 3. Locate **Google** in the list of OAuth providers and enable it.
 4. Paste your **Client ID** and **Client Secret** into the respective fields and save changes.
 
 ### Option B: Local Supabase CLI Setup
+
 When using local Supabase CLI, provider settings are managed via `supabase/config.toml` or environment variables:
 
 1. In `supabase/config.toml`, add or update the `[auth.external.google]` section:
@@ -73,9 +75,10 @@ Google OAuth allows users to authenticate, but for Admin access, the user must a
 To grant an authenticated Google user Admin privileges:
 
 ```sql
-INSERT INTO admins (auth_user_id, role)
-VALUES ('<SUPABASE_USER_UUID>', 'admin')
-ON CONFLICT (auth_user_id) DO NOTHING;
+INSERT INTO
+  admins (auth_user_id, role)
+VALUES
+  ('<SUPABASE_USER_UUID>', 'admin') ON CONFLICT (auth_user_id) DO NOTHING;
 ```
 
 If a user signs in with Google without being present in the `admins` table, the application will automatically sign them out and display "This account is not authorized".

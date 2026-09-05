@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,8 +10,6 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
-import { useQueryClient } from '@tanstack/react-query';
-
 import {
   ADMIN_AUTH_QUERY_KEY,
   useAdminAuthQuery,
@@ -131,8 +130,8 @@ export function LoginPage() {
         </Button>
       </form>
 
-      <div className="relative my-6 text-center text-xs text-muted border-t border-border pt-4">
-        <span className="bg-surface px-2 text-muted uppercase tracking-wider text-[11px] font-medium font-mono">
+      <div className="relative my-6 text-center text-xs text-muted border-t border-border pt-2">
+        <span className="bg-surface text-muted uppercase tracking-wider text-[11px] font-medium font-mono">
           Or
         </span>
       </div>
@@ -141,7 +140,7 @@ export function LoginPage() {
         disabled={googleLoginMutation.isPending}
         fullWidth
         size="md"
-        variant="secondary"
+        variant="outline"
         type="button"
         onClick={handleGoogleSignIn}
       >
