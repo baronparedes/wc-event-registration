@@ -10,6 +10,7 @@ import {
   createOptionUsageCounter,
   extractSelectedOptionValuesFromStoredAnswer,
   incrementOptionUsageFromSelection,
+  isFieldVisible,
   parseRequestBody,
   validateFieldValue,
   z,
@@ -332,8 +333,12 @@ Deno.serve(async (req) => {
     const validationErrors: FieldValidationError[] = [];
 
     for (const field of fields) {
+      if (!isFieldVisible(field, fields, responses)) {
+        continue;
+      }
+
       const fieldValue = responses[field.field_key];
-      const error = validateFieldValue(field.field_key, fieldValue, field);
+      const error = validateFieldValue(field.field_key, fieldValue, field, fields, responses);
       if (error) {
         validationErrors.push(error);
       }

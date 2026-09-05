@@ -1,6 +1,6 @@
 import type { HandlerResult } from '@/shared/handler.ts';
 import type { EventFieldWithValidation, FieldValidationError } from '@/shared/validation.ts';
-import { validateFieldValue } from '@/shared/validation.ts';
+import { isFieldVisible, validateFieldValue } from '@/shared/validation.ts';
 
 export function validateFields(
   fields: EventFieldWithValidation[],
@@ -13,14 +13,22 @@ export function validateFields(
     const field = fieldMap.get(fieldKey);
     if (!field) continue;
 
-    const error = validateFieldValue(fieldKey, value, field);
+    if (!isFieldVisible(field, fields, responses)) {
+      continue;
+    }
+
+    const error = validateFieldValue(fieldKey, value, field, fields, responses);
     if (error) {
       errors.push(error);
     }
   }
 
   for (const [fieldKey, field] of fieldMap) {
-    if (field.is_required && !(fieldKey in responses)) {
+    if (
+      field.is_required &&
+      isFieldVisible(field, fields, responses) &&
+      !(fieldKey in responses)
+    ) {
       errors.push({ fieldKey, message: `${field.label} is required.` });
     }
   }

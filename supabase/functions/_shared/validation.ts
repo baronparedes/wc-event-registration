@@ -701,12 +701,72 @@ function buildFieldSchema(field: EventFieldWithValidation, label: string): z.Zod
  * Validates a single field value against its schema and validation rules using Zod.
  * Returns validation error if invalid, null if valid.
  */
+export function isFieldVisible(
+  field: EventFieldWithValidation,
+  allFields: EventFieldWithValidation[],
+  responses: Record<string, unknown>,
+  visitedKeys = new Set<string>(),
+): boolean {
+  if (visitedKeys.has(field.field_key)) {
+    return false;
+  }
+  visitedKeys.add(field.field_key);
+
+  const rules = (field.validation_rules || {}) as Record<string, unknown>;
+  const visibilityRule = rules.visibility_rule as
+    | { depends_on_field_key?: string; equals_value?: string }
+    | undefined;
+
+  if (
+    !visibilityRule ||
+    !visibilityRule.depends_on_field_key ||
+    visibilityRule.depends_on_field_key.trim().length === 0
+  ) {
+    return true;
+  }
+
+  const parentKey = visibilityRule.depends_on_field_key.trim();
+  const parentField = allFields.find((f) => f.field_key === parentKey);
+
+  if (parentField && !isFieldVisible(parentField, allFields, responses, new Set(visitedKeys))) {
+    return false;
+  }
+
+  const parentValue = responses[parentKey];
+  const targetValue = (visibilityRule.equals_value ?? '').trim().toLowerCase();
+
+  if (parentValue === undefined || parentValue === null) {
+    return targetValue === '';
+  }
+
+  if (Array.isArray(parentValue)) {
+    return parentValue.some((item) => String(item).trim().toLowerCase() === targetValue);
+  }
+
+  if (typeof parentValue === 'object') {
+    return Object.entries(parentValue as Record<string, unknown>).some(([key, val]) => {
+      if (key.trim().toLowerCase() === targetValue) {
+        return val !== false && val !== null && val !== undefined;
+      }
+      return false;
+    });
+  }
+
+  return String(parentValue).trim().toLowerCase() === targetValue;
+}
+
 export function validateFieldValue(
   fieldKey: string,
   value: unknown,
   field: EventFieldWithValidation,
+  allFields?: EventFieldWithValidation[],
+  responses?: Record<string, unknown>,
 ): FieldValidationError | null {
   const label = field.label || fieldKey;
+
+  if (allFields && responses && !isFieldVisible(field, allFields, responses)) {
+    return null;
+  }
 
   // Optional empty values are valid (skip validation entirely)
   if (!field.is_required && (value === null || value === undefined || value === '')) {
