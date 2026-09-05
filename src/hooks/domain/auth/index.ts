@@ -7,3 +7,4 @@ export {
 export { useAdminAuthQuery } from './useAdminAuthQuery';
 export { useAdminLoginMutation } from './useAdminLoginMutation';
 export { useAdminLogoutMutation } from './useAdminLogoutMutation';
+export { useGoogleLoginMutation } from './useGoogleLoginMutation';
