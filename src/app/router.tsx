@@ -28,6 +28,12 @@ import { useIsMobileViewport, useOnlineStatus } from '../hooks/utils';
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
 );
+const PrivacyPolicyPage = lazy(() =>
+  import('../pages/privacy').then((module) => ({ default: module.PrivacyPolicyPage })),
+);
+const TermsOfServicePage = lazy(() =>
+  import('../pages/terms').then((module) => ({ default: module.TermsOfServicePage })),
+);
 const EventRegistrationPage = lazy(() =>
   import('../pages/events/[slug]/register').then((module) => ({
     default: module.EventRegistrationPage,
@@ -185,6 +191,10 @@ function isOfflineSupportedPath(pathname: string): boolean {
 
 const routeComponents: Record<AppRouteKey, ComponentType> = {
   home: HomePage,
+  privacy: PrivacyPolicyPage,
+  privacyPolicy: PrivacyPolicyPage,
+  terms: TermsOfServicePage,
+  termsOfService: TermsOfServicePage,
   eventRegister: EventRegistrationPage,
   eventPublicRegister: PublicEventRegistrationPage,
   login: LoginPage,

@@ -7,6 +7,7 @@ This guide provides step-by-step instructions for restoring a Supabase PostgreSQ
 ## Prerequisites
 
 Before attempting a restore, ensure you have:
+
 1. Access to the Cloudflare R2 bucket containing your encrypted backup files (`supabase-backup-YYYYMMDD-HHMMSS.sql.gz.gpg`).
 2. The `BACKUP_ENCRYPTION_PASSPHRASE` used during the backup creation.
 3. The target database PostgreSQL connection string (`SUPABASE_DB_URL`).
@@ -20,6 +21,7 @@ Before attempting a restore, ensure you have:
 The automated restoration workflow allows you to restore directly from GitHub without needing local database or CLI tools installed.
 
 ### Steps:
+
 1. Go to the **Actions** tab in your GitHub repository.
 2. Select **Restore Supabase Database Backup** from the workflows list on the left.
 3. Click **Run workflow** on the right.
@@ -29,6 +31,7 @@ The automated restoration workflow allows you to restore directly from GitHub wi
 5. Click **Run workflow**.
 
 ### What happens during execution:
+
 - The workflow authenticates with Cloudflare R2 and downloads the requested file.
 - It decrypts the file using `gpg` with `BACKUP_ENCRYPTION_PASSPHRASE`.
 - It uncompresses the `.gz` archive.
@@ -41,6 +44,7 @@ The automated restoration workflow allows you to restore directly from GitHub wi
 Use this method if you wish to run the restore locally or from an administrative server.
 
 ### Required Tools
+
 - `aws-cli` (or `rclone` / Cloudflare Dashboard download)
 - `gpg` (GnuPG)
 - `gzip` / `gunzip`

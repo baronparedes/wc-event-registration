@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -98,6 +98,18 @@ export function LoginPage() {
           {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
         </Button>
       </form>
+
+      <div className="mt-6 border-t border-border pt-4 text-center text-xs text-muted">
+        <div className="flex items-center justify-center gap-3">
+          <Link to={ROUTE_PATHS.privacy} className="hover:text-text hover:underline">
+            Privacy Policy
+          </Link>
+          <span aria-hidden="true">•</span>
+          <Link to={ROUTE_PATHS.terms} className="hover:text-text hover:underline">
+            Terms of Service
+          </Link>
+        </div>
+      </div>
     </section>
   );
 }

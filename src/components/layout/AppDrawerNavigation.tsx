@@ -216,7 +216,27 @@ export function AppDrawerNavigation({
           </div>
 
           {isAuthenticated && (
-            <div className="border-t border-border p-4">
+            <div className="p-4">
+              <div className="mb-3 flex items-center justify-center gap-3 border-b border-border pb-3 text-[11px] text-muted">
+                <NavLink
+                  to={ROUTE_PATHS.privacy}
+                  onClick={onClose}
+                  className="transition hover:text-text hover:underline hover:underline-offset-2"
+                >
+                  Privacy Policy
+                </NavLink>
+                <span aria-hidden="true" className="text-border">
+                  •
+                </span>
+                <NavLink
+                  to={ROUTE_PATHS.terms}
+                  onClick={onClose}
+                  className="transition hover:text-text hover:underline hover:underline-offset-2"
+                >
+                  Terms of Service
+                </NavLink>
+              </div>
+
               {currentUserLabel && (
                 <p className="mb-3 truncate text-xs text-muted">
                   {getSignedInText(currentUserLabel, adminRole)}

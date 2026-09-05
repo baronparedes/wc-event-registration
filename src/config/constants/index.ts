@@ -1,3 +1,4 @@
+export * from './legal';
 export * from './messages';
 export * from './pagination';
 export * from './queryKeys';

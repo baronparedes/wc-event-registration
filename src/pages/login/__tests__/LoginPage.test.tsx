@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LoginPage } from '@/pages/login';
@@ -46,6 +47,10 @@ vi.mock('@/hooks/domain/auth', async () => {
   };
 });
 
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
+
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -68,7 +73,7 @@ describe('LoginPage', () => {
   });
 
   it('submits admin credentials and navigates on success', async () => {
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -99,7 +104,7 @@ describe('LoginPage', () => {
       key: 'redirect',
     });
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -128,7 +133,7 @@ describe('LoginPage', () => {
       isLoading: false,
     });
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
   });
@@ -146,7 +151,7 @@ describe('LoginPage', () => {
       isLoading: false,
     });
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
   });
@@ -154,7 +159,7 @@ describe('LoginPage', () => {
   it('shows API error message when login fails with an Error instance', async () => {
     mockLoginMutateAsync.mockRejectedValueOnce(new Error('Invalid credentials'));
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -172,7 +177,7 @@ describe('LoginPage', () => {
   it('falls back to default error toast for non-Error rejections', async () => {
     mockLoginMutateAsync.mockRejectedValueOnce('bad response');
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -193,8 +198,21 @@ describe('LoginPage', () => {
       isPending: true,
     });
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
     expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled();
+  });
+
+  it('renders privacy policy and terms of service links', () => {
+    renderWithRouter(<LoginPage />);
+
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
+    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute(
+      'href',
+      '/terms',
+    );
   });
 });
