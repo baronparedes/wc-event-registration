@@ -1,12 +1,17 @@
 import { useEffect, useRef } from 'react';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Info } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
 import { WizardStep } from '@/components/ui/WizardStep';
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import {
+  type DynamicFieldResponseValues,
+  type PublicEventField,
+  filterVisibleFieldValues,
+  isFieldVisible,
+} from '@/lib/domain';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
 
@@ -138,14 +143,37 @@ export function PublicEventFieldsStep({
   inactivityTimeoutMs,
   onInactivityTimeout,
 }: PublicEventFieldsStepProps) {
-  const schema = buildDynamicFieldResponseSchema(fields);
   const lastAppliedDefaultsRef = useRef<string>('');
 
   const dynamicForm = useForm<DynamicFieldResponseValues>({
-    resolver: zodResolver(schema),
     mode: 'onBlur',
     defaultValues: {},
   });
+
+  const formValues = useWatch({ control: dynamicForm.control });
+  const visibleFields = fields.filter((f) => isFieldVisible(f, fields, formValues));
+
+  function handleFormSubmit(data: DynamicFieldResponseValues) {
+    const visibleFieldsAtSubmit = fields.filter((f) => isFieldVisible(f, fields, data));
+    const visibleSchema = buildDynamicFieldResponseSchema(visibleFieldsAtSubmit);
+
+    const parsed = visibleSchema.safeParse(data);
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue: z.ZodIssue) => {
+        const key = issue.path[0];
+        if (typeof key === 'string') {
+          dynamicForm.setError(key, {
+            message: issue.message,
+            type: 'manual',
+          });
+        }
+      });
+      return;
+    }
+
+    const cleaned = filterVisibleFieldValues(fields, parsed.data);
+    onSubmit(cleaned);
+  }
 
   useEffect(() => {
     const normalizedDefaultValues = buildNormalizedDefaultValues(fields, defaultValues);
@@ -168,14 +196,14 @@ export function PublicEventFieldsStep({
         `Returning to member registration in ${s}s if no one continues.`
       }
     >
-      <form onSubmit={dynamicForm.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={dynamicForm.handleSubmit(handleFormSubmit)} className="space-y-4">
         {errorMessage && (
           <div className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger">
             {errorMessage}
           </div>
         )}
 
-        {fields.length === 0 && (
+        {visibleFields.length === 0 && (
           <div
             aria-live="polite"
             className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-blue-600 bg-blue-100 px-4 py-3 text-sm text-blue-950 shadow-md"
@@ -195,7 +223,7 @@ export function PublicEventFieldsStep({
         )}
 
         <div className="space-y-6">
-          {fields.map((field) => (
+          {visibleFields.map((field) => (
             <div key={field.id}>
               <label className="mb-2 block text-sm font-medium text-text">
                 {field.label}

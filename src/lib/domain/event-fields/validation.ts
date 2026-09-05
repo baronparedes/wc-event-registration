@@ -324,6 +324,19 @@ function parseFieldValidationRules(field: PublicEventFieldRow): PublicEventField
     rules.unique_key_component = true;
   }
 
+  const visibilityRule = field.validation_rules.visibility_rule;
+  if (
+    isRecord(visibilityRule) &&
+    typeof visibilityRule.depends_on_field_key === 'string' &&
+    visibilityRule.depends_on_field_key.trim().length > 0
+  ) {
+    rules.visibility_rule = {
+      depends_on_field_key: visibilityRule.depends_on_field_key.trim(),
+      equals_value:
+        typeof visibilityRule.equals_value === 'string' ? visibilityRule.equals_value : '',
+    };
+  }
+
   return rules;
 }
 

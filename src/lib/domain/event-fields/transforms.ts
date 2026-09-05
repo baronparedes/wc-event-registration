@@ -149,6 +149,8 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   val_max_past_days: '',
   val_allowed_weekdays: [],
   val_unique_key_component: false,
+  val_visibility_depends_on_field_key: '',
+  val_visibility_equals_value: '',
 };
 
 function toWeekdayString(value: number): WeekdayString | null {
@@ -207,6 +209,14 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
           .filter((weekday): weekday is WeekdayString => weekday !== null)
       : [],
     val_unique_key_component: rules.unique_key_component === true,
+    val_visibility_depends_on_field_key:
+      typeof rules.visibility_rule?.depends_on_field_key === 'string'
+        ? rules.visibility_rule.depends_on_field_key
+        : '',
+    val_visibility_equals_value:
+      typeof rules.visibility_rule?.equals_value === 'string'
+        ? rules.visibility_rule.equals_value
+        : '',
   };
 }
 
@@ -234,6 +244,12 @@ export function toValidationRules(values: EventFieldFormValues): Record<string, 
   }
   if (values.val_unique_key_component) {
     rules.unique_key_component = true;
+  }
+  if (values.val_visibility_depends_on_field_key) {
+    rules.visibility_rule = {
+      depends_on_field_key: values.val_visibility_depends_on_field_key.trim(),
+      equals_value: values.val_visibility_equals_value ?? '',
+    };
   }
 
   const selectedWeekdays = values.val_allowed_weekdays ?? [];

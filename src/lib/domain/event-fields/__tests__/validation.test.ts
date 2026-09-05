@@ -305,4 +305,25 @@ describe('validatePublicEventFieldConfig', () => {
     expect(result.issues).toEqual([]);
     expect(result.validFields[0]?.validation_rules.unique_key_component).toBe(true);
   });
+
+  it('preserves visibility_rule validation flag', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'other_specify',
+        field_type: 'text',
+        validation_rules: {
+          visibility_rule: {
+            depends_on_field_key: 'category',
+            equals_value: 'Others',
+          },
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields[0]?.validation_rules.visibility_rule).toEqual({
+      depends_on_field_key: 'category',
+      equals_value: 'Others',
+    });
+  });
 });

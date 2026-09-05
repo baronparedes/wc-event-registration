@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Button, CheckboxField, FormInputField, SectionCard } from '@/components/ui';
 import { VALIDATION_PATTERNS } from '@/config/constants';
 import {
+  useAttendanceFieldsQuery,
   useCreateAttendanceFieldMutation,
   useUpdateAttendanceFieldMutation,
 } from '@/hooks/domain/attendance-fields';
@@ -19,6 +20,7 @@ import {
   attendanceFieldTypeHasTextValidation,
 } from '@/lib/domain/attendance-fields';
 import type { AttendanceField, AttendanceFieldTypeEnum } from '@/lib/domain/attendance-fields';
+import { VisibilityRuleSection } from '@/pages/admin/events/[id]/fields/components/VisibilityRuleSection';
 
 import { AttendanceFieldTypeSelector } from './AttendanceFieldTypeSelector';
 import { RuleInput } from './RuleInput';
@@ -75,6 +77,8 @@ const attendanceFieldPanelSchema = z.object({
   ),
   val_min_date: z.string().optional().or(z.literal('')),
   val_max_date: z.string().optional().or(z.literal('')),
+  val_visibility_depends_on_field_key: z.string().optional().or(z.literal('')),
+  val_visibility_equals_value: z.string().optional().or(z.literal('')),
 });
 
 type AttendanceFieldPanelValues = z.infer<typeof attendanceFieldPanelSchema>;
@@ -95,6 +99,9 @@ export function AttendanceFieldEditPanel({
   onClose,
 }: AttendanceFieldEditPanelProps) {
   const isEditing = field !== null;
+  const { data: allFields = [] } = useAttendanceFieldsQuery(eventId);
+  const availableParentFields = allFields.filter((f) => f.field_key !== (field?.field_key ?? ''));
+
   const createMutation = useCreateAttendanceFieldMutation();
   const updateMutation = useUpdateAttendanceFieldMutation();
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -127,6 +134,9 @@ export function AttendanceFieldEditPanel({
           val_max_selections: field.validation_rules?.max_selections,
           val_min_date: field.validation_rules?.min_date ?? '',
           val_max_date: field.validation_rules?.max_date ?? '',
+          val_visibility_depends_on_field_key:
+            field.validation_rules?.visibility_rule?.depends_on_field_key ?? '',
+          val_visibility_equals_value: field.validation_rules?.visibility_rule?.equals_value ?? '',
         }
       : {
           field_key: '',
@@ -144,11 +154,16 @@ export function AttendanceFieldEditPanel({
           val_max_selections: undefined,
           val_min_date: '',
           val_max_date: '',
+          val_visibility_depends_on_field_key: '',
+          val_visibility_equals_value: '',
         },
   });
 
   const { fields: optionFields, append, remove } = useFieldArray({ control, name: 'options' });
   const selectedFieldType = useWatch({ control, name: 'field_type' }) as AttendanceFieldTypeEnum;
+  const dependsOnFieldKey =
+    (useWatch({ control, name: 'val_visibility_depends_on_field_key' }) as string | undefined) ??
+    '';
   const showOptions = attendanceFieldTypeHasOptions(selectedFieldType);
 
   function handleTypeSelect(type: AttendanceFieldTypeEnum) {
@@ -158,6 +173,13 @@ export function AttendanceFieldEditPanel({
 
   async function onSubmit(values: AttendanceFieldPanelValues) {
     try {
+      const visibilityRule = values.val_visibility_depends_on_field_key
+        ? {
+            depends_on_field_key: values.val_visibility_depends_on_field_key.trim(),
+            equals_value: values.val_visibility_equals_value ?? '',
+          }
+        : undefined;
+
       const validationRules = {
         ...(values.val_min_length !== undefined && { min_length: values.val_min_length }),
         ...(values.val_max_length !== undefined && { max_length: values.val_max_length }),
@@ -172,6 +194,7 @@ export function AttendanceFieldEditPanel({
         }),
         ...(values.val_min_date && { min_date: values.val_min_date }),
         ...(values.val_max_date && { max_date: values.val_max_date }),
+        ...(visibilityRule && { visibility_rule: visibilityRule }),
       };
 
       if (isEditing) {
@@ -492,6 +515,13 @@ export function AttendanceFieldEditPanel({
               </div>
             </SectionCard>
           )}
+
+          {/* Conditional Visibility */}
+          <VisibilityRuleSection
+            availableParentFields={availableParentFields}
+            dependsOnFieldKey={dependsOnFieldKey}
+            register={register}
+          />
 
           {/* Footer */}
           <div className="border-t border-border pt-4">

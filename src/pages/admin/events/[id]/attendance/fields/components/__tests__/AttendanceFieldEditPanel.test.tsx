@@ -14,6 +14,10 @@ const { mockCreateMutation, mockUpdateMutation, mockToast } = vi.hoisted(() => (
 }));
 
 vi.mock('@/hooks/domain/attendance-fields', () => ({
+  useAttendanceFieldsQuery: () => ({
+    data: [],
+    isLoading: false,
+  }),
   useCreateAttendanceFieldMutation: () => ({
     mutateAsync: mockCreateMutation,
     isPending: false,

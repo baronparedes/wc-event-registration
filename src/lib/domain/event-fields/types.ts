@@ -1,3 +1,5 @@
+import type { FieldVisibilityRule } from '@/lib/domain/field-visibility';
+
 export type EventFieldType =
   | 'text'
   | 'textarea'
@@ -30,6 +32,8 @@ export type AdminEventFieldOption = {
   toggle_default?: boolean;
 };
 
+export type { FieldVisibilityRule };
+
 export type PublicEventFieldValidationRules = {
   min_length?: number;
   max_length?: number;
@@ -51,6 +55,7 @@ export type PublicEventFieldValidationRules = {
   max_past_days?: number;
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
+  visibility_rule?: FieldVisibilityRule;
 };
 
 export type AdminEventFieldValidationRules = {
@@ -74,6 +79,7 @@ export type AdminEventFieldValidationRules = {
   max_past_days?: number;
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
+  visibility_rule?: FieldVisibilityRule;
 };
 
 export type PublicEventField = {

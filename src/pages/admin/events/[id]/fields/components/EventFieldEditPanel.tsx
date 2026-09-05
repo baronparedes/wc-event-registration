@@ -3,6 +3,7 @@ import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import {
+  useAdminEventFieldsQuery,
   useCreateEventFieldMutation,
   useUpdateEventFieldMutation,
 } from '@/hooks/domain/event-fields';
@@ -34,6 +35,7 @@ import { PanelFooter } from './PanelFooter';
 import { PanelHeader } from './PanelHeader';
 import { StatusBanners } from './StatusBanners';
 import { ValidationRulesSection } from './ValidationRulesSection';
+import { VisibilityRuleSection } from './VisibilityRuleSection';
 
 type EventFieldEditPanelProps = {
   eventId: string;
@@ -57,6 +59,9 @@ export function EventFieldEditPanel({
   const isOptionStructureLocked = isPublished || isArchived;
   const isCapacityLocked = isArchived;
 
+  const { data: allFields = [] } = useAdminEventFieldsQuery(eventId);
+  const availableParentFields = allFields.filter((f) => f.field_key !== (field?.field_key ?? ''));
+
   const createMutation = useCreateEventFieldMutation();
   const updateMutation = useUpdateEventFieldMutation();
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -79,6 +84,9 @@ export function EventFieldEditPanel({
   const selectedFieldType = useWatch({ control, name: 'field_type' }) as EventFieldTypeEnum;
   const selectedApplicability =
     (useWatch({ control, name: 'applicability' }) as EventFieldApplicability | undefined) ?? 'both';
+  const dependsOnFieldKey =
+    (useWatch({ control, name: 'val_visibility_depends_on_field_key' }) as string | undefined) ??
+    '';
   const showOptions = fieldTypeHasOptions(selectedFieldType);
   const showTextValidation = fieldTypeHasTextValidation(selectedFieldType);
   const showNumberValidation = fieldTypeHasNumberValidation(selectedFieldType);
@@ -128,6 +136,9 @@ export function EventFieldEditPanel({
         }
         if (validationRules.unique_key_component !== undefined) {
           publishedCapacityRules.unique_key_component = validationRules.unique_key_component;
+        }
+        if (validationRules.visibility_rule !== undefined) {
+          publishedCapacityRules.visibility_rule = validationRules.visibility_rule;
         }
 
         const updatePayload = isPublished
@@ -267,6 +278,13 @@ export function EventFieldEditPanel({
               uniqueKeyComponentError={errors.val_unique_key_component?.message}
             />
           )}
+
+          <VisibilityRuleSection
+            isLocked={isFullyLocked}
+            availableParentFields={availableParentFields}
+            dependsOnFieldKey={dependsOnFieldKey}
+            register={register}
+          />
 
           <PanelFooter
             isFullyLocked={isFullyLocked}
