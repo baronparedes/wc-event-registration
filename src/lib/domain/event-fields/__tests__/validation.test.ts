@@ -23,6 +23,26 @@ function buildRow(overrides: Partial<PublicEventFieldRow>): PublicEventFieldRow 
 }
 
 describe('validatePublicEventFieldConfig', () => {
+  it('returns issue when selectable field options is not an array', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({ field_key: 'select_field', field_type: 'select', options: null }),
+    ]);
+
+    expect(result.validFields).toEqual([]);
+    expect(result.issues).toEqual(['Field "select_field" must define options as an array.']);
+  });
+
+  it('normalizes unsupported applicability to both with issue warning', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({ field_key: 'test_app', applicability: 'invalid' as never }),
+    ]);
+
+    expect(result.validFields[0].applicability).toBe('both');
+    expect(result.issues).toEqual([
+      'Field "test_app" has unsupported applicability "invalid". Defaulting to both.',
+    ]);
+  });
+
   it('returns an issue for unsupported field types', () => {
     const result = validatePublicEventFieldConfig([
       buildRow({ field_type: 'unsupported' as PublicEventFieldRow['field_type'] }),

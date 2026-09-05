@@ -707,6 +707,82 @@ describe('AttendanceDataEntryPanel', () => {
     expect(screen.getByLabelText(/Required Text/)).toBeInTheDocument();
   });
 
+  it('handles public registrant type and clear multi-select button', async () => {
+    const publicRegistrant: RegistrantAttendanceRow = {
+      nickname: 'Guest',
+      last_name: 'User',
+      attendee_kind: 'public',
+      registration_id: null,
+      public_registration_id: 'pub-1',
+      member_id: null,
+      full_name: 'Guest User',
+      email: 'guest@example.com',
+      answers: [],
+    };
+
+    const multiReqFields: AttendanceField[] = [
+      {
+        id: 'f-multi-req',
+        event_id: 'e1',
+        field_key: 'req_multi',
+        label: 'Required Multi',
+        field_type: 'multi_select',
+        is_required: true,
+        is_active: true,
+        display_order: 0,
+        options: [{ label: 'Opt 1', value: 'opt1' }],
+        validation_rules: {},
+        created_at: '2026-07-01T00:00:00Z',
+        updated_at: '2026-07-01T00:00:00Z',
+      },
+      {
+        id: 'f-color',
+        event_id: 'e1',
+        field_key: 'color_field',
+        label: 'Color Field',
+        field_type: 'color_picker',
+        is_required: false,
+        is_active: true,
+        display_order: 1,
+        options: [],
+        validation_rules: {},
+        created_at: '2026-07-01T00:00:00Z',
+        updated_at: '2026-07-01T00:00:00Z',
+      },
+    ];
+
+    render(
+      <AttendanceDataEntryPanel
+        isOpen={true}
+        eventId="e1"
+        registrant={publicRegistrant}
+        fields={multiReqFields}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/Attendee Type: Guest/)).toBeInTheDocument();
+
+    // Submit without selecting required multi select field
+    fireEvent.click(screen.getByRole('button', { name: 'Save Data' }));
+
+    await waitFor(() => {
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Select at least one option for all required multi-select fields.',
+      );
+    });
+
+    // Open multi select dropdown and select an option
+    fireEvent.click(screen.getByRole('button', { name: 'Required Multi' }));
+    fireEvent.click(screen.getByLabelText('Opt 1'));
+
+    // Clear selection
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selections' }));
+    expect(screen.getByRole('button', { name: 'Required Multi' })).toHaveTextContent(
+      'Select option(s)',
+    );
+  });
+
   it('shows an empty-state message when no attendance fields are configured', () => {
     render(
       <AttendanceDataEntryPanel

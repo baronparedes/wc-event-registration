@@ -425,6 +425,40 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.getAllByText('1 attendee')).toHaveLength(2);
   });
 
+  it('toggles desktop view mode between grid and table', () => {
+    const registrants: RegistrantAttendanceRow[] = [
+      {
+        attendee_kind: 'registered',
+        registration_id: 'reg-toggle',
+        public_registration_id: null,
+        nickname: 'Toggle',
+        last_name: 'User',
+        member_id: 'MID-100',
+        full_name: 'Toggle User',
+        email: 'toggle@example.com',
+        role: 'Admin',
+        category: 'Management',
+        check_in_status: 'checked_in',
+        answers: [],
+      },
+    ];
+
+    render(
+      <AttendanceDataEntryList
+        eventId="event-1"
+        registrants={registrants}
+        fields={baseFields}
+        allAttendees={[]}
+        registrationFields={[]}
+      />,
+    );
+
+    const switchBtn = screen.getByRole('switch');
+    expect(switchBtn).toBeInTheDocument();
+    fireEvent.click(switchBtn);
+    expect(localStorage.getItem('wc:attendance-data:desktop-view-mode')).toBe('table');
+  });
+
   it('opens edit panel when Edit button is clicked', () => {
     const registrants: RegistrantAttendanceRow[] = [
       {

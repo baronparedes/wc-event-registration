@@ -147,4 +147,155 @@ describe('useQueuedCheckInAttendeeMutation', () => {
       expect(secondRender.result.current.lastError).toBe('Failed to fetch');
     });
   });
+
+  it('throws when enqueueCheckIn is called without eventId', () => {
+    const { result } = renderHookWithClient(() =>
+      useQueuedCheckInAttendeeMutation(undefined, {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
+    );
+
+    expect(() => {
+      result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    }).toThrow('Missing event ID for queued check-in.');
+  });
+
+  it('returns queued: false when enqueuing a duplicate item', async () => {
+    mockCaller.mockImplementation(() => new Promise(() => {})); // Never resolves to keep pending
+
+    const { result } = renderHookWithClient(() =>
+      useQueuedCheckInAttendeeMutation('event-1', {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
+    );
+
+    let outcome1: { queued: boolean } | undefined;
+    let outcome2: { queued: boolean } | undefined;
+
+    act(() => {
+      outcome1 = result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    });
+
+    act(() => {
+      outcome2 = result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    });
+
+    expect(outcome1?.queued).toBe(true);
+    expect(outcome2?.queued).toBe(false);
+  });
+
+  it('handles non-retryable error (e.g. Bad Request or rejected status)', async () => {
+    mockCaller.mockResolvedValueOnce({
+      success: false,
+      error: 'Bad request: Invalid registration',
+    });
+
+    const refreshCache = vi.fn();
+    const updateAttendee = vi.fn();
+
+    const { result } = renderHookWithClient(() =>
+      useQueuedCheckInAttendeeMutation('event-1', { refreshCache, updateAttendee }),
+    );
+
+    act(() => {
+      result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    });
+
+    await waitFor(() => {
+      expect(refreshCache).toHaveBeenCalled();
+      expect(result.current.pendingCount).toBe(0);
+      expect(result.current.lastError).toBe('Bad request: Invalid registration');
+    });
+  });
+
+  it('handles non-retryable rejected result status', async () => {
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+      result: {
+        success: false,
+        status: 'rejected',
+        message: 'Unprocessable entity',
+        official_check_in_time: null,
+        attendee_kind: 'registered',
+      },
+    });
+
+    const refreshCache = vi.fn();
+
+    const { result } = renderHookWithClient(() =>
+      useQueuedCheckInAttendeeMutation('event-1', { refreshCache, updateAttendee: vi.fn() }),
+    );
+
+    act(() => {
+      result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    });
+
+    await waitFor(() => {
+      expect(refreshCache).toHaveBeenCalled();
+      expect(result.current.lastError).toBe('Unprocessable entity');
+    });
+  });
+
+  it('does not drain when navigator is offline', async () => {
+    const originalOnLine = navigator.onLine;
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+
+    const { result } = renderHookWithClient(() =>
+      useQueuedCheckInAttendeeMutation('event-1', {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    });
+
+    expect(mockCaller).not.toHaveBeenCalled();
+
+    Object.defineProperty(navigator, 'onLine', { value: originalOnLine, configurable: true });
+  });
+
+  it('uses fallback queue item ID generator when crypto.randomUUID is not available', () => {
+    vi.stubGlobal('crypto', undefined);
+
+    const { result } = renderHookWithClient(() =>
+      useQueuedCheckInAttendeeMutation('event-1', {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
+    );
+
+    let outcome: { item: { id: string } } | undefined;
+    act(() => {
+      outcome = result.current.enqueueCheckIn(
+        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
+        'reg-1',
+      );
+    });
+
+    expect(outcome?.item.id).toMatch(/^queued-check-in-/);
+
+    vi.unstubAllGlobals();
+  });
 });

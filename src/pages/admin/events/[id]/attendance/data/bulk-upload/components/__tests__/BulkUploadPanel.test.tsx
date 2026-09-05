@@ -851,6 +851,35 @@ describe('BulkUploadPanel', () => {
     });
   });
 
+  it('shows error when CSV has no matching attendance field columns', async () => {
+    render(
+      <BulkUploadPanel
+        eventId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        fields={[...fields]}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const fileInput = screen.getByLabelText('CSV file');
+    const csvNoFields = new File(
+      [
+        'attendee_kind,registration_id,public_registration_id,full_name\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row',
+      ],
+      'attendance.csv',
+      { type: 'text/csv' },
+    );
+
+    fireEvent.change(fileInput, { target: { files: [csvNoFields] } });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'CSV has no attendance field columns. Include at least one attendance field header to update.',
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
   it('uses backend error text when structured error payload only contains an error field', async () => {
     const mutateAsync = vi.fn().mockRejectedValue(
       new Error(

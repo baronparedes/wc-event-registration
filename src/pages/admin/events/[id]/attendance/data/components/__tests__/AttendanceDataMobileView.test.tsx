@@ -1,0 +1,95 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { AttendeeSearchResult, RegistrantAttendanceRow } from '@/lib/domain/attendance';
+import type { DynamicFieldRef } from '@/lib/domain/attendance-views';
+
+import { AttendanceDataMobileView } from '../AttendanceDataMobileView';
+
+const sampleRegistrant: RegistrantAttendanceRow = {
+  registration_id: 'reg-1',
+  public_registration_id: null,
+  attendee_kind: 'registered',
+  member_id: 'm-1',
+  nickname: 'John',
+  last_name: 'Doe',
+  full_name: 'John Doe',
+  email: 'john@example.com',
+  check_in_status: 'checked_in',
+  answers: [],
+};
+
+const sampleAttendee: AttendeeSearchResult = {
+  registration_id: 'reg-1',
+  public_registration_id: null,
+  user_id: 'u-1',
+  attendee_kind: 'registered',
+  member_id: 'm-1',
+  nickname: 'John',
+  last_name: 'Doe',
+  full_name: 'John Doe',
+  email: 'john@example.com',
+  role: 'member',
+  category: 'adult',
+  registration_status: 'submitted',
+  submitted_at: '2023-01-01T10:00:00Z',
+  check_in_status: 'checked_in',
+  official_check_in_time: '2023-01-01T10:00:00Z',
+  registration_answers: [],
+  attendance_answers: [],
+  slot_records: [{ slot: '2026-07-25T10:00:00Z', recorded_at: '2026-07-25T10:00:00Z' }],
+};
+
+const visibleFields: DynamicFieldRef[] = [
+  { source: 'member', fieldKey: 'avatar', label: 'Avatar' },
+  { source: 'member', fieldKey: 'check_in_status', label: 'Status' },
+  { source: 'member', fieldKey: 'email', label: 'Email' },
+  { source: 'role', fieldKey: 'role', label: 'Role' },
+  { source: 'member', fieldKey: 'member_id', label: 'Member ID' },
+  { source: 'member', fieldKey: 'checked_in_slot', label: 'Slot' },
+  { source: 'attendance', fieldKey: 'color', label: 'Color', fieldType: 'color_picker' },
+];
+
+function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+describe('AttendanceDataMobileView', () => {
+  it('renders mobile cards and handles interactions', () => {
+    const onViewRegistrant = vi.fn();
+    const onEditRegistrant = vi.fn();
+    const attendeesMap = new Map<string, AttendeeSearchResult>([['reg-1', sampleAttendee]]);
+
+    const getVisibleFieldValue = vi.fn((_, field) => {
+      if (field.fieldKey === 'role') return 'Leader';
+      if (field.fieldKey === 'member_id') return 'MEM-001';
+      return '';
+    });
+
+    renderWithQueryClient(
+      <AttendanceDataMobileView
+        registrants={[sampleRegistrant]}
+        visibleFields={visibleFields}
+        fields={[]}
+        attendeesByRegistrantKey={attendeesMap}
+        canWrite={true}
+        fetchImage={true}
+        onViewRegistrant={onViewRegistrant}
+        onEditRegistrant={onEditRegistrant}
+        countFilledAnswers={() => 1}
+        getRegistrantKey={() => 'reg-1'}
+        getVisibleFieldValue={getVisibleFieldValue}
+      />,
+    );
+
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+
+    const editBtn = screen.getByRole('button', { name: 'Edit attendance details' });
+    fireEvent.click(editBtn);
+    expect(onEditRegistrant).toHaveBeenCalledWith(sampleRegistrant);
+  });
+});
