@@ -8,13 +8,14 @@ import { Dialog } from '@/components/ui/Dialog';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import { useUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance';
-import type {
-  AttendanceAnswer,
-  AttendanceAnswerEntry,
-  AttendanceAnswerSummary,
-  AttendeeKind,
-  RegistrantAttendanceRow,
-} from '@/lib/domain/attendance';
+import {
+  isFieldVisible,
+  type AttendanceAnswer,
+  type AttendanceAnswerEntry,
+  type AttendanceAnswerSummary,
+  type AttendeeKind,
+  type RegistrantAttendanceRow,
+} from '@/lib/domain';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 
 type AttendanceDataEntryPanelProps = {
@@ -64,11 +65,33 @@ function getExistingAnswerValue(
   return answer.answer_text ?? '';
 }
 
-function buildMutationAnswers(
+function buildFormValuesByKey(
   fields: AttendanceField[],
+  valuesByFieldId: AnswerFormValues,
+): Record<string, unknown> {
+  const byKey: Record<string, unknown> = {};
+  for (const field of fields) {
+    byKey[field.field_key] = valuesByFieldId[field.id];
+  }
+  return byKey;
+}
+
+function buildMutationAnswers(
+  allFields: AttendanceField[],
+  visibleFields: AttendanceField[],
   values: AnswerFormValues,
 ): AttendanceAnswerEntry[] {
-  return fields.map((field) => {
+  const visibleIds = new Set(visibleFields.map((f) => f.id));
+
+  return allFields.map((field) => {
+    if (!visibleIds.has(field.id)) {
+      return {
+        attendance_field_id: field.id,
+        answer_text: null,
+        answer_number: null,
+      };
+    }
+
     const rawValue = values[field.id] ?? '';
 
     if (field.field_type === 'number') {
@@ -165,6 +188,11 @@ export function AttendanceDataEntryPanel({
   });
   const formValues = useWatch({ control });
 
+  const formValuesByKey = buildFormValuesByKey(fields, formValues);
+  const visibleFields = fields.filter((field) =>
+    isFieldVisible(field, fields, formValuesByKey),
+  );
+
   function getMultiSelectSelectedLabel(field: AttendanceField): string {
     const selectedValues = Array.isArray(formValues[field.id])
       ? (formValues[field.id] as string[])
@@ -206,7 +234,12 @@ export function AttendanceDataEntryPanel({
 
   async function onSubmit(values: AnswerFormValues) {
     try {
-      const missingRequiredMultiSelectFields = fields.filter((field) => {
+      const valuesByKeyAtSubmit = buildFormValuesByKey(fields, values);
+      const visibleFieldsAtSubmit = fields.filter((field) =>
+        isFieldVisible(field, fields, valuesByKeyAtSubmit),
+      );
+
+      const missingRequiredMultiSelectFields = visibleFieldsAtSubmit.filter((field) => {
         if (!(field.field_type === 'multi_select' && field.is_required)) {
           return false;
         }
@@ -232,7 +265,7 @@ export function AttendanceDataEntryPanel({
 
       setRequiredMultiSelectErrors({});
 
-      const answers = buildMutationAnswers(fields, values);
+      const answers = buildMutationAnswers(fields, visibleFieldsAtSubmit, values);
 
       await upsertMutation.mutateAsync({
         event_id: eventId,
@@ -282,7 +315,7 @@ export function AttendanceDataEntryPanel({
     >
       <div className="overflow-visible">
         <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
-          {fields.map((field) => {
+          {visibleFields.map((field) => {
             const inputId = `field-${field.id}`;
             const isRequired = field.is_required;
 

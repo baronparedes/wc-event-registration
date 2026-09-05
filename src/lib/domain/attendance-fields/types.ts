@@ -21,6 +21,10 @@ export type AttendanceFieldOption = {
   toggle_default?: boolean;
 };
 
+import type { FieldVisibilityRule } from '@/lib/domain/field-visibility';
+
+export type { FieldVisibilityRule };
+
 export type AttendanceFieldValidationRules = {
   min_length?: number;
   max_length?: number;
@@ -31,6 +35,7 @@ export type AttendanceFieldValidationRules = {
   max_selections?: number;
   min_date?: string;
   max_date?: string;
+  visibility_rule?: FieldVisibilityRule;
 };
 
 export type AttendanceField = {

@@ -4,7 +4,7 @@ import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { WizardStep } from '@/components/ui/WizardStep';
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import { isFieldVisible, type DynamicFieldResponseValues, type PublicEventField } from '@/lib/domain';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
 import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer';
@@ -157,6 +157,11 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     onInactivityTimeout,
   } = props;
 
+  const formValues = dynamicForm.watch();
+  const visibleFields = activeFields.filter((field) =>
+    isFieldVisible(field, activeFields, formValues),
+  );
+
   const shouldShowDefaultLockedMessage = !matchedMember || shouldFadeLockedState;
   const shouldShowBlockedLockedMessage = matchedMember && isLocked && !shouldFadeLockedState;
 
@@ -269,7 +274,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
 
       {matchedMember && !isLocked && !isLoadingFields && !isRegistrationConfirmed && (
         <form className="mt-4 space-y-4" onSubmit={dynamicForm.handleSubmit(onSubmit)} noValidate>
-          {activeFields.length === 0 && (
+          {visibleFields.length === 0 && (
             <div
               aria-live="polite"
               className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-blue-600 bg-blue-100 px-4 py-3 text-sm text-blue-950 shadow-md"
@@ -288,8 +293,8 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
             </div>
           )}
 
-          {activeFields.length > 0 &&
-            activeFields.map((field) => {
+          {visibleFields.length > 0 &&
+            visibleFields.map((field) => {
               const errorMessage = fieldErrorMessage(field.field_key);
 
               return (

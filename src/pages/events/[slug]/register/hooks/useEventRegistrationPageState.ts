@@ -15,11 +15,13 @@ import { useMemberLookupState } from '@/hooks/domain/members';
 import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout, useRfidAutoFocus, useScanBuffer } from '@/hooks/utils';
 import {
+  filterVisibleFieldValues,
+  isFieldVisible,
   type DynamicFieldResponseValues,
   type EventFieldType,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
-} from '@/lib/domain/event-fields';
+} from '@/lib/domain';
 import { logger } from '@/lib/infrastructure';
 
 export type WizardStep = 1 | 2 | 3;
@@ -428,7 +430,12 @@ export function useEventRegistrationPageState() {
       setIsRegistrationConfirmed(false);
       dynamicForm.clearErrors();
 
-      const parsed = responseSchema.safeParse(values);
+      const visibleFields = activeFields.filter((field) =>
+        isFieldVisible(field, activeFields, values),
+      );
+      const visibleSchema = buildDynamicFieldResponseSchema(visibleFields);
+
+      const parsed = visibleSchema.safeParse(values);
       if (!parsed.success) {
         logger.warn('Form validation failed:', parsed.error.issues);
         parsed.error.issues.forEach((issue: z.ZodIssue) => {
@@ -461,6 +468,7 @@ export function useEventRegistrationPageState() {
         return;
       }
 
+      const cleanedResponses = filterVisibleFieldValues(activeFields, parsed.data);
       const idempotencyKey = crypto.randomUUID();
 
       logger.info('Submitting registration:', {
@@ -472,7 +480,7 @@ export function useEventRegistrationPageState() {
       const result = await submitMutation.mutateAsync({
         event_slug: slug,
         member_token: memberLookup.verifiedMemberCredential,
-        responses: parsed.data,
+        responses: cleanedResponses,
         idempotency_key: idempotencyKey,
       });
 

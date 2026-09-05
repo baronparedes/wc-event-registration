@@ -140,6 +140,8 @@ export const eventFieldFormSchema = z
     val_max_past_days: z.string(),
     val_allowed_weekdays: z.array(z.enum(['0', '1', '2', '3', '4', '5', '6'])).optional(),
     val_unique_key_component: z.boolean().default(false),
+    val_visibility_depends_on_field_key: z.string().optional(),
+    val_visibility_equals_value: z.string().optional(),
   })
   .superRefine((values, context) => {
     if (
