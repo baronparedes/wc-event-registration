@@ -13,9 +13,7 @@ describe('TermsOfServicePage', () => {
       </MemoryRouter>,
     );
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Terms of Service' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Terms of Service' })).toBeInTheDocument();
     expect(screen.getAllByText(new RegExp(LEGAL_CONFIG.appName, 'i'))[0]).toBeInTheDocument();
   });
 
@@ -50,9 +48,7 @@ describe('TermsOfServicePage', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: '7. Changes to Terms' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { level: 2, name: '8. Contact Us' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '8. Contact Us' })).toBeInTheDocument();
   });
 
   it('displays contact email link', () => {

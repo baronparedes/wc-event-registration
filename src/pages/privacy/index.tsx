@@ -34,8 +34,8 @@ export function PrivacyPolicyPage() {
           </p>
           <ul className="list-disc space-y-2 pl-6 text-sm sm:text-base">
             <li>
-              <strong>Account & Profile Data:</strong> When you sign in using single sign-on (such as
-              Google OAuth), we receive profile data including your email address, full name, and
+              <strong>Account & Profile Data:</strong> When you sign in using single sign-on (such
+              as Google OAuth), we receive profile data including your email address, full name, and
               profile image URL as permitted by your OAuth provider settings.
             </li>
             <li>
@@ -62,7 +62,10 @@ export function PrivacyPolicyPage() {
             <li>Authenticating your identity and providing access to administrative features.</li>
             <li>Processing event registrations and managing event attendance records.</li>
             <li>Sending event confirmations, updates, and essential administrative notices.</li>
-            <li>Maintaining system security, preventing unauthorized access, and rate limiting requests.</li>
+            <li>
+              Maintaining system security, preventing unauthorized access, and rate limiting
+              requests.
+            </li>
           </ul>
         </section>
 
@@ -93,12 +96,12 @@ export function PrivacyPolicyPage() {
               responsible for managing attendance and logistics for events you register for.
             </li>
             <li>
-              <strong>Service Providers:</strong> Secure infrastructure providers (such as hosting and
-              database services) operating under strict data protection terms.
+              <strong>Service Providers:</strong> Secure infrastructure providers (such as hosting
+              and database services) operating under strict data protection terms.
             </li>
             <li>
-              <strong>Legal Compliance:</strong> When required by applicable law, regulation, or legal
-              process.
+              <strong>Legal Compliance:</strong> When required by applicable law, regulation, or
+              legal process.
             </li>
           </ul>
         </section>

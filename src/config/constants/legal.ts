@@ -1,7 +1,7 @@
 export const LEGAL_CONFIG = {
-  appName: 'WC Event Registration Platform',
-  organizationName: 'WC Event Registration Platform',
-  contactEmail: 'privacy@example.com',
-  effectiveDate: 'May 1, 2024',
-  lastUpdated: 'May 1, 2024',
+  appName: 'Welcome Hub',
+  organizationName: 'Welcome Hub',
+  contactEmail: 'welcome-hub@googlegroups.com',
+  effectiveDate: 'Aug 1, 2026',
+  lastUpdated: 'Aug 1, 2026',
 } as const;

@@ -24,9 +24,7 @@ describe('PrivacyPolicyPage', () => {
       </MemoryRouter>,
     );
 
-    expect(
-      screen.getByRole('heading', { level: 2, name: '1. Introduction' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '1. Introduction' })).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { level: 2, name: '2. Information We Collect' }),
     ).toBeInTheDocument();
@@ -42,12 +40,8 @@ describe('PrivacyPolicyPage', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: '6. Data Security & Retention' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { level: 2, name: '7. Your Rights' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { level: 2, name: '8. Contact Us' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '7. Your Rights' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '8. Contact Us' })).toBeInTheDocument();
   });
 
   it('displays contact email link', () => {

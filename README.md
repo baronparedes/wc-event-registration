@@ -157,6 +157,7 @@ Examples:
 - **Restore Guide**: [docs/restore-guide.md](docs/restore-guide.md)
 
 Workflows:
+
 - Automatic weekly backups every Monday 01:00 AM PHT (or manual run) via `.github/workflows/supabase-backup.yml`.
 - Manual database restoration via `.github/workflows/supabase-restore.yml`.
 

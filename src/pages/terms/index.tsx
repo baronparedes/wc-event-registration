@@ -23,11 +23,13 @@ export function TermsOfServicePage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-heading text-xl font-semibold text-text">2. Description of Service</h2>
+          <h2 className="font-heading text-xl font-semibold text-text">
+            2. Description of Service
+          </h2>
           <p className="text-sm sm:text-base">
-            {LEGAL_CONFIG.appName} provides event registration, attendance tracking, and administrative
-            management features. Services may include user authentication via single sign-on
-            (such as Google OAuth) and public event registration forms.
+            {LEGAL_CONFIG.appName} provides event registration, attendance tracking, and
+            administrative management features. Services may include user authentication via single
+            sign-on (such as Google OAuth) and public event registration forms.
           </p>
         </section>
 
@@ -57,13 +59,11 @@ export function TermsOfServicePage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-heading text-xl font-semibold text-text">
-            5. Intellectual Property
-          </h2>
+          <h2 className="font-heading text-xl font-semibold text-text">5. Intellectual Property</h2>
           <p className="text-sm sm:text-base">
-            All rights, title, and interest in and to the Platform, including software, design, logos,
-            and content, remain the exclusive property of {LEGAL_CONFIG.organizationName} or its
-            licensors.
+            All rights, title, and interest in and to the Platform, including software, design,
+            logos, and content, remain the exclusive property of {LEGAL_CONFIG.organizationName} or
+            its licensors.
           </p>
         </section>
 
@@ -82,9 +82,9 @@ export function TermsOfServicePage() {
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold text-text">7. Changes to Terms</h2>
           <p className="text-sm sm:text-base">
-            We reserve the right to update or modify these Terms at any time. Any changes will become
-            effective upon posting the revised Terms on this page. Your continued use of the Platform
-            after changes are posted constitutes your acceptance of the updated Terms.
+            We reserve the right to update or modify these Terms at any time. Any changes will
+            become effective upon posting the revised Terms on this page. Your continued use of the
+            Platform after changes are posted constitutes your acceptance of the updated Terms.
           </p>
         </section>
 
