@@ -4,6 +4,10 @@ import type { AdminRole } from '@/lib/domain/auth';
 
 export const ROUTE_PATHS = {
   home: '/',
+  privacy: '/privacy',
+  privacyPolicy: '/privacy-policy',
+  terms: '/terms',
+  termsOfService: '/terms-of-service',
   notFound: '*',
   login: '/login',
   eventRegisterPattern: '/events/:slug/register',
@@ -37,6 +41,10 @@ export const ROUTE_PATHS = {
 
 export type AppRouteKey =
   | 'home'
+  | 'privacy'
+  | 'privacyPolicy'
+  | 'terms'
+  | 'termsOfService'
   | 'eventRegister'
   | 'eventPublicRegister'
   | 'login'
@@ -75,6 +83,10 @@ export type AppRouteDefinition = {
 
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
+  { key: 'privacy', path: ROUTE_PATHS.privacy, layout: 'shell' },
+  { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
+  { key: 'terms', path: ROUTE_PATHS.terms, layout: 'shell' },
+  { key: 'termsOfService', path: ROUTE_PATHS.termsOfService, layout: 'shell' },
   { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },

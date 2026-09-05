@@ -102,6 +102,8 @@ export function AppDrawerNavigation({
             <div className="space-y-2">
               <SectionHeading label="General" />
               <DrawerNavLink to={ROUTE_PATHS.home} label="Events" onClose={onClose} />
+              <DrawerNavLink to={ROUTE_PATHS.privacy} label="Privacy Policy" onClose={onClose} />
+              <DrawerNavLink to={ROUTE_PATHS.terms} label="Terms of Service" onClose={onClose} />
               {!isAuthenticated && (
                 <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
               )}
