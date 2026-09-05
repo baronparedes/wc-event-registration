@@ -188,13 +188,13 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
 
       {/* Guest/non-member registration option */}
       {slug && allowPublicRegistration && (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center pt-4">
           <button
             type="button"
             onClick={() => navigate(`/events/${slug}/register-public`)}
-            className="text-sm text-primary underline transition hover:text-primary/80"
+            className="text-xl text-primary underline transition hover:text-primary/80"
           >
-            Not a Member? Register as guest
+            Join as a Guest
           </button>
         </div>
       )}
