@@ -1,0 +1,42 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Run every 4 days at midnight UTC to ensure Supabase remains active (under the 5-day limit)
+    - cron: '0 0 */4 * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright & Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Visit Homepage with Headless Browser
+        run: |
+          if [ -z "${APP_URL}" ]; then
+            echo "Error: APP_URL secret is not set."
+            exit 1
+          fi
+          echo "Visiting ${APP_URL} with headless Chromium..."
+          node -e '
+            const { chromium } = require("playwright");
+            (async () => {
+              const browser = await chromium.launch();
+              const page = await browser.newPage();
+              console.log("Navigating to:", process.env.APP_URL);
+              await page.goto(process.env.APP_URL, { waitUntil: "networkidle", timeout: 60000 });
+              console.log("Page loaded successfully. Title:", await page.title());
+              await browser.close();
+            })();
+          '
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
