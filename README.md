@@ -40,6 +40,7 @@ Database and Security:
 - RLS-oriented schema posture with explicit grants
 - Public registration write path through Edge Functions
 - Shared fixed-window in-memory rate limiting for edge endpoints
+- Automated weekly database backups to Cloudflare R2: see [Backup Guide](docs/backup-guide.md) and [Restore Guide](docs/restore-guide.md)
 
 Tooling and Quality:
 
@@ -149,6 +150,15 @@ Examples:
   ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
    RUNTIME_ENV=production
   ```
+
+## Database Backups & Restoration
+
+- **Backup Guide**: [docs/backup-guide.md](docs/backup-guide.md)
+- **Restore Guide**: [docs/restore-guide.md](docs/restore-guide.md)
+
+Workflows:
+- Automatic weekly backups every Monday 01:00 AM PHT (or manual run) via `.github/workflows/supabase-backup.yml`.
+- Manual database restoration via `.github/workflows/supabase-restore.yml`.
 
 ## Local Supabase Workflow
 
