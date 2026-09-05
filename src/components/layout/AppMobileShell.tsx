@@ -27,6 +27,7 @@ export function AppMobileShell() {
     adminAuth?.session?.user?.phone,
     adminAuth?.session?.user?.id,
   );
+  const hasSession = Boolean(adminAuth?.session);
 
   async function handleLogout() {
     try {
@@ -76,6 +77,7 @@ export function AppMobileShell() {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         isAuthenticated={adminAuth?.isAuthenticated ?? false}
+        hasSession={hasSession}
         adminRole={adminAuth?.adminRole ?? null}
         currentUserLabel={currentUserLabel}
         onLogout={handleLogout}

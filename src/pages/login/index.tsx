@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -11,12 +10,10 @@ import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
 import {
-  ADMIN_AUTH_QUERY_KEY,
   useAdminAuthQuery,
   useAdminLoginMutation,
   useGoogleLoginMutation,
 } from '@/hooks/domain/auth';
-import { supabase } from '@/lib/infrastructure';
 
 const adminLoginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -43,7 +40,6 @@ function getSafeRedirectTarget(search: string): string {
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
   const loginMutation = useAdminLoginMutation();
   const googleLoginMutation = useGoogleLoginMutation();
   const { data: adminAuth, isLoading } = useAdminAuthQuery();
@@ -68,12 +64,10 @@ export function LoginPage() {
     }
 
     if (adminAuth?.session && !adminAuth.isAuthenticated) {
-      void supabase.auth.signOut().then(() => {
-        queryClient.invalidateQueries({ queryKey: ADMIN_AUTH_QUERY_KEY });
-        toast.error('This account is not authorized');
-      });
+      const target = redirectTarget.startsWith('/admin') ? ROUTE_PATHS.home : redirectTarget;
+      navigate(target, { replace: true });
     }
-  }, [adminAuth, isLoading, navigate, queryClient, redirectTarget]);
+  }, [adminAuth, isLoading, navigate, redirectTarget]);
 
   async function handleGoogleSignIn() {
     try {

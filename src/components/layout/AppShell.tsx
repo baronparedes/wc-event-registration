@@ -31,6 +31,7 @@ export function AppShell() {
     adminAuth?.session?.user?.phone,
     adminAuth?.session?.user?.id,
   );
+  const hasSession = Boolean(adminAuth?.session);
 
   async function handleLogout() {
     try {
@@ -64,7 +65,7 @@ export function AppShell() {
             </div>
 
             <div className="flex items-center gap-3">
-              {adminAuth?.isAuthenticated && currentUserLabel && (
+              {hasSession && currentUserLabel && (
                 <p className="max-w-[20rem] truncate text-xs text-muted">
                   {getSignedInText(currentUserLabel, adminAuth?.adminRole)}
                 </p>
@@ -87,6 +88,7 @@ export function AppShell() {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         isAuthenticated={adminAuth?.isAuthenticated ?? false}
+        hasSession={hasSession}
         adminRole={adminAuth?.adminRole ?? null}
         currentUserLabel={currentUserLabel}
         onLogout={handleLogout}

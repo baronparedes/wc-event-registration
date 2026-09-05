@@ -299,11 +299,16 @@ function RequireAdminAuth({
   }
 
   const isAuthenticated = data?.isAuthenticated ?? false;
+  const hasSession = Boolean(data?.session);
 
-  if (!isAuthenticated) {
+  if (!hasSession) {
     const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
     const searchParams = new URLSearchParams({ redirect: redirectTarget });
     return <Navigate to={`${ROUTE_PATHS.login}?${searchParams.toString()}`} replace />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to={ROUTE_PATHS.home} replace />;
   }
 
   if (allowedRoles) {

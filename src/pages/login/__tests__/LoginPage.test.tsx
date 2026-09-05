@@ -265,22 +265,19 @@ describe('LoginPage', () => {
     });
   });
 
-  it('signs out and shows error toast when user has session but is not an admin', async () => {
+  it('redirects non-admin authenticated users to home page when session exists', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
         isAuthenticated: false,
-        session: { user: { id: 'unauthorized-id' } },
+        session: { user: { id: 'member-id' } },
         adminRole: null,
       },
       isLoading: false,
     });
 
-    render(<LoginPage />);
+    renderWithRouter(<LoginPage />);
 
-    await waitFor(() => {
-      expect(mockSignOut).toHaveBeenCalled();
-      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['admin-auth-state'] });
-      expect(mockToastError).toHaveBeenCalledWith('This account is not authorized');
-    });
+    expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+    expect(mockSignOut).not.toHaveBeenCalled();
   });
 });
