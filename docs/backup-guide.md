@@ -1,6 +1,6 @@
 # Supabase Automated Backup & Restoration Guide
 
-This guide details the automated database backup architecture using **GitHub Actions**, **GPG Encryption**, and **Cloudflare R2 Object Storage**, along with step-by-step instructions for setup and restoration.
+This guide details the automated database backup and manual restoration architecture using **GitHub Actions**, **GPG Encryption**, and **Cloudflare R2 Object Storage**, along with step-by-step setup instructions.
 
 ---
 
@@ -59,31 +59,49 @@ You can manually trigger a backup at any time:
 
 ## 4. Restoration Guide
 
-To restore your Supabase database from an encrypted Cloudflare R2 backup:
+### Option A: Restore via GitHub Actions (Recommended)
 
-### Step 1: Download the Backup File from Cloudflare R2
-You can download the file directly from the Cloudflare R2 Dashboard or using AWS CLI locally:
+You can trigger a restoration directly from GitHub Actions without needing local command line tools:
+
+1. Go to the **Actions** tab in your GitHub repository.
+2. Select **Restore Supabase Database Backup** from the left sidebar.
+3. Click **Run workflow**.
+4. Enter the required parameters:
+   - **`backup_filename`**: The filename in your Cloudflare R2 bucket (e.g., `supabase-backup-20250101-000000.sql.gz.gpg`).
+   - **`confirm_restore`**: Type `RESTORE` to confirm the operation.
+5. Click **Run workflow**.
+
+The workflow will download the file from Cloudflare R2, decrypt it using your secret passphrase, uncompress it, and apply it to your database via `psql`.
+
+---
+
+### Option B: Restore via Local CLI
+
+To restore your Supabase database locally or from your own machine:
+
+#### Step 1: Download the Backup File from Cloudflare R2
+Download the file from Cloudflare R2 Dashboard or using AWS CLI:
 
 ```bash
 aws s3 cp s3://<CF_R2_BUCKET_NAME>/<BACKUP_FILE_NAME>.sql.gz.gpg ./ \
   --endpoint-url https://<CF_R2_ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
-### Step 2: Decrypt the Backup
+#### Step 2: Decrypt the Backup
 Decrypt the encrypted archive using `gpg` with your encryption passphrase:
 
 ```bash
 gpg --decrypt --batch --passphrase "<YOUR_BACKUP_ENCRYPTION_PASSPHRASE>" <BACKUP_FILE_NAME>.sql.gz.gpg > backup.sql.gz
 ```
 
-### Step 3: Uncompress the Backup
+#### Step 3: Uncompress the Backup
 Uncompress the `.gz` file to retrieve the raw `.sql` file:
 
 ```bash
 gunzip backup.sql.gz
 ```
 
-### Step 4: Restore to Supabase Postgres
+#### Step 4: Restore to Supabase Postgres
 Restore the SQL dump to your target Supabase PostgreSQL instance:
 
 ```bash
