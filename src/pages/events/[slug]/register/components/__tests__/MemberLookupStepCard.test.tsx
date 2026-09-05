@@ -140,7 +140,7 @@ describe('MemberLookupStepCard', () => {
   it('shows guest registration link and navigates to public registration', () => {
     renderCard({ allowPublicRegistration: true, slug: 'sample-event' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Join as a Guest' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Join the event as a Guest' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/sample-event/register-public');
   });
