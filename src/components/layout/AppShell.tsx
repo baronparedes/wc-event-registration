@@ -10,6 +10,7 @@ import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
 
 import { Button } from '../ui';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
+import { AppFooter } from './AppFooter';
 
 function getCurrentUserLabel(email?: string | null, phone?: string | null, userId?: string) {
   return email ?? phone ?? userId ?? null;
@@ -42,7 +43,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text">
+    <div className="flex min-h-screen flex-col bg-background text-text">
       {isMinimizedShell ? (
         <div className="sticky top-0 z-30 flex justify-center px-2 pt-1 print:hidden">
           <button
@@ -92,12 +93,14 @@ export function AppShell() {
       />
 
       <main
-        className={`relative mx-auto w-full max-w-6xl animate-fadeIn print:p-0 ${
+        className={`relative mx-auto w-full max-w-6xl flex-1 animate-fadeIn print:p-0 ${
           isMinimizedShell ? 'px-2 py-2 sm:px-3' : 'px-4 py-8'
         }`}
       >
         <Outlet />
       </main>
+
+      <AppFooter />
     </div>
   );
 }
