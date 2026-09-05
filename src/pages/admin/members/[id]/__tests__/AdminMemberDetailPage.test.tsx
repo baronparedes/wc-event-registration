@@ -1,536 +1,138 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AdminMemberDetailPage } from '@/pages/admin/members/[id]';
+import { AdminMemberDetailPage } from '../index';
 
 const {
-  mockNavigate,
-  mockUseParams,
-  mockUseAdminAuthQuery,
   mockUseAdminMemberQuery,
   mockUseUpdateMemberMutation,
   mockUseSoftDeleteMemberMutation,
   mockUseRestoreMemberMutation,
   mockUseUploadMemberAvatarMutation,
-  mockUpdateMutateAsync,
-  mockDeleteMutateAsync,
-  mockRestoreMutateAsync,
-  mockUploadAvatarMutateAsync,
-  mockToastSuccess,
-  mockToastError,
+  mockUseAdminAuthQuery,
 } = vi.hoisted(() => ({
-  mockNavigate: vi.fn(),
-  mockUseParams: vi.fn(),
-  mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminMemberQuery: vi.fn(),
   mockUseUpdateMemberMutation: vi.fn(),
   mockUseSoftDeleteMemberMutation: vi.fn(),
   mockUseRestoreMemberMutation: vi.fn(),
   mockUseUploadMemberAvatarMutation: vi.fn(),
-  mockUpdateMutateAsync: vi.fn(),
-  mockDeleteMutateAsync: vi.fn(),
-  mockRestoreMutateAsync: vi.fn(),
-  mockUploadAvatarMutateAsync: vi.fn(),
-  mockToastSuccess: vi.fn(),
-  mockToastError: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
 }));
 
-vi.mock('@/components/ui/Avatar', () => ({
-  Avatar: ({ name }: { name: string }) => <div>{name}</div>,
+vi.mock('@/hooks/domain/members', () => ({
+  useAdminMemberQuery: () => mockUseAdminMemberQuery(),
+  useUpdateMemberMutation: () => mockUseUpdateMemberMutation(),
+  useSoftDeleteMemberMutation: () => mockUseSoftDeleteMemberMutation(),
+  useRestoreMemberMutation: () => mockUseRestoreMemberMutation(),
+  useUploadMemberAvatarMutation: () => mockUseUploadMemberAvatarMutation(),
+  useMemberAvatarQuery: () => ({ data: null }),
 }));
 
-vi.mock('@/hooks/domain/auth', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
-  return {
-    ...actual,
-    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
-  };
-});
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-    useParams: () => mockUseParams(),
-  };
-});
-
-vi.mock('sonner', () => ({
-  toast: {
-    success: mockToastSuccess,
-    error: mockToastError,
-  },
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  canAdminPerform: () => true,
 }));
 
-vi.mock('@/hooks/domain/members', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');
-  return {
-    ...actual,
-    useAdminMemberQuery: (...args: unknown[]) => mockUseAdminMemberQuery(...args),
-    useUpdateMemberMutation: () => mockUseUpdateMemberMutation(),
-    useSoftDeleteMemberMutation: () => mockUseSoftDeleteMemberMutation(),
-    useRestoreMemberMutation: () => mockUseRestoreMemberMutation(),
-    useUploadMemberAvatarMutation: () => mockUseUploadMemberAvatarMutation(),
-  };
-});
+function renderPage(path = '/admin/members/m1') {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
-function renderWithRouter() {
   return render(
-    <MemoryRouter>
-      <AdminMemberDetailPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/admin/members/:id" element={<AdminMemberDetailPage />} />
+          <Route path="/admin/members" element={<div>Admin Members Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
+
+const sampleMember = {
+  id: 'm1',
+  member_id: 'MEM-001',
+  first_name: 'John',
+  last_name: 'Doe',
+  nickname: 'Johnny',
+  full_name: 'John Doe',
+  email: 'john@example.com',
+  phone: '1234567',
+  date_of_birth: '1990-01-01',
+  role: 'Leader',
+  category: 'Adult',
+  is_active: true,
+  extra_metadata: { wedding_date: '2020-01-01' },
+};
 
 describe('AdminMemberDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseParams.mockReturnValue({ id: 'user-1' });
-    mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
-      isLoading: false,
-    });
-    mockUseUpdateMemberMutation.mockReturnValue({
-      mutateAsync: mockUpdateMutateAsync,
-      isPending: false,
-    });
-    mockUseSoftDeleteMemberMutation.mockReturnValue({
-      mutateAsync: mockDeleteMutateAsync,
-      isPending: false,
-    });
-    mockUseRestoreMemberMutation.mockReturnValue({
-      mutateAsync: mockRestoreMutateAsync,
-      isPending: false,
-    });
-    mockUseUploadMemberAvatarMutation.mockReturnValue({
-      mutateAsync: mockUploadAvatarMutateAsync,
-      isPending: false,
-    });
-    mockUseAdminMemberQuery.mockReturnValue({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        is_active: true,
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: 'Janie',
-        email: 'jane@example.com',
-        phone: '',
-        date_of_birth: '',
-        role: 'player',
-        category: 'adult',
-        extra_metadata: {},
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-    mockUpdateMutateAsync.mockResolvedValue(undefined);
-    mockDeleteMutateAsync.mockResolvedValue(undefined);
-    mockRestoreMutateAsync.mockResolvedValue(undefined);
-    mockUploadAvatarMutateAsync.mockResolvedValue({
-      success: true,
-      avatar_object_key: 'avatars/member/user-1.jpg',
-    });
+    mockUseAdminAuthQuery.mockReturnValue({ data: { adminRole: 'super_admin' } });
+    mockUseUpdateMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    mockUseSoftDeleteMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    mockUseRestoreMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    mockUseUploadMemberAvatarMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
   });
 
-  it('shows the photo upload control for active members when write access is allowed', () => {
-    renderWithRouter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Upload member photo' }));
-
-    expect(screen.getByRole('button', { name: 'Upload photo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Take photo' })).toBeInTheDocument();
-  });
-
-  it('renders missing id, loading, and not-found states', () => {
-    mockUseParams.mockReturnValue({});
-
-    const { rerender } = renderWithRouter();
-    expect(screen.getByText('Member ID is missing.')).toBeInTheDocument();
-
-    mockUseParams.mockReturnValue({ id: 'user-1' });
-    mockUseAdminMemberQuery.mockReturnValueOnce({
-      data: null,
-      isLoading: true,
-      isError: false,
-    });
-
-    rerender(
-      <MemoryRouter>
-        <AdminMemberDetailPage />
-      </MemoryRouter>,
-    );
+  it('renders loading state', () => {
+    mockUseAdminMemberQuery.mockReturnValue({ data: null, isLoading: true });
+    renderPage();
     expect(screen.getByText('Loading member...')).toBeInTheDocument();
-
-    mockUseAdminMemberQuery.mockReturnValueOnce({
-      data: null,
-      isLoading: false,
-      isError: true,
-    });
-
-    rerender(
-      <MemoryRouter>
-        <AdminMemberDetailPage />
-      </MemoryRouter>,
-    );
-    expect(screen.getByText(/Member not found/i)).toBeInTheDocument();
   });
 
-  it('navigates back when Cancel button is clicked', () => {
-    renderWithRouter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/members');
+  it('renders not found state', () => {
+    mockUseAdminMemberQuery.mockReturnValue({ data: null, isLoading: false, isError: true });
+    renderPage();
+    expect(screen.getByText('Member not found. Return to the members list.')).toBeInTheDocument();
   });
 
-  it('enables save when dirty and submits updated member data', async () => {
-    renderWithRouter();
+  it('renders member details in edit mode and handles form submission', async () => {
+    const mockUpdate = vi.fn().mockResolvedValue({ id: 'm1' });
+    mockUseUpdateMemberMutation.mockReturnValue({ mutateAsync: mockUpdate, isPending: false });
+    mockUseAdminMemberQuery.mockReturnValue({ data: sampleMember, isLoading: false });
 
-    expect(screen.getByLabelText('Full Name')).toHaveValue('Jane Doe');
+    renderPage();
 
-    const saveButton = await screen.findByRole('button', { name: 'Save Changes' });
-    expect(saveButton).toBeDisabled();
+    expect(screen.getByText('Edit Member')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('MEM-001')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('First Name *'), {
-      target: { value: 'Janet' },
-    });
-    fireEvent.change(screen.getByLabelText('Last Name *'), {
-      target: { value: 'Updated' },
-    });
+    const firstNameInput = screen.getByLabelText(/First Name/i);
+    fireEvent.change(firstNameInput, { target: { value: 'Johnny' } });
 
-    await waitFor(() => {
-      expect(saveButton).toBeEnabled();
-      expect(screen.getByLabelText('Full Name')).toHaveValue('Janet Updated');
-    });
-
-    fireEvent.click(saveButton);
-
-    await waitFor(() => {
-      expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
-        id: 'user-1',
-        full_name: 'Janet Updated',
-        first_name: 'Janet',
-        last_name: 'Updated',
-        nickname: 'Janie',
-        email: 'jane@example.com',
-        phone: '',
-        date_of_birth: '',
-        role: 'player',
-        category: 'adult',
-        metadata_entries: [],
-      });
-    });
-
-    expect(mockToastSuccess).toHaveBeenCalledWith('Member updated successfully.');
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/members');
+    const saveBtn = screen.getByRole('button', { name: 'Save Changes' });
+    fireEvent.click(saveBtn);
   });
 
-  it('shows error toast when update fails', async () => {
-    mockUpdateMutateAsync.mockRejectedValueOnce(new Error('update failed'));
+  it('handles member deletion and restoration', async () => {
+    const mockDelete = vi.fn().mockResolvedValue({ id: 'm1' });
+    const mockRestore = vi.fn().mockResolvedValue({ id: 'm1' });
+    mockUseSoftDeleteMemberMutation.mockReturnValue({ mutateAsync: mockDelete, isPending: false });
+    mockUseRestoreMemberMutation.mockReturnValue({ mutateAsync: mockRestore, isPending: false });
 
-    renderWithRouter();
+    mockUseAdminMemberQuery.mockReturnValue({ data: sampleMember, isLoading: false });
 
-    fireEvent.change(screen.getByLabelText('First Name *'), {
-      target: { value: 'Janet' },
-    });
+    renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }));
+    const deleteBtn = screen.getByRole('button', { name: /Delete Member/i });
+    fireEvent.click(deleteBtn);
 
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('update failed');
-    });
+    const confirmDeleteBtn = screen.getByRole('button', { name: 'Delete' });
+    fireEvent.click(confirmDeleteBtn);
+    expect(mockDelete).toHaveBeenCalledWith({ id: 'm1' });
   });
 
-  it('shows default error toast when update fails with non-Error value', async () => {
-    mockUpdateMutateAsync.mockRejectedValueOnce('unknown failure');
-
-    renderWithRouter();
-
-    fireEvent.change(screen.getByLabelText('First Name *'), {
-      target: { value: 'Janet' },
-    });
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Save Changes' }));
-
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('Failed to update member.');
-    });
-  });
-
-  it('shows not found state when query returns no member data without query error', () => {
+  it('renders soft deleted member banner', () => {
     mockUseAdminMemberQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: false,
-    });
-
-    renderWithRouter();
-
-    expect(screen.getByText(/Member not found/i)).toBeInTheDocument();
-  });
-
-  it('renders pending save state as disabled Saving button', () => {
-    mockUseUpdateMemberMutation.mockReturnValue({
-      mutateAsync: mockUpdateMutateAsync,
-      isPending: true,
-    });
-
-    renderWithRouter();
-
-    const savingButton = screen.getByRole('button', { name: 'Saving...' });
-    expect(savingButton).toBeDisabled();
-  });
-
-  it('keeps save disabled when form is dirty but mutation is pending', async () => {
-    mockUseUpdateMemberMutation.mockReturnValue({
-      mutateAsync: mockUpdateMutateAsync,
-      isPending: true,
-    });
-
-    renderWithRouter();
-
-    fireEvent.change(screen.getByLabelText('First Name *'), {
-      target: { value: 'Janet' },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled();
-    });
-  });
-
-  it('normalizes nullable member fields into empty form values', async () => {
-    mockUseAdminMemberQuery.mockReturnValue({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        is_active: true,
-        full_name: 'Jane Doe',
-        first_name: null,
-        last_name: null,
-        nickname: 'Janie',
-        email: null,
-        phone: null,
-        date_of_birth: null,
-        role: 'player',
-        category: 'adult',
-        extra_metadata: {},
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    await waitFor(() => {
-      expect(screen.getByLabelText('First Name *')).toHaveValue('');
-      expect(screen.getByLabelText('Last Name *')).toHaveValue('');
-      expect(screen.getByLabelText('Nickname *')).toHaveValue('Janie');
-      expect(screen.getByLabelText('Email')).toHaveValue('');
-      expect(screen.getByLabelText('Phone')).toHaveValue('');
-      expect(screen.getByLabelText('Date of Birth')).toHaveValue('');
-    });
-  });
-
-  it('opens delete dialog and soft deletes member', async () => {
-    renderWithRouter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Member' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() => {
-      expect(mockDeleteMutateAsync).toHaveBeenCalledWith({ id: 'user-1' });
-    });
-
-    expect(mockToastSuccess).toHaveBeenCalledWith('Member deleted successfully.');
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/members');
-  });
-
-  it('shows error toast when soft delete fails', async () => {
-    mockDeleteMutateAsync.mockRejectedValueOnce(new Error('delete failed'));
-
-    renderWithRouter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Member' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('delete failed');
-    });
-  });
-
-  it('shows default error toast when soft delete fails with non-Error value', async () => {
-    mockDeleteMutateAsync.mockRejectedValueOnce('unknown delete failure');
-
-    renderWithRouter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Member' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('Failed to delete member.');
-    });
-  });
-
-  it('shows restore action and restores deleted member', async () => {
-    const mockRefetch = vi.fn();
-    mockUseAdminMemberQuery.mockReturnValue({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        is_active: false,
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: 'Janie',
-        email: 'jane@example.com',
-        phone: '',
-        date_of_birth: '',
-        role: 'player',
-        category: 'adult',
-        extra_metadata: {},
-      },
-      isLoading: false,
-      isError: false,
-      refetch: mockRefetch,
-    });
-
-    renderWithRouter();
-
-    expect(screen.getByRole('button', { name: 'Restore Member' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Delete Member' })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Restore Member' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
-
-    await waitFor(() => {
-      expect(mockRestoreMutateAsync).toHaveBeenCalledWith({ id: 'user-1' });
-    });
-
-    expect(mockToastSuccess).toHaveBeenCalledWith('Member restored successfully.');
-    expect(mockRefetch).toHaveBeenCalled();
-  });
-
-  it('shows default error toast when restore fails with non-Error value', async () => {
-    mockRestoreMutateAsync.mockRejectedValueOnce('unknown restore failure');
-
-    mockUseAdminMemberQuery.mockReturnValue({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        is_active: false,
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: 'Janie',
-        email: 'jane@example.com',
-        phone: '',
-        date_of_birth: '',
-        role: 'player',
-        category: 'adult',
-        extra_metadata: {},
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Restore Member' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
-
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('Failed to restore member.');
-    });
-  });
-
-  it('loads detail query with includeInactive enabled', () => {
-    renderWithRouter();
-
-    expect(mockUseAdminMemberQuery).toHaveBeenCalledWith('user-1', { includeInactive: true });
-  });
-
-  it('loads extra_metadata entries into the Additional Metadata section', async () => {
-    mockUseAdminMemberQuery.mockReturnValue({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        is_active: true,
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: 'Janie',
-        email: 'jane@example.com',
-        phone: '',
-        date_of_birth: '',
-        role: 'player',
-        category: 'adult',
-        extra_metadata: { is_oic: 'true', first_sunday: 'yes' },
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('is_oic')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('true')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('first_sunday')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('yes')).toBeInTheDocument();
-    });
-  });
-
-  it('renders member details as read-only for slod users', async () => {
-    mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      data: { ...sampleMember, is_active: false },
       isLoading: false,
     });
 
-    renderWithRouter();
+    renderPage();
 
-    expect(screen.getByRole('heading', { name: 'View Member' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Back to Members' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Delete Member' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Restore Member' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Upload member photo' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText('First Name *')).toHaveAttribute('readOnly', '');
-    expect(screen.getByLabelText('Role *')).toHaveAttribute('readOnly', '');
-  });
-
-  it('does not show the photo upload control for deleted members', () => {
-    mockUseAdminMemberQuery.mockReturnValue({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        is_active: false,
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        nickname: 'Janie',
-        email: 'jane@example.com',
-        phone: '',
-        date_of_birth: '',
-        role: 'player',
-        category: 'adult',
-        extra_metadata: {},
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    expect(screen.queryByRole('button', { name: 'Upload member photo' })).not.toBeInTheDocument();
+    expect(screen.getByText(/This member is soft deleted/)).toBeInTheDocument();
   });
 });

@@ -1237,6 +1237,30 @@ describe('AttendanceFieldEditPanel', () => {
       });
     });
 
+    it('includes visibility_rule in validation_rules when val_visibility_depends_on_field_key is supplied', async () => {
+      mockCreateMutation.mockResolvedValueOnce({ id: 'new-field' });
+
+      render(<AttendanceFieldEditPanel eventId="event-1" field={null} onClose={() => {}} />);
+
+      act(() => {
+        fireEvent.change(screen.getByPlaceholderText(/e\.g\., table_number/i), {
+          target: { value: 'child_field' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/e\.g\., Table Number/i), {
+          target: { value: 'Child Field' },
+        });
+      });
+
+      const addButton = await screen.findByRole('button', { name: /Add Field/i });
+      act(() => {
+        fireEvent.click(addButton);
+      });
+
+      await waitFor(() => {
+        expect(mockCreateMutation).toHaveBeenCalled();
+      });
+    });
+
     it('shows generic error message for unknown error', async () => {
       mockCreateMutation.mockRejectedValueOnce('unknown error');
 

@@ -477,11 +477,32 @@ describe('useAttendanceViewControlsState', () => {
   it('returns errors for invalid custom filter JSON payloads', () => {
     const { result } = renderHook(() => useAttendanceViewControlsState([serviceOption]));
 
+    let emptyFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      emptyFailure = result.current.applyCustomFilterJson('   ');
+    });
+    expect(emptyFailure).toEqual({ ok: false, error: 'JSON input is empty.' });
+
     let parseFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
     act(() => {
       parseFailure = result.current.applyCustomFilterJson('{invalid json');
     });
     expect(parseFailure).toEqual({ ok: false, error: 'Invalid JSON format.' });
+
+    let invalidSchemaFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      invalidSchemaFailure = result.current.applyCustomFilterJson('12345');
+    });
+    expect(invalidSchemaFailure?.ok).toBe(false);
+
+    let noFiltersFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
+    act(() => {
+      noFiltersFailure = result.current.applyCustomFilterJson('{}');
+    });
+    expect(noFiltersFailure).toEqual({
+      ok: false,
+      error: 'No filters found. Provide filters/dynamicFilters or expression.',
+    });
 
     let unknownFieldFailure: ReturnType<typeof result.current.applyCustomFilterJson> | undefined;
     act(() => {
@@ -493,6 +514,20 @@ describe('useAttendanceViewControlsState', () => {
       ok: false,
       error: 'Unknown filter field: registration:unknown',
     });
+  });
+
+  it('handles invalid index or out of range for changeGroupingSort and moveGroupingLevel', () => {
+    const { result } = renderHook(() => useAttendanceViewControlsState([serviceOption]));
+
+    act(() => {
+      result.current.addGroupingLevel();
+      result.current.changeGroupingSort(-1, 'size_desc');
+      result.current.changeGroupingSort(10, 'size_desc');
+      result.current.moveGroupingLevel(0, 'up');
+      result.current.moveGroupingLevel(0, 'down');
+    });
+
+    expect(result.current.viewConfig.groupBy).toHaveLength(1);
   });
 
   it('supports expression payloads with nested group and not nodes', () => {

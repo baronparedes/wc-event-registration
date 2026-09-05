@@ -115,6 +115,65 @@ describe('attendance-views export', () => {
     );
   });
 
+  it('formats numeric answer values and handles missing answer values in export', () => {
+    const attendee = makeAttendee({
+      registration_id: 'reg-num',
+      registration_answers: [
+        {
+          event_field_id: 'ef-score',
+          field_type: 'number',
+          field_key: 'score',
+          label: 'Score',
+          answer_text: null,
+          answer_number: 100,
+        },
+        {
+          event_field_id: 'ef-empty',
+          field_type: 'text',
+          field_key: 'empty',
+          label: 'Empty',
+          answer_text: null,
+          answer_number: null,
+        },
+      ],
+    });
+
+    const result = buildAttendanceViewCsvExport({
+      eventId: 'event-num',
+      filteredAttendees: [attendee],
+      groups: [
+        {
+          key: 'all',
+          label: 'All attendees',
+          registrants: [
+            {
+              attendee_kind: 'registered',
+              registration_id: 'reg-num',
+              public_registration_id: null,
+              member_id: 'MID-001',
+              nickname: 'Num',
+              last_name: 'Person',
+              full_name: 'Num Person',
+              email: null,
+              role: null,
+              category: null,
+              check_in_status: 'not_checked_in',
+              answers: [],
+            },
+          ],
+        },
+      ],
+      visibleFields: [
+        { source: 'registration', fieldKey: 'score', label: 'Score' },
+        { source: 'registration', fieldKey: 'empty', label: 'Empty' },
+      ],
+      now: new Date('2026-07-22T00:00:00.000Z'),
+    });
+
+    const lines = result.csvText.split('\n');
+    expect(lines[1]).toContain('100,');
+  });
+
   it('includes only registration and attendance visible fields in csv columns', () => {
     const attendee = makeAttendee({
       registration_id: 'reg-101',

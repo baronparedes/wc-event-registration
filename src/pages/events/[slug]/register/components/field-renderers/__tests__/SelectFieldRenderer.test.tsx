@@ -461,6 +461,19 @@ describe('SelectFieldRenderer family', () => {
     expect(zeroCountLabel).toBeTruthy();
   });
 
+  it('splits option label with comma and renders secondary text', () => {
+    const toggleField = createField({
+      field_key: 'meal_slots_secondary_label',
+      field_type: 'multi_select_toggle',
+      options: [{ value: 'breakfast', label: 'Breakfast Slot, 8:00 AM - 9:00 AM' }],
+    });
+
+    render(<Harness field={toggleField} renderer="toggle" />);
+
+    expect(screen.getByText('Breakfast Slot')).toBeInTheDocument();
+    expect(screen.getByText('8:00 AM - 9:00 AM')).toBeInTheDocument();
+  });
+
   it('ignores forced yes/no clicks when option is not selected', () => {
     const toggleField = createField({
       field_key: 'meal_slots_toggle_guard',

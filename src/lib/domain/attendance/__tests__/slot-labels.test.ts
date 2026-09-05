@@ -25,6 +25,28 @@ describe('attendance slot labels', () => {
     ).toEqual(['AUG-30 9AM', 'AUG-31 9:30AM']);
   });
 
+  it('handles empty/null slot records, invalid slot dates, and deduplicates slots', () => {
+    expect(formatCompactSlotLabelsFromSlotRecords(null)).toEqual([]);
+    expect(formatCompactSlotLabelsFromSlotRecords([])).toEqual([]);
+    expect(formatCompactSlotLabelsFromSlotRecords([{ slot: 'invalid-date' }])).toEqual([]);
+
+    expect(
+      formatCompactSlotLabelsFromSlotRecords([
+        { slot: '2026-08-30T09:00:00+08:00' },
+        { slot: '2026-08-30T09:00:00+08:00' },
+      ]),
+    ).toEqual(['9AM']);
+
+    expect(
+      formatCompactCheckedInSlotLabels({
+        check_in_status: 'checked_in',
+        slot_records: [{ slot: '2026-08-30T09:00:00+08:00' }],
+      }),
+    ).toEqual(['9AM']);
+
+    expect(formatCompactCheckedInSlotLabels(null)).toEqual([]);
+  });
+
   it('returns empty for non-checked-in attendees in checked-in helper', () => {
     expect(
       formatCompactCheckedInSlotLabels({

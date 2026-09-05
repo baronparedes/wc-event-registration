@@ -257,6 +257,38 @@ describe('usePublicRegistrationDetailQuery', () => {
             display_order: 11,
           },
         },
+        {
+          id: faker.string.uuid(),
+          event_field_id: 'f13',
+          answer_text: null,
+          answer_number: null,
+          answer_boolean: null,
+          answer_date: null,
+          answer_json: 'single_json_str',
+          event_fields: {
+            id: 'f13',
+            field_key: 'json_string',
+            label: 'JSON String',
+            field_type: 'multi_select',
+            display_order: 12,
+          },
+        },
+        {
+          id: faker.string.uuid(),
+          event_field_id: 'f14',
+          answer_text: '2026-10-10',
+          answer_number: null,
+          answer_boolean: null,
+          answer_date: null,
+          answer_json: null,
+          event_fields: {
+            id: 'f14',
+            field_key: 'date_text',
+            label: 'Date Text',
+            field_type: 'date',
+            display_order: 13,
+          },
+        },
       ],
       error: null,
     });
@@ -284,6 +316,8 @@ describe('usePublicRegistrationDetailQuery', () => {
       { field_id: 'f10', answer: false },
       { field_id: 'f11', answer: '2026-07-22' },
       { field_id: 'f12', answer: ['Alpha', 'Beta'] },
+      { field_id: 'f13', answer: 'single_json_str' },
+      { field_id: 'f14', answer: '2026-10-10' },
     ]);
   });
 

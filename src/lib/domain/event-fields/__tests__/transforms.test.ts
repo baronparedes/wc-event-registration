@@ -625,6 +625,37 @@ describe('event-fields transforms', () => {
     ]);
   });
 
+  it('maps unique_key_component and visibility_rule in fieldToFormValues and toValidationRules', () => {
+    const values = fieldToFormValues(
+      makeAdminField({
+        validation_rules: {
+          unique_key_component: true,
+          visibility_rule: {
+            depends_on_field_key: 'parent_field',
+            equals_value: 'yes',
+          },
+        },
+      }),
+    );
+
+    expect(values.val_unique_key_component).toBe(true);
+    expect(values.val_visibility_depends_on_field_key).toBe('parent_field');
+    expect(values.val_visibility_equals_value).toBe('yes');
+
+    const rules = toValidationRules({
+      ...BASE_FORM_VALUES,
+      val_unique_key_component: true,
+      val_visibility_depends_on_field_key: '  parent_field  ',
+      val_visibility_equals_value: 'yes',
+    });
+
+    expect(rules.unique_key_component).toBe(true);
+    expect(rules.visibility_rule).toEqual({
+      depends_on_field_key: 'parent_field',
+      equals_value: 'yes',
+    });
+  });
+
   it('creates dynamic defaults by field type', () => {
     const defaults = createDynamicFieldDefaultValues([
       makePublicField({ field_key: 'accept_terms', field_type: 'checkbox' }),

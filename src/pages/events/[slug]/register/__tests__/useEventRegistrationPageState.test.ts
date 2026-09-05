@@ -654,4 +654,109 @@ describe('useEventRegistrationPageState', () => {
       expect(result.current.isRegistrationConfirmed).toBe(true);
     });
   });
+
+  it('resets to step one via resetToStepOne', () => {
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    act(() => {
+      result.current.setWizardStep(2);
+      result.current.resetToStepOne();
+    });
+
+    expect(result.current.activeWizardStep).toBe(1);
+    expect(memberLookupState.clearMember).toHaveBeenCalled();
+  });
+
+  it('handles scan buffer member lookup success and failure', async () => {
+    memberLookupState.handleLookupSubmit.mockResolvedValueOnce({
+      success: true,
+      mode: 'new_registration',
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    await act(async () => {
+      if (mockScanHandler.current) {
+        await mockScanHandler.current('CARD-999');
+      }
+    });
+
+    expect(memberLookupState.handleLookupSubmit).toHaveBeenCalledWith({ memberId: 'CARD-999' });
+    expect(result.current.activeWizardStep).toBe(2);
+  });
+
+  it('prefills field values for all supported event field types', () => {
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Jane Doe',
+      nickname: null,
+      first_name: 'Jane',
+      last_name: 'Doe',
+    };
+    memberLookupState.prefillResponses = {
+      f_text: 'Hello',
+      f_text_null: null,
+      f_select_null: null,
+      f_num: 123,
+      f_num_empty: '',
+      f_num_obj: { x: 1 } as unknown as number,
+      f_check_true: 'true',
+      f_check_false: 'false',
+      f_check_num: 1,
+      f_check_num0: 0,
+      f_check_str_invalid: 'maybe',
+      f_multi: ['a', 'b'],
+      f_multi_str: 'single',
+      f_multi_null: null,
+      f_toggle: { opt1: true, opt2: false, opt3: null },
+      f_toggle_invalid: 'invalid-toggle',
+    };
+
+    mockUsePublicEventFieldsQuery.mockReturnValue({
+      data: {
+        validFields: [
+          { id: '1', field_key: 'f_text', field_type: 'text', validation_rules: {} },
+          { id: '1b', field_key: 'f_text_null', field_type: 'text', validation_rules: {} },
+          { id: '1c', field_key: 'f_select_null', field_type: 'select', validation_rules: {} },
+          { id: '2', field_key: 'f_num', field_type: 'number', validation_rules: {} },
+          { id: '2b', field_key: 'f_num_empty', field_type: 'number', validation_rules: {} },
+          { id: '2c', field_key: 'f_num_obj', field_type: 'number', validation_rules: {} },
+          { id: '3', field_key: 'f_check_true', field_type: 'checkbox', validation_rules: {} },
+          { id: '4', field_key: 'f_check_false', field_type: 'checkbox', validation_rules: {} },
+          { id: '5', field_key: 'f_check_num', field_type: 'checkbox', validation_rules: {} },
+          { id: '5b', field_key: 'f_check_num0', field_type: 'checkbox', validation_rules: {} },
+          { id: '5c', field_key: 'f_check_str_invalid', field_type: 'checkbox', validation_rules: {} },
+          { id: '6', field_key: 'f_multi', field_type: 'multi_select', validation_rules: {} },
+          { id: '6b', field_key: 'f_multi_str', field_type: 'multi_select', validation_rules: {} },
+          { id: '6c', field_key: 'f_multi_null', field_type: 'multi_select', validation_rules: {} },
+          { id: '7', field_key: 'f_toggle', field_type: 'multi_select_toggle', validation_rules: {} },
+          { id: '7b', field_key: 'f_toggle_invalid', field_type: 'multi_select_toggle', validation_rules: {} },
+        ],
+        issues: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    expect(result.current.dynamicForm.getValues()).toEqual({
+      f_text: 'Hello',
+      f_text_null: '',
+      f_select_null: '',
+      f_num: 123,
+      f_num_empty: undefined,
+      f_num_obj: '[object Object]',
+      f_check_true: true,
+      f_check_false: false,
+      f_check_num: true,
+      f_check_num0: false,
+      f_check_str_invalid: true,
+      f_multi: ['a', 'b'],
+      f_multi_str: ['single'],
+      f_multi_null: [],
+      f_toggle: { opt1: true, opt2: false, opt3: null },
+      f_toggle_invalid: {},
+    });
+  });
 });
