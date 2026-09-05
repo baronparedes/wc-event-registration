@@ -34,11 +34,24 @@ This guide explains how to configure Google Sign-In for the application via Supa
 
 ## Step 2: Configure Google Provider in Supabase
 
-1. Open your **Supabase Dashboard** (or local Supabase Studio at `http://localhost:54323`).
+### Option A: Hosted Supabase Dashboard
+1. Open your **Supabase Dashboard** for your project.
 2. Go to **Authentication** > **Providers**.
 3. Locate **Google** in the list of OAuth providers and enable it.
-4. Paste your **Client ID** and **Client Secret** into the respective fields.
-5. Save changes.
+4. Paste your **Client ID** and **Client Secret** into the respective fields and save changes.
+
+### Option B: Local Supabase CLI Setup
+When using local Supabase CLI, provider settings are managed via `supabase/config.toml` or environment variables:
+
+1. In `supabase/config.toml`, add or update the `[auth.external.google]` section:
+   ```toml
+   [auth.external.google]
+   enabled = true
+   client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+   secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+   redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+   ```
+2. Set `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` in your `.env` / `.env.local` file or export them in your terminal before running `supabase start`.
 
 ---
 
