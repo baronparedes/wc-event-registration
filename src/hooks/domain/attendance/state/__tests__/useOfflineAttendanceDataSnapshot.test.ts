@@ -2,18 +2,26 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AdminEvent } from '@/lib/domain/events';
+
 import { useOfflineAttendanceDataSnapshot } from '../useOfflineAttendanceDataSnapshot';
 
 const sampleEvent: AdminEvent = {
   id: 'e1',
   title: 'Test Event',
   slug: 'test-event',
-  event_date: '2025-01-01',
-  event_start_time: '10:00',
-  event_end_time: '12:00',
-  location: 'Hall',
   description: 'Desc',
+  location: 'Hall',
+  starts_at: '2025-01-01T10:00:00Z',
+  ends_at: '2025-01-01T12:00:00Z',
+  registration_opens_at: null,
+  registration_closes_at: null,
   status: 'published',
+  duplicate_policy: 'block',
+  require_id_lookup: true,
+  registration_mode: 'open',
+  allow_public_registrations: false,
+  metadata: {},
+  created_by_admin_id: null,
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
 };
@@ -31,9 +39,10 @@ describe('useOfflineAttendanceDataSnapshot', () => {
         event: sampleEvent,
         settings: {
           event_id: 'e1',
-          is_offline_check_in_enabled: true,
-          is_offline_attendance_enabled: true,
-          created_at: '2025-01-01',
+          attendance_enabled: true,
+          timeslot_enabled: false,
+          enforce_check_in_event_window: false,
+          timeslots: [],
           updated_at: '2025-01-01',
         },
         attendanceFields: [],

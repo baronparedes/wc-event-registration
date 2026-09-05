@@ -4,20 +4,25 @@ import { describe, expect, it } from 'vitest';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 import type { AdminEventField } from '@/lib/domain/event-fields';
+
 import { useAttendanceDataViewOptions } from '../useAttendanceDataViewOptions';
 
 const sampleAttendee: AttendeeSearchResult = {
   registration_id: 'r1',
-  attendee_kind: 'member',
+  public_registration_id: null,
+  user_id: 'u1',
+  attendee_kind: 'registered',
   member_id: 'M1',
   nickname: 'Jane',
   last_name: 'Doe',
+  full_name: 'Jane Doe',
   email: 'jane@example.com',
   role: 'Leader',
   category: 'Adult',
+  registration_status: 'submitted',
+  submitted_at: '2025-01-01',
   check_in_status: 'checked_in',
-  check_in_time: '2025-01-01',
-  answers: [],
+  official_check_in_time: '2025-01-01',
   registration_answers: [],
   attendance_answers: [],
 };

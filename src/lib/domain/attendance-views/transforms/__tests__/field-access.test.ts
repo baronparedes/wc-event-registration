@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
-import type { DynamicFieldRef } from '../types';
+import type { DynamicFieldRef } from '@/lib/domain/attendance-views';
+
 import {
   collectDynamicFieldOptions,
   fieldFilterValues,
@@ -25,6 +26,7 @@ describe('field-access', () => {
   it('fieldFilterValues parses multi_select, multi_select_toggle, and simple answer values', () => {
     expect(
       fieldFilterValues({
+        event_field_id: 'ef1',
         field_key: 'ms',
         field_type: 'multi_select',
         label: 'MS',
@@ -35,6 +37,7 @@ describe('field-access', () => {
 
     expect(
       fieldFilterValues({
+        event_field_id: 'ef2',
         field_key: 'mst',
         field_type: 'multi_select_toggle',
         label: 'MST',
@@ -45,6 +48,7 @@ describe('field-access', () => {
 
     expect(
       fieldFilterValues({
+        event_field_id: 'ef3',
         field_key: 'num',
         field_type: 'number',
         label: 'Num',
@@ -55,6 +59,7 @@ describe('field-access', () => {
 
     expect(
       fieldFilterValues({
+        event_field_id: 'ef4',
         field_key: 'empty',
         field_type: 'text',
         label: 'Empty',
@@ -67,19 +72,39 @@ describe('field-access', () => {
   it('getAnswerSummaries and findAnswerSummary return correct answers for registration and attendance', () => {
     const attendee: AttendeeSearchResult = {
       registration_id: 'r1',
-      attendee_kind: 'member',
+      public_registration_id: null,
+      user_id: 'u1',
+      attendee_kind: 'registered',
       member_id: 'm1',
       nickname: 'A',
       last_name: 'B',
+      full_name: 'A B',
       email: 'a@b.com',
+      role: 'member',
+      category: 'adult',
+      registration_status: 'submitted',
+      submitted_at: '2025-01-01',
       check_in_status: 'checked_in',
-      check_in_time: null,
-      answers: [],
+      official_check_in_time: '2025-01-01',
       registration_answers: [
-        { field_key: 'reg_field', field_type: 'text', label: 'Reg', answer_text: 'reg_val', answer_number: null },
+        {
+          event_field_id: 'rf1',
+          field_key: 'reg_field',
+          field_type: 'text',
+          label: 'Reg',
+          answer_text: 'reg_val',
+          answer_number: null,
+        },
       ],
       attendance_answers: [
-        { field_key: 'att_field', field_type: 'text', label: 'Att', answer_text: 'att_val', answer_number: null },
+        {
+          attendance_field_id: 'af1',
+          field_key: 'att_field',
+          field_type: 'text',
+          label: 'Att',
+          answer_text: 'att_val',
+          answer_number: null,
+        },
       ],
     };
 
@@ -104,47 +129,104 @@ describe('field-access', () => {
   it('findFieldGroupingValues handles role, category, multi_select, multi_select_toggle, and text/number answers', () => {
     const attendee: AttendeeSearchResult = {
       registration_id: 'r1',
-      attendee_kind: 'member',
+      public_registration_id: null,
+      user_id: 'u1',
+      attendee_kind: 'registered',
       member_id: 'm1',
       nickname: 'A',
       last_name: 'B',
+      full_name: 'A B',
       email: 'a@b.com',
-      check_in_status: 'not_checked_in',
-      check_in_time: null,
-      answers: [],
       role: 'Leader',
       category: 'Youth',
+      registration_status: 'submitted',
+      submitted_at: '2025-01-01',
+      check_in_status: 'not_checked_in',
+      official_check_in_time: null,
+      attendance_answers: [],
       registration_answers: [
-        { field_key: 'ms', field_type: 'multi_select', label: 'MS', answer_text: JSON.stringify(['A']), answer_number: null },
-        { field_key: 'mst', field_type: 'multi_select_toggle', label: 'MST', answer_text: JSON.stringify({ x: true }), answer_number: null },
-        { field_key: 'txt', field_type: 'text', label: 'Txt', answer_text: 'Hello', answer_number: null },
+        {
+          event_field_id: 'rf1',
+          field_key: 'ms',
+          field_type: 'multi_select',
+          label: 'MS',
+          answer_text: JSON.stringify(['A']),
+          answer_number: null,
+        },
+        {
+          event_field_id: 'rf2',
+          field_key: 'mst',
+          field_type: 'multi_select_toggle',
+          label: 'MST',
+          answer_text: JSON.stringify({ x: true }),
+          answer_number: null,
+        },
+        {
+          event_field_id: 'rf3',
+          field_key: 'txt',
+          field_type: 'text',
+          label: 'Txt',
+          answer_text: 'Hello',
+          answer_number: null,
+        },
       ],
     };
 
-    expect(findFieldGroupingValues(attendee, { source: 'role', fieldKey: 'role', label: 'Role' })).toEqual(['Leader']);
-    expect(findFieldGroupingValues(attendee, { source: 'category', fieldKey: 'category', label: 'Category' })).toEqual(['Youth']);
-    expect(findFieldGroupingValues({ ...attendee, role: null, category: null }, { source: 'role', fieldKey: 'role', label: 'Role' })).toEqual([]);
-    expect(findFieldGroupingValues({ ...attendee, role: null, category: null }, { source: 'category', fieldKey: 'category', label: 'Category' })).toEqual([]);
+    expect(
+      findFieldGroupingValues(attendee, { source: 'role', fieldKey: 'role', label: 'Role' }),
+    ).toEqual(['Leader']);
+    expect(
+      findFieldGroupingValues(attendee, {
+        source: 'category',
+        fieldKey: 'category',
+        label: 'Category',
+      }),
+    ).toEqual(['Youth']);
 
-    expect(findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'ms', label: 'MS' })).toEqual(['A']);
-    expect(findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'mst', label: 'MST' })).toEqual(['x']);
-    expect(findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'txt', label: 'Txt' })).toEqual(['Hello']);
-    expect(findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'none', label: 'None' })).toEqual([]);
+    expect(
+      findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'ms', label: 'MS' }),
+    ).toEqual(['A']);
+    expect(
+      findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'mst', label: 'MST' }),
+    ).toEqual(['x']);
+    expect(
+      findFieldGroupingValues(attendee, { source: 'registration', fieldKey: 'txt', label: 'Txt' }),
+    ).toEqual(['Hello']);
+    expect(
+      findFieldGroupingValues(attendee, {
+        source: 'registration',
+        fieldKey: 'none',
+        label: 'None',
+      }),
+    ).toEqual([]);
   });
 
   it('collectDynamicFieldOptions aggregates and sorts seeded and attendee dynamic fields correctly', () => {
     const attendee1: AttendeeSearchResult = {
       registration_id: 'r1',
-      attendee_kind: 'member',
+      public_registration_id: null,
+      user_id: 'u1',
+      attendee_kind: 'registered',
       member_id: 'm1',
       nickname: 'A',
       last_name: 'B',
+      full_name: 'A B',
       email: 'a@b.com',
+      role: 'member',
+      category: 'adult',
+      registration_status: 'submitted',
+      submitted_at: '2025-01-01',
       check_in_status: 'checked_in',
-      check_in_time: null,
-      answers: [],
+      official_check_in_time: '2025-01-01',
       registration_answers: [
-        { field_key: 't1', field_type: 'text', label: 'B Label', answer_text: 'Val2', answer_number: null },
+        {
+          event_field_id: 'rf1',
+          field_key: 't1',
+          field_type: 'text',
+          label: 'B Label',
+          answer_text: 'Val2',
+          answer_number: null,
+        },
       ],
       attendance_answers: [],
     };
@@ -152,7 +234,14 @@ describe('field-access', () => {
     const attendee2: AttendeeSearchResult = {
       ...attendee1,
       registration_answers: [
-        { field_key: 't1', field_type: 'text', label: 'B Label', answer_text: 'Val1', answer_number: null },
+        {
+          event_field_id: 'rf1',
+          field_key: 't1',
+          field_type: 'text',
+          label: 'B Label',
+          answer_text: 'Val1',
+          answer_number: null,
+        },
       ],
     };
 
@@ -176,7 +265,9 @@ describe('field-access', () => {
   it('getVisibleFieldValue formats member, role, category, and answer values properly', () => {
     const attendee: AttendeeSearchResult = {
       registration_id: 'r1',
-      attendee_kind: 'member',
+      public_registration_id: null,
+      user_id: 'u1',
+      attendee_kind: 'registered',
       member_id: 'M123',
       email: 'm123@example.com',
       full_name: 'Jane Doe',
@@ -184,31 +275,85 @@ describe('field-access', () => {
       last_name: 'Doe',
       role: 'Staff',
       category: 'Adult',
+      registration_status: 'submitted',
+      submitted_at: '2025-01-01',
       check_in_status: 'checked_in',
-      check_in_time: null,
-      answers: [],
+      official_check_in_time: '2025-01-01',
+      attendance_answers: [],
       registration_answers: [
-        { field_key: 'f_txt', field_type: 'text', label: 'Txt', answer_text: 'Text Value', answer_number: null },
-        { field_key: 'f_num', field_type: 'number', label: 'Num', answer_text: null, answer_number: 99 },
-        { field_key: 'f_empty', field_type: 'text', label: 'Empty', answer_text: '   ', answer_number: null },
+        {
+          event_field_id: 'rf1',
+          field_key: 'f_txt',
+          field_type: 'text',
+          label: 'Txt',
+          answer_text: 'Text Value',
+          answer_number: null,
+        },
+        {
+          event_field_id: 'rf2',
+          field_key: 'f_num',
+          field_type: 'number',
+          label: 'Num',
+          answer_text: null,
+          answer_number: 99,
+        },
+        {
+          event_field_id: 'rf3',
+          field_key: 'f_empty',
+          field_type: 'text',
+          label: 'Empty',
+          answer_text: '   ',
+          answer_number: null,
+        },
       ],
     };
 
-    expect(getVisibleFieldValue(undefined, { source: 'member', fieldKey: 'email', label: '' })).toBe('—');
-    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'member_id', label: '' })).toBe('M123');
-    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'email', label: '' })).toBe('m123@example.com');
-    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'full_name', label: '' })).toBe('Jane Doe');
-    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'check_in_status', label: '' })).toBe('Checked In');
-    expect(getVisibleFieldValue({ ...attendee, check_in_status: 'not_checked_in' }, { source: 'member', fieldKey: 'check_in_status', label: '' })).toBe('Not Checked In');
-    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'checked_in_slot', label: '' })).toBe('—');
-    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'unknown', label: '' })).toBe('—');
+    expect(
+      getVisibleFieldValue(undefined, { source: 'member', fieldKey: 'email', label: '' }),
+    ).toBe('—');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'member_id', label: '' }),
+    ).toBe('M123');
+    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'email', label: '' })).toBe(
+      'm123@example.com',
+    );
+    expect(
+      getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'full_name', label: '' }),
+    ).toBe('Jane Doe');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'check_in_status', label: '' }),
+    ).toBe('Checked In');
+    expect(
+      getVisibleFieldValue(
+        { ...attendee, check_in_status: 'not_checked_in' },
+        { source: 'member', fieldKey: 'check_in_status', label: '' },
+      ),
+    ).toBe('Not Checked In');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'checked_in_slot', label: '' }),
+    ).toBe('—');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'unknown', label: '' }),
+    ).toBe('—');
 
-    expect(getVisibleFieldValue(attendee, { source: 'role', fieldKey: 'role', label: '' })).toBe('Staff');
-    expect(getVisibleFieldValue(attendee, { source: 'category', fieldKey: 'category', label: '' })).toBe('Adult');
+    expect(getVisibleFieldValue(attendee, { source: 'role', fieldKey: 'role', label: '' })).toBe(
+      'Staff',
+    );
+    expect(
+      getVisibleFieldValue(attendee, { source: 'category', fieldKey: 'category', label: '' }),
+    ).toBe('Adult');
 
-    expect(getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_txt', label: '' })).toBe('Text Value');
-    expect(getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_num', label: '' })).toBe('99');
-    expect(getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_empty', label: '' })).toBe('—');
-    expect(getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_missing', label: '' })).toBe('—');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_txt', label: '' }),
+    ).toBe('Text Value');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_num', label: '' }),
+    ).toBe('99');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_empty', label: '' }),
+    ).toBe('—');
+    expect(
+      getVisibleFieldValue(attendee, { source: 'registration', fieldKey: 'f_missing', label: '' }),
+    ).toBe('—');
   });
 });

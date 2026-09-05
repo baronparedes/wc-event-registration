@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeSearchResult, RegistrantAttendanceRow } from '@/lib/domain/attendance';
@@ -10,28 +10,36 @@ import { AttendanceDataTableView } from '../AttendanceDataTableView';
 
 const sampleRegistrant: RegistrantAttendanceRow = {
   registration_id: 'reg-1',
-  attendee_kind: 'member',
+  public_registration_id: null,
+  attendee_kind: 'registered',
   member_id: 'm-1',
   nickname: 'Jane',
   last_name: 'Doe',
+  full_name: 'Jane Doe',
   email: 'jane@example.com',
   check_in_status: 'checked_in',
-  check_in_time: '2023-01-01T10:00:00Z',
   answers: [],
-  created_at: '2023-01-01',
 };
 
 const sampleAttendee: AttendeeSearchResult = {
   registration_id: 'reg-1',
-  attendee_kind: 'member',
+  public_registration_id: null,
+  user_id: 'u-1',
+  attendee_kind: 'registered',
   member_id: 'm-1',
   nickname: 'Jane',
   last_name: 'Doe',
+  full_name: 'Jane Doe',
   email: 'jane@example.com',
+  role: 'member',
+  category: 'adult',
+  registration_status: 'submitted',
+  submitted_at: '2023-01-01T10:00:00Z',
   check_in_status: 'checked_in',
-  check_in_time: '2023-01-01T10:00:00Z',
-  answers: [],
-  slot_records: [{ slot: '2026-07-25T10:00:00Z' }],
+  official_check_in_time: '2023-01-01T10:00:00Z',
+  registration_answers: [],
+  attendance_answers: [],
+  slot_records: [{ slot: '2026-07-25T10:00:00Z', recorded_at: '2026-07-25T10:00:00Z' }],
   avatar_object_key: 'avatar.png',
 };
 
@@ -41,7 +49,7 @@ const visibleFields: DynamicFieldRef[] = [
   { source: 'member', fieldKey: 'check_in_status', label: 'Status', fieldType: 'text' },
   { source: 'member', fieldKey: 'member_id', label: 'Member ID', fieldType: 'text' },
   { source: 'member', fieldKey: 'checked_in_slot', label: 'Slot', fieldType: 'text' },
-  { source: 'custom', fieldKey: 'favorite_color', label: 'Color', fieldType: 'color_picker' },
+  { source: 'attendance', fieldKey: 'favorite_color', label: 'Color', fieldType: 'color_picker' },
 ];
 
 function renderWithQueryClient(ui: React.ReactElement) {

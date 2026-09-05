@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeViewConfig } from '@/lib/domain/attendance-views';
+
 import { AttendanceViewControls } from '../AttendanceViewControls';
 
 const defaultViewConfig: AttendeeViewConfig = {
@@ -36,14 +37,38 @@ describe('AttendanceViewControls', () => {
         roleOptions={[]}
         categoryOptions={[]}
         dynamicFieldOptions={[
-          { source: 'registration', fieldKey: 'service', label: 'Service', token: 'registration:service', values: [] },
-          { source: 'attendance', fieldKey: 'area', label: 'Area', token: 'attendance:area', values: [] },
+          {
+            source: 'registration',
+            fieldKey: 'service',
+            label: 'Service',
+            token: 'registration:service',
+            values: [],
+          },
+          {
+            source: 'attendance',
+            fieldKey: 'area',
+            label: 'Area',
+            token: 'attendance:area',
+            values: [],
+          },
         ]}
         registrationDynamicFieldOptions={[
-          { source: 'registration', fieldKey: 'service', label: 'Service', token: 'registration:service', values: [] },
+          {
+            source: 'registration',
+            fieldKey: 'service',
+            label: 'Service',
+            token: 'registration:service',
+            values: [],
+          },
         ]}
         attendanceDynamicFieldOptions={[
-          { source: 'attendance', fieldKey: 'area', label: 'Area', token: 'attendance:area', values: [] },
+          {
+            source: 'attendance',
+            fieldKey: 'area',
+            label: 'Area',
+            token: 'attendance:area',
+            values: [],
+          },
         ]}
         memberDynamicFieldOptions={[]}
         dynamicFilterFieldToken=""

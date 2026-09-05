@@ -103,7 +103,9 @@ describe('AdminAttendanceDataPage', () => {
     mockUseOfflineAttendanceDataSnapshot.mockReturnValue({
       event: { id: 'event-1', title: 'Sunday Service' },
       settings: { attendance_enabled: true },
-      attendanceFields: [{ id: 'f1', field_key: 'table_no', label: 'Table No', field_type: 'number' }],
+      attendanceFields: [
+        { id: 'f1', field_key: 'table_no', label: 'Table No', field_type: 'number' },
+      ],
       registrationFields: [],
       attendees: [],
       isUsingSnapshot: false,
@@ -157,7 +159,9 @@ describe('AdminAttendanceDataPage', () => {
     mockUseOfflineAttendanceDataSnapshot.mockReturnValueOnce({
       event: { id: 'event-1', title: 'Sunday Service' },
       settings: { attendance_enabled: true },
-      attendanceFields: [{ id: 'f1', field_key: 'table_no', label: 'Table No', field_type: 'number' }],
+      attendanceFields: [
+        { id: 'f1', field_key: 'table_no', label: 'Table No', field_type: 'number' },
+      ],
       registrationFields: [],
       attendees: [],
       isUsingSnapshot: true,

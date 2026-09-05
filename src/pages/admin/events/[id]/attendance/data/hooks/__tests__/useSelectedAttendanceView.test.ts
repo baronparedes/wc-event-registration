@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useSelectedAttendanceView } from '../useSelectedAttendanceView';
@@ -33,6 +33,7 @@ describe('useSelectedAttendanceView', () => {
             groupBy: [],
             visibleFields: [],
           },
+          sort_order: 1,
           created_at: '2025-01-01',
           updated_at: '2025-01-01',
         },

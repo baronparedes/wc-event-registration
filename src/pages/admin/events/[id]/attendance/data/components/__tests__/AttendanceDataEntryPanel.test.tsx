@@ -767,7 +767,9 @@ describe('AttendanceDataEntryPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save Data' }));
 
     await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalledWith('Select at least one option for all required multi-select fields.');
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Select at least one option for all required multi-select fields.',
+      );
     });
 
     // Open multi select dropdown and select an option
@@ -776,7 +778,9 @@ describe('AttendanceDataEntryPanel', () => {
 
     // Clear selection
     fireEvent.click(screen.getByRole('button', { name: 'Clear selections' }));
-    expect(screen.getByRole('button', { name: 'Required Multi' })).toHaveTextContent('Select option(s)');
+    expect(screen.getByRole('button', { name: 'Required Multi' })).toHaveTextContent(
+      'Select option(s)',
+    );
   });
 
   it('shows an empty-state message when no attendance fields are configured', () => {

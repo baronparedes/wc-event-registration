@@ -40,7 +40,9 @@ describe('attendance slot labels', () => {
     expect(
       formatCompactCheckedInSlotLabels({
         check_in_status: 'checked_in',
-        slot_records: [{ slot: '2026-08-30T09:00:00+08:00' }],
+        slot_records: [
+          { slot: '2026-08-30T09:00:00+08:00', recorded_at: '2026-08-30T09:00:00+08:00' },
+        ],
       }),
     ).toEqual(['9AM']);
 
@@ -52,7 +54,7 @@ describe('attendance slot labels', () => {
       formatCompactCheckedInSlotLabels({
         check_in_status: 'not_checked_in',
         slot_records: [
-          { slot: '2026-08-30T09:00:00+08:00', recorded_at: '2026-08-30T09:02:00+08:00' },
+          { slot: '2026-08-30T09:00:00+08:00', recorded_at: '2026-08-30T09:00:00+08:00' },
         ],
       }),
     ).toEqual([]);

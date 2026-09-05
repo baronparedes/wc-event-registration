@@ -150,7 +150,10 @@ describe('useQueuedCheckInAttendeeMutation', () => {
 
   it('throws when enqueueCheckIn is called without eventId', () => {
     const { result } = renderHookWithClient(() =>
-      useQueuedCheckInAttendeeMutation(undefined, { refreshCache: vi.fn(), updateAttendee: vi.fn() }),
+      useQueuedCheckInAttendeeMutation(undefined, {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
     );
 
     expect(() => {
@@ -165,11 +168,14 @@ describe('useQueuedCheckInAttendeeMutation', () => {
     mockCaller.mockImplementation(() => new Promise(() => {})); // Never resolves to keep pending
 
     const { result } = renderHookWithClient(() =>
-      useQueuedCheckInAttendeeMutation('event-1', { refreshCache: vi.fn(), updateAttendee: vi.fn() }),
+      useQueuedCheckInAttendeeMutation('event-1', {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
     );
 
-    let outcome1;
-    let outcome2;
+    let outcome1: { queued: boolean } | undefined;
+    let outcome2: { queued: boolean } | undefined;
 
     act(() => {
       outcome1 = result.current.enqueueCheckIn(
@@ -185,8 +191,8 @@ describe('useQueuedCheckInAttendeeMutation', () => {
       );
     });
 
-    expect(outcome1.queued).toBe(true);
-    expect(outcome2.queued).toBe(false);
+    expect(outcome1?.queued).toBe(true);
+    expect(outcome2?.queued).toBe(false);
   });
 
   it('handles non-retryable error (e.g. Bad Request or rejected status)', async () => {
@@ -252,7 +258,10 @@ describe('useQueuedCheckInAttendeeMutation', () => {
     Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
 
     const { result } = renderHookWithClient(() =>
-      useQueuedCheckInAttendeeMutation('event-1', { refreshCache: vi.fn(), updateAttendee: vi.fn() }),
+      useQueuedCheckInAttendeeMutation('event-1', {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
     );
 
     act(() => {
@@ -271,10 +280,13 @@ describe('useQueuedCheckInAttendeeMutation', () => {
     vi.stubGlobal('crypto', undefined);
 
     const { result } = renderHookWithClient(() =>
-      useQueuedCheckInAttendeeMutation('event-1', { refreshCache: vi.fn(), updateAttendee: vi.fn() }),
+      useQueuedCheckInAttendeeMutation('event-1', {
+        refreshCache: vi.fn(),
+        updateAttendee: vi.fn(),
+      }),
     );
 
-    let outcome;
+    let outcome: { item: { id: string } } | undefined;
     act(() => {
       outcome = result.current.enqueueCheckIn(
         { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
@@ -282,7 +294,7 @@ describe('useQueuedCheckInAttendeeMutation', () => {
       );
     });
 
-    expect(outcome.item.id).toMatch(/^queued-check-in-/);
+    expect(outcome?.item.id).toMatch(/^queued-check-in-/);
 
     vi.unstubAllGlobals();
   });

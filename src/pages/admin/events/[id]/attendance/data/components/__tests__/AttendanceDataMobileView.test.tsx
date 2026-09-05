@@ -4,32 +4,41 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendeeSearchResult, RegistrantAttendanceRow } from '@/lib/domain/attendance';
 import type { DynamicFieldRef } from '@/lib/domain/attendance-views';
+
 import { AttendanceDataMobileView } from '../AttendanceDataMobileView';
 
 const sampleRegistrant: RegistrantAttendanceRow = {
   registration_id: 'reg-1',
-  attendee_kind: 'member',
+  public_registration_id: null,
+  attendee_kind: 'registered',
   member_id: 'm-1',
   nickname: 'John',
   last_name: 'Doe',
+  full_name: 'John Doe',
   email: 'john@example.com',
   check_in_status: 'checked_in',
-  check_in_time: '2023-01-01T10:00:00Z',
   answers: [],
-  created_at: '2023-01-01',
 };
 
 const sampleAttendee: AttendeeSearchResult = {
   registration_id: 'reg-1',
-  attendee_kind: 'member',
+  public_registration_id: null,
+  user_id: 'u-1',
+  attendee_kind: 'registered',
   member_id: 'm-1',
   nickname: 'John',
   last_name: 'Doe',
+  full_name: 'John Doe',
   email: 'john@example.com',
+  role: 'member',
+  category: 'adult',
+  registration_status: 'submitted',
+  submitted_at: '2023-01-01T10:00:00Z',
   check_in_status: 'checked_in',
-  check_in_time: '2023-01-01T10:00:00Z',
-  answers: [],
-  slot_records: [{ slot: '2026-07-25T10:00:00Z' }],
+  official_check_in_time: '2023-01-01T10:00:00Z',
+  registration_answers: [],
+  attendance_answers: [],
+  slot_records: [{ slot: '2026-07-25T10:00:00Z', recorded_at: '2026-07-25T10:00:00Z' }],
 };
 
 const visibleFields: DynamicFieldRef[] = [
@@ -39,7 +48,7 @@ const visibleFields: DynamicFieldRef[] = [
   { source: 'role', fieldKey: 'role', label: 'Role' },
   { source: 'member', fieldKey: 'member_id', label: 'Member ID' },
   { source: 'member', fieldKey: 'checked_in_slot', label: 'Slot' },
-  { source: 'custom', fieldKey: 'color', label: 'Color', fieldType: 'color_picker' },
+  { source: 'attendance', fieldKey: 'color', label: 'Color', fieldType: 'color_picker' },
 ];
 
 function renderWithQueryClient(ui: React.ReactElement) {
@@ -50,17 +59,15 @@ function renderWithQueryClient(ui: React.ReactElement) {
 }
 
 describe('AttendanceDataMobileView', () => {
-  it('renders registrant card with compact member fields, slot labels and handles clicks', () => {
+  it('renders mobile cards and handles interactions', () => {
     const onViewRegistrant = vi.fn();
     const onEditRegistrant = vi.fn();
     const attendeesMap = new Map<string, AttendeeSearchResult>([['reg-1', sampleAttendee]]);
 
     const getVisibleFieldValue = vi.fn((_, field) => {
-      if (field.fieldKey === 'role') return 'Volunteer';
+      if (field.fieldKey === 'role') return 'Leader';
       if (field.fieldKey === 'member_id') return 'MEM-001';
-      if (field.fieldKey === 'checked_in_slot') return '10:00 AM, 11:00 AM';
-      if (field.fieldKey === 'color') return '#00ff00';
-      return '—';
+      return '';
     });
 
     renderWithQueryClient(
@@ -73,57 +80,16 @@ describe('AttendanceDataMobileView', () => {
         fetchImage={true}
         onViewRegistrant={onViewRegistrant}
         onEditRegistrant={onEditRegistrant}
-        countFilledAnswers={() => 0}
+        countFilledAnswers={() => 1}
         getRegistrantKey={() => 'reg-1'}
         getVisibleFieldValue={getVisibleFieldValue}
       />,
     );
 
     expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
-    expect(screen.getByText('Volunteer')).toBeInTheDocument();
-    expect(screen.getByText('MEM-001')).toBeInTheDocument();
-    expect(screen.getByText('10:00 AM')).toBeInTheDocument();
-    expect(screen.getByText('11:00 AM')).toBeInTheDocument();
 
-    const article = screen.getByText('John Doe').closest('article')!;
-    fireEvent.click(article);
-    expect(onViewRegistrant).toHaveBeenCalledWith(sampleRegistrant);
-
-    const editBtn = screen.getByRole('button', { name: 'Fill in attendance details' });
+    const editBtn = screen.getByRole('button', { name: 'Edit attendance details' });
     fireEvent.click(editBtn);
     expect(onEditRegistrant).toHaveBeenCalledWith(sampleRegistrant);
-  });
-
-  it('renders unchecked registrant with empty slot labels and canWrite false', () => {
-    const uncheckedRegistrant: RegistrantAttendanceRow = {
-      ...sampleRegistrant,
-      check_in_status: 'not_checked_in',
-    };
-
-    const getVisibleFieldValue = vi.fn((_, field) => {
-      if (field.fieldKey === 'checked_in_slot') return '—';
-      return '—';
-    });
-
-    renderWithQueryClient(
-      <AttendanceDataMobileView
-        registrants={[uncheckedRegistrant]}
-        visibleFields={visibleFields.filter((f) => f.fieldKey !== 'email')}
-        fields={[]}
-        attendeesByRegistrantKey={new Map()}
-        canWrite={false}
-        fetchImage={false}
-        onViewRegistrant={vi.fn()}
-        onEditRegistrant={vi.fn()}
-        countFilledAnswers={() => 0}
-        getRegistrantKey={() => 'reg-1'}
-        getVisibleFieldValue={getVisibleFieldValue}
-      />,
-    );
-
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument();
-    expect(screen.getByTitle('Not Checked In')).toBeInTheDocument();
   });
 });

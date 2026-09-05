@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AdminMember } from '@/lib/domain/members';
+
 import { AdminMemberMilestonesPage } from '../index';
 
 const { mockUseAdminMembersMilestonesQuery, mockUseIsMobileViewport } = vi.hoisted(() => ({
@@ -22,13 +23,17 @@ vi.mock('@/hooks/utils', () => ({
 const sampleMember: AdminMember = {
   id: 'm1',
   member_id: 'MEM-001',
+  avatar_object_key: null,
+  is_active: true,
   first_name: 'John',
   last_name: 'Doe',
   nickname: 'Johnny',
   full_name: 'John Doe',
   email: 'john@example.com',
+  phone: '123-456',
   date_of_birth: '1990-05-15',
-  status: 'active',
+  role: 'member',
+  category: 'adult',
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
   extra_metadata: {
@@ -73,7 +78,9 @@ describe('AdminMemberMilestonesPage', () => {
     });
 
     renderComponent();
-    expect(screen.getByText('Failed to load member milestones. Please refresh.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Failed to load member milestones. Please refresh.'),
+    ).toBeInTheDocument();
   });
 
   it('renders empty state when there are no members', () => {
