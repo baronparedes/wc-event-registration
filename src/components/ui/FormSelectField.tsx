@@ -28,6 +28,8 @@ type FormSelectFieldProps = {
   helperText?: string;
   labelAdornment?: ReactNode;
   selectClassName?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 };
 
 /** Shared labeled custom dropdown field with consistent styling and error rendering. */
@@ -47,9 +49,12 @@ export function FormSelectField(props: FormSelectFieldProps) {
     helperText,
     labelAdornment,
     selectClassName,
+    searchable = false,
+    searchPlaceholder = 'Search options',
   } = props;
 
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { containerRef, opensUpward, prepareOpenDirection } = useDropdownPlacement({
     isOpen,
     optionCount: options.length,
@@ -59,6 +64,14 @@ export function FormSelectField(props: FormSelectFieldProps) {
   const selectedOption = options.find((o) => !o.isGroupHeader && o.value === value);
   const displayLabel = selectedOption?.label ?? placeholder;
   const isPlaceholderShown = !selectedOption;
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredOptions =
+    searchable && normalizedSearchQuery
+      ? options.filter(
+          (option) =>
+            option.isGroupHeader || option.label.toLowerCase().includes(normalizedSearchQuery),
+        )
+      : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,11 +79,15 @@ export function FormSelectField(props: FormSelectFieldProps) {
     function handleOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setSearchQuery('');
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
     }
 
     document.addEventListener('mousedown', handleOutside);
@@ -83,6 +100,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
 
   function handleSelect(optionValue: string) {
     setIsOpen(false);
+    setSearchQuery('');
     onChange?.(optionValue);
     if (registration) {
       registration.onChange({
@@ -117,6 +135,8 @@ export function FormSelectField(props: FormSelectFieldProps) {
           onClick={() => {
             if (!isOpen) {
               prepareOpenDirection();
+            } else {
+              setSearchQuery('');
             }
             setIsOpen((prev) => !prev);
           }}
@@ -140,6 +160,19 @@ export function FormSelectField(props: FormSelectFieldProps) {
               opensUpward ? 'bottom-full mb-1' : 'top-full mt-1'
             }`}
           >
+            {searchable && (
+              <li className="sticky top-0 z-10 list-none bg-background px-3 pb-2 pt-1">
+                <input
+                  type="search"
+                  aria-label={searchPlaceholder}
+                  placeholder={searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onClick={(event) => event.stopPropagation()}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/30"
+                />
+              </li>
+            )}
             {placeholder && (
               <li
                 role="option"
@@ -150,7 +183,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
                 {placeholder}
               </li>
             )}
-            {options.map((option, idx) =>
+            {filteredOptions.map((option, idx) =>
               option.isGroupHeader ? (
                 <li
                   key={`header-${idx}`}
@@ -179,6 +212,11 @@ export function FormSelectField(props: FormSelectFieldProps) {
                 </li>
               ),
             )}
+            {searchable &&
+              normalizedSearchQuery &&
+              filteredOptions.every((option) => option.isGroupHeader) && (
+                <li className="px-3.5 py-2.5 text-sm text-muted">No options found</li>
+              )}
           </ul>
         )}
       </div>

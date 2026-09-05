@@ -63,6 +63,24 @@ describe('FormSelectField', () => {
     expect(screen.getByRole('option', { name: 'Published' })).toBeInTheDocument();
   });
 
+  it('filters options when searchable mode is enabled', () => {
+    render(
+      <FormSelectField
+        options={[
+          { value: 'draft', label: 'Draft' },
+          { value: 'published', label: 'Published' },
+        ]}
+        searchable
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'pub' } });
+
+    expect(screen.queryByRole('option', { name: 'Draft' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Published' })).toBeInTheDocument();
+  });
+
   it('renders error state styling and disabled mode', () => {
     render(<Harness error="Status is required" disabled />);
 
