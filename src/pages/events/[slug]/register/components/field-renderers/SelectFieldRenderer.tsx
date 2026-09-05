@@ -210,6 +210,7 @@ export function SelectFieldRenderer({
       registration={dynamicForm.register(field.field_key)}
       value={currentValue}
       placeholder="Select an option"
+      searchable={field.options.length > 10}
       options={field.options.map((option: { value: string; label: string }) => {
         const isUnavailable = isOptionUnavailableForRole(
           field,

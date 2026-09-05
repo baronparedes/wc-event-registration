@@ -113,6 +113,33 @@ describe('SelectFieldRenderer family', () => {
     expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toBeInTheDocument();
   });
 
+  it('allows users to search configured select options', () => {
+    const field = createField({
+      field_key: 'food_search',
+      options: [
+        { value: 'option-1', label: 'Option 1' },
+        { value: 'option-2', label: 'Option 2' },
+        { value: 'option-3', label: 'Option 3' },
+        { value: 'option-4', label: 'Option 4' },
+        { value: 'option-5', label: 'Option 5' },
+        { value: 'option-6', label: 'Option 6' },
+        { value: 'option-7', label: 'Option 7' },
+        { value: 'option-8', label: 'Option 8' },
+        { value: 'option-9', label: 'Option 9' },
+        { value: 'option-10', label: 'Option 10' },
+        { value: 'nonveg', label: 'Non-Vegetarian' },
+      ],
+    });
+
+    render(<Harness field={field} renderer="select" />);
+
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'non' } });
+
+    expect(screen.queryByRole('option', { name: 'Vegetarian' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Non-Vegetarian' })).toBeInTheDocument();
+  });
+
   it('shows configured role allotment breakdown when role remaining data is unavailable', () => {
     const field = createField({
       field_key: 'meal_type',
