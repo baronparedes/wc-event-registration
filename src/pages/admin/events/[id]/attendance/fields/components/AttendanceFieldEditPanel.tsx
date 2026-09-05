@@ -20,7 +20,6 @@ import {
   attendanceFieldTypeHasTextValidation,
 } from '@/lib/domain/attendance-fields';
 import type { AttendanceField, AttendanceFieldTypeEnum } from '@/lib/domain/attendance-fields';
-
 import { VisibilityRuleSection } from '@/pages/admin/events/[id]/fields/components/VisibilityRuleSection';
 
 import { AttendanceFieldTypeSelector } from './AttendanceFieldTypeSelector';
@@ -101,9 +100,7 @@ export function AttendanceFieldEditPanel({
 }: AttendanceFieldEditPanelProps) {
   const isEditing = field !== null;
   const { data: allFields = [] } = useAttendanceFieldsQuery(eventId);
-  const availableParentFields = allFields.filter(
-    (f) => f.field_key !== (field?.field_key ?? ''),
-  );
+  const availableParentFields = allFields.filter((f) => f.field_key !== (field?.field_key ?? ''));
 
   const createMutation = useCreateAttendanceFieldMutation();
   const updateMutation = useUpdateAttendanceFieldMutation();
@@ -139,8 +136,7 @@ export function AttendanceFieldEditPanel({
           val_max_date: field.validation_rules?.max_date ?? '',
           val_visibility_depends_on_field_key:
             field.validation_rules?.visibility_rule?.depends_on_field_key ?? '',
-          val_visibility_equals_value:
-            field.validation_rules?.visibility_rule?.equals_value ?? '',
+          val_visibility_equals_value: field.validation_rules?.visibility_rule?.equals_value ?? '',
         }
       : {
           field_key: '',
@@ -166,7 +162,8 @@ export function AttendanceFieldEditPanel({
   const { fields: optionFields, append, remove } = useFieldArray({ control, name: 'options' });
   const selectedFieldType = useWatch({ control, name: 'field_type' }) as AttendanceFieldTypeEnum;
   const dependsOnFieldKey =
-    (useWatch({ control, name: 'val_visibility_depends_on_field_key' }) as string | undefined) ?? '';
+    (useWatch({ control, name: 'val_visibility_depends_on_field_key' }) as string | undefined) ??
+    '';
   const showOptions = attendanceFieldTypeHasOptions(selectedFieldType);
 
   function handleTypeSelect(type: AttendanceFieldTypeEnum) {

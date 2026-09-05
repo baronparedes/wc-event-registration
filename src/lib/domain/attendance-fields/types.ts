@@ -1,3 +1,5 @@
+import type { FieldVisibilityRule } from '@/lib/domain/field-visibility';
+
 export type AttendanceFieldType =
   | 'text'
   | 'textarea'
@@ -20,8 +22,6 @@ export type AttendanceFieldOption = {
   toggle_label?: string;
   toggle_default?: boolean;
 };
-
-import type { FieldVisibilityRule } from '@/lib/domain/field-visibility';
 
 export type { FieldVisibilityRule };
 

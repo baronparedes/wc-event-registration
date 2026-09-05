@@ -60,9 +60,7 @@ export function EventFieldEditPanel({
   const isCapacityLocked = isArchived;
 
   const { data: allFields = [] } = useAdminEventFieldsQuery(eventId);
-  const availableParentFields = allFields.filter(
-    (f) => f.field_key !== (field?.field_key ?? ''),
-  );
+  const availableParentFields = allFields.filter((f) => f.field_key !== (field?.field_key ?? ''));
 
   const createMutation = useCreateEventFieldMutation();
   const updateMutation = useUpdateEventFieldMutation();
@@ -87,7 +85,8 @@ export function EventFieldEditPanel({
   const selectedApplicability =
     (useWatch({ control, name: 'applicability' }) as EventFieldApplicability | undefined) ?? 'both';
   const dependsOnFieldKey =
-    (useWatch({ control, name: 'val_visibility_depends_on_field_key' }) as string | undefined) ?? '';
+    (useWatch({ control, name: 'val_visibility_depends_on_field_key' }) as string | undefined) ??
+    '';
   const showOptions = fieldTypeHasOptions(selectedFieldType);
   const showTextValidation = fieldTypeHasTextValidation(selectedFieldType);
   const showNumberValidation = fieldTypeHasNumberValidation(selectedFieldType);

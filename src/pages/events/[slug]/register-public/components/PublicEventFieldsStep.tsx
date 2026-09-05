@@ -1,18 +1,16 @@
 import { useEffect, useRef } from 'react';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Info } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
 import { WizardStep } from '@/components/ui/WizardStep';
 import {
-  filterVisibleFieldValues,
-  isFieldVisible,
   type DynamicFieldResponseValues,
   type PublicEventField,
+  filterVisibleFieldValues,
+  isFieldVisible,
 } from '@/lib/domain';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
@@ -152,7 +150,7 @@ export function PublicEventFieldsStep({
     defaultValues: {},
   });
 
-  const formValues = dynamicForm.watch();
+  const formValues = useWatch({ control: dynamicForm.control });
   const visibleFields = fields.filter((f) => isFieldVisible(f, fields, formValues));
 
   function handleFormSubmit(data: DynamicFieldResponseValues) {

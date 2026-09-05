@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { describe, expect, it } from 'vitest';
 
 import { VisibilityRuleSection } from '../VisibilityRuleSection';
@@ -18,14 +18,17 @@ function VisibilityRuleSectionHarness(props: {
     defaultDependsOn = '',
   } = props;
 
-  const { register, watch } = useForm({
+  const { control, register } = useForm({
     defaultValues: {
       val_visibility_depends_on_field_key: defaultDependsOn,
       val_visibility_equals_value: 'Others',
     },
   });
 
-  const dependsOnFieldKey = watch('val_visibility_depends_on_field_key');
+  const dependsOnFieldKey = useWatch({
+    control,
+    name: 'val_visibility_depends_on_field_key',
+  });
 
   return (
     <VisibilityRuleSection

@@ -15,12 +15,12 @@ import { useMemberLookupState } from '@/hooks/domain/members';
 import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout, useRfidAutoFocus, useScanBuffer } from '@/hooks/utils';
 import {
-  filterVisibleFieldValues,
-  isFieldVisible,
   type DynamicFieldResponseValues,
   type EventFieldType,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
+  filterVisibleFieldValues,
+  isFieldVisible,
 } from '@/lib/domain';
 import { logger } from '@/lib/infrastructure';
 
@@ -363,10 +363,6 @@ export function useEventRegistrationPageState() {
       {},
     );
   }, [slotAvailabilityQuery.data?.fields]);
-  const responseSchema = useMemo(
-    () => buildDynamicFieldResponseSchema(activeFields),
-    [activeFields],
-  );
 
   useEffect(() => {
     const defaults = createDynamicFieldDefaultValues(activeFields);
@@ -529,7 +525,6 @@ export function useEventRegistrationPageState() {
       scrollToDynamicFieldsStep();
     },
     [
-      responseSchema,
       slug,
       memberLookup,
       availability,

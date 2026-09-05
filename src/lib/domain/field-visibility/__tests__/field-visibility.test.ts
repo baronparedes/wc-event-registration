@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  filterVisibleFieldValues,
-  isFieldVisible,
-  type FieldWithVisibility,
-} from '../index';
+import { type FieldWithVisibility, filterVisibleFieldValues, isFieldVisible } from '../index';
 
 describe('isFieldVisible', () => {
   const fields: FieldWithVisibility[] = [
@@ -34,21 +30,13 @@ describe('isFieldVisible', () => {
   });
 
   it('returns true when parent field value matches (case insensitive and trimmed)', () => {
-    expect(
-      isFieldVisible(fields[1], fields, { field_a: '  OTHERS  ' }),
-    ).toBe(true);
-    expect(
-      isFieldVisible(fields[1], fields, { field_a: 'others' }),
-    ).toBe(true);
+    expect(isFieldVisible(fields[1], fields, { field_a: '  OTHERS  ' })).toBe(true);
+    expect(isFieldVisible(fields[1], fields, { field_a: 'others' })).toBe(true);
   });
 
   it('returns false when parent field value does not match', () => {
-    expect(
-      isFieldVisible(fields[1], fields, { field_a: 'Something Else' }),
-    ).toBe(false);
-    expect(
-      isFieldVisible(fields[1], fields, { field_a: '' }),
-    ).toBe(false);
+    expect(isFieldVisible(fields[1], fields, { field_a: 'Something Else' })).toBe(false);
+    expect(isFieldVisible(fields[1], fields, { field_a: '' })).toBe(false);
   });
 
   it('handles array values (multi-select / checkboxes)', () => {

@@ -26,10 +26,11 @@ function DynamicFieldsStepCardHarness(props: {
   return (
     <DynamicFieldsStepCard
       matchedMember={{
-        id: 'member-1',
         full_name: 'Jane Doe',
         role: 'Member',
-        member_id: 'MEM-001',
+        first_name: 'Jane',
+        last_initial: 'D',
+        member_token: 'MEM-001',
       }}
       isLoadingFields={false}
       isFieldsError={false}

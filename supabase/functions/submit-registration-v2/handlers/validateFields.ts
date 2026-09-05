@@ -24,11 +24,7 @@ export function validateFields(
   }
 
   for (const [fieldKey, field] of fieldMap) {
-    if (
-      field.is_required &&
-      isFieldVisible(field, fields, responses) &&
-      !(fieldKey in responses)
-    ) {
+    if (field.is_required && isFieldVisible(field, fields, responses) && !(fieldKey in responses)) {
       errors.push({ fieldKey, message: `${field.label} is required.` });
     }
   }

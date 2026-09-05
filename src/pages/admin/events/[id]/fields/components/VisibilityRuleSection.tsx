@@ -26,7 +26,10 @@ export function VisibilityRuleSection({
     >
       <div className="space-y-4">
         <div>
-          <label htmlFor="val_visibility_depends_on_field_key" className="block text-xs font-medium text-text">
+          <label
+            htmlFor="val_visibility_depends_on_field_key"
+            className="block text-xs font-medium text-text"
+          >
             Depends On Field
           </label>
           <select
@@ -51,7 +54,10 @@ export function VisibilityRuleSection({
 
         {hasParentSelected && (
           <div>
-            <label htmlFor="val_visibility_equals_value" className="block text-xs font-medium text-text">
+            <label
+              htmlFor="val_visibility_equals_value"
+              className="block text-xs font-medium text-text"
+            >
               When Value Equals
             </label>
             <input
@@ -63,7 +69,8 @@ export function VisibilityRuleSection({
               className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:text-gray-500"
             />
             <p className="mt-1 text-xs text-muted">
-              This field will only be shown when the parent field equals this value (case-insensitive & trimmed).
+              This field will only be shown when the parent field equals this value
+              (case-insensitive & trimmed).
             </p>
           </div>
         )}

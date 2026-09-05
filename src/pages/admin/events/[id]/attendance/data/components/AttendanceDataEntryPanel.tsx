@@ -9,12 +9,12 @@ import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDro
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import { useUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance';
 import {
-  isFieldVisible,
   type AttendanceAnswer,
   type AttendanceAnswerEntry,
   type AttendanceAnswerSummary,
   type AttendeeKind,
   type RegistrantAttendanceRow,
+  isFieldVisible,
 } from '@/lib/domain';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 
@@ -67,7 +67,7 @@ function getExistingAnswerValue(
 
 function buildFormValuesByKey(
   fields: AttendanceField[],
-  valuesByFieldId: AnswerFormValues,
+  valuesByFieldId: Partial<AnswerFormValues>,
 ): Record<string, unknown> {
   const byKey: Record<string, unknown> = {};
   for (const field of fields) {
@@ -189,9 +189,7 @@ export function AttendanceDataEntryPanel({
   const formValues = useWatch({ control });
 
   const formValuesByKey = buildFormValuesByKey(fields, formValues);
-  const visibleFields = fields.filter((field) =>
-    isFieldVisible(field, fields, formValuesByKey),
-  );
+  const visibleFields = fields.filter((field) => isFieldVisible(field, fields, formValuesByKey));
 
   function getMultiSelectSelectedLabel(field: AttendanceField): string {
     const selectedValues = Array.isArray(formValues[field.id])

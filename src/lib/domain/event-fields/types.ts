@@ -1,3 +1,5 @@
+import type { FieldVisibilityRule } from '@/lib/domain/field-visibility';
+
 export type EventFieldType =
   | 'text'
   | 'textarea'
@@ -29,8 +31,6 @@ export type AdminEventFieldOption = {
   toggle_label?: string;
   toggle_default?: boolean;
 };
-
-import type { FieldVisibilityRule } from '@/lib/domain/field-visibility';
 
 export type { FieldVisibilityRule };
 

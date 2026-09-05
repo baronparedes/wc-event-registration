@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { RegistrantAttendanceRow } from '@/lib';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 
 import { AttendanceDataEntryPanel } from '../AttendanceDataEntryPanel';
@@ -61,11 +62,13 @@ describe('Conditional Visibility in Attendance Data Entry', () => {
     },
   ];
 
-  const registrant = {
+  const registrant: RegistrantAttendanceRow = {
     registration_id: 'reg-1',
     public_registration_id: null,
     full_name: 'John Smith',
-    attendee_kind: 'member' as const,
+    nickname: 'John',
+    last_name: 'Smith',
+    attendee_kind: 'registered',
     member_id: 'MEM-002',
     email: 'john@example.com',
     answers: [],
@@ -116,15 +119,23 @@ describe('Conditional Visibility in Attendance Data Entry', () => {
           answers: [
             {
               id: 'ans-1',
+              registration_id: 'reg-1',
+              public_registration_id: null,
               attendance_field_id: 'att-field-1',
               answer_text: 'General',
               answer_number: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             },
             {
               id: 'ans-2',
+              registration_id: 'reg-1',
+              public_registration_id: null,
               attendance_field_id: 'att-field-2',
               answer_text: 'Table 5',
               answer_number: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             },
           ],
         }}
