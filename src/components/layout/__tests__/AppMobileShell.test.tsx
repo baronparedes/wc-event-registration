@@ -6,14 +6,21 @@ import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
 
 import { AppMobileShell } from '../AppMobileShell';
 
-const { mockUseAdminAuthQuery, mockMutateAsync, mockToastSuccess, mockToastError } = vi.hoisted(
-  () => ({
-    mockUseAdminAuthQuery: vi.fn(),
-    mockMutateAsync: vi.fn(),
-    mockToastSuccess: vi.fn(),
-    mockToastError: vi.fn(),
-  }),
-);
+const {
+  mockUseAdminAuthQuery,
+  mockUseCurrentProfileQuery,
+  mockUseMemberAvatarQuery,
+  mockMutateAsync,
+  mockToastSuccess,
+  mockToastError,
+} = vi.hoisted(() => ({
+  mockUseAdminAuthQuery: vi.fn(),
+  mockUseCurrentProfileQuery: vi.fn(),
+  mockUseMemberAvatarQuery: vi.fn(),
+  mockMutateAsync: vi.fn(),
+  mockToastSuccess: vi.fn(),
+  mockToastError: vi.fn(),
+}));
 
 vi.mock('sonner', () => ({
   toast: {
@@ -25,6 +32,11 @@ vi.mock('sonner', () => ({
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => mockUseAdminAuthQuery(),
   useAdminLogoutMutation: () => ({ mutateAsync: mockMutateAsync }),
+}));
+
+vi.mock('@/hooks/domain/members', () => ({
+  useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
+  useMemberAvatarQuery: (...args: unknown[]) => mockUseMemberAvatarQuery(...args),
 }));
 
 vi.mock('../AppDrawerNavigation', () => ({
@@ -81,6 +93,8 @@ describe('AppMobileShell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMutateAsync.mockResolvedValue(undefined);
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
+    mockUseMemberAvatarQuery.mockReturnValue({ data: null });
   });
 
   it('shows drawer actions for unauthenticated users', () => {
@@ -96,7 +110,7 @@ describe('AppMobileShell', () => {
     );
   });
 
-  it('shows events entry in drawer', () => {
+  it('shows events entry and profile badge in drawer and header', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
         isAuthenticated: true,
@@ -104,13 +118,21 @@ describe('AppMobileShell', () => {
         session: { user: { email: 'admin@example.com' } },
       },
     });
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: {
+        id: 'user-1',
+        full_name: 'John Doe',
+        avatar_object_key: 'avatars/john.jpg',
+      },
+    });
 
     renderShell('/');
+
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
     expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute('href', ROUTE_PATHS.home);
-    expect(screen.getByText('Signed in as admin@example.com (admin)')).toBeInTheDocument();
   });
 
   it('uses minimized shell chrome on kiosk check-in routes', () => {

@@ -1,14 +1,15 @@
 import { useState } from 'react';
 
 import { ChevronDown, Menu } from 'lucide-react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import brandLogo from '@/assets/wc-hub-brand-white.png';
 import { ROUTE_PATHS, TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
 import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
+import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
-import { Button } from '../ui';
+import { Avatar, Button } from '../ui';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 import { AppFooter } from './AppFooter';
 
@@ -16,14 +17,11 @@ function getCurrentUserLabel(email?: string | null, phone?: string | null, userI
   return email ?? phone ?? userId ?? null;
 }
 
-function getSignedInText(userLabel: string, role?: string | null) {
-  return role ? `Signed in as ${userLabel} (${role})` : `Signed in as ${userLabel}`;
-}
-
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: adminAuth } = useAdminAuthQuery();
+  const { data: currentProfile } = useCurrentProfileQuery();
   const logoutMutation = useAdminLogoutMutation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMinimizedShell = isMinimizedAppShellRoute(location.pathname);
@@ -33,6 +31,10 @@ export function AppShell() {
     adminAuth?.session?.user?.id,
   );
   const hasSession = Boolean(adminAuth?.session);
+
+  const displayName = currentProfile?.full_name ?? currentUserLabel;
+  const avatarObjectKey = currentProfile?.avatar_object_key;
+  const roleLabel = adminAuth?.adminRole ? `(${adminAuth.adminRole})` : '';
 
   async function handleLogout() {
     try {
@@ -45,14 +47,41 @@ export function AppShell() {
     }
   }
 
+  const userBadge = hasSession && displayName && (
+    <div className="flex items-center gap-2">
+      {currentProfile ? (
+        <Link
+          to={ROUTE_PATHS.profile}
+          className="flex items-center gap-2 transition hover:opacity-80"
+          title="View Profile"
+        >
+          <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
+          <div className="max-w-[15rem] truncate text-xs text-muted">
+            <span className="font-semibold text-text">{displayName}</span>
+            {roleLabel && <span className="ml-1 font-normal text-muted">{roleLabel}</span>}
+          </div>
+        </Link>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
+          <div className="max-w-[15rem] truncate text-xs text-muted">
+            <span className="font-semibold text-text">{displayName}</span>
+            {roleLabel && <span className="ml-1 font-normal text-muted">{roleLabel}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       {isMinimizedShell ? (
-        <div className="sticky top-0 z-30 flex justify-center px-2 pt-1 print:hidden">
+        <div className="sticky top-0 z-30 flex items-center justify-between px-3 pt-1.5 print:hidden">
+          {userBadge ? userBadge : <div />}
           <button
             type="button"
             aria-label="Open app navigation drawer"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/95 px-2.5 py-1 text-[11px] font-semibold text-text shadow-sm backdrop-blur transition hover:bg-primary/10"
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/95 px-2.5 py-1 text-[11px] font-semibold text-text shadow-xs backdrop-blur transition hover:bg-primary/10"
             onClick={() => setDrawerOpen(true)}
           >
             <ChevronDown className="h-4 w-4" />
@@ -67,11 +96,7 @@ export function AppShell() {
             </div>
 
             <div className="flex items-center gap-3">
-              {hasSession && currentUserLabel && (
-                <p className="max-w-[20rem] truncate text-xs text-muted">
-                  {getSignedInText(currentUserLabel, adminAuth?.adminRole)}
-                </p>
-              )}
+              {userBadge}
               <Button
                 type="button"
                 aria-label="Open app navigation drawer"

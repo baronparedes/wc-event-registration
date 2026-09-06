@@ -20,13 +20,14 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
+import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 
 type AppDrawerNavigationProps = {
@@ -82,10 +83,6 @@ function DrawerNavLink({
   );
 }
 
-function getSignedInText(userLabel: string, role?: AdminRole | null) {
-  return role ? `Signed in as ${userLabel} (${role})` : `Signed in as ${userLabel}`;
-}
-
 export function AppDrawerNavigation({
   isOpen,
   onClose,
@@ -106,6 +103,9 @@ export function AppDrawerNavigation({
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
+  const displayName = currentProfile?.full_name ?? currentUserLabel;
+  const avatarObjectKey = currentProfile?.avatar_object_key;
+  const roleLabel = adminRole ? `(${adminRole})` : '';
 
   return (
     <>
@@ -308,10 +308,31 @@ export function AppDrawerNavigation({
                 </NavLink>
               </div>
 
-              {currentUserLabel && (
-                <p className="mb-3 truncate text-xs text-muted">
-                  {getSignedInText(currentUserLabel, adminRole)}
-                </p>
+              {displayName && (
+                <div className="mb-3">
+                  {hasProfileAccess ? (
+                    <Link
+                      to={ROUTE_PATHS.profile}
+                      onClick={onClose}
+                      className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 transition hover:bg-primary/10"
+                      title="View Profile"
+                    >
+                      <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
+                      <div className="min-w-0 flex-1 truncate text-xs">
+                        <p className="truncate font-semibold text-text">{displayName}</p>
+                        {roleLabel && <p className="truncate text-muted">{roleLabel}</p>}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2">
+                      <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
+                      <div className="min-w-0 flex-1 truncate text-xs">
+                        <p className="truncate font-semibold text-text">{displayName}</p>
+                        {roleLabel && <p className="truncate text-muted">{roleLabel}</p>}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
               <Button
                 type="button"
