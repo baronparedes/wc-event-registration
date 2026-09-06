@@ -74,6 +74,8 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             allowNameLookup={allowNameLookup}
             isLookupPending={isLookupPending}
             onSelectMethod={setLookupMethod}
+            allowPublicRegistration={allowPublicRegistration}
+            slug={slug}
           />
         )}
 
@@ -187,18 +189,6 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
 
         {/* Guest/non-member registration option */}
       </WizardStep>
-
-      {slug && allowPublicRegistration && (
-        <div className="flex items-center justify-center pt-4">
-          <Button
-            type="button"
-            onClick={() => navigate(`/events/${slug}/register-public`)}
-            className="text-xl transition hover:text-primary/80 w-full"
-          >
-            Join the event as a Guest
-          </Button>
-        </div>
-      )}
     </>
   );
 }
