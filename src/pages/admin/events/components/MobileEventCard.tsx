@@ -1,12 +1,13 @@
 import { useState } from 'react';
 
 import {
-  CalendarCheck,
   ClipboardList,
   Edit,
-  Form,
+  FormInput,
+  MapPin,
   MoreHorizontal,
-  Settings,
+  QrCode,
+  UserCheck,
   Users,
 } from 'lucide-react';
 
@@ -40,26 +41,32 @@ export function MobileEventCard({
       <div className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-text">{event.title}</h2>
+            <h2 className="line-clamp-2 text-base font-semibold leading-snug text-text">
+              {event.title}
+            </h2>
             <p className="mt-0.5 truncate text-xs text-muted">{event.slug}</p>
+            <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted">
+              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{event.location}</span>
+            </p>
           </div>
           <EventStatusBadge status={event.status} />
         </div>
 
-        <dl className="grid grid-cols-3 py-2.5">
-          <div className="pr-2">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 py-2.5 sm:grid-cols-3 sm:gap-0">
+          <div className="pr-0 sm:pr-2">
             <dt className="text-xs text-muted">Starts</dt>
             <dd className="mt-0.5 text-sm font-medium text-text">
               {formatDateOnly(event.starts_at)}
             </dd>
           </div>
-          <div className="px-2">
+          <div className="px-0 sm:px-2">
             <dt className="text-xs text-muted">Reg. mode</dt>
             <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
               {event.registration_mode}
             </dd>
           </div>
-          <div className="pl-2">
+          <div className="col-span-2 pl-0 sm:col-span-1 sm:pl-2">
             <dt className="text-xs text-muted">Policy</dt>
             <dd className="mt-0.5 truncate text-sm font-medium text-text">
               <DuplicatePolicyLabel policy={event.duplicate_policy} />
@@ -119,7 +126,7 @@ export function MobileEventCard({
             {canWrite && (
               <DropdownMenuItem to={toRoute('adminEventAttendance', { id: event.id })}>
                 <span className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
+                  <UserCheck className="h-4 w-4" />
                   Attendance settings
                 </span>
               </DropdownMenuItem>
@@ -127,7 +134,7 @@ export function MobileEventCard({
             {canWrite && (
               <DropdownMenuItem to={toRoute('adminEventFields', { id: event.id })}>
                 <span className="flex items-center gap-2">
-                  <Form className="h-4 w-4" />
+                  <FormInput className="h-4 w-4" />
                   Registration fields
                 </span>
               </DropdownMenuItem>
@@ -143,7 +150,7 @@ export function MobileEventCard({
             {canAccessCheckIn && (
               <DropdownMenuItem to={toRoute('adminAttendanceCheckIn', { id: event.id })}>
                 <span className="flex items-center gap-2">
-                  <CalendarCheck className="h-4 w-4" />
+                  <QrCode className="h-4 w-4" />
                   Check-in
                 </span>
               </DropdownMenuItem>

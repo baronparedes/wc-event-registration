@@ -117,6 +117,7 @@ describe('AdminEventsPage', () => {
             id: 'event-1',
             title: 'Sample Event',
             slug: 'sample-event',
+            location: 'Main Hall',
             status: 'draft',
             duplicate_policy: 'block',
             registration_mode: 'open',
@@ -141,6 +142,8 @@ describe('AdminEventsPage', () => {
 
     expect(screen.getByText('Sample Event')).toBeInTheDocument();
     expect(screen.getByText('sample-event')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Location' })).toBeInTheDocument();
+    expect(screen.getByText('Main Hall')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument();
   });
