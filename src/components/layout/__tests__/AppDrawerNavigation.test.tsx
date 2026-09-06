@@ -60,12 +60,13 @@ describe('AppDrawerNavigation', () => {
     expect(screen.queryByLabelText('Close navigation drawer overlay')).not.toBeInTheDocument();
   });
 
-  it('shows sign-in link for unauthenticated users and hides My Profile link', () => {
+  it('shows Hub link and sign-in link for unauthenticated users and hides My Profile link', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ isAuthenticated: false, hasSession: false, adminRole: null });
 
+    expect(screen.getByRole('link', { name: 'Hub' })).toHaveAttribute('href', ROUTE_PATHS.home);
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.login,

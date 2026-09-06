@@ -1,4 +1,25 @@
-import { X } from 'lucide-react';
+import { type ComponentType } from 'react';
+
+import {
+  BarChart3,
+  Calendar,
+  ClipboardList,
+  FileText,
+  FormInput,
+  Globe,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  QrCode,
+  Settings,
+  ShieldCheck,
+  Sliders,
+  User,
+  UserCheck,
+  Users,
+  UserX,
+  X,
+} from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
@@ -19,7 +40,7 @@ type AppDrawerNavigationProps = {
 };
 
 const linkClassName =
-  'block rounded-md px-3 py-2 text-sm text-text transition hover:bg-primary/10 hover:text-text';
+  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-text transition hover:bg-primary/10 hover:text-text';
 const activeLinkClassName = 'bg-primary/10 font-semibold text-text';
 
 function getEventIdFromPath(pathname: string): string | null {
@@ -38,14 +59,25 @@ function SectionHeading({ label }: { label: string }) {
   return <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>;
 }
 
-function DrawerNavLink({ to, label, onClose }: { to: string; label: string; onClose: () => void }) {
+function DrawerNavLink({
+  to,
+  label,
+  icon: Icon,
+  onClose,
+}: {
+  to: string;
+  label: string;
+  icon?: ComponentType<{ className?: string }>;
+  onClose: () => void;
+}) {
   return (
     <NavLink
       to={to}
       onClick={onClose}
       className={({ isActive }) => `${linkClassName} ${isActive ? activeLinkClassName : ''}`.trim()}
     >
-      {label}
+      {Icon && <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />}
+      <span>{label}</span>
     </NavLink>
   );
 }
@@ -108,12 +140,27 @@ export function AppDrawerNavigation({
           <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
             <div className="space-y-2">
               <SectionHeading label="General" />
-              <DrawerNavLink to={ROUTE_PATHS.home} label="Events" onClose={onClose} />
+              <DrawerNavLink
+                to={ROUTE_PATHS.home}
+                label="Hub"
+                icon={LayoutDashboard}
+                onClose={onClose}
+              />
               {hasProfileAccess && (
-                <DrawerNavLink to={ROUTE_PATHS.profile} label="My Profile" onClose={onClose} />
+                <DrawerNavLink
+                  to={ROUTE_PATHS.profile}
+                  label="My Profile"
+                  icon={User}
+                  onClose={onClose}
+                />
               )}
               {!hasSession && (
-                <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
+                <DrawerNavLink
+                  to={ROUTE_PATHS.login}
+                  label="Sign In"
+                  icon={LogIn}
+                  onClose={onClose}
+                />
               )}
             </div>
 
@@ -125,6 +172,7 @@ export function AppDrawerNavigation({
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminEvents}
                       label="Manage Events"
+                      icon={Calendar}
                       onClose={onClose}
                     />
                   )}
@@ -132,6 +180,7 @@ export function AppDrawerNavigation({
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminMembers}
                       label="Manage Members"
+                      icon={Users}
                       onClose={onClose}
                     />
                   )}
@@ -149,6 +198,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminEventDetail', { id: eventId })}
                     label="Manage Event"
+                    icon={Settings}
                     onClose={onClose}
                   />
                 )}
@@ -156,6 +206,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminEventFields', { id: eventId })}
                     label="Manage Registration Fields"
+                    icon={FormInput}
                     onClose={onClose}
                   />
                 )}
@@ -163,6 +214,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminRegistrations', { id: eventId })}
                     label="Manage Registrations"
+                    icon={ClipboardList}
                     onClose={onClose}
                   />
                 )}
@@ -170,6 +222,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminPublicRegistrations', { id: eventId })}
                     label="Manage Public Registrations"
+                    icon={Globe}
                     onClose={onClose}
                   />
                 )}
@@ -177,6 +230,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminEventAttendance', { id: eventId })}
                     label="Manage Attendance"
+                    icon={UserCheck}
                     onClose={onClose}
                   />
                 )}
@@ -190,6 +244,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminAttendanceCheckIn', { id: eventId })}
                     label="Check-In"
+                    icon={QrCode}
                     onClose={onClose}
                   />
                 )}
@@ -197,6 +252,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminAttendanceFields', { id: eventId })}
                     label="Attendance Fields"
+                    icon={Sliders}
                     onClose={onClose}
                   />
                 )}
@@ -204,6 +260,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminAttendanceData', { id: eventId })}
                     label="Attendee Details"
+                    icon={Users}
                     onClose={onClose}
                   />
                 )}
@@ -211,6 +268,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminAttendanceDashboard', { id: eventId })}
                     label="Attendance Dashboard"
+                    icon={BarChart3}
                     onClose={onClose}
                   />
                 )}
@@ -218,6 +276,7 @@ export function AppDrawerNavigation({
                   <DrawerNavLink
                     to={toRoute('adminAttendanceUnregisteredMembers', { id: eventId })}
                     label="Unregistered Members"
+                    icon={UserX}
                     onClose={onClose}
                   />
                 )}
@@ -231,9 +290,10 @@ export function AppDrawerNavigation({
                 <NavLink
                   to={ROUTE_PATHS.privacy}
                   onClick={onClose}
-                  className="transition hover:text-text hover:underline hover:underline-offset-2"
+                  className="inline-flex items-center gap-1 transition hover:text-text hover:underline hover:underline-offset-2"
                 >
-                  Privacy Policy
+                  <ShieldCheck className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+                  <span>Privacy Policy</span>
                 </NavLink>
                 <span aria-hidden="true" className="text-border">
                   •
@@ -241,9 +301,10 @@ export function AppDrawerNavigation({
                 <NavLink
                   to={ROUTE_PATHS.terms}
                   onClick={onClose}
-                  className="transition hover:text-text hover:underline hover:underline-offset-2"
+                  className="inline-flex items-center gap-1 transition hover:text-text hover:underline hover:underline-offset-2"
                 >
-                  Terms of Service
+                  <FileText className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+                  <span>Terms of Service</span>
                 </NavLink>
               </div>
 
@@ -256,13 +317,14 @@ export function AppDrawerNavigation({
                 type="button"
                 variant="primaryOutline"
                 size="sm"
-                className="w-full"
+                className="w-full gap-2"
                 onClick={async () => {
                   await onLogout();
                   onClose();
                 }}
               >
-                Sign Out
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Sign Out</span>
               </Button>
             </div>
           )}
