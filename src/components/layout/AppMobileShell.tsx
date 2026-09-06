@@ -1,17 +1,15 @@
 import { useState } from 'react';
 
-import { ChevronDown, Menu } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import brandLogo from '@/assets/wc-hub-brand-white.png';
 import { ROUTE_PATHS, TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
 import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
-import { Button } from '../ui';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 import { AppFooter } from './AppFooter';
+import { AppShellHeader } from './AppShellHeader';
 import { UserIdentity } from './UserIdentity';
 
 function getCurrentUserLabel(email?: string | null, phone?: string | null, userId?: string) {
@@ -57,46 +55,18 @@ export function AppMobileShell() {
         hasProfileAccess={Boolean(currentProfile)}
         contentClassName="max-w-[10rem] sm:max-w-[15rem]"
         showNameLabel={false}
+        disableLink={isMinimizedShell}
       />
     </div>
   );
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
-      {isMinimizedShell ? (
-        <div className="sticky top-0 z-30 flex items-center justify-between px-3 pt-1.5 print:hidden">
-          {userBadge ? userBadge : <div />}
-          <button
-            type="button"
-            aria-label="Open app navigation drawer"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/95 px-2.5 py-1 text-[11px] font-semibold text-text shadow-xs backdrop-blur transition hover:bg-primary/10"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <ChevronDown className="h-4 w-4" />
-            <span>Menu</span>
-          </button>
-        </div>
-      ) : (
-        <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-1">
-            <div className="flex items-center gap-3">
-              <img src={brandLogo} alt="Welcome Hub" className="h-20 object-cover object-center" />
-            </div>
-
-            <div className="flex items-center gap-3">
-              {userBadge}
-              <Button
-                type="button"
-                aria-label="Open app navigation drawer"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-text shadow-xs transition hover:bg-primary/10"
-                onClick={() => setDrawerOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </Button>
-            </div>
-          </div>
-        </header>
-      )}
+      <AppShellHeader
+        isMinimizedShell={isMinimizedShell}
+        userBadge={userBadge}
+        onOpenDrawer={() => setDrawerOpen(true)}
+      />
 
       <AppDrawerNavigation
         isOpen={drawerOpen}
