@@ -11,6 +11,7 @@ type AppDrawerNavigationProps = {
   isOpen: boolean;
   onClose: () => void;
   isAuthenticated: boolean;
+  hasSession?: boolean;
   adminRole?: AdminRole | null;
   currentUserLabel?: string | null;
   onLogout: () => Promise<void>;
@@ -56,6 +57,7 @@ export function AppDrawerNavigation({
   isOpen,
   onClose,
   isAuthenticated,
+  hasSession = isAuthenticated,
   adminRole = null,
   currentUserLabel = null,
   onLogout,
@@ -102,7 +104,7 @@ export function AppDrawerNavigation({
             <div className="space-y-2">
               <SectionHeading label="General" />
               <DrawerNavLink to={ROUTE_PATHS.home} label="Events" onClose={onClose} />
-              {!isAuthenticated && (
+              {!hasSession && (
                 <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
               )}
             </div>
@@ -215,7 +217,7 @@ export function AppDrawerNavigation({
             )}
           </div>
 
-          {isAuthenticated && (
+          {hasSession && (
             <div className="p-4">
               <div className="mb-3 flex items-center justify-center gap-3 border-b border-border pb-3 text-[11px] text-muted">
                 <NavLink

@@ -18,6 +18,7 @@ function renderDrawer(options?: {
   path?: string;
   isOpen?: boolean;
   isAuthenticated?: boolean;
+  hasSession?: boolean;
   adminRole?: 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk' | null;
   currentUserLabel?: string | null;
   onClose?: () => void;
@@ -32,7 +33,8 @@ function renderDrawer(options?: {
         isOpen={options?.isOpen ?? true}
         onClose={onClose}
         isAuthenticated={options?.isAuthenticated ?? true}
-        adminRole={options?.adminRole ?? 'admin'}
+        hasSession={options?.hasSession ?? options?.isAuthenticated ?? true}
+        adminRole={options?.adminRole === undefined ? 'admin' : options.adminRole}
         currentUserLabel={options?.currentUserLabel ?? null}
         onLogout={onLogout}
       />
@@ -54,13 +56,30 @@ describe('AppDrawerNavigation', () => {
   it('shows sign-in link for unauthenticated users', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
 
-    renderDrawer({ isAuthenticated: false, adminRole: null });
+    renderDrawer({ isAuthenticated: false, hasSession: false, adminRole: null });
 
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.login,
     );
     expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
+  });
+
+  it('shows user identity and sign-out for authenticated non-admin users while hiding admin links', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: null });
+
+    renderDrawer({
+      isAuthenticated: false,
+      hasSession: true,
+      adminRole: null,
+      currentUserLabel: 'member@example.com',
+    });
+
+    expect(screen.queryByRole('link', { name: 'Sign In' })).not.toBeInTheDocument();
+    expect(screen.getByText('Signed in as member@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Events' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Members' })).not.toBeInTheDocument();
   });
 
   it('shows admin links and handles sign out for authenticated users', async () => {
