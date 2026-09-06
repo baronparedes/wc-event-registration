@@ -47,6 +47,9 @@ const PublicEventRegistrationPage = lazy(() =>
 const LoginPage = lazy(() =>
   import('../pages/login').then((module) => ({ default: module.LoginPage })),
 );
+const ProfilePage = lazy(() =>
+  import('../pages/profile').then((module) => ({ default: module.ProfilePage })),
+);
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
 );
@@ -198,6 +201,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   eventRegister: EventRegistrationPage,
   eventPublicRegister: PublicEventRegistrationPage,
   login: LoginPage,
+  profile: ProfilePage,
   adminMembers: AdminMembersPage,
   adminMemberMilestones: AdminMemberMilestonesPage,
   adminMembersImport: AdminMembersImportPage,
