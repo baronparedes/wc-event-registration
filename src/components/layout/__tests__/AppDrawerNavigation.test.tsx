@@ -7,12 +7,13 @@ import { ROUTE_PATHS } from '@/config/constants';
 
 import { AppDrawerNavigation } from '../AppDrawerNavigation';
 
-const { mockUseAdminEventQuery, mockUseCurrentProfileQuery, mockUseMemberAvatarQuery } =
-  vi.hoisted(() => ({
+const { mockUseAdminEventQuery, mockUseCurrentProfileQuery, mockUseMemberAvatarQuery } = vi.hoisted(
+  () => ({
     mockUseAdminEventQuery: vi.fn(),
     mockUseCurrentProfileQuery: vi.fn(),
     mockUseMemberAvatarQuery: vi.fn(),
-  }));
+  }),
+);
 
 vi.mock('@/hooks/domain/events', () => ({
   useAdminEventQuery: (...args: unknown[]) => mockUseAdminEventQuery(...args),

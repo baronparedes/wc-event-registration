@@ -20,15 +20,15 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
-import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
+import { UserIdentity } from './UserIdentity';
 
 type AppDrawerNavigationProps = {
   isOpen: boolean;
@@ -310,28 +310,14 @@ export function AppDrawerNavigation({
 
               {displayName && (
                 <div className="mb-3">
-                  {hasProfileAccess ? (
-                    <Link
-                      to={ROUTE_PATHS.profile}
-                      onClick={onClose}
-                      className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 transition hover:bg-primary/10"
-                      title="View Profile"
-                    >
-                      <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
-                      <div className="min-w-0 flex-1 truncate text-xs">
-                        <p className="truncate font-semibold text-text">{displayName}</p>
-                        {roleLabel && <p className="truncate text-muted">{roleLabel}</p>}
-                      </div>
-                    </Link>
-                  ) : (
-                    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2">
-                      <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
-                      <div className="min-w-0 flex-1 truncate text-xs">
-                        <p className="truncate font-semibold text-text">{displayName}</p>
-                        {roleLabel && <p className="truncate text-muted">{roleLabel}</p>}
-                      </div>
-                    </div>
-                  )}
+                  <UserIdentity
+                    displayName={displayName}
+                    avatarObjectKey={avatarObjectKey}
+                    roleLabel={roleLabel}
+                    hasProfileAccess={hasProfileAccess}
+                    variant="drawer"
+                    onProfileClick={onClose}
+                  />
                 </div>
               )}
               <Button

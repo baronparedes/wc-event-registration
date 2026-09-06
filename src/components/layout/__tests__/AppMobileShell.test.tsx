@@ -128,7 +128,7 @@ describe('AppMobileShell', () => {
 
     renderShell('/');
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { ChevronDown, Menu } from 'lucide-react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import brandLogo from '@/assets/wc-hub-brand-white.png';
@@ -9,9 +9,10 @@ import { ROUTE_PATHS, TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/
 import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
-import { Avatar, Button } from '../ui';
+import { Button } from '../ui';
 import { AppDrawerNavigation } from './AppDrawerNavigation';
 import { AppFooter } from './AppFooter';
+import { UserIdentity } from './UserIdentity';
 
 function getCurrentUserLabel(email?: string | null, phone?: string | null, userId?: string) {
   return email ?? phone ?? userId ?? null;
@@ -49,27 +50,14 @@ export function AppMobileShell() {
 
   const userBadge = hasSession && displayName && (
     <div className="flex items-center gap-2">
-      {currentProfile ? (
-        <Link
-          to={ROUTE_PATHS.profile}
-          className="flex items-center gap-2 transition hover:opacity-80"
-          title="View Profile"
-        >
-          <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
-          <div className="max-w-[10rem] truncate text-xs text-muted sm:max-w-[15rem]">
-            <span className="font-semibold text-text">{displayName}</span>
-            {roleLabel && <span className="ml-1 font-normal text-muted">{roleLabel}</span>}
-          </div>
-        </Link>
-      ) : (
-        <div className="flex items-center gap-2">
-          <Avatar name={displayName} avatarObjectKey={avatarObjectKey} size="sm" />
-          <div className="max-w-[10rem] truncate text-xs text-muted sm:max-w-[15rem]">
-            <span className="font-semibold text-text">{displayName}</span>
-            {roleLabel && <span className="ml-1 font-normal text-muted">{roleLabel}</span>}
-          </div>
-        </div>
-      )}
+      <UserIdentity
+        displayName={displayName}
+        avatarObjectKey={avatarObjectKey}
+        roleLabel={roleLabel}
+        hasProfileAccess={Boolean(currentProfile)}
+        contentClassName="max-w-[10rem] sm:max-w-[15rem]"
+        showNameLabel={false}
+      />
     </div>
   );
 
