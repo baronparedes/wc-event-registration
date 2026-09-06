@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { FORM_MESSAGES, TIMING, TOAST_MESSAGES } from '@/config/constants';
+import { FORM_MESSAGES, ROUTE_PATHS, TIMING, TOAST_MESSAGES } from '@/config/constants';
 import {
   useEventSlotAvailabilityQuery,
   usePublicEventFieldsQuery,
 } from '@/hooks/domain/event-fields';
 import { usePublicEventQuery } from '@/hooks/domain/events';
-import { useMemberLookupState } from '@/hooks/domain/members';
+import { useCurrentProfileQuery, useMemberLookupState } from '@/hooks/domain/members';
 import { useSubmitRegistrationMutation } from '@/hooks/domain/registrations';
 import { useErrorWithFadeout, useRfidAutoFocus, useScanBuffer } from '@/hooks/utils';
 import {
@@ -134,6 +134,7 @@ export function stepBadgeClassName(currentStep: WizardStep, badgeStep: WizardSte
 
 export function useEventRegistrationPageState() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const memberIdInputRef = useRef<HTMLInputElement | null>(null);
   const dynamicFieldsStepRef = useRef<HTMLDivElement | null>(null);
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
@@ -142,6 +143,11 @@ export function useEventRegistrationPageState() {
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false);
   const isAutoSubmittingNoFieldsRef = useRef(false);
+  const hasAttemptedAutoLookupRef = useRef(false);
+
+  const profileQuery = useCurrentProfileQuery();
+  const currentProfile = profileQuery.data;
+  const isSignedIn = Boolean(currentProfile?.member_id);
 
   const eventQuery = usePublicEventQuery(slug ?? null);
   const submitMutation = useSubmitRegistrationMutation(
@@ -288,6 +294,57 @@ export function useEventRegistrationPageState() {
     },
     [focusMemberIdInput, showLookupError],
   );
+
+  useEffect(() => {
+    hasAttemptedAutoLookupRef.current = false;
+  }, [slug]);
+
+  useEffect(() => {
+    if (
+      !isGateReady ||
+      profileQuery.isLoading ||
+      !currentProfile?.member_id ||
+      memberLookup.matchedMember ||
+      memberLookup.isLookupPending ||
+      hasAttemptedAutoLookupRef.current
+    ) {
+      return;
+    }
+
+    hasAttemptedAutoLookupRef.current = true;
+
+    void (async () => {
+      setSubmitErrorMessage(null);
+      setSubmitSuccessMessage(null);
+      setIsRegistrationConfirmed(false);
+      clearLookupError();
+
+      const result = await runMemberLookupSubmit({ memberId: currentProfile.member_id });
+
+      if (!result || !result.success) {
+        handleLookupFailure(
+          result?.error || FORM_MESSAGES.memberLookupFailed,
+          result?.reason === 'already_registered',
+          result?.reason,
+        );
+        return;
+      }
+
+      setIsWizardBlockedResult(false);
+      setWizardStep(3);
+      scrollToDynamicFieldsStep();
+    })();
+  }, [
+    isGateReady,
+    profileQuery.isLoading,
+    currentProfile?.member_id,
+    memberLookup.matchedMember,
+    memberLookup.isLookupPending,
+    runMemberLookupSubmit,
+    clearLookupError,
+    handleLookupFailure,
+    scrollToDynamicFieldsStep,
+  ]);
 
   const handleScan = useCallback(
     async (scannedMemberId: string) => {
@@ -537,6 +594,7 @@ export function useEventRegistrationPageState() {
   );
 
   const shouldBypassDynamicFieldsStepCard =
+    !isSignedIn &&
     wizardStep === 3 &&
     Boolean(memberLookup.matchedMember) &&
     !isEffectiveRegistrationBlocked &&
@@ -585,6 +643,11 @@ export function useEventRegistrationPageState() {
   );
 
   const handleCancelUpdate = useCallback(() => {
+    if (isSignedIn) {
+      navigate(ROUTE_PATHS.home);
+      return;
+    }
+
     dynamicForm.reset(createDynamicFieldDefaultValues(activeFields));
     memberLookup.reset();
     clearLookupError();
@@ -594,7 +657,23 @@ export function useEventRegistrationPageState() {
     setIsWizardBlockedResult(false);
     setWizardStep(1);
     scrollToTitleAnchor();
-  }, [dynamicForm, activeFields, memberLookup, clearLookupError, scrollToTitleAnchor]);
+  }, [
+    isSignedIn,
+    navigate,
+    dynamicForm,
+    activeFields,
+    memberLookup,
+    clearLookupError,
+    scrollToTitleAnchor,
+  ]);
+
+  const handleConfirmAcknowledged = useCallback(() => {
+    if (isSignedIn) {
+      navigate(ROUTE_PATHS.home);
+    } else {
+      resetToStepOne();
+    }
+  }, [isSignedIn, navigate, resetToStepOne]);
 
   return {
     slug,
@@ -621,6 +700,7 @@ export function useEventRegistrationPageState() {
     handleSubmitRegistration,
     fieldErrorMessage,
     handleCancelUpdate,
+    handleConfirmAcknowledged,
     resetToStepOne,
     activeWizardStep,
     isEffectiveRegistrationBlocked,
@@ -629,5 +709,7 @@ export function useEventRegistrationPageState() {
     setWizardStep,
     scrollToDynamicFieldsStep,
     shouldBypassDynamicFieldsStepCard,
+    isSignedIn,
+    currentProfile,
   };
 }

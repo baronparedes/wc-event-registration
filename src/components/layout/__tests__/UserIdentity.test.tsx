@@ -46,6 +46,17 @@ describe('UserIdentity', () => {
     expect(screen.getByText('Jane Doe')).toBeInTheDocument();
   });
 
+  it('renders a non-link identity when the minimized shell disables profile navigation', () => {
+    renderUserIdentity({
+      displayName: 'Jane Doe',
+      hasProfileAccess: true,
+      disableLink: true,
+    });
+
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+  });
+
   it('supports drawer presentation and hiding the name label', () => {
     const { container } = renderUserIdentity({
       displayName: 'Jane Doe',

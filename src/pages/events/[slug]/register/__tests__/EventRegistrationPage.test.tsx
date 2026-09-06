@@ -12,6 +12,7 @@ const {
   mockUseEventSlotAvailabilityQuery,
   mockSubmitMutateAsync,
   mockUseSubmitRegistrationMutation,
+  mockUseCurrentProfileQuery,
   mockUseMemberLookupState,
   mockUseRfidAutoFocus,
   mockUseErrorWithFadeout,
@@ -63,6 +64,7 @@ const {
     mockUseEventSlotAvailabilityQuery: vi.fn(),
     mockSubmitMutateAsync: vi.fn(),
     mockUseSubmitRegistrationMutation: vi.fn(),
+    mockUseCurrentProfileQuery: vi.fn(),
     mockUseMemberLookupState: vi.fn(),
     mockUseRfidAutoFocus: vi.fn(),
     mockUseErrorWithFadeout: vi.fn(),
@@ -141,6 +143,7 @@ vi.mock('@/hooks/domain/members', async () => {
 
   return {
     ...actual,
+    useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
     useMemberLookupState: (...args: unknown[]) => mockUseMemberLookupState(...args),
   };
 });
@@ -234,6 +237,7 @@ describe('EventRegistrationPage', () => {
     vi.clearAllMocks();
     vi.useRealTimers();
     mockUseParams.mockReturnValue({ slug: 'sample-event' });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false });
     mockUseRfidAutoFocus.mockReturnValue(mockFocusMemberIdInput);
     mockUseErrorWithFadeout.mockReturnValue({
       error: null,
@@ -722,5 +726,113 @@ describe('EventRegistrationPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Trigger Step 3 Inactivity' }));
 
     expect(screen.getByText('Member Lookup')).toBeInTheDocument();
+  });
+
+  it('renders Step 3 directly for signed-in members without Back to Step 2 button', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-100', full_name: 'John SignedIn' },
+      isLoading: false,
+    });
+
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: true,
+      mode: 'new_registration',
+    });
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: {
+        user_id: 'user-signedin',
+        full_name: 'John SignedIn',
+        nickname: null,
+        first_name: 'John',
+        last_name: 'SignedIn',
+      },
+      handleLookupSubmit: runMemberLookupSubmit,
+    });
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<EventRegistrationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Submit Registration')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Back to Step 2')).toBeNull();
+  });
+
+  it('shows Back to Events button on Step 2 when signed-in member is already registered and blocked', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-100', full_name: 'John SignedIn' },
+      isLoading: false,
+    });
+
+    const runMemberLookupSubmit = vi.fn().mockResolvedValue({
+      success: false,
+      error: 'Already registered for this event.',
+      reason: 'already_registered',
+    });
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: {
+        user_id: 'user-signedin',
+        full_name: 'John SignedIn',
+        nickname: null,
+        first_name: 'John',
+        last_name: 'SignedIn',
+      },
+      isRegistrationBlocked: true,
+      handleLookupSubmit: runMemberLookupSubmit,
+    });
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+        },
+        registration_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<EventRegistrationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Profile Step')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Back to Events' })).toBeInTheDocument();
   });
 });

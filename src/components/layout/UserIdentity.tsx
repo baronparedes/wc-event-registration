@@ -13,6 +13,7 @@ type UserIdentityProps = {
   onProfileClick?: () => void;
   contentClassName?: string;
   showNameLabel?: boolean;
+  disableLink?: boolean;
 };
 
 export function UserIdentity({
@@ -24,6 +25,7 @@ export function UserIdentity({
   onProfileClick,
   contentClassName,
   showNameLabel = true,
+  disableLink = false,
 }: UserIdentityProps) {
   const isDrawer = variant === 'drawer';
   const content = (
@@ -54,7 +56,21 @@ export function UserIdentity({
     ? 'flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 transition hover:bg-primary/10'
     : 'flex items-center gap-2 transition hover:opacity-80';
 
-  return hasProfileAccess ? (
+  if (disableLink || !hasProfileAccess) {
+    return (
+      <div
+        className={
+          isDrawer
+            ? className.replace(' transition hover:bg-primary/10', '')
+            : 'flex items-center gap-2'
+        }
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
     <Link
       to={ROUTE_PATHS.profile}
       onClick={onProfileClick}
@@ -63,15 +79,5 @@ export function UserIdentity({
     >
       {content}
     </Link>
-  ) : (
-    <div
-      className={
-        isDrawer
-          ? className.replace(' transition hover:bg-primary/10', '')
-          : 'flex items-center gap-2'
-      }
-    >
-      {content}
-    </div>
   );
 }
