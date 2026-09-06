@@ -31,7 +31,14 @@ jobs:
       - name: Install PostgreSQL client tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
+          sudo apt-get install -y -qq curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc > /dev/null
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo \"${VERSION_CODENAME}\")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
 
       - name: Download Backup from Cloudflare R2
         env:
@@ -73,6 +80,16 @@ jobs:
             exit 1
           fi
 
+          PSQL=/usr/lib/postgresql/17/bin/psql
+          PSQL_VERSION=$(${PSQL} --version | awk '{print $NF}')
+          case "${PSQL_VERSION}" in
+            17.*) ;;
+            *)
+              echo "Error: PostgreSQL 17 psql is required; found ${PSQL_VERSION}."
+              exit 1
+              ;;
+          esac
+
           echo "Decrypting backup file..."
           gpg --decrypt --batch --yes --passphrase "${BACKUP_ENCRYPTION_PASSPHRASE}" "${BACKUP_FILENAME}" > backup.sql.gz
 
@@ -80,6 +97,6 @@ jobs:
           gunzip backup.sql.gz
 
           echo "Restoring SQL database to Supabase..."
-          psql "${SUPABASE_DB_URL}" -f backup.sql
+          "${PSQL}" "${SUPABASE_DB_URL}" -f backup.sql
 
           echo "Database restoration completed successfully!"
