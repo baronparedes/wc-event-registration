@@ -18,7 +18,14 @@ jobs:
       - name: Install PostgreSQL tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
+          sudo apt-get install -y -qq curl ca-certificates
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc > /dev/null
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo \"${VERSION_CODENAME}\")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
 
       - name: Perform Database Dump, Compress, and Encrypt
         env:
@@ -37,11 +44,21 @@ jobs:
             exit 1
           fi
 
+          PG_DUMP=/usr/lib/postgresql/17/bin/pg_dump
+          PG_DUMP_VERSION=$(${PG_DUMP} --version | awk '{print $NF}')
+          case "${PG_DUMP_VERSION}" in
+            17.*) ;;
+            *)
+              echo "Error: PostgreSQL 17 pg_dump is required; found ${PG_DUMP_VERSION}."
+              exit 1
+              ;;
+          esac
+
           TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
           BACKUP_FILE="supabase-backup-${TIMESTAMP}.sql.gz.gpg"
 
           echo "Starting Supabase database backup..."
-          pg_dump "${SUPABASE_DB_URL}" \
+          "${PG_DUMP}" "${SUPABASE_DB_URL}" \
             --clean \
             --if-exists \
             --no-owner \
