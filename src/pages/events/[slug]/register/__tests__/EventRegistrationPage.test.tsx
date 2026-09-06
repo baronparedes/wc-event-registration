@@ -728,6 +728,38 @@ describe('EventRegistrationPage', () => {
     expect(screen.getByText('Member Lookup')).toBeInTheDocument();
   });
 
+  it('renders seamless verification loading state while verifying signed-in member', () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-100', full_name: 'John SignedIn' },
+      isLoading: true,
+    });
+
+    mockUseMemberLookupState.mockReturnValue({
+      ...memberLookupState,
+      matchedMember: null,
+    });
+
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          registration_mode: 'open',
+        },
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<EventRegistrationPage />);
+
+    expect(screen.getByText('Verifying Registration Details')).toBeInTheDocument();
+    expect(screen.getByText('Checking your member profile...')).toBeInTheDocument();
+    expect(screen.queryByText('Member Lookup')).toBeNull();
+  });
+
   it('renders Step 3 directly for signed-in members without Back to Step 2 button', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
       data: { member_id: 'MEM-100', full_name: 'John SignedIn' },

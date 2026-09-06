@@ -91,6 +91,13 @@ vi.mock('sonner', () => ({
   },
 }));
 
+vi.mock('@/config/env', () => ({
+  env: {
+    supabaseUrl: 'http://127.0.0.1:54321',
+    supabasePublishableKey: 'anon-key',
+  },
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
 
@@ -780,6 +787,17 @@ describe('useEventRegistrationPageState', () => {
       f_toggle: { opt1: true, opt2: false, opt3: null },
       f_toggle_invalid: {},
     });
+  });
+
+  it('sets isVerifyingSignedInMember to true while profile or auto lookup is pending for signed in user', () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      isLoading: true,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    expect(result.current.isVerifyingSignedInMember).toBe(true);
   });
 
   it('automatically performs lookup and enters step 3 when member is signed in', async () => {

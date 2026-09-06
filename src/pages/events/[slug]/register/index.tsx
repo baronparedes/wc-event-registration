@@ -52,6 +52,7 @@ export function EventRegistrationPage() {
     isEffectiveRegistrationBlocked,
     shouldBypassDynamicFieldsStepCard,
     isSignedIn,
+    isVerifyingSignedInMember,
   } = useEventRegistrationPageState();
 
   const publicRegistrationAccess =
@@ -137,24 +138,33 @@ export function EventRegistrationPage() {
 
           {activeWizardStep === 1 && (
             <div ref={stepOneRef} className="scroll-mt-24">
-              <MemberLookupStepCard
-                slug={slug}
-                lookupForm={memberLookup.lookupForm}
-                onLookupSubmit={handleLookupSubmit}
-                isLookupPending={memberLookup.isLookupPending}
-                lookupErrorMessage={lookupErrorMessage}
-                suppressLookupWarning={memberLookup.isRegistrationBlocked}
-                memberIdInputRef={memberIdInputRef}
-                shouldHighlightInput={memberLookup.memberIdHighlight}
-                onDismissLookupError={clearLookupError}
-                allowNameLookup={
-                  availability?.status === 'available' && availability.event
-                    ? Boolean(availability.event.metadata?.allow_name_lookup)
-                    : false
-                }
-                allowMemberRegistration={publicRegistrationAccess !== 'public'}
-                allowPublicRegistration={publicRegistrationAccess !== 'members'}
-              />
+              {isVerifyingSignedInMember ? (
+                <SectionCard title="Verifying Registration Details">
+                  <div className="flex items-center space-x-3 py-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="text-sm text-muted">Checking your member profile...</p>
+                  </div>
+                </SectionCard>
+              ) : (
+                <MemberLookupStepCard
+                  slug={slug}
+                  lookupForm={memberLookup.lookupForm}
+                  onLookupSubmit={handleLookupSubmit}
+                  isLookupPending={memberLookup.isLookupPending}
+                  lookupErrorMessage={lookupErrorMessage}
+                  suppressLookupWarning={memberLookup.isRegistrationBlocked}
+                  memberIdInputRef={memberIdInputRef}
+                  shouldHighlightInput={memberLookup.memberIdHighlight}
+                  onDismissLookupError={clearLookupError}
+                  allowNameLookup={
+                    availability?.status === 'available' && availability.event
+                      ? Boolean(availability.event.metadata?.allow_name_lookup)
+                      : false
+                  }
+                  allowMemberRegistration={publicRegistrationAccess !== 'public'}
+                  allowPublicRegistration={publicRegistrationAccess !== 'members'}
+                />
+              )}
             </div>
           )}
 
