@@ -90,12 +90,8 @@ function normalizeLookupHeaderKey(value: string): string {
 }
 
 function normalizeMetadataHeaderKey(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+/, '')
-    .replace(/_+$/, '');
+  const matches = value.toLowerCase().match(/[a-z0-9]+/g);
+  return matches ? matches.join('_') : '';
 }
 
 function canonicalizeMetadataHeaderKey(value: string): string {
