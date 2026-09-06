@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useAdminLogoutMutation } from '@/hooks/domain/auth/useAdminLogoutMutation';
+import { CURRENT_PROFILE_QUERY_KEY } from '@/hooks/domain/members/queries/useCurrentProfileQuery';
 import { ADMIN_AUTH_QUERY_KEY } from '@/lib/domain/auth';
 
 const { mockSignOut } = vi.hoisted(() => ({
@@ -31,6 +32,7 @@ describe('useAdminLogoutMutation', () => {
   it('signs out, clears cached auth state, and invalidates auth query', async () => {
     const { result, queryClient } = renderHookWithClient(() => useAdminLogoutMutation());
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    queryClient.setQueryData(CURRENT_PROFILE_QUERY_KEY, { id: 'member-1' });
 
     queryClient.setQueryData(ADMIN_AUTH_QUERY_KEY, {
       isAuthenticated: true,
@@ -47,6 +49,7 @@ describe('useAdminLogoutMutation', () => {
       session: null,
       adminRole: null,
     });
+    expect(queryClient.getQueryData(CURRENT_PROFILE_QUERY_KEY)).toBeUndefined();
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_AUTH_QUERY_KEY });
