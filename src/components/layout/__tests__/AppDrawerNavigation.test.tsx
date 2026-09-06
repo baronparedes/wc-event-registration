@@ -2,16 +2,22 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { makeAdminMember } from '@/__tests__/factories';
 import { ROUTE_PATHS } from '@/config/constants';
 
 import { AppDrawerNavigation } from '../AppDrawerNavigation';
 
-const { mockUseAdminEventQuery } = vi.hoisted(() => ({
+const { mockUseAdminEventQuery, mockUseCurrentProfileQuery } = vi.hoisted(() => ({
   mockUseAdminEventQuery: vi.fn(),
+  mockUseCurrentProfileQuery: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/events', () => ({
   useAdminEventQuery: (...args: unknown[]) => mockUseAdminEventQuery(...args),
+}));
+
+vi.mock('@/hooks/domain/members', () => ({
+  useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
 }));
 
 function renderDrawer(options?: {
@@ -47,14 +53,16 @@ function renderDrawer(options?: {
 describe('AppDrawerNavigation', () => {
   it('does not render overlay when drawer is closed', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ isOpen: false });
 
     expect(screen.queryByLabelText('Close navigation drawer overlay')).not.toBeInTheDocument();
   });
 
-  it('shows sign-in link for unauthenticated users', () => {
+  it('shows sign-in link for unauthenticated users and hides My Profile link', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ isAuthenticated: false, hasSession: false, adminRole: null });
 
@@ -62,11 +70,45 @@ describe('AppDrawerNavigation', () => {
       'href',
       ROUTE_PATHS.login,
     );
+    expect(screen.queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
+  });
+
+  it('shows My Profile link when user has a session and matching member profile', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: null });
+    const member = makeAdminMember();
+    mockUseCurrentProfileQuery.mockReturnValue({ data: member });
+
+    renderDrawer({
+      isAuthenticated: false,
+      hasSession: true,
+      adminRole: null,
+      currentUserLabel: member.email,
+    });
+
+    expect(screen.getByRole('link', { name: 'My Profile' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.profile,
+    );
+  });
+
+  it('hides My Profile link when user has a session but no matching member profile', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
+
+    renderDrawer({
+      isAuthenticated: false,
+      hasSession: true,
+      adminRole: null,
+      currentUserLabel: 'unknown@example.com',
+    });
+
+    expect(screen.queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
   });
 
   it('shows user identity and sign-out for authenticated non-admin users while hiding admin links', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({
       isAuthenticated: false,
@@ -84,6 +126,7 @@ describe('AppDrawerNavigation', () => {
 
   it('shows admin links and handles sign out for authenticated users', async () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     const { onClose, onLogout } = renderDrawer({
       isAuthenticated: true,
       currentUserLabel: 'admin@example.com',
@@ -109,6 +152,7 @@ describe('AppDrawerNavigation', () => {
 
   it('shows member navigation for imt users without admin write links', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ isAuthenticated: true, adminRole: 'imt' });
 
@@ -121,6 +165,7 @@ describe('AppDrawerNavigation', () => {
 
   it('renders event workspace and attendance links with event title when on event routes', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ path: '/admin/events/event-1/fields' });
 
@@ -156,6 +201,7 @@ describe('AppDrawerNavigation', () => {
 
   it('uses event id as fallback label when event title is unavailable', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ path: '/admin/events/event-fallback/registrations' });
 
@@ -164,6 +210,7 @@ describe('AppDrawerNavigation', () => {
 
   it('does not render event workspace for new event route variants', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ path: '/admin/events/new/extra' });
 
@@ -173,6 +220,7 @@ describe('AppDrawerNavigation', () => {
 
   it('closes when overlay or close button is clicked', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     const { onClose } = renderDrawer();
 
     fireEvent.click(screen.getByLabelText('Close navigation drawer overlay'));
@@ -183,6 +231,7 @@ describe('AppDrawerNavigation', () => {
 
   it('invokes onClose when clicking navigation links', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     const { onClose } = renderDrawer({ path: '/admin/events/event-1' });
 
     fireEvent.click(screen.getByRole('link', { name: 'Manage Event' }));
@@ -192,6 +241,7 @@ describe('AppDrawerNavigation', () => {
 
   it('hides write-only links for slod users while preserving read navigation', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ path: '/admin/events/event-1/registrations', adminRole: 'slod' });
 
@@ -228,6 +278,7 @@ describe('AppDrawerNavigation', () => {
 
   it('shows check-in only navigation for kiosk users on event routes', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     renderDrawer({ path: '/admin/events/event-1/attendance/check-in', adminRole: 'kiosk' });
 
