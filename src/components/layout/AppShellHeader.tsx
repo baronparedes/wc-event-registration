@@ -24,7 +24,11 @@ export function AppShellHeader({ isMinimizedShell, userBadge, onOpenDrawer }: Ap
             onClick={onOpenDrawer}
           >
             {userBadge && <span className="flex items-center justify-center">{userBadge}</span>}
-            <span className="inline-flex items-center gap-1.5 border-l border-border pl-2">
+            <span
+              className={`inline-flex items-center gap-1.5 ${
+                userBadge ? 'border-l border-border pl-2' : ''
+              }`}
+            >
               <ChevronDown className="h-4 w-4" />
               <span>Menu</span>
             </span>
