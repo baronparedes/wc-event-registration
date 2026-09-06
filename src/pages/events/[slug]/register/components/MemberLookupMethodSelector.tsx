@@ -1,9 +1,13 @@
+import { useNavigate } from 'react-router-dom';
+
 import { Button } from '@/components/ui/Button';
 
 type MemberLookupMethodSelectorProps = {
   allowNameLookup: boolean;
   isLookupPending: boolean;
   onSelectMethod: (method: 'id' | 'name') => void;
+  allowPublicRegistration?: boolean;
+  slug?: string;
 };
 
 /**
@@ -14,7 +18,10 @@ export function MemberLookupMethodSelector({
   allowNameLookup,
   isLookupPending,
   onSelectMethod,
+  allowPublicRegistration = false,
+  slug,
 }: MemberLookupMethodSelectorProps) {
+  const navigate = useNavigate();
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -48,6 +55,18 @@ export function MemberLookupMethodSelector({
               Find your profile using your registered full name
             </span>
           </Button>
+        )}
+
+        {slug && allowPublicRegistration && (
+          <div className="flex items-center justify-center w-full sm:col-span-2">
+            <Button
+              type="button"
+              onClick={() => navigate(`/events/${slug}/register-public`)}
+              className="text-xl transition hover:text-primary/80 w-full"
+            >
+              Join the event as a Guest
+            </Button>
+          </div>
         )}
       </div>
     </div>
