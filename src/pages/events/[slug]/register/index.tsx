@@ -47,9 +47,11 @@ export function EventRegistrationPage() {
     submitSuccessMessage,
     isRegistrationConfirmed,
     handleCancelUpdate,
+    handleConfirmAcknowledged,
     enterWizardConfirmStep,
     isEffectiveRegistrationBlocked,
     shouldBypassDynamicFieldsStepCard,
+    isSignedIn,
   } = useEventRegistrationPageState();
 
   const publicRegistrationAccess =
@@ -163,8 +165,8 @@ export function EventRegistrationPage() {
                 isUpdateMode={memberLookup.isUpdateMode}
                 isRegistrationBlocked={isEffectiveRegistrationBlocked}
                 shouldFadeDetails={false}
-                countdownMs={TIMING.registrationWizardConfirmTimeoutMs}
-                onTimeout={resetToStepOne}
+                countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmTimeoutMs}
+                onTimeout={isSignedIn ? undefined : resetToStepOne}
                 onContinueToStepThree={
                   isEffectiveRegistrationBlocked ? undefined : enterWizardCompleteStep
                 }
@@ -173,12 +175,12 @@ export function EventRegistrationPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   className="w-full"
-                  onClick={resetToStepOne}
+                  onClick={isSignedIn ? handleCancelUpdate : resetToStepOne}
                   size="lg"
                   type="button"
                   variant="accent"
                 >
-                  Scan Another Member
+                  {isSignedIn ? 'Back to Events' : 'Scan Another Member'}
                 </Button>
               </div>
             </div>
@@ -210,19 +212,28 @@ export function EventRegistrationPage() {
                   onSubmit={handleSubmitRegistration}
                   fieldErrorMessage={fieldErrorMessage}
                   isSubmitPending={submitMutation.isPending}
-                  submitButtonLabel={memberLookup.isUpdateMode ? 'Update' : 'Submit Registration'}
+                  submitButtonLabel={
+                    memberLookup.isUpdateMode
+                      ? 'Update'
+                      : activeFields.length === 0
+                        ? 'Confirm Registration'
+                        : 'Submit Registration'
+                  }
                   submitErrorMessage={submitErrorMessage}
                   submitSuccessMessage={submitSuccessMessage}
                   isRegistrationConfirmed={isRegistrationConfirmed}
-                  onConfirmAcknowledged={resetToStepOne}
-                  countdownMs={TIMING.registrationWizardConfirmedResetMs}
-                  onCountdownTimeout={resetToStepOne}
-                  inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
-                  onInactivityTimeout={resetToStepOne}
+                  onConfirmAcknowledged={handleConfirmAcknowledged}
+                  confirmAcknowledgedLabel={
+                    isSignedIn ? 'Back to Events' : 'Ready for Next Attendee'
+                  }
+                  countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmedResetMs}
+                  onCountdownTimeout={isSignedIn ? undefined : resetToStepOne}
+                  inactivityTimeoutMs={isSignedIn ? undefined : TIMING.kioskInactivityResetMs}
+                  onInactivityTimeout={isSignedIn ? undefined : resetToStepOne}
                 />
               )}
 
-              {!isRegistrationConfirmed && (
+              {!isRegistrationConfirmed && !isSignedIn && (
                 <Button
                   className="hover:bg-surface"
                   onClick={enterWizardConfirmStep}

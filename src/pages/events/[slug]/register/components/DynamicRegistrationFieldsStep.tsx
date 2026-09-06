@@ -121,6 +121,7 @@ type DynamicFieldsStepCardProps = {
   fieldErrorMessage: (fieldKey: string) => string | undefined;
   isSubmitPending: boolean;
   submitButtonLabel?: string;
+  confirmAcknowledgedLabel?: string;
   submitErrorMessage: string | null;
   submitSuccessMessage: string | null;
   /** Duration in ms for the fixed countdown after registration is confirmed. Requires onCountdownTimeout. */
@@ -153,6 +154,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
     fieldErrorMessage,
     isSubmitPending,
     submitButtonLabel = 'Submit Registration',
+    confirmAcknowledgedLabel,
     submitErrorMessage,
     submitSuccessMessage,
     countdownMs,
@@ -270,7 +272,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
               type="button"
               variant="default"
             >
-              Ready for Next Attendee
+              {confirmAcknowledgedLabel ?? 'Ready for Next Attendee'}
             </Button>
           )}
         </div>

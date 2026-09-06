@@ -10,10 +10,12 @@ import {
 
 const {
   mockUseParams,
+  mockNavigate,
   mockUsePublicEventQuery,
   mockUsePublicEventFieldsQuery,
   mockUseEventSlotAvailabilityQuery,
   mockUseSubmitRegistrationMutation,
+  mockUseCurrentProfileQuery,
   mockUseMemberLookupState,
   mockUseRfidAutoFocus,
   mockUseErrorWithFadeout,
@@ -60,10 +62,12 @@ const {
 
   return {
     mockUseParams: vi.fn(),
+    mockNavigate: vi.fn(),
     mockUsePublicEventQuery: vi.fn(),
     mockUsePublicEventFieldsQuery: vi.fn(),
     mockUseEventSlotAvailabilityQuery: vi.fn(),
     mockUseSubmitRegistrationMutation: vi.fn(),
+    mockUseCurrentProfileQuery: vi.fn(),
     mockUseMemberLookupState: vi.fn(),
     mockUseRfidAutoFocus: vi.fn(),
     mockUseErrorWithFadeout: vi.fn(),
@@ -93,6 +97,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useParams: () => mockUseParams(),
+    useNavigate: () => mockNavigate,
   };
 });
 
@@ -110,6 +115,7 @@ vi.mock('@/hooks/domain/registrations', () => ({
 }));
 
 vi.mock('@/hooks/domain/members', () => ({
+  useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
   useMemberLookupState: (...args: unknown[]) => mockUseMemberLookupState(...args),
 }));
 
@@ -142,6 +148,7 @@ describe('useEventRegistrationPageState', () => {
     memberLookupState.lookupForm.reset.mockReset();
 
     mockUseParams.mockReturnValue({ slug: 'sample-event' });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false });
     mockUsePublicEventQuery.mockReturnValue({
       data: {
         status: 'available',
@@ -773,5 +780,73 @@ describe('useEventRegistrationPageState', () => {
       f_toggle: { opt1: true, opt2: false, opt3: null },
       f_toggle_invalid: {},
     });
+  });
+
+  it('automatically performs lookup and enters step 3 when member is signed in', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      isLoading: false,
+    });
+    memberLookupState.handleLookupSubmit.mockResolvedValueOnce({
+      success: true,
+      mode: 'new_registration',
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    await waitFor(() => {
+      expect(memberLookupState.handleLookupSubmit).toHaveBeenCalledWith({ memberId: 'MEM-001' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.activeWizardStep).toBe(3);
+    });
+    expect(result.current.isSignedIn).toBe(true);
+  });
+
+  it('does not bypass dynamic fields card for signed in members when activeFields is empty', () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      isLoading: false,
+    });
+    memberLookupState.matchedMember = {
+      user_id: 'user-1',
+      full_name: 'Signed In User',
+      nickname: null,
+      first_name: 'Signed',
+      last_name: 'User',
+    };
+    memberLookupState.verifiedMemberCredential = 'MEM-001';
+    mockUsePublicEventFieldsQuery.mockReturnValue({
+      data: {
+        validFields: [],
+        issues: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    expect(result.current.shouldBypassDynamicFieldsStepCard).toBe(false);
+  });
+
+  it('navigates to home when signed in user cancels or acknowledges confirmation', () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      isLoading: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    act(() => {
+      result.current.handleCancelUpdate();
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+
+    act(() => {
+      result.current.handleConfirmAcknowledged();
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 });
