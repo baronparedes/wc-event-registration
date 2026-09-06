@@ -77,9 +77,7 @@ describe('ProfilePage', () => {
   });
 
   it('renders event history items when present', () => {
-    const items = [
-      makeMemberEventHistoryItem({ event_title: 'Annual Championship' }),
-    ];
+    const items = [makeMemberEventHistoryItem({ event_title: 'Annual Championship' })];
     mockUseMemberEventHistoryQuery.mockReturnValue({
       data: items,
       isLoading: false,

@@ -9,7 +9,7 @@ select
     public.is_admin_member_viewer ()
     or (
       email is not null
-      and lower(email) = lower(auth.jwt() ->> 'email')
+      and lower(email) = lower(auth.jwt () ->> 'email')
     )
   );
 

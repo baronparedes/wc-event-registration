@@ -4,6 +4,7 @@ import type { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ADMIN_AUTH_QUERY_KEY } from '@/hooks/domain/auth';
+import { CURRENT_PROFILE_QUERY_KEY } from '@/hooks/domain/members/queries/useCurrentProfileQuery';
 import { supabase } from '@/lib/infrastructure';
 
 export function AppProviders({ children }: PropsWithChildren) {
@@ -24,6 +25,7 @@ export function AppProviders({ children }: PropsWithChildren) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
       queryClient.invalidateQueries({ queryKey: ADMIN_AUTH_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
     });
 
     return () => {
