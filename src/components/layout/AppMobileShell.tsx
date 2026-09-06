@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 import { ChevronDown, Menu } from 'lucide-react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import brandLogo from '@/assets/wc-hub-brand-white.png';
-import { TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
 import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
 
 import { Button } from '../ui';
@@ -18,6 +18,7 @@ function getCurrentUserLabel(email?: string | null, phone?: string | null, userI
 
 export function AppMobileShell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { data: adminAuth } = useAdminAuthQuery();
   const logoutMutation = useAdminLogoutMutation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -33,6 +34,7 @@ export function AppMobileShell() {
     try {
       await logoutMutation.mutateAsync();
       toast.success(TOAST_MESSAGES.adminSignOutSuccess);
+      navigate(ROUTE_PATHS.home);
     } catch (error) {
       const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignOutFailure;
       toast.error(message);
