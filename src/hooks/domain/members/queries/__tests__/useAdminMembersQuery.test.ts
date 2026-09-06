@@ -80,14 +80,14 @@ describe('useAdminMembersQuery', () => {
     });
 
     const { result } = renderHookWithClient(() =>
-      useAdminMembersQuery({ pageSize: 20, cursor: null, searchTerm: member.first_name ?? '' }),
+      useAdminMembersQuery({ pageSize: 20, searchTerm: member.first_name ?? '' }),
     );
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data?.pages[0]).toEqual({
       items: [member],
       nextCursor: null,
       hasMore: false,
@@ -126,7 +126,7 @@ describe('useAdminMembersQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data?.pages[0]).toEqual({
       items: [],
       nextCursor: null,
       hasMore: false,
@@ -163,7 +163,7 @@ describe('useAdminMembersQuery', () => {
     });
 
     const { result } = renderHookWithClient(() =>
-      useAdminMembersQuery({ pageSize: 1, cursor: null, searchTerm: 'A_B,Name%Here' }),
+      useAdminMembersQuery({ pageSize: 1, searchTerm: 'A_B,Name%Here' }),
     );
 
     await waitFor(() => {
@@ -173,11 +173,11 @@ describe('useAdminMembersQuery', () => {
     expect(mockQueryBuilder.or).toHaveBeenCalledWith(
       expect.stringContaining('A\\_B\\,Name\\%Here'),
     );
-    expect(result.current.data?.items[0]?.role).toBe('');
-    expect(result.current.data?.items[0]?.category).toBe('');
-    expect(result.current.data?.hasMore).toBe(true);
-    expect(result.current.data?.nextCursor).toBe('1');
-    expect(result.current.data?.totalPages).toBe(3);
+    expect(result.current.data?.pages[0]?.items[0]?.role).toBe('');
+    expect(result.current.data?.pages[0]?.items[0]?.category).toBe('');
+    expect(result.current.data?.pages[0]?.hasMore).toBe(true);
+    expect(result.current.data?.pages[0]?.nextCursor).toBe('1');
+    expect(result.current.data?.pages[0]?.totalPages).toBe(3);
   });
 
   it('applies deleted status filter when requested', async () => {
@@ -249,6 +249,6 @@ describe('useAdminMembersQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data?.items[0]?.extra_metadata).toEqual({ tag: 'vip' });
+    expect(result.current.data?.pages[0]?.items[0]?.extra_metadata).toEqual({ tag: 'vip' });
   });
 });

@@ -56,7 +56,6 @@ describe('useAdminEventsQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAdminEventsQuery({
         pageSize: 10,
-        cursor: null,
       }),
     );
 
@@ -64,7 +63,7 @@ describe('useAdminEventsQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data?.pages[0]).toEqual({
       items: [dbRow],
       hasMore: true,
       nextCursor: '10',
@@ -105,7 +104,6 @@ describe('useAdminEventsQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAdminEventsQuery({
         pageSize: 10,
-        cursor: null,
       }),
     );
 
@@ -113,7 +111,7 @@ describe('useAdminEventsQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data?.pages[0]).toEqual({
       items: [{ id: 'evt-2', title: 'Event Two' }],
       hasMore: false,
       nextCursor: null,
@@ -132,7 +130,6 @@ describe('useAdminEventsQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAdminEventsQuery({
         pageSize: 10,
-        cursor: null,
         searchTerm: 'sample',
       }),
     );

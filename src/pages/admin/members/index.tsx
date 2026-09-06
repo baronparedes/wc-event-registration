@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Edit, User, Users } from 'lucide-react';
+import { Edit, Loader2, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
@@ -18,18 +17,11 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import {
-  PAGINATION_DEFAULTS,
-  PAGINATION_OPTIONS,
-  ROUTE_PATHS,
-  TIMING,
-  UI_MESSAGES,
-  toRoute,
-} from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
 import { canAdminPerform } from '@/lib/domain/auth';
-import { formatDateOnly, getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
+import { formatDateOnly } from '@/lib/infrastructure';
 
 import { AddMemberDialog } from './components/AddMemberDialog';
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
@@ -37,8 +29,6 @@ import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
 export function AdminMembersPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'deleted' | 'all'>('active');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -55,55 +45,54 @@ export function AdminMembersPage() {
   }, [searchTerm]);
 
   const membersQuery = useAdminMembersQuery({
-    pageSize,
-    cursor,
+    pageSize: PAGINATION_DEFAULTS.adminMembersPageSize,
     searchTerm: normalizedSearchTerm,
     statusFilter,
   });
-  const members = membersQuery.data?.items ?? [];
-  const hasMore = membersQuery.data?.hasMore ?? false;
-  const nextCursor = membersQuery.data?.nextCursor ?? null;
-  const totalPages = membersQuery.data?.totalPages ?? 1;
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
+
+  const pages = membersQuery.data?.pages ?? [];
+  const members = useMemo(() => pages.flatMap((page) => page.items), [pages]);
+  const totalCount = pages[0]?.totalCount ?? 0;
+  const hasNextPage = Boolean(membersQuery.hasNextPage);
+  const isFetchingNextPage = Boolean(membersQuery.isFetchingNextPage);
+  const fetchNextPage = membersQuery.fetchNextPage;
 
   const isLoading = membersQuery.isLoading;
   const error = membersQuery.error;
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
 
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    const currentElement = loadMoreRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
+
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
-    setCursor(null);
-  }
-
-  function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize);
-    setCursor(null);
   }
 
   function handleStatusFilterChange(nextStatusFilter: 'active' | 'deleted' | 'all') {
     setStatusFilter(nextStatusFilter);
-    setCursor(null);
-  }
-
-  function handleNextPage() {
-    if (!nextCursor) return;
-    setCursor(nextCursor);
-  }
-
-  function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize));
-  }
-
-  function handleFirstPage() {
-    setCursor(null);
-  }
-
-  function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize));
-  }
-
-  function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize));
   }
 
   return (
@@ -297,28 +286,34 @@ export function AdminMembersPage() {
                 </ListTableBody>
               </ListTable>
 
-              <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p className="hidden text-xs text-muted sm:block">
-                  {normalizedSearchTerm.length > 0
-                    ? `Showing up to ${pageSize} matching ${statusFilter} members per page`
-                    : `Showing up to ${pageSize} ${statusFilter} members per page`}
+              <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-xs text-muted">
+                  {hasNextPage
+                    ? `Showing ${members.length} of ${totalCount} members`
+                    : `Showing all ${totalCount} member${totalCount === 1 ? '' : 's'}`}
                 </p>
-                <AdminPaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  isLoading={isLoading}
-                  canGoPrevious={currentPage > 1}
-                  canGoNext={hasMore && Boolean(nextCursor)}
-                  pageSize={pageSize}
-                  pageSizeOptions={PAGINATION_OPTIONS.adminMembers}
-                  onPageSizeChange={handlePageSizeChange}
-                  onFirstPage={handleFirstPage}
-                  onPreviousPage={handlePreviousPage}
-                  onNextPage={handleNextPage}
-                  onLastPage={handleLastPage}
-                  onGoToPage={handleGoToPage}
-                />
+                {hasNextPage && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="primaryOutline"
+                      size="sm"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                    >
+                      {isFetchingNextPage ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading...
+                        </span>
+                      ) : (
+                        'Load More'
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
+              <div ref={loadMoreRef} className="h-1" />
             </div>
           </>
         )}

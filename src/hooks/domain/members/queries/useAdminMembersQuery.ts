@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminMember } from '@/lib/domain/members';
@@ -23,7 +23,6 @@ export const adminMembersPageQueryKey = (
 
 export interface AdminMembersPageParams {
   pageSize?: number;
-  cursor?: string | null;
   searchTerm?: string;
   statusFilter?: 'active' | 'deleted' | 'all';
 }
@@ -37,21 +36,21 @@ export interface AdminMembersPage {
 }
 
 /**
- * Fetches paginated members list for admin view.
+ * Fetches infinite paginated members list for admin view.
  * Returns members with role and category from metadata.
  */
 export function useAdminMembersQuery(params?: AdminMembersPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize;
-  const cursor = params?.cursor ?? null;
   const searchTerm = params?.searchTerm?.trim() ?? '';
   const statusFilter = params?.statusFilter ?? 'active';
   const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0);
-  const offset = decodeOffsetCursor(cursor);
 
-  return useQuery({
-    queryKey: adminMembersPageQueryKey(pageSize, cursor, searchTerm, statusFilter),
-    placeholderData: keepPreviousData,
-    queryFn: async (): Promise<AdminMembersPage> => {
+  return useInfiniteQuery({
+    queryKey: [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, searchTerm, statusFilter],
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    queryFn: async ({ pageParam }): Promise<AdminMembersPage> => {
+      const offset = decodeOffsetCursor(pageParam);
       let query = supabase
         .from('users')
         .select(
