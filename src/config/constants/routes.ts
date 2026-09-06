@@ -10,6 +10,7 @@ export const ROUTE_PATHS = {
   termsOfService: '/terms-of-service',
   notFound: '*',
   login: '/login',
+  profile: '/profile',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
   adminMembers: '/admin/members',
@@ -48,6 +49,7 @@ export type AppRouteKey =
   | 'eventRegister'
   | 'eventPublicRegister'
   | 'login'
+  | 'profile'
   | 'adminMembers'
   | 'adminMemberMilestones'
   | 'adminMembersImport'
@@ -90,6 +92,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },
+  { key: 'profile', path: ROUTE_PATHS.profile, layout: 'shell' },
   {
     key: 'adminMembers',
     path: ROUTE_PATHS.adminMembers,

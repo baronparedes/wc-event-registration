@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
@@ -65,10 +66,14 @@ export function AppDrawerNavigation({
   const location = useLocation();
   const eventId = getEventIdFromPath(location.pathname);
   const { data: selectedEvent } = useAdminEventQuery(eventId ?? undefined);
+  const { data: currentProfile } = useCurrentProfileQuery();
+
   const canWrite = canAdminPerform(adminRole, 'canWriteAdminData');
   const canRead = canAdminPerform(adminRole, 'canReadAdminData');
   const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
+
+  const hasProfileAccess = hasSession && Boolean(currentProfile);
 
   return (
     <>
@@ -104,6 +109,9 @@ export function AppDrawerNavigation({
             <div className="space-y-2">
               <SectionHeading label="General" />
               <DrawerNavLink to={ROUTE_PATHS.home} label="Events" onClose={onClose} />
+              {hasProfileAccess && (
+                <DrawerNavLink to={ROUTE_PATHS.profile} label="My Profile" onClose={onClose} />
+              )}
               {!hasSession && (
                 <DrawerNavLink to={ROUTE_PATHS.login} label="Sign In" onClose={onClose} />
               )}
