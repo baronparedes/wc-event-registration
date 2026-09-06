@@ -94,8 +94,8 @@ function normalizeMetadataHeaderKey(value: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .replace(/_+/g, '_');
+    .replace(/^_+/, '')
+    .replace(/_+$/, '');
 }
 
 function canonicalizeMetadataHeaderKey(value: string): string {
