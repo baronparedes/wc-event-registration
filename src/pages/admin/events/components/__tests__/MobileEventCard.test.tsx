@@ -48,6 +48,8 @@ describe('MobileEventCard', () => {
 
     expect(screen.getByRole('heading', { name: 'Summer Gathering' })).toBeInTheDocument();
     expect(screen.getByText('summer-gathering')).toBeInTheDocument();
+    expect(screen.getByText('Main Hall')).toBeInTheDocument();
+    expect(document.querySelector('svg.lucide-map-pin')).toBeInTheDocument();
     expect(screen.getByText('Published')).toBeInTheDocument();
     expect(screen.getByText('Starts')).toBeInTheDocument();
     expect(screen.getByText('Reg. mode')).toBeInTheDocument();

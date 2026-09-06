@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, Edit, Form, Settings, Users } from 'lucide-react';
+import { ClipboardList, FormInput, QrCode, Settings, UserCheck, Users } from 'lucide-react';
 
 import { ActionLink } from '@/components/ui/ActionLink';
 import {
@@ -38,6 +38,7 @@ export function AdminEventsTable({
         <ListTableHead>
           <ListTableHeaderRow>
             <ListTableHeaderCell className="px-6">Event</ListTableHeaderCell>
+            <ListTableHeaderCell>Location</ListTableHeaderCell>
             <ListTableHeaderCell>Status</ListTableHeaderCell>
             <ListTableHeaderCell>Duplicate Policy</ListTableHeaderCell>
             <ListTableHeaderCell>Reg. Mode</ListTableHeaderCell>
@@ -55,6 +56,9 @@ export function AdminEventsTable({
               <ListTableCell className="px-6">
                 <p className="font-medium text-text">{event.title}</p>
                 <p className="mt-0.5 text-xs text-muted">{event.slug}</p>
+              </ListTableCell>
+              <ListTableCell>
+                <span className="text-sm text-text">{event.location}</span>
               </ListTableCell>
               <ListTableCell>
                 <EventStatusBadge status={event.status} />
@@ -76,7 +80,7 @@ export function AdminEventsTable({
                       title="Edit"
                       aria-label="Edit"
                     >
-                      <Edit className="h-5 w-5" />
+                      <Settings className="h-5 w-5" />
                     </ActionLink>
                   )}
                   {canWrite && (
@@ -85,7 +89,7 @@ export function AdminEventsTable({
                       title="Attendance"
                       aria-label="Attendance"
                     >
-                      <Settings className="h-5 w-5" />
+                      <UserCheck className="h-5 w-5" />
                     </ActionLink>
                   )}
                   {canWrite && (
@@ -94,7 +98,7 @@ export function AdminEventsTable({
                       title="Fields"
                       aria-label="Fields"
                     >
-                      <Form className="h-5 w-5" aria-label="Fields" />
+                      <FormInput className="h-5 w-5" aria-label="Fields" />
                     </ActionLink>
                   )}
                   {canRead && (
@@ -121,7 +125,7 @@ export function AdminEventsTable({
                       title="Check-In"
                       aria-label="Check-In"
                     >
-                      <CalendarCheck className="h-5 w-5" />
+                      <QrCode className="h-5 w-5" />
                     </ActionLink>
                   )}
                 </div>
