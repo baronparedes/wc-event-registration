@@ -53,6 +53,7 @@ describe('useAdminLogoutMutation', () => {
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_AUTH_QUERY_KEY });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: CURRENT_PROFILE_QUERY_KEY });
     });
   });
 

@@ -16,6 +16,7 @@ export function useAdminLogoutMutation() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
       queryClient.removeQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
       queryClient.setQueryData<AdminAuthState>(ADMIN_AUTH_QUERY_KEY, {
         isAuthenticated: false,
