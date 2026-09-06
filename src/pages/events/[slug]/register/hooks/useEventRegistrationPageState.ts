@@ -142,8 +142,10 @@ export function useEventRegistrationPageState() {
   const [isRegistrationConfirmed, setIsRegistrationConfirmed] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isWizardBlockedResult, setIsWizardBlockedResult] = useState(false);
+  const [autoLookupStatus, setAutoLookupStatus] = useState<'idle' | 'executing' | 'completed'>(
+    'idle',
+  );
   const isAutoSubmittingNoFieldsRef = useRef(false);
-  const hasAttemptedAutoLookupRef = useRef(false);
 
   const profileQuery = useCurrentProfileQuery();
   const currentProfile = profileQuery.data;
@@ -296,30 +298,32 @@ export function useEventRegistrationPageState() {
   );
 
   useEffect(() => {
-    hasAttemptedAutoLookupRef.current = false;
-  }, [slug]);
-
-  useEffect(() => {
     if (
       !isGateReady ||
       profileQuery.isLoading ||
       !currentProfile?.member_id ||
       memberLookup.matchedMember ||
       memberLookup.isLookupPending ||
-      hasAttemptedAutoLookupRef.current
+      autoLookupStatus !== 'idle'
     ) {
       return;
     }
 
-    hasAttemptedAutoLookupRef.current = true;
+    let isMounted = true;
 
-    void (async () => {
+    void Promise.resolve().then(async () => {
+      if (!isMounted) return;
+
+      setAutoLookupStatus('executing');
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
       setIsRegistrationConfirmed(false);
       clearLookupError();
 
       const result = await runMemberLookupSubmit({ memberId: currentProfile.member_id });
+      if (!isMounted) return;
+
+      setAutoLookupStatus('completed');
 
       if (!result || !result.success) {
         handleLookupFailure(
@@ -333,18 +337,30 @@ export function useEventRegistrationPageState() {
       setIsWizardBlockedResult(false);
       setWizardStep(3);
       scrollToDynamicFieldsStep();
-    })();
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [
     isGateReady,
     profileQuery.isLoading,
     currentProfile?.member_id,
     memberLookup.matchedMember,
     memberLookup.isLookupPending,
+    autoLookupStatus,
     runMemberLookupSubmit,
     clearLookupError,
     handleLookupFailure,
     scrollToDynamicFieldsStep,
   ]);
+
+  const isVerifyingSignedInMember =
+    isGateReady &&
+    !memberLookup.matchedMember &&
+    !lookupErrorMessage &&
+    (profileQuery.isLoading ||
+      (isSignedIn && (autoLookupStatus !== 'completed' || memberLookup.isLookupPending)));
 
   const handleScan = useCallback(
     async (scannedMemberId: string) => {
@@ -711,5 +727,6 @@ export function useEventRegistrationPageState() {
     shouldBypassDynamicFieldsStepCard,
     isSignedIn,
     currentProfile,
+    isVerifyingSignedInMember,
   };
 }
