@@ -28,6 +28,7 @@ import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
+import { UserIdentity } from './UserIdentity';
 
 type AppDrawerNavigationProps = {
   isOpen: boolean;
@@ -82,10 +83,6 @@ function DrawerNavLink({
   );
 }
 
-function getSignedInText(userLabel: string, role?: AdminRole | null) {
-  return role ? `Signed in as ${userLabel} (${role})` : `Signed in as ${userLabel}`;
-}
-
 export function AppDrawerNavigation({
   isOpen,
   onClose,
@@ -106,6 +103,9 @@ export function AppDrawerNavigation({
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
+  const displayName = currentProfile?.full_name ?? currentUserLabel;
+  const avatarObjectKey = currentProfile?.avatar_object_key;
+  const roleLabel = adminRole ? `(${adminRole})` : '';
 
   return (
     <>
@@ -308,10 +308,17 @@ export function AppDrawerNavigation({
                 </NavLink>
               </div>
 
-              {currentUserLabel && (
-                <p className="mb-3 truncate text-xs text-muted">
-                  {getSignedInText(currentUserLabel, adminRole)}
-                </p>
+              {displayName && (
+                <div className="mb-3">
+                  <UserIdentity
+                    displayName={displayName}
+                    avatarObjectKey={avatarObjectKey}
+                    roleLabel={roleLabel}
+                    hasProfileAccess={hasProfileAccess}
+                    variant="drawer"
+                    onProfileClick={onClose}
+                  />
+                </div>
               )}
               <Button
                 type="button"

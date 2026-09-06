@@ -6,14 +6,21 @@ import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
 
 import { AppShell } from '../AppShell';
 
-const { mockUseAdminAuthQuery, mockMutateAsync, mockToastSuccess, mockToastError } = vi.hoisted(
-  () => ({
-    mockUseAdminAuthQuery: vi.fn(),
-    mockMutateAsync: vi.fn(),
-    mockToastSuccess: vi.fn(),
-    mockToastError: vi.fn(),
-  }),
-);
+const {
+  mockUseAdminAuthQuery,
+  mockUseCurrentProfileQuery,
+  mockUseMemberAvatarQuery,
+  mockMutateAsync,
+  mockToastSuccess,
+  mockToastError,
+} = vi.hoisted(() => ({
+  mockUseAdminAuthQuery: vi.fn(),
+  mockUseCurrentProfileQuery: vi.fn(),
+  mockUseMemberAvatarQuery: vi.fn(),
+  mockMutateAsync: vi.fn(),
+  mockToastSuccess: vi.fn(),
+  mockToastError: vi.fn(),
+}));
 
 vi.mock('sonner', () => ({
   toast: {
@@ -25,6 +32,11 @@ vi.mock('sonner', () => ({
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => mockUseAdminAuthQuery(),
   useAdminLogoutMutation: () => ({ mutateAsync: mockMutateAsync }),
+}));
+
+vi.mock('@/hooks/domain/members', () => ({
+  useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
+  useMemberAvatarQuery: (...args: unknown[]) => mockUseMemberAvatarQuery(...args),
 }));
 
 vi.mock('../AppDrawerNavigation', () => ({
@@ -85,6 +97,8 @@ describe('AppShell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMutateAsync.mockResolvedValue(undefined);
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
+    mockUseMemberAvatarQuery.mockReturnValue({ data: null });
   });
 
   it('renders sign in navigation for unauthenticated users', () => {
@@ -99,7 +113,7 @@ describe('AppShell', () => {
     expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
   });
 
-  it('renders admin links for authenticated users', () => {
+  it('renders admin links and user badge for authenticated users', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
         isAuthenticated: true,
@@ -107,8 +121,18 @@ describe('AppShell', () => {
         session: { user: { email: 'admin@example.com' } },
       },
     });
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: {
+        id: 'user-1',
+        full_name: 'Jane Doe',
+        avatar_object_key: 'avatars/jane.jpg',
+      },
+    });
 
     renderShell('/admin/events');
+
+    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByText('(admin)')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));
 
@@ -120,7 +144,6 @@ describe('AppShell', () => {
       'href',
       ROUTE_PATHS.adminMembers,
     );
-    expect(screen.getAllByText('Signed in as admin@example.com (admin)').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 
