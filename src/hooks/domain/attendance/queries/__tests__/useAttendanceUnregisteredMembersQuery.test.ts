@@ -32,12 +32,13 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAttendanceUnregisteredMembersQuery(undefined, {
         pageSize: 20,
+        cursor: null,
       }),
     );
 
     await act(async () => {
       const refetchResult = await result.current.refetch();
-      expect(refetchResult.data?.pages[0]).toEqual({
+      expect(refetchResult.data).toEqual({
         items: [],
         nextCursor: null,
         hasMore: false,
@@ -71,6 +72,7 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAttendanceUnregisteredMembersQuery('event-1', {
         pageSize: 20,
+        cursor: null,
         searchTerm: ' Alex ',
       }),
     );
@@ -86,7 +88,7 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
       offset: 0,
       search_term: 'Alex',
     });
-    expect(result.current.data?.pages[0]).toEqual({
+    expect(result.current.data).toEqual({
       items: [
         {
           user_id: 'user-1',
@@ -114,6 +116,7 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAttendanceUnregisteredMembersQuery('event-1', {
         pageSize: 20,
+        cursor: null,
       }),
     );
 
@@ -132,6 +135,7 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAttendanceUnregisteredMembersQuery('event-1', {
         pageSize: 20,
+        cursor: null,
       }),
     );
 

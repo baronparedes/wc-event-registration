@@ -1,6 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { PAGINATION_DEFAULTS, QUERY_KEYS } from '@/config/constants';
+import { QUERY_KEYS } from '@/config/constants';
 import type { UnregisteredMember, UnregisteredMembersReportInput } from '@/lib/domain/attendance';
 import { createEdgeFunctionCaller, decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
@@ -28,24 +28,29 @@ export type AttendanceUnregisteredMembersPage = {
 };
 
 export interface AttendanceUnregisteredMembersParams {
-  pageSize?: number;
+  pageSize: number;
+  cursor: string | null;
   searchTerm?: string;
 }
 
-/** Fetches active members without an active registration for an event using infinite query. */
+/** Fetches active members without an active registration for an event. */
 export function useAttendanceUnregisteredMembersQuery(
   eventId: string | undefined,
-  params?: AttendanceUnregisteredMembersParams,
+  params: AttendanceUnregisteredMembersParams,
 ) {
-  const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize;
-  const searchTerm = params?.searchTerm?.trim() ?? '';
+  const searchTerm = params.searchTerm?.trim() ?? '';
+  const offset = decodeOffsetCursor(params.cursor);
 
-  return useInfiniteQuery<AttendanceUnregisteredMembersPage, Error>({
-    queryKey: QUERY_KEYS.adminAttendanceUnregisteredMembers(eventId, pageSize, searchTerm),
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage: AttendanceUnregisteredMembersPage) => lastPage.nextCursor,
+  return useQuery({
+    queryKey: QUERY_KEYS.adminAttendanceUnregisteredMembers(
+      eventId,
+      params.pageSize,
+      params.cursor,
+      searchTerm,
+    ),
+    placeholderData: keepPreviousData,
     enabled: Boolean(eventId),
-    queryFn: async ({ pageParam }): Promise<AttendanceUnregisteredMembersPage> => {
+    queryFn: async (): Promise<AttendanceUnregisteredMembersPage> => {
       if (!eventId) {
         return {
           items: [],
@@ -56,7 +61,6 @@ export function useAttendanceUnregisteredMembersQuery(
         };
       }
 
-      const offset = decodeOffsetCursor(pageParam as string | null);
       const caller = createEdgeFunctionCaller<
         UnregisteredMembersReportInput,
         UnregisteredMembersSuccess | UnregisteredMembersError
@@ -64,7 +68,7 @@ export function useAttendanceUnregisteredMembersQuery(
 
       const response = await caller({
         event_id: eventId,
-        page_size: pageSize,
+        page_size: params.pageSize,
         offset,
         search_term: searchTerm.length > 0 ? searchTerm : undefined,
       });
@@ -78,7 +82,7 @@ export function useAttendanceUnregisteredMembersQuery(
         nextCursor: response.next_cursor,
         hasMore: response.has_more,
         totalCount: response.total_count,
-        totalPages: getTotalPages(response.total_count, pageSize),
+        totalPages: getTotalPages(response.total_count, params.pageSize),
       };
     },
   });
