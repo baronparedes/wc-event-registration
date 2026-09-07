@@ -20,4 +20,3 @@ export {
   getPageCursor,
   getTotalPages,
 } from './pagination';
-export * from './servicesData';
