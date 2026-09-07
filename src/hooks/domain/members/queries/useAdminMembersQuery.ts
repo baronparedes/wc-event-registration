@@ -45,12 +45,12 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
   const statusFilter = params?.statusFilter ?? 'active';
   const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0);
 
-  return useInfiniteQuery({
+  return useInfiniteQuery<AdminMembersPage, Error>({
     queryKey: [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, searchTerm, statusFilter],
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: AdminMembersPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminMembersPage> => {
-      const offset = decodeOffsetCursor(pageParam);
+      const offset = decodeOffsetCursor(pageParam as string | null);
       let query = supabase
         .from('users')
         .select(

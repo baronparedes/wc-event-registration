@@ -31,12 +31,12 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminEventsPageSize;
   const searchTerm = params?.searchTerm?.trim() ?? '';
 
-  return useInfiniteQuery({
+  return useInfiniteQuery<AdminEventsPage, Error>({
     queryKey: adminEventsInfiniteQueryKey(pageSize, searchTerm),
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: AdminEventsPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminEventsPage> => {
-      const offset = decodeOffsetCursor(pageParam);
+      const offset = decodeOffsetCursor(pageParam as string | null);
       let eventsQuery = supabase.from('events').select('*', { count: 'exact' });
 
       if (searchTerm.length > 0) {
