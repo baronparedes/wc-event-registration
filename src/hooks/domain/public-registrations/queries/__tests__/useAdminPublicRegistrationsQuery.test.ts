@@ -95,7 +95,6 @@ describe('useAdminPublicRegistrationsQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAdminPublicRegistrationsQuery(eventId, {
         pageSize: 10,
-        cursor: null,
         searchTerm: '   ',
       }),
     );
@@ -104,7 +103,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toMatchObject({
+    expect(result.current.data?.pages[0]).toMatchObject({
       items: [{ email: attendeeEmail }],
       hasMore: false,
       nextCursor: null,
@@ -138,7 +137,6 @@ describe('useAdminPublicRegistrationsQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAdminPublicRegistrationsQuery(eventId, {
         pageSize,
-        cursor: '10',
         searchTerm: 'john%_smith,',
       }),
     );
@@ -147,8 +145,8 @@ describe('useAdminPublicRegistrationsQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data?.hasMore).toBe(true);
-    expect(result.current.data?.nextCursor).toBe('20');
+    expect(result.current.data?.pages[0]?.hasMore).toBe(true);
+    expect(result.current.data?.pages[0]?.nextCursor).toBe('20');
     expect(mockBuilder.or).toHaveBeenCalledWith(
       'first_name.ilike.%john\\%\\_smith\\,%,last_name.ilike.%john\\%\\_smith\\,%,nickname.ilike.%john\\%\\_smith\\,%,email.ilike.%john\\%\\_smith\\,%',
     );

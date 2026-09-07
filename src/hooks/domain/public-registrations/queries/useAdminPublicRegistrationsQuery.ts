@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
@@ -11,16 +11,14 @@ function escapeOrFilterValue(value: string): string {
 export const ADMIN_PUBLIC_REGISTRATIONS_QUERY_KEY = (eventId: string) =>
   ['admin-public-registrations', eventId] as const;
 
-export const adminPublicRegistrationsPageQueryKey = (
+export const adminPublicRegistrationsInfiniteQueryKey = (
   eventId: string,
   pageSize: number,
-  cursor: string | null,
   searchTerm: string,
-) => [...ADMIN_PUBLIC_REGISTRATIONS_QUERY_KEY(eventId), pageSize, cursor, searchTerm] as const;
+) => [...ADMIN_PUBLIC_REGISTRATIONS_QUERY_KEY(eventId), pageSize, searchTerm] as const;
 
 interface UseAdminPublicRegistrationsQueryParams {
   pageSize?: number;
-  cursor?: string | null;
   searchTerm?: string;
 }
 
@@ -41,13 +39,15 @@ export function useAdminPublicRegistrationsQuery(
   params?: UseAdminPublicRegistrationsQueryParams,
 ) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminRegistrationsPageSize;
-  const cursor = params?.cursor ?? null;
   const searchTerm = params?.searchTerm?.trim() ?? '';
-  const offset = decodeOffsetCursor(cursor);
 
-  return useQuery<AdminPublicRegistrationsPage>({
-    queryKey: adminPublicRegistrationsPageQueryKey(eventId, pageSize, cursor, searchTerm),
-    queryFn: async (): Promise<AdminPublicRegistrationsPage> => {
+  return useInfiniteQuery<AdminPublicRegistrationsPage, Error>({
+    queryKey: adminPublicRegistrationsInfiniteQueryKey(eventId, pageSize, searchTerm),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: AdminPublicRegistrationsPage) => lastPage.nextCursor,
+    enabled: Boolean(eventId),
+    queryFn: async ({ pageParam }): Promise<AdminPublicRegistrationsPage> => {
+      const offset = decodeOffsetCursor(pageParam as string | null);
       let query = supabase
         .from('public_registrations')
         .select('id, first_name, last_name, nickname, email, phone, status, submitted_at', {
@@ -83,7 +83,6 @@ export function useAdminPublicRegistrationsQuery(
         totalPages: getTotalPages(totalCount, pageSize),
       };
     },
-    enabled: Boolean(eventId),
     staleTime: QUERY_STALE_TIME_MS.immediate,
   });
 }
