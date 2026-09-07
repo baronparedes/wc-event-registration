@@ -11,6 +11,8 @@ export const ROUTE_PATHS = {
   notFound: '*',
   login: '/login',
   profile: '/profile',
+  forms: '/forms',
+  formSubmitPattern: '/forms/:slug/submit',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
   adminMembers: '/admin/members',
@@ -38,6 +40,11 @@ export const ROUTE_PATHS = {
   adminEventPublicRegistrationsPattern: '/admin/events/:id/public-registrations',
   adminRegistrationDetailPattern: '/admin/events/:id/registrations/:registration_id',
   adminPublicRegistrationDetailPattern: '/admin/events/:id/public-registrations/:registration_id',
+  adminForms: '/admin/forms',
+  adminFormNew: '/admin/forms/new',
+  adminFormDetailPattern: '/admin/forms/:id',
+  adminFormFieldsPattern: '/admin/forms/:id/fields',
+  adminFormSubmissionsPattern: '/admin/forms/:id/submissions',
 } as const;
 
 export type AppRouteKey =
@@ -46,6 +53,8 @@ export type AppRouteKey =
   | 'privacyPolicy'
   | 'terms'
   | 'termsOfService'
+  | 'forms'
+  | 'formSubmit'
   | 'eventRegister'
   | 'eventPublicRegister'
   | 'login'
@@ -72,7 +81,12 @@ export type AppRouteKey =
   | 'adminPublicRegistrations'
   | 'adminPublicRegistrationsBulkUpload'
   | 'adminRegistrationDetail'
-  | 'adminRegistrationNames';
+  | 'adminRegistrationNames'
+  | 'adminForms'
+  | 'adminFormNew'
+  | 'adminFormDetail'
+  | 'adminFormFields'
+  | 'adminFormSubmissions';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -89,6 +103,8 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
   { key: 'terms', path: ROUTE_PATHS.terms, layout: 'shell' },
   { key: 'termsOfService', path: ROUTE_PATHS.termsOfService, layout: 'shell' },
+  { key: 'forms', path: ROUTE_PATHS.forms, layout: 'shell' },
+  { key: 'formSubmit', path: ROUTE_PATHS.formSubmitPattern, layout: 'shell' },
   { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },
@@ -231,6 +247,36 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     layout: 'standalone',
     requiresAuth: true,
   },
+  {
+    key: 'adminForms',
+    path: ROUTE_PATHS.adminForms,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+  },
+  {
+    key: 'adminFormNew',
+    path: ROUTE_PATHS.adminFormNew,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminFormDetail',
+    path: ROUTE_PATHS.adminFormDetailPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminFormFields',
+    path: ROUTE_PATHS.adminFormFieldsPattern,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminFormSubmissions',
+    path: ROUTE_PATHS.adminFormSubmissionsPattern,
+    layout: 'shell',
+    requiresAuth: true,
+  },
 ];
 
 export const ROUTE_PREFIXES = {
@@ -240,6 +286,7 @@ export const ROUTE_PREFIXES = {
 const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.eventRegisterPattern,
   ROUTE_PATHS.eventPublicRegisterPattern,
+  ROUTE_PATHS.formSubmitPattern,
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
 ] as const;
 

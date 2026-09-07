@@ -5,3 +5,4 @@ export * from './attendance-fields';
 export * from './event-fields';
 export * from './members';
 export * from './registrations';
+export * from './forms';

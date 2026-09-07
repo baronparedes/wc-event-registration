@@ -44,6 +44,12 @@ const PublicEventRegistrationPage = lazy(() =>
     default: module.PublicEventRegistrationPage,
   })),
 );
+const PublicFormsDirectoryPage = lazy(() =>
+  import('../pages/forms').then((module) => ({ default: module.PublicFormsDirectoryPage })),
+);
+const FormSubmitPage = lazy(() =>
+  import('../pages/forms/[slug]/submit').then((module) => ({ default: module.FormSubmitPage })),
+);
 const LoginPage = lazy(() =>
   import('../pages/login').then((module) => ({ default: module.LoginPage })),
 );
@@ -152,6 +158,25 @@ const AdminRegistrationNamesPage = lazy(() =>
     default: module.AdminRegistrationNamesPage,
   })),
 );
+const AdminFormsPage = lazy(() =>
+  import('../pages/admin/forms').then((module) => ({ default: module.AdminFormsPage })),
+);
+const AdminNewFormPage = lazy(() =>
+  import('../pages/admin/forms/new').then((module) => ({ default: module.AdminNewFormPage })),
+);
+const AdminEditFormPage = lazy(() =>
+  import('../pages/admin/forms/[id]').then((module) => ({ default: module.AdminEditFormPage })),
+);
+const AdminFormFieldsPage = lazy(() =>
+  import('../pages/admin/forms/[id]/fields').then((module) => ({
+    default: module.AdminFormFieldsPage,
+  })),
+);
+const AdminFormSubmissionsPage = lazy(() =>
+  import('../pages/admin/forms/[id]/submissions').then((module) => ({
+    default: module.AdminFormSubmissionsPage,
+  })),
+);
 const NotFoundPage = lazy(() =>
   import('../pages/not-found').then((module) => ({ default: module.NotFoundPage })),
 );
@@ -198,6 +223,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   privacyPolicy: PrivacyPolicyPage,
   terms: TermsOfServicePage,
   termsOfService: TermsOfServicePage,
+  forms: PublicFormsDirectoryPage,
+  formSubmit: FormSubmitPage,
   eventRegister: EventRegistrationPage,
   eventPublicRegister: PublicEventRegistrationPage,
   login: LoginPage,
@@ -225,6 +252,11 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminPublicRegistrationsBulkUpload: AdminPublicRegistrationsBulkUploadPage,
   adminRegistrationDetail: AdminRegistrationDetailPage,
   adminRegistrationNames: AdminRegistrationNamesPage,
+  adminForms: AdminFormsPage,
+  adminFormNew: AdminNewFormPage,
+  adminFormDetail: AdminEditFormPage,
+  adminFormFields: AdminFormFieldsPage,
+  adminFormSubmissions: AdminFormSubmissionsPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {
