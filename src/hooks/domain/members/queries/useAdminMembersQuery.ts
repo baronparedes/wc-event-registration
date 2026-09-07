@@ -76,7 +76,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
           .join('%')}%`;
 
         query = query.or(
-          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.${escapedTokenPattern}`,
+          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.${escapedTokenPattern},email.ilike.${escapedTokenPattern}`,
         );
       }
 

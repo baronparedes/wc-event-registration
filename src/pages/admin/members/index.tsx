@@ -234,7 +234,7 @@ export function AdminMembersPage() {
             <FormInputField
               value={searchTerm}
               onChange={(event) => handleSearchTermChange(event.target.value)}
-              placeholder="Search by first name, last name, nickname, or member ID"
+              placeholder="Search by first name, last name, nickname, email, or member ID"
               inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
             />
           </label>

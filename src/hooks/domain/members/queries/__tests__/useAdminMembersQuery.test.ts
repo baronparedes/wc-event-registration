@@ -251,4 +251,48 @@ describe('useAdminMembersQuery', () => {
 
     expect(result.current.data?.pages[0]?.items[0]?.extra_metadata).toEqual({ tag: 'vip' });
   });
+
+  it.each([
+    ['first name', 'John', 'first_name.ilike.%John%'],
+    ['last name', 'Smith', 'last_name.ilike.%Smith%'],
+    ['nickname', 'Johnny', 'nickname.ilike.%Johnny%'],
+    ['member ID', 'WC-002', 'member_id.ilike.%WC-002%'],
+    ['email', 'john.smith@email.com', 'email.ilike.%john.smith@email.com%'],
+    ['multiple name or email tokens', 'John Smith', 'full_name.ilike.%John%Smith%'],
+  ])('filters by %s', async (_field, searchTerm, expectedFilter) => {
+    mockQueryBuilder.or.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'user-2',
+          member_id: 'WC-002',
+          avatar_object_key: null,
+          is_active: true,
+          full_name: 'John Smith',
+          first_name: 'John',
+          last_name: 'Smith',
+          nickname: null,
+          email: 'john.smith@email.com',
+          phone: null,
+          date_of_birth: null,
+          role: 'player',
+          category: 'adult',
+          metadata: {},
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+
+    const { result } = renderHookWithClient(() =>
+      useAdminMembersQuery({ pageSize: 10, searchTerm }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockQueryBuilder.or).toHaveBeenCalledWith(expect.stringContaining(expectedFilter));
+  });
 });
