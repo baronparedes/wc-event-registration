@@ -1,22 +1,26 @@
-import type { UseFormRegister } from 'react-hook-form';
+import type { FieldValues, Path, UseFormRegister } from 'react-hook-form';
 
 import { SectionCard } from '@/components/ui/SectionCard';
 
-type VisibilityRuleSectionProps = {
+export type HasVisibilityRules = {
+  val_visibility_depends_on_field_key?: string;
+  val_visibility_equals_value?: string;
+};
+
+type VisibilityRuleSectionProps<TFieldValues extends HasVisibilityRules & FieldValues> = {
   isLocked?: boolean;
   availableParentFields: Array<{ field_key: string; label: string }>;
   dependsOnFieldKey: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register: UseFormRegister<any>;
+  register: UseFormRegister<TFieldValues>;
 };
 
 /** Section for setting conditional field visibility rules. */
-export function VisibilityRuleSection({
+export function VisibilityRuleSection<TFieldValues extends HasVisibilityRules & FieldValues>({
   isLocked = false,
   availableParentFields,
   dependsOnFieldKey,
   register,
-}: VisibilityRuleSectionProps) {
+}: VisibilityRuleSectionProps<TFieldValues>) {
   const hasParentSelected = Boolean(dependsOnFieldKey && dependsOnFieldKey.trim().length > 0);
 
   return (
@@ -35,7 +39,7 @@ export function VisibilityRuleSection({
           <select
             id="val_visibility_depends_on_field_key"
             disabled={isLocked || availableParentFields.length === 0}
-            {...register('val_visibility_depends_on_field_key')}
+            {...register('val_visibility_depends_on_field_key' as Path<TFieldValues>)}
             className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:text-gray-500"
           >
             <option value="">-- Always Visible (No Dependency) --</option>
@@ -65,7 +69,7 @@ export function VisibilityRuleSection({
               type="text"
               disabled={isLocked}
               placeholder="e.g., Others"
-              {...register('val_visibility_equals_value')}
+              {...register('val_visibility_equals_value' as Path<TFieldValues>)}
               className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:text-gray-500"
             />
             <p className="mt-1 text-xs text-muted">

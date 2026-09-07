@@ -1,17 +1,16 @@
-import type { FieldArrayWithId, UseFormRegister } from 'react-hook-form';
+import type { FieldArrayWithId, FieldErrors, UseFormRegister } from 'react-hook-form';
 
 import { Button, SectionCard } from '@/components/ui';
+
+import type { AttendanceFieldPanelValues } from './AttendanceFieldEditPanel';
 
 const inputClass =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600';
 
 type AttendanceFieldOptionsSectionProps = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  optionFields: FieldArrayWithId<any, 'options', 'id'>[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register: UseFormRegister<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  errors: any;
+  optionFields: FieldArrayWithId<AttendanceFieldPanelValues, 'options', 'id'>[];
+  register: UseFormRegister<AttendanceFieldPanelValues>;
+  errors: FieldErrors<AttendanceFieldPanelValues>;
   append: (value: { label: string; value: string }) => void;
   remove: (index: number) => void;
 };

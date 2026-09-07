@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { Resolver } from 'react-hook-form';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -26,17 +27,27 @@ import { AttendanceFieldOptionsSection } from './AttendanceFieldOptionsSection';
 import { AttendanceFieldTypeSelector } from './AttendanceFieldTypeSelector';
 import { RuleInput } from './RuleInput';
 
-function normalizeOptionalNumberInput(value: unknown): unknown {
-  if (value === '' || value === null || value === undefined) {
+function preprocessOptionalNumber(val: unknown): number | undefined {
+  if (val === '' || val === null || val === undefined) {
     return undefined;
   }
-
-  if (typeof value === 'number' && Number.isNaN(value)) {
-    return undefined;
+  if (typeof val === 'number') {
+    return Number.isNaN(val) ? undefined : val;
   }
-
-  return value;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed === '') return undefined;
+    const num = Number(trimmed);
+    return Number.isNaN(num) ? undefined : num;
+  }
+  return undefined;
 }
+
+const optionalNumber = z.preprocess(preprocessOptionalNumber, z.number().optional());
+const optionalNonNegativeInt = z.preprocess(
+  preprocessOptionalNumber,
+  z.number().int().nonnegative().optional(),
+);
 
 const attendanceFieldPanelSchema = z.object({
   field_key: z
@@ -57,32 +68,38 @@ const attendanceFieldPanelSchema = z.object({
       value: z.string().min(1, 'Option value is required'),
     }),
   ),
-  val_min_length: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
-  val_max_length: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
+  val_min_length: optionalNonNegativeInt,
+  val_max_length: optionalNonNegativeInt,
   val_pattern: z.string().optional().or(z.literal('')),
-  val_min: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
-  val_max: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
-  val_min_selections: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
-  val_max_selections: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
+  val_min: optionalNumber,
+  val_max: optionalNumber,
+  val_min_selections: optionalNonNegativeInt,
+  val_max_selections: optionalNonNegativeInt,
   val_min_date: z.string().optional().or(z.literal('')),
   val_max_date: z.string().optional().or(z.literal('')),
   val_visibility_depends_on_field_key: z.string().optional().or(z.literal('')),
   val_visibility_equals_value: z.string().optional().or(z.literal('')),
 });
 
-type AttendanceFieldPanelValues = z.infer<typeof attendanceFieldPanelSchema>;
+export type AttendanceFieldPanelValues = {
+  field_key: string;
+  label: string;
+  field_type: AttendanceFieldTypeEnum;
+  is_required: boolean;
+  is_active: boolean;
+  options: { label: string; value: string }[];
+  val_min_length?: number;
+  val_max_length?: number;
+  val_pattern?: string;
+  val_min?: number;
+  val_max?: number;
+  val_min_selections?: number;
+  val_max_selections?: number;
+  val_min_date?: string;
+  val_max_date?: string;
+  val_visibility_depends_on_field_key?: string;
+  val_visibility_equals_value?: string;
+};
 
 type AttendanceFieldEditPanelProps = {
   eventId: string;
@@ -111,8 +128,9 @@ export function AttendanceFieldEditPanel({
     setValue,
     formState: { errors, isDirty, isValid },
   } = useForm<AttendanceFieldPanelValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(attendanceFieldPanelSchema) as any,
+    resolver: zodResolver(
+      attendanceFieldPanelSchema,
+    ) as unknown as Resolver<AttendanceFieldPanelValues>,
     mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues: isEditing
@@ -271,14 +289,7 @@ export function AttendanceFieldEditPanel({
           </button>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            handleSubmit(onSubmit as any)(e).catch(console.error);
-          }}
-          className="space-y-5 p-6"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6">
           {/* Field Type */}
           {!isEditing ? (
             <SectionCard title="Field Type">
