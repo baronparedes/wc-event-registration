@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
@@ -10,15 +10,11 @@ function escapeOrFilterValue(value: string): string {
   return value.replace(/[,%_]/g, (char) => `\\${char}`);
 }
 
-export const adminEventsPageQueryKey = (
-  pageSize: number,
-  cursor: string | null,
-  searchTerm: string,
-) => [...ADMIN_EVENTS_QUERY_KEY, pageSize, cursor, searchTerm] as const;
+export const adminEventsInfiniteQueryKey = (pageSize: number, searchTerm: string) =>
+  [...ADMIN_EVENTS_QUERY_KEY, pageSize, searchTerm] as const;
 
 export interface AdminEventsPageParams {
   pageSize?: number;
-  cursor?: string | null;
   searchTerm?: string;
 }
 
@@ -30,17 +26,17 @@ export interface AdminEventsPage {
   totalPages: number;
 }
 
-/** Fetches all events ordered by start date descending for admin management. */
+/** Fetches infinite events ordered by start date descending for admin management. */
 export function useAdminEventsQuery(params?: AdminEventsPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminEventsPageSize;
-  const cursor = params?.cursor ?? null;
   const searchTerm = params?.searchTerm?.trim() ?? '';
-  const offset = decodeOffsetCursor(cursor);
 
-  return useQuery({
-    queryKey: adminEventsPageQueryKey(pageSize, cursor, searchTerm),
-    placeholderData: keepPreviousData,
-    queryFn: async (): Promise<AdminEventsPage> => {
+  return useInfiniteQuery<AdminEventsPage, Error>({
+    queryKey: adminEventsInfiniteQueryKey(pageSize, searchTerm),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: AdminEventsPage) => lastPage.nextCursor,
+    queryFn: async ({ pageParam }): Promise<AdminEventsPage> => {
+      const offset = decodeOffsetCursor(pageParam as string | null);
       let eventsQuery = supabase.from('events').select('*', { count: 'exact' });
 
       if (searchTerm.length > 0) {

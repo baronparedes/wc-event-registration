@@ -1,32 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Plus } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
-import {
-  PAGINATION_DEFAULTS,
-  PAGINATION_OPTIONS,
-  ROUTE_PATHS,
-  TIMING,
-  UI_MESSAGES,
-  toRoute,
-} from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
-import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 
 import { AdminEventsTable, MobileEventCard } from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminEventsPageSize);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
@@ -41,12 +30,17 @@ export function AdminEventsPage() {
     };
   }, [searchTerm]);
 
-  const eventsQuery = useAdminEventsQuery({ pageSize, cursor, searchTerm: normalizedSearchTerm });
-  const events = eventsQuery.data?.items ?? [];
-  const hasMore = eventsQuery.data?.hasMore ?? false;
-  const nextCursor = eventsQuery.data?.nextCursor ?? null;
-  const totalPages = eventsQuery.data?.totalPages ?? 1;
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
+  const eventsQuery = useAdminEventsQuery({
+    pageSize: PAGINATION_DEFAULTS.adminEventsPageSize,
+    searchTerm: normalizedSearchTerm,
+  });
+
+  const pages = eventsQuery.data?.pages;
+  const events = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages]);
+  const totalCount = pages?.[0]?.totalCount ?? 0;
+  const hasNextPage = Boolean(eventsQuery.hasNextPage);
+  const isFetchingNextPage = Boolean(eventsQuery.isFetchingNextPage);
+  const fetchNextPage = eventsQuery.fetchNextPage;
 
   const isLoading = eventsQuery.isLoading;
   const error = eventsQuery.error;
@@ -55,35 +49,34 @@ export function AdminEventsPage() {
   const canAccessCheckIn = canAdminPerform(authState?.adminRole, 'canAccessAttendanceCheckIn');
   const isMobileViewport = useIsMobileViewport();
 
-  function handleNextPage() {
-    if (!nextCursor) return;
-    setCursor(nextCursor);
-  }
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize));
-  }
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
 
-  function handleFirstPage() {
-    setCursor(null);
-  }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
 
-  function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize));
-  }
+    const currentElement = loadMoreRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
 
-  function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize));
-  }
-
-  function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize);
-    setCursor(null);
-  }
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
-    setCursor(null);
   }
 
   return (
@@ -185,28 +178,34 @@ export function AdminEventsPage() {
               />
             )}
 
-            <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="hidden text-xs text-muted sm:block">
-                {normalizedSearchTerm.length > 0
-                  ? `Showing up to ${pageSize} matching events per page`
-                  : `Showing up to ${pageSize} events per page`}
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p className="text-xs text-muted">
+                {hasNextPage
+                  ? `Showing ${events.length} of ${totalCount} events`
+                  : `Showing all ${totalCount} event${totalCount === 1 ? '' : 's'}`}
               </p>
-              <AdminPaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                isLoading={isLoading}
-                canGoPrevious={currentPage > 1}
-                canGoNext={hasMore && Boolean(nextCursor)}
-                pageSize={pageSize}
-                pageSizeOptions={PAGINATION_OPTIONS.adminEvents}
-                onPageSizeChange={handlePageSizeChange}
-                onFirstPage={handleFirstPage}
-                onPreviousPage={handlePreviousPage}
-                onNextPage={handleNextPage}
-                onLastPage={handleLastPage}
-                onGoToPage={handleGoToPage}
-              />
+              {hasNextPage && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="primaryOutline"
+                    size="sm"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : (
+                      'Load More'
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
+            <div ref={loadMoreRef} className="h-1" />
           </div>
         )}
       </AdminPageShell.Content>
