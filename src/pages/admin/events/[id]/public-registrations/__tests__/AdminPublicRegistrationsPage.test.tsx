@@ -12,8 +12,6 @@ const {
   mockUseAdminEventQuery,
   mockUseAdminPublicRegistrationsQuery,
   mockUseDownloadPublicRegistrationsTemplateMutation,
-  mockGetCurrentPageFromCursor,
-  mockGetPageCursor,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
@@ -21,8 +19,6 @@ const {
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminPublicRegistrationsQuery: vi.fn(),
   mockUseDownloadPublicRegistrationsTemplateMutation: vi.fn(),
-  mockGetCurrentPageFromCursor: vi.fn(),
-  mockGetPageCursor: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/auth', async () => {
@@ -64,20 +60,6 @@ vi.mock('@/hooks/domain/public-registrations', async () => {
   };
 });
 
-vi.mock('@/lib/infrastructure', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
-  return {
-    ...actual,
-    getCurrentPageFromCursor: (...args: unknown[]) => mockGetCurrentPageFromCursor(...args),
-    getPageCursor: (...args: unknown[]) => mockGetPageCursor(...args),
-  };
-});
-
-vi.mock('@/components/ui/AdminPaginationControls', () => ({
-  AdminPaginationControls: () => <div>Pagination</div>,
-}));
-
 vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
   PublicRegistrationsList: (props: {
     registrations: Array<{ email: string }>;
@@ -102,8 +84,6 @@ describe('AdminPublicRegistrationsPage', () => {
       mutateAsync: vi.fn(),
       isPending: false,
     });
-    mockGetCurrentPageFromCursor.mockReturnValue(1);
-    mockGetPageCursor.mockReturnValue(null);
   });
 
   function renderWithRouter() {
@@ -125,11 +105,19 @@ describe('AdminPublicRegistrationsPage', () => {
     });
     mockUseAdminPublicRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ email: attendeeEmail }],
-        hasMore: false,
-        nextCursor: null,
-        totalPages: 1,
+        pages: [
+          {
+            items: [{ email: attendeeEmail }],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -148,6 +136,7 @@ describe('AdminPublicRegistrationsPage', () => {
       screen.getByText('This event is published. All public registrations are visible.'),
     ).toBeInTheDocument();
     expect(screen.getByText(`Public registrations: ${attendeeEmail}:write`)).toBeInTheDocument();
+    expect(screen.getByText('Showing all 1 public registration')).toBeInTheDocument();
   });
 
   it('renders error state when queries fail', () => {
@@ -198,11 +187,19 @@ describe('AdminPublicRegistrationsPage', () => {
     });
     mockUseAdminPublicRegistrationsQuery.mockReturnValue({
       data: {
-        items: [],
-        hasMore: false,
-        nextCursor: null,
-        totalPages: 1,
+        pages: [
+          {
+            items: [],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 0,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -234,11 +231,19 @@ describe('AdminPublicRegistrationsPage', () => {
     });
     mockUseAdminPublicRegistrationsQuery.mockReturnValue({
       data: {
-        items: [],
-        hasMore: false,
-        nextCursor: null,
-        totalPages: 1,
+        pages: [
+          {
+            items: [],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 0,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -265,6 +270,43 @@ describe('AdminPublicRegistrationsPage', () => {
     vi.useRealTimers();
   });
 
+  it('renders load more button when hasNextPage is true and calls fetchNextPage when clicked', () => {
+    const eventTitle = faker.lorem.words(2);
+    const fetchNextPage = vi.fn();
+
+    mockUseAdminEventQuery.mockReturnValue({
+      data: { id: testEventId, title: eventTitle, status: 'published' },
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminPublicRegistrationsQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [{ email: 'guest@example.com' }],
+            hasMore: true,
+            nextCursor: '25',
+            totalCount: 50,
+            totalPages: 2,
+          },
+        ],
+      },
+      hasNextPage: true,
+      isFetchingNextPage: false,
+      fetchNextPage,
+      isLoading: false,
+      error: null,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Showing 1 of 50 public registrations')).toBeInTheDocument();
+    const loadMoreButton = screen.getByRole('button', { name: 'Load More' });
+    expect(loadMoreButton).toBeInTheDocument();
+    fireEvent.click(loadMoreButton);
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
+
   it('passes read-only mode to the list for slod users', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: { isAuthenticated: true, session: null, adminRole: 'slod' },
@@ -277,11 +319,19 @@ describe('AdminPublicRegistrationsPage', () => {
     });
     mockUseAdminPublicRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ email: 'guest@example.com' }],
-        hasMore: false,
-        nextCursor: null,
-        totalPages: 1,
+        pages: [
+          {
+            items: [{ email: 'guest@example.com' }],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });

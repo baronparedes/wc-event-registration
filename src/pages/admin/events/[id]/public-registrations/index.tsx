@@ -1,25 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { FormInputField } from '@/components/ui';
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { Button } from '@/components/ui/Button';
-import {
-  PAGINATION_DEFAULTS,
-  PAGINATION_OPTIONS,
-  ROUTE_PATHS,
-  TIMING,
-  toRoute,
-} from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations';
-import type { AdminPublicRegistrationsPage } from '@/hooks/domain/public-registrations/queries/useAdminPublicRegistrationsQuery';
 import { canAdminPerform } from '@/lib/domain/auth';
-import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
-import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { PublicRegistrationsList } from '../registrations/components';
@@ -28,8 +19,6 @@ export function AdminPublicRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const { data: authState } = useAdminAuthQuery();
 
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminRegistrationsPageSize);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
@@ -48,10 +37,42 @@ export function AdminPublicRegistrationsPage() {
 
   const eventQuery = useAdminEventQuery(eventId ?? '');
   const publicRegistrationsQuery = useAdminPublicRegistrationsQuery(eventId ?? '', {
-    pageSize,
-    cursor,
+    pageSize: PAGINATION_DEFAULTS.adminRegistrationsPageSize,
     searchTerm: normalizedSearchTerm,
   });
+
+  const pages = publicRegistrationsQuery.data?.pages;
+  const registrations = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages]);
+  const totalCount = pages?.[0]?.totalCount ?? 0;
+  const hasNextPage = Boolean(publicRegistrationsQuery.hasNextPage);
+  const isFetchingNextPage = Boolean(publicRegistrationsQuery.isFetchingNextPage);
+  const fetchNextPage = publicRegistrationsQuery.fetchNextPage;
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    const currentElement = loadMoreRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
+
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (!eventId) {
     return (
@@ -65,12 +86,6 @@ export function AdminPublicRegistrationsPage() {
   }
 
   const event = eventQuery.data;
-  const pagedResult: AdminPublicRegistrationsPage | undefined = publicRegistrationsQuery.data;
-  const registrations: PublicRegistrationSummary[] = pagedResult?.items ?? [];
-  const hasMore = pagedResult?.hasMore ?? false;
-  const nextCursor = pagedResult?.nextCursor ?? null;
-  const totalPages = pagedResult?.totalPages ?? 1;
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
   const isLoading = eventQuery.isLoading || publicRegistrationsQuery.isLoading;
   const error = eventQuery.error || publicRegistrationsQuery.error;
   const isEventArchived = event?.status === 'archived';
@@ -78,33 +93,6 @@ export function AdminPublicRegistrationsPage() {
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
-    setCursor(null);
-  }
-
-  function handleNextPage() {
-    if (!nextCursor) return;
-    setCursor(nextCursor);
-  }
-
-  function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize));
-  }
-
-  function handleFirstPage() {
-    setCursor(null);
-  }
-
-  function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize));
-  }
-
-  function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize));
-  }
-
-  function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize);
-    setCursor(null);
   }
 
   if (error) {
@@ -152,7 +140,7 @@ export function AdminPublicRegistrationsPage() {
         ]}
         navLinks={<EventNavigationLinks eventId={eventId} currentSection="public-registrations" />}
         title="Manage Public Registrations"
-        description={`Page ${currentPage} of ${totalPages} • ${registrations.length} registrations on this page`}
+        description={`${totalCount} public registrations`}
         actions={navActions}
       />
 
@@ -207,27 +195,33 @@ export function AdminPublicRegistrationsPage() {
           />
 
           <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p className="hidden text-xs text-muted sm:block">
-              {normalizedSearchTerm.length > 0
-                ? `Showing up to ${pageSize} matching registrations per page`
-                : `Showing up to ${pageSize} registrations per page`}
+            <p className="text-xs text-muted">
+              {hasNextPage
+                ? `Showing ${registrations.length} of ${totalCount} public registrations`
+                : `Showing all ${totalCount} public registration${totalCount === 1 ? '' : 's'}`}
             </p>
-            <AdminPaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              isLoading={isLoading}
-              canGoPrevious={currentPage > 1}
-              canGoNext={hasMore && Boolean(nextCursor)}
-              pageSize={pageSize}
-              pageSizeOptions={PAGINATION_OPTIONS.adminRegistrations}
-              onPageSizeChange={handlePageSizeChange}
-              onFirstPage={handleFirstPage}
-              onPreviousPage={handlePreviousPage}
-              onNextPage={handleNextPage}
-              onLastPage={handleLastPage}
-              onGoToPage={handleGoToPage}
-            />
+            {hasNextPage && (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="primaryOutline"
+                  size="sm"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </span>
+                  ) : (
+                    'Load More'
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
+          <div ref={loadMoreRef} className="h-1" />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

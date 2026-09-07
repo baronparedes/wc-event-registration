@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminRegistrationWithMember, RegistrationStatus } from '@/lib/domain/registrations';
@@ -34,16 +34,14 @@ function readAnswerCount(value: RegistrationAnswerCount[] | null | undefined): n
 export const ADMIN_REGISTRATIONS_QUERY_KEY = (eventId: string) =>
   ['admin-registrations', eventId] as const;
 
-export const adminRegistrationsPageQueryKey = (
+export const adminRegistrationsInfiniteQueryKey = (
   eventId: string,
   pageSize: number,
-  cursor: string | null,
   searchTerm: string,
-) => [...ADMIN_REGISTRATIONS_QUERY_KEY(eventId), pageSize, cursor, searchTerm] as const;
+) => [...ADMIN_REGISTRATIONS_QUERY_KEY(eventId), pageSize, searchTerm] as const;
 
 export interface AdminRegistrationsPageParams {
   pageSize?: number;
-  cursor?: string | null;
   searchTerm?: string;
 }
 
@@ -56,19 +54,20 @@ export interface AdminRegistrationsPage {
 }
 
 /**
- * Fetches all registrations for an event with member details.
+ * Fetches infinite registrations for an event with member details.
  * Joins registrations + users + counts answers for display in list view.
  */
 export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegistrationsPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminRegistrationsPageSize;
-  const cursor = params?.cursor ?? null;
   const searchTerm = params?.searchTerm?.trim() ?? '';
-  const offset = decodeOffsetCursor(cursor);
 
-  return useQuery({
-    queryKey: adminRegistrationsPageQueryKey(eventId, pageSize, cursor, searchTerm),
-    placeholderData: keepPreviousData,
-    queryFn: async (): Promise<AdminRegistrationsPage> => {
+  return useInfiniteQuery<AdminRegistrationsPage, Error>({
+    queryKey: adminRegistrationsInfiniteQueryKey(eventId, pageSize, searchTerm),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: AdminRegistrationsPage) => lastPage.nextCursor,
+    enabled: Boolean(eventId),
+    queryFn: async ({ pageParam }): Promise<AdminRegistrationsPage> => {
+      const offset = decodeOffsetCursor(pageParam as string | null);
       let registrationsQuery = supabase
         .from('registrations')
         .select(

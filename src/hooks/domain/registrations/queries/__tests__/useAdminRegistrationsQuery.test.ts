@@ -116,14 +116,14 @@ describe('useAdminRegistrationsQuery', () => {
     });
 
     const { result } = renderHookWithClient(() =>
-      useAdminRegistrationsQuery(regRow.event_id, { pageSize: 25, cursor: null }),
+      useAdminRegistrationsQuery(regRow.event_id, { pageSize: 25 }),
     );
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data?.pages[0]).toEqual({
       items: [
         {
           ...regRow,
@@ -152,14 +152,14 @@ describe('useAdminRegistrationsQuery', () => {
     });
 
     const { result } = renderHookWithClient(() =>
-      useAdminRegistrationsQuery(eventId, { pageSize: 25, cursor: null }),
+      useAdminRegistrationsQuery(eventId, { pageSize: 25 }),
     );
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({
+    expect(result.current.data?.pages[0]).toEqual({
       items: [],
       hasMore: false,
       nextCursor: null,
@@ -203,17 +203,17 @@ describe('useAdminRegistrationsQuery', () => {
     });
 
     const { result } = renderHookWithClient(() =>
-      useAdminRegistrationsQuery(regRow.event_id, { pageSize: 1, cursor: null }),
+      useAdminRegistrationsQuery(regRow.event_id, { pageSize: 1 }),
     );
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data?.hasMore).toBe(true);
-    expect(result.current.data?.nextCursor).toBe('1');
-    expect(result.current.data?.totalPages).toBe(3);
-    expect(result.current.data?.items[0]).toMatchObject({ role: '', category: '' });
+    expect(result.current.data?.pages[0]?.hasMore).toBe(true);
+    expect(result.current.data?.pages[0]?.nextCursor).toBe('1');
+    expect(result.current.data?.pages[0]?.totalPages).toBe(3);
+    expect(result.current.data?.pages[0]?.items[0]).toMatchObject({ role: '', category: '' });
   });
 
   it('returns error state when user detail query fails', async () => {
@@ -258,7 +258,7 @@ describe('useAdminRegistrationsQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data?.items[0]?.answer_count).toBe(0);
+    expect(result.current.data?.pages[0]?.items[0]?.answer_count).toBe(0);
   });
 
   describe('with searchTerm', () => {
@@ -284,7 +284,6 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(regRow.event_id, {
           pageSize: 25,
-          cursor: null,
           searchTerm: 'Jane',
         }),
       );
@@ -296,8 +295,10 @@ describe('useAdminRegistrationsQuery', () => {
       expect(mockUsersBuilder.or).toHaveBeenCalledWith(
         expect.stringContaining('full_name.ilike.%Jane%'),
       );
-      expect(result.current.data?.items).toHaveLength(1);
-      expect(result.current.data?.items[0]).toMatchObject({ full_name: userRow.full_name });
+      expect(result.current.data?.pages[0]?.items).toHaveLength(1);
+      expect(result.current.data?.pages[0]?.items[0]).toMatchObject({
+        full_name: userRow.full_name,
+      });
     });
 
     it('returns empty result immediately when no users match the search', async () => {
@@ -309,7 +310,6 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery('evt-1', {
           pageSize: 25,
-          cursor: null,
           searchTerm: 'nonexistent',
         }),
       );
@@ -318,7 +318,7 @@ describe('useAdminRegistrationsQuery', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(result.current.data).toEqual({
+      expect(result.current.data?.pages[0]).toEqual({
         items: [],
         nextCursor: null,
         hasMore: false,
@@ -337,7 +337,6 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(testEventId, {
           pageSize: 25,
-          cursor: null,
           searchTerm: 'Jane',
         }),
       );
@@ -367,7 +366,6 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(regRow.event_id, {
           pageSize: 25,
-          cursor: null,
           searchTerm: '  Jane  ',
         }),
       );

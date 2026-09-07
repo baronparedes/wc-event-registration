@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { UserMinus } from 'lucide-react';
+import { Loader2, UserMinus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { AdminPaginationControls } from '@/components/ui/AdminPaginationControls';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
@@ -17,27 +16,18 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import {
-  PAGINATION_DEFAULTS,
-  PAGINATION_OPTIONS,
-  ROUTE_PATHS,
-  TIMING,
-  toRoute,
-} from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useAttendanceUnregisteredMembersQuery,
   useExportUnregisteredMembersCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { getCurrentPageFromCursor, getPageCursor } from '@/lib/infrastructure';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 export function AdminUnregisteredMembersPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
-  const [pageSize, setPageSize] = useState<number>(PAGINATION_DEFAULTS.adminMembersPageSize);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
@@ -55,11 +45,43 @@ export function AdminUnregisteredMembersPage() {
   const eventQuery = useAdminEventQuery(eventId);
   const settingsQuery = useAttendanceSettingsQuery(eventId);
   const unregisteredMembersQuery = useAttendanceUnregisteredMembersQuery(eventId, {
-    pageSize,
-    cursor,
+    pageSize: PAGINATION_DEFAULTS.adminMembersPageSize,
     searchTerm: normalizedSearchTerm,
   });
   const exportMutation = useExportUnregisteredMembersCSVMutation(eventId ?? '');
+
+  const pages = unregisteredMembersQuery.data?.pages;
+  const members = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages]);
+  const totalCount = pages?.[0]?.totalCount ?? 0;
+  const hasNextPage = Boolean(unregisteredMembersQuery.hasNextPage);
+  const isFetchingNextPage = Boolean(unregisteredMembersQuery.isFetchingNextPage);
+  const fetchNextPage = unregisteredMembersQuery.fetchNextPage;
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    const currentElement = loadMoreRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
+
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (!eventId) {
     return (
@@ -71,14 +93,6 @@ export function AdminUnregisteredMembersPage() {
       </AdminPageShell>
     );
   }
-
-  const membersPage = unregisteredMembersQuery.data;
-  const members = membersPage?.items ?? [];
-  const hasMore = membersPage?.hasMore ?? false;
-  const nextCursor = membersPage?.nextCursor ?? null;
-  const totalPages = membersPage?.totalPages ?? 1;
-  const totalCount = membersPage?.totalCount ?? 0;
-  const currentPage = getCurrentPageFromCursor(cursor, pageSize);
 
   const isLoading =
     eventQuery.isLoading || settingsQuery.isLoading || unregisteredMembersQuery.isLoading;
@@ -112,33 +126,6 @@ export function AdminUnregisteredMembersPage() {
 
   function handleSearchTermChange(nextSearchTerm: string) {
     setSearchTerm(nextSearchTerm);
-    setCursor(null);
-  }
-
-  function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize);
-    setCursor(null);
-  }
-
-  function handleNextPage() {
-    if (!nextCursor) return;
-    setCursor(nextCursor);
-  }
-
-  function handlePreviousPage() {
-    setCursor(getPageCursor(currentPage - 1, pageSize));
-  }
-
-  function handleFirstPage() {
-    setCursor(null);
-  }
-
-  function handleGoToPage(page: number) {
-    setCursor(getPageCursor(page, pageSize));
-  }
-
-  function handleLastPage() {
-    setCursor(getPageCursor(totalPages, pageSize));
   }
 
   return (
@@ -162,7 +149,7 @@ export function AdminUnregisteredMembersPage() {
           ) : undefined
         }
         title="Unregistered Members Report"
-        description={`Page ${currentPage} of ${totalPages} • ${totalCount} members without an active registration`}
+        description={`${totalCount} members without an active registration`}
         actions={
           <Button
             type="button"
@@ -283,27 +270,33 @@ export function AdminUnregisteredMembersPage() {
             </ListTable>
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="hidden text-xs text-muted sm:block">
-                {normalizedSearchTerm.length > 0
-                  ? `Showing up to ${pageSize} matching unregistered members per page`
-                  : `Showing up to ${pageSize} unregistered members per page`}
+              <p className="text-xs text-muted">
+                {hasNextPage
+                  ? `Showing ${members.length} of ${totalCount} unregistered members`
+                  : `Showing all ${totalCount} unregistered member${totalCount === 1 ? '' : 's'}`}
               </p>
-              <AdminPaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                isLoading={isLoading}
-                canGoPrevious={currentPage > 1}
-                canGoNext={hasMore && Boolean(nextCursor)}
-                pageSize={pageSize}
-                pageSizeOptions={PAGINATION_OPTIONS.adminMembers}
-                onPageSizeChange={handlePageSizeChange}
-                onFirstPage={handleFirstPage}
-                onPreviousPage={handlePreviousPage}
-                onNextPage={handleNextPage}
-                onLastPage={handleLastPage}
-                onGoToPage={handleGoToPage}
-              />
+              {hasNextPage && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="primaryOutline"
+                    size="sm"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : (
+                      'Load More'
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
+            <div ref={loadMoreRef} className="h-1" />
           </div>
         )}
       </AdminPageShell.Content>

@@ -11,18 +11,12 @@ const {
   mockUseAdminAuthQuery,
   mockUseAdminEventQuery,
   mockUseAdminRegistrationsQuery,
-  mockGetCurrentPageFromCursor,
-  mockGetPageCursor,
-  mockPaginationProps,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
   mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminEventQuery: vi.fn(),
   mockUseAdminRegistrationsQuery: vi.fn(),
-  mockGetCurrentPageFromCursor: vi.fn(),
-  mockGetPageCursor: vi.fn(),
-  mockPaginationProps: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/auth', async () => {
@@ -60,51 +54,6 @@ vi.mock('@/hooks/domain/registrations', async () => {
     useAdminRegistrationsQuery: (...args: unknown[]) => mockUseAdminRegistrationsQuery(...args),
   };
 });
-
-vi.mock('@/lib/infrastructure', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
-  return {
-    ...actual,
-    getCurrentPageFromCursor: (...args: unknown[]) => mockGetCurrentPageFromCursor(...args),
-    getPageCursor: (...args: unknown[]) => mockGetPageCursor(...args),
-  };
-});
-
-vi.mock('@/components/ui/AdminPaginationControls', () => ({
-  AdminPaginationControls: (props: {
-    onFirstPage: () => void;
-    onPreviousPage: () => void;
-    onNextPage: () => void;
-    onLastPage: () => void;
-    onGoToPage: (page: number) => void;
-    onPageSizeChange: (size: number) => void;
-  }) => {
-    mockPaginationProps(props);
-    return (
-      <div>
-        <button onClick={props.onFirstPage} type="button">
-          First
-        </button>
-        <button onClick={props.onPreviousPage} type="button">
-          Previous
-        </button>
-        <button onClick={props.onNextPage} type="button">
-          Next
-        </button>
-        <button onClick={props.onLastPage} type="button">
-          Last
-        </button>
-        <button onClick={() => props.onGoToPage(2)} type="button">
-          Go Page 2
-        </button>
-        <button onClick={() => props.onPageSizeChange(50)} type="button">
-          Page Size 50
-        </button>
-      </div>
-    );
-  },
-}));
 
 vi.mock('@/pages/admin/events/[id]/registrations/components', () => ({
   RegistrationsList: (props: {
@@ -150,8 +99,6 @@ describe('AdminRegistrationsPage', () => {
       isLoading: false,
     });
     mockNavigate.mockReset();
-    mockGetCurrentPageFromCursor.mockReturnValue(1);
-    mockGetPageCursor.mockReturnValue(null);
   });
 
   it('renders registrations and published-state banner', () => {
@@ -165,12 +112,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: memberId }],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 1,
-        totalPages: 1,
+        pages: [
+          {
+            items: [{ member_id: memberId }],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -189,6 +143,7 @@ describe('AdminRegistrationsPage', () => {
       screen.getByText('This event is published. All registrations are visible.'),
     ).toBeInTheDocument();
     expect(screen.getByText(`Registrations: ${memberId}:write`)).toBeInTheDocument();
+    expect(screen.getByText('Showing all 1 registration')).toBeInTheDocument();
   });
 
   it('renders error state when queries fail', () => {
@@ -240,12 +195,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: memberId }],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 1,
-        totalPages: 1,
+        pages: [
+          {
+            items: [{ member_id: memberId }],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -269,12 +231,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 0,
-        totalPages: 1,
+        pages: [
+          {
+            items: [],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 0,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -299,12 +268,10 @@ describe('AdminRegistrationsPage', () => {
     vi.useRealTimers();
   });
 
-  it('wires pagination actions to cursor helper functions', () => {
+  it('renders load more button when hasNextPage is true and calls fetchNextPage when clicked', () => {
     const eventTitle = faker.lorem.words(2);
-    const memberId = faker.helpers.slugify(faker.lorem.words(2)).toUpperCase();
+    const fetchNextPage = vi.fn();
 
-    mockGetCurrentPageFromCursor.mockReturnValue(2);
-    mockGetPageCursor.mockImplementation((page: number) => `cursor-${page}`);
     mockUseAdminEventQuery.mockReturnValue({
       data: { id: testEventId, title: eventTitle, status: 'published' },
       isLoading: false,
@@ -312,28 +279,30 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: memberId }],
-        hasMore: true,
-        nextCursor: 'cursor-next',
-        totalCount: 4,
-        totalPages: 4,
+        pages: [
+          {
+            items: [{ member_id: 'WC-001' }],
+            hasMore: true,
+            nextCursor: '25',
+            totalCount: 50,
+            totalPages: 2,
+          },
+        ],
       },
+      hasNextPage: true,
+      isFetchingNextPage: false,
+      fetchNextPage,
       isLoading: false,
       error: null,
     });
 
     renderWithRouter();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
-    fireEvent.click(screen.getByRole('button', { name: 'First' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Last' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Go Page 2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Page Size 50' }));
-
-    expect(mockGetPageCursor).toHaveBeenCalledWith(1, expect.any(Number));
-    expect(mockGetPageCursor).toHaveBeenCalledWith(4, expect.any(Number));
-    expect(mockGetPageCursor).toHaveBeenCalledWith(2, expect.any(Number));
+    expect(screen.getByText('Showing 1 of 50 registrations')).toBeInTheDocument();
+    const loadMoreButton = screen.getByRole('button', { name: 'Load More' });
+    expect(loadMoreButton).toBeInTheDocument();
+    fireEvent.click(loadMoreButton);
+    expect(fetchNextPage).toHaveBeenCalled();
   });
 
   it('renders mobile-stacked header action group and navigates to public registrations', () => {
@@ -346,12 +315,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 0,
-        totalPages: 1,
+        pages: [
+          {
+            items: [],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 0,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -382,12 +358,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: 'WC-001' }],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 1,
-        totalPages: 1,
+        pages: [
+          {
+            items: [{ member_id: 'WC-001' }],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -415,12 +398,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [{ member_id: 'WC-001' }],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 1,
-        totalPages: 1,
+        pages: [
+          {
+            items: [{ member_id: 'WC-001' }],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
@@ -441,12 +431,19 @@ describe('AdminRegistrationsPage', () => {
     });
     mockUseAdminRegistrationsQuery.mockReturnValue({
       data: {
-        items: [],
-        hasMore: false,
-        nextCursor: null,
-        totalCount: 0,
-        totalPages: 1,
+        pages: [
+          {
+            items: [],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 0,
+            totalPages: 1,
+          },
+        ],
       },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
       isLoading: false,
       error: null,
     });
