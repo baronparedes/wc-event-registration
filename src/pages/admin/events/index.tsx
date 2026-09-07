@@ -35,9 +35,9 @@ export function AdminEventsPage() {
     searchTerm: normalizedSearchTerm,
   });
 
-  const pages = eventsQuery.data?.pages ?? [];
-  const events = useMemo(() => pages.flatMap((page) => page.items), [pages]);
-  const totalCount = pages[0]?.totalCount ?? 0;
+  const pages = eventsQuery.data?.pages;
+  const events = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages]);
+  const totalCount = pages?.[0]?.totalCount ?? 0;
   const hasNextPage = Boolean(eventsQuery.hasNextPage);
   const isFetchingNextPage = Boolean(eventsQuery.isFetchingNextPage);
   const fetchNextPage = eventsQuery.fetchNextPage;

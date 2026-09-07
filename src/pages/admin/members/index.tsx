@@ -21,10 +21,102 @@ import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
 import { canAdminPerform } from '@/lib/domain/auth';
+import type { AdminMember } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
 
 import { AddMemberDialog } from './components/AddMemberDialog';
 import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
+
+function getHeaderDescription(canWrite: boolean) {
+  if (canWrite) {
+    return 'View and manage member profiles and details.';
+  }
+
+  return 'View member profiles and details.';
+}
+
+function MemberStatus({ isActive }: { isActive: boolean }) {
+  let statusClassName = 'bg-red-100 text-red-700';
+  let statusLabel = 'Deleted';
+
+  if (isActive) {
+    statusClassName = 'bg-secondary/15 text-secondary';
+    statusLabel = 'Active';
+  }
+
+  return (
+    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClassName}`}>
+      {statusLabel}
+    </span>
+  );
+}
+
+function MemberActions({ member, canWrite }: { member: AdminMember; canWrite: boolean }) {
+  const canEdit = canWrite && member.is_active;
+  let actionLabel = 'View Member';
+
+  if (canEdit) {
+    actionLabel = 'Edit Member';
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <ActionLink
+        to={toRoute('adminMemberDetail', { id: member.id })}
+        title={actionLabel}
+        aria-label={actionLabel}
+      >
+        {canEdit && <Edit className="h-5 w-5" />}
+        {!canEdit && <User className="h-5 w-5" />}
+      </ActionLink>
+      {canEdit && (
+        <UpdateMemberIdDialog
+          memberId={member.id}
+          memberName={member.full_name}
+          currentMemberId={member.member_id}
+        />
+      )}
+    </div>
+  );
+}
+
+function EmptyMembersState({ hasSearch }: { hasSearch: boolean }) {
+  let title = 'No members yet';
+  let description = 'Members will appear here once they are added to the system';
+
+  if (hasSearch) {
+    title = 'No members found';
+    description = 'Try adjusting your search filters';
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface px-6 py-12">
+      <EmptyState icon={<Users className="h-6 w-6" />} title={title} description={description} />
+    </div>
+  );
+}
+
+function getPaginationSummary(hasNextPage: boolean, memberCount: number, totalCount: number) {
+  if (hasNextPage) {
+    return `Showing ${memberCount} of ${totalCount} members`;
+  }
+
+  let memberLabel = 'members';
+
+  if (totalCount === 1) {
+    memberLabel = 'member';
+  }
+
+  return `Showing all ${totalCount} ${memberLabel}`;
+}
+
+function getMemberRowClassName(isActive: boolean) {
+  if (isActive) {
+    return 'cursor-pointer';
+  }
+
+  return 'cursor-pointer opacity-70';
+}
 
 export function AdminMembersPage() {
   const navigate = useNavigate();
@@ -50,9 +142,9 @@ export function AdminMembersPage() {
     statusFilter,
   });
 
-  const pages = membersQuery.data?.pages ?? [];
-  const members = useMemo(() => pages.flatMap((page) => page.items), [pages]);
-  const totalCount = pages[0]?.totalCount ?? 0;
+  const pages = membersQuery.data?.pages;
+  const members = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages]);
+  const totalCount = pages?.[0]?.totalCount ?? 0;
   const hasNextPage = Boolean(membersQuery.hasNextPage);
   const isFetchingNextPage = Boolean(membersQuery.isFetchingNextPage);
   const fetchNextPage = membersQuery.fetchNextPage;
@@ -60,6 +152,9 @@ export function AdminMembersPage() {
   const isLoading = membersQuery.isLoading;
   const error = membersQuery.error;
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const hasError = Boolean(error);
+  const hasNoMembers = !hasError && members.length === 0;
+  const hasMembers = !hasError && members.length > 0;
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -100,11 +195,7 @@ export function AdminMembersPage() {
       <AdminPageShell.Header
         breadcrumbs={[{ label: 'Members' }]}
         title="Manage Members"
-        description={
-          canWrite
-            ? 'View and manage member profiles and details.'
-            : 'View member profiles and details.'
-        }
+        description={getHeaderDescription(canWrite)}
         actions={
           <>
             <div className="flex items-center gap-2">
@@ -173,23 +264,13 @@ export function AdminMembersPage() {
       </AdminPageShell.Filters>
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage={UI_MESSAGES.loading.members}>
-        {error ? (
+        {hasError && (
           <div className="rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-red-600">{UI_MESSAGES.errors.membersLoadFailed}</p>
           </div>
-        ) : members.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-surface px-6 py-12">
-            <EmptyState
-              icon={<Users className="h-6 w-6" />}
-              title={normalizedSearchTerm.length > 0 ? 'No members found' : 'No members yet'}
-              description={
-                normalizedSearchTerm.length > 0
-                  ? 'Try adjusting your search filters'
-                  : 'Members will appear here once they are added to the system'
-              }
-            />
-          </div>
-        ) : (
+        )}
+        {hasNoMembers && <EmptyMembersState hasSearch={normalizedSearchTerm.length > 0} />}
+        {hasMembers && (
           <>
             <div className="rounded-2xl border border-border bg-surface">
               <ListTable>
@@ -211,7 +292,7 @@ export function AdminMembersPage() {
                   {members.map((member) => (
                     <ListTableRow
                       key={member.id}
-                      className={`cursor-pointer ${member.is_active ? '' : 'opacity-70'}`}
+                      className={getMemberRowClassName(member.is_active)}
                       onClick={() => navigate(toRoute('adminMemberDetail', { id: member.id }))}
                     >
                       <ListTableCell>
@@ -232,15 +313,7 @@ export function AdminMembersPage() {
                         )}
                       </ListTableCell>
                       <ListTableCell>
-                        <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                            member.is_active
-                              ? 'bg-secondary/15 text-secondary'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {member.is_active ? 'Active' : 'Deleted'}
-                        </span>
+                        <MemberStatus isActive={member.is_active} />
                       </ListTableCell>
                       <ListTableCell>
                         <p className="text-sm text-text">{member.email || '—'}</p>
@@ -258,28 +331,7 @@ export function AdminMembersPage() {
                         <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
                       </ListTableCell>
                       <ListTableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-3">
-                          <ActionLink
-                            to={toRoute('adminMemberDetail', { id: member.id })}
-                            title={canWrite && member.is_active ? 'Edit Member' : 'View Member'}
-                            aria-label={
-                              canWrite && member.is_active ? 'Edit Member' : 'View Member'
-                            }
-                          >
-                            {canWrite && member.is_active ? (
-                              <Edit className="h-5 w-5" />
-                            ) : (
-                              <User className="h-5 w-5" />
-                            )}
-                          </ActionLink>
-                          {canWrite && member.is_active && (
-                            <UpdateMemberIdDialog
-                              memberId={member.id}
-                              memberName={member.full_name}
-                              currentMemberId={member.member_id}
-                            />
-                          )}
-                        </div>
+                        <MemberActions member={member} canWrite={canWrite} />
                       </ListTableCell>
                     </ListTableRow>
                   ))}
@@ -288,9 +340,7 @@ export function AdminMembersPage() {
 
               <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <p className="text-xs text-muted">
-                  {hasNextPage
-                    ? `Showing ${members.length} of ${totalCount} members`
-                    : `Showing all ${totalCount} member${totalCount === 1 ? '' : 's'}`}
+                  {getPaginationSummary(hasNextPage, members.length, totalCount)}
                 </p>
                 {hasNextPage && (
                   <div className="flex items-center gap-2">
@@ -301,14 +351,13 @@ export function AdminMembersPage() {
                       onClick={() => fetchNextPage()}
                       disabled={isFetchingNextPage}
                     >
-                      {isFetchingNextPage ? (
+                      {isFetchingNextPage && (
                         <span className="inline-flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Loading...
                         </span>
-                      ) : (
-                        'Load More'
                       )}
+                      {!isFetchingNextPage && 'Load More'}
                     </Button>
                   </div>
                 )}
