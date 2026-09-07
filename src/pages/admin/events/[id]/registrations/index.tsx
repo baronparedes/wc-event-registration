@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Loader2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/cons
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
+import { useInfiniteScrollTrigger } from '@/hooks/utils';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { CopyNamesButton, ExportButton, RegistrationsList, ViewNamesButton } from './components';
@@ -46,31 +47,11 @@ export function AdminRegistrationsPage() {
   const isFetchingNextPage = Boolean(registrationsQuery.isFetchingNextPage);
   const fetchNextPage = registrationsQuery.fetchNextPage;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const loadMoreRef = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   if (!eventId) {
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { ActionButton } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
@@ -14,35 +14,20 @@ type PublishEventModalProps = {
 };
 
 function PublishEventModal({ eventData, isPending, onConfirm, onClose }: PublishEventModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  // Open dialog when eventData is set, close when cleared
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setIsOpen(!!eventData);
-  }, [eventData]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
   if (!eventData) return null;
 
   const requirements = getPublishRequirements(eventData);
   const allFilled = areAllRequirementsMet(eventData);
   const filledCount = requirements.filter((req) => req.filled).length;
 
-  const handleCancel = () => {
-    setIsOpen(false);
-    onClose();
-  };
-
   const handleConfirm = () => {
     onConfirm();
-    setIsOpen(false);
     onClose();
   };
 
   return (
     <ConfirmDialog
-      isOpen={isOpen}
+      isOpen={Boolean(eventData)}
       title="Publish Event"
       description={
         <div className="space-y-4">
@@ -75,7 +60,7 @@ function PublishEventModal({ eventData, isPending, onConfirm, onClose }: Publish
       confirmVariant={allFilled ? 'default' : 'outline'}
       isPending={isPending}
       onConfirm={handleConfirm}
-      onCancel={handleCancel}
+      onCancel={onClose}
       disabled={!allFilled}
     />
   );

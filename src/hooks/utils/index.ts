@@ -12,3 +12,4 @@ export { useFieldAnswerTextFormatter } from './useFieldAnswerTextFormatter';
 export { useWizardStepScroll } from './useWizardStepScroll';
 export { useLocalStorage } from './useLocalStorage';
 export { useDropdownPlacement } from './useDropdownPlacement';
+export { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';

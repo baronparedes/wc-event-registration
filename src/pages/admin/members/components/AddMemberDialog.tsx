@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
@@ -45,17 +45,21 @@ export function AddMemberDialog() {
     .filter(Boolean)
     .join(' ');
 
-  useEffect(() => {
-    if (!isOpen) {
-      reset(DEFAULT_VALUES);
-    }
-  }, [isOpen, reset]);
+  function handleOpen() {
+    reset(DEFAULT_VALUES);
+    setIsOpen(true);
+  }
+
+  function handleClose() {
+    reset(DEFAULT_VALUES);
+    setIsOpen(false);
+  }
 
   async function onSubmit(values: CreateMemberInput) {
     try {
       await createMemberMutation.mutateAsync(values);
       toast.success('Member created successfully.');
-      setIsOpen(false);
+      handleClose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create member.';
       toast.error(errorMessage);
@@ -66,7 +70,7 @@ export function AddMemberDialog() {
 
   return (
     <>
-      <Button type="button" onClick={() => setIsOpen(true)} className="whitespace-nowrap">
+      <Button type="button" onClick={handleOpen} className="whitespace-nowrap">
         <span className="sm:hidden">Add</span>
         <span className="hidden sm:inline">Add Member</span>
       </Button>
@@ -76,7 +80,7 @@ export function AddMemberDialog() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 lg:px-8"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setIsOpen(false);
+              handleClose();
             }
           }}
         >
@@ -164,7 +168,7 @@ export function AddMemberDialog() {
                 <Button
                   type="button"
                   variant="primaryOutline"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleClose}
                   disabled={isLoading}
                 >
                   Cancel
