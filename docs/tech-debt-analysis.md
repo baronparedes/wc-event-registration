@@ -41,14 +41,14 @@ The goal of this refactoring initiative is to reduce cognitive complexity, elimi
 
 ## Multi-Level Refactoring Roadmap
 
-### Phase 1: Foundation & Low-Hanging Refactoring _(Current Phase)_
+### Phase 1: Foundation & Low-Hanging Refactoring _(Completed)_
 
 - **Task 1.1**: Extract reusable `useInfiniteScrollTrigger` hook to eliminate duplicate `IntersectionObserver` boilerplate across all admin list views.
 - **Task 1.2**: Refactor `FormSelectField` to eliminate `useEffect` prop-to-state mirroring and ensure direct controlled behavior.
 - **Task 1.3**: Refactor dialog reset triggers in `PublishEventDialog` and `AddMemberDialog` to eliminate redundant effect syncs.
 - **Task 1.4**: Centralize query key factories across React Query hooks.
 
-### Phase 2: Structural & Component Decomposition
+### Phase 2: Structural & Component Decomposition _(Current Phase)_
 
 - **Task 2.1**: Break down monolithic state hook `useEventRegistrationPageState` into smaller focused custom hooks (`useRegistrationStepNavigation`, `useRegistrationLookup`, `useRegistrationSubmission`).
 - **Task 2.2**: Decompose monolithic components `SelectFieldRenderer` and `AttendanceFieldEditPanel` into focused sub-components.
