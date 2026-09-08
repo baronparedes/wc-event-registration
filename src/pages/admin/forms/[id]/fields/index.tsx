@@ -199,7 +199,7 @@ export function AdminFormFieldsPage() {
                 <FormSelectField
                   label="Field Type"
                   value={fieldType}
-                  onChange={(e) => setFieldType(e.target.value as FormFieldInput['field_type'])}
+                  onChange={(val) => setFieldType(val as FormFieldInput['field_type'])}
                   options={[
                     { label: 'Short Text', value: 'text' },
                     { label: 'Long Text (Textarea)', value: 'textarea' },
@@ -232,7 +232,7 @@ export function AdminFormFieldsPage() {
                 <FormSelectField
                   label="Field Applicability"
                   value={applicability}
-                  onChange={(e) => setApplicability(e.target.value as 'all' | 'member_only' | 'public_only')}
+                  onChange={(val) => setApplicability(val as 'all' | 'member_only' | 'public_only')}
                   options={[
                     { label: 'All Respondents', value: 'all' },
                     { label: 'Members Only', value: 'member_only' },
@@ -242,7 +242,6 @@ export function AdminFormFieldsPage() {
 
                 <FormInputField
                   label="Display Order"
-                  type="number"
                   value={String(displayOrder)}
                   onChange={(e) => setDisplayOrder(Number(e.target.value))}
                 />

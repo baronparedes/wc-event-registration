@@ -19,10 +19,10 @@ export const adminFormInputSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase alphanumeric with hyphens'),
   title: z.string().trim().min(1, 'Title is required'),
   description: z.string().trim().nullable().optional(),
-  status: formStatusSchema.default('published'),
-  duplicate_policy: formDuplicatePolicySchema.default('block'),
-  audience: formAudienceSchema.default('members'),
-  metadata: z.record(z.unknown()).default({}),
+  status: formStatusSchema,
+  duplicate_policy: formDuplicatePolicySchema,
+  audience: formAudienceSchema,
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type AdminFormInput = z.infer<typeof adminFormInputSchema>;
@@ -58,7 +58,7 @@ export const formFieldInputSchema = z.object({
   placeholder: z.string().trim().nullable().optional(),
   help_text: z.string().trim().nullable().optional(),
   options: z.array(formFieldOptionSchema).default([]),
-  validation_rules: z.record(z.unknown()).default({}),
+  validation_rules: z.record(z.string(), z.unknown()).default({}),
   field_applicability: formFieldApplicabilitySchema.default('all'),
   display_order: z.number().int().min(0).default(0),
 });

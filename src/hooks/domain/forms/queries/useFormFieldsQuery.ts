@@ -26,6 +26,6 @@ export function useFormFieldsQuery(formId?: string, includeInactive = false) {
       if (error) throw error;
       return (data ?? []) as FormField[];
     },
-    staleTime: QUERY_STALE_TIME_MS.standard,
+    staleTime: QUERY_STALE_TIME_MS.short,
   });
 }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -52,7 +52,7 @@ export function FormEditorPage() {
     }
   }, [existingForm, reset]);
 
-  const onSubmit = async (data: AdminFormInput) => {
+  const onSubmit: SubmitHandler<AdminFormInput> = async (data) => {
     try {
       const form = await saveFormMutation.mutateAsync({ id, data });
       if (form?.id) {
@@ -90,10 +90,9 @@ export function FormEditorPage() {
             />
 
             <SlugField
-              slug={watch('slug')}
-              sourceValue={watch('title')}
-              isEditing={isEditing}
-              onSlugChange={(slug) => setValue('slug', slug, { shouldValidate: true })}
+              value={watch('slug')}
+              isEditMode={isEditing}
+              onChange={(slugValue: string) => setValue('slug', slugValue, { shouldValidate: true })}
               error={errors.slug?.message}
             />
 

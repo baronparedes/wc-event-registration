@@ -19,6 +19,6 @@ export function usePublicFormsQuery() {
       if (error) throw error;
       return (data ?? []) as AdminForm[];
     },
-    staleTime: QUERY_STALE_TIME_MS.standard,
+    staleTime: QUERY_STALE_TIME_MS.short,
   });
 }

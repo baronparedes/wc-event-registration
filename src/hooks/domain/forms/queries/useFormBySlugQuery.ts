@@ -24,6 +24,6 @@ export function useFormBySlugQuery(slug?: string) {
       if (error) throw error;
       return data as AdminForm | null;
     },
-    staleTime: QUERY_STALE_TIME_MS.standard,
+    staleTime: QUERY_STALE_TIME_MS.short,
   });
 }
