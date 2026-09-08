@@ -8,3 +8,4 @@ export * from './events';
 export * from './members';
 export * from './registrations';
 export * from './field-visibility';
+export * from './services';
