@@ -8,6 +8,7 @@ import { AdminPageShell } from '@/components/layout';
 import { Button, FormInputField, FormSelectField, SlugField } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useSaveFormMutation } from '@/hooks/domain/forms';
+import { useSlugGeneration } from '@/hooks/utils';
 import { type AdminFormInput, adminFormInputSchema } from '@/lib/domain/forms';
 
 export function FormEditorPage() {
@@ -37,6 +38,8 @@ export function FormEditorPage() {
       metadata: {},
     },
   });
+
+  const { slugValue, onSlugChange } = useSlugGeneration(isEditing, watch, setValue);
 
   useEffect(() => {
     if (existingForm) {
@@ -77,7 +80,7 @@ export function FormEditorPage() {
       />
 
       <AdminPageShell.Content isLoading={isEditing && isLoading}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
             <h3 className="text-lg font-semibold text-text">Basic Details</h3>
 
@@ -90,11 +93,9 @@ export function FormEditorPage() {
             />
 
             <SlugField
-              value={watch('slug')}
+              value={slugValue}
               isEditMode={isEditing}
-              onChange={(slugValue: string) =>
-                setValue('slug', slugValue, { shouldValidate: true })
-              }
+              onChange={onSlugChange}
               error={errors.slug?.message}
             />
 
@@ -147,20 +148,22 @@ export function FormEditorPage() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button type="submit" variant="default" disabled={saveFormMutation.isPending}>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="primaryOutline"
+              size="lg"
+              disabled={saveFormMutation.isPending}
+              onClick={() => navigate(ROUTE_PATHS.adminForms)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="default" size="lg" disabled={saveFormMutation.isPending}>
               {saveFormMutation.isPending
                 ? 'Saving...'
                 : isEditing
                   ? 'Save Changes'
                   : 'Next: Manage Fields'}
-            </Button>
-            <Button
-              type="button"
-              variant="primaryOutline"
-              onClick={() => navigate(ROUTE_PATHS.adminForms)}
-            >
-              Cancel
             </Button>
           </div>
         </form>
