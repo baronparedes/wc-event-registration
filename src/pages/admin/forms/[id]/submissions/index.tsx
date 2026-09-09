@@ -36,9 +36,7 @@ export function AdminFormSubmissionsPage() {
           { label: 'Submissions' },
         ]}
         title="Form Submissions"
-        description={
-          form ? `Submissions submitted for ${form.title}` : 'Manage form submissions'
-        }
+        description={form ? `Submissions submitted for ${form.title}` : 'Manage form submissions'}
       />
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading submissions...">

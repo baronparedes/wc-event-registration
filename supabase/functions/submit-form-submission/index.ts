@@ -164,7 +164,9 @@ Deno.serve(async (req) => {
     // Step 3: Fetch active form fields
     const { data: formFieldsData, error: fieldsError } = await supabase
       .from('form_fields')
-      .select('id, field_key, label, field_type, field_applicability, is_required, options, validation_rules')
+      .select(
+        'id, field_key, label, field_type, field_applicability, is_required, options, validation_rules',
+      )
       .eq('form_id', formId)
       .eq('is_active', true);
 
@@ -262,7 +264,10 @@ Deno.serve(async (req) => {
     let isNew = true;
 
     // Check for existing submission under allow_update
-    if (userId && (duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update')) {
+    if (
+      userId &&
+      (duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update')
+    ) {
       const { data: existingSub } = await supabase
         .from('form_submissions')
         .select('id')
@@ -358,9 +363,7 @@ Deno.serve(async (req) => {
         submission_id: submissionId,
         status,
         is_new: isNew,
-        message: isNew
-          ? 'Form submitted successfully'
-          : 'Form submission updated successfully',
+        message: isNew ? 'Form submitted successfully' : 'Form submission updated successfully',
       } as SubmitFormSubmissionSuccess),
       {
         status: 200,

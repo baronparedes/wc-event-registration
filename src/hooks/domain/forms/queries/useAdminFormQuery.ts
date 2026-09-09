@@ -14,7 +14,11 @@ export function useAdminFormQuery(formId?: string) {
     enabled: Boolean(formId),
     queryFn: async (): Promise<AdminForm | null> => {
       if (!formId) return null;
-      const { data, error } = await supabase.from('forms').select('*').eq('id', formId).maybeSingle();
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('id', formId)
+        .maybeSingle();
 
       if (error) throw error;
       return data as AdminForm | null;

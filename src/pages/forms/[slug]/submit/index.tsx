@@ -1,12 +1,16 @@
 import { useState } from 'react';
 
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button, FormInputField, StepIndicator } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
-import { useFormBySlugQuery, useFormFieldsQuery, useSubmitFormMutation } from '@/hooks/domain/forms';
-import { useMemberLookupQuery, type MemberLookupProfile } from '@/hooks/domain/members';
+import {
+  useFormBySlugQuery,
+  useFormFieldsQuery,
+  useSubmitFormMutation,
+} from '@/hooks/domain/forms';
+import { type MemberLookupProfile, useMemberLookupQuery } from '@/hooks/domain/members';
 
 export function FormSubmitPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -104,7 +108,9 @@ export function FormSubmitPage() {
       <div className="mx-auto max-w-2xl py-12 text-center space-y-4">
         <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
         <h2 className="text-2xl font-bold text-text">Form Not Found</h2>
-        <p className="text-sm text-muted">The requested form is not available or has been archived.</p>
+        <p className="text-sm text-muted">
+          The requested form is not available or has been archived.
+        </p>
         <Button onClick={() => navigate(ROUTE_PATHS.forms)}>Back to Forms</Button>
       </div>
     );
@@ -152,7 +158,9 @@ export function FormSubmitPage() {
 
           {(form.audience === 'public' || form.audience === 'members_and_public') && (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-text">Or Continue as Guest / Public Respondent</h3>
+              <h3 className="text-sm font-medium text-text">
+                Or Continue as Guest / Public Respondent
+              </h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <FormInputField
                   label="First Name"
@@ -245,8 +253,8 @@ export function FormSubmitPage() {
                         field.field_type === 'email'
                           ? 'email'
                           : field.field_type === 'date'
-                          ? 'date'
-                          : 'text'
+                            ? 'date'
+                            : 'text'
                       }
                       value={String(responses[field.field_key] ?? '')}
                       onChange={(e) => handleFieldValueChange(field.field_key, e.target.value)}
@@ -278,9 +286,7 @@ export function FormSubmitPage() {
         <div className="rounded-2xl border border-border bg-surface p-8 text-center space-y-4">
           <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
           <h2 className="text-2xl font-bold text-text">Form Submitted Successfully!</h2>
-          <p className="text-sm text-muted">
-            Thank you! Your response has been recorded.
-          </p>
+          <p className="text-sm text-muted">Thank you! Your response has been recorded.</p>
           <div className="pt-4 flex justify-center gap-3">
             <Button variant="default" onClick={() => navigate(ROUTE_PATHS.forms)}>
               Back to Forms

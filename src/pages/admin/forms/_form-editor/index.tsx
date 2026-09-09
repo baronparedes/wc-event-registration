@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { type SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, FormInputField, FormSelectField, SlugField } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useSaveFormMutation } from '@/hooks/domain/forms';
-import { adminFormInputSchema, type AdminFormInput } from '@/lib/domain/forms';
+import { type AdminFormInput, adminFormInputSchema } from '@/lib/domain/forms';
 
 export function FormEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -92,7 +92,9 @@ export function FormEditorPage() {
             <SlugField
               value={watch('slug')}
               isEditMode={isEditing}
-              onChange={(slugValue: string) => setValue('slug', slugValue, { shouldValidate: true })}
+              onChange={(slugValue: string) =>
+                setValue('slug', slugValue, { shouldValidate: true })
+              }
               error={errors.slug?.message}
             />
 
@@ -146,16 +148,12 @@ export function FormEditorPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              type="submit"
-              variant="default"
-              disabled={saveFormMutation.isPending}
-            >
+            <Button type="submit" variant="default" disabled={saveFormMutation.isPending}>
               {saveFormMutation.isPending
                 ? 'Saving...'
                 : isEditing
-                ? 'Save Changes'
-                : 'Next: Manage Fields'}
+                  ? 'Save Changes'
+                  : 'Next: Manage Fields'}
             </Button>
             <Button
               type="button"

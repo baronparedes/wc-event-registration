@@ -17,7 +17,8 @@ export function useFormSubmissionsQuery(formId?: string) {
 
       const { data, error } = await supabase
         .from('form_submissions')
-        .select(`
+        .select(
+          `
           *,
           users (
             member_id,
@@ -39,7 +40,8 @@ export function useFormSubmissionsQuery(formId?: string) {
               field_type
             )
           )
-        `)
+        `,
+        )
         .eq('form_id', formId)
         .order('submitted_at', { ascending: false });
 

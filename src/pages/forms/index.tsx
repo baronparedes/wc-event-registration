@@ -1,4 +1,4 @@
-import { ClipboardList, ArrowRight } from 'lucide-react';
+import { ArrowRight, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { Button, EmptyState } from '@/components/ui';

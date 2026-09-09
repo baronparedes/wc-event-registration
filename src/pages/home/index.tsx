@@ -10,7 +10,11 @@ import { usePublicFormsQuery } from '@/hooks/domain/forms';
 import { EventSection } from './components';
 
 export function HomePage() {
-  const { data: events, isLoading: eventsLoading, isError: eventsError } = usePublicEventListingQuery();
+  const {
+    data: events,
+    isLoading: eventsLoading,
+    isError: eventsError,
+  } = usePublicEventListingQuery();
   const { data: forms, isLoading: formsLoading } = usePublicFormsQuery();
 
   const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? [];

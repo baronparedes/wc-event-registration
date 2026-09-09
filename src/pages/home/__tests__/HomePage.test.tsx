@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomePage } from '@/pages/home';
 
-const { mockUsePublicEventListingQuery, mockUsePublicFormsQuery, mockEventSection } = vi.hoisted(() => ({
-  mockUsePublicEventListingQuery: vi.fn(),
-  mockUsePublicFormsQuery: vi.fn(),
-  mockEventSection: vi.fn(),
-}));
+const { mockUsePublicEventListingQuery, mockUsePublicFormsQuery, mockEventSection } = vi.hoisted(
+  () => ({
+    mockUsePublicEventListingQuery: vi.fn(),
+    mockUsePublicFormsQuery: vi.fn(),
+    mockEventSection: vi.fn(),
+  }),
+);
 
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
@@ -18,14 +20,9 @@ vi.mock('@/hooks/domain/events', async () => {
   };
 });
 
-vi.mock('@/hooks/domain/forms', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/hooks/domain/forms')>('@/hooks/domain/forms');
-  return {
-    ...actual,
-    usePublicFormsQuery: () => mockUsePublicFormsQuery(),
-  };
-});
+vi.mock('@/hooks/domain/forms', () => ({
+  usePublicFormsQuery: () => mockUsePublicFormsQuery(),
+}));
 
 vi.mock('@/pages/home/components', () => ({
   EventSection: (props: { title: string; events: Array<{ id: string }> }) => {

@@ -55,9 +55,7 @@ export function AdminFormFieldsPage() {
     setFieldType(field.field_type as FormFieldInput['field_type']);
     setIsRequired(field.is_required);
     setApplicability(field.field_applicability);
-    setRawOptions(
-      Array.isArray(field.options) ? field.options.map((o) => o.label).join('\n') : '',
-    );
+    setRawOptions(Array.isArray(field.options) ? field.options.map((o) => o.label).join('\n') : '');
     setDisplayOrder(field.display_order);
   }
 
@@ -135,7 +133,9 @@ export function AdminFormFieldsPage() {
               <div className="rounded-2xl border border-border bg-surface p-6">
                 <h3 className="text-lg font-semibold text-text mb-4">Configured Fields</h3>
                 {fields?.length === 0 ? (
-                  <p className="text-sm text-muted">No fields configured yet. Click &quot;Add Field&quot; to begin.</p>
+                  <p className="text-sm text-muted">
+                    No fields configured yet. Click &quot;Add Field&quot; to begin.
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {fields?.map((field) => (
@@ -160,10 +160,18 @@ export function AdminFormFieldsPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="primaryOutline" onClick={() => startEditing(field)}>
+                          <Button
+                            size="sm"
+                            variant="primaryOutline"
+                            onClick={() => startEditing(field)}
+                          >
                             Edit
                           </Button>
-                          <Button size="sm" variant="primaryOutline" onClick={() => handleDeleteField(field.id)}>
+                          <Button
+                            size="sm"
+                            variant="primaryOutline"
+                            onClick={() => handleDeleteField(field.id)}
+                          >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
@@ -214,7 +222,9 @@ export function AdminFormFieldsPage() {
                   ]}
                 />
 
-                {(fieldType === 'select' || fieldType === 'multi_select' || fieldType === 'radio') && (
+                {(fieldType === 'select' ||
+                  fieldType === 'multi_select' ||
+                  fieldType === 'radio') && (
                   <div>
                     <label className="block text-sm font-medium text-text mb-1">
                       Options (One per line)
