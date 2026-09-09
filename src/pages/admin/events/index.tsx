@@ -102,6 +102,7 @@ export function AdminEventsPage() {
 
       <AdminPageShell.SubNav>
         <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
+        <AdminSubNavLink to={ROUTE_PATHS.adminForms}>Forms</AdminSubNavLink>
         {(canWrite || canRead) && (
           <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
         )}

@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomePage } from '@/pages/home';
 
-const { mockUsePublicEventListingQuery, mockEventSection } = vi.hoisted(() => ({
+const { mockUsePublicEventListingQuery, mockUsePublicFormsQuery, mockEventSection } = vi.hoisted(() => ({
   mockUsePublicEventListingQuery: vi.fn(),
+  mockUsePublicFormsQuery: vi.fn(),
   mockEventSection: vi.fn(),
 }));
 
@@ -14,6 +15,15 @@ vi.mock('@/hooks/domain/events', async () => {
   return {
     ...actual,
     usePublicEventListingQuery: () => mockUsePublicEventListingQuery(),
+  };
+});
+
+vi.mock('@/hooks/domain/forms', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/hooks/domain/forms')>('@/hooks/domain/forms');
+  return {
+    ...actual,
+    usePublicFormsQuery: () => mockUsePublicFormsQuery(),
   };
 });
 
@@ -27,6 +37,11 @@ vi.mock('@/pages/home/components', () => ({
 describe('HomePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
   });
 
   it('splits events into open, upcoming, and past sections', () => {
@@ -43,7 +58,7 @@ describe('HomePage', () => {
     render(<HomePage />);
 
     expect(screen.getByText('Open for Registration: 1')).toBeInTheDocument();
-    expect(screen.getByText('Upcoming: 1')).toBeInTheDocument();
+    expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
     expect(screen.getByText('Past 3 Months: 1')).toBeInTheDocument();
   });
 
@@ -56,9 +71,9 @@ describe('HomePage', () => {
 
     render(<HomePage />);
 
-    expect(screen.getByText('No events available')).toBeInTheDocument();
+    expect(screen.getByText('No items available')).toBeInTheDocument();
     expect(
-      screen.getByText('There are currently no open, upcoming, or recent events. Check back soon!'),
+      screen.getByText('There are currently no open events or active forms. Check back soon!'),
     ).toBeInTheDocument();
   });
 

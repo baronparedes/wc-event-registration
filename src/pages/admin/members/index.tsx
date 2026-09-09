@@ -225,6 +225,7 @@ export function AdminMembersPage() {
 
       <AdminPageShell.SubNav>
         <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
+        <AdminSubNavLink to={ROUTE_PATHS.adminForms}>Forms</AdminSubNavLink>
         <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
       </AdminPageShell.SubNav>
 

@@ -104,33 +104,21 @@ alter table public.form_fields enable row level security;
 alter table public.form_submissions enable row level security;
 alter table public.form_submission_answers enable row level security;
 
--- Admin policies
-create policy admin_forms_all on public.forms
-  for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
-
-create policy admin_form_fields_all on public.form_fields
-  for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
-
-create policy admin_form_submissions_all on public.form_submissions
-  for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
-
-create policy admin_form_submission_answers_all on public.form_submission_answers
-  for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
-
 -- Public / Member read policies for published forms and active fields
-create policy forms_public_read on public.forms
+create policy "public can read published forms" on public.forms
   for select to anon, authenticated
   using (status = 'published');
 
-create policy form_fields_public_read on public.form_fields
+create policy "admin viewers can read all forms" on public.forms
+  for select to authenticated
+  using (public.is_admin_viewer());
+
+create policy "admins can manage forms" on public.forms
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "public can read fields of published forms" on public.form_fields
   for select to anon, authenticated
   using (
     is_active = true and exists (
@@ -138,9 +126,39 @@ create policy form_fields_public_read on public.form_fields
     )
   );
 
+create policy "admin viewers can read form fields" on public.form_fields
+  for select to authenticated
+  using (public.is_admin_viewer());
+
+create policy "admins can manage form fields" on public.form_fields
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "admin viewers can read form submissions" on public.form_submissions
+  for select to authenticated
+  using (public.is_admin_viewer());
+
+create policy "admins can manage form submissions" on public.form_submissions
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "admin viewers can read form submission answers" on public.form_submission_answers
+  for select to authenticated
+  using (public.is_admin_viewer());
+
+create policy "admins can manage form submission answers" on public.form_submission_answers
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
 -- Grants
 grant select on public.forms to anon, authenticated;
 grant select on public.form_fields to anon, authenticated;
+grant select on public.form_submissions to authenticated;
+grant select on public.form_submission_answers to authenticated;
+
 grant all on public.forms to service_role;
 grant all on public.form_fields to service_role;
 grant all on public.form_submissions to service_role;
