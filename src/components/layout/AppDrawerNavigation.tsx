@@ -16,6 +16,7 @@ import {
   Sliders,
   User,
   UserCheck,
+  UserCog,
   UserX,
   Users,
   X,
@@ -101,6 +102,7 @@ export function AppDrawerNavigation({
   const canRead = canAdminPerform(adminRole, 'canReadAdminData');
   const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
+  const canManageRoles = canAdminPerform(adminRole, 'canManageAdminRoles');
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
   const displayName = currentProfile?.full_name ?? currentUserLabel;
@@ -181,6 +183,14 @@ export function AppDrawerNavigation({
                       to={ROUTE_PATHS.adminMembers}
                       label="Manage Members"
                       icon={Users}
+                      onClose={onClose}
+                    />
+                  )}
+                  {canManageRoles && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminUserRoles}
+                      label="User Roles"
+                      icon={UserCog}
                       onClose={onClose}
                     />
                   )}

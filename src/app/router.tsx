@@ -50,6 +50,11 @@ const LoginPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('../pages/profile').then((module) => ({ default: module.ProfilePage })),
 );
+const AdminUserRolesPage = lazy(() =>
+  import('../pages/admin/users/roles').then((module) => ({
+    default: module.AdminUserRolesPage,
+  })),
+);
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
 );
@@ -202,6 +207,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   eventPublicRegister: PublicEventRegistrationPage,
   login: LoginPage,
   profile: ProfilePage,
+  adminUserRoles: AdminUserRolesPage,
   adminMembers: AdminMembersPage,
   adminMemberMilestones: AdminMemberMilestonesPage,
   adminMembersImport: AdminMembersImportPage,
@@ -279,7 +285,7 @@ function RequireAdminAuth({
 }: {
   children: ReactElement;
   allowedRoles?: readonly AdminRole[];
-  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
+  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData' | 'canManageAdminRoles';
 }) {
   const { data, isLoading } = useAdminAuthQuery();
   const isOnline = useOnlineStatus();

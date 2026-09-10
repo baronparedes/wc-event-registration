@@ -13,6 +13,7 @@ export const ROUTE_PATHS = {
   profile: '/profile',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
+  adminUserRoles: '/admin/users/roles',
   adminMembers: '/admin/members',
   adminMemberMilestones: '/admin/members/milestones',
   adminMembersImport: '/admin/members/import',
@@ -50,6 +51,7 @@ export type AppRouteKey =
   | 'eventPublicRegister'
   | 'login'
   | 'profile'
+  | 'adminUserRoles'
   | 'adminMembers'
   | 'adminMemberMilestones'
   | 'adminMembersImport'
@@ -80,7 +82,7 @@ export type AppRouteDefinition = {
   layout: 'shell' | 'standalone';
   requiresAuth?: boolean;
   allowedRoles?: readonly AdminRole[];
-  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData';
+  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData' | 'canManageAdminRoles';
 };
 
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
@@ -93,6 +95,13 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },
   { key: 'profile', path: ROUTE_PATHS.profile, layout: 'shell' },
+  {
+    key: 'adminUserRoles',
+    path: ROUTE_PATHS.adminUserRoles,
+    layout: 'shell',
+    allowedRoles: ['super_admin'],
+    requiredPermission: 'canManageAdminRoles',
+  },
   {
     key: 'adminMembers',
     path: ROUTE_PATHS.adminMembers,

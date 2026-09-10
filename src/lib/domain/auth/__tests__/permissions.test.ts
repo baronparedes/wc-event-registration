@@ -19,6 +19,7 @@ describe('admin permission policies', () => {
           canExportAdminReports: true,
           canAccessAttendanceCheckIn: true,
           canViewMemberHistory: true,
+          canManageAdminRoles: false,
         },
       },
       {
@@ -31,6 +32,7 @@ describe('admin permission policies', () => {
           canExportAdminReports: true,
           canAccessAttendanceCheckIn: true,
           canViewMemberHistory: true,
+          canManageAdminRoles: true,
         },
       },
       {
@@ -43,6 +45,7 @@ describe('admin permission policies', () => {
           canExportAdminReports: true,
           canAccessAttendanceCheckIn: false,
           canViewMemberHistory: true,
+          canManageAdminRoles: false,
         },
       },
       {
@@ -55,6 +58,7 @@ describe('admin permission policies', () => {
           canExportAdminReports: false,
           canAccessAttendanceCheckIn: false,
           canViewMemberHistory: false,
+          canManageAdminRoles: false,
         },
       },
       {
@@ -67,6 +71,7 @@ describe('admin permission policies', () => {
           canExportAdminReports: false,
           canAccessAttendanceCheckIn: true,
           canViewMemberHistory: false,
+          canManageAdminRoles: false,
         },
       },
     ]);
@@ -83,6 +88,7 @@ describe('admin permission policies', () => {
         canExportAdminReports: true,
         canAccessAttendanceCheckIn: false,
         canViewMemberHistory: true,
+        canManageAdminRoles: false,
       },
     });
   });
@@ -90,6 +96,8 @@ describe('admin permission policies', () => {
   it('supports generic and specific permission checks', () => {
     expect(canAdminPerform('admin', 'canWriteAdminData')).toBe(true);
     expect(canAdminPerform('admin', 'canReadAdminData')).toBe(true);
+    expect(canAdminPerform('super_admin', 'canManageAdminRoles')).toBe(true);
+    expect(canAdminPerform('admin', 'canManageAdminRoles')).toBe(false);
     expect(canAdminPerform('imt', 'canReadAdminMemberData')).toBe(true);
     expect(canAdminPerform('slod', 'canManageAttendanceSavedViews')).toBe(true);
     expect(canAdminPerform('slod', 'canExportAdminReports')).toBe(true);
@@ -103,5 +111,6 @@ describe('admin permission policies', () => {
     expect(canAdminPerform('kiosk', 'canReadAdminData')).toBe(false);
     expect(canAdminPerform('kiosk', 'canReadAdminMemberData')).toBe(false);
     expect(canAdminPerform('slod', 'canWriteAdminData')).toBe(false);
+    expect(canAdminPerform('admin', 'canManageAdminRoles')).toBe(false);
   });
 });
