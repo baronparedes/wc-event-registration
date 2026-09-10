@@ -53,8 +53,6 @@ export type AppRouteKey =
   | 'privacyPolicy'
   | 'terms'
   | 'termsOfService'
-  | 'forms'
-  | 'formSubmit'
   | 'eventRegister'
   | 'eventPublicRegister'
   | 'login'
@@ -103,8 +101,6 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
   { key: 'terms', path: ROUTE_PATHS.terms, layout: 'shell' },
   { key: 'termsOfService', path: ROUTE_PATHS.termsOfService, layout: 'shell' },
-  { key: 'forms', path: ROUTE_PATHS.forms, layout: 'shell' },
-  { key: 'formSubmit', path: ROUTE_PATHS.formSubmitPattern, layout: 'shell' },
   { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },

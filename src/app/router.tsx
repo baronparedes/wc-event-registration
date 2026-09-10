@@ -44,12 +44,6 @@ const PublicEventRegistrationPage = lazy(() =>
     default: module.PublicEventRegistrationPage,
   })),
 );
-const PublicFormsDirectoryPage = lazy(() =>
-  import('../pages/forms').then((module) => ({ default: module.PublicFormsDirectoryPage })),
-);
-const FormSubmitPage = lazy(() =>
-  import('../pages/forms/[slug]/submit').then((module) => ({ default: module.FormSubmitPage })),
-);
 const LoginPage = lazy(() =>
   import('../pages/login').then((module) => ({ default: module.LoginPage })),
 );
@@ -223,8 +217,6 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   privacyPolicy: PrivacyPolicyPage,
   terms: TermsOfServicePage,
   termsOfService: TermsOfServicePage,
-  forms: PublicFormsDirectoryPage,
-  formSubmit: FormSubmitPage,
   eventRegister: EventRegistrationPage,
   eventPublicRegister: PublicEventRegistrationPage,
   login: LoginPage,

@@ -1,9 +1,7 @@
-import { ArrowRight, Calendar } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Calendar } from 'lucide-react';
 
-import { Button, EmptyState } from '@/components/ui';
+import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { toRoute } from '@/config/constants';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
 
@@ -65,40 +63,6 @@ export function HomePage() {
 
       {eventsError && (
         <p className="text-sm text-destructive">Unable to load events. Please try again.</p>
-      )}
-
-      {!isLoading && !eventsError && forms && forms.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="font-heading text-xl font-bold text-text">Active Forms & Requests</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {forms.map((form) => (
-              <div
-                key={form.id}
-                className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs transition hover:border-accent"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent capitalize">
-                      {form.audience}
-                    </span>
-                  </div>
-                  <h3 className="font-heading text-lg font-bold text-text">{form.title}</h3>
-                  {form.description && (
-                    <p className="text-xs text-muted line-clamp-2">{form.description}</p>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-border flex justify-end">
-                  <Button asChild size="sm" variant="default">
-                    <Link to={toRoute('formSubmit', { slug: form.slug })}>
-                      Fill Out Form <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {!isLoading && !eventsError && events?.length === 0 && (!forms || forms.length === 0) && (
