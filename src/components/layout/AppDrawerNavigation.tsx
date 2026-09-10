@@ -148,6 +148,12 @@ export function AppDrawerNavigation({
                 icon={LayoutDashboard}
                 onClose={onClose}
               />
+              <DrawerNavLink
+                to={ROUTE_PATHS.forms}
+                label="Forms"
+                icon={ClipboardList}
+                onClose={onClose}
+              />
               {hasProfileAccess && (
                 <DrawerNavLink
                   to={ROUTE_PATHS.profile}
@@ -175,6 +181,14 @@ export function AppDrawerNavigation({
                       to={ROUTE_PATHS.adminEvents}
                       label="Manage Events"
                       icon={Calendar}
+                      onClose={onClose}
+                    />
+                  )}
+                  {canRead && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminForms}
+                      label="Manage Forms"
+                      icon={ClipboardList}
                       onClose={onClose}
                     />
                   )}
