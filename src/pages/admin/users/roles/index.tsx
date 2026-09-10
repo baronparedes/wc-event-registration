@@ -22,7 +22,7 @@ import {
   type AdminRole,
   type AdminRoleAssignment,
   useAdminRolesQuery,
-  useRevokeAdminRoleMutation,
+  useManageAdminRoleMutation,
 } from '@/hooks/domain/auth';
 
 import { AssignRoleDialog } from './components/AssignRoleDialog';
@@ -47,7 +47,7 @@ function getRoleBadgeVariant(role: AdminRole): 'open' | 'upcoming' | 'closed' | 
 
 export function AdminUserRolesPage() {
   const { data: assignments, isLoading, error } = useAdminRolesQuery();
-  const revokeMutation = useRevokeAdminRoleMutation();
+  const roleMutation = useManageAdminRoleMutation();
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<AdminRoleAssignment | null>(null);
@@ -59,7 +59,7 @@ export function AdminUserRolesPage() {
     if (!revokingAssignment) return;
 
     try {
-      await revokeMutation.mutateAsync({ adminId: revokingAssignment.id });
+      await roleMutation.mutateAsync({ action: 'revoke', admin_id: revokingAssignment.id });
       toast.success(`Role for ${revokingAssignment.email} has been revoked.`);
       setRevokingAssignment(null);
     } catch (err) {
@@ -223,7 +223,7 @@ export function AdminUserRolesPage() {
         confirmLabel="Revoke Role"
         confirmLoadingLabel="Revoking..."
         confirmVariant="destructive"
-        isPending={revokeMutation.isPending}
+        isPending={roleMutation.isPending}
         onConfirm={handleRevoke}
         onCancel={() => setRevokingAssignment(null)}
       />

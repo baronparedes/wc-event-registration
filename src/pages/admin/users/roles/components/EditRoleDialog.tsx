@@ -6,7 +6,7 @@ import { Button, Dialog, FormSelectField } from '@/components/ui';
 import {
   type AdminRoleAssignment,
   type AssignableAdminRole,
-  useUpdateAdminRoleMutation,
+  useManageAdminRoleMutation,
 } from '@/hooks/domain/auth';
 
 type EditRoleDialogProps = {
@@ -24,7 +24,7 @@ const ROLE_OPTIONS: Array<{ value: AssignableAdminRole; label: string }> = [
 
 export function EditRoleDialog({ isOpen, onClose, assignment }: EditRoleDialogProps) {
   const [selectedRole, setSelectedRole] = useState<AssignableAdminRole | null>(null);
-  const updateMutation = useUpdateAdminRoleMutation();
+  const roleMutation = useManageAdminRoleMutation();
 
   if (!assignment) return null;
 
@@ -41,8 +41,9 @@ export function EditRoleDialog({ isOpen, onClose, assignment }: EditRoleDialogPr
     if (!assignment) return;
 
     try {
-      await updateMutation.mutateAsync({
-        adminId: assignment.id,
+      await roleMutation.mutateAsync({
+        action: 'update',
+        admin_id: assignment.id,
         role,
       });
       toast.success(`Role for ${assignment.email} updated to "${role}".`);
@@ -89,10 +90,10 @@ export function EditRoleDialog({ isOpen, onClose, assignment }: EditRoleDialogPr
             type="button"
             variant="default"
             size="sm"
-            disabled={updateMutation.isPending || role === assignment.role}
+            disabled={roleMutation.isPending || role === assignment.role}
             onClick={handleUpdate}
           >
-            {updateMutation.isPending ? 'Updating...' : 'Save Changes'}
+            {roleMutation.isPending ? 'Updating...' : 'Save Changes'}
           </Button>
         </div>
       </div>

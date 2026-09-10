@@ -6,10 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   useAdminRolesQuery,
-  useAssignAdminRoleMutation,
   useAuthUsersQuery,
-  useRevokeAdminRoleMutation,
-  useUpdateAdminRoleMutation,
+  useManageAdminRoleMutation,
 } from '@/hooks/domain/auth';
 import { supabase } from '@/lib/infrastructure';
 
@@ -125,84 +123,40 @@ describe('role management domain hooks', () => {
     });
   });
 
-  describe('useAssignAdminRoleMutation', () => {
-    it('assigns role successfully', async () => {
-      const { result } = renderHook(() => useAssignAdminRoleMutation(), {
+  describe('useManageAdminRoleMutation', () => {
+    it.each([
+      {
+        action: 'assign' as const,
+        variables: { action: 'assign' as const, auth_user_id: 'u1', role: 'admin' as const },
+      },
+      {
+        action: 'update' as const,
+        variables: { action: 'update' as const, admin_id: '1', role: 'slod' as const },
+      },
+      {
+        action: 'revoke' as const,
+        variables: { action: 'revoke' as const, admin_id: '1' },
+      },
+    ])('handles $action', async ({ variables }) => {
+      const { result } = renderHook(() => useManageAdminRoleMutation(), {
         wrapper: createWrapper(),
       });
 
-      await result.current.mutateAsync({ authUserId: 'u1', role: 'admin' });
+      await result.current.mutateAsync(variables);
 
-      expect(mockManageAdminRole).toHaveBeenCalledWith({
-        action: 'assign',
-        auth_user_id: 'u1',
-        role: 'admin',
-      });
+      expect(mockManageAdminRole).toHaveBeenCalledWith(variables);
     });
 
-    it('throws error when assign fails', async () => {
-      mockManageAdminRole.mockRejectedValueOnce(new Error('Assign failed'));
+    it('throws errors from the Edge Function', async () => {
+      mockManageAdminRole.mockRejectedValueOnce(new Error('Role mutation failed'));
 
-      const { result } = renderHook(() => useAssignAdminRoleMutation(), {
+      const { result } = renderHook(() => useManageAdminRoleMutation(), {
         wrapper: createWrapper(),
       });
 
-      await expect(result.current.mutateAsync({ authUserId: 'u1', role: 'admin' })).rejects.toThrow(
-        'Assign failed',
+      await expect(result.current.mutateAsync({ action: 'revoke', admin_id: '1' })).rejects.toThrow(
+        'Role mutation failed',
       );
-    });
-  });
-
-  describe('useUpdateAdminRoleMutation', () => {
-    it('updates role successfully', async () => {
-      const { result } = renderHook(() => useUpdateAdminRoleMutation(), {
-        wrapper: createWrapper(),
-      });
-
-      await result.current.mutateAsync({ adminId: '1', role: 'slod' });
-
-      expect(mockManageAdminRole).toHaveBeenCalledWith({
-        action: 'update',
-        admin_id: '1',
-        role: 'slod',
-      });
-    });
-
-    it('throws error when update fails', async () => {
-      mockManageAdminRole.mockRejectedValueOnce(new Error('Update failed'));
-
-      const { result } = renderHook(() => useUpdateAdminRoleMutation(), {
-        wrapper: createWrapper(),
-      });
-
-      await expect(result.current.mutateAsync({ adminId: '1', role: 'slod' })).rejects.toThrow(
-        'Update failed',
-      );
-    });
-  });
-
-  describe('useRevokeAdminRoleMutation', () => {
-    it('revokes role successfully', async () => {
-      const { result } = renderHook(() => useRevokeAdminRoleMutation(), {
-        wrapper: createWrapper(),
-      });
-
-      await result.current.mutateAsync({ adminId: '1' });
-
-      expect(mockManageAdminRole).toHaveBeenCalledWith({
-        action: 'revoke',
-        admin_id: '1',
-      });
-    });
-
-    it('throws error when revoke fails', async () => {
-      mockManageAdminRole.mockRejectedValueOnce(new Error('Revoke failed'));
-
-      const { result } = renderHook(() => useRevokeAdminRoleMutation(), {
-        wrapper: createWrapper(),
-      });
-
-      await expect(result.current.mutateAsync({ adminId: '1' })).rejects.toThrow('Revoke failed');
     });
   });
 });

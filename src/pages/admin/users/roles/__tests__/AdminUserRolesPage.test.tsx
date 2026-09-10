@@ -7,6 +7,7 @@ import { AdminUserRolesPage } from '@/pages/admin/users/roles';
 const {
   mockUseAdminRolesQuery,
   mockUseAuthUsersQuery,
+  mockManageAdminRole,
   mockAssignMutateAsync,
   mockUpdateMutateAsync,
   mockRevokeMutateAsync,
@@ -15,6 +16,7 @@ const {
 } = vi.hoisted(() => ({
   mockUseAdminRolesQuery: vi.fn(),
   mockUseAuthUsersQuery: vi.fn(),
+  mockManageAdminRole: vi.fn(),
   mockAssignMutateAsync: vi.fn(),
   mockUpdateMutateAsync: vi.fn(),
   mockRevokeMutateAsync: vi.fn(),
@@ -40,16 +42,8 @@ vi.mock('@/hooks/domain/auth', async () => {
     useAdminAuthQuery: () => ({ data: { adminRole: 'super_admin' } }),
     useAdminRolesQuery: () => mockUseAdminRolesQuery(),
     useAuthUsersQuery: (search: string, enabled: boolean) => mockUseAuthUsersQuery(search, enabled),
-    useAssignAdminRoleMutation: () => ({
-      mutateAsync: mockAssignMutateAsync,
-      isPending: false,
-    }),
-    useUpdateAdminRoleMutation: () => ({
-      mutateAsync: mockUpdateMutateAsync,
-      isPending: false,
-    }),
-    useRevokeAdminRoleMutation: () => ({
-      mutateAsync: mockRevokeMutateAsync,
+    useManageAdminRoleMutation: () => ({
+      mutateAsync: mockManageAdminRole,
       isPending: false,
     }),
   };
@@ -130,6 +124,11 @@ describe('AdminUserRolesPage', () => {
     mockAssignMutateAsync.mockResolvedValue({});
     mockUpdateMutateAsync.mockResolvedValue({});
     mockRevokeMutateAsync.mockResolvedValue({});
+    mockManageAdminRole.mockImplementation((variables: { action: string }) => {
+      if (variables.action === 'assign') return mockAssignMutateAsync(variables);
+      if (variables.action === 'update') return mockUpdateMutateAsync(variables);
+      return mockRevokeMutateAsync(variables);
+    });
   });
 
   it('renders loading state', () => {
@@ -199,7 +198,8 @@ describe('AdminUserRolesPage', () => {
 
     await waitFor(() => {
       expect(mockAssignMutateAsync).toHaveBeenCalledWith({
-        authUserId: 'user-id-new',
+        action: 'assign',
+        auth_user_id: 'user-id-new',
         role: 'admin',
       });
     });
@@ -235,7 +235,8 @@ describe('AdminUserRolesPage', () => {
 
     await waitFor(() => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
-        adminId: 'admin-row-2',
+        action: 'update',
+        admin_id: 'admin-row-2',
         role: 'slod',
       });
     });
@@ -273,7 +274,8 @@ describe('AdminUserRolesPage', () => {
 
     await waitFor(() => {
       expect(mockRevokeMutateAsync).toHaveBeenCalledWith({
-        adminId: 'admin-row-2',
+        action: 'revoke',
+        admin_id: 'admin-row-2',
       });
     });
 

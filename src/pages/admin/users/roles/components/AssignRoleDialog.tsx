@@ -21,8 +21,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import {
   type AssignableAdminRole,
   type AuthUserItem,
-  useAssignAdminRoleMutation,
   useAuthUsersQuery,
+  useManageAdminRoleMutation,
 } from '@/hooks/domain/auth';
 
 type AssignRoleDialogProps = {
@@ -44,7 +44,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
   const [selectedRole, setSelectedRole] = useState<AssignableAdminRole>('admin');
 
   const { data: authUsers, isLoading: isSearching } = useAuthUsersQuery(searchTerm, isOpen);
-  const assignMutation = useAssignAdminRoleMutation();
+  const roleMutation = useManageAdminRoleMutation();
 
   function handleClose() {
     setSearchTerm('');
@@ -57,8 +57,9 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
     if (!selectedUser) return;
 
     try {
-      await assignMutation.mutateAsync({
-        authUserId: selectedUser.id,
+      await roleMutation.mutateAsync({
+        action: 'assign',
+        auth_user_id: selectedUser.id,
         role: selectedRole,
       });
       toast.success(`Role "${selectedRole}" assigned to ${selectedUser.email}.`);
@@ -187,12 +188,12 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
             type="button"
             variant="default"
             size="sm"
-            disabled={!selectedUser || assignMutation.isPending}
+            disabled={!selectedUser || roleMutation.isPending}
             onClick={handleAssign}
             className="gap-1.5"
           >
             <UserPlus className="h-4 w-4" />
-            <span>{assignMutation.isPending ? 'Assigning...' : 'Assign Role'}</span>
+            <span>{roleMutation.isPending ? 'Assigning...' : 'Assign Role'}</span>
           </Button>
         </div>
       </div>

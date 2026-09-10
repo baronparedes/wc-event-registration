@@ -13,6 +13,7 @@ export { useAdminLogoutMutation } from './useAdminLogoutMutation';
 export { useGoogleLoginMutation } from './useGoogleLoginMutation';
 export { useAdminRolesQuery, ADMIN_ROLES_QUERY_KEY } from './useAdminRolesQuery';
 export { useAuthUsersQuery, AUTH_USERS_QUERY_KEY } from './useAuthUsersQuery';
-export { useAssignAdminRoleMutation } from './useAssignAdminRoleMutation';
-export { useUpdateAdminRoleMutation } from './useUpdateAdminRoleMutation';
-export { useRevokeAdminRoleMutation } from './useRevokeAdminRoleMutation';
+export {
+  useManageAdminRoleMutation,
+  type ManageAdminRoleVariables,
+} from './useManageAdminRoleMutation';
