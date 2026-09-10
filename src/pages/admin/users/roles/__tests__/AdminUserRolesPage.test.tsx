@@ -29,10 +29,15 @@ vi.mock('sonner', () => ({
   },
 }));
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name }: { name: string }) => <span>{name}</span>,
+}));
+
 vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
+    useAdminAuthQuery: () => ({ data: { adminRole: 'super_admin' } }),
     useAdminRolesQuery: () => mockUseAdminRolesQuery(),
     useAuthUsersQuery: (search: string, enabled: boolean) => mockUseAuthUsersQuery(search, enabled),
     useAssignAdminRoleMutation: () => ({
@@ -62,6 +67,7 @@ const mockAssignments = [
   {
     id: 'admin-row-1',
     auth_user_id: 'user-id-super',
+    avatar_object_key: null,
     email: 'superadmin@example.com',
     role: 'super_admin' as const,
     created_at: '2026-01-01T00:00:00Z',
@@ -69,6 +75,7 @@ const mockAssignments = [
   {
     id: 'admin-row-2',
     auth_user_id: 'user-id-admin',
+    avatar_object_key: null,
     email: 'regularadmin@example.com',
     role: 'admin' as const,
     created_at: '2026-02-01T00:00:00Z',
@@ -76,6 +83,7 @@ const mockAssignments = [
   {
     id: 'admin-row-3',
     auth_user_id: 'user-id-slod',
+    avatar_object_key: null,
     email: 'sloduser@example.com',
     role: 'slod' as const,
     created_at: '2026-02-02T00:00:00Z',
@@ -83,6 +91,7 @@ const mockAssignments = [
   {
     id: 'admin-row-4',
     auth_user_id: 'user-id-imt',
+    avatar_object_key: null,
     email: 'imtuser@example.com',
     role: 'imt' as const,
     created_at: '2026-02-03T00:00:00Z',
@@ -90,6 +99,7 @@ const mockAssignments = [
   {
     id: 'admin-row-5',
     auth_user_id: 'user-id-kiosk',
+    avatar_object_key: null,
     email: 'kioskuser@example.com',
     role: 'kiosk' as const,
     created_at: '2026-02-04T00:00:00Z',
@@ -108,7 +118,9 @@ describe('AdminUserRolesPage', () => {
       data: [
         {
           id: 'user-id-new',
+          name: 'New User',
           email: 'newuser@example.com',
+          avatar_object_key: null,
           created_at: '2026-03-01T00:00:00Z',
           last_sign_in_at: null,
         },
@@ -176,7 +188,7 @@ describe('AdminUserRolesPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Assign Role to User' }));
 
-    expect(screen.getByText('Assign Role to Auth User')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assign Role' })).toBeInTheDocument();
 
     const searchInput = screen.getByPlaceholderText('Search by email...');
     fireEvent.change(searchInput, { target: { value: 'new' } });

@@ -55,6 +55,7 @@ describe('role management domain hooks', () => {
         {
           id: '1',
           auth_user_id: 'u1',
+          name: 'Auth User',
           email: 'a@example.com',
           role: 'admin',
           created_at: '2026-01-01',
@@ -85,7 +86,14 @@ describe('role management domain hooks', () => {
   describe('useAuthUsersQuery', () => {
     it('lists auth users with search term', async () => {
       const mockUsers = [
-        { id: 'u1', email: 'test@example.com', created_at: '2026-01-01', last_sign_in_at: null },
+        {
+          id: 'u1',
+          name: 'Auth User',
+          email: 'test@example.com',
+          avatar_object_key: null,
+          created_at: '2026-01-01',
+          last_sign_in_at: null,
+        },
       ];
       vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockUsers, error: null } as never);
 

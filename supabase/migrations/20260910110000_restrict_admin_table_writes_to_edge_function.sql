@@ -6,4 +6,9 @@ from
   anon,
   authenticated;
 
+-- Login and role checks read only the current user's row through RLS.
+grant
+select
+  on table public.admins to authenticated;
+
 commit;

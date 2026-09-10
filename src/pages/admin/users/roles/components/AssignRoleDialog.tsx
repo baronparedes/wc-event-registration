@@ -3,7 +3,21 @@ import { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button, Dialog, FormInputField, FormSelectField } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Dialog,
+  FormInputField,
+  FormSelectField,
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui';
+import { Avatar } from '@/components/ui/Avatar';
 import {
   type AssignableAdminRole,
   type AuthUserItem,
@@ -59,9 +73,9 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
     <Dialog
       isOpen={isOpen}
       onClose={handleClose}
-      title="Assign Role to Auth User"
-      description="Search Supabase auth users by email and assign them a role."
-      maxWidthClass="max-w-xl"
+      title="Assign Role"
+      description="Search users by email and assign them a role."
+      maxWidthClass="max-w-3xl"
       showCloseIcon
     >
       <div className="space-y-4">
@@ -83,7 +97,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
         </div>
 
         {/* User Search Results List */}
-        <div className="max-h-52 overflow-y-auto rounded-lg border border-border p-1 space-y-1 bg-surface">
+        <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-surface">
           {isSearching ? (
             <p className="p-3 text-xs text-muted">Searching auth users...</p>
           ) : !authUsers || authUsers.length === 0 ? (
@@ -91,33 +105,59 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
               {searchTerm ? 'No matching auth users found.' : 'Type to search auth users...'}
             </p>
           ) : (
-            authUsers.map((user) => {
-              const isAssigned = assignedAuthUserIds.has(user.id);
-              const isSelected = selectedUser?.id === user.id;
+            <ListTable density="dense">
+              <ListTableHead>
+                <ListTableHeaderRow>
+                  <ListTableHeaderCell>Name</ListTableHeaderCell>
+                  <ListTableHeaderCell>User Email & ID</ListTableHeaderCell>
+                  <ListTableHeaderCell>Status</ListTableHeaderCell>
+                </ListTableHeaderRow>
+              </ListTableHead>
+              <ListTableBody>
+                {authUsers.map((user) => {
+                  const isAssigned = assignedAuthUserIds.has(user.id);
+                  const isSelected = selectedUser?.id === user.id;
 
-              return (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => setSelectedUser(user)}
-                  className={`w-full text-left rounded-md px-3 py-2 text-xs flex items-center justify-between transition-colors ${
-                    isSelected
-                      ? 'bg-primary/15 border border-primary/40 font-semibold text-text'
-                      : 'hover:bg-primary/5 text-text'
-                  }`}
-                >
-                  <div className="min-w-0 flex-1 pr-2">
-                    <p className="truncate font-medium">{user.email}</p>
-                    <p className="text-[10px] text-muted truncate">ID: {user.id}</p>
-                  </div>
-                  {isAssigned && (
-                    <span className="shrink-0 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-700">
-                      Assigned
-                    </span>
-                  )}
-                </button>
-              );
-            })
+                  return (
+                    <ListTableRow
+                      key={user.id}
+                      hover="muted"
+                      tabIndex={0}
+                      aria-selected={isSelected}
+                      className={`cursor-pointer ${isSelected ? 'bg-primary/10 ring-1 ring-inset ring-primary/40' : ''}`}
+                      onClick={() => setSelectedUser(user)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedUser(user);
+                        }
+                      }}
+                    >
+                      <ListTableCell>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Avatar
+                            name={user.name}
+                            avatarObjectKey={user.avatar_object_key}
+                            size="sm"
+                            className="h-8 w-8 shrink-0 text-xs"
+                          />
+                          <span className="truncate font-medium text-text">{user.name}</span>
+                        </div>
+                      </ListTableCell>
+                      <ListTableCell>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-text">{user.email}</p>
+                          <p className="truncate font-mono text-[10px] text-muted">{user.id}</p>
+                        </div>
+                      </ListTableCell>
+                      <ListTableCell>
+                        {isAssigned && <Badge variant="closed">Assigned</Badge>}
+                      </ListTableCell>
+                    </ListTableRow>
+                  );
+                })}
+              </ListTableBody>
+            </ListTable>
           )}
         </div>
 

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Edit, Loader2, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
+import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
@@ -223,11 +223,7 @@ export function AdminMembersPage() {
         }
       />
 
-      <AdminPageShell.SubNav>
-        <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
-        <AdminSubNavLink to={ROUTE_PATHS.adminForms}>Forms</AdminSubNavLink>
-        <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
-      </AdminPageShell.SubNav>
+      <AdminBaseNavigation />
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">

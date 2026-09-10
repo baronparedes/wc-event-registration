@@ -8,16 +8,17 @@ import { isMinimizedAppShellRoute } from '@/config/constants';
 
 type AdminPageShellProps = {
   children: ReactNode;
+  wide?: boolean;
 };
 
-export function AdminPageShell({ children }: AdminPageShellProps) {
+export function AdminPageShell({ children, wide = false }: AdminPageShellProps) {
   const location = useLocation();
   const isMinimizedShell = isMinimizedAppShellRoute(location.pathname);
 
   return (
     <div
       className={cx(
-        'mx-auto w-full max-w-6xl print:px-8 print:py-8',
+        `mx-auto w-full ${wide ? 'max-w-7xl' : 'max-w-6xl'} print:px-8 print:py-8`,
         isMinimizedShell ? 'px-1 py-3 sm:px-2' : 'px-4 py-6',
       )}
     >

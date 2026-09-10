@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { Edit2, Shield, Trash2, UserPlus } from 'lucide-react';
+import { Edit2, LockKeyhole, Shield, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { AdminPageShell } from '@/components/layout/AdminPageShell';
+import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
   Badge,
   Button,
@@ -16,7 +16,8 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui';
-import { ROUTE_PATHS } from '@/config/constants';
+import { ActionButton } from '@/components/ui/ActionLink';
+import { Avatar } from '@/components/ui/Avatar';
 import {
   type AdminRole,
   type AdminRoleAssignment,
@@ -68,15 +69,11 @@ export function AdminUserRolesPage() {
   }
 
   return (
-    <AdminPageShell>
+    <AdminPageShell wide>
       <AdminPageShell.Header
         title="User Roles"
-        description="Assign and manage application roles for Supabase auth users."
-        breadcrumbs={[
-          { label: 'Home', to: ROUTE_PATHS.home },
-          { label: 'Admin', to: ROUTE_PATHS.adminEvents },
-          { label: 'User Roles' },
-        ]}
+        description="Assign and manage application roles for users."
+        breadcrumbs={[{ label: 'User Roles' }]}
         actions={
           <Button
             type="button"
@@ -91,6 +88,8 @@ export function AdminUserRolesPage() {
         }
       />
 
+      <AdminBaseNavigation />
+
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading assigned roles...">
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -101,7 +100,7 @@ export function AdminUserRolesPage() {
             <Shield className="mx-auto h-10 w-10 text-muted" aria-hidden="true" />
             <h3 className="font-heading text-lg font-semibold text-text">No roles assigned</h3>
             <p className="text-sm text-muted">
-              Click &quot;Assign Role to User&quot; to assign a role to a Supabase auth user.
+              Click &quot;Assign Role to User&quot; to assign a role to a user.
             </p>
             <Button
               type="button"
@@ -117,6 +116,7 @@ export function AdminUserRolesPage() {
             <ListTable>
               <ListTableHead>
                 <ListTableHeaderRow>
+                  <ListTableHeaderCell>Name</ListTableHeaderCell>
                   <ListTableHeaderCell>User Email & ID</ListTableHeaderCell>
                   <ListTableHeaderCell>Assigned Role</ListTableHeaderCell>
                   <ListTableHeaderCell>Assigned Date</ListTableHeaderCell>
@@ -138,6 +138,17 @@ export function AdminUserRolesPage() {
                   return (
                     <ListTableRow key={assignment.id}>
                       <ListTableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar
+                            name={assignment.name}
+                            avatarObjectKey={assignment.avatar_object_key}
+                            size="sm"
+                            className="h-8 w-8 text-xs"
+                          />
+                          <span className="font-medium text-text">{assignment.name}</span>
+                        </div>
+                      </ListTableCell>
+                      <ListTableCell>
                         <div>
                           <p className="font-medium text-text">{assignment.email}</p>
                           <p className="text-xs text-muted font-mono">{assignment.auth_user_id}</p>
@@ -153,29 +164,33 @@ export function AdminUserRolesPage() {
                       <ListTableCell className="text-xs text-muted">{formattedDate}</ListTableCell>
                       <ListTableCell className="text-right">
                         {isSuperAdmin ? (
-                          <span className="text-xs text-muted italic">Protected</span>
+                          <span
+                            className="inline-flex items-center justify-end text-muted"
+                            aria-label="Protected"
+                            title="Protected"
+                          >
+                            <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+                            <span className="sr-only">Protected</span>
+                          </span>
                         ) : (
-                          <div className="flex justify-end gap-1.5">
-                            <Button
+                          <div className="flex items-center justify-end gap-3">
+                            <ActionButton
                               type="button"
-                              variant="ghost"
-                              size="sm"
                               aria-label={`Edit role for ${assignment.email}`}
+                              title="Edit role"
                               onClick={() => setEditingAssignment(assignment)}
-                              className="h-8 w-8 p-0"
                             >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
+                              <Edit2 className="h-5 w-5" aria-hidden="true" />
+                            </ActionButton>
+                            <ActionButton
                               type="button"
-                              variant="ghost"
-                              size="sm"
+                              variant="destructive"
                               aria-label={`Revoke role for ${assignment.email}`}
+                              title="Revoke role"
                               onClick={() => setRevokingAssignment(assignment)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                              <Trash2 className="h-5 w-5" aria-hidden="true" />
+                            </ActionButton>
                           </div>
                         )}
                       </ListTableCell>
