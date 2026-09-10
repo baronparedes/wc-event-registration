@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -135,5 +135,33 @@ describe('MemberProfilePage', () => {
     });
     renderPage();
     expect(screen.getByText('Event History (2)')).toBeInTheDocument();
+  });
+
+  it('opens modal when clicking View on a group card', async () => {
+    const eventId = 'shared-event-id';
+    const items = [
+      makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
+      makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
+    ];
+    mockUseMemberEventHistoryQuery.mockReturnValue({
+      data: items,
+      isLoading: false,
+      isError: false,
+    });
+    renderPage();
+
+    // Check that the modal title is not currently visible
+    // EventRegistrationsModal uses Dialog component which conditionally renders content
+    expect(
+      screen.queryByRole('heading', { level: 2, name: 'Shared Event' }),
+    ).not.toBeInTheDocument();
+
+    const viewButton = screen.getByRole('button', { name: 'View' });
+    fireEvent.click(viewButton);
+
+    // After clicking view, the modal should open showing the title
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Shared Event' }),
+    ).toBeInTheDocument();
   });
 });

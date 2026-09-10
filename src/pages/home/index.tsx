@@ -3,22 +3,33 @@ import { Calendar } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
+import { usePublicFormsQuery } from '@/hooks/domain/forms';
 
 import { EventSection } from './components';
 
 export function HomePage() {
-  const { data: events, isLoading, isError } = usePublicEventListingQuery();
+  const {
+    data: events,
+    isLoading: eventsLoading,
+    isError: eventsError,
+  } = usePublicEventListingQuery();
+  const { data: forms, isLoading: formsLoading } = usePublicFormsQuery();
 
   const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? [];
   const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? [];
   const pastEvents = events?.filter((e) => e.listingStatus === 'past') ?? [];
 
+  const isLoading = eventsLoading || formsLoading;
+
   return (
     <section className="relative space-y-10">
       <div className="space-y-2">
         <h1 className="font-heading text-3xl font-bold leading-tight text-text md:text-4xl">
-          Register to an Event
+          Welcome Hub
         </h1>
+        <p className="text-sm text-muted">
+          Register for upcoming events or submit requests and area reservations.
+        </p>
       </div>
 
       {isLoading && (
@@ -50,20 +61,20 @@ export function HomePage() {
         </div>
       )}
 
-      {isError && (
+      {eventsError && (
         <p className="text-sm text-destructive">Unable to load events. Please try again.</p>
       )}
 
-      {!isLoading && !isError && events?.length === 0 && (
+      {!isLoading && !eventsError && events?.length === 0 && (!forms || forms.length === 0) && (
         <EmptyState
           icon={<Calendar className="h-6 w-6" />}
-          title="No events available"
-          description="There are currently no open, upcoming, or recent events. Check back soon!"
+          title="No items available"
+          description="There are currently no open events or active forms. Check back soon!"
         />
       )}
 
       <EventSection events={openEvents} title="Open for Registration" />
-      <EventSection events={upcomingEvents} title="Upcoming" />
+      <EventSection events={upcomingEvents} title="Upcoming Events" />
       <EventSection events={pastEvents} title="Past 3 Months" />
     </section>
   );

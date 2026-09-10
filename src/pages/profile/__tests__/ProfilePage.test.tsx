@@ -91,4 +91,30 @@ describe('ProfilePage', () => {
     renderPage();
     expect(screen.getByText('No events found.')).toBeInTheDocument();
   });
+
+  it('opens modal when clicking View on a group card', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    const eventId = 'shared-event-id';
+    const items = [
+      makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
+      makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
+    ];
+    mockUseMemberEventHistoryQuery.mockReturnValue({
+      data: items,
+      isLoading: false,
+      isError: false,
+    });
+    renderPage();
+
+    expect(
+      screen.queryByRole('heading', { level: 2, name: 'Shared Event' }),
+    ).not.toBeInTheDocument();
+
+    const viewButton = screen.getByRole('button', { name: 'View' });
+    fireEvent.click(viewButton);
+
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Shared Event' }),
+    ).toBeInTheDocument();
+  });
 });
