@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { AssignableAdminRole } from '@/lib/domain/auth';
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 import { ADMIN_ROLES_QUERY_KEY } from './useAdminRolesQuery';
 
@@ -10,24 +10,17 @@ type UpdateRoleVariables = {
   role: AssignableAdminRole;
 };
 
+const manageAdminRole = createEdgeFunctionCaller<
+  { action: 'update'; admin_id: string; role: AssignableAdminRole },
+  { success: true }
+>('manage-admin-role');
+
 export function useUpdateAdminRoleMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ adminId, role }: UpdateRoleVariables) => {
-      const { data, error } = await supabase
-        .from('admins')
-        .update({ role })
-        .eq('id', adminId)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
+    mutationFn: ({ adminId, role }: UpdateRoleVariables) =>
+      manageAdminRole({ action: 'update', admin_id: adminId, role }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ADMIN_ROLES_QUERY_KEY });
     },

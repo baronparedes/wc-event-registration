@@ -13,11 +13,16 @@ import {
 } from '@/hooks/domain/auth';
 import { supabase } from '@/lib/infrastructure';
 
+const { mockManageAdminRole } = vi.hoisted(() => ({
+  mockManageAdminRole: vi.fn(),
+}));
+
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
+    createEdgeFunctionCaller: vi.fn(() => mockManageAdminRole),
     supabase: {
       rpc: vi.fn(),
       from: vi.fn(),
@@ -41,6 +46,7 @@ function createWrapper() {
 describe('role management domain hooks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockManageAdminRole.mockResolvedValue({ success: true });
   });
 
   describe('useAdminRolesQuery', () => {
@@ -113,33 +119,21 @@ describe('role management domain hooks', () => {
 
   describe('useAssignAdminRoleMutation', () => {
     it('assigns role successfully', async () => {
-      const mockSingle = vi.fn().mockResolvedValueOnce({ data: { id: '1' }, error: null });
-      const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
-      const mockUpsert = vi.fn().mockReturnValue({ select: mockSelect });
-
-      vi.mocked(supabase.from).mockReturnValueOnce({ upsert: mockUpsert } as never);
-
       const { result } = renderHook(() => useAssignAdminRoleMutation(), {
         wrapper: createWrapper(),
       });
 
       await result.current.mutateAsync({ authUserId: 'u1', role: 'admin' });
 
-      expect(supabase.from).toHaveBeenCalledWith('admins');
-      expect(mockUpsert).toHaveBeenCalledWith(
-        { auth_user_id: 'u1', role: 'admin' },
-        { onConflict: 'auth_user_id' },
-      );
+      expect(mockManageAdminRole).toHaveBeenCalledWith({
+        action: 'assign',
+        auth_user_id: 'u1',
+        role: 'admin',
+      });
     });
 
     it('throws error when assign fails', async () => {
-      const mockSingle = vi
-        .fn()
-        .mockResolvedValueOnce({ data: null, error: new Error('Assign failed') });
-      const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
-      const mockUpsert = vi.fn().mockReturnValue({ select: mockSelect });
-
-      vi.mocked(supabase.from).mockReturnValueOnce({ upsert: mockUpsert } as never);
+      mockManageAdminRole.mockRejectedValueOnce(new Error('Assign failed'));
 
       const { result } = renderHook(() => useAssignAdminRoleMutation(), {
         wrapper: createWrapper(),
@@ -153,33 +147,21 @@ describe('role management domain hooks', () => {
 
   describe('useUpdateAdminRoleMutation', () => {
     it('updates role successfully', async () => {
-      const mockSingle = vi.fn().mockResolvedValueOnce({ data: { id: '1' }, error: null });
-      const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
-      const mockEq = vi.fn().mockReturnValue({ select: mockSelect });
-      const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq });
-
-      vi.mocked(supabase.from).mockReturnValueOnce({ update: mockUpdate } as never);
-
       const { result } = renderHook(() => useUpdateAdminRoleMutation(), {
         wrapper: createWrapper(),
       });
 
       await result.current.mutateAsync({ adminId: '1', role: 'slod' });
 
-      expect(supabase.from).toHaveBeenCalledWith('admins');
-      expect(mockUpdate).toHaveBeenCalledWith({ role: 'slod' });
-      expect(mockEq).toHaveBeenCalledWith('id', '1');
+      expect(mockManageAdminRole).toHaveBeenCalledWith({
+        action: 'update',
+        admin_id: '1',
+        role: 'slod',
+      });
     });
 
     it('throws error when update fails', async () => {
-      const mockSingle = vi
-        .fn()
-        .mockResolvedValueOnce({ data: null, error: new Error('Update failed') });
-      const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
-      const mockEq = vi.fn().mockReturnValue({ select: mockSelect });
-      const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq });
-
-      vi.mocked(supabase.from).mockReturnValueOnce({ update: mockUpdate } as never);
+      mockManageAdminRole.mockRejectedValueOnce(new Error('Update failed'));
 
       const { result } = renderHook(() => useUpdateAdminRoleMutation(), {
         wrapper: createWrapper(),
@@ -193,27 +175,20 @@ describe('role management domain hooks', () => {
 
   describe('useRevokeAdminRoleMutation', () => {
     it('revokes role successfully', async () => {
-      const mockEq = vi.fn().mockResolvedValueOnce({ error: null });
-      const mockDelete = vi.fn().mockReturnValue({ eq: mockEq });
-
-      vi.mocked(supabase.from).mockReturnValueOnce({ delete: mockDelete } as never);
-
       const { result } = renderHook(() => useRevokeAdminRoleMutation(), {
         wrapper: createWrapper(),
       });
 
       await result.current.mutateAsync({ adminId: '1' });
 
-      expect(supabase.from).toHaveBeenCalledWith('admins');
-      expect(mockDelete).toHaveBeenCalled();
-      expect(mockEq).toHaveBeenCalledWith('id', '1');
+      expect(mockManageAdminRole).toHaveBeenCalledWith({
+        action: 'revoke',
+        admin_id: '1',
+      });
     });
 
     it('throws error when revoke fails', async () => {
-      const mockEq = vi.fn().mockResolvedValueOnce({ error: new Error('Revoke failed') });
-      const mockDelete = vi.fn().mockReturnValue({ eq: mockEq });
-
-      vi.mocked(supabase.from).mockReturnValueOnce({ delete: mockDelete } as never);
+      mockManageAdminRole.mockRejectedValueOnce(new Error('Revoke failed'));
 
       const { result } = renderHook(() => useRevokeAdminRoleMutation(), {
         wrapper: createWrapper(),
