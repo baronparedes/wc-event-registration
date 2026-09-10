@@ -119,10 +119,9 @@ alter table public.form_submissions enable row level security;
 alter table public.form_submission_answers enable row level security;
 
 -- Public / Member read policies for published forms and active fields
-create policy "public can read published forms" on public.forms for
+create policy "authenticated can read published forms" on public.forms for
 select
-  to anon,
-  authenticated using (status = 'published');
+  to authenticated using (status = 'published');
 
 create policy "admin viewers can read all forms" on public.forms for
 select
@@ -132,10 +131,9 @@ create policy "admins can manage forms" on public.forms for all to authenticated
 with
   check (public.is_admin ());
 
-create policy "public can read fields of published forms" on public.form_fields for
+create policy "authenticated can read fields of published forms" on public.form_fields for
 select
-  to anon,
-  authenticated using (
+  to authenticated using (
     is_active = true
     and exists (
       select
@@ -172,31 +170,51 @@ create policy "admins can manage form submission answers" on public.form_submiss
 with
   check (public.is_admin ());
 
--- Grants
+-- Member and Admin workflows must read published forms and form fields.
 grant
 select
-  on public.forms to anon,
-  authenticated;
-
-grant
-select
-  on public.form_fields to anon,
-  authenticated;
+  on table public.forms to authenticated;
 
 grant
 select
-  on public.form_submissions to authenticated;
+  on table public.form_fields to authenticated;
+
+-- Authenticated role needs table privileges for admin workflows; RLS still limits rows/actions.
+grant
+select
+,
+  insert,
+update,
+delete on table public.forms to authenticated;
 
 grant
 select
-  on public.form_submission_answers to authenticated;
+,
+  insert,
+update,
+delete on table public.form_fields to authenticated;
 
-grant all on public.forms to service_role;
+grant
+select
+,
+  insert,
+update,
+delete on table public.form_submissions to authenticated;
 
-grant all on public.form_fields to service_role;
+grant
+select
+,
+  insert,
+update,
+delete on table public.form_submission_answers to authenticated;
 
-grant all on public.form_submissions to service_role;
+-- Service role needs full privileges for Edge Functions
+grant all on table public.forms to service_role;
 
-grant all on public.form_submission_answers to service_role;
+grant all on table public.form_fields to service_role;
+
+grant all on table public.form_submissions to service_role;
+
+grant all on table public.form_submission_answers to service_role;
 
 commit;

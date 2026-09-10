@@ -115,6 +115,7 @@ export function FormEditorPage() {
 
             <FormSelectField
               label="Audience"
+              value={watch('audience')}
               registration={register('audience')}
               error={errors.audience?.message}
               options={[
@@ -126,6 +127,7 @@ export function FormEditorPage() {
 
             <FormSelectField
               label="Duplicate Submission Policy"
+              value={watch('duplicate_policy')}
               registration={register('duplicate_policy')}
               error={errors.duplicate_policy?.message}
               options={[
@@ -138,6 +140,7 @@ export function FormEditorPage() {
 
             <FormSelectField
               label="Status"
+              value={watch('status')}
               registration={register('status')}
               error={errors.status?.message}
               options={[
