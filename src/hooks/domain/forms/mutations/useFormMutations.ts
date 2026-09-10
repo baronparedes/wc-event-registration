@@ -86,6 +86,30 @@ export function useDeleteFormFieldMutation(formId: string) {
   });
 }
 
+export function useReorderFormFieldsMutation(formId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Update display_order for each field based on its new position
+      const updates = orderedIds.map((id, index) =>
+        supabase
+          .from('form_fields')
+          .update({ display_order: index * 10 })
+          .eq('id', id)
+          .eq('form_id', formId),
+      );
+      const results = await Promise.all(updates);
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formFieldsQueryKey(formId, true) });
+      queryClient.invalidateQueries({ queryKey: formFieldsQueryKey(formId, false) });
+    },
+  });
+}
+
 export function useSubmitFormMutation() {
   const queryClient = useQueryClient();
 
