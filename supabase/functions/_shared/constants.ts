@@ -101,6 +101,10 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 60,
   },
+  adminRoleManagement: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
   exportRegistrationsCsv: {
     windowMs: 60_000,
     maxHits: 5,

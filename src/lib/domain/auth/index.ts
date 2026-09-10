@@ -1,4 +1,10 @@
-export type { AdminAuthState, AdminRole } from './types';
+export type {
+  AdminAuthState,
+  AdminRole,
+  AssignableAdminRole,
+  AdminRoleAssignment,
+  AuthUserItem,
+} from './types';
 export {
   ADMIN_PERMISSION_POLICIES,
   canAdminPerform,

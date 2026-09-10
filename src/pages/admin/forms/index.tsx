@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
+import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
@@ -95,13 +95,7 @@ export function AdminFormsPage() {
         }
       />
 
-      <AdminPageShell.SubNav>
-        <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
-        <AdminSubNavLink to={ROUTE_PATHS.adminForms}>Forms</AdminSubNavLink>
-        {(canWrite || canRead) && (
-          <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
-        )}
-      </AdminPageShell.SubNav>
+      <AdminBaseNavigation />
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
