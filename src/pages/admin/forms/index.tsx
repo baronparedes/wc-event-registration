@@ -1,24 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { ClipboardList, FormInput, Loader2, Plus, Settings } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
-import { ActionLink, Button, EmptyState, FormInputField } from '@/components/ui';
-import {
-  ListTable,
-  ListTableBody,
-  ListTableCell,
-  ListTableHead,
-  ListTableHeaderCell,
-  ListTableHeaderRow,
-  ListTableRow,
-} from '@/components/ui/ListTable';
+import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminFormsQuery } from '@/hooks/domain/forms';
+import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
-import { formatDateOnly } from '@/lib/infrastructure';
+
+import { AdminFormsTable, MobileFormCard } from './components';
 
 export function AdminFormsPage() {
   const navigate = useNavigate();
@@ -53,6 +46,7 @@ export function AdminFormsPage() {
   const error = formsQuery.error;
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const isMobileViewport = useIsMobileViewport();
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -158,81 +152,20 @@ export function AdminFormsPage() {
 
         {!error && forms.length > 0 && (
           <div className="rounded-2xl border border-border bg-surface">
-            <ListTable>
-              <ListTableHead>
-                <ListTableHeaderRow>
-                  <ListTableHeaderCell className="px-6">Form Title</ListTableHeaderCell>
-                  <ListTableHeaderCell>Audience</ListTableHeaderCell>
-                  <ListTableHeaderCell>Duplicate Policy</ListTableHeaderCell>
-                  <ListTableHeaderCell>Status</ListTableHeaderCell>
-                  <ListTableHeaderCell>Created</ListTableHeaderCell>
-                  <ListTableHeaderCell>Actions</ListTableHeaderCell>
-                </ListTableHeaderRow>
-              </ListTableHead>
-              <ListTableBody>
+            {isMobileViewport ? (
+              <div className="space-y-3 p-3">
                 {forms.map((form) => (
-                  <ListTableRow
-                    key={form.id}
-                    className={canWrite ? 'cursor-pointer' : undefined}
-                    onClick={
-                      canWrite
-                        ? () => navigate(toRoute('adminFormDetail', { id: form.id }))
-                        : undefined
-                    }
-                  >
-                    <ListTableCell className="px-6">
-                      <p className="font-medium text-text">{form.title}</p>
-                      <p className="mt-0.5 text-xs text-muted">{form.slug}</p>
-                    </ListTableCell>
-                    <ListTableCell>
-                      <span className="text-sm text-text capitalize">{form.audience}</span>
-                    </ListTableCell>
-                    <ListTableCell>
-                      <span className="text-sm text-text capitalize">{form.duplicate_policy}</span>
-                    </ListTableCell>
-                    <ListTableCell>
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                        {form.status}
-                      </span>
-                    </ListTableCell>
-                    <ListTableCell>
-                      <span className="text-sm text-text">{formatDateOnly(form.created_at)}</span>
-                    </ListTableCell>
-                    <ListTableCell onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-3">
-                        {canWrite && (
-                          <ActionLink
-                            to={toRoute('adminFormDetail', { id: form.id })}
-                            title="Edit Form"
-                            aria-label="Edit Form"
-                          >
-                            <Settings className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                        {canWrite && (
-                          <ActionLink
-                            to={toRoute('adminFormFields', { id: form.id })}
-                            title="Form Fields"
-                            aria-label="Form Fields"
-                          >
-                            <FormInput className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                        {canRead && (
-                          <ActionLink
-                            to={toRoute('adminFormSubmissions', { id: form.id })}
-                            title="Submissions"
-                            aria-label="Submissions"
-                          >
-                            <ClipboardList className="h-5 w-5" />
-                          </ActionLink>
-                        )}
-                      </div>
-                    </ListTableCell>
-                  </ListTableRow>
+                  <MobileFormCard key={form.id} form={form} canWrite={canWrite} canRead={canRead} />
                 ))}
-              </ListTableBody>
-            </ListTable>
+              </div>
+            ) : (
+              <AdminFormsTable
+                forms={forms}
+                canWrite={canWrite}
+                canRead={canRead}
+                onFormSelect={(formId) => navigate(toRoute('adminFormDetail', { id: formId }))}
+              />
+            )}
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="text-xs text-muted">

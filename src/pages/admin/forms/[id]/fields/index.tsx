@@ -13,6 +13,7 @@ import {
   useSaveFormFieldMutation,
 } from '@/hooks/domain/forms';
 import type { FormField, FormFieldInput } from '@/lib/domain/forms';
+import { FormNavigationLinks } from '@/pages/admin/forms/components';
 
 export function AdminFormFieldsPage() {
   const { id } = useParams<{ id: string }>();
@@ -102,6 +103,8 @@ export function AdminFormFieldsPage() {
     }
   }
 
+  const navLinks = id ? <FormNavigationLinks formId={id} currentSection="fields" /> : undefined;
+
   return (
     <AdminPageShell>
       <AdminPageShell.Header
@@ -110,6 +113,7 @@ export function AdminFormFieldsPage() {
           { label: form?.title ?? 'Form', to: id ? toRoute('adminFormDetail', { id }) : undefined },
           { label: 'Form Fields' },
         ]}
+        navLinks={navLinks}
         title="Form Fields Builder"
         description={form ? `Configure fields for ${form.title}` : 'Manage form fields'}
         actions={

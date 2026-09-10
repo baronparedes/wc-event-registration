@@ -5,14 +5,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROUTE_PATHS } from '@/config/constants';
 import { FormEditorPage } from '@/pages/admin/forms/_form-editor';
 
-const { mockNavigate, mockUseParams, mockUseAdminFormQuery, mockSaveFormMutateAsync } = vi.hoisted(
-  () => ({
-    mockNavigate: vi.fn(),
-    mockUseParams: vi.fn(),
-    mockUseAdminFormQuery: vi.fn(),
-    mockSaveFormMutateAsync: vi.fn(),
-  }),
-);
+const {
+  mockNavigate,
+  mockUseParams,
+  mockUseAdminFormQuery,
+  mockSaveFormMutateAsync,
+  mockUseAdminAuthQuery,
+} = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+  mockUseParams: vi.fn(),
+  mockUseAdminFormQuery: vi.fn(),
+  mockSaveFormMutateAsync: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
+}));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -32,6 +37,10 @@ vi.mock('@/hooks/domain/forms', () => ({
   }),
 }));
 
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+}));
+
 function renderPage() {
   return render(
     <MemoryRouter>
@@ -47,6 +56,11 @@ describe('FormEditorPage', () => {
     mockUseAdminFormQuery.mockReturnValue({
       data: null,
       isLoading: false,
+    });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: {
+        adminRole: 'super_admin',
+      },
     });
   });
 
@@ -151,5 +165,95 @@ describe('FormEditorPage', () => {
       screen.getByRole('heading', { level: 1, name: 'Edit Form: Existing Form' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
+  });
+
+  it('allows moving form to draft, publishing, and archiving', async () => {
+    mockUseParams.mockReturnValue({ id: 'form-123' });
+    mockUseAdminFormQuery.mockReturnValue({
+      data: {
+        id: 'form-123',
+        title: 'Draft Form',
+        slug: 'draft-form',
+        description: 'Test description',
+        status: 'draft',
+        duplicate_policy: 'block',
+        audience: 'members',
+        metadata: {},
+      },
+      isLoading: false,
+    });
+    mockSaveFormMutateAsync.mockResolvedValue({});
+
+    renderPage();
+
+    // 1. Publish the form
+    const publishButton = screen.getByRole('button', { name: 'Publish Form' });
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(mockSaveFormMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'form-123',
+          data: expect.objectContaining({ status: 'published' }),
+        }),
+      );
+    });
+
+    // 2. Archive the form
+    const archiveButton = screen.getByRole('button', { name: 'Archive' });
+    fireEvent.click(archiveButton);
+
+    const confirmArchiveDialog = await screen.findByRole('heading', {
+      level: 2,
+      name: 'Archive Form',
+    });
+    expect(confirmArchiveDialog).toBeInTheDocument();
+    const allArchiveButtons = screen.getAllByRole('button', { name: 'Archive' });
+    fireEvent.click(allArchiveButtons[allArchiveButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(mockSaveFormMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'form-123',
+          data: expect.objectContaining({ status: 'archived' }),
+        }),
+      );
+    });
+  });
+
+  it('allows restoring an archived form back to draft', async () => {
+    mockUseParams.mockReturnValue({ id: 'form-123' });
+    mockUseAdminFormQuery.mockReturnValue({
+      data: {
+        id: 'form-123',
+        title: 'Archived Form',
+        slug: 'archived-form',
+        status: 'archived',
+        metadata: {},
+      },
+      isLoading: false,
+    });
+
+    renderPage();
+
+    const moveToDraftButton = screen.getByRole('button', { name: 'Move to Draft' });
+    fireEvent.click(moveToDraftButton);
+
+    const confirmDialog = await screen.findByRole('heading', {
+      level: 2,
+      name: 'Move Form to Draft',
+    });
+    expect(confirmDialog).toBeInTheDocument();
+
+    const allMoveToDraftButtons = screen.getAllByRole('button', { name: 'Move to Draft' });
+    fireEvent.click(allMoveToDraftButtons[allMoveToDraftButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(mockSaveFormMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'draft' }),
+        }),
+      );
+    });
   });
 });

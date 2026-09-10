@@ -17,6 +17,7 @@ import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
 import type { FormSubmission } from '@/lib/domain/forms';
 import { formatDateOnly } from '@/lib/infrastructure';
+import { FormNavigationLinks } from '@/pages/admin/forms/components';
 
 export function AdminFormSubmissionsPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +28,10 @@ export function AdminFormSubmissionsPage() {
 
   const isLoading = formLoading || submissionsLoading;
 
+  const navLinks = id ? (
+    <FormNavigationLinks formId={id} currentSection="submissions" />
+  ) : undefined;
+
   return (
     <AdminPageShell>
       <AdminPageShell.Header
@@ -35,6 +40,7 @@ export function AdminFormSubmissionsPage() {
           { label: form?.title ?? 'Form', to: id ? toRoute('adminFormDetail', { id }) : undefined },
           { label: 'Submissions' },
         ]}
+        navLinks={navLinks}
         title="Form Submissions"
         description={form ? `Submissions submitted for ${form.title}` : 'Manage form submissions'}
       />
