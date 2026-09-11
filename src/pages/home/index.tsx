@@ -5,7 +5,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
 
-import { EventSection } from './components';
+import { HubSection, PastEventList } from './components';
+import type { HubItem } from './components/HubSection';
 
 export function HomePage() {
   const {
@@ -19,7 +20,18 @@ export function HomePage() {
   const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? [];
   const pastEvents = events?.filter((e) => e.listingStatus === 'past') ?? [];
 
+  const openForms = forms?.filter((f) => f.status === 'published') ?? [];
+
   const isLoading = eventsLoading || formsLoading;
+
+  // Mix open events and forms
+  const availableItems: HubItem[] = [
+    ...openEvents.map((e) => ({ ...e, type: 'event' as const })),
+    ...openForms.map((f) => ({ ...f, type: 'form' as const })),
+  ];
+
+  // Upcoming items (currently only events)
+  const upcomingItems: HubItem[] = upcomingEvents.map((e) => ({ ...e, type: 'event' as const }));
 
   return (
     <section className="relative space-y-10">
@@ -73,9 +85,9 @@ export function HomePage() {
         />
       )}
 
-      <EventSection events={openEvents} title="Open for Registration" />
-      <EventSection events={upcomingEvents} title="Upcoming Events" />
-      <EventSection events={pastEvents} title="Past 3 Months" />
+      <HubSection items={availableItems} title="Available Now" />
+      <HubSection items={upcomingItems} title="Upcoming Events" />
+      <PastEventList events={pastEvents} />
     </section>
   );
 }

@@ -3,13 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomePage } from '@/pages/home';
 
-const { mockUsePublicEventListingQuery, mockUsePublicFormsQuery, mockEventSection } = vi.hoisted(
-  () => ({
-    mockUsePublicEventListingQuery: vi.fn(),
-    mockUsePublicFormsQuery: vi.fn(),
-    mockEventSection: vi.fn(),
-  }),
-);
+const {
+  mockUsePublicEventListingQuery,
+  mockUsePublicFormsQuery,
+  mockEventSection,
+  mockHubSection,
+  mockPastEventList,
+} = vi.hoisted(() => ({
+  mockUsePublicEventListingQuery: vi.fn(),
+  mockUsePublicFormsQuery: vi.fn(),
+  mockEventSection: vi.fn(),
+  mockHubSection: vi.fn(),
+  mockPastEventList: vi.fn(),
+}));
 
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
@@ -28,6 +34,14 @@ vi.mock('@/pages/home/components', () => ({
   EventSection: (props: { title: string; events: Array<{ id: string }> }) => {
     mockEventSection(props);
     return <div>{`${props.title}: ${props.events.length}`}</div>;
+  },
+  HubSection: (props: { title: string; items: Array<{ id: string }> }) => {
+    mockHubSection(props);
+    return <div>{`${props.title}: ${props.items.length}`}</div>;
+  },
+  PastEventList: (props: { events: Array<{ id: string }> }) => {
+    mockPastEventList(props);
+    return <div>{`Past Events List: ${props.events.length}`}</div>;
   },
 }));
 
@@ -54,9 +68,9 @@ describe('HomePage', () => {
 
     render(<HomePage />);
 
-    expect(screen.getByText('Open for Registration: 1')).toBeInTheDocument();
+    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
-    expect(screen.getByText('Past 3 Months: 1')).toBeInTheDocument();
+    expect(screen.getByText('Past Events List: 1')).toBeInTheDocument();
   });
 
   it('renders empty-state text when no events are available', () => {
