@@ -100,7 +100,10 @@ export function FormCard({ form }: FormCardProps) {
         </div>
       </div>
 
-      {form.description && <p className="line-clamp-2 text-sm text-muted">{form.description}</p>}
+      <div className="space-y-1">
+        {form.description && <p className="line-clamp-2 text-sm text-muted">{form.description}</p>}
+        <p className="text-xs text-muted font-mono">{form.slug}</p>
+      </div>
 
       {isOpen && (
         <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">

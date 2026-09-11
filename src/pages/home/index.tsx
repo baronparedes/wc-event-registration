@@ -35,6 +35,15 @@ export function HomePage() {
 
   return (
     <section className="relative space-y-10">
+      <div className="space-y-2">
+        <h1 className="font-heading text-3xl font-bold leading-tight text-text md:text-4xl">
+          Welcome Hub
+        </h1>
+        <p className="text-sm text-muted">
+          Register for upcoming events or submit requests and area reservations.
+        </p>
+      </div>
+
       {isLoading && (
         <div className="space-y-6" aria-hidden="true">
           <div className="space-y-3">
