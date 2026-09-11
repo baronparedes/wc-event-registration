@@ -102,7 +102,6 @@ export function FormCard({ form }: FormCardProps) {
 
       <div className="space-y-1">
         {form.description && <p className="line-clamp-2 text-sm text-muted">{form.description}</p>}
-        <p className="text-xs text-muted font-mono">{form.slug}</p>
       </div>
 
       {isOpen && (

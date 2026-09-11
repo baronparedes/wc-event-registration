@@ -57,4 +57,20 @@ describe('HubSection', () => {
     );
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('ignores unsupported item types gracefully', () => {
+    const invalidItems = [
+      ...mockItems,
+      { type: 'unsupported' as unknown as 'event', id: '3' } as unknown as HubItem,
+    ];
+
+    render(
+      <MemoryRouter>
+        <HubSection items={invalidItems} title="Mixed Section" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Hub Event 1')).toBeInTheDocument();
+    expect(screen.getByText('Hub Form 1')).toBeInTheDocument();
+  });
 });

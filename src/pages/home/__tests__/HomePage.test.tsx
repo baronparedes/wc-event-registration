@@ -111,4 +111,50 @@ describe('HomePage', () => {
 
     expect(screen.getByText('Unable to load events. Please try again.')).toBeInTheDocument();
   });
+
+  it('mixes open events and published forms into Available Now section', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [{ id: 'event-1', listingStatus: 'open' }],
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: [
+        { id: 'form-1', status: 'published', title: 'Survey' },
+        { id: 'form-2', status: 'draft', title: 'Draft Survey' },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<HomePage />);
+
+    expect(screen.getByText('Available Now: 2')).toBeInTheDocument();
+    expect(mockHubSection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Available Now',
+        items: [
+          expect.objectContaining({ id: 'event-1', type: 'event' }),
+          expect.objectContaining({ id: 'form-1', type: 'form' }),
+        ],
+      }),
+    );
+  });
+
+  it('renders loading skeleton when forms query is loading', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
+
+    const { container } = render(<HomePage />);
+
+    expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
+  });
 });

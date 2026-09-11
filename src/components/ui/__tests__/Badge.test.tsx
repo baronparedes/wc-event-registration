@@ -20,6 +20,9 @@ describe('Badge', () => {
 
     rerender(<Badge variant="danger">Danger</Badge>);
     expect(screen.getByText('Danger')).toHaveClass('bg-red-100');
+
+    rerender(<Badge variant="outline">Outline</Badge>);
+    expect(screen.getByText('Outline')).toHaveClass('border-primary/60');
   });
 
   it('renders icon slot and custom class names', () => {
