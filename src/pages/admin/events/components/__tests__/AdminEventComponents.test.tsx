@@ -106,15 +106,15 @@ describe('admin event mini-components', () => {
 
   it('renders status badge label and variant including fallback branch', () => {
     const { rerender } = render(<EventStatusBadge status="published" />);
-    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'open');
+    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'success');
     expect(screen.getByText('Published')).toBeInTheDocument();
 
     rerender(<EventStatusBadge status="archived" />);
-    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'error');
+    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'danger');
     expect(screen.getByText('Archived')).toBeInTheDocument();
 
     rerender(<EventStatusBadge status={'unknown' as unknown as never} />);
-    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'closed');
+    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'neutral');
     expect(screen.getByText('Draft')).toBeInTheDocument();
   });
 

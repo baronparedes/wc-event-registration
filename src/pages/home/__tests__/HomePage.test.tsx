@@ -3,13 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomePage } from '@/pages/home';
 
-const { mockUsePublicEventListingQuery, mockUsePublicFormsQuery, mockEventSection } = vi.hoisted(
-  () => ({
-    mockUsePublicEventListingQuery: vi.fn(),
-    mockUsePublicFormsQuery: vi.fn(),
-    mockEventSection: vi.fn(),
-  }),
-);
+const {
+  mockUsePublicEventListingQuery,
+  mockUsePublicFormsQuery,
+  mockEventSection,
+  mockHubSection,
+  mockPastEventList,
+} = vi.hoisted(() => ({
+  mockUsePublicEventListingQuery: vi.fn(),
+  mockUsePublicFormsQuery: vi.fn(),
+  mockEventSection: vi.fn(),
+  mockHubSection: vi.fn(),
+  mockPastEventList: vi.fn(),
+}));
 
 vi.mock('@/hooks/domain/events', async () => {
   const actual =
@@ -28,6 +34,14 @@ vi.mock('@/pages/home/components', () => ({
   EventSection: (props: { title: string; events: Array<{ id: string }> }) => {
     mockEventSection(props);
     return <div>{`${props.title}: ${props.events.length}`}</div>;
+  },
+  HubSection: (props: { title: string; items: Array<{ id: string }> }) => {
+    mockHubSection(props);
+    return <div>{`${props.title}: ${props.items.length}`}</div>;
+  },
+  PastEventList: (props: { events: Array<{ id: string }> }) => {
+    mockPastEventList(props);
+    return <div>{`Past Events List: ${props.events.length}`}</div>;
   },
 }));
 
@@ -54,9 +68,9 @@ describe('HomePage', () => {
 
     render(<HomePage />);
 
-    expect(screen.getByText('Open for Registration: 1')).toBeInTheDocument();
+    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
-    expect(screen.getByText('Past 3 Months: 1')).toBeInTheDocument();
+    expect(screen.getByText('Past Events List: 1')).toBeInTheDocument();
   });
 
   it('renders empty-state text when no events are available', () => {
@@ -96,5 +110,51 @@ describe('HomePage', () => {
     render(<HomePage />);
 
     expect(screen.getByText('Unable to load events. Please try again.')).toBeInTheDocument();
+  });
+
+  it('mixes open events and published forms into Available Now section', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [{ id: 'event-1', listingStatus: 'open' }],
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: [
+        { id: 'form-1', status: 'published', title: 'Survey' },
+        { id: 'form-2', status: 'draft', title: 'Draft Survey' },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<HomePage />);
+
+    expect(screen.getByText('Available Now: 2')).toBeInTheDocument();
+    expect(mockHubSection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Available Now',
+        items: [
+          expect.objectContaining({ id: 'event-1', type: 'event' }),
+          expect.objectContaining({ id: 'form-1', type: 'form' }),
+        ],
+      }),
+    );
+  });
+
+  it('renders loading skeleton when forms query is loading', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
+
+    const { container } = render(<HomePage />);
+
+    expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
   });
 });

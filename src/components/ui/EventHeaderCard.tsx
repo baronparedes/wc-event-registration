@@ -26,10 +26,10 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
   const title = event?.title ?? 'Register for This Event';
   const statusBadgeVariant =
     availability?.status === 'available'
-      ? 'open'
+      ? 'success'
       : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
-        ? 'upcoming'
-        : 'closed';
+        ? 'warning'
+        : 'neutral';
   const statusBadgeLabel =
     availability?.status === 'available'
       ? 'Open'
@@ -46,7 +46,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
           </span>
         )}
         {event.allow_public_registrations && (
-          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
+          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
             Open to Guests
           </Badge>
         )}

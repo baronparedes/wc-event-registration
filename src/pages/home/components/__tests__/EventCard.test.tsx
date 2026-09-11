@@ -210,8 +210,8 @@ describe('EventCard', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('does not navigate when a past card is clicked', () => {
-    render(
+  it('does not navigate when a past card is clicked or activated with the keyboard', () => {
+    const { container } = render(
       <EventCard
         event={{
           ...baseEvent,
@@ -220,9 +220,21 @@ describe('EventCard', () => {
       />,
     );
 
+    const card = container.firstElementChild as HTMLElement;
     fireEvent.click(screen.getByRole('heading', { name: 'Summer Gathering' }));
+    fireEvent.keyDown(card, { key: 'Enter' });
+    fireEvent.keyDown(card, { key: ' ' });
 
     expect(screen.getByText('Past')).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('does not navigate on unhandled key press when open', () => {
+    render(<EventCard event={baseEvent} />);
+
+    const card = screen.getAllByRole('link')[0];
+    fireEvent.keyDown(card, { key: 'Escape' });
+
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
