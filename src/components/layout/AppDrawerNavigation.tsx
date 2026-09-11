@@ -141,7 +141,6 @@ export function AppDrawerNavigation({
 
           <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
             <div className="space-y-2">
-              <SectionHeading label="General" />
               <DrawerNavLink
                 to={ROUTE_PATHS.home}
                 label="Hub"
