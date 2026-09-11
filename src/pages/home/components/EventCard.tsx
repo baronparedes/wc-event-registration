@@ -1,4 +1,4 @@
-import { Share, Users } from 'lucide-react';
+import { Calendar, Share, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -80,8 +80,11 @@ export function EventCard({ event }: EventCardProps) {
       tabIndex={isOpen ? 0 : undefined}
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-heading text-base font-semibold text-text">{event.title}</h3>
-        <div className="flex items-start gap-2">
+        <h3 className="font-heading text-base font-semibold text-text flex items-start gap-2">
+          <Calendar className="h-5 w-5 shrink-0 text-muted mt-0.5" aria-hidden="true" />
+          <span>{event.title}</span>
+        </h3>
+        <div className="flex items-start gap-2 shrink-0">
           <Badge
             variant={
               event.listingStatus === 'open'
