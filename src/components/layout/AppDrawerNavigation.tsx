@@ -148,12 +148,6 @@ export function AppDrawerNavigation({
                 icon={LayoutDashboard}
                 onClose={onClose}
               />
-              <DrawerNavLink
-                to={ROUTE_PATHS.forms}
-                label="Forms"
-                icon={ClipboardList}
-                onClose={onClose}
-              />
               {hasProfileAccess && (
                 <DrawerNavLink
                   to={ROUTE_PATHS.profile}
