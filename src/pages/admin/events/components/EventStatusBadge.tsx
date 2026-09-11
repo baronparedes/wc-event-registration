@@ -5,21 +5,21 @@ import type { EventStatus } from '@/lib/domain/events';
 
 const statusConfig: Record<
   EventStatus,
-  { label: string; variant: 'open' | 'upcoming' | 'closed' | 'error'; icon: React.ReactNode }
+  { label: string; variant: 'success' | 'warning' | 'neutral' | 'danger'; icon: React.ReactNode }
 > = {
   draft: {
     label: 'Draft',
-    variant: 'closed',
+    variant: 'neutral',
     icon: <FileText className="h-3 w-3" />,
   },
   published: {
     label: 'Published',
-    variant: 'open',
+    variant: 'success',
     icon: <CheckCircle2 className="h-3 w-3" />,
   },
   archived: {
     label: 'Archived',
-    variant: 'error',
+    variant: 'danger',
     icon: <Trash2 className="h-3 w-3" />,
   },
 };

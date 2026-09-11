@@ -84,7 +84,7 @@ export function FormCard({ form }: FormCardProps) {
           <span>{form.title}</span>
         </h3>
         <div className="flex items-start gap-2 shrink-0">
-          <Badge variant="open">Open</Badge>
+          <Badge variant="success">Open</Badge>
           {isOpen && (
             <div>
               <Button

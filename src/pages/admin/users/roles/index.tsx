@@ -28,20 +28,20 @@ import {
 import { AssignRoleDialog } from './components/AssignRoleDialog';
 import { EditRoleDialog } from './components/EditRoleDialog';
 
-function getRoleBadgeVariant(role: AdminRole): 'open' | 'upcoming' | 'closed' | 'error' | 'guest' {
+function getRoleBadgeVariant(role: AdminRole): 'success' | 'warning' | 'neutral' | 'outline' {
   switch (role) {
     case 'super_admin':
-      return 'upcoming';
+      return 'warning';
     case 'admin':
-      return 'open';
+      return 'success';
     case 'slod':
-      return 'guest';
+      return 'outline';
     case 'imt':
-      return 'open';
+      return 'success';
     case 'kiosk':
-      return 'closed';
+      return 'neutral';
     default:
-      return 'closed';
+      return 'neutral';
   }
 }
 

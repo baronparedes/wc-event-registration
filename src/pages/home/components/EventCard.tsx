@@ -88,10 +88,10 @@ export function EventCard({ event }: EventCardProps) {
           <Badge
             variant={
               event.listingStatus === 'open'
-                ? 'open'
+                ? 'success'
                 : event.listingStatus === 'upcoming'
-                  ? 'upcoming'
-                  : 'closed'
+                  ? 'warning'
+                  : 'neutral'
             }
           >
             {event.listingStatus === 'open'
@@ -119,7 +119,7 @@ export function EventCard({ event }: EventCardProps) {
 
       {event.allow_public_registrations && (
         <div>
-          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="guest">
+          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
             Open to Guests
           </Badge>
         </div>
