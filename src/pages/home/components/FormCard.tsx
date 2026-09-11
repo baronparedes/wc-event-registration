@@ -104,7 +104,7 @@ export function FormCard({ form }: FormCardProps) {
 
       {isOpen && (
         <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">
-          <Link to={submitPath}>Submit</Link>
+          <Link to={submitPath}>Fill out</Link>
         </Button>
       )}
     </div>
