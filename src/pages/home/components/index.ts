@@ -3,3 +3,4 @@ export { EventSection } from './EventSection';
 export { FormCard } from './FormCard';
 export { HubSection } from './HubSection';
 export { PastEventList } from './PastEventList';
+export { WelcomeHelloBanner } from './WelcomeHelloBanner';
