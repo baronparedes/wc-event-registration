@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Edit2, LockKeyhole, Shield, Trash2, UserPlus } from 'lucide-react';
+import { Edit2, LockKeyhole, Shield, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -149,8 +149,18 @@ export function AdminUserRolesPage() {
                         </div>
                       </ListTableCell>
                       <ListTableCell>
-                        <div>
-                          <p className="font-medium text-text">{assignment.email}</p>
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-1.5 truncate font-medium text-text">
+                            {assignment.email}
+                            {assignment.has_member_profile && (
+                              <span title="Verified Member Profile">
+                                <ShieldCheck
+                                  className="h-4 w-4 text-primary shrink-0"
+                                  aria-label="Verified Member Profile"
+                                />
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-muted font-mono">{assignment.auth_user_id}</p>
                         </div>
                       </ListTableCell>

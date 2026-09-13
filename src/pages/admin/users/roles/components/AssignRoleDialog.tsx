@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Search, UserPlus } from 'lucide-react';
+import { Search, ShieldCheck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -147,7 +147,17 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
                       </ListTableCell>
                       <ListTableCell>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-text">{user.email}</p>
+                          <p className="flex items-center gap-1.5 truncate font-medium text-text">
+                            {user.email}
+                            {user.has_member_profile && (
+                              <span title="Verified Member Profile">
+                                <ShieldCheck
+                                  className="h-4 w-4 text-primary shrink-0"
+                                  aria-label="Verified Member Profile"
+                                />
+                              </span>
+                            )}
+                          </p>
                           <p className="truncate font-mono text-[10px] text-muted">{user.id}</p>
                         </div>
                       </ListTableCell>
@@ -165,9 +175,17 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
         {/* Selected User Summary & Role Selection */}
         {selectedUser && (
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
-            <div className="text-xs">
+            <div className="flex items-center gap-1 text-xs">
               <span className="text-muted">Selected User: </span>
               <span className="font-semibold text-text">{selectedUser.email}</span>
+              {selectedUser.has_member_profile && (
+                <span title="Verified Member Profile">
+                  <ShieldCheck
+                    className="h-4 w-4 text-primary shrink-0"
+                    aria-label="Verified Member Profile"
+                  />
+                </span>
+              )}
             </div>
 
             <FormSelectField
