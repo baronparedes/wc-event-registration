@@ -26,6 +26,7 @@ import { updateMemberSchema } from '@/lib/domain/members';
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
 import { MetadataEntriesEditor } from './components/MetadataEntriesEditor';
+import { SundayAvailabilityEditor } from './components/SundayAvailabilityEditor';
 
 const DEFAULT_VALUES: UpdateMemberInput = {
   full_name: '',
@@ -73,6 +74,7 @@ export function AdminMemberDetailPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     control,
     formState: { errors, isDirty },
   } = useForm<UpdateMemberInput>({
@@ -313,6 +315,19 @@ export function AdminMemberDetailPage() {
               />
             </div>
           </SectionCard>
+
+          {(canWrite || canRead) && (
+            <SectionCard
+              title="Sunday Availability"
+              subtitle="Manage member availability across all five Sundays."
+            >
+              <SundayAvailabilityEditor
+                control={control}
+                setValue={setValue}
+                disabled={!canWrite || isDeletedMember}
+              />
+            </SectionCard>
+          )}
 
           {(canWrite || canRead) && (
             <SectionCard
