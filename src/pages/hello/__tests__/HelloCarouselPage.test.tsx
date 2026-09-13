@@ -1,10 +1,28 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ROUTE_PATHS } from '@/config/constants';
+
 import { ImageCarousel } from '../components/ImageCarousel';
 import { HelloCarouselPage } from '../index';
 
+const { mockNavigate } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+}));
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 describe('HelloCarouselPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders carousel gallery, slide title, and initial slide image', () => {
     render(<HelloCarouselPage />);
 
@@ -121,20 +139,57 @@ describe('HelloCarouselPage', () => {
   it('toggles fullscreen and handles Escape key', () => {
     render(<HelloCarouselPage />);
 
+    const section = screen.getByRole('region', { name: /Hello Image Gallery Carousel/i });
     const fullscreenBtn = screen.getByRole('button', { name: /Enter fullscreen/i });
+
+    expect(section).not.toHaveClass('p-0');
+
     fireEvent.click(fullscreenBtn);
 
-    expect(screen.getByRole('button', { name: /Exit fullscreen/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Exit fullscreen/i }).length).toBeGreaterThan(0);
+    expect(section).toHaveClass('p-0');
 
     // Press Escape to exit fullscreen
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByRole('button', { name: /Enter fullscreen/i })).toBeInTheDocument();
+    expect(section).not.toHaveClass('p-0');
   });
 
   it('renders fallback when no slides are provided', () => {
     render(<ImageCarousel slides={[]} />);
 
     expect(screen.getByText(/No images available in this carousel/i)).toBeInTheDocument();
+  });
+
+  it('navigates to home page when clicking the Home button', () => {
+    render(<HelloCarouselPage />);
+
+    const homeButton = screen.getByRole('button', { name: /Go to home page/i });
+    expect(homeButton).toBeInTheDocument();
+
+    fireEvent.click(homeButton);
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.home);
+  });
+
+  it('calls custom onGoHome callback when provided', () => {
+    const onGoHomeMock = vi.fn();
+    render(<ImageCarousel onGoHome={onGoHomeMock} />);
+
+    const homeButton = screen.getByRole('button', { name: /Go to home page/i });
+    fireEvent.click(homeButton);
+
+    expect(onGoHomeMock).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates home from empty slides fallback button', () => {
+    render(<ImageCarousel slides={[]} />);
+
+    const fallbackHomeBtn = screen.getByRole('button', { name: /Go to home page/i });
+    expect(fallbackHomeBtn).toBeInTheDocument();
+
+    fireEvent.click(fallbackHomeBtn);
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.home);
   });
 
   it('renders the subtle help and guide for controls at the bottom', () => {
