@@ -42,8 +42,8 @@ type AppDrawerNavigationProps = {
 };
 
 const linkClassName =
-  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-text transition hover:bg-primary/10 hover:text-text';
-const activeLinkClassName = 'bg-primary/10 font-semibold text-text';
+  'flex min-h-[48px] items-center gap-3.5 rounded-xl border-2 border-transparent px-4 py-3 text-base font-semibold text-text transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:bg-primary/15';
+const activeLinkClassName = 'border-primary bg-primary/20 font-bold text-text shadow-sm';
 
 function getEventIdFromPath(pathname: string): string | null {
   if (
@@ -58,7 +58,7 @@ function getEventIdFromPath(pathname: string): string | null {
 }
 
 function SectionHeading({ label }: { label: string }) {
-  return <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>;
+  return <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-muted">{label}</p>;
 }
 
 function DrawerNavLink({
@@ -78,7 +78,7 @@ function DrawerNavLink({
       onClick={onClose}
       className={({ isActive }) => `${linkClassName} ${isActive ? activeLinkClassName : ''}`.trim()}
     >
-      {Icon && <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />}
+      {Icon && <Icon className="h-5 w-5 shrink-0 opacity-80" aria-hidden="true" />}
       <span>{label}</span>
     </NavLink>
   );
@@ -132,10 +132,10 @@ export function AppDrawerNavigation({
             <button
               type="button"
               aria-label="Close navigation drawer"
-              className="rounded-md p-2 text-muted transition hover:bg-primary/10 hover:text-text"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={onClose}
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" aria-hidden="true" />
             </button>
           </div>
 

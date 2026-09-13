@@ -22,29 +22,15 @@ describe('WelcomeHelloBanner', () => {
     vi.clearAllMocks();
   });
 
-  it('renders heading, description, badge, and button', () => {
+  it('renders brochure preview and badge', () => {
     render(<WelcomeHelloBanner />);
 
-    expect(screen.getByText('Hello!')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Discover who we are, our mission and vision, core values, and our discipleship journey/i,
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Explore Hello Guide/i })).toBeInTheDocument();
     expect(screen.getByAltText('CCF Hello Brochure Preview')).toBeInTheDocument();
+    expect(screen.getByText('8 Interactive Slides')).toBeInTheDocument();
+    expect(screen.getByText('Explore →')).toBeInTheDocument();
   });
 
-  it('navigates to /hello when button is clicked', () => {
-    render(<WelcomeHelloBanner />);
-
-    const button = screen.getByRole('button', { name: /Explore Hello Guide/i });
-    fireEvent.click(button);
-
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.hello);
-  });
-
-  it('navigates to /hello when the entire card banner is clicked', () => {
+  it('navigates to /hello when the banner is clicked', () => {
     render(<WelcomeHelloBanner />);
 
     const banner = screen.getByRole('region', { name: /Welcome to CCF Hello Brochure Banner/i });

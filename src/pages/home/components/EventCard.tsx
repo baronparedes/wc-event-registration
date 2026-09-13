@@ -125,27 +125,35 @@ export function EventCard({ event }: EventCardProps) {
         </div>
       )}
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-sm text-muted">
         {event.location && (
           <>
-            <dt className="font-medium text-text">Location</dt>
-            <dd>{event.location}</dd>
+            <dt className="py-0.5 font-semibold text-text">Location</dt>
+            <dd className="py-0.5 min-w-0 break-words">{event.location}</dd>
           </>
         )}
         {event.starts_at && (
           <>
-            <dt className="font-medium text-text">Event date</dt>
-            <dd>{formatDateOnly(event.starts_at)}</dd>
+            <dt className="py-0.5 font-semibold text-text">Event date</dt>
+            <dd className="py-0.5 min-w-0 break-words">{formatDateOnly(event.starts_at)}</dd>
           </>
         )}
-        <dt className="font-medium text-text">Registration opens</dt>
-        <dd>{formatDateOnly(event.registration_opens_at)}</dd>
-        <dt className="font-medium text-text">Registration closes</dt>
-        <dd>{formatDateOnly(event.registration_closes_at)}</dd>
+        <dt className="py-0.5 font-semibold text-text">Registration opens</dt>
+        <dd className="py-0.5 min-w-0 break-words">
+          {formatDateOnly(event.registration_opens_at)}
+        </dd>
+        <dt className="py-0.5 font-semibold text-text">Registration closes</dt>
+        <dd className="py-0.5 min-w-0 break-words">
+          {formatDateOnly(event.registration_closes_at)}
+        </dd>
       </dl>
 
       {isOpen && (
-        <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">
+        <Button
+          asChild
+          className="mt-auto inline-flex min-h-[44px] items-center justify-center font-semibold tracking-wide text-white shadow-xs"
+          size="md"
+        >
           <Link to={registrationPath}>Register Now</Link>
         </Button>
       )}
