@@ -65,6 +65,15 @@ export function useFormSubmissionPageState() {
   } = useErrorWithFadeout();
 
   const memberIdInputRef = useRef<HTMLInputElement | null>(null);
+  const isMountedRef = useRef(true);
+  const autoLookupAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Profile auto-detection for signed-in members
   const { data: currentProfile, isLoading: isProfileLoading } = useCurrentProfileQuery();
@@ -116,7 +125,11 @@ export function useFormSubmissionPageState() {
       const result = await runMemberLookupSubmit(values);
 
       if (!result.success) {
-        showLookupError(result.error || FORM_MESSAGES.memberLookupFailed);
+        if (result.reason === 'already_registered') {
+          setActiveWizardStep(2);
+        } else {
+          showLookupError(result.error || FORM_MESSAGES.memberLookupFailed);
+        }
         return;
       }
 
@@ -134,31 +147,28 @@ export function useFormSubmissionPageState() {
       isProfileLoading ||
       !currentProfile?.member_id ||
       matchedMember ||
-      autoLookupStatus !== 'idle'
+      autoLookupAttemptedRef.current
     ) {
       return;
     }
 
-    let isMounted = true;
+    autoLookupAttemptedRef.current = true;
+    setAutoLookupStatus('executing');
 
     void Promise.resolve().then(async () => {
-      if (!isMounted) return;
-
-      setAutoLookupStatus('executing');
       const result = await runMemberLookupSubmit({ memberId: currentProfile.member_id });
-      if (!isMounted) return;
+      if (!isMountedRef.current) return;
 
       setAutoLookupStatus('completed');
       if (result.success) {
         setActiveWizardStep(3);
+      } else if (result.reason === 'already_registered') {
+        setActiveWizardStep(2);
       } else {
         showLookupError(result.error || FORM_MESSAGES.memberLookupFailed);
+        setActiveWizardStep(1);
       }
     });
-
-    return () => {
-      isMounted = false;
-    };
   }, [
     form,
     isPublished,
@@ -166,7 +176,6 @@ export function useFormSubmissionPageState() {
     isProfileLoading,
     currentProfile?.member_id,
     matchedMember,
-    autoLookupStatus,
     runMemberLookupSubmit,
     showLookupError,
   ]);
@@ -191,6 +200,8 @@ export function useFormSubmissionPageState() {
   const switchToMemberMode = useCallback(() => {
     setGuestInfo(null);
     setUserSelectedRespondentType('member');
+    autoLookupAttemptedRef.current = false;
+    setAutoLookupStatus('idle');
     setActiveWizardStep(1);
   }, []);
 
@@ -341,6 +352,7 @@ export function useFormSubmissionPageState() {
     setSubmitErrorMessage(null);
     setSubmitSuccessMessage(null);
     dynamicForm.reset(createDynamicFieldDefaultValues(publicFields));
+    autoLookupAttemptedRef.current = false;
     setAutoLookupStatus('idle');
     setActiveWizardStep(1);
   }, [clearLookupError, dynamicForm, publicFields, resetMemberLookup]);

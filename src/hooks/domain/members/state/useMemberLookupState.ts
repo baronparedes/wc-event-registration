@@ -81,6 +81,9 @@ export function useMemberLookupState(
 
   const lookupMutation = useMemberLookupQuery();
 
+  const { mutateAsync: runLookupMutation } = lookupMutation;
+  const { reset: resetLookupForm } = lookupForm;
+
   const clearMember = useCallback(() => {
     setMatchedMember(null);
     setVerifiedMemberCredential(null);
@@ -94,8 +97,8 @@ export function useMemberLookupState(
 
   const reset = useCallback(() => {
     clearMember();
-    lookupForm.reset();
-  }, [clearMember, lookupForm]);
+    resetLookupForm();
+  }, [clearMember, resetLookupForm]);
 
   const handleLookupSubmit = useCallback(
     async (values: MemberLookupFormValues): Promise<MemberLookupResult> => {
@@ -105,7 +108,7 @@ export function useMemberLookupState(
       try {
         logger.info('Member lookup attempt:', { memberId: values.memberId, name: values.name });
 
-        const result = await lookupMutation.mutateAsync({
+        const result = await runLookupMutation({
           memberId: values.memberId,
           name: values.name,
           eventSlug: eventSlug ? eventSlug.trim() : undefined,
@@ -115,7 +118,7 @@ export function useMemberLookupState(
         if (!result.profile) {
           setMatchedMember(null);
           setVerifiedMemberCredential(null);
-          lookupForm.reset();
+          resetLookupForm();
           logger.warn('Member lookup returned null');
           return {
             success: false,
@@ -138,7 +141,7 @@ export function useMemberLookupState(
               : 'Already registered for this event. Verify another member.',
           );
           setMemberIdHighlight(true);
-          lookupForm.reset();
+          resetLookupForm();
           logger.info('Duplicate blocked during lookup');
           return {
             success: false,
@@ -185,7 +188,7 @@ export function useMemberLookupState(
         };
       }
     },
-    [eventSlug, formSlug, clearMember, lookupMutation, lookupForm],
+    [eventSlug, formSlug, clearMember, runLookupMutation, resetLookupForm],
   );
 
   return {

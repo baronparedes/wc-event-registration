@@ -57,12 +57,14 @@ function TestWrapper(props: {
 }
 
 describe('FormFieldsStepCard', () => {
-  it('renders fields and handles submit', async () => {
+  it('renders fields with label and handles submit', async () => {
     const handleSubmit = vi.fn();
 
     render(<TestWrapper onSubmit={handleSubmit} />);
 
     expect(screen.getByText('Step 2: Questions')).toBeInTheDocument();
+    expect(screen.getByText('Comments')).toBeInTheDocument();
+    expect(screen.getByText('*')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter comments')).toBeInTheDocument();
 
     const submitBtn = screen.getByRole('button', { name: /Submit Form/i });
@@ -71,6 +73,33 @@ describe('FormFieldsStepCard', () => {
     await waitFor(() => {
       expect(handleSubmit).toHaveBeenCalled();
     });
+  });
+
+  it('renders help text when provided on a field', () => {
+    const fieldsWithHelp: FormField[] = [
+      {
+        id: 'field-1',
+        form_id: 'form-123',
+        field_key: 'comments',
+        label: 'Comments',
+        field_type: 'text',
+        is_required: false,
+        is_active: true,
+        placeholder: null,
+        help_text: 'Please enter any additional feedback',
+        options: [],
+        validation_rules: {},
+        field_applicability: 'all',
+        display_order: 1,
+        created_at: '2026-09-01T00:00:00Z',
+        updated_at: '2026-09-01T00:00:00Z',
+      },
+    ];
+
+    render(<TestWrapper fields={fieldsWithHelp} />);
+
+    expect(screen.getByText('Comments')).toBeInTheDocument();
+    expect(screen.getByText('Please enter any additional feedback')).toBeInTheDocument();
   });
 
   it('renders empty fields message when no fields are visible', () => {

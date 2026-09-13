@@ -209,6 +209,22 @@ describe('useFormSubmissionPageState', () => {
     expect(result.current.lookupErrorMessage).toBeNull();
   });
 
+  it('navigates to step 2 when member lookup returns already_registered', async () => {
+    mockMemberLookupSubmit.mockResolvedValueOnce({
+      success: false,
+      reason: 'already_registered',
+      error: 'You have already submitted this form.',
+    });
+
+    const { result } = renderHook(() => useFormSubmissionPageState());
+
+    await act(async () => {
+      await result.current.handleLookupSubmit({ memberId: 'WC-001' });
+    });
+
+    expect(result.current.activeWizardStep).toBe(2);
+  });
+
   it('advances to step 2 upon guest info submit', () => {
     mockUseFormBySlugQuery.mockReturnValue({
       data: { ...sampleForm, audience: 'public' },
@@ -350,6 +366,28 @@ describe('useFormSubmissionPageState', () => {
     expect(mockMemberLookupSubmit).toHaveBeenCalledWith({ memberId: 'WC-AUTO-ERR' });
     expect(result.current.lookupErrorMessage).toBe('Auto verification failed');
     expect(result.current.activeWizardStep).toBe(1);
+  });
+
+  it('navigates to step 2 when signed-in member auto-lookup returns already_registered', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'WC-AUTO-DUP' },
+      isLoading: false,
+    });
+
+    mockMemberLookupSubmit.mockResolvedValueOnce({
+      success: false,
+      reason: 'already_registered',
+      error: 'You have already submitted this form.',
+    });
+
+    const { result } = renderHook(() => useFormSubmissionPageState());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockMemberLookupSubmit).toHaveBeenCalledWith({ memberId: 'WC-AUTO-DUP' });
+    expect(result.current.activeWizardStep).toBe(2);
   });
 
   it('prevents submission if form or slug is missing', async () => {

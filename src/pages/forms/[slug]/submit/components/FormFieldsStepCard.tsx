@@ -62,11 +62,24 @@ export function FormFieldsStepCard({
           <p className="text-sm text-muted">No questions required for this form.</p>
         ) : (
           <div className="space-y-5">
-            {visibleFields.map((field) => (
-              <div key={field.id} className="space-y-1.5">
-                {renderFieldByType(field.field_type, field, dynamicForm)}
-              </div>
-            ))}
+            {visibleFields.map((field) => {
+              const errorMessage = dynamicForm.formState.errors[field.field_key]?.message;
+
+              return (
+                <div key={field.id} className="space-y-1.5">
+                  <label
+                    className="block text-sm font-medium text-text"
+                    htmlFor={`field-${field.field_key}`}
+                  >
+                    {field.label}
+                    {field.is_required && <span className="text-danger"> *</span>}
+                  </label>
+                  {field.help_text && <p className="text-xs text-muted">{field.help_text}</p>}
+                  {renderFieldByType(field.field_type, field, dynamicForm)}
+                  {errorMessage && <p className="text-sm text-danger">{String(errorMessage)}</p>}
+                </div>
+              );
+            })}
           </div>
         )}
 
