@@ -43,6 +43,7 @@ vi.mock('@/pages/home/components', () => ({
     mockPastEventList(props);
     return <div>{`Past Events List: ${props.events.length}`}</div>;
   },
+  WelcomeHelloBanner: () => <div data-testid="welcome-hello-banner">Welcome Hello Banner</div>,
 }));
 
 describe('HomePage', () => {

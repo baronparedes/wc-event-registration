@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
 
-import { HubSection, PastEventList } from './components';
+import { HubSection, PastEventList, WelcomeHelloBanner } from './components';
 import type { HubItem } from './components/HubSection';
 
 export function HomePage() {
@@ -35,6 +35,8 @@ export function HomePage() {
 
   return (
     <section className="relative space-y-10">
+      <WelcomeHelloBanner />
+
       {isLoading && (
         <div className="space-y-6" aria-hidden="true">
           <div className="space-y-3">
