@@ -64,8 +64,14 @@ export function ImageCarousel({
   const currentSlide = slides[currentIndex];
 
   const handleGoHome = useCallback(() => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void>;
+    };
+    if (doc.fullscreenElement) {
+      doc.exitFullscreen().catch(() => {});
+    } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
+      doc.webkitExitFullscreen().catch(() => {});
     }
     if (onGoHome) {
       onGoHome();
@@ -132,26 +138,77 @@ export function ImageCarousel({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, paginate]);
 
-  // HTML Fullscreen sync
+  // Fullscreen lock and iOS Safari theme-color & background handling
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyBg = document.body.style.backgroundColor;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.backgroundColor = '#000000';
+
+    const themeColorMeta = document.querySelector(
+      'meta[name="theme-color"]',
+    ) as HTMLMetaElement | null;
+    const originalThemeColor = themeColorMeta?.content;
+    if (themeColorMeta) {
+      themeColorMeta.content = '#000000';
+    }
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.backgroundColor = originalBodyBg;
+      if (themeColorMeta && originalThemeColor) {
+        themeColorMeta.content = originalThemeColor;
+      }
+    };
+  }, [isFullscreen]);
+
+  // HTML Fullscreen sync with standard and WebKit prefix support
   useEffect(() => {
     function handleFullscreenChange() {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      const doc = document as Document & {
+        webkitFullscreenElement?: Element | null;
+      };
+      setIsFullscreen(Boolean(doc.fullscreenElement || doc.webkitFullscreenElement));
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   async function toggleFullscreen() {
     try {
+      const el = containerRef.current as
+        | (HTMLDivElement & {
+            webkitRequestFullscreen?: () => Promise<void>;
+          })
+        | null;
+      const doc = document as Document & {
+        webkitFullscreenElement?: Element | null;
+        webkitExitFullscreen?: () => Promise<void>;
+      };
+
       if (!isFullscreen) {
-        if (containerRef.current?.requestFullscreen) {
-          await containerRef.current.requestFullscreen();
+        if (el?.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el?.webkitRequestFullscreen) {
+          await el.webkitRequestFullscreen();
         } else {
           setIsFullscreen(true);
         }
       } else {
-        if (document.fullscreenElement) {
-          await document.exitFullscreen();
+        if (doc.fullscreenElement) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
         } else {
           setIsFullscreen(false);
         }
@@ -194,23 +251,37 @@ export function ImageCarousel({
     );
   }
 
+  const safeAreaInsetLeft =
+    'max(1.25rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))';
+  const safeAreaInsetRight =
+    'max(1.25rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))';
+
   return (
     <section
       ref={containerRef}
       aria-roledescription="carousel"
       aria-label="Hello Image Gallery Carousel"
       data-fullscreen={isFullscreen}
-      className={`relative mx-auto flex w-full flex-col overflow-hidden transition-all duration-300 ${
+      className={`mx-auto flex w-full flex-col overflow-hidden transition-all duration-300 ${
         isFullscreen
-          ? 'fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] max-w-none rounded-none bg-slate-950 p-0 text-white'
-          : 'w-full max-w-6xl lg:max-w-7xl rounded-3xl border border-border/80 bg-surface/90 p-3 sm:p-5 sm:pb-6 shadow-xl backdrop-blur-md'
+          ? '!fixed inset-0 z-[9999] h-[100dvh] w-full max-w-none rounded-none bg-black p-0 text-white overscroll-none touch-none'
+          : 'relative w-full max-w-6xl lg:max-w-7xl rounded-3xl border border-border/80 bg-surface/90 p-3 sm:p-5 sm:pb-6 shadow-xl backdrop-blur-md'
       }`}
     >
       {/* Top Header Controls */}
       <header
-        className={`mb-3 flex items-center justify-between gap-3 border-b border-border/60 pb-3 ${
+        className={`flex-none mb-3 flex items-center justify-between gap-3 border-b border-border/60 pb-3 ${
           isFullscreen ? 'portrait:flex landscape:hidden px-3 pt-3 sm:px-5 sm:pt-4' : ''
         }`}
+        style={
+          isFullscreen
+            ? {
+                paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+                paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+                paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+              }
+            : undefined
+        }
       >
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {/* Back to Home Button */}
@@ -297,7 +368,11 @@ export function ImageCarousel({
             size="sm"
             onClick={handleGoHome}
             aria-label="Go to home page"
-            className="absolute top-4 left-4 z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full bg-black/40 text-white hover:bg-black/70 border border-white/20 backdrop-blur-md shadow-lg"
+            className="absolute z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl bg-black/50 text-white hover:bg-black/80 border border-white/20 backdrop-blur-md shadow-lg"
+            style={{
+              top: 'max(1rem, env(safe-area-inset-top, 0px))',
+              left: safeAreaInsetLeft,
+            }}
           >
             <Home className="h-6 w-6" />
           </Button>
@@ -307,7 +382,11 @@ export function ImageCarousel({
             size="sm"
             onClick={toggleFullscreen}
             aria-label="Exit fullscreen"
-            className="absolute top-4 right-4 z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full bg-black/40 text-white hover:bg-black/70 border border-white/20 backdrop-blur-md shadow-lg"
+            className="absolute z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl bg-black/50 text-white hover:bg-black/80 border border-white/20 backdrop-blur-md shadow-lg"
+            style={{
+              top: 'max(1rem, env(safe-area-inset-top, 0px))',
+              right: safeAreaInsetRight,
+            }}
           >
             <X className="h-6 w-6" />
           </Button>
@@ -316,15 +395,15 @@ export function ImageCarousel({
 
       {/* Main Image Stage Container */}
       <div
-        className={`relative flex w-full flex-1 select-none items-center justify-center overflow-hidden bg-neutral-950 shadow-inner ${
-          isFullscreen ? 'rounded-none bg-slate-950 h-full !h-[100dvh]' : 'rounded-2xl'
+        className={`relative flex w-full flex-1 min-h-0 select-none items-stretch justify-center overflow-hidden bg-black shadow-inner ${
+          isFullscreen ? 'rounded-none h-full' : 'rounded-2xl'
         }`}
       >
         {/* Animated Swipe Stage */}
         <div
-          className={`relative flex w-full items-center justify-center overflow-hidden touch-pan-y ${
+          className={`relative flex w-full h-full min-h-0 items-stretch justify-center overflow-hidden touch-pan-y ${
             isFullscreen
-              ? 'h-full min-h-full max-h-full'
+              ? 'h-full flex-1'
               : 'h-[68vh] min-h-[460px] sm:h-[75vh] sm:min-h-[580px] md:h-[80vh] md:min-h-[680px] lg:h-[84vh] lg:min-h-[760px] xl:h-[86vh] xl:min-h-[820px] max-h-[960px] xl:max-h-[1100px]'
           }`}
         >
@@ -353,9 +432,7 @@ export function ImageCarousel({
                 src={currentSlide.src}
                 alt={currentSlide.alt}
                 draggable={false}
-                className={`pointer-events-none h-full w-full max-h-full max-w-full object-contain drop-shadow-2xl select-none ${
-                  isFullscreen ? 'rounded-none' : 'rounded-xl'
-                }`}
+                className="pointer-events-none h-full w-full max-h-full max-w-full object-contain drop-shadow-2xl select-none rounded-none"
               />
             </motion.div>
           </AnimatePresence>
@@ -367,9 +444,14 @@ export function ImageCarousel({
           variant="ghost"
           onClick={() => paginate(-1)}
           aria-label="Previous slide"
-          className="group absolute left-3 top-1/2 z-10 -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80 hover:text-white active:scale-95 sm:left-6 sm:!h-14 sm:!w-14 sm:!min-h-14 sm:!min-w-14"
+          className={`group absolute top-1/2 z-10 -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80 hover:text-white active:scale-95 ${
+            isFullscreen ? '' : 'left-3 sm:left-6'
+          }`}
+          style={{
+            left: isFullscreen ? safeAreaInsetLeft : undefined,
+          }}
         >
-          <ChevronLeft className="h-7 w-7 shrink-0 transition-transform group-hover:-translate-x-0.5 sm:h-8 sm:w-8" />
+          <ChevronLeft className="h-6 w-6 shrink-0 transition-transform group-hover:-translate-x-0.5" />
         </Button>
 
         <Button
@@ -377,16 +459,21 @@ export function ImageCarousel({
           variant="ghost"
           onClick={() => paginate(1)}
           aria-label="Next slide"
-          className="group absolute right-3 top-1/2 z-10 -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80 hover:text-white active:scale-95 sm:right-6 sm:!h-14 sm:!w-14 sm:!min-h-14 sm:!min-w-14"
+          className={`group absolute top-1/2 z-10 -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80 hover:text-white active:scale-95 ${
+            isFullscreen ? '' : 'right-3 sm:right-6'
+          }`}
+          style={{
+            right: isFullscreen ? safeAreaInsetRight : undefined,
+          }}
         >
-          <ChevronRight className="h-7 w-7 shrink-0 transition-transform group-hover:translate-x-0.5 sm:h-8 sm:w-8" />
+          <ChevronRight className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-0.5" />
         </Button>
       </div>
 
       {/* Autoplay Progress Bar Indicator */}
       {isPlaying && (
         <div
-          className={`mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/20 ${
+          className={`flex-none mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/20 ${
             isFullscreen ? 'portrait:block landscape:hidden px-3' : ''
           }`}
         >
@@ -402,9 +489,18 @@ export function ImageCarousel({
 
       {/* Image Icons as Indicators */}
       <footer
-        className={`mt-4 border-t border-border/60 pt-3 ${
+        className={`flex-none mt-4 border-t border-border/60 pt-3 ${
           isFullscreen ? 'portrait:block landscape:hidden px-3 pb-3 sm:px-5 sm:pb-4' : ''
         }`}
+        style={
+          isFullscreen
+            ? {
+                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+                paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+                paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+              }
+            : undefined
+        }
       >
         <nav
           aria-label="Carousel image slide indicators"
