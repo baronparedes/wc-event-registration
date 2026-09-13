@@ -15,6 +15,23 @@ import {
   type MemberEventGroup,
 } from '../member/[id]/components/EventHistoryCard';
 import { EventRegistrationsModal } from '../member/[id]/components/EventRegistrationsModal';
+import { SundayAvailabilityDisplay } from './components/SundayAvailabilityDisplay';
+
+const SUNDAY_KEYS = [
+  'first_sunday',
+  'second_sunday',
+  'third_sunday',
+  'fourth_sunday',
+  'fifth_sunday',
+];
+
+// Helper to convert snake_case to Title Case
+function toTitleCase(str: string): string {
+  return str
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 export function ProfilePage() {
   const profileQuery = useCurrentProfileQuery();
@@ -59,7 +76,12 @@ export function ProfilePage() {
 
   const trimmedName = `${member.nickname ?? ''} ${member.last_name ?? ''}`.trim();
   const avatarName = trimmedName !== '' ? trimmedName : member.full_name;
-  const metadataEntries = Object.entries(member.extra_metadata ?? {});
+
+  const extraMetadata = member.extra_metadata ?? {};
+  // Filter out sunday keys for the general Additional Information section
+  const generalMetadataEntries = Object.entries(extraMetadata).filter(
+    ([key]) => !SUNDAY_KEYS.includes(key),
+  );
 
   return (
     <AdminPageShell>
@@ -137,12 +159,16 @@ export function ProfilePage() {
             </div>
           </SectionCard>
 
-          {metadataEntries.length > 0 && (
+          <SectionCard title="Sunday Availability">
+            <SundayAvailabilityDisplay metadata={extraMetadata} />
+          </SectionCard>
+
+          {generalMetadataEntries.length > 0 && (
             <SectionCard title="Additional Information">
               <dl className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                {metadataEntries.map(([key, value]) => (
+                {generalMetadataEntries.map(([key, value]) => (
                   <div key={key} className="min-w-0">
-                    <dt className="text-muted">{key}</dt>
+                    <dt className="text-muted">{toTitleCase(key)}</dt>
                     <dd className="break-words font-medium text-text">{value}</dd>
                   </div>
                 ))}

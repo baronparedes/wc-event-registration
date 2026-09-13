@@ -34,13 +34,22 @@ export function MetadataEntriesEditor({
   disabled,
 }: MetadataEntriesEditorProps) {
   const entryErrors = errors.metadata_entries;
+  const SUNDAY_KEYS = [
+    'first_sunday',
+    'second_sunday',
+    'third_sunday',
+    'fourth_sunday',
+    'fifth_sunday',
+  ];
+
   const sortedFields = [...fields]
     .map((field, index) => ({ field, index }))
+    .filter((f) => !SUNDAY_KEYS.includes(f.field.key))
     .sort((a, b) => a.field.key.localeCompare(b.field.key));
 
   return (
     <div className="space-y-3">
-      {fields.length === 0 && (
+      {sortedFields.length === 0 && (
         <p className="text-sm text-muted">
           No additional metadata. Click "Add field" to add custom key-value pairs.
         </p>
