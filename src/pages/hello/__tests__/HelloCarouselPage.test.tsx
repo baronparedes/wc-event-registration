@@ -137,6 +137,14 @@ describe('HelloCarouselPage', () => {
     expect(screen.getByText(/No images available in this carousel/i)).toBeInTheDocument();
   });
 
+  it('renders the subtle help and guide for controls at the bottom', () => {
+    render(<HelloCarouselPage />);
+
+    expect(screen.getByText(/Swipe or drag left \/ right/i)).toBeInTheDocument();
+    expect(screen.getByText(/Use keyboard arrows/i)).toBeInTheDocument();
+    expect(screen.getByText(/to play \/ pause/i)).toBeInTheDocument();
+  });
+
   describe('Autoplay and timers', () => {
     beforeEach(() => {
       vi.useFakeTimers();
