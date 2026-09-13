@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { createPortal } from 'react-dom';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -165,7 +167,7 @@ export function ImageCarousel({
     );
   }
 
-  return (
+  const carouselContent = (
     <section
       ref={containerRef}
       aria-roledescription="carousel"
@@ -375,4 +377,10 @@ export function ImageCarousel({
       </footer>
     </section>
   );
+
+  if (isFullscreen) {
+    return createPortal(carouselContent, document.body);
+  }
+
+  return carouselContent;
 }
