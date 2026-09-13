@@ -171,9 +171,10 @@ export function ImageCarousel({
       ref={containerRef}
       aria-roledescription="carousel"
       aria-label="Hello Image Gallery Carousel"
+      data-fullscreen={isFullscreen}
       className={`relative mx-auto flex w-full flex-col overflow-hidden transition-all duration-300 ${
         isFullscreen
-          ? 'fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] max-w-none rounded-none bg-slate-950 p-3 sm:p-6 text-white'
+          ? 'fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] max-w-none rounded-none bg-slate-950 p-3 sm:p-6 landscape:p-0 text-white'
           : 'w-full max-w-6xl lg:max-w-7xl rounded-3xl border border-border/80 bg-surface/90 p-3 sm:p-5 sm:pb-6 shadow-xl backdrop-blur-md'
       }`}
     >
