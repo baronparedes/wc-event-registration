@@ -14,6 +14,23 @@ export function useFormSubmissionsQuery(formId?: string) {
     enabled: Boolean(formId),
     queryFn: async (): Promise<FormSubmission[]> => {
       if (!formId) return [];
+      const trimmed = formId.trim();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        trimmed,
+      );
+
+      let targetFormId = trimmed;
+      if (!isUuid) {
+        const { data: formRecord, error: formError } = await supabase
+          .from('forms')
+          .select('id')
+          .eq('slug', trimmed)
+          .maybeSingle();
+
+        if (formError) throw formError;
+        if (!formRecord?.id) return [];
+        targetFormId = formRecord.id;
+      }
 
       const { data, error } = await supabase
         .from('form_submissions')
@@ -42,7 +59,7 @@ export function useFormSubmissionsQuery(formId?: string) {
           )
         `,
         )
-        .eq('form_id', formId)
+        .eq('form_id', targetFormId)
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;

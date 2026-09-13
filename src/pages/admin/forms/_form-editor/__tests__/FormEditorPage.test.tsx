@@ -161,9 +161,7 @@ describe('FormEditorPage', () => {
 
     renderPage();
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Edit Form: Existing Form' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Existing Form' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
   });
 
@@ -254,6 +252,122 @@ describe('FormEditorPage', () => {
           data: expect.objectContaining({ status: 'draft' }),
         }),
       );
+    });
+  });
+
+  it('allows cancelling archive and restore confirm dialogs', async () => {
+    mockUseParams.mockReturnValue({ id: 'form-123' });
+    mockUseAdminFormQuery.mockReturnValue({
+      data: {
+        id: 'form-123',
+        title: 'Form with Dialogs',
+        slug: 'form-with-dialogs',
+        status: 'published',
+        metadata: {},
+      },
+      isLoading: false,
+    });
+
+    const { rerender } = renderPage();
+
+    // Open and cancel archive dialog
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Archive Form' }),
+    ).toBeInTheDocument();
+    const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelButtons[0]);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('heading', { level: 2, name: 'Archive Form' }),
+      ).not.toBeInTheDocument();
+    });
+
+    // Rerender as archived to test restore cancel
+    mockUseAdminFormQuery.mockReturnValue({
+      data: {
+        id: 'form-123',
+        title: 'Archived Form',
+        slug: 'archived-form',
+        status: 'archived',
+        metadata: {},
+      },
+      isLoading: false,
+    });
+    rerender(
+      <MemoryRouter>
+        <FormEditorPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move to Draft' }));
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Move Form to Draft' }),
+    ).toBeInTheDocument();
+    const restoreCancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
+    fireEvent.click(restoreCancelButtons[0]);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('heading', { level: 2, name: 'Move Form to Draft' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('navigates to adminForms when saveFormMutation returns without an id', async () => {
+    mockUseParams.mockReturnValue({});
+    mockSaveFormMutateAsync.mockResolvedValueOnce(null);
+
+    renderPage();
+
+    const titleInput = screen.getByPlaceholderText('e.g. Area Reservation Form');
+    fireEvent.change(titleInput, { target: { value: 'Form Without ID' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Manage Fields' }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminForms);
+    });
+  });
+
+  it('catches and logs error when saveFormMutation throws on submit', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockUseParams.mockReturnValue({});
+    mockSaveFormMutateAsync.mockRejectedValueOnce(new Error('Save failed'));
+
+    renderPage();
+
+    const titleInput = screen.getByPlaceholderText('e.g. Area Reservation Form');
+    fireEvent.change(titleInput, { target: { value: 'Failing Form' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Manage Fields' }));
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to save form:', expect.any(Error));
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('handles error when handleUpdateStatus throws', async () => {
+    mockUseParams.mockReturnValue({ id: 'form-123' });
+    mockUseAdminFormQuery.mockReturnValue({
+      data: {
+        id: 'form-123',
+        title: 'Status Update Fail',
+        slug: 'status-update-fail',
+        status: 'draft',
+        metadata: {},
+      },
+      isLoading: false,
+    });
+    mockSaveFormMutateAsync.mockRejectedValueOnce(new Error('Status change failed'));
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publish Form' }));
+
+    await waitFor(() => {
+      expect(mockSaveFormMutateAsync).toHaveBeenCalled();
     });
   });
 });

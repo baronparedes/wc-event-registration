@@ -1,6 +1,7 @@
 export type {
   MemberLookupProfile,
   ExistingRegistrationState,
+  ExistingSubmissionState,
   MemberLookupResult,
   AdminMember,
   MemberEventHistoryItem,

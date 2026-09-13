@@ -26,6 +26,8 @@ type MemberLookupStepCardProps = {
   allowNameLookup: boolean;
   allowMemberRegistration?: boolean;
   allowPublicRegistration?: boolean;
+  onGuestClick?: () => void;
+  guestButtonLabel?: string;
 };
 
 export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
@@ -43,6 +45,8 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
     allowNameLookup,
     allowMemberRegistration = true,
     allowPublicRegistration = false,
+    onGuestClick,
+    guestButtonLabel,
   } = props;
 
   const { ref: memberIdRef, ...memberIdRest } = lookupForm.register('memberId');
@@ -76,6 +80,8 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             onSelectMethod={setLookupMethod}
             allowPublicRegistration={allowPublicRegistration}
             slug={slug}
+            onGuestClick={onGuestClick}
+            guestButtonLabel={guestButtonLabel}
           />
         )}
 
@@ -145,14 +151,16 @@ export function MemberLookupStepCard(props: MemberLookupStepCardProps) {
             <p className="text-sm text-muted">
               This event is currently set to public-only registration.
             </p>
-            {slug && allowPublicRegistration && (
+            {(slug || onGuestClick) && allowPublicRegistration && (
               <Button
                 type="button"
                 variant="default"
                 className="w-full"
-                onClick={() => navigate(`/events/${slug}/register-public`)}
+                onClick={
+                  onGuestClick ? onGuestClick : () => navigate(`/events/${slug}/register-public`)
+                }
               >
-                Continue as Guest
+                {guestButtonLabel ?? 'Continue as Guest'}
               </Button>
             )}
           </div>

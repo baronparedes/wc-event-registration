@@ -14,6 +14,11 @@ const memberLookupRequestSchema = z
     memberId: z.string().trim().min(1).optional(),
     name: z.string().trim().min(1).optional(),
     eventSlug: z.string().trim().min(1).optional(),
+    formSlug: z.string().trim().min(1).optional(),
+  })
+  .refine((value) => !(value.eventSlug && value.formSlug), {
+    message: 'Only one of eventSlug or formSlug may be provided',
+    path: ['formSlug'],
   })
   .refine((value) => Boolean(value.memberId || value.name), {
     message: 'Either memberId or name must be provided',
@@ -67,10 +72,29 @@ type EventLookupRow = {
   metadata: unknown;
 };
 
+type FormLookupRow = {
+  id: string;
+  duplicate_policy: string;
+};
+
+type FormAnswerRow = {
+  answer_text: string | null;
+  answer_number: number | null;
+  answer_boolean: boolean | null;
+  answer_date: string | null;
+  answer_json: unknown | null;
+  form_fields:
+    | { field_key: string; field_type?: string | null }
+    | { field_key: string; field_type?: string | null }[]
+    | null;
+};
+
 type ExistingRegistrationLookupResult = {
   data: ExistingRegistrationState | null;
   error: string | null;
 };
+
+type ExistingSubmissionLookupResult = ExistingRegistrationLookupResult;
 
 type ExistingRegistrationRow = {
   id: string;
@@ -252,6 +276,56 @@ function mapAnswerRowsToResponses(rows: AnswerRow[] | null | undefined): Record<
   return responses;
 }
 
+function getFormAnswerValue(row: FormAnswerRow): unknown {
+  const formField = Array.isArray(row.form_fields) ? row.form_fields[0] : row.form_fields;
+  const fieldType = formField?.field_type ?? null;
+
+  if (row.answer_json !== null) return row.answer_json;
+  if (row.answer_boolean !== null) return row.answer_boolean;
+  if (row.answer_number !== null) return row.answer_number;
+  if (row.answer_date !== null) return row.answer_date;
+
+  if (row.answer_text !== null) {
+    if (
+      fieldType === 'text' ||
+      fieldType === 'textarea' ||
+      fieldType === 'email' ||
+      fieldType === 'phone' ||
+      fieldType === 'select' ||
+      fieldType === 'radio' ||
+      fieldType === 'date' ||
+      fieldType === 'datetime'
+    ) {
+      return row.answer_text;
+    }
+
+    try {
+      return JSON.parse(row.answer_text);
+    } catch {
+      return row.answer_text;
+    }
+  }
+
+  return null;
+}
+
+function mapFormAnswerRowsToResponses(
+  rows: FormAnswerRow[] | null | undefined,
+): Record<string, unknown> {
+  const responses: Record<string, unknown> = {};
+  for (const row of rows ?? []) {
+    const formField = Array.isArray(row.form_fields) ? row.form_fields[0] : row.form_fields;
+    const fieldKey = formField?.field_key;
+    if (!fieldKey) continue;
+
+    const value = getFormAnswerValue(row);
+    if (value !== null) {
+      responses[fieldKey] = value;
+    }
+  }
+  return responses;
+}
+
 async function findUserByNameOrNickname(supabase: SupabaseClient, normalizedSearchValue: string) {
   const searchTokens = tokenizeName(normalizedSearchValue);
   if (searchTokens.length === 0) {
@@ -307,6 +381,24 @@ async function getEventBySlug(
   }
 
   return { data: data as EventLookupRow | null, error: null };
+}
+
+async function getFormBySlug(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<{ data: FormLookupRow | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('forms')
+    .select('id, duplicate_policy')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  return { data: data as FormLookupRow | null, error: null };
 }
 
 async function getExistingRegistrationState(
@@ -366,6 +458,49 @@ async function getExistingRegistrationState(
   };
 }
 
+async function getExistingSubmissionState(
+  supabase: SupabaseClient,
+  formId: string,
+  userId: string,
+  duplicatePolicy: string,
+): Promise<ExistingSubmissionLookupResult> {
+  if (duplicatePolicy === 'allow_multiple') {
+    return { data: null, error: null };
+  }
+
+  const { data: existingSubmission, error: submissionError } = await supabase
+    .from('form_submissions')
+    .select(
+      'id, status, form_submission_answers(answer_text, answer_number, answer_boolean, answer_date, answer_json, form_fields!inner(field_key, field_type))',
+    )
+    .eq('form_id', formId)
+    .eq('user_id', userId)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (submissionError) {
+    return { data: null, error: `submission_lookup:${submissionError.message}` };
+  }
+
+  if (!existingSubmission) {
+    return { data: null, error: null };
+  }
+
+  return {
+    data: {
+      exists: true,
+      edit_allowed:
+        duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update',
+      status: existingSubmission.status,
+      responses: mapFormAnswerRowsToResponses(
+        existingSubmission.form_submission_answers as FormAnswerRow[],
+      ),
+    },
+    error: null,
+  };
+}
+
 Deno.serve(async (req) => {
   // Step 1: Validation and Gates
   // 1.1 Build request context and CORS headers.
@@ -392,7 +527,7 @@ Deno.serve(async (req) => {
       return sharedErrorResponse(corsHeaders, 400, parsedBody.error, parsedBody.details);
     }
 
-    const { memberId, name, eventSlug }: MemberLookupRequest = parsedBody.data;
+    const { memberId, name, eventSlug, formSlug }: MemberLookupRequest = parsedBody.data;
 
     // Infer lookup type from which field is provided
     // Prefer memberId if both are provided; otherwise use name
@@ -400,12 +535,14 @@ Deno.serve(async (req) => {
     const isNameLookup = !isIdLookup && Boolean(name?.trim());
 
     const normalizedEventSlug = eventSlug;
+    const normalizedFormSlug = formSlug;
 
     // 1.4 Create Supabase service-role client.
     const supabase = guard.client;
 
     // 1.5 Preload event context when eventSlug is provided.
     let eventData: EventLookupRow | null = null;
+    let formData: FormLookupRow | null = null;
 
     if (normalizedEventSlug) {
       const eventResult = await getEventBySlug(supabase, normalizedEventSlug);
@@ -417,12 +554,21 @@ Deno.serve(async (req) => {
       eventData = eventResult.data;
     }
 
+    if (normalizedFormSlug) {
+      const formResult = await getFormBySlug(supabase, normalizedFormSlug);
+      if (formResult.error) {
+        return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup form', formResult.error);
+      }
+
+      formData = formResult.data;
+    }
+
     // 1.6 Enforce event name-lookup policy before running name search.
     if (isNameLookup && normalizedEventSlug) {
       if (!eventData) {
         return sharedSuccessResponse(
           corsHeaders,
-          { profile: null, existing_registration: null },
+          { profile: null, existing_registration: null, existing_submission: null },
           200,
         );
       }
@@ -432,10 +578,18 @@ Deno.serve(async (req) => {
       if (!allowNameLookup) {
         return sharedSuccessResponse(
           corsHeaders,
-          { profile: null, existing_registration: null },
+          { profile: null, existing_registration: null, existing_submission: null },
           200,
         );
       }
+    }
+
+    if (isNameLookup && normalizedFormSlug && !formData) {
+      return sharedSuccessResponse(
+        corsHeaders,
+        { profile: null, existing_registration: null, existing_submission: null },
+        200,
+      );
     }
 
     // Step 2: Member Lookup
@@ -475,12 +629,56 @@ Deno.serve(async (req) => {
 
     const profile = toProfile(filteredData, memberToken);
 
-    if (!profile || !filteredData || !normalizedEventSlug) {
-      return sharedSuccessResponse(corsHeaders, { profile, existing_registration: null }, 200);
+    if (!profile || !filteredData || (!normalizedEventSlug && !normalizedFormSlug)) {
+      return sharedSuccessResponse(
+        corsHeaders,
+        { profile, existing_registration: null, existing_submission: null },
+        200,
+      );
+    }
+
+    if (normalizedFormSlug) {
+      if (!formData) {
+        return sharedSuccessResponse(
+          corsHeaders,
+          { profile, existing_registration: null, existing_submission: null },
+          200,
+        );
+      }
+
+      const submissionResult = await getExistingSubmissionState(
+        supabase,
+        formData.id,
+        filteredData.id,
+        formData.duplicate_policy,
+      );
+
+      if (submissionResult.error) {
+        return sharedErrorResponse(
+          corsHeaders,
+          500,
+          'Failed to lookup existing form submission',
+          submissionResult.error.replace('submission_lookup:', ''),
+        );
+      }
+
+      return sharedSuccessResponse(
+        corsHeaders,
+        {
+          profile,
+          existing_registration: null,
+          existing_submission: submissionResult.data,
+        },
+        200,
+      );
     }
 
     if (!eventData) {
-      return sharedSuccessResponse(corsHeaders, { profile, existing_registration: null }, 200);
+      return sharedSuccessResponse(
+        corsHeaders,
+        { profile, existing_registration: null, existing_submission: null },
+        200,
+      );
     }
 
     // Step 3: Registration Lookup
@@ -513,7 +711,11 @@ Deno.serve(async (req) => {
     // 3.2 Return successful lookup with registration state (or null when not registered).
     return sharedSuccessResponse(
       corsHeaders,
-      { profile, existing_registration: registrationResult.data },
+      {
+        profile,
+        existing_registration: registrationResult.data,
+        existing_submission: null,
+      },
       200,
     );
   } catch (error) {

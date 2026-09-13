@@ -1,5 +1,6 @@
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
+import { decodeMemberLookupToken } from '../_shared/memberLookupToken.ts';
 import {
   EventFieldWithValidation,
   FieldValidationError,
@@ -136,10 +137,18 @@ Deno.serve(async (req) => {
     // Step 2: Handle Member lookup if member_id is supplied
     let userId: string | null = null;
     if (member_id) {
+      let resolvedMemberId = member_id;
+      if (member_id.startsWith('mlt2.')) {
+        const decoded = await decodeMemberLookupToken(member_id);
+        if (decoded?.memberId) {
+          resolvedMemberId = decoded.memberId;
+        }
+      }
+
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
-        .eq('member_id', member_id)
+        .eq('member_id', resolvedMemberId)
         .maybeSingle();
 
       if (userError || !userData) {

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Badge, Button } from '@/components/ui';
+import { toRoute } from '@/config/constants';
 import type { AdminForm } from '@/lib/domain/forms';
 
 type FormCardProps = {
@@ -15,8 +16,7 @@ type FormCardProps = {
  */
 export function FormCard({ form }: FormCardProps) {
   const navigate = useNavigate();
-  // Using generic pattern for now as requested
-  const submitPath = `/forms/${form.slug}`;
+  const submitPath = toRoute('formSubmit', { slug: form.slug });
   const shareUrl = new URL(submitPath, window.location.origin).toString();
   const isOpen = form.status === 'published';
 

@@ -8,6 +8,8 @@ type MemberLookupMethodSelectorProps = {
   onSelectMethod: (method: 'id' | 'name') => void;
   allowPublicRegistration?: boolean;
   slug?: string;
+  onGuestClick?: () => void;
+  guestButtonLabel?: string;
 };
 
 /**
@@ -20,6 +22,8 @@ export function MemberLookupMethodSelector({
   onSelectMethod,
   allowPublicRegistration = false,
   slug,
+  onGuestClick,
+  guestButtonLabel = 'Join the event as a Guest',
 }: MemberLookupMethodSelectorProps) {
   const navigate = useNavigate();
   return (
@@ -57,14 +61,16 @@ export function MemberLookupMethodSelector({
           </Button>
         )}
 
-        {slug && allowPublicRegistration && (
+        {(slug || onGuestClick) && allowPublicRegistration && (
           <div className="flex items-center justify-center w-full sm:col-span-2">
             <Button
               type="button"
-              onClick={() => navigate(`/events/${slug}/register-public`)}
+              onClick={
+                onGuestClick ? onGuestClick : () => navigate(`/events/${slug}/register-public`)
+              }
               className="text-xl transition hover:text-primary/80 w-full"
             >
-              Join the event as a Guest
+              {guestButtonLabel}
             </Button>
           </div>
         )}

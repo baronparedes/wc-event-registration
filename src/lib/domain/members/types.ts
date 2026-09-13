@@ -18,9 +18,12 @@ export type ExistingRegistrationState = {
   responses: Record<string, unknown>;
 };
 
+export type ExistingSubmissionState = ExistingRegistrationState;
+
 export type MemberLookupResult = {
   profile: MemberLookupProfile | null;
   existing_registration: ExistingRegistrationState | null;
+  existing_submission: ExistingSubmissionState | null;
 };
 
 export type MemberEventHistoryAttendanceAnswer = {

@@ -199,6 +199,18 @@ verify_jwt = false
 [functions.get-public-event-listing]
 verify_jwt = false
 
+[functions.get-public-forms]
+verify_jwt = false
+
+[functions.get-public-form]
+verify_jwt = false
+
+[functions.get-public-form-fields]
+verify_jwt = false
+
+[functions.submit-form-submission]
+verify_jwt = false
+
 [functions.upsert-attendance-saved-view]
 verify_jwt = true
 

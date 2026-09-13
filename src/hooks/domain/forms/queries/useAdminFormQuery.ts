@@ -14,11 +14,16 @@ export function useAdminFormQuery(formId?: string) {
     enabled: Boolean(formId),
     queryFn: async (): Promise<AdminForm | null> => {
       if (!formId) return null;
-      const { data, error } = await supabase
-        .from('forms')
-        .select('*')
-        .eq('id', formId)
-        .maybeSingle();
+      const trimmed = formId.trim();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        trimmed,
+      );
+
+      const query = isUuid
+        ? supabase.from('forms').select('*').eq('id', trimmed)
+        : supabase.from('forms').select('*').eq('slug', trimmed);
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       return data as AdminForm | null;

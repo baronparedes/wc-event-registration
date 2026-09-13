@@ -44,6 +44,11 @@ const PublicEventRegistrationPage = lazy(() =>
     default: module.PublicEventRegistrationPage,
   })),
 );
+const FormSubmissionPage = lazy(() =>
+  import('../pages/forms/[slug]/submit').then((module) => ({
+    default: module.FormSubmissionPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import('../pages/login').then((module) => ({ default: module.LoginPage })),
 );
@@ -255,6 +260,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminFormDetail: AdminEditFormPage,
   adminFormFields: AdminFormFieldsPage,
   adminFormSubmissions: AdminFormSubmissionsPage,
+  formSubmit: FormSubmissionPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {

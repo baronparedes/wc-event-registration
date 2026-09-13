@@ -125,6 +125,18 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 30,
   },
+  getPublicForm: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
+  getPublicFormFields: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
+  getPublicForms: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
   downloadRegistrationsTemplate: {
     windowMs: 60_000,
     maxHits: 12,

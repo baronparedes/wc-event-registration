@@ -190,10 +190,10 @@ export function FormEditorPage() {
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Forms', to: ROUTE_PATHS.adminForms },
-          { label: isEditing ? 'Edit Form' : 'New Form' },
+          { label: isEditing ? (existingForm?.title ?? 'Edit Form') : 'New Form' },
         ]}
         navLinks={navLinks}
-        title={isEditing ? `Edit Form: ${existingForm?.title ?? ''}` : 'Create New Form'}
+        title={isEditing ? (existingForm?.title ?? 'Edit Form') : 'Create New Form'}
         description="Set title, slug, audience, and submission policies."
         actions={headerActions}
       />
