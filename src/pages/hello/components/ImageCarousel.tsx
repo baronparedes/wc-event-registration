@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
+  Home,
   Maximize2,
   Minimize2,
   Pause,
@@ -13,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { ROUTE_PATHS } from '@/config/constants';
 
 import { HELLO_CAROUSEL_SLIDES, type HelloCarouselSlide } from '../constants';
 
@@ -42,12 +45,15 @@ const slideVariants = {
 interface ImageCarouselProps {
   slides?: readonly HelloCarouselSlide[];
   autoPlayDefault?: boolean;
+  onGoHome?: () => void;
 }
 
 export function ImageCarousel({
   slides = HELLO_CAROUSEL_SLIDES,
   autoPlayDefault = false,
+  onGoHome,
 }: ImageCarouselProps) {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(autoPlayDefault);
@@ -56,6 +62,17 @@ export function ImageCarousel({
 
   const totalSlides = slides.length;
   const currentSlide = slides[currentIndex];
+
+  const handleGoHome = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    if (onGoHome) {
+      onGoHome();
+    } else {
+      navigate(ROUTE_PATHS.home);
+    }
+  }, [navigate, onGoHome]);
 
   const paginate = useCallback(
     (newDirection: number) => {
@@ -160,8 +177,19 @@ export function ImageCarousel({
 
   if (totalSlides === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
-        No images available in this carousel.
+      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface p-8 text-center text-muted">
+        <p>No images available in this carousel.</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleGoHome}
+          aria-label="Go to home page"
+          className="rounded-xl border-border/80 bg-surface px-4 font-medium shadow-xs hover:border-primary/40 hover:text-primary"
+        >
+          <Home className="mr-2 h-4 w-4" />
+          Go Home
+        </Button>
       </div>
     );
   }
@@ -174,16 +202,31 @@ export function ImageCarousel({
       data-fullscreen={isFullscreen}
       className={`relative mx-auto flex w-full flex-col overflow-hidden transition-all duration-300 ${
         isFullscreen
-          ? 'fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] max-w-none rounded-none bg-slate-950 p-3 sm:p-6 landscape:p-0 text-white'
+          ? 'fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] max-w-none rounded-none bg-slate-950 p-0 text-white'
           : 'w-full max-w-6xl lg:max-w-7xl rounded-3xl border border-border/80 bg-surface/90 p-3 sm:p-5 sm:pb-6 shadow-xl backdrop-blur-md'
       }`}
     >
       {/* Top Header Controls */}
       <header
-        className={`mb-3 flex items-center justify-between gap-3 border-b border-border/60 pb-3 ${isFullscreen ? 'portrait:flex landscape:hidden' : ''}`}
+        className={`mb-3 flex items-center justify-between gap-3 border-b border-border/60 pb-3 ${
+          isFullscreen ? 'portrait:flex landscape:hidden px-3 pt-3 sm:px-5 sm:pt-4' : ''
+        }`}
       >
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold text-primary sm:text-sm">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          {/* Back to Home Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleGoHome}
+            aria-label="Go to home page"
+            className="!h-10 rounded-xl border-border/80 bg-surface px-3 font-medium shadow-xs hover:border-primary/40 hover:text-primary shrink-0"
+          >
+            <Home className="h-4 w-4 shrink-0 sm:mr-1.5" />
+            <span className="hidden sm:inline">Home</span>
+          </Button>
+
+          <span className="inline-flex shrink-0 items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold text-primary sm:text-sm">
             {String(currentIndex + 1).padStart(2, '0')} / {String(totalSlides).padStart(2, '0')}
           </span>
           <h2 className="line-clamp-1 font-heading text-sm font-medium text-text sm:text-base lg:text-lg">
@@ -245,27 +288,45 @@ export function ImageCarousel({
         </div>
       </header>
 
-      {/* Dedicated Close Button for Fullscreen Landscape */}
+      {/* Dedicated Controls for Fullscreen Landscape */}
       {isFullscreen && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={toggleFullscreen}
-          aria-label="Exit fullscreen"
-          className="absolute top-4 right-4 z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full bg-black/40 text-white hover:bg-black/70 border border-white/20 backdrop-blur-md shadow-lg"
-        >
-          <X className="h-6 w-6" />
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleGoHome}
+            aria-label="Go to home page"
+            className="absolute top-4 left-4 z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full bg-black/40 text-white hover:bg-black/70 border border-white/20 backdrop-blur-md shadow-lg"
+          >
+            <Home className="h-6 w-6" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggleFullscreen}
+            aria-label="Exit fullscreen"
+            className="absolute top-4 right-4 z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full bg-black/40 text-white hover:bg-black/70 border border-white/20 backdrop-blur-md shadow-lg"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+        </>
       )}
 
       {/* Main Image Stage Container */}
       <div
-        className={`relative flex w-full flex-1 select-none items-center justify-center overflow-hidden rounded-2xl bg-neutral-950 shadow-inner ${isFullscreen ? 'landscape:rounded-none landscape:bg-slate-950 landscape:!h-[100dvh]' : ''}`}
+        className={`relative flex w-full flex-1 select-none items-center justify-center overflow-hidden bg-neutral-950 shadow-inner ${
+          isFullscreen ? 'rounded-none bg-slate-950 h-full !h-[100dvh]' : 'rounded-2xl'
+        }`}
       >
         {/* Animated Swipe Stage */}
         <div
-          className={`relative flex h-[68vh] min-h-[460px] sm:h-[75vh] sm:min-h-[580px] md:h-[80vh] md:min-h-[680px] lg:h-[84vh] lg:min-h-[760px] xl:h-[86vh] xl:min-h-[820px] max-h-[960px] xl:max-h-[1100px] w-full items-center justify-center overflow-hidden touch-pan-y ${isFullscreen ? 'landscape:h-full landscape:min-h-full landscape:max-h-full' : ''}`}
+          className={`relative flex w-full items-center justify-center overflow-hidden touch-pan-y ${
+            isFullscreen
+              ? 'h-full min-h-full max-h-full'
+              : 'h-[68vh] min-h-[460px] sm:h-[75vh] sm:min-h-[580px] md:h-[80vh] md:min-h-[680px] lg:h-[84vh] lg:min-h-[760px] xl:h-[86vh] xl:min-h-[820px] max-h-[960px] xl:max-h-[1100px]'
+          }`}
         >
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
@@ -284,13 +345,17 @@ export function ImageCarousel({
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.25}
               onDragEnd={handleDragEnd}
-              className="absolute inset-0 flex cursor-grab active:cursor-grabbing items-center justify-center p-1 sm:p-2 md:p-3"
+              className={`absolute inset-0 flex cursor-grab active:cursor-grabbing items-center justify-center ${
+                isFullscreen ? 'p-0' : 'p-1 sm:p-2 md:p-3'
+              }`}
             >
               <img
                 src={currentSlide.src}
                 alt={currentSlide.alt}
                 draggable={false}
-                className="pointer-events-none h-full w-full max-h-full max-w-full rounded-xl object-contain drop-shadow-2xl select-none"
+                className={`pointer-events-none h-full w-full max-h-full max-w-full object-contain drop-shadow-2xl select-none ${
+                  isFullscreen ? 'rounded-none' : 'rounded-xl'
+                }`}
               />
             </motion.div>
           </AnimatePresence>
@@ -321,7 +386,9 @@ export function ImageCarousel({
       {/* Autoplay Progress Bar Indicator */}
       {isPlaying && (
         <div
-          className={`mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/20 ${isFullscreen ? 'portrait:block landscape:hidden' : ''}`}
+          className={`mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/20 ${
+            isFullscreen ? 'portrait:block landscape:hidden px-3' : ''
+          }`}
         >
           <motion.div
             key={currentIndex}
@@ -335,7 +402,9 @@ export function ImageCarousel({
 
       {/* Image Icons as Indicators */}
       <footer
-        className={`mt-4 border-t border-border/60 pt-3 ${isFullscreen ? 'portrait:block landscape:hidden' : ''}`}
+        className={`mt-4 border-t border-border/60 pt-3 ${
+          isFullscreen ? 'portrait:block landscape:hidden px-3 pb-3 sm:px-5 sm:pb-4' : ''
+        }`}
       >
         <nav
           aria-label="Carousel image slide indicators"
