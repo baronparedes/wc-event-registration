@@ -90,4 +90,16 @@ describe('GuestInfoStepCard', () => {
 
     expect(screen.getByRole('button', { name: 'Continuing...' })).toBeDisabled();
   });
+
+  it('renders inactivity timer message when inactivityTimeoutMs is provided', () => {
+    render(
+      <GuestInfoStepCard
+        onSubmit={vi.fn()}
+        inactivityTimeoutMs={5000}
+        onInactivityTimeout={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Resetting in 5s if inactive/i)).toBeInTheDocument();
+  });
 });

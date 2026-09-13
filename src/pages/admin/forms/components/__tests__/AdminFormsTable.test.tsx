@@ -78,7 +78,7 @@ describe('AdminFormsTable', () => {
         <AdminFormsTable
           forms={[mockForm]}
           canWrite={false}
-          canRead={true}
+          canRead={false}
           onFormSelect={vi.fn()}
         />
       </MemoryRouter>,
@@ -86,6 +86,18 @@ describe('AdminFormsTable', () => {
 
     expect(screen.queryByRole('link', { name: 'Edit Form' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Form Fields' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Submissions' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Submissions' })).not.toBeInTheDocument();
+  });
+
+  it('stops event propagation when clicking actions cell', () => {
+    const onFormSelect = vi.fn();
+    renderComponent({ onFormSelect, canWrite: true, canRead: true });
+
+    const submissionsLink = screen.getByRole('link', { name: 'Submissions' });
+    const actionCell = submissionsLink.closest('td');
+    expect(actionCell).not.toBeNull();
+
+    fireEvent.click(actionCell!);
+    expect(onFormSelect).not.toHaveBeenCalled();
   });
 });

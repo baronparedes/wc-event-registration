@@ -14,6 +14,8 @@ function TestWrapper(props: {
   submitErrorMessage?: string | null;
   onBack?: () => void;
   submitButtonLabel?: string;
+  inactivityTimeoutMs?: number;
+  onInactivityTimeout?: () => void;
 }) {
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     defaultValues: { comments: 'Initial comment' },
@@ -48,6 +50,8 @@ function TestWrapper(props: {
       submitErrorMessage={props.submitErrorMessage}
       submitButtonLabel={props.submitButtonLabel}
       onBack={props.onBack}
+      inactivityTimeoutMs={props.inactivityTimeoutMs}
+      onInactivityTimeout={props.onInactivityTimeout}
     />
   );
 }
@@ -96,5 +100,11 @@ describe('FormFieldsStepCard', () => {
     fireEvent.click(backBtn);
 
     expect(handleBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders inactivity timer message when inactivityTimeoutMs is provided', () => {
+    render(<TestWrapper inactivityTimeoutMs={5000} onInactivityTimeout={vi.fn()} />);
+
+    expect(screen.getByText(/Resetting form in 5s if inactive/i)).toBeInTheDocument();
   });
 });

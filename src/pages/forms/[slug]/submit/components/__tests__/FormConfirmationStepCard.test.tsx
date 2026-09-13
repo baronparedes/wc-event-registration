@@ -39,4 +39,19 @@ describe('FormConfirmationStepCard', () => {
 
     expect(screen.getByText('Submission Updated!')).toBeInTheDocument();
   });
+
+  it('renders inactivity timer message when inactivityTimeoutMs is provided', () => {
+    render(
+      <FormConfirmationStepCard
+        submissionId="sub-789"
+        status="submitted"
+        onReset={vi.fn()}
+        onGoHome={vi.fn()}
+        inactivityTimeoutMs={5000}
+        onInactivityTimeout={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Resetting in 5s/i)).toBeInTheDocument();
+  });
 });

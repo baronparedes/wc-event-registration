@@ -1,52 +1,230 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui';
-import {
-  ListTable,
-  ListTableBody,
-  ListTableCell,
-  ListTableHead,
-  ListTableHeaderCell,
-  ListTableHeaderRow,
-  ListTableRow,
-} from '@/components/ui/ListTable';
-import { ROUTE_PATHS, toRoute } from '@/config/constants';
+import { Button, FormInputField } from '@/components/ui';
+import { ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
 import type { FormSubmission } from '@/lib/domain/forms';
-import { formatDateOnly } from '@/lib/infrastructure';
 import { FormNavigationLinks } from '@/pages/admin/forms/components';
+
+import { ExportSubmissionsButton, SubmissionDetailDialog, SubmissionsList } from './components';
+
+type SourceFilter = 'all' | 'member' | 'guest';
 
 export function AdminFormSubmissionsPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: form, isLoading: formLoading } = useAdminFormQuery(id);
-  const { data: submissions, isLoading: submissionsLoading } = useFormSubmissionsQuery(id);
+
+  const { data: form, isLoading: formLoading, error: formError } = useAdminFormQuery(id);
+  const targetFormId = form?.id || id;
+  const {
+    data: rawSubmissions,
+    isLoading: submissionsLoading,
+    error: submissionsError,
+  } = useFormSubmissionsQuery(targetFormId);
 
   const [selectedSubmission, setSelectedSubmission] = useState<FormSubmission | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, TIMING.searchDebounceMs);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [searchTerm]);
+
+  const normalizedSearchTerm = useMemo(
+    () => debouncedSearchTerm.trim().toLowerCase(),
+    [debouncedSearchTerm],
+  );
+
+  const allSubmissions = useMemo(() => rawSubmissions ?? [], [rawSubmissions]);
+
+  const filteredSubmissions = useMemo(() => {
+    return allSubmissions.filter((sub) => {
+      if (sourceFilter !== 'all' && sub.source !== sourceFilter) {
+        return false;
+      }
+
+      if (!normalizedSearchTerm) {
+        return true;
+      }
+
+      const fullName = (
+        sub.users?.full_name ||
+        [sub.public_registrant_info?.first_name, sub.public_registrant_info?.last_name]
+          .filter(Boolean)
+          .join(' ')
+      ).toLowerCase();
+
+      const memberId = (sub.users?.member_id ?? '').toLowerCase();
+      const email = (sub.users?.email ?? sub.public_registrant_info?.email ?? '').toLowerCase();
+      const phone = (sub.public_registrant_info?.phone ?? '').toLowerCase();
+
+      return (
+        fullName.includes(normalizedSearchTerm) ||
+        memberId.includes(normalizedSearchTerm) ||
+        email.includes(normalizedSearchTerm) ||
+        phone.includes(normalizedSearchTerm)
+      );
+    });
+  }, [allSubmissions, normalizedSearchTerm, sourceFilter]);
 
   const isLoading = formLoading || submissionsLoading;
+  const error = formError || submissionsError;
 
-  const navLinks = id ? (
-    <FormNavigationLinks formId={id} currentSection="submissions" />
+  if (error) {
+    return (
+      <AdminPageShell>
+        <AdminPageShell.Header title="Manage Submissions" />
+        <AdminPageShell.Content>
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <p className="text-sm text-red-600">
+              Error loading submissions: {error instanceof Error ? error.message : String(error)}
+            </p>
+          </div>
+        </AdminPageShell.Content>
+      </AdminPageShell>
+    );
+  }
+
+  const isFormArchived = form?.status === 'archived';
+  const totalCount = allSubmissions.length;
+  const filteredCount = filteredSubmissions.length;
+  const hasFilterActive = normalizedSearchTerm.length > 0 || sourceFilter !== 'all';
+
+  const navLinks = form ? (
+    <FormNavigationLinks formId={form.id} currentSection="submissions" />
   ) : undefined;
+
+  const navActions = (
+    <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center md:w-auto md:justify-end">
+      <ExportSubmissionsButton
+        submissions={filteredSubmissions}
+        formTitle={form?.title}
+        formSlug={form?.slug}
+        disabled={isLoading || filteredCount === 0}
+      />
+    </div>
+  );
 
   return (
     <AdminPageShell>
       <AdminPageShell.Header
         breadcrumbs={[
           { label: 'Forms', to: ROUTE_PATHS.adminForms },
-          { label: form?.title ?? 'Form', to: id ? toRoute('adminFormDetail', { id }) : undefined },
+          {
+            label: form?.title ?? 'Form',
+            to: form ? toRoute('adminFormDetail', { id: form.id }) : undefined,
+          },
           { label: 'Submissions' },
         ]}
         navLinks={navLinks}
-        title="Form Submissions"
-        description={form ? `Submissions submitted for ${form.title}` : 'Manage form submissions'}
+        title="Manage Submissions"
+        description={
+          form
+            ? `${totalCount} form submission${totalCount === 1 ? '' : 's'}`
+            : 'Manage form submissions'
+        }
+        actions={navActions}
       />
 
+      {form && form.status !== 'draft' && (
+        <div
+          className={`rounded-lg p-3 ${
+            isFormArchived
+              ? 'border border-yellow-200 bg-yellow-50'
+              : 'border border-blue-200 bg-blue-50'
+          }`}
+        >
+          <p
+            className={`text-sm font-medium ${
+              isFormArchived ? 'text-yellow-800' : 'text-blue-800'
+            }`}
+          >
+            {isFormArchived
+              ? 'This form is closed. Submissions are read-only.'
+              : 'This form is published. All submissions are visible.'}
+          </p>
+        </div>
+      )}
+
+      {form && form.status === 'draft' && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium text-amber-800">
+            This form is in draft mode. Submissions are not yet open to the public.
+          </p>
+        </div>
+      )}
+
+      <AdminPageShell.Filters>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_auto_auto] sm:items-end">
+          <FormInputField
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by respondent, member ID, or email"
+            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+          />
+
+          {/* Source Tabs */}
+          <div className="flex items-center rounded-xl border border-border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setSourceFilter('all')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                sourceFilter === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              All ({totalCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('member')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                sourceFilter === 'member'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              Members
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('guest')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                sourceFilter === 'guest'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              Guests
+            </button>
+          </div>
+
+          <Button
+            type="button"
+            variant="primaryOutline"
+            onClick={() => {
+              setSearchTerm('');
+              setSourceFilter('all');
+            }}
+            disabled={!hasFilterActive}
+          >
+            Clear
+          </Button>
+        </div>
+      </AdminPageShell.Filters>
+
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading submissions...">
-        {!form ? (
+        {!form && !isLoading ? (
           <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
             Form not found.{' '}
             <Link className="underline" to={ROUTE_PATHS.adminForms}>
@@ -54,138 +232,29 @@ export function AdminFormSubmissionsPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="rounded-2xl border border-border bg-surface">
-                {submissions?.length === 0 ? (
-                  <div className="p-8 text-center text-muted text-sm">
-                    No submissions recorded yet for this form.
-                  </div>
-                ) : (
-                  <ListTable>
-                    <ListTableHead>
-                      <ListTableHeaderRow>
-                        <ListTableHeaderCell className="px-6">Respondent</ListTableHeaderCell>
-                        <ListTableHeaderCell>Source</ListTableHeaderCell>
-                        <ListTableHeaderCell>Submitted At</ListTableHeaderCell>
-                        <ListTableHeaderCell>Actions</ListTableHeaderCell>
-                      </ListTableHeaderRow>
-                    </ListTableHead>
-                    <ListTableBody>
-                      {submissions?.map((sub) => {
-                        const respondentName =
-                          sub.users?.full_name ||
-                          [
-                            sub.public_registrant_info?.first_name,
-                            sub.public_registrant_info?.last_name,
-                          ]
-                            .filter(Boolean)
-                            .join(' ') ||
-                          'Anonymous';
+          <div className="rounded-2xl border border-border bg-surface">
+            <SubmissionsList
+              submissions={filteredSubmissions}
+              isLoading={isLoading}
+              searchTerm={normalizedSearchTerm}
+              onSelectSubmission={setSelectedSubmission}
+            />
 
-                        const respondentDetail =
-                          sub.users?.member_id || sub.public_registrant_info?.email || '';
-
-                        return (
-                          <ListTableRow
-                            key={sub.id}
-                            className="cursor-pointer"
-                            onClick={() => setSelectedSubmission(sub)}
-                          >
-                            <ListTableCell className="px-6">
-                              <p className="font-medium text-text">{respondentName}</p>
-                              {respondentDetail && (
-                                <p className="text-xs text-muted mt-0.5">{respondentDetail}</p>
-                              )}
-                            </ListTableCell>
-                            <ListTableCell>
-                              <span className="text-sm text-text capitalize">{sub.source}</span>
-                            </ListTableCell>
-                            <ListTableCell>
-                              <span className="text-sm text-text">
-                                {formatDateOnly(sub.submitted_at)}
-                              </span>
-                            </ListTableCell>
-                            <ListTableCell>
-                              <Button
-                                size="sm"
-                                variant="primaryOutline"
-                                onClick={() => setSelectedSubmission(sub)}
-                              >
-                                View Answers
-                              </Button>
-                            </ListTableCell>
-                          </ListTableRow>
-                        );
-                      })}
-                    </ListTableBody>
-                  </ListTable>
-                )}
-              </div>
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p className="text-xs text-muted">
+                {hasFilterActive
+                  ? `Showing ${filteredCount} of ${totalCount} submission${totalCount === 1 ? '' : 's'}`
+                  : `Showing all ${totalCount} submission${totalCount === 1 ? '' : 's'}`}
+              </p>
             </div>
-
-            {selectedSubmission && (
-              <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 h-fit">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-text">Submission Details</h3>
-                  <Button
-                    size="sm"
-                    variant="primaryOutline"
-                    onClick={() => setSelectedSubmission(null)}
-                  >
-                    Close
-                  </Button>
-                </div>
-
-                <div className="space-y-2 text-xs border-b border-border pb-4 text-muted">
-                  <p>
-                    <strong className="text-text">Submitted:</strong>{' '}
-                    {formatDateOnly(selectedSubmission.submitted_at)}
-                  </p>
-                  <p>
-                    <strong className="text-text">Source:</strong> {selectedSubmission.source}
-                  </p>
-                  {selectedSubmission.users && (
-                    <p>
-                      <strong className="text-text">Member:</strong>{' '}
-                      {selectedSubmission.users.full_name} ({selectedSubmission.users.member_id})
-                    </p>
-                  )}
-                  {selectedSubmission.public_registrant_info?.email && (
-                    <p>
-                      <strong className="text-text">Email:</strong>{' '}
-                      {selectedSubmission.public_registrant_info.email}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-text">Answers:</h4>
-                  {selectedSubmission.form_submission_answers?.length === 0 ? (
-                    <p className="text-xs text-muted">No answers captured.</p>
-                  ) : (
-                    selectedSubmission.form_submission_answers?.map((ans) => (
-                      <div
-                        key={ans.id}
-                        className="rounded-xl border border-border bg-background p-3 space-y-1"
-                      >
-                        <p className="text-xs font-semibold text-text">
-                          {ans.form_fields?.label || ans.form_fields?.field_key}
-                        </p>
-                        <p className="text-xs text-text">
-                          {ans.answer_text ||
-                            ans.answer_number ||
-                            (ans.answer_boolean !== null ? String(ans.answer_boolean) : '') ||
-                            (ans.answer_json ? JSON.stringify(ans.answer_json) : '—')}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
+
+        <SubmissionDetailDialog
+          submission={selectedSubmission}
+          isOpen={Boolean(selectedSubmission)}
+          onClose={() => setSelectedSubmission(null)}
+        />
       </AdminPageShell.Content>
     </AdminPageShell>
   );
