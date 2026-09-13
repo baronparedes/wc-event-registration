@@ -124,7 +124,7 @@ describe('HelloCarouselPage', () => {
     const fullscreenBtn = screen.getByRole('button', { name: /Enter fullscreen/i });
     fireEvent.click(fullscreenBtn);
 
-    expect(screen.getByRole('button', { name: /Exit fullscreen/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Exit fullscreen/i }).length).toBeGreaterThan(0);
 
     // Press Escape to exit fullscreen
     fireEvent.keyDown(window, { key: 'Escape' });

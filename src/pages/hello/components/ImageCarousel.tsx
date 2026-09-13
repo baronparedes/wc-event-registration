@@ -9,6 +9,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  X,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
@@ -177,7 +178,9 @@ export function ImageCarousel({
       }`}
     >
       {/* Top Header Controls */}
-      <header className="mb-3 flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+      <header
+        className={`mb-3 flex items-center justify-between gap-3 border-b border-border/60 pb-3 ${isFullscreen ? 'portrait:flex landscape:hidden' : ''}`}
+      >
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold text-primary sm:text-sm">
             {String(currentIndex + 1).padStart(2, '0')} / {String(totalSlides).padStart(2, '0')}
@@ -241,10 +244,28 @@ export function ImageCarousel({
         </div>
       </header>
 
+      {/* Dedicated Close Button for Fullscreen Landscape */}
+      {isFullscreen && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={toggleFullscreen}
+          aria-label="Exit fullscreen"
+          className="absolute top-4 right-4 z-50 hidden landscape:flex !h-12 !w-12 !min-h-12 !min-w-12 !p-0 rounded-full bg-black/40 text-white hover:bg-black/70 border border-white/20 backdrop-blur-md shadow-lg"
+        >
+          <X className="h-6 w-6" />
+        </Button>
+      )}
+
       {/* Main Image Stage Container */}
-      <div className="relative flex w-full flex-1 select-none items-center justify-center overflow-hidden rounded-2xl bg-neutral-950 shadow-inner">
+      <div
+        className={`relative flex w-full flex-1 select-none items-center justify-center overflow-hidden rounded-2xl bg-neutral-950 shadow-inner ${isFullscreen ? 'landscape:rounded-none landscape:bg-slate-950 landscape:!h-[100dvh]' : ''}`}
+      >
         {/* Animated Swipe Stage */}
-        <div className="relative flex h-[68vh] min-h-[460px] sm:h-[75vh] sm:min-h-[580px] md:h-[80vh] md:min-h-[680px] lg:h-[84vh] lg:min-h-[760px] xl:h-[86vh] xl:min-h-[820px] max-h-[960px] xl:max-h-[1100px] w-full items-center justify-center overflow-hidden touch-pan-y">
+        <div
+          className={`relative flex h-[68vh] min-h-[460px] sm:h-[75vh] sm:min-h-[580px] md:h-[80vh] md:min-h-[680px] lg:h-[84vh] lg:min-h-[760px] xl:h-[86vh] xl:min-h-[820px] max-h-[960px] xl:max-h-[1100px] w-full items-center justify-center overflow-hidden touch-pan-y ${isFullscreen ? 'landscape:h-full landscape:min-h-full landscape:max-h-full' : ''}`}
+        >
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
               key={currentIndex}
@@ -298,7 +319,9 @@ export function ImageCarousel({
 
       {/* Autoplay Progress Bar Indicator */}
       {isPlaying && (
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/20">
+        <div
+          className={`mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/20 ${isFullscreen ? 'portrait:block landscape:hidden' : ''}`}
+        >
           <motion.div
             key={currentIndex}
             initial={{ width: '0%' }}
@@ -310,7 +333,9 @@ export function ImageCarousel({
       )}
 
       {/* Image Icons as Indicators */}
-      <footer className="mt-4 border-t border-border/60 pt-3">
+      <footer
+        className={`mt-4 border-t border-border/60 pt-3 ${isFullscreen ? 'portrait:block landscape:hidden' : ''}`}
+      >
         <nav
           aria-label="Carousel image slide indicators"
           className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none sm:justify-center sm:gap-3"
