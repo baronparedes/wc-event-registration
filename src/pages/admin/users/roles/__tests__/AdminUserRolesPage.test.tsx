@@ -71,6 +71,7 @@ const mockAssignments = [
     auth_user_id: 'user-id-admin',
     avatar_object_key: null,
     email: 'regularadmin@example.com',
+    has_member_profile: true,
     role: 'admin' as const,
     created_at: '2026-02-01T00:00:00Z',
   },
@@ -115,6 +116,7 @@ describe('AdminUserRolesPage', () => {
           name: 'New User',
           email: 'newuser@example.com',
           avatar_object_key: null,
+          has_member_profile: true,
           created_at: '2026-03-01T00:00:00Z',
           last_sign_in_at: null,
         },
@@ -180,6 +182,9 @@ describe('AdminUserRolesPage', () => {
     expect(screen.getByText('kioskuser@example.com')).toBeInTheDocument();
 
     expect(screen.getByText('Protected')).toBeInTheDocument();
+
+    // verify the member profile badge is rendered
+    expect(screen.getAllByLabelText('Verified Member Profile')).toHaveLength(1);
   });
 
   it('opens assign dialog and assigns a role to a user', async () => {
@@ -193,6 +198,9 @@ describe('AdminUserRolesPage', () => {
     fireEvent.change(searchInput, { target: { value: 'new' } });
 
     fireEvent.click(screen.getByText('newuser@example.com'));
+
+    // Check that verified badge appears in the main table + dialog search list + summary (3 total)
+    expect(screen.getAllByLabelText('Verified Member Profile')).toHaveLength(3);
 
     fireEvent.click(screen.getByRole('button', { name: 'Assign Role' }));
 
