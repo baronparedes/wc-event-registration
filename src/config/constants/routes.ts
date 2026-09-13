@@ -46,6 +46,7 @@ export const ROUTE_PATHS = {
   adminFormDetailPattern: '/admin/forms/:id',
   adminFormFieldsPattern: '/admin/forms/:id/fields',
   adminFormSubmissionsPattern: '/admin/forms/:id/submissions',
+  hello: '/hello',
 } as const;
 
 export type AppRouteKey =
@@ -87,7 +88,8 @@ export type AppRouteKey =
   | 'adminFormDetail'
   | 'adminFormFields'
   | 'adminFormSubmissions'
-  | 'formSubmit';
+  | 'formSubmit'
+  | 'hello';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -100,6 +102,7 @@ export type AppRouteDefinition = {
 
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
+  { key: 'hello', path: ROUTE_PATHS.hello, layout: 'shell' },
   { key: 'privacy', path: ROUTE_PATHS.privacy, layout: 'shell' },
   { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
   { key: 'terms', path: ROUTE_PATHS.terms, layout: 'shell' },
@@ -295,6 +298,7 @@ const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.eventPublicRegisterPattern,
   ROUTE_PATHS.formSubmitPattern,
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
+  ROUTE_PATHS.hello,
 ] as const;
 
 export function isMinimizedAppShellRoute(pathname: string): boolean {
