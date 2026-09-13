@@ -1,10 +1,21 @@
 import '@testing-library/jest-dom/vitest';
 import dotenv from 'dotenv';
 import path from 'path';
+import { env } from 'process';
 import { afterAll, beforeAll } from 'vitest';
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+
+// Explicitly ensure test env variables are set to avoid false-positive VITE_SUPABASE_URL missing errors during tests
+if (!env.VITE_SUPABASE_URL) {
+  env.VITE_SUPABASE_URL = 'http://localhost:54321';
+  env.VITE_SUPABASE_PUBLISHABLE_KEY = 'dummy';
+}
+if (!env.NEXT_PUBLIC_SUPABASE_URL) {
+  env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
+  env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'dummy';
+}
 
 // Stub fetch if not available in test environment
 if (!globalThis.fetch) {
