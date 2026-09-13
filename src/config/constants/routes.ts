@@ -102,7 +102,7 @@ export type AppRouteDefinition = {
 
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
-  { key: 'hello', path: ROUTE_PATHS.hello, layout: 'shell' },
+  { key: 'hello', path: ROUTE_PATHS.hello, layout: 'standalone' },
   { key: 'privacy', path: ROUTE_PATHS.privacy, layout: 'shell' },
   { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
   { key: 'terms', path: ROUTE_PATHS.terms, layout: 'shell' },
