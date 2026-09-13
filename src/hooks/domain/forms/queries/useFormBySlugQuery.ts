@@ -2,11 +2,24 @@ import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminForm } from '@/lib/domain/forms';
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 export function formBySlugQueryKey(slug: string) {
   return ['form-by-slug', slug] as const;
 }
+
+interface GetPublicFormRequest {
+  slug: string;
+}
+
+interface GetPublicFormResponse {
+  success: true;
+  form: AdminForm | null;
+}
+
+const callGetPublicForm = createEdgeFunctionCaller<GetPublicFormRequest, GetPublicFormResponse>(
+  'get-public-form',
+);
 
 export function useFormBySlugQuery(slug?: string) {
   return useQuery<AdminForm | null, Error>({
@@ -14,15 +27,8 @@ export function useFormBySlugQuery(slug?: string) {
     enabled: Boolean(slug),
     queryFn: async (): Promise<AdminForm | null> => {
       if (!slug) return null;
-      const { data, error } = await supabase
-        .from('forms')
-        .select('*')
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as AdminForm | null;
+      const response = await callGetPublicForm({ slug });
+      return response.form;
     },
     staleTime: QUERY_STALE_TIME_MS.short,
   });

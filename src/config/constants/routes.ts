@@ -86,7 +86,8 @@ export type AppRouteKey =
   | 'adminFormNew'
   | 'adminFormDetail'
   | 'adminFormFields'
-  | 'adminFormSubmissions';
+  | 'adminFormSubmissions'
+  | 'formSubmit';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -103,6 +104,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
   { key: 'terms', path: ROUTE_PATHS.terms, layout: 'shell' },
   { key: 'termsOfService', path: ROUTE_PATHS.termsOfService, layout: 'shell' },
+  { key: 'formSubmit', path: ROUTE_PATHS.formSubmitPattern, layout: 'shell' },
   { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },

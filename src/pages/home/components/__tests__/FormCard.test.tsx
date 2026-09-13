@@ -72,7 +72,7 @@ describe('FormCard', () => {
     expect(screen.getByText('A test form description')).toBeInTheDocument();
     expect(screen.getByText('Open')).toBeInTheDocument();
     const submitLink = screen.getByRole('link', { name: 'Fill out' });
-    expect(submitLink).toHaveAttribute('href', '/forms/test-form');
+    expect(submitLink).toHaveAttribute('href', '/forms/test-form/submit');
   });
 
   it('renders without description when description is null', () => {
@@ -99,7 +99,7 @@ describe('FormCard', () => {
     fireEvent.keyDown(card, { key: ' ' });
 
     expect(mockNavigate).toHaveBeenCalledTimes(3);
-    expect(mockNavigate).toHaveBeenCalledWith('/forms/test-form');
+    expect(mockNavigate).toHaveBeenCalledWith('/forms/test-form/submit');
   });
 
   it('does not navigate on unhandled key press when open', () => {
@@ -131,7 +131,9 @@ describe('FormCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Share Test Form/i }));
 
     await waitFor(() => {
-      expect(mockClipboardWriteText).toHaveBeenCalledWith('http://localhost:3000/forms/test-form');
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(
+        'http://localhost:3000/forms/test-form/submit',
+      );
     });
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Form link copied to clipboard.');
@@ -164,7 +166,7 @@ describe('FormCard', () => {
     await waitFor(() => {
       expect(mockNativeShare).toHaveBeenCalledWith({
         title: 'Test Form',
-        url: 'http://localhost:3000/forms/test-form',
+        url: 'http://localhost:3000/forms/test-form/submit',
       });
     });
     expect(mockClipboardWriteText).not.toHaveBeenCalled();
@@ -201,7 +203,9 @@ describe('FormCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Share Test Form/i }));
 
     await waitFor(() => {
-      expect(mockClipboardWriteText).toHaveBeenCalledWith('http://localhost:3000/forms/test-form');
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(
+        'http://localhost:3000/forms/test-form/submit',
+      );
     });
     expect(mockToastSuccess).toHaveBeenCalledWith('Form link copied to clipboard.');
   });
@@ -223,7 +227,9 @@ describe('FormCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Share Test Form/i }));
 
     await waitFor(() => {
-      expect(mockClipboardWriteText).toHaveBeenCalledWith('http://localhost:3000/forms/test-form');
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(
+        'http://localhost:3000/forms/test-form/submit',
+      );
     });
     expect(mockNativeShare).not.toHaveBeenCalled();
     expect(mockToastSuccess).toHaveBeenCalledWith('Form link copied to clipboard.');

@@ -24,6 +24,14 @@ type MemberLookupResult =
       reason: 'not_found' | 'already_registered' | 'lookup_unavailable';
     };
 
+export type MemberLookupConfig =
+  | string
+  | {
+      eventSlug?: string;
+      formSlug?: string;
+      onMemberCleared?: () => void;
+    };
+
 export type MemberLookupState = {
   matchedMember: MemberLookupProfile | null;
   verifiedMemberCredential: string | null;
@@ -42,9 +50,19 @@ export type MemberLookupActions = {
 /**
  * Custom hook for managing member lookup state and logic.
  * Encapsulates all member verification, duplicate policy handling, and update mode logic.
- * Supports both ID-first and name-based lookup modes.
+ * Supports both event registrations and form submissions, with ID-first and name-based lookup modes.
  */
-export function useMemberLookupState(eventSlug: string | undefined, onMemberCleared?: () => void) {
+export function useMemberLookupState(
+  config: MemberLookupConfig | undefined,
+  onMemberClearedParam?: () => void,
+) {
+  const eventSlug = typeof config === 'object' ? config.eventSlug : config;
+  const formSlug = typeof config === 'object' ? config.formSlug : undefined;
+  const onMemberCleared =
+    typeof config === 'object' && config.onMemberCleared
+      ? config.onMemberCleared
+      : onMemberClearedParam;
+
   const [matchedMember, setMatchedMember] = useState<MemberLookupProfile | null>(null);
   const [verifiedMemberCredential, setVerifiedMemberCredential] = useState<string | null>(null);
   const [memberIdHighlight, setMemberIdHighlight] = useState(false);
@@ -90,7 +108,8 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         const result = await lookupMutation.mutateAsync({
           memberId: values.memberId,
           name: values.name,
-          eventSlug: eventSlug || '',
+          eventSlug: eventSlug ? eventSlug.trim() : undefined,
+          formSlug: formSlug ? formSlug.trim() : undefined,
         });
 
         if (!result.profile) {
@@ -98,7 +117,6 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           setVerifiedMemberCredential(null);
           lookupForm.reset();
           logger.warn('Member lookup returned null');
-          // Return error state to caller via hook state
           return {
             success: false,
             error: `We could not verify that entry. Please contact your administrator for support.`,
@@ -106,19 +124,27 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
           };
         }
 
-        if (result.existing_registration?.exists && !result.existing_registration.edit_allowed) {
+        const existingRecord = formSlug ? result.existing_submission : result.existing_registration;
+
+        if (existingRecord?.exists && !existingRecord.edit_allowed) {
           setMatchedMember(result.profile);
           setVerifiedMemberCredential(null);
           setIsRegistrationBlocked(true);
           setIsUpdateMode(false);
           setPrefillResponses(null);
-          setLockedStepMessage('Already registered for this event. Verify another member.');
+          setLockedStepMessage(
+            formSlug
+              ? 'Already submitted this form. Verify another member.'
+              : 'Already registered for this event. Verify another member.',
+          );
           setMemberIdHighlight(true);
           lookupForm.reset();
-          logger.info('Duplicate registration blocked during lookup');
+          logger.info('Duplicate blocked during lookup');
           return {
             success: false,
-            error: 'You are already registered for this event.',
+            error: formSlug
+              ? 'You have already submitted this form.'
+              : 'You are already registered for this event.',
             reason: 'already_registered',
           };
         }
@@ -138,16 +164,14 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         setMatchedMember(result.profile);
         setVerifiedMemberCredential(result.profile.member_token);
         setIsRegistrationBlocked(false);
-        setIsUpdateMode(Boolean(result.existing_registration?.edit_allowed));
-        setPrefillResponses(result.existing_registration?.responses ?? null);
-        setMemberIdHighlight(Boolean(result.existing_registration?.edit_allowed));
+        setIsUpdateMode(Boolean(existingRecord?.edit_allowed));
+        setPrefillResponses(existingRecord?.responses ?? null);
+        setMemberIdHighlight(Boolean(existingRecord?.edit_allowed));
 
         logger.info('Member lookup successful:', result.profile);
         return {
           success: true,
-          mode: result.existing_registration?.edit_allowed
-            ? 'update_registration'
-            : 'new_registration',
+          mode: existingRecord?.edit_allowed ? 'update_registration' : 'new_registration',
         };
       } catch (error) {
         setMatchedMember(null);
@@ -161,7 +185,7 @@ export function useMemberLookupState(eventSlug: string | undefined, onMemberClea
         };
       }
     },
-    [eventSlug, clearMember, lookupMutation, lookupForm],
+    [eventSlug, formSlug, clearMember, lookupMutation, lookupForm],
   );
 
   return {

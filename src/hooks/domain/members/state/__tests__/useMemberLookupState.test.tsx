@@ -190,4 +190,89 @@ describe('useMemberLookupState', () => {
       expect(result.current.lookupForm.getValues('memberId')).toBe('');
     });
   });
+
+  it('handles formSlug lookup for new form submission', async () => {
+    const profile = makeMemberLookupProfile();
+    mockMutateAsync.mockResolvedValue({
+      profile,
+      existing_registration: null,
+      existing_submission: null,
+    });
+
+    const { result } = renderHook(() => useMemberLookupState({ formSlug: 'volunteer-form' }), {
+      wrapper: createWrapper(),
+    });
+
+    const outcome = await act(async () => {
+      return await result.current.handleLookupSubmit({ memberId: 'WC-002' });
+    });
+
+    expect(outcome).toEqual({ success: true, mode: 'new_registration' });
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      memberId: 'WC-002',
+      name: undefined,
+      eventSlug: undefined,
+      formSlug: 'volunteer-form',
+    });
+    expect(result.current.matchedMember?.full_name).toBe(profile.full_name);
+    expect(result.current.isUpdateMode).toBe(false);
+  });
+
+  it('blocks duplicate form submissions when edit is not allowed', async () => {
+    const profile = makeMemberLookupProfile();
+    mockMutateAsync.mockResolvedValue({
+      profile,
+      existing_registration: null,
+      existing_submission: {
+        exists: true,
+        edit_allowed: false,
+        status: 'submitted',
+        responses: { reason: 'Previous submission' },
+      },
+    });
+
+    const { result } = renderHook(() => useMemberLookupState({ formSlug: 'survey-form' }), {
+      wrapper: createWrapper(),
+    });
+
+    const outcome = await act(async () => {
+      return await result.current.handleLookupSubmit({ memberId: 'WC-003' });
+    });
+
+    expect(outcome).toEqual({
+      success: false,
+      error: 'You have already submitted this form.',
+      reason: 'already_registered',
+    });
+    expect(result.current.isRegistrationBlocked).toBe(true);
+    expect(result.current.lockedStepMessage).toBe(
+      'Already submitted this form. Verify another member.',
+    );
+  });
+
+  it('allows updating form submission when edit is allowed', async () => {
+    const profile = makeMemberLookupProfile();
+    mockMutateAsync.mockResolvedValue({
+      profile,
+      existing_registration: null,
+      existing_submission: {
+        exists: true,
+        edit_allowed: true,
+        status: 'submitted',
+        responses: { notes: 'Existing answer' },
+      },
+    });
+
+    const { result } = renderHook(() => useMemberLookupState({ formSlug: 'editable-form' }), {
+      wrapper: createWrapper(),
+    });
+
+    const outcome = await act(async () => {
+      return await result.current.handleLookupSubmit({ memberId: 'WC-004' });
+    });
+
+    expect(outcome).toEqual({ success: true, mode: 'update_registration' });
+    expect(result.current.isUpdateMode).toBe(true);
+    expect(result.current.prefillResponses).toEqual({ notes: 'Existing answer' });
+  });
 });

@@ -2,21 +2,28 @@ import { useMutation } from '@tanstack/react-query';
 
 import type {
   ExistingRegistrationState,
+  ExistingSubmissionState,
   MemberLookupProfile,
   MemberLookupResult,
 } from '@/lib/domain/members';
 import { createEdgeFunctionCaller, logger } from '@/lib/infrastructure';
 
-export type { MemberLookupProfile, ExistingRegistrationState, MemberLookupResult };
+export type {
+  MemberLookupProfile,
+  ExistingRegistrationState,
+  ExistingSubmissionState,
+  MemberLookupResult,
+};
 
 interface MemberLookupResponse {
   success: true;
   profile: MemberLookupProfile | null;
   existing_registration: ExistingRegistrationState | null;
+  existing_submission: ExistingSubmissionState | null;
 }
 
 const callMemberLookup = createEdgeFunctionCaller<
-  { memberId?: string; name?: string; eventSlug?: string },
+  { memberId?: string; name?: string; eventSlug?: string; formSlug?: string },
   MemberLookupResponse
 >('member-lookup');
 
@@ -24,6 +31,7 @@ export type MemberLookupParams = {
   memberId?: string;
   name?: string;
   eventSlug?: string;
+  formSlug?: string;
 };
 
 /**
@@ -36,12 +44,12 @@ export type MemberLookupParams = {
  */
 export function useMemberLookupQuery() {
   return useMutation<MemberLookupResult, Error, MemberLookupParams>({
-    mutationFn: async ({ memberId, name, eventSlug }) => {
+    mutationFn: async ({ memberId, name, eventSlug, formSlug }) => {
       const normalizedMemberId = (memberId ?? '').trim();
       const normalizedName = (name ?? '').trim();
 
       if (!normalizedMemberId && !normalizedName) {
-        return { profile: null, existing_registration: null };
+        return { profile: null, existing_registration: null, existing_submission: null };
       }
 
       logger.debug('Looking up member:', {
@@ -52,10 +60,12 @@ export function useMemberLookupQuery() {
         memberId: normalizedMemberId || undefined,
         name: normalizedName || undefined,
         eventSlug,
+        formSlug,
       });
       return {
         profile: response.profile,
-        existing_registration: response.existing_registration,
+        existing_registration: response.existing_registration ?? null,
+        existing_submission: response.existing_submission ?? null,
       };
     },
     onError: (error) => {

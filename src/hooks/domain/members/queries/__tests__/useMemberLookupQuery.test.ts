@@ -67,6 +67,7 @@ describe('useMemberLookupQuery', () => {
         category: profile.category,
       },
       existing_registration: null,
+      existing_submission: null,
     });
   });
 
@@ -79,6 +80,7 @@ describe('useMemberLookupQuery', () => {
     expect(response).toEqual({
       profile: null,
       existing_registration: null,
+      existing_submission: null,
     });
   });
 
@@ -114,6 +116,7 @@ describe('useMemberLookupQuery', () => {
         category: profile.category,
       },
       existing_registration: null,
+      existing_submission: null,
     });
   });
 
@@ -128,6 +131,29 @@ describe('useMemberLookupQuery', () => {
 
     await waitFor(() => {
       expect(mockLogger.error).toHaveBeenCalled();
+    });
+  });
+
+  it('passes form slug to the edge function', async () => {
+    const profile = makeMemberLookupProfile();
+    mockLookupCaller.mockResolvedValueOnce({
+      success: true,
+      profile,
+      existing_registration: null,
+      existing_submission: null,
+    });
+
+    const { result } = renderHookWithClient(() => useMemberLookupQuery());
+
+    await act(async () =>
+      result.current.mutateAsync({ memberId: 'WC-001', formSlug: 'volunteer-form' }),
+    );
+
+    expect(mockLookupCaller).toHaveBeenCalledWith({
+      memberId: 'WC-001',
+      name: undefined,
+      eventSlug: undefined,
+      formSlug: 'volunteer-form',
     });
   });
 });
