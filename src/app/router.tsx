@@ -28,6 +28,9 @@ import { useIsMobileViewport, useOnlineStatus } from '../hooks/utils';
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
 );
+const HelloCarouselPage = lazy(() =>
+  import('../pages/hello').then((module) => ({ default: module.HelloCarouselPage })),
+);
 const PrivacyPolicyPage = lazy(() =>
   import('../pages/privacy').then((module) => ({ default: module.PrivacyPolicyPage })),
 );
@@ -223,6 +226,7 @@ function isOfflineSupportedPath(pathname: string): boolean {
 
 const routeComponents: Record<AppRouteKey, ComponentType> = {
   home: HomePage,
+  hello: HelloCarouselPage,
   privacy: PrivacyPolicyPage,
   privacyPolicy: PrivacyPolicyPage,
   terms: TermsOfServicePage,

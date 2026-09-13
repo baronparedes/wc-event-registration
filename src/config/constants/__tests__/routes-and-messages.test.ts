@@ -12,6 +12,7 @@ import {
 describe('route constants and builders', () => {
   it('exposes stable route constants', () => {
     expect(ROUTE_PATHS.home).toBe('/');
+    expect(ROUTE_PATHS.hello).toBe('/hello');
     expect(ROUTE_PATHS.adminEvents).toBe('/admin/events');
     expect(ROUTE_PATHS.adminMemberMilestones).toBe('/admin/members/milestones');
     expect(ROUTE_PATHS.adminMembersImport).toBe('/admin/members/import');
@@ -26,6 +27,7 @@ describe('route constants and builders', () => {
   });
 
   it('builds route paths from identifiers', () => {
+    expect(toRoute('hello')).toBe('/hello');
     expect(toRoute('eventRegister', { slug: 'summer-2026' })).toBe('/events/summer-2026/register');
     expect(toRoute('adminMembersImport')).toBe('/admin/members/import');
     expect(toRoute('adminMemberMilestones')).toBe('/admin/members/milestones');
@@ -43,7 +45,8 @@ describe('route constants and builders', () => {
     );
   });
 
-  it('detects only kiosk-minimized shell routes', () => {
+  it('detects minimized shell routes', () => {
+    expect(isMinimizedAppShellRoute('/hello')).toBe(true);
     expect(isMinimizedAppShellRoute('/events/summer-2026/register')).toBe(true);
     expect(isMinimizedAppShellRoute('/events/summer-2026/register-public')).toBe(true);
     expect(isMinimizedAppShellRoute('/admin/events/event-1/attendance/check-in')).toBe(true);
