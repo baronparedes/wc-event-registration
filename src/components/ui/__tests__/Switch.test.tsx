@@ -81,4 +81,28 @@ describe('Switch', () => {
 
     expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
+
+  it('supports success and primary variants', () => {
+    const { rerender } = render(
+      <Switch
+        checked={true}
+        onCheckedChange={vi.fn()}
+        ariaLabel="Primary switch"
+        variant="primary"
+      />,
+    );
+
+    expect(screen.getByRole('switch', { name: 'Primary switch' })).toBeChecked();
+
+    rerender(
+      <Switch
+        checked={true}
+        onCheckedChange={vi.fn()}
+        ariaLabel="Success switch"
+        variant="success"
+      />,
+    );
+
+    expect(screen.getByRole('switch', { name: 'Success switch' })).toBeChecked();
+  });
 });

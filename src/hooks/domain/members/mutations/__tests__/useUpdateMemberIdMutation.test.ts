@@ -6,6 +6,7 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useUpdateMemberIdMutation } from '@/hooks/domain/members/mutations/useUpdateMemberIdMutation';
 import { ADMIN_MEMBER_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMemberQuery';
 import { ADMIN_MEMBERS_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMembersQuery';
+import { CURRENT_PROFILE_QUERY_KEY } from '@/hooks/domain/members/queries/useCurrentProfileQuery';
 
 const { mockUpdateMemberIdCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
   const updateMemberIdCaller = vi.fn();
@@ -52,6 +53,7 @@ describe('useUpdateMemberIdMutation', () => {
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBER_QUERY_KEY(userId) });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: CURRENT_PROFILE_QUERY_KEY });
     });
   });
 

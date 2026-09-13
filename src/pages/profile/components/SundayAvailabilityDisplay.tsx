@@ -1,3 +1,12 @@
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable';
 import { Switch } from '@/components/ui/Switch';
 
 const SUNDAY_KEYS = [
@@ -19,6 +28,14 @@ const SUNDAY_LABELS: Record<SundayKey, string> = {
   third_sunday: 'Third Sunday',
   fourth_sunday: 'Fourth Sunday',
   fifth_sunday: 'Fifth Sunday',
+};
+
+const SUNDAY_SHORT_LABELS: Record<SundayKey, string> = {
+  first_sunday: '1st Sun',
+  second_sunday: '2nd Sun',
+  third_sunday: '3rd Sun',
+  fourth_sunday: '4th Sun',
+  fifth_sunday: '5th Sun',
 };
 
 type SundayAvailabilityDisplayProps = {
@@ -49,27 +66,43 @@ export function SundayAvailabilityDisplay({ metadata }: SundayAvailabilityDispla
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[400px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-border/50 text-muted">
-            <th className="pb-3 font-medium uppercase tracking-wider">Week</th>
-            {TIME_SLOTS.map((time) => (
-              <th key={time} className="pb-3 font-medium uppercase tracking-wider text-center">
-                {time.replace('AM', ' AM').replace('NN', ' NN').replace('PM', ' PM')}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border/30">
-          {SUNDAY_KEYS.map((key) => {
-            return (
-              <tr key={key}>
-                <td className="py-4 font-medium text-text">{SUNDAY_LABELS[key]}</td>
-                {TIME_SLOTS.map((time) => {
-                  const isChecked = currentValues[key].has(time);
-                  return (
-                    <td key={time} className="py-4 text-center">
+    <ListTable density="dense" className="min-w-full">
+      <ListTableHead>
+        <ListTableHeaderRow variant="default">
+          <ListTableHeaderCell className="px-2.5 py-3 sm:px-4 text-left font-semibold">
+            Week
+          </ListTableHeaderCell>
+          {TIME_SLOTS.map((time) => (
+            <ListTableHeaderCell key={time} className="px-2 py-3 sm:px-4 text-center font-semibold">
+              {time.replace('AM', ' AM').replace('NN', ' NN').replace('PM', ' PM')}
+            </ListTableHeaderCell>
+          ))}
+        </ListTableHeaderRow>
+      </ListTableHead>
+      <ListTableBody divider="default">
+        {SUNDAY_KEYS.map((key) => {
+          const selectedCount = currentValues[key].size;
+          return (
+            <ListTableRow key={key} hover="muted">
+              <ListTableCell className="px-2.5 py-3 sm:px-4 font-medium text-text">
+                <div className="flex items-center gap-1.5">
+                  <span className="hidden sm:inline">{SUNDAY_LABELS[key]}</span>
+                  <span className="sm:hidden">{SUNDAY_SHORT_LABELS[key]}</span>
+                  {selectedCount > 0 && (
+                    <span
+                      aria-label={`${selectedCount} slots selected`}
+                      className="inline-flex items-center justify-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary sm:hidden"
+                    >
+                      {selectedCount}
+                    </span>
+                  )}
+                </div>
+              </ListTableCell>
+              {TIME_SLOTS.map((time) => {
+                const isChecked = currentValues[key].has(time);
+                return (
+                  <ListTableCell key={time} className="px-2 py-3 sm:px-4 text-center">
+                    <div className="flex items-center justify-center">
                       <Switch
                         checked={isChecked}
                         onCheckedChange={() => undefined}
@@ -77,14 +110,14 @@ export function SundayAvailabilityDisplay({ metadata }: SundayAvailabilityDispla
                         ariaLabel={`${SUNDAY_LABELS[key]} at ${time} availability`}
                         size="sm"
                       />
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                    </div>
+                  </ListTableCell>
+                );
+              })}
+            </ListTableRow>
+          );
+        })}
+      </ListTableBody>
+    </ListTable>
   );
 }

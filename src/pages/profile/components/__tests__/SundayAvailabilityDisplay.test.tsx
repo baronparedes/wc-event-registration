@@ -36,5 +36,9 @@ describe('SundayAvailabilityDisplay', () => {
     });
     expect(secondSunday3PM).toBeChecked();
     expect(secondSunday3PM).toBeDisabled();
+
+    // Mobile short labels and count badge
+    expect(screen.getByText('1st Sun')).toBeInTheDocument();
+    expect(screen.getByLabelText('2 slots selected')).toBeInTheDocument();
   });
 });

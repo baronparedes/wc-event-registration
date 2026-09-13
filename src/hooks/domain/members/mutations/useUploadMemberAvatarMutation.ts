@@ -4,6 +4,7 @@ import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
 import { ADMIN_MEMBER_QUERY_KEY } from '../queries/useAdminMemberQuery';
 import { ADMIN_MEMBERS_QUERY_KEY } from '../queries/useAdminMembersQuery';
+import { CURRENT_PROFILE_QUERY_KEY } from '../queries/useCurrentProfileQuery';
 import { memberAvatarQueryKey } from '../queries/useMemberAvatarQuery';
 
 interface UploadMemberAvatarRequest {
@@ -30,6 +31,7 @@ export function useUploadMemberAvatarMutation() {
       queryClient.setQueryData(memberAvatarQueryKey(avatar_object_key), image_base64);
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBER_QUERY_KEY(id) });
+      queryClient.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
     },
   });
 }

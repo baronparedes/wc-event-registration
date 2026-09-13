@@ -1,5 +1,7 @@
 import type { InputHTMLAttributes } from 'react';
 
+type SwitchVariant = 'primary' | 'success';
+
 type SwitchProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'onChange' | 'type' | 'checked' | 'size'
@@ -8,6 +10,7 @@ type SwitchProps = Omit<
   onCheckedChange: (checked: boolean) => void;
   ariaLabel: string;
   size?: 'sm' | 'md';
+  variant?: SwitchVariant;
   showStateText?: boolean;
   onText?: string;
   offText?: string;
@@ -25,6 +28,7 @@ export function Switch({
   onCheckedChange,
   disabled = false,
   size = 'md',
+  variant = 'primary',
   showStateText = false,
   onText = 'YES',
   offText = 'NO',
@@ -50,15 +54,21 @@ export function Switch({
           text: 'text-xs tracking-wide font-semibold',
         };
 
+  const checkedTrackClass =
+    variant === 'primary'
+      ? 'border-primary bg-primary hover:bg-primary/90'
+      : 'border-green-200 bg-green-100 hover:bg-green-200';
+
+  const checkedTextClass = variant === 'primary' ? 'text-white' : 'text-green-800';
+
   return (
     <label
       className={cx(
         'inline-flex box-border items-center rounded-full border transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/30',
+        !disabled && 'cursor-pointer',
         isLabeled && 'relative overflow-hidden',
         sizeClasses.track,
-        checked
-          ? 'border-green-200 bg-green-100 hover:bg-green-200'
-          : 'border-slate-300 bg-slate-200 hover:bg-slate-300',
+        checked ? checkedTrackClass : 'border-slate-300 bg-slate-200 hover:bg-slate-300',
         disabled && 'cursor-not-allowed opacity-60',
         className,
       )}
@@ -81,7 +91,7 @@ export function Switch({
             'pointer-events-none absolute inset-y-0 flex items-center transition-opacity select-none',
             sizeClasses.text,
             checked ? 'left-1 right-5 justify-start' : 'left-5 right-1 justify-end',
-            checked ? 'text-green-800' : 'text-slate-500',
+            checked ? checkedTextClass : 'text-slate-500',
             checked ? 'opacity-100' : 'opacity-90',
           )}
         >

@@ -212,19 +212,6 @@ export function AdminMemberDetailPage() {
           </div>
         )}
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {(canWrite || canRead) && (
-            <SectionCard
-              title="Sunday Availability"
-              subtitle="Manage member availability across all five Sundays."
-            >
-              <SundayAvailabilityEditor
-                control={control}
-                setValue={setValue}
-                disabled={!canWrite || isDeletedMember}
-              />
-            </SectionCard>
-          )}
-
           <SectionCard
             title="Member Profile"
             subtitle="Member ID stays read-only because it is used for lookup and registration linking."
@@ -328,6 +315,19 @@ export function AdminMemberDetailPage() {
               />
             </div>
           </SectionCard>
+
+          {(canWrite || canRead) && (
+            <SectionCard
+              title="Sunday Availability"
+              subtitle="Manage member availability across all five Sundays."
+            >
+              <SundayAvailabilityEditor
+                control={control}
+                setValue={setValue}
+                disabled={!canWrite || isDeletedMember}
+              />
+            </SectionCard>
+          )}
 
           {(canWrite || canRead) && (
             <SectionCard
