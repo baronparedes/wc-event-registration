@@ -1,9 +1,9 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
-import { Bot, Loader2, Send } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Avatar, Button, FormInputField } from '@/components/ui';
+import { Avatar, BrandAvatar, Button, FormInputField } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useChatStreamQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
@@ -107,8 +107,8 @@ export function AdminChatPage() {
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             {messages.length === 0 && (
               <div className="flex h-full flex-col items-center justify-center text-center text-muted">
-                <Bot className="mb-4 h-12 w-12 opacity-20" />
-                <p>Hi! I'm your AI assistant.</p>
+                <BrandAvatar size="md" className="mb-4" />
+                <p className="font-medium text-text">Hi! I'm your AI assistant.</p>
                 <p className="text-sm">Ask me questions about your events.</p>
               </div>
             )}
@@ -125,9 +125,7 @@ export function AdminChatPage() {
                     className="h-8 w-8 shrink-0 text-xs"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/20 text-muted">
-                    <Bot className="h-5 w-5" />
-                  </div>
+                  <BrandAvatar size="xs" />
                 )}
                 <div
                   className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-2.5 ${

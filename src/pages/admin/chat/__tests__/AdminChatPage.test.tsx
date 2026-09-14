@@ -50,6 +50,7 @@ describe('AdminChatPage', () => {
 
     expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
     expect(screen.getByText('Ask me questions about your events.')).toBeInTheDocument();
+    expect(screen.getByAltText('AI Assistant')).toBeInTheDocument();
   });
 
   it('submits a message, displays user message and avatar, and streams response', async () => {
@@ -74,6 +75,8 @@ describe('AdminChatPage', () => {
     expect(screen.getByText('How many members registered?')).toBeInTheDocument();
     // Verify user avatar is rendered with user initials / name title
     expect(screen.getByTitle('Admin User')).toBeInTheDocument();
+    // Verify bot brand avatar is rendered
+    expect(screen.getAllByAltText('AI Assistant').length).toBeGreaterThanOrEqual(1);
 
     await waitFor(() => {
       expect(mockStreamRequest).toHaveBeenCalledTimes(1);

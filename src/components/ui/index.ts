@@ -31,3 +31,4 @@ export { EventHeaderCard } from './EventHeaderCard';
 export { Avatar } from './Avatar';
 export { ColorSwatchDisplay } from './ColorSwatchDisplay';
 export { StepIndicator } from './StepIndicator';
+export { BrandAvatar, type BrandAvatarProps } from './BrandAvatar';
