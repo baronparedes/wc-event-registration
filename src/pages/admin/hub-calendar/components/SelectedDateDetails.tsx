@@ -6,6 +6,7 @@ import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 
 import type { MilestoneEntry } from '../types';
+import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
 
@@ -203,7 +204,7 @@ export function SelectedDateDetails({
 
         {/* Section 2: Service Schedules */}
         <div className="pt-2">
-          <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
             <div>
               <h3 className="font-heading text-lg font-semibold text-text">Service Schedules</h3>
               <p className="text-xs text-muted">
@@ -213,9 +214,17 @@ export function SelectedDateDetails({
               </p>
             </div>
             {isCurrentSelectedSunday && selectedEntries.length > 0 && (
-              <Badge variant="neutral" className="text-xs">
-                {selectedEntries.length} scheduled
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="neutral" className="text-xs">
+                  {selectedEntries.length} scheduled
+                </Badge>
+                <ExportSundaySchedulesButton
+                  selectedEntries={selectedEntries}
+                  year={viewYear}
+                  monthIndex={viewMonthIndex}
+                  dayNumber={selectedDayNumber}
+                />
+              </div>
             )}
           </div>
 

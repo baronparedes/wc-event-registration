@@ -190,6 +190,8 @@ describe('AdminHubCalendarPage', () => {
       fireEvent.click(sundayBtn);
     }
 
+    expect(screen.getByRole('button', { name: 'Export Schedules CSV' })).toBeInTheDocument();
+
     // Select tab 12NN
     const tab12nn = screen.getByRole('button', { name: /12:00 NN/i });
     fireEvent.click(tab12nn);
@@ -223,6 +225,9 @@ describe('AdminHubCalendarPage', () => {
     if (secondSundayBtn) {
       fireEvent.click(secondSundayBtn);
       expect(screen.getByText('No schedules on this Sunday')).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Export Schedules CSV' }),
+      ).not.toBeInTheDocument();
     }
   });
 
