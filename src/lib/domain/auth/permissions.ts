@@ -8,7 +8,8 @@ export type AdminPermissionKey =
   | 'canExportAdminReports'
   | 'canAccessAttendanceCheckIn'
   | 'canViewMemberHistory'
-  | 'canManageAdminRoles';
+  | 'canManageAdminRoles'
+  | 'canReadDashboard';
 
 export type AdminPermissions = Record<AdminPermissionKey, boolean>;
 
@@ -29,6 +30,7 @@ export const ADMIN_PERMISSION_POLICIES = [
       canAccessAttendanceCheckIn: true,
       canViewMemberHistory: true,
       canManageAdminRoles: false,
+      canReadDashboard: true,
     },
   },
   {
@@ -42,6 +44,7 @@ export const ADMIN_PERMISSION_POLICIES = [
       canAccessAttendanceCheckIn: true,
       canViewMemberHistory: true,
       canManageAdminRoles: true,
+      canReadDashboard: true,
     },
   },
   {
@@ -55,6 +58,7 @@ export const ADMIN_PERMISSION_POLICIES = [
       canAccessAttendanceCheckIn: false,
       canViewMemberHistory: true,
       canManageAdminRoles: false,
+      canReadDashboard: true,
     },
   },
   {
@@ -68,6 +72,7 @@ export const ADMIN_PERMISSION_POLICIES = [
       canAccessAttendanceCheckIn: false,
       canViewMemberHistory: false,
       canManageAdminRoles: false,
+      canReadDashboard: true,
     },
   },
   {
@@ -81,6 +86,7 @@ export const ADMIN_PERMISSION_POLICIES = [
       canAccessAttendanceCheckIn: true,
       canViewMemberHistory: false,
       canManageAdminRoles: false,
+      canReadDashboard: false,
     },
   },
 ] as const satisfies readonly AdminPermissionPolicy[];

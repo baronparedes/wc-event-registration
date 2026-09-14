@@ -104,7 +104,7 @@ export function AppDrawerNavigation({
   const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
   const canManageRoles = canAdminPerform(adminRole, 'canManageAdminRoles');
-  const canReadDashboard = adminRole && ['super_admin', 'admin', 'slod'].includes(adminRole);
+  const canReadDashboard = canAdminPerform(adminRole, 'canReadDashboard');
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
   const displayName = currentProfile?.full_name ?? currentUserLabel;
