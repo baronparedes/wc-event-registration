@@ -27,7 +27,7 @@ set
 declare
   v_inserted_count integer := 0;
 begin
-  if not public.is_admin () then
+  if not (public.is_admin () or auth.role() = 'service_role' or current_user = 'service_role') then
     raise exception 'unauthorized';
   end if;
 
