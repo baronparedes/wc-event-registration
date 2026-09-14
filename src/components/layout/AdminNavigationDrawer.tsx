@@ -1,6 +1,6 @@
 import { type ComponentType, useEffect, useId } from 'react';
 
-import { Calendar, CalendarDays, ClipboardList, Menu, UserCog, Users, X } from 'lucide-react';
+import { Bot, Calendar, CalendarDays, ClipboardList, Menu, UserCog, Users, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 import { ROUTE_PATHS } from '@/config/constants';
@@ -113,6 +113,12 @@ export function AdminNavigationDrawer({
       to: ROUTE_PATHS.adminEvents,
       label: 'Manage Events',
       icon: Calendar,
+      isAllowed: canReadEvents,
+    },
+    {
+      to: ROUTE_PATHS.adminChat,
+      label: 'AI Assistant',
+      icon: Bot,
       isAllowed: canReadEvents,
     },
     {

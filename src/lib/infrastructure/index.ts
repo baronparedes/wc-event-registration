@@ -1,4 +1,9 @@
-export { supabase, createEdgeFunctionCaller, createEdgeFunctionTextCaller } from './supabase';
+export {
+  supabase,
+  createEdgeFunctionCaller,
+  createEdgeFunctionTextCaller,
+  createEdgeFunctionStreamCaller,
+} from './supabase';
 export type { EdgeFunctionTextResponse } from './supabase';
 export {
   ATTENDANCE_DATA_SNAPSHOT_TTL_MS,

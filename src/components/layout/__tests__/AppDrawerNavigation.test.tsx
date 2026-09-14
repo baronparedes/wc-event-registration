@@ -148,6 +148,10 @@ describe('AppDrawerNavigation', () => {
       'href',
       ROUTE_PATHS.adminEvents,
     );
+    expect(screen.getByRole('link', { name: 'AI Assistant' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminChat,
+    );
     expect(screen.getByRole('link', { name: 'Manage Members' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminMembers,

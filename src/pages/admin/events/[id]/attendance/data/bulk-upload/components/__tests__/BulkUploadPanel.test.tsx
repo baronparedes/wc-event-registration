@@ -136,7 +136,7 @@ describe('BulkUploadPanel', () => {
     const importButton = screen.getByRole('button', { name: 'Import CSV' });
     expect(importButton).toBeDisabled();
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const invalidCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nmember,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Broken Row,',
@@ -190,7 +190,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -227,7 +227,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -269,7 +269,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -314,7 +314,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -348,7 +348,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -387,7 +387,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const csv = [
       'attendee_kind,registration_id,public_registration_id,full_name,table_number',
       'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1,,Name 1,1',
@@ -426,7 +426,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -483,7 +483,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -514,7 +514,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const invalidCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,"Broken Row,12',
@@ -539,7 +539,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -573,7 +573,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number,area\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12,2F',
@@ -622,7 +622,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number,checked\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12,false',
@@ -665,7 +665,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number,event_date,event_datetime\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12,2026-07-11,2026-07-11T09:30',
@@ -692,7 +692,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number,notes\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12,Hello',
@@ -740,7 +740,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number,area\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12,2F',
@@ -791,7 +791,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -832,7 +832,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',
@@ -860,7 +860,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const csvNoFields = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row',
@@ -903,7 +903,7 @@ describe('BulkUploadPanel', () => {
       />,
     );
 
-    const fileInput = screen.getByLabelText('CSV file');
+    const fileInput = screen.getAllByLabelText('CSV file')[0];
     const validCsv = new File(
       [
         'attendee_kind,registration_id,public_registration_id,full_name,table_number\nregistered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,Valid Row,12',

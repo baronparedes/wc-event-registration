@@ -7,3 +7,4 @@ export * from './members';
 export * from './registrations';
 export * from './services';
 export * from './forms';
+export * from './chat';

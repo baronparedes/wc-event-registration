@@ -81,6 +81,10 @@ const AdminMemberDetailPage = lazy(() =>
     default: module.AdminMemberDetailPage,
   })),
 );
+const AdminChatPage = lazy(() =>
+  import('@/pages/admin/chat').then((module) => ({ default: module.AdminChatPage })),
+);
+
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
 );
@@ -241,6 +245,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminMembersImport: AdminMembersImportPage,
   adminMemberDetail: AdminMemberDetailPage,
   memberProfile: MemberProfilePage,
+  adminChat: AdminChatPage,
   adminEvents: AdminEventsPage,
   adminEventNew: AdminNewEventPage,
   adminEventDetail: AdminEditEventPage,
