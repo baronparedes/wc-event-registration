@@ -1,8 +1,6 @@
 import { HTTP_STATUS, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
-import { requireAdminAccess } from '@/shared/security.ts';
-import { parseFunctionEnvironment } from '@/shared/validation.ts';
 
 Deno.serve(async (req: Request): Promise<Response> => {
   const guard = await useEdgeHook({
@@ -10,6 +8,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     functionName: 'cron-tokenize-users',
     allowAnyOrigin: true,
     method: 'POST',
+    requireAdmin: true,
+    allowServiceRole: true,
+    allowedRoles: ['admin', 'super_admin'],
     publicRateLimit: {
       scope: 'cron-tokenize-users',
       windowMs: RATE_LIMIT_PRESETS.cron.tokenizeUsers.windowMs,
@@ -21,47 +22,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return guard.response;
   }
 
-  const env = parseFunctionEnvironment();
-  if (!env) {
-    return errorResponse(
-      guard.corsHeaders,
-      HTTP_STATUS.internalServerError,
-      'Environment not configured',
-    );
-  }
-
-  const authHeader = req.headers.get('authorization')?.trim() ?? '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-
-  let callerType: 'service_role' | 'admin';
-  let callerId: string | null = null;
-
-  if (token === env.supabaseServiceKey) {
-    callerType = 'service_role';
-  } else {
-    const adminAccess = await requireAdminAccess({
-      requestId: guard.requestId,
-      logPrefix: 'cron-tokenize-users',
-      supabaseUrl: env.supabaseUrl,
-      supabaseServiceKey: env.supabaseServiceKey,
-      authHeader,
-      corsHeaders: guard.corsHeaders,
-      allowedRoles: ['admin', 'super_admin'],
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    callerType = 'admin';
-    callerId = adminAccess.userId;
-  }
-
   try {
     console.log('[cron-tokenize-users] Executing tokenize_all_users RPC', {
       requestId: guard.requestId,
-      callerType,
-      callerId,
+      callerType: guard.callerType,
+      callerId: guard.userId,
     });
 
     const { data: insertedCount, error } = await guard.client.rpc('tokenize_all_users');

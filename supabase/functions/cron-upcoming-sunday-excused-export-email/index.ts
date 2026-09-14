@@ -1,7 +1,6 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
-import { requireAdminAccess } from '@/shared/security.ts';
-import { parseFunctionEnvironment, z } from '@/shared/validation.ts';
+import { z } from '@/shared/validation.ts';
 
 const CRON_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000; // Asia/Manila (UTC+8)
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -255,6 +254,9 @@ Deno.serve(async (req) => {
     functionName: 'cron-upcoming-sunday-excused-export-email',
     allowAnyOrigin: true,
     method: 'POST',
+    requireAdmin: true,
+    allowServiceRole: true,
+    allowedRoles: ['admin', 'super_admin'],
     publicRateLimit: {
       scope: 'cron-upcoming-sunday-excused-export-email',
       windowMs: RATE_LIMIT_PRESETS.cron.upcomingSundayExcusedExportEmail.windowMs,
@@ -270,45 +272,10 @@ Deno.serve(async (req) => {
     return guard.response;
   }
 
-  const env = parseFunctionEnvironment();
-  if (!env) {
-    return jsonResponse(500, {
-      success: false,
-      error: 'Environment not configured',
-    });
-  }
-
-  const authHeader = req.headers.get('authorization')?.trim() ?? '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-
-  let callerType: 'service_role' | 'admin';
-  let callerId: string | null = null;
-
-  if (token === env.supabaseServiceKey) {
-    callerType = 'service_role';
-  } else {
-    const adminAccess = await requireAdminAccess({
-      requestId: guard.requestId,
-      logPrefix: 'cron-upcoming-sunday-excused-export-email',
-      supabaseUrl: env.supabaseUrl,
-      supabaseServiceKey: env.supabaseServiceKey,
-      authHeader,
-      corsHeaders: guard.corsHeaders,
-      allowedRoles: ['admin', 'super_admin'],
-    });
-
-    if (!adminAccess.ok) {
-      return adminAccess.response;
-    }
-
-    callerType = 'admin';
-    callerId = adminAccess.userId;
-  }
-
   console.log('[cron-upcoming-sunday-excused-export-email] Edge hook accepted request', {
     requestId: guard.requestId,
-    callerType,
-    callerId,
+    callerType: guard.callerType,
+    callerId: guard.userId,
   });
 
   try {
