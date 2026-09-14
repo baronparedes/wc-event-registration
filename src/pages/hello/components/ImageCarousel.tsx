@@ -81,15 +81,6 @@ export function ImageCarousel({
         onGoHome={handleGoHome}
       />
 
-      {/* Dedicated Floating Controls for Fullscreen Landscape */}
-      <CarouselLandscapeControls
-        isFullscreen={isFullscreen}
-        onGoHome={handleGoHome}
-        onExitFullscreen={toggleFullscreen}
-        safeAreaInsetLeft={safeAreaInsetLeft}
-        safeAreaInsetRight={safeAreaInsetRight}
-      />
-
       {/* Main Image Stage Container */}
       <CarouselSlideStage
         isFullscreen={isFullscreen}
@@ -108,6 +99,15 @@ export function ImageCarousel({
         currentIndex={currentIndex}
         slides={slides}
         onGoToSlide={goToSlide}
+      />
+
+      {/* Dedicated Floating Controls for Fullscreen Landscape */}
+      <CarouselLandscapeControls
+        isFullscreen={isFullscreen}
+        onGoHome={handleGoHome}
+        onExitFullscreen={toggleFullscreen}
+        safeAreaInsetLeft={safeAreaInsetLeft}
+        safeAreaInsetRight={safeAreaInsetRight}
       />
     </section>
   );
