@@ -5,6 +5,19 @@ import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
 
+import { createChatTools } from './tools/index.ts';
+
+const SYSTEM_PROMPT = `You are the Welcome Center Administrative Assistant for Christ's Commission Fellowship (CCF).
+Your primary role is to assist church administrators with Welcome Center events.
+
+CRITICAL OPERATIONAL RULES:
+1. ONLY answer questions and perform actions related to Welcome Center events.
+2. For any query requiring data (e.g. upcoming events, schedules, locations, registration status), ALWAYS use the getEvents tool. Never invent, hallucinate, or assume database records.
+3. If a request is outside the scope of Welcome Center events (e.g. general coding, creative writing, homework, poetry, unrelated world facts), POLITELY REFUSE with:
+   "I am specialized to assist only with Welcome Center events. Please let me know if you have questions about our events, schedules, or registration details."
+4. If the tool returns no records, inform the user clearly.
+5. Keep your answers clear, concise, well-structured, and helpful for administrative workflows.`;
+
 const chatMessageSchema = z.object({
   id: z.string().optional(),
   role: z.enum(['user', 'assistant', 'system']),
@@ -28,6 +41,11 @@ Deno.serve(async (req) => {
     method: 'POST',
     requireAdmin: true,
     allowedRoles: ['slod', 'admin', 'super_admin'],
+    rateLimit: {
+      scope: 'chat',
+      windowMs: 60 * 1000,
+      maxHits: 15,
+    },
     schema: chatRequestSchema,
   });
 
@@ -36,11 +54,20 @@ Deno.serve(async (req) => {
       requestId: guard.requestId,
       status: guard.response.status,
     });
+    if (guard.response.status === 429) {
+      return errorResponse(
+        guard.corsHeaders,
+        429,
+        "I'm on a coffee break, you can come back later.",
+        undefined,
+        { error_code: 'RATE_LIMITED' },
+      );
+    }
     return guard.response;
   }
 
   const { messages } = guard.data;
-  const { corsHeaders, requestId, userId } = guard;
+  const { corsHeaders, requestId, userId, client } = guard;
 
   console.log('[chat] Request authenticated and validated', {
     requestId,
@@ -66,10 +93,14 @@ Deno.serve(async (req) => {
 
     const google = createGoogleGenerativeAI({ apiKey });
 
+    const tools = createChatTools({ client, requestId });
+
     const result = streamText({
       model: google('gemini-3.6-flash'),
+      system: SYSTEM_PROMPT,
       messages,
-      tools: {},
+      tools,
+      maxSteps: 5,
       onFinish: ({ text, finishReason, usage }) => {
         const durationMs = Math.round(performance.now() - startTime);
         console.log('[chat] Generation stream finished', {
@@ -94,17 +125,6 @@ Deno.serve(async (req) => {
 
     let response: Response;
     if (
-      typeof (streamResult as { toDataStreamResponse?: unknown }).toDataStreamResponse ===
-      'function'
-    ) {
-      response = (
-        streamResult as {
-          toDataStreamResponse: (opts?: { headers?: Record<string, string> }) => Response;
-        }
-      ).toDataStreamResponse({
-        headers: corsHeaders,
-      });
-    } else if (
       typeof (streamResult as { toTextStreamResponse?: unknown }).toTextStreamResponse ===
       'function'
     ) {
@@ -113,6 +133,17 @@ Deno.serve(async (req) => {
           toTextStreamResponse: (opts?: { headers?: Record<string, string> }) => Response;
         }
       ).toTextStreamResponse({
+        headers: corsHeaders,
+      });
+    } else if (
+      typeof (streamResult as { toDataStreamResponse?: unknown }).toDataStreamResponse ===
+      'function'
+    ) {
+      response = (
+        streamResult as {
+          toDataStreamResponse: (opts?: { headers?: Record<string, string> }) => Response;
+        }
+      ).toDataStreamResponse({
         headers: corsHeaders,
       });
     } else {
@@ -135,12 +166,28 @@ Deno.serve(async (req) => {
     return response;
   } catch (err) {
     const durationMs = Math.round(performance.now() - startTime);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     console.error('[chat] Unexpected error processing chat request', {
       requestId,
       durationMs,
-      error: err instanceof Error ? err.message : String(err),
+      error: errorMessage,
       stack: err instanceof Error ? err.stack : undefined,
     });
+
+    const isRateLimitOrQuota =
+      (err as { status?: number })?.status === 429 ||
+      /429|quota|resource_exhausted|rate\s*limit/i.test(errorMessage);
+
+    if (isRateLimitOrQuota) {
+      return errorResponse(
+        corsHeaders,
+        429,
+        "I'm on a coffee break, you can come back later.",
+        undefined,
+        { error_code: 'RATE_LIMITED' },
+      );
+    }
+
     return errorResponse(corsHeaders, 500, 'Failed to process request');
   }
 });

@@ -160,29 +160,34 @@ export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
     let done = false;
     let textBuffer = '';
     let isProtocolStream = false;
+    let pendingLine = '';
 
     while (!done) {
       const { value, done: readerDone } = await reader.read();
       done = readerDone;
       if (value) {
         const chunk = decoder.decode(value, { stream: true });
-        let isProtocolChunk = false;
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('0:')) {
-            isProtocolChunk = true;
-            isProtocolStream = true;
-            try {
-              const content = JSON.parse(line.slice(2));
-              textBuffer += content;
-              onChunk(textBuffer);
-            } catch {
-              // ignore parse errors for partial chunks if any
-            }
-          }
+        if (!isProtocolStream && /^[0-9a-f]:["{[]/m.test(chunk)) {
+          isProtocolStream = true;
         }
 
-        if (!isProtocolChunk && !isProtocolStream && chunk) {
+        if (isProtocolStream) {
+          const fullText = pendingLine + chunk;
+          const lines = fullText.split('\n');
+          pendingLine = done ? '' : (lines.pop() ?? '');
+
+          for (const line of lines) {
+            if (line.startsWith('0:')) {
+              try {
+                const content = JSON.parse(line.slice(2));
+                textBuffer += content;
+                onChunk(textBuffer);
+              } catch {
+                // ignore parse errors for partial chunks if any
+              }
+            }
+          }
+        } else {
           textBuffer += chunk;
           onChunk(textBuffer);
         }

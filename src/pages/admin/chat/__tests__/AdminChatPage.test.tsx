@@ -49,9 +49,7 @@ describe('AdminChatPage', () => {
     );
 
     expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
-    expect(
-      screen.getByText('Ask me questions about your events, forms and members.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Ask me questions about your events.')).toBeInTheDocument();
   });
 
   it('submits a message, displays user message and avatar, and streams response', async () => {
@@ -101,5 +99,60 @@ describe('AdminChatPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Sorry, I encountered an error.')).toBeInTheDocument();
     });
+  });
+
+  it('displays coffee break message when rate limit or quota is exceeded', async () => {
+    mockStreamRequest.mockRejectedValue(
+      new Error("I'm on a coffee break, you can come back later."),
+    );
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'Hello' } });
+
+    const sendButton = screen.getByRole('button', { name: /Send/i });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("I'm on a coffee break, you can come back later."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('renders a single assistant bubble during streaming loading state without duplicates', async () => {
+    let resolveStream: () => void;
+    const streamPromise = new Promise<void>((resolve) => {
+      resolveStream = resolve;
+    });
+
+    mockStreamRequest.mockImplementation(() => streamPromise);
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'What events are tomorrow?' } });
+
+    const sendButton = screen.getByRole('button', { name: /Send/i });
+    fireEvent.click(sendButton);
+
+    // Verify user message is present
+    expect(screen.getByText('What events are tomorrow?')).toBeInTheDocument();
+
+    // Verify exactly one loader spinner is rendered (inside the assistant bubble)
+    const loaders = document.querySelectorAll('.animate-spin');
+    expect(loaders).toHaveLength(1);
+
+    // Resolve stream and clean up
+    resolveStream!();
   });
 });

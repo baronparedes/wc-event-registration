@@ -166,6 +166,21 @@ describe('supabase edge function callers', () => {
     );
   });
 
+  it('falls back to default errorMessage when error json has no error property in text caller', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ other: 'value' }),
+    } as unknown as Response);
+
+    const callFunction = createEdgeFunctionTextCaller<{ eventId: string }>('export-csv');
+
+    await expect(callFunction({ eventId: 'event-1' })).rejects.toThrow('Edge function failed: 400');
+  });
+
   it('falls back to status-based message when text error body is empty', async () => {
     mockGetSession.mockResolvedValue({
       data: {
@@ -187,6 +202,25 @@ describe('supabase edge function callers', () => {
     );
 
     await expect(callFunction({ value: 'hello' })).rejects.toThrow('Edge function failed: 502');
+  });
+
+  it('handles response.text() failure in createEdgeFunctionCaller', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error('fail text');
+      },
+    } as unknown as Response);
+
+    const callFunction = createEdgeFunctionCaller<{ value: string }, { success: boolean }>(
+      'sample-function',
+    );
+
+    await expect(callFunction({ value: 'hello' })).rejects.toThrow('Edge function failed: 500');
   });
 
   it('returns plain text without filename when content-disposition is missing', async () => {
@@ -288,6 +322,57 @@ describe('supabase edge function callers', () => {
     await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow('Unauthorized stream');
   });
 
+  it('handles { message: ... } JSON error in stream caller', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => JSON.stringify({ message: 'Stream message error' }),
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+
+    await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow('Stream message error');
+  });
+
+  it('handles non-JSON error string in stream caller response', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => 'Internal Server Error Text',
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+
+    await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow(
+      'Internal Server Error Text',
+    );
+  });
+
+  it('handles response.text() failure in stream caller', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: async () => {
+        throw new Error('read error');
+      },
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+
+    await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow(
+      'Edge function failed: 502',
+    );
+  });
+
   it('streams plain text chunks when not formatted with data stream protocol', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
 
@@ -320,5 +405,78 @@ describe('supabase edge function callers', () => {
     expect(onChunk).toHaveBeenCalledWith('Plain ');
     expect(onChunk).toHaveBeenCalledWith('Plain text ');
     expect(onChunk).toHaveBeenCalledWith('Plain text stream');
+  });
+
+  it('filters out AI SDK tool call, result, and finish protocol lines', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const encoder = new TextEncoder();
+    const chunks = [
+      'f:{"messageId":"msg-1"}\n9:{"toolCallId":"t1","toolName":"getEvents","args":{}}\n',
+      'a:{"toolCallId":"t1","result":{"events":[]}}\ne:{"finishReason":"tool-calls"}\n',
+      '0:"Here are "\n',
+      '0:"the events:"\n',
+    ];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    const onChunk = vi.fn();
+
+    await callStream({ prompt: 'hi' }, onChunk);
+
+    expect(onChunk).toHaveBeenCalledTimes(2);
+    expect(onChunk).toHaveBeenCalledWith('Here are ');
+    expect(onChunk).toHaveBeenCalledWith('Here are the events:');
+  });
+
+  it('handles partial line buffering and malformed JSON gracefully in protocol stream', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const encoder = new TextEncoder();
+    // Split lines across chunks and include a malformed 0: line
+    const chunks = ['0:"First ', 'part"\n0:invalid-json\n0:"', 'Second"\n'];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    const onChunk = vi.fn();
+
+    await callStream({ prompt: 'hi' }, onChunk);
+
+    expect(onChunk).toHaveBeenCalledWith('First part');
+    expect(onChunk).toHaveBeenCalledWith('First partSecond');
   });
 });

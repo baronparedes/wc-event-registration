@@ -8,6 +8,8 @@ import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useChatStreamQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
+import { ChatMessageContent } from './components';
+
 type Message = {
   id: string;
   role: 'user' | 'assistant';
@@ -25,24 +27,30 @@ export function AdminChatPage() {
   const avatarObjectKey = currentProfile?.avatar_object_key;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (bottomRef.current?.scrollIntoView) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    } else if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
-    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: input };
-    const currentMessages = [...messages, userMessage];
-    setMessages(currentMessages);
-    setInput('');
-
+    const trimmedInput = input.trim();
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: trimmedInput };
     const assistantMessageId = crypto.randomUUID();
-    setMessages((prev) => [...prev, { id: assistantMessageId, role: 'assistant', content: '' }]);
+    const currentMessages = [...messages, userMessage];
+
+    setMessages([...currentMessages, { id: assistantMessageId, role: 'assistant', content: '' }]);
+    setInput('');
 
     try {
       await streamRequest({ messages: currentMessages }, (textBuffer: string) => {
@@ -54,10 +62,23 @@ export function AdminChatPage() {
       });
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', content: 'Sorry, I encountered an error.' },
-      ]);
+      const isLowLevelError =
+        !error ||
+        !(error instanceof Error) ||
+        !error.message ||
+        error.message === 'Network error' ||
+        error.message === 'Failed to fetch' ||
+        error.message.startsWith('Edge function failed:');
+
+      const fallbackContent = isLowLevelError ? 'Sorry, I encountered an error.' : error.message;
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId ? { ...msg, content: fallbackContent } : msg,
+        ),
+      );
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
@@ -70,13 +91,13 @@ export function AdminChatPage() {
       />
 
       <AdminPageShell.Content isLoading={false} loadingMessage="">
-        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-border bg-surface">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex h-[calc(100vh-14rem)] min-h-[520px] max-h-[820px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             {messages.length === 0 && (
               <div className="flex h-full flex-col items-center justify-center text-center text-muted">
                 <Bot className="mb-4 h-12 w-12 opacity-20" />
                 <p>Hi! I'm your AI assistant.</p>
-                <p className="text-sm">Ask me questions about your events, forms and members.</p>
+                <p className="text-sm">Ask me questions about your events.</p>
               </div>
             )}
             {messages.map((m) => (
@@ -97,26 +118,23 @@ export function AdminChatPage() {
                   </div>
                 )}
                 <div
-                  className={`rounded-2xl px-4 py-2 ${
+                  className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-2.5 ${
                     m.role === 'user'
-                      ? 'bg-accent text-white rounded-tr-none'
-                      : 'bg-background border border-border rounded-tl-none'
+                      ? 'bg-primary text-white rounded-tr-none'
+                      : 'bg-background border border-border rounded-tl-none shadow-sm'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                  {m.role === 'user' ? (
+                    <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                  ) : m.content.trim() ? (
+                    <ChatMessageContent content={m.content} />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted" />
+                  )}
                 </div>
               </div>
             ))}
-            {isLoading && messages[messages.length - 1]?.content === '' && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/20 text-muted">
-                  <Bot className="h-5 w-5" />
-                </div>
-                <div className="rounded-2xl bg-background border border-border rounded-tl-none px-4 py-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted" />
-                </div>
-              </div>
-            )}
+            <div ref={bottomRef} className="h-1" />
           </div>
 
           <div className="border-t border-border bg-background p-4">
