@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
-import type { CalendarCell } from '@/pages/admin/dashboard';
+import type { CalendarCell } from '@/pages/admin/hub-calendar';
 import type { MilestoneEntry } from '@/pages/admin/members/milestones';
 
 import { DesktopScheduleCalendar } from '../DesktopScheduleCalendar';

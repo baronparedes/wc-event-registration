@@ -173,7 +173,7 @@ export function AppDrawerNavigation({
                 <>
                   {canReadDashboard && (
                     <DrawerNavLink
-                      to={ROUTE_PATHS.adminDashboard}
+                      to={ROUTE_PATHS.adminHubCalendar}
                       label="Hub Calendar"
                       icon={CalendarDays}
                       onClose={onClose}

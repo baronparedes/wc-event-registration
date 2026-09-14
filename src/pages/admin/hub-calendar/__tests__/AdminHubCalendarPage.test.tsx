@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
 
-import { AdminDashboardPage } from '../index';
+import { AdminHubCalendarPage } from '../index';
 import { getMonthWeekRanges } from '../utils/calendarUtils';
 
 const {
@@ -67,13 +67,13 @@ function renderComponent() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <AdminDashboardPage />
+        <AdminHubCalendarPage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-describe('AdminDashboardPage', () => {
+describe('AdminHubCalendarPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseIsMobileViewport.mockReturnValue(false);

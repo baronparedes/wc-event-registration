@@ -104,7 +104,7 @@ export function AdminNavigationDrawer({
 
   const adminNavItems: AdminNavItem[] = [
     {
-      to: ROUTE_PATHS.adminDashboard,
+      to: ROUTE_PATHS.adminHubCalendar,
       label: 'Hub Calendar',
       icon: CalendarDays,
       isAllowed: canReadDashboard ?? false,

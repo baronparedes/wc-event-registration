@@ -58,9 +58,9 @@ const LoginPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('../pages/profile').then((module) => ({ default: module.ProfilePage })),
 );
-const AdminDashboardPage = lazy(() =>
-  import('../pages/admin/dashboard').then((module) => ({
-    default: module.AdminDashboardPage,
+const AdminHubCalendarPage = lazy(() =>
+  import('../pages/admin/hub-calendar').then((module) => ({
+    default: module.AdminHubCalendarPage,
   })),
 );
 const AdminUserRolesPage = lazy(() =>
@@ -231,7 +231,7 @@ function isOfflineSupportedPath(pathname: string): boolean {
 
 const routeComponents: Record<AppRouteKey, ComponentType> = {
   home: HomePage,
-  adminDashboard: AdminDashboardPage,
+  adminHubCalendar: AdminHubCalendarPage,
   hello: HelloCarouselPage,
   privacy: PrivacyPolicyPage,
   privacyPolicy: PrivacyPolicyPage,

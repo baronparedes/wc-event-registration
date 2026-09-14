@@ -203,7 +203,7 @@ function buildMobileWeekCells(
     });
 }
 
-export function AdminDashboardPage() {
+export function AdminHubCalendarPage() {
   const navigate = useNavigate();
   const isMobileViewport = useIsMobileViewport();
 

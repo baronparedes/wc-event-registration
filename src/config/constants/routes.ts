@@ -15,7 +15,7 @@ export const ROUTE_PATHS = {
   formSubmitPattern: '/forms/:slug/submit',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
-  adminDashboard: '/admin/dashboard',
+  adminHubCalendar: '/admin/hub-calendar',
   adminUserRoles: '/admin/users/roles',
   adminMembers: '/admin/members',
   adminMemberMilestones: '/admin/members/milestones',
@@ -90,7 +90,7 @@ export type AppRouteKey =
   | 'adminFormFields'
   | 'adminFormSubmissions'
   | 'formSubmit'
-  | 'adminDashboard'
+  | 'adminHubCalendar'
   | 'hello';
 
 export type AppRouteDefinition = {
@@ -104,8 +104,8 @@ export type AppRouteDefinition = {
 
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
-    key: 'adminDashboard',
-    path: ROUTE_PATHS.adminDashboard,
+    key: 'adminHubCalendar',
+    path: ROUTE_PATHS.adminHubCalendar,
     layout: 'shell',
     allowedRoles: ['admin', 'super_admin', 'slod'],
   },
