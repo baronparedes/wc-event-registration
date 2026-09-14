@@ -1,5 +1,5 @@
-import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^1.1.0';
-import { streamText } from 'npm:ai@^4.1.0';
+import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^4.0.67';
+import { stepCountIs, streamText } from 'npm:ai@latest';
 
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
@@ -101,7 +101,17 @@ Deno.serve(async (req) => {
       system: SYSTEM_PROMPT,
       messages,
       tools,
+      stopWhen: stepCountIs(5),
       maxSteps: 5,
+      onStepFinish: (step) => {
+        console.log('[chat] Step finished', {
+          requestId,
+          stepType: step.stepType,
+          finishReason: step.finishReason,
+          toolCalls: step.toolCalls?.map((tc) => ({ name: tc.toolName, args: tc.args })),
+          textLength: step.text?.length ?? 0,
+        });
+      },
       onFinish: ({ text, finishReason, usage }) => {
         const durationMs = Math.round(performance.now() - startTime);
         console.log('[chat] Generation stream finished', {
@@ -127,19 +137,14 @@ Deno.serve(async (req) => {
     const encoder = new TextEncoder();
     const responseStream = new ReadableStream({
       async start(controller) {
-        let sentText = false;
         try {
           const reader = (streamResult.textStream as ReadableStream<string>).getReader();
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             if (value) {
-              sentText = true;
               controller.enqueue(encoder.encode(value));
             }
-          }
-          if (!sentText) {
-            controller.enqueue(encoder.encode("I'm on a coffee break, you can come back later."));
           }
           controller.close();
         } catch (err) {

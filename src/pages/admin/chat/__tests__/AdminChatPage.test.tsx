@@ -29,6 +29,7 @@ vi.mock('@/hooks/domain/members', () => ({
 describe('AdminChatPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
     mockUseChatStream.mockReturnValue({
       streamRequest: mockStreamRequest,
       isLoading: false,
@@ -203,5 +204,49 @@ describe('AdminChatPage', () => {
         screen.getByText("I'm on a coffee break, you can come back later."),
       ).toBeInTheDocument();
     });
+  });
+
+  it('restores previous messages from sessionStorage across page refreshes', () => {
+    window.sessionStorage.setItem(
+      'wc_admin_chat_messages',
+      JSON.stringify([
+        { id: '1', role: 'user', content: 'What is happening this Sunday?' },
+        { id: '2', role: 'assistant', content: 'We have 2 events scheduled.' },
+      ]),
+    );
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('What is happening this Sunday?')).toBeInTheDocument();
+    expect(screen.getByText('We have 2 events scheduled.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Clear Chat/i })).toBeInTheDocument();
+  });
+
+  it('clears chat history when Clear Chat button is clicked', async () => {
+    window.sessionStorage.setItem(
+      'wc_admin_chat_messages',
+      JSON.stringify([
+        { id: '1', role: 'user', content: 'Hello' },
+        { id: '2', role: 'assistant', content: 'Hi there!' },
+      ]),
+    );
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Hello')).toBeInTheDocument();
+    const clearButton = screen.getByRole('button', { name: /Clear Chat/i });
+    fireEvent.click(clearButton);
+
+    expect(screen.queryByText('Hello')).not.toBeInTheDocument();
+    expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
+    expect(window.sessionStorage.getItem('wc_admin_chat_messages')).toBeNull();
   });
 });

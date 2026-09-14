@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, RotateCcw, Send } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
 import { Avatar, BrandAvatar, Button, FormInputField } from '@/components/ui';
@@ -16,8 +16,36 @@ type Message = {
   content: string;
 };
 
+const CHAT_STORAGE_KEY = 'wc_admin_chat_messages';
+
+function isValidMessage(item: unknown): item is Message {
+  if (typeof item !== 'object' || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.content === 'string' &&
+    (candidate.role === 'user' || candidate.role === 'assistant')
+  );
+}
+
+function loadStoredMessages(): Message[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = window.sessionStorage.getItem(CHAT_STORAGE_KEY);
+    if (saved) {
+      const parsed: unknown = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(isValidMessage);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load chat messages from sessionStorage', error);
+  }
+  return [];
+}
+
 export function AdminChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
   const { streamRequest, isLoading } = useChatStreamQuery();
   const { data: adminAuth } = useAdminAuthQuery();
@@ -30,6 +58,27 @@ export function AdminChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const isSubmittingRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      if (messages.length > 0) {
+        window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+      } else {
+        window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
+      }
+    } catch (error) {
+      console.error('Failed to save chat messages to sessionStorage', error);
+    }
+  }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    try {
+      window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch (error) {
+      console.error('Failed to clear chat messages from sessionStorage', error);
+    }
+  };
 
   useEffect(() => {
     if (bottomRef.current?.scrollIntoView) {
@@ -100,6 +149,21 @@ export function AdminChatPage() {
         breadcrumbs={[{ label: 'AI Assistant' }]}
         title="AI Assistant"
         description="Ask questions about data and events."
+        actions={
+          messages.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearChat}
+              disabled={isLoading}
+              className="gap-1.5"
+              aria-label="Clear chat"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Clear Chat</span>
+            </Button>
+          ) : undefined
+        }
       />
 
       <AdminPageShell.Content isLoading={false} loadingMessage="">

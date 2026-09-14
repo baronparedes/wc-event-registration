@@ -1,27 +1,29 @@
-import { tool } from 'npm:ai@^4.1.0';
-
-import { z } from '@/shared/validation.ts';
+import { tool } from 'npm:ai@latest';
+import { z } from 'npm:zod';
 
 import type { ToolContext } from './types.ts';
 
 export function createGetEventsTool({ client, requestId }: ToolContext) {
+  const schema = z.object({
+    status: z
+      .enum(['open', 'closed', 'all'])
+      .default('all')
+      .describe('Filter events by registration mode (open, closed, or all)'),
+    search: z.string().optional().describe('Optional search keyword to filter events by title'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(25)
+      .default(10)
+      .describe('Maximum number of events to return'),
+  });
+
   return tool({
     description:
       'Retrieve events from the database with their schedule, location, and registration status.',
-    parameters: z.object({
-      status: z
-        .enum(['open', 'closed', 'all'])
-        .default('all')
-        .describe('Filter events by registration mode (open, closed, or all)'),
-      search: z.string().optional().describe('Optional search keyword to filter events by title'),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(25)
-        .default(10)
-        .describe('Maximum number of events to return'),
-    }),
+    parameters: schema,
+    inputSchema: schema,
     execute: async ({ status, search, limit }) => {
       console.log('[chat:tool:getEvents] Executing', { status, search, limit, requestId });
       let query = client
@@ -47,6 +49,7 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
         console.error('[chat:tool:getEvents] Query error', error);
         return { error: error.message };
       }
+      console.log('[chat:tool:getEvents] Fetched events:', data);
       return { events: data };
     },
   });
