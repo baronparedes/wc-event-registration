@@ -1,4 +1,5 @@
 import { Avatar, Button } from '@/components/ui';
+import { MilestoneAvatar, MilestoneBadge } from '@/pages/admin/members/milestones';
 
 import type { WeekCell } from '../';
 
@@ -51,36 +52,26 @@ export function MobileScheduleCalendar({
 
       <div className="space-y-2">
         {mobileWeekCells.map((cell) => {
-          if (!cell.isSunday) {
-            return (
-              <div
-                key={cell.monthDayKey}
-                className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-muted/5 p-3 text-left opacity-50"
-              >
-                <div className="flex w-14 shrink-0 flex-col items-center rounded-xl border border-border bg-surface px-2 py-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    {cell.date.toLocaleDateString(undefined, { weekday: 'short' })}
-                  </span>
-                  <span className="mt-1 text-lg font-semibold text-text">
-                    {cell.date.getDate()}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-text">
-                    {cell.date.toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </p>
-                </div>
-              </div>
-            );
-          }
-
           const isSelected =
             cell.date.getFullYear() === viewYear &&
             cell.date.getMonth() === viewMonthIndex &&
             cell.date.getDate() === selectedDayNumber;
+
+          const hasSchedules = cell.isSunday && cell.scheduleEntries.length > 0;
+          const hasMilestones = cell.milestoneEntries.length > 0;
+          const birthdays = cell.milestoneEntries.filter((m) => m.type === 'birthday');
+          const anniversaries = cell.milestoneEntries.filter(
+            (m) => m.type === 'wedding_anniversary',
+          );
+
+          const scheduleList = hasSchedules ? cell.scheduleEntries : [];
+          const totalItems = cell.milestoneEntries.length + scheduleList.length;
+          const hasExcess = totalItems > 6;
+          const maxVisible = hasExcess ? 5 : 6;
+          const visibleMilestones = cell.milestoneEntries.slice(0, maxVisible);
+          const remainingSlots = Math.max(0, maxVisible - visibleMilestones.length);
+          const visibleSchedules = scheduleList.slice(0, remainingSlots);
+          const excessCount = totalItems - (visibleMilestones.length + visibleSchedules.length);
 
           return (
             <button
@@ -89,7 +80,7 @@ export function MobileScheduleCalendar({
               onClick={() => onSelectDay(cell.date.getDate())}
               className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
                 isSelected
-                  ? 'border-primary bg-primary/5 shadow-sm'
+                  ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
                   : 'border-border bg-background hover:border-primary/40 hover:bg-primary/[0.03]'
               }`}
             >
@@ -97,7 +88,13 @@ export function MobileScheduleCalendar({
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {cell.date.toLocaleDateString(undefined, { weekday: 'short' })}
                 </span>
-                <span className="mt-1 text-lg font-semibold text-text">{cell.date.getDate()}</span>
+                <span
+                  className={`mt-1 text-lg leading-none ${
+                    isSelected ? 'font-bold text-primary' : 'font-semibold text-text'
+                  }`}
+                >
+                  {cell.date.getDate()}
+                </span>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -108,16 +105,47 @@ export function MobileScheduleCalendar({
                       day: 'numeric',
                     })}
                   </p>
-                  {cell.entries.length > 0 && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                      {cell.entries.length}
-                    </span>
-                  )}
+
+                  <div className="flex items-center gap-1">
+                    {hasSchedules && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        {cell.scheduleEntries.length} sched
+                      </span>
+                    )}
+                    {birthdays.length > 0 && (
+                      <MilestoneBadge
+                        type="birthday"
+                        size="sm"
+                        title={`${birthdays.length} birthday(s)`}
+                      >
+                        {birthdays.length}
+                      </MilestoneBadge>
+                    )}
+                    {anniversaries.length > 0 && (
+                      <MilestoneBadge
+                        type="wedding_anniversary"
+                        size="sm"
+                        title={`${anniversaries.length} wedding anniversary(ies)`}
+                      >
+                        {anniversaries.length}
+                      </MilestoneBadge>
+                    )}
+                  </div>
                 </div>
 
-                {cell.entries.length > 0 ? (
+                {/* Combined milestones and Sunday schedules preview */}
+                {totalItems > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {cell.entries.slice(0, 3).map((entry) => (
+                    {visibleMilestones.map((m) => (
+                      <MilestoneAvatar
+                        key={m.id}
+                        size="sm"
+                        name={m.member.full_name}
+                        avatarObjectKey={m.member.avatar_object_key}
+                        type={m.type}
+                      />
+                    ))}
+                    {visibleSchedules.map((entry) => (
                       <Avatar
                         key={entry.member.id}
                         size="sm"
@@ -125,14 +153,21 @@ export function MobileScheduleCalendar({
                         avatarObjectKey={entry.member.avatar_object_key}
                       />
                     ))}
-                    {cell.entries.length > 3 && (
-                      <span className="inline-flex h-8 items-center rounded-full border border-border bg-surface px-2 text-xs font-medium text-muted">
-                        +{cell.entries.length - 3}
+                    {excessCount > 0 && (
+                      <span
+                        className="inline-flex h-8 items-center rounded-full border border-border bg-surface px-2 text-xs font-medium text-muted"
+                        title={`${excessCount} more`}
+                      >
+                        +{excessCount}
                       </span>
                     )}
                   </div>
-                ) : (
-                  <p className="mt-2 text-xs text-muted">No schedules</p>
+                )}
+
+                {!hasSchedules && !hasMilestones && (
+                  <p className="mt-1 text-xs text-muted">
+                    {cell.isSunday ? 'No schedules' : 'No milestones'}
+                  </p>
                 )}
               </div>
             </button>

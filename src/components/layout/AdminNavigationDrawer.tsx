@@ -1,6 +1,6 @@
 import { type ComponentType, useEffect, useId } from 'react';
 
-import { Calendar, ClipboardList, LayoutDashboard, Menu, UserCog, Users, X } from 'lucide-react';
+import { Calendar, CalendarDays, ClipboardList, Menu, UserCog, Users, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 import { ROUTE_PATHS } from '@/config/constants';
@@ -105,8 +105,8 @@ export function AdminNavigationDrawer({
   const adminNavItems: AdminNavItem[] = [
     {
       to: ROUTE_PATHS.adminDashboard,
-      label: 'Dashboard',
-      icon: LayoutDashboard,
+      label: 'Hub Calendar',
+      icon: CalendarDays,
       isAllowed: canReadDashboard ?? false,
     },
     {

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Cake, CalendarDays, ChevronLeft, ChevronRight, HeartIcon } from 'lucide-react';
 
 import { AdminPageShell, AdminSubNavLink } from '@/components/layout';
-import { Avatar, Badge, Button, EmptyState, SectionCard } from '@/components/ui';
+import { Button, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminMembersMilestonesQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
@@ -12,7 +12,12 @@ import { formatDayMonth } from '@/lib/infrastructure';
 
 import { DesktopMilestonesCalendar } from './components/DesktopMilestonesCalendar';
 import { ExportMonthMilestonesButton } from './components/ExportMonthMilestonesButton';
+import { MilestoneAvatar } from './components/MilestoneAvatar';
+import { MilestoneBadge } from './components/MilestoneBadge';
 import { MobileMilestonesCalendar } from './components/MobileMilestonesCalendar';
+
+export { MilestoneAvatar } from './components/MilestoneAvatar';
+export { MilestoneBadge } from './components/MilestoneBadge';
 
 export type MilestoneType = 'birthday' | 'wedding_anniversary';
 
@@ -169,19 +174,6 @@ function getMonthDayKeyFromMember(member: AdminMember, type: MilestoneType): str
 
 function getMilestoneTypeLabel(type: MilestoneType): string {
   return MILESTONE_DEFINITIONS.find((definition) => definition.type === type)?.label ?? type;
-}
-
-function getMilestoneTypeIcon(type: MilestoneType) {
-  const Icon = MILESTONE_DEFINITIONS.find((definition) => definition.type === type)?.icon ?? Cake;
-
-  return <Icon className="h-3.5 w-3.5" />;
-}
-
-function getMilestoneTypeBadgeClass(type: MilestoneType): string {
-  return (
-    MILESTONE_DEFINITIONS.find((definition) => definition.type === type)?.badgeClassName ??
-    'border border-primary/20 bg-primary/10 text-primary'
-  );
 }
 
 function getMilestoneTypeDateText(entry: MilestoneEntry): string {
@@ -459,21 +451,17 @@ export function AdminMemberMilestonesPage() {
                   key={entry.id}
                   className="flex items-center gap-3 p-3 border-b border-border last:border-b-0"
                 >
-                  <Avatar
-                    size="lg"
+                  <MilestoneAvatar
+                    size="md"
                     name={entry.member.full_name}
                     avatarObjectKey={entry.member.avatar_object_key}
-                    className="h-11 w-11 border-2 border-surface shadow-sm"
+                    type={entry.type}
+                    className="shrink-0"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium text-text">{entry.member.full_name}</p>
-                      <Badge
-                        className={getMilestoneTypeBadgeClass(entry.type)}
-                        icon={getMilestoneTypeIcon(entry.type)}
-                      >
-                        {getMilestoneTypeLabel(entry.type)}
-                      </Badge>
+                      <MilestoneBadge type={entry.type} />
                     </div>
                     <p className="mt-1 text-xs text-muted">
                       {entry.member.member_id} • {entry.member.nickname || 'No nickname'}

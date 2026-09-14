@@ -3,6 +3,7 @@ import { type ComponentType } from 'react';
 import {
   BarChart3,
   Calendar,
+  CalendarDays,
   ClipboardList,
   FileText,
   FormInput,
@@ -173,8 +174,8 @@ export function AppDrawerNavigation({
                   {canReadDashboard && (
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminDashboard}
-                      label="Dashboard"
-                      icon={LayoutDashboard}
+                      label="Hub Calendar"
+                      icon={CalendarDays}
                       onClose={onClose}
                     />
                   )}
