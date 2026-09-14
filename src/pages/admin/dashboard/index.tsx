@@ -177,29 +177,30 @@ function buildMobileWeekCells(
   scheduleMap: Map<string, MemberScheduleEntry[]>,
   milestoneMap: Map<string, MilestoneEntry[]>,
 ): WeekCell[] {
-  return weekRange.days.map((date) => {
-    const isSunday = date.getDay() === 0;
-    const isCurrentMonth = date.getFullYear() === viewYear && date.getMonth() === viewMonthIndex;
-    const monthDayKey = toMonthDayKey(date.getMonth() + 1, date.getDate());
+  return weekRange.days
+    .filter((date) => date.getFullYear() === viewYear && date.getMonth() === viewMonthIndex)
+    .map((date) => {
+      const isSunday = date.getDay() === 0;
+      const monthDayKey = toMonthDayKey(date.getMonth() + 1, date.getDate());
 
-    let sundayKey: SundayKey | null = null;
-    if (isSunday && isCurrentMonth) {
-      const sundayIndex = Math.floor((date.getDate() - 1) / 7);
-      sundayKey = SUNDAY_KEYS[sundayIndex] ?? null;
-    }
+      let sundayKey: SundayKey | null = null;
+      if (isSunday) {
+        const sundayIndex = Math.floor((date.getDate() - 1) / 7);
+        sundayKey = SUNDAY_KEYS[sundayIndex] ?? null;
+      }
 
-    const scheduleEntries = isCurrentMonth ? (scheduleMap.get(monthDayKey) ?? []) : [];
-    const milestoneEntries = milestoneMap.get(monthDayKey) ?? [];
+      const scheduleEntries = scheduleMap.get(monthDayKey) ?? [];
+      const milestoneEntries = milestoneMap.get(monthDayKey) ?? [];
 
-    return {
-      date,
-      monthDayKey,
-      scheduleEntries,
-      milestoneEntries,
-      isSunday,
-      sundayKey,
-    };
-  });
+      return {
+        date,
+        monthDayKey,
+        scheduleEntries,
+        milestoneEntries,
+        isSunday,
+        sundayKey,
+      };
+    });
 }
 
 export function AdminDashboardPage() {
