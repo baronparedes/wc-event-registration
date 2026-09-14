@@ -6,7 +6,7 @@ This file contains the core principles, architecture rules, and domain logic con
 
 - **Deep Planning Mode**: Before making changes or creating an execution plan, you must ALWAYS enter a deep planning mode by asking clarifying questions to confirm the user's expectations and assumptions. Never assume requirements.
 - **Verification**: Verify changes by running the appropriate checks. Do not guess if code compiles.
-- **CI Gate**: The repository CI gate command is `npm run ci:gate`. Always run this before finalizing commits to ensure formatting, linting, building, and tests pass.
+- **CI Gate**: The repository CI gate command is `npm run ci:gate`. Do NOT run this command on every small change or intermediate step, as it takes too much time. ONLY run this command when you are finalizing code and preparing for a commit to ensure formatting, linting, building, and tests pass.
 - **Formatting**: If formatting fails, run `npm run format`.
 
 ## 2. Core Coding Standards & TypeScript Rules
