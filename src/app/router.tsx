@@ -58,6 +58,11 @@ const LoginPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('../pages/profile').then((module) => ({ default: module.ProfilePage })),
 );
+const AdminDashboardPage = lazy(() =>
+  import('../pages/admin/dashboard').then((module) => ({
+    default: module.AdminDashboardPage,
+  })),
+);
 const AdminUserRolesPage = lazy(() =>
   import('../pages/admin/users/roles').then((module) => ({
     default: module.AdminUserRolesPage,
@@ -226,6 +231,7 @@ function isOfflineSupportedPath(pathname: string): boolean {
 
 const routeComponents: Record<AppRouteKey, ComponentType> = {
   home: HomePage,
+  adminDashboard: AdminDashboardPage,
   hello: HelloCarouselPage,
   privacy: PrivacyPolicyPage,
   privacyPolicy: PrivacyPolicyPage,

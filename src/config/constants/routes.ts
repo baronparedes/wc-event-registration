@@ -15,6 +15,7 @@ export const ROUTE_PATHS = {
   formSubmitPattern: '/forms/:slug/submit',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
+  adminDashboard: '/admin/dashboard',
   adminUserRoles: '/admin/users/roles',
   adminMembers: '/admin/members',
   adminMemberMilestones: '/admin/members/milestones',
@@ -89,6 +90,7 @@ export type AppRouteKey =
   | 'adminFormFields'
   | 'adminFormSubmissions'
   | 'formSubmit'
+  | 'adminDashboard'
   | 'hello';
 
 export type AppRouteDefinition = {
@@ -101,6 +103,12 @@ export type AppRouteDefinition = {
 };
 
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
+  {
+    key: 'adminDashboard',
+    path: ROUTE_PATHS.adminDashboard,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+  },
   { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
   { key: 'hello', path: ROUTE_PATHS.hello, layout: 'standalone' },
   { key: 'privacy', path: ROUTE_PATHS.privacy, layout: 'shell' },

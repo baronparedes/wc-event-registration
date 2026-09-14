@@ -1,6 +1,8 @@
 export { useMemberLookupQuery } from './useMemberLookupQuery';
 export { useAdminMembersQuery } from './useAdminMembersQuery';
 export { useAdminMembersMilestonesQuery } from './useAdminMembersMilestonesQuery';
+export { useAdminMembersSchedulesQuery } from './useAdminMembersSchedulesQuery';
+export type { MemberScheduleEntry, TimeSlot, SundayKey } from './useAdminMembersSchedulesQuery';
 export { useAdminMemberQuery } from './useAdminMemberQuery';
 export { useAdminMembersImportSnapshotQuery } from './useAdminMembersImportSnapshotQuery';
 export { useMemberAvatarQuery } from './useMemberAvatarQuery';

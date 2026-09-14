@@ -103,6 +103,7 @@ export function AppDrawerNavigation({
   const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
   const canManageRoles = canAdminPerform(adminRole, 'canManageAdminRoles');
+  const canReadDashboard = adminRole && ['super_admin', 'admin', 'slod'].includes(adminRole);
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
   const displayName = currentProfile?.full_name ?? currentUserLabel;
@@ -169,6 +170,14 @@ export function AppDrawerNavigation({
               <div className="space-y-2">
                 <SectionHeading label="Admin" />
                 <>
+                  {canReadDashboard && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminDashboard}
+                      label="Dashboard"
+                      icon={LayoutDashboard}
+                      onClose={onClose}
+                    />
+                  )}
                   {(canRead || canAccessCheckIn) && (
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminEvents}

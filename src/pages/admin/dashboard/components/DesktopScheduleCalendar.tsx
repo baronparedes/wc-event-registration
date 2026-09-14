@@ -1,0 +1,108 @@
+import { Avatar } from '@/components/ui';
+import type { MemberScheduleEntry } from '@/hooks/domain/members';
+
+import type { CalendarCell } from '../';
+
+type DesktopScheduleCalendarProps = {
+  calendarCells: CalendarCell[];
+  scheduleMap: Map<string, MemberScheduleEntry[]>;
+  selectedDayNumber: number;
+  onSelectDay: (dayNumber: number) => void;
+};
+
+export function DesktopScheduleCalendar({
+  calendarCells,
+  scheduleMap,
+  selectedDayNumber,
+  onSelectDay,
+}: DesktopScheduleCalendarProps) {
+  return (
+    <div className="min-w-0">
+      <div className="min-w-0 pb-1">
+        <div className="w-full min-w-0 space-y-4">
+          <div className="grid grid-cols-7 gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayLabel) => (
+              <div key={dayLabel} className="px-2 py-1 text-center">
+                {dayLabel}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-2">
+            {calendarCells.map((cell, index) => {
+              if (!cell.isCurrentMonth || !cell.dayNumber || !cell.monthDayKey) {
+                return (
+                  <div
+                    key={`blank-${index}`}
+                    className="min-h-36 rounded-2xl border border-dashed border-border/60 bg-muted/30"
+                  />
+                );
+              }
+
+              if (!cell.isSunday) {
+                return (
+                  <div
+                    key={cell.monthDayKey}
+                    className="flex min-h-36 flex-col rounded-2xl border border-dashed border-border/60 bg-muted/5 p-3 text-left opacity-50"
+                  >
+                    <span className="text-sm font-semibold leading-none text-text">
+                      {cell.dayNumber}
+                    </span>
+                  </div>
+                );
+              }
+
+              const entriesForDay = scheduleMap.get(cell.monthDayKey) ?? [];
+              const hasSchedules = entriesForDay.length > 0;
+              const isSelected = cell.dayNumber === selectedDayNumber;
+
+              return (
+                <button
+                  key={cell.monthDayKey}
+                  type="button"
+                  onClick={() => onSelectDay(cell.dayNumber ?? 1)}
+                  className={`flex min-h-36 flex-col rounded-2xl border p-3 text-left transition ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border bg-background hover:border-primary/40 hover:bg-primary/[0.03]'
+                  } ${hasSchedules ? 'ring-1 ring-primary/10' : ''}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold leading-none text-text">
+                      {cell.dayNumber}
+                    </span>
+                    {hasSchedules && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        {entriesForDay.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {hasSchedules ? (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {entriesForDay.slice(0, 4).map((entry) => (
+                        <Avatar
+                          key={entry.member.id}
+                          size="sm"
+                          name={entry.member.full_name}
+                          avatarObjectKey={entry.member.avatar_object_key}
+                        />
+                      ))}
+                      {entriesForDay.length > 4 && (
+                        <span className="inline-flex h-8 items-center rounded-full border border-border bg-surface px-2 text-xs font-medium text-muted">
+                          +{entriesForDay.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-xs text-muted">No schedules</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
