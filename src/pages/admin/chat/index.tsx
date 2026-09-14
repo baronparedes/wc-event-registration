@@ -4,6 +4,7 @@ import { Bot, Loader2, Send, User } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, FormInputField } from '@/components/ui';
+import { useEdgeFunctionStream } from '@/hooks/utils';
 
 type Message = {
   id: string;
@@ -14,7 +15,7 @@ type Message = {
 export function AdminChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { streamRequest, isLoading } = useEdgeFunctionStream('chat');
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -29,69 +30,27 @@ export function AdminChatPage() {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInput('');
-    setIsLoading(true);
+
+    const assistantMessageId = Date.now().toString();
+    setMessages((prev) => [...prev, { id: assistantMessageId, role: 'assistant', content: '' }]);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`,
-        },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
+      await streamRequest({ messages: currentMessages }, (textBuffer: string) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId ? { ...msg, content: textBuffer } : msg,
+          ),
+        );
       });
-
-      if (!response.ok) throw new Error('Network response was not ok');
-
-      if (!response.body) {
-        setIsLoading(false);
-        return;
-      }
-
-      const assistantMessageId = Date.now().toString();
-      setMessages((prev) => [...prev, { id: assistantMessageId, role: 'assistant', content: '' }]);
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-
-      let done = false;
-      let textBuffer = '';
-
-      // Vercel AI SDK text streams send chunks starting with '0:'
-      // Example: 0:"Hello "
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('0:')) {
-              try {
-                const content = JSON.parse(line.slice(2));
-                textBuffer += content;
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === assistantMessageId ? { ...msg, content: textBuffer } : msg,
-                  ),
-                );
-              } catch {
-                // ignore parse errors for partial chunks if any
-              }
-            }
-          }
-        }
-      }
     } catch (error) {
       console.error('Chat error:', error);
       setMessages((prev) => [
         ...prev,
         { id: Date.now().toString(), role: 'assistant', content: 'Sorry, I encountered an error.' },
       ]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -136,7 +95,7 @@ export function AdminChatPage() {
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isLoading && messages[messages.length - 1]?.content === '' && (
               <div className="flex gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/20 text-muted">
                   <Bot className="h-5 w-5" />

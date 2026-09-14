@@ -82,7 +82,7 @@ const AdminMemberDetailPage = lazy(() =>
   })),
 );
 const AdminChatPage = lazy(() =>
-  import('../pages/admin/chat').then((module) => ({ default: module.AdminChatPage })),
+  import('@/pages/admin/chat').then((module) => ({ default: module.AdminChatPage })),
 );
 
 const AdminEventsPage = lazy(() =>
