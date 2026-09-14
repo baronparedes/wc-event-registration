@@ -273,6 +273,39 @@ describe('AdminDashboardPage', () => {
       fireEvent.click(week2Btn);
     }
   });
+
+  it('excludes dates from adjacent months in mobile week view', () => {
+    mockUseIsMobileViewport.mockReturnValue(true);
+    mockUseAdminMembersSchedulesQuery.mockReturnValue({
+      data: [sampleSchedule],
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
+      data: [sampleMember],
+      isLoading: false,
+      error: null,
+    });
+
+    renderComponent();
+
+    const week1Btn = screen.getByLabelText('Go to week 1');
+    fireEvent.click(week1Btn);
+
+    const currentMonthName = new Date().toLocaleDateString(undefined, { month: 'short' });
+    const dayButtons = screen.getAllByRole('button');
+    const mobileDayButtons = dayButtons.filter((btn) =>
+      btn.textContent?.includes(currentMonthName),
+    );
+    expect(mobileDayButtons.length).toBeGreaterThan(0);
+
+    const prevMonthDate = new Date();
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevMonthName = prevMonthDate.toLocaleDateString(undefined, { month: 'short' });
+    if (prevMonthName !== currentMonthName) {
+      expect(screen.queryByText(new RegExp(`^${prevMonthName}\\s+\\d+$`))).not.toBeInTheDocument();
+    }
+  });
 });
 
 describe('getMonthWeekRanges', () => {
