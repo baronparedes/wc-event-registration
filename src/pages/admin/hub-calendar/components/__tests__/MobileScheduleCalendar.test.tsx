@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
+import type { MilestoneEntry, WeekCell } from '@/lib/domain/hub-calendar';
 import type { AdminMember } from '@/lib/domain/members';
-import type { MilestoneEntry, WeekCell } from '@/pages/admin/hub-calendar/types';
 
 import { MobileScheduleCalendar } from '../MobileScheduleCalendar';
 

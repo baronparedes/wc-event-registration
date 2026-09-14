@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar, Badge, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
+import type { MilestoneEntry } from '@/lib/domain/hub-calendar';
 
-import type { MilestoneEntry } from '../types';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';

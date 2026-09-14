@@ -1,8 +1,7 @@
 import { Cake, HeartIcon } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
-
-import type { MilestoneType } from '../types';
+import type { MilestoneType } from '@/lib/domain/hub-calendar';
 
 export type MilestoneAvatarProps = {
   name: string;

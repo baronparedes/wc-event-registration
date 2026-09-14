@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { MilestoneEntry } from '@/pages/admin/hub-calendar/types';
+import type { MilestoneEntry } from '@/lib/domain/hub-calendar';
 
 import { ExportMonthMilestonesButton } from '../ExportMonthMilestonesButton';
 

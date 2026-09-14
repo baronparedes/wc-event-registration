@@ -1,7 +1,7 @@
 import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
 
-import type { MilestoneEntry, MilestoneType } from '../types';
-import { toMonthDayKey } from './calendarUtils';
+import { toMonthDayKey } from './calendar';
+import type { MilestoneEntry, MilestoneType } from './types';
 
 const MILESTONE_SOURCE_DATES: Record<MilestoneType, (member: AdminMember) => string | null> = {
   birthday: (member) => member.date_of_birth,

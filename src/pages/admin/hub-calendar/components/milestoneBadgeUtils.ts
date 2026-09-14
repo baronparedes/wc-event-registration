@@ -1,6 +1,6 @@
 import { Cake, HeartIcon } from 'lucide-react';
 
-import type { MilestoneType } from '../types';
+import type { MilestoneType } from '@/lib/domain/hub-calendar';
 
 export const MILESTONE_DEFINITIONS = [
   {

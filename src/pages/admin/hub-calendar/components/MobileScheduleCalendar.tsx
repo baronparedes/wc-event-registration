@@ -1,6 +1,6 @@
 import { Avatar, Button } from '@/components/ui';
+import type { WeekCell } from '@/lib/domain/hub-calendar';
 
-import type { WeekCell } from '../types';
 import { MilestoneAvatar, MilestoneBadge } from './';
 
 type MobileScheduleCalendarProps = {

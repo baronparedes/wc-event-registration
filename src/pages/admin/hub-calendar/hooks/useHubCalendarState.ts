@@ -1,8 +1,7 @@
 import { useState } from 'react';
 
 import type { TimeSlot } from '@/hooks/domain/members';
-
-import type { WeekRange } from '../utils/calendarUtils';
+import type { WeekRange } from '@/lib/domain/hub-calendar';
 
 export function useHubCalendarState() {
   const [viewDate, setViewDate] = useState(() => {

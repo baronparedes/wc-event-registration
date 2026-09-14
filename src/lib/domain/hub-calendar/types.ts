@@ -1,5 +1,5 @@
 import type { MemberScheduleEntry, SundayKey } from '@/hooks/domain/members';
-import { type AdminMember } from '@/lib/domain/members';
+import type { AdminMember } from '@/lib/domain/members';
 
 export type MilestoneType = 'birthday' | 'wedding_anniversary';
 
@@ -15,6 +15,13 @@ export type CalendarCell = {
   isCurrentMonth: boolean;
   isSunday: boolean;
   sundayKey: SundayKey | null;
+};
+
+export type WeekRange = {
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+  days: Date[];
 };
 
 export type WeekCell = {

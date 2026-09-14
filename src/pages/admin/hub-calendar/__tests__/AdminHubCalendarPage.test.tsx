@@ -4,10 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
+import { getMonthWeekRanges } from '@/lib/domain/hub-calendar';
 import type { AdminMember } from '@/lib/domain/members';
 
 import { AdminHubCalendarPage } from '../index';
-import { getMonthWeekRanges } from '../utils/calendarUtils';
 
 const {
   mockUseAdminMembersSchedulesQuery,

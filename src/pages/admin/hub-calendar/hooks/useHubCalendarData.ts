@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
 
 import { type MemberScheduleEntry, type TimeSlot } from '@/hooks/domain/members';
-import { type AdminMember } from '@/lib/domain/members';
-
-import type { MilestoneEntry } from '../types';
 import {
+  type MilestoneEntry,
   buildCalendarCells,
+  buildMilestoneEntries,
   buildMobileWeekCells,
+  getMonthDayKeyFromMember,
   getMonthWeekRanges,
   toMonthDayKey,
-} from '../utils/calendarUtils';
-import { buildMilestoneEntries, getMonthDayKeyFromMember } from '../utils/milestoneUtils';
+} from '@/lib/domain/hub-calendar';
+import { type AdminMember } from '@/lib/domain/members';
 
 export function useHubCalendarData(
   scheduleEntries: MemberScheduleEntry[],
