@@ -25,6 +25,7 @@ import { ExportMonthMilestonesButton } from '@/pages/admin/members/milestones/co
 
 import { DesktopScheduleCalendar } from './components/DesktopScheduleCalendar';
 import { MobileScheduleCalendar } from './components/MobileScheduleCalendar';
+import { type WeekRange, getMonthWeekRanges } from './utils/calendarUtils';
 
 export type CalendarCell = {
   dayNumber: number | null;
@@ -106,18 +107,6 @@ function getMonthDayKeyFromMember(member: AdminMember, type: MilestoneType): str
   return parsed ? toMonthDayKey(parsed.month, parsed.day) : null;
 }
 
-function getWeekStartDayFromWeekNumber(weekNumber: number): number {
-  return (weekNumber - 1) * 7 + 1;
-}
-
-function getWeekWindowStartDay(dayNumber: number): number {
-  return Math.floor((dayNumber - 1) / 7) * 7 + 1;
-}
-
-function getLastWeekWindowStartDay(daysInMonth: number): number {
-  return getWeekWindowStartDay(daysInMonth);
-}
-
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
   return date.toLocaleDateString(undefined, {
@@ -182,44 +171,35 @@ function buildCalendarCells(year: number, monthIndex: number): CalendarCell[] {
 }
 
 function buildMobileWeekCells(
-  year: number,
-  monthIndex: number,
-  weekStartDay: number,
-  daysInMonth: number,
+  weekRange: WeekRange,
+  viewYear: number,
+  viewMonthIndex: number,
   scheduleMap: Map<string, MemberScheduleEntry[]>,
   milestoneMap: Map<string, MilestoneEntry[]>,
 ): WeekCell[] {
-  const cells: WeekCell[] = [];
-  const firstDay = new Date(year, monthIndex, 1);
-  const startDayOfWeek = firstDay.getDay();
+  return weekRange.days.map((date) => {
+    const isSunday = date.getDay() === 0;
+    const isCurrentMonth = date.getFullYear() === viewYear && date.getMonth() === viewMonthIndex;
+    const monthDayKey = toMonthDayKey(date.getMonth() + 1, date.getDate());
 
-  let sundayCount = Math.floor((weekStartDay - 1 + startDayOfWeek) / 7);
-
-  for (let i = 0; i < 7; i++) {
-    const currentDay = weekStartDay + i;
-    if (currentDay > daysInMonth) break;
-
-    const isSunday = (startDayOfWeek + currentDay - 1) % 7 === 0;
     let sundayKey: SundayKey | null = null;
-    if (isSunday) {
-      sundayKey = SUNDAY_KEYS[sundayCount];
-      sundayCount++;
+    if (isSunday && isCurrentMonth) {
+      const sundayIndex = Math.floor((date.getDate() - 1) / 7);
+      sundayKey = SUNDAY_KEYS[sundayIndex] ?? null;
     }
 
-    const monthDayKey = toMonthDayKey(monthIndex + 1, currentDay);
-    const scheduleEntries = scheduleMap.get(monthDayKey) ?? [];
+    const scheduleEntries = isCurrentMonth ? (scheduleMap.get(monthDayKey) ?? []) : [];
     const milestoneEntries = milestoneMap.get(monthDayKey) ?? [];
-    cells.push({
-      date: new Date(year, monthIndex, currentDay),
+
+    return {
+      date,
       monthDayKey,
       scheduleEntries,
       milestoneEntries,
       isSunday,
       sundayKey,
-    });
-  }
-
-  return cells;
+    };
+  });
 }
 
 export function AdminDashboardPage() {
@@ -252,10 +232,6 @@ export function AdminDashboardPage() {
     setActiveTab(slot);
     setSelectedRole(null);
   }
-
-  const [mobileWeekStartDay, setMobileWeekStartDay] = useState<number>(() =>
-    getWeekWindowStartDay(today.getDate()),
-  );
 
   const minViewDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
   const maxViewDate = new Date(today.getFullYear() + 2, today.getMonth(), 1);
@@ -359,58 +335,75 @@ export function AdminDashboardPage() {
     viewYear === today.getFullYear() &&
     viewMonthIndex === today.getMonth() &&
     selectedDayNumber === today.getDate();
-  const lastWeekWindowStartDay = getLastWeekWindowStartDay(daysInMonth);
-  const currentWeekNumber = Math.ceil(mobileWeekStartDay / 7);
-  const weekOptions = Array.from({ length: 5 }, (_, index) => {
-    const weekNumber = index + 1;
-    const weekStartDay = getWeekStartDayFromWeekNumber(weekNumber);
+  const monthWeeks = useMemo(
+    () => getMonthWeekRanges(viewYear, viewMonthIndex),
+    [viewYear, viewMonthIndex],
+  );
 
-    return {
-      weekNumber,
-      isAvailable: weekStartDay <= lastWeekWindowStartDay,
-    };
-  });
+  const currentWeekNumber = useMemo(() => {
+    const matchingWeek = monthWeeks.find((w) =>
+      w.days.some(
+        (d) =>
+          d.getFullYear() === viewYear &&
+          d.getMonth() === viewMonthIndex &&
+          d.getDate() === selectedDayNumber,
+      ),
+    );
+    return matchingWeek ? matchingWeek.weekNumber : 1;
+  }, [monthWeeks, viewYear, viewMonthIndex, selectedDayNumber]);
+
+  const weekOptions = useMemo(() => {
+    return monthWeeks.map((week) => ({
+      weekNumber: week.weekNumber,
+      isAvailable: true,
+    }));
+  }, [monthWeeks]);
+
+  const activeWeek = monthWeeks.find((w) => w.weekNumber === currentWeekNumber) ?? monthWeeks[0];
 
   const mobileWeekCells = useMemo(() => {
-    const year = viewDate.getFullYear();
-    const month = viewDate.getMonth();
-    const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
-    return buildMobileWeekCells(
-      year,
-      month,
-      mobileWeekStartDay,
-      daysInCurrentMonth,
-      scheduleMap,
-      milestoneMap,
-    );
-  }, [viewDate, mobileWeekStartDay, scheduleMap, milestoneMap]);
+    if (!activeWeek) return [];
+    return buildMobileWeekCells(activeWeek, viewYear, viewMonthIndex, scheduleMap, milestoneMap);
+  }, [activeWeek, viewYear, viewMonthIndex, scheduleMap, milestoneMap]);
 
   function handlePreviousMonth() {
     if (isAtMinimumMonth) return;
     setViewDate(new Date(viewYear, viewMonthIndex - 1, 1));
     setSelectedDayNumber(1);
-    setMobileWeekStartDay(1);
   }
 
   function handleNextMonth() {
     if (isAtMaximumMonth) return;
     setViewDate(new Date(viewYear, viewMonthIndex + 1, 1));
     setSelectedDayNumber(1);
-    setMobileWeekStartDay(1);
   }
 
   function handleSelectWeek(weekNumber: number) {
-    const weekStartDay = getWeekStartDayFromWeekNumber(weekNumber);
-    if (weekStartDay > lastWeekWindowStartDay) return;
+    const targetWeek = monthWeeks.find((w) => w.weekNumber === weekNumber);
+    if (!targetWeek) return;
 
-    setMobileWeekStartDay(weekStartDay);
-    setSelectedDayNumber(weekStartDay);
+    const currentMonthDay = targetWeek.days.find(
+      (d) => d.getFullYear() === viewYear && d.getMonth() === viewMonthIndex,
+    );
+    if (currentMonthDay) {
+      setSelectedDayNumber(currentMonthDay.getDate());
+    } else {
+      setSelectedDayNumber(targetWeek.days[0].getDate());
+    }
   }
 
   function handleToday() {
     setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDayNumber(today.getDate());
-    setMobileWeekStartDay(getWeekWindowStartDay(today.getDate()));
+  }
+
+  function handleSelectDay(dayNumber: number, date?: Date) {
+    if (date && (date.getFullYear() !== viewYear || date.getMonth() !== viewMonthIndex)) {
+      setViewDate(new Date(date.getFullYear(), date.getMonth(), 1));
+      setSelectedDayNumber(date.getDate());
+      return;
+    }
+    setSelectedDayNumber(dayNumber);
   }
 
   const TIME_SLOT_TABS: { slot: TimeSlot; label: string }[] = [
@@ -470,7 +463,7 @@ export function AdminDashboardPage() {
         {filteredEntries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted">No members for this role.</p>
         ) : (
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {filteredEntries.map((entry) => (
               <button
                 type="button"
@@ -607,7 +600,7 @@ export function AdminDashboardPage() {
                   currentWeekNumber={currentWeekNumber}
                   weekOptions={weekOptions}
                   onSelectWeek={handleSelectWeek}
-                  onSelectDay={setSelectedDayNumber}
+                  onSelectDay={handleSelectDay}
                 />
               ) : (
                 <DesktopScheduleCalendar
@@ -615,7 +608,7 @@ export function AdminDashboardPage() {
                   scheduleMap={scheduleMap}
                   milestoneMap={milestoneMap}
                   selectedDayNumber={selectedDayNumber}
-                  onSelectDay={setSelectedDayNumber}
+                  onSelectDay={handleSelectDay}
                 />
               )}
             </div>

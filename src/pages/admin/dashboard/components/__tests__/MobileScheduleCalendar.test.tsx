@@ -123,7 +123,7 @@ describe('MobileScheduleCalendar', () => {
     // Click a day button
     const dayBtn = screen.getByText('May 3').closest('button')!;
     fireEvent.click(dayBtn);
-    expect(onSelectDay).toHaveBeenCalledWith(3);
+    expect(onSelectDay).toHaveBeenCalledWith(3, expect.any(Date));
 
     // Verify badges and labels
     expect(screen.getByText('4 sched')).toBeInTheDocument();

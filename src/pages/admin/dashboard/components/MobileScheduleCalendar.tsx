@@ -11,7 +11,7 @@ type MobileScheduleCalendarProps = {
   currentWeekNumber: number;
   weekOptions: Array<{ weekNumber: number; isAvailable: boolean }>;
   onSelectWeek: (weekNumber: number) => void;
-  onSelectDay: (dayNumber: number) => void;
+  onSelectDay: (dayNumber: number, date?: Date) => void;
 };
 
 export function MobileScheduleCalendar({
@@ -27,7 +27,10 @@ export function MobileScheduleCalendar({
   return (
     <div>
       <div className="mb-3 rounded-2xl border border-border bg-background p-2 shadow-sm">
-        <div className="grid grid-cols-5 gap-1.5">
+        <div
+          className="grid gap-1.5"
+          style={{ gridTemplateColumns: `repeat(${weekOptions.length}, minmax(0, 1fr))` }}
+        >
           {weekOptions.map((week) => {
             const isSelected = week.weekNumber === currentWeekNumber;
 
@@ -52,10 +55,10 @@ export function MobileScheduleCalendar({
 
       <div className="space-y-2">
         {mobileWeekCells.map((cell) => {
-          const isSelected =
-            cell.date.getFullYear() === viewYear &&
-            cell.date.getMonth() === viewMonthIndex &&
-            cell.date.getDate() === selectedDayNumber;
+          const isCurrentMonth =
+            cell.date.getFullYear() === viewYear && cell.date.getMonth() === viewMonthIndex;
+
+          const isSelected = isCurrentMonth && cell.date.getDate() === selectedDayNumber;
 
           const hasSchedules = cell.isSunday && cell.scheduleEntries.length > 0;
           const hasMilestones = cell.milestoneEntries.length > 0;
@@ -75,13 +78,15 @@ export function MobileScheduleCalendar({
 
           return (
             <button
-              key={cell.monthDayKey}
+              key={`${cell.monthDayKey}-${cell.date.getFullYear()}-${cell.date.getMonth()}`}
               type="button"
-              onClick={() => onSelectDay(cell.date.getDate())}
+              onClick={() => onSelectDay(cell.date.getDate(), cell.date)}
               className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
-                  : 'border-border bg-background hover:border-primary/40 hover:bg-primary/[0.03]'
+                  : isCurrentMonth
+                    ? 'border-border bg-background hover:border-primary/40 hover:bg-primary/[0.03]'
+                    : 'border-dashed border-border/70 bg-surface/40 opacity-60 hover:opacity-100 hover:border-primary/40'
               }`}
             >
               <div className="flex w-14 shrink-0 flex-col items-center rounded-xl border border-border bg-surface px-2 py-3">

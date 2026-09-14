@@ -7,6 +7,7 @@ import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
 
 import { AdminDashboardPage } from '../index';
+import { getMonthWeekRanges } from '../utils/calendarUtils';
 
 const {
   mockUseAdminMembersSchedulesQuery,
@@ -271,5 +272,52 @@ describe('AdminDashboardPage', () => {
     if (week2Btn && !week2Btn.hasAttribute('disabled')) {
       fireEvent.click(week2Btn);
     }
+  });
+});
+
+describe('getMonthWeekRanges', () => {
+  it('ensures every week starts on a Monday and ends on a Sunday with 7 days', () => {
+    // Check across all months in 2026
+    for (let month = 0; month < 12; month++) {
+      const weeks = getMonthWeekRanges(2026, month);
+      expect(weeks.length).toBeGreaterThanOrEqual(4);
+      expect(weeks.length).toBeLessThanOrEqual(6);
+
+      weeks.forEach((w, index) => {
+        expect(w.weekNumber).toBe(index + 1);
+        expect(w.days).toHaveLength(7);
+        // First day of week must be Monday (1)
+        expect(w.days[0].getDay()).toBe(1);
+        // Last day of week must always be Sunday (0)
+        expect(w.days[6].getDay()).toBe(0);
+        expect(w.endDate.getDay()).toBe(0);
+      });
+    }
+  });
+
+  it('correctly calculates 4 weeks for a month starting on Monday with 28 days', () => {
+    // Feb 2021 starts on Monday and has 28 days
+    const weeks = getMonthWeekRanges(2021, 1);
+    expect(weeks).toHaveLength(4);
+    expect(weeks[0].startDate.getDate()).toBe(1);
+    expect(weeks[3].endDate.getDate()).toBe(28);
+    expect(weeks[3].endDate.getDay()).toBe(0); // Sunday
+  });
+
+  it('correctly pads month days so September 2026 starts with Aug 31 and ends with Oct 4', () => {
+    // Sep 2026 starts on Tuesday (Sep 1) and ends on Wednesday (Sep 30)
+    const weeks = getMonthWeekRanges(2026, 8);
+    expect(weeks).toHaveLength(5);
+    // Week 1 starts on Monday Aug 31 and ends on Sunday Sep 6
+    expect(weeks[0].startDate.getMonth()).toBe(7); // August
+    expect(weeks[0].startDate.getDate()).toBe(31);
+    expect(weeks[0].endDate.getMonth()).toBe(8); // September
+    expect(weeks[0].endDate.getDate()).toBe(6);
+    expect(weeks[0].endDate.getDay()).toBe(0);
+
+    // Week 5 ends on Sunday Oct 4
+    expect(weeks[4].endDate.getMonth()).toBe(9); // October
+    expect(weeks[4].endDate.getDate()).toBe(4);
+    expect(weeks[4].endDate.getDay()).toBe(0);
   });
 });
