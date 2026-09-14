@@ -47,6 +47,7 @@ export const ROUTE_PATHS = {
   adminFormFieldsPattern: '/admin/forms/:id/fields',
   adminFormSubmissionsPattern: '/admin/forms/:id/submissions',
   hello: '/hello',
+  adminChat: '/admin/chat',
 } as const;
 
 export type AppRouteKey =
@@ -89,7 +90,8 @@ export type AppRouteKey =
   | 'adminFormFields'
   | 'adminFormSubmissions'
   | 'formSubmit'
-  | 'hello';
+  | 'hello'
+  | 'adminChat';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -286,6 +288,12 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     path: ROUTE_PATHS.adminFormSubmissionsPattern,
     layout: 'shell',
     requiresAuth: true,
+  },
+  {
+    key: 'adminChat',
+    path: ROUTE_PATHS.adminChat,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
   },
 ];
 

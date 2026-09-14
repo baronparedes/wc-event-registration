@@ -2,6 +2,7 @@ import { type ComponentType } from 'react';
 
 import {
   BarChart3,
+  Bot,
   Calendar,
   ClipboardList,
   FileText,
@@ -196,8 +197,16 @@ export function AppDrawerNavigation({
                   {canManageRoles && (
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminUserRoles}
-                      label="User Roles"
+                      label="Manage Roles"
                       icon={UserCog}
+                      onClose={onClose}
+                    />
+                  )}
+                  {canRead && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminChat}
+                      label="AI Assistant"
+                      icon={Bot}
                       onClose={onClose}
                     />
                   )}

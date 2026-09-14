@@ -83,4 +83,19 @@ describe('FormInputField', () => {
     fireEvent.change(input, { target: { value: 'updated@example.com' } });
     expect(onChange).toHaveBeenCalledTimes(1);
   });
+
+  it('applies custom className to wrapper container', () => {
+    const { container } = render(
+      <FormInputField
+        id="name"
+        value="test"
+        onChange={vi.fn()}
+        className="flex-1 custom-wrapper"
+      />,
+    );
+
+    const wrapper = container.firstElementChild;
+    expect(wrapper?.className).toContain('flex-1');
+    expect(wrapper?.className).toContain('custom-wrapper');
+  });
 });
