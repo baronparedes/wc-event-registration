@@ -217,10 +217,13 @@ verify_jwt = true
 [functions.delete-attendance-saved-view]
 verify_jwt = true
 
-[functions.cron_upcoming_sunday_excused_export_email]
+[functions.cron-upcoming-sunday-excused-export-email]
 verify_jwt = true
 
 [functions.chat]
+verify_jwt = true
+
+[functions.cron-tokenize-users]
 verify_jwt = true
 
 

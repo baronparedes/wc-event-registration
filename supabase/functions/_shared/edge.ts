@@ -43,11 +43,14 @@ type EdgeHookAdminOptions =
       requireAdmin: true;
       rateLimit?: AdminRateLimitConfig;
       allowedRoles?: AdminAccountRole[];
+      /** Also accept SUPABASE_SERVICE_ROLE_KEY as a valid caller (e.g. cron jobs). */
+      allowServiceRole?: boolean;
     }
   | {
       requireAdmin?: false;
       rateLimit?: never;
       allowedRoles?: never;
+      allowServiceRole?: never;
     };
 
 type EdgeHookOptions = EdgeHookBaseOptions & EdgeHookAdminOptions;
@@ -75,6 +78,8 @@ type EdgeHookSuccess<TData> = {
   client: EdgeClient;
   data: TData;
   userId: string | null;
+  /** 'service_role' when called by a cron/server key, 'admin' when called by an admin JWT, null otherwise. */
+  callerType: 'service_role' | 'admin' | null;
 };
 
 export type EdgeHookResult<TData> = EdgeHookFailure | EdgeHookSuccess<TData>;
@@ -207,28 +212,63 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   }
 
   let userId: string | null = null;
+  let callerType: 'service_role' | 'admin' | null = null;
+
   if (options.requireAdmin) {
-    const adminAccess = await requireAdminAccess({
-      requestId,
-      logPrefix: options.functionName,
-      supabaseUrl: env.supabaseUrl,
-      supabaseServiceKey: env.supabaseServiceKey,
-      authHeader: options.req.headers.get('authorization'),
-      corsHeaders,
-      rateLimit: options.rateLimit,
-      allowedRoles: options.allowedRoles,
-    });
+    if (options.allowServiceRole) {
+      const authHeader = options.req.headers.get('authorization')?.trim() ?? '';
+      const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-    if (!adminAccess.ok) {
-      return {
-        valid: false,
-        response: adminAccess.response,
+      if (token === env.supabaseServiceKey) {
+        callerType = 'service_role';
+      } else {
+        const adminAccess = await requireAdminAccess({
+          requestId,
+          logPrefix: options.functionName,
+          supabaseUrl: env.supabaseUrl,
+          supabaseServiceKey: env.supabaseServiceKey,
+          authHeader,
+          corsHeaders,
+          rateLimit: options.rateLimit,
+          allowedRoles: options.allowedRoles,
+        });
+
+        if (!adminAccess.ok) {
+          return {
+            valid: false,
+            response: adminAccess.response,
+            requestId,
+            corsHeaders,
+          };
+        }
+
+        callerType = 'admin';
+        userId = adminAccess.userId;
+      }
+    } else {
+      const adminAccess = await requireAdminAccess({
         requestId,
+        logPrefix: options.functionName,
+        supabaseUrl: env.supabaseUrl,
+        supabaseServiceKey: env.supabaseServiceKey,
+        authHeader: options.req.headers.get('authorization'),
         corsHeaders,
-      };
-    }
+        rateLimit: options.rateLimit,
+        allowedRoles: options.allowedRoles,
+      });
 
-    userId = adminAccess.userId;
+      if (!adminAccess.ok) {
+        return {
+          valid: false,
+          response: adminAccess.response,
+          requestId,
+          corsHeaders,
+        };
+      }
+
+      callerType = 'admin';
+      userId = adminAccess.userId;
+    }
   }
 
   const client = createClient(env.supabaseUrl, env.supabaseServiceKey, {
@@ -243,5 +283,6 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
     client,
     data: parsedData,
     userId,
+    callerType,
   };
 }
