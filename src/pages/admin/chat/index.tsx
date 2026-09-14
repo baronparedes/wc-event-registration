@@ -3,7 +3,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Loader2, RotateCcw, Send } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Avatar, BrandAvatar, Button, FormInputField } from '@/components/ui';
+import { Avatar, Badge, BrandAvatar, Button, FormInputField } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useChatStreamQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
@@ -148,6 +148,14 @@ export function AdminChatPage() {
       <AdminPageShell.Header
         breadcrumbs={[{ label: 'AI Assistant' }]}
         title="AI Assistant"
+        badge={
+          <Badge
+            variant="outline"
+            className="border-secondary/50 bg-secondary/10 text-secondary text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5"
+          >
+            Beta
+          </Badge>
+        }
         description="Ask questions about data and events."
         actions={
           messages.length > 0 ? (
@@ -172,7 +180,15 @@ export function AdminChatPage() {
             {messages.length === 0 && (
               <div className="flex h-full flex-col items-center justify-center text-center text-muted">
                 <BrandAvatar size="md" className="mb-4" />
-                <p className="font-medium text-text">Hi! I'm your AI assistant.</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-medium text-text">Hi! I'm your AI assistant.</p>
+                  <Badge
+                    variant="outline"
+                    className="border-secondary/50 bg-secondary/10 text-secondary text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
+                  >
+                    Beta
+                  </Badge>
+                </div>
                 <p className="text-sm">Ask me questions about your events.</p>
               </div>
             )}

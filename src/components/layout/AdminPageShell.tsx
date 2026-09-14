@@ -30,6 +30,7 @@ export function AdminPageShell({ children, wide = false }: AdminPageShellProps) 
 type AdminPageHeaderProps = {
   title: string;
   description?: string;
+  badge?: ReactNode;
   actions?: ReactNode;
   breadcrumbs?: Array<{
     label: string;
@@ -41,6 +42,7 @@ type AdminPageHeaderProps = {
 function AdminPageHeader({
   title,
   description,
+  badge,
   actions,
   breadcrumbs,
   navLinks,
@@ -66,7 +68,10 @@ function AdminPageHeader({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="font-heading text-3xl font-bold text-text">{title}</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-heading text-3xl font-bold text-text">{title}</h1>
+            {badge}
+          </div>
           {description && <p className="mt-1.5 text-sm text-muted">{description}</p>}
         </div>
         {actions && (

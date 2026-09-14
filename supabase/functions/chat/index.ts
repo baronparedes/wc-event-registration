@@ -7,16 +7,24 @@ import { z } from '@/shared/validation.ts';
 
 import { createChatTools } from './tools/index.ts';
 
-const SYSTEM_PROMPT = `You are the Welcome Center Administrative Assistant for Christ's Commission Fellowship (CCF).
+function getSystemPrompt() {
+  const currentIso = new Date().toISOString();
+  return `You are the Welcome Center Administrative Assistant for Christ's Commission Fellowship (CCF).
 Your primary role is to assist church administrators with Welcome Center events.
+Current date and time: ${currentIso}.
 
 CRITICAL OPERATIONAL RULES:
 1. ONLY answer questions and perform actions related to Welcome Center events.
 2. For any query requiring data (e.g. upcoming events, schedules, locations, registration status), ALWAYS use the getEvents tool. Never invent, hallucinate, or assume database records.
-3. If a request is outside the scope of Welcome Center events (e.g. general coding, creative writing, homework, poetry, unrelated world facts), POLITELY REFUSE with:
+3. When referencing or listing events, ALWAYS format the event name as a markdown link using its admin_url: [Event Title](/admin/events/{id}). This allows administrators to open and manage the event in the app. If public registration is open or relevant, you may also provide the public_url: [Register](/events/{slug}/register).
+4. When the user asks for "upcoming", "future", "next", or "scheduled" events, ALWAYS call getEvents with timeframe: "upcoming". This strictly filters out past events. Never present past events when asked for upcoming events. Do NOT pass the word "upcoming" into the search argument.
+5. When the user asks for "past" or "previous" events, call getEvents with timeframe: "past".
+6. Use the "search" parameter ONLY for specific event titles or topics (e.g. "Baptism", "Retreat"). Do NOT search for generic words like "upcoming", "past", or "events".
+7. If a request is outside the scope of Welcome Center events (e.g. general coding, creative writing, homework, poetry, unrelated world facts), POLITELY REFUSE with:
    "I am specialized to assist only with Welcome Center events. Please let me know if you have questions about our events, schedules, or registration details."
-4. If the tool returns no records, inform the user clearly.
-5. Keep your answers clear, concise, well-structured, and helpful for administrative workflows.`;
+8. If the tool returns no records, inform the user clearly.
+9. Keep your answers clear, concise, well-structured, and helpful for administrative workflows.`;
+}
 
 const chatMessageSchema = z.object({
   id: z.string().optional(),
@@ -98,7 +106,7 @@ Deno.serve(async (req) => {
 
     const result = streamText({
       model: google(model || 'gemini-3.5-flash-lite'),
-      system: SYSTEM_PROMPT,
+      system: getSystemPrompt(),
       messages,
       tools,
       stopWhen: stepCountIs(5),

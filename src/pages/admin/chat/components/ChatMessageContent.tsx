@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -53,9 +54,10 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent underline hover:text-accent/80 transition-colors"
+              className="inline-flex items-center gap-1 font-medium text-accent underline hover:text-accent/80 transition-colors"
             >
-              {children}
+              <span>{children}</span>
+              <ExternalLink className="inline h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />
             </a>
           ),
           blockquote: ({ children }) => (

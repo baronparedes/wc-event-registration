@@ -51,6 +51,15 @@ describe('ChatMessageContent', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
+  it('renders internal event links targeting a new tab', () => {
+    const markdown = 'Here is the event: [Sunday Service](/admin/events/event-123)';
+    render(<ChatMessageContent content={markdown} />);
+    const link = screen.getByRole('link', { name: 'Sunday Service' });
+    expect(link).toHaveAttribute('href', '/admin/events/event-123');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('renders tables with gfm', () => {
     const markdown = `
 | Event | Status |
