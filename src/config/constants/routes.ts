@@ -289,6 +289,12 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     layout: 'shell',
     requiresAuth: true,
   },
+  {
+    key: 'adminChat',
+    path: ROUTE_PATHS.adminChat,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+  },
 ];
 
 export const ROUTE_PREFIXES = {

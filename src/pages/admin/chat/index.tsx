@@ -1,10 +1,12 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
-import { Bot, Loader2, Send, User } from 'lucide-react';
+import { Bot, Loader2, Send } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, FormInputField } from '@/components/ui';
-import { useEdgeFunctionStream } from '@/hooks/utils';
+import { Avatar, Button, FormInputField } from '@/components/ui';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
+import { useChatStreamQuery } from '@/hooks/domain/chat';
+import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
 type Message = {
   id: string;
@@ -15,7 +17,12 @@ type Message = {
 export function AdminChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const { streamRequest, isLoading } = useEdgeFunctionStream('chat');
+  const { streamRequest, isLoading } = useChatStreamQuery();
+  const { data: adminAuth } = useAdminAuthQuery();
+  const { data: currentProfile } = useCurrentProfileQuery();
+
+  const displayName = currentProfile?.full_name ?? adminAuth?.session?.user?.email ?? 'User';
+  const avatarObjectKey = currentProfile?.avatar_object_key;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -29,12 +36,12 @@ export function AdminChatPage() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: input };
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setInput('');
 
-    const assistantMessageId = Date.now().toString();
+    const assistantMessageId = crypto.randomUUID();
     setMessages((prev) => [...prev, { id: assistantMessageId, role: 'assistant', content: '' }]);
 
     try {
@@ -49,7 +56,7 @@ export function AdminChatPage() {
       console.error('Chat error:', error);
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: 'assistant', content: 'Sorry, I encountered an error.' },
+        { id: crypto.randomUUID(), role: 'assistant', content: 'Sorry, I encountered an error.' },
       ]);
     }
   };
@@ -69,7 +76,7 @@ export function AdminChatPage() {
               <div className="flex h-full flex-col items-center justify-center text-center text-muted">
                 <Bot className="mb-4 h-12 w-12 opacity-20" />
                 <p>Hi! I'm your AI assistant.</p>
-                <p className="text-sm">Ask me questions about your events and members.</p>
+                <p className="text-sm">Ask me questions about your events, forms and members.</p>
               </div>
             )}
             {messages.map((m) => (
@@ -77,13 +84,18 @@ export function AdminChatPage() {
                 key={m.id}
                 className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                    m.role === 'user' ? 'bg-accent/20 text-accent' : 'bg-muted/20 text-muted'
-                  }`}
-                >
-                  {m.role === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
-                </div>
+                {m.role === 'user' ? (
+                  <Avatar
+                    name={displayName}
+                    avatarObjectKey={avatarObjectKey}
+                    size="sm"
+                    className="h-8 w-8 shrink-0 text-xs"
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/20 text-muted">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                )}
                 <div
                   className={`rounded-2xl px-4 py-2 ${
                     m.role === 'user'
@@ -113,6 +125,7 @@ export function AdminChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me anything..."
+                className="flex-1"
                 inputClassName="w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
               />
               <Button

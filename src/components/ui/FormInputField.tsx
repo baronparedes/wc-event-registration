@@ -16,6 +16,7 @@ type FormInputFieldBaseProps = {
   helperText?: string;
   labelAdornment?: ReactNode;
   inputClassName?: string;
+  className?: string;
 };
 
 type RegisteredInputProps = {
@@ -51,6 +52,7 @@ export function FormInputField(props: FormInputFieldProps) {
     helperText,
     labelAdornment,
     inputClassName,
+    className,
   } = props;
 
   const controlledProps = registration
@@ -61,7 +63,7 @@ export function FormInputField(props: FormInputFieldProps) {
       };
 
   return (
-    <div className="space-y-1.5">
+    <div className={`space-y-1.5 ${className ?? ''}`}>
       {label && (
         <label className="block text-sm font-semibold text-text" htmlFor={id}>
           {label}

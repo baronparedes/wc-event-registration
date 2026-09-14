@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createEdgeFunctionCaller, createEdgeFunctionTextCaller } from '../supabase';
+import {
+  createEdgeFunctionCaller,
+  createEdgeFunctionStreamCaller,
+  createEdgeFunctionTextCaller,
+} from '../supabase';
 
 const { mockGetSession, mockSupabaseClient } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
@@ -205,5 +209,116 @@ describe('supabase edge function callers', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       '[export-csv] No auth token available for Edge Function call',
     );
+  });
+
+  it('streams chunks and invokes onChunk for each 0: formatted token', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'token-stream' } },
+    });
+
+    const encoder = new TextEncoder();
+    const chunks = ['0:"Hello "\n', '0:"world!"\n'];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    const onChunk = vi.fn();
+
+    await callStream({ prompt: 'hi' }, onChunk);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/functions/v1/chat',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer token-stream',
+        },
+        body: JSON.stringify({ prompt: 'hi' }),
+      }),
+    );
+    expect(onChunk).toHaveBeenCalledWith('Hello ');
+    expect(onChunk).toHaveBeenCalledWith('Hello world!');
+  });
+
+  it('handles stream caller without response body', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: null,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    const onChunk = vi.fn();
+
+    await expect(callStream({ prompt: 'hi' }, onChunk)).resolves.toBeUndefined();
+    expect(onChunk).not.toHaveBeenCalled();
+  });
+
+  it('throws parsed error in stream caller when response is not ok', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => JSON.stringify({ error: 'Unauthorized stream' }),
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+
+    await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow('Unauthorized stream');
+  });
+
+  it('streams plain text chunks when not formatted with data stream protocol', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const encoder = new TextEncoder();
+    const chunks = ['Plain ', 'text ', 'stream'];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    const onChunk = vi.fn();
+
+    await callStream({ prompt: 'hi' }, onChunk);
+
+    expect(onChunk).toHaveBeenCalledWith('Plain ');
+    expect(onChunk).toHaveBeenCalledWith('Plain text ');
+    expect(onChunk).toHaveBeenCalledWith('Plain text stream');
   });
 });

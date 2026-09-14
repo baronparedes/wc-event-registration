@@ -106,3 +106,87 @@ export function createEdgeFunctionTextCaller<TRequest>(functionName: string) {
     return { text, filename };
   };
 }
+
+/**
+ * Factory for Edge Function callers that stream responses.
+ * Automatically includes the current session's auth token in the Authorization header.
+ */
+export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
+  return async (payload: TRequest, onChunk: (text: string) => void): Promise<void> => {
+    const { data: session } = await supabase.auth.getSession();
+    const token = session?.session?.access_token;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn(`[${functionName}] No auth token available for Edge Function call`);
+    }
+
+    const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/${functionName}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Edge function failed: ${response.status}`;
+      try {
+        const errorData = await response.text();
+        console.error(`[Edge Function ${functionName}] ${response.status}:`, errorData);
+        if (errorData) {
+          try {
+            const parsed = JSON.parse(errorData) as { error?: string; message?: string };
+            errorMessage = parsed.error || parsed.message || errorData;
+          } catch {
+            errorMessage = errorData;
+          }
+        }
+      } catch (e) {
+        console.error(`[Edge Function ${functionName}] Failed to parse error response`, e);
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (!response.body) {
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let done = false;
+    let textBuffer = '';
+    let isProtocolStream = false;
+
+    while (!done) {
+      const { value, done: readerDone } = await reader.read();
+      done = readerDone;
+      if (value) {
+        const chunk = decoder.decode(value, { stream: true });
+        let isProtocolChunk = false;
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('0:')) {
+            isProtocolChunk = true;
+            isProtocolStream = true;
+            try {
+              const content = JSON.parse(line.slice(2));
+              textBuffer += content;
+              onChunk(textBuffer);
+            } catch {
+              // ignore parse errors for partial chunks if any
+            }
+          }
+        }
+
+        if (!isProtocolChunk && !isProtocolStream && chunk) {
+          textBuffer += chunk;
+          onChunk(textBuffer);
+        }
+      }
+    }
+  };
+}
