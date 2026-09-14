@@ -32,7 +32,7 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
 
   return tool({
     description:
-      'Retrieve events from the database with their schedule, location, registration status, and app URLs (admin_url, public_url).',
+      'Retrieve events from the database with their schedule, location, registration status, registration counts (member_registrations, public_registrations, total_registrations), and app URLs (admin_url, public_url).',
     parameters: schema,
     inputSchema: schema,
     execute: async ({ status, timeframe = 'all', search, limit }) => {
@@ -110,6 +110,41 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
         return { error: error.message };
       }
 
+      // Concurrently fetch registration counts (both member and public) for each event
+      const eventCounts = await Promise.all(
+        (data ?? []).map(async (event) => {
+          try {
+            const [memberRes, publicRes] = await Promise.all([
+              client.rpc('get_event_registration_count', { p_event_id: event.id }),
+              client.rpc('get_public_event_registration_count', { p_event_id: event.id }),
+            ]);
+
+            const memberCount =
+              typeof memberRes.data === 'number' ? memberRes.data : Number(memberRes.data ?? 0);
+            const publicCount =
+              typeof publicRes.data === 'number' ? publicRes.data : Number(publicRes.data ?? 0);
+
+            return {
+              id: event.id,
+              member_registrations: Number.isFinite(memberCount) ? memberCount : 0,
+              public_registrations: Number.isFinite(publicCount) ? publicCount : 0,
+            };
+          } catch (err) {
+            console.warn('[chat:tool:getEvents] Failed to fetch registration counts for event', {
+              eventId: event.id,
+              error: err,
+            });
+            return {
+              id: event.id,
+              member_registrations: 0,
+              public_registrations: 0,
+            };
+          }
+        }),
+      );
+
+      const countsMap = new Map(eventCounts.map((c) => [c.id, c]));
+
       const nowMs = Date.now();
       const enrichedEvents = (data ?? []).map((event) => {
         const startsAtMs = event.starts_at ? Date.parse(event.starts_at) : null;
@@ -127,9 +162,17 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
           }
         }
 
+        const counts = countsMap.get(event.id);
+        const member_registrations = counts?.member_registrations ?? 0;
+        const public_registrations = counts?.public_registrations ?? 0;
+        const total_registrations = member_registrations + public_registrations;
+
         return {
           ...event,
           time_status,
+          member_registrations,
+          public_registrations,
+          total_registrations,
           admin_url: `/admin/events/${event.id}`,
           public_url: event.slug ? `/events/${event.slug}/register` : null,
         };
@@ -152,6 +195,10 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
           title: e.title,
           starts_at: e.starts_at,
           time_status: e.time_status,
+          member_registrations: e.member_registrations,
+          public_registrations: e.public_registrations,
+          total_registrations: e.total_registrations,
+          admin_url: e.admin_url,
         })),
       });
 

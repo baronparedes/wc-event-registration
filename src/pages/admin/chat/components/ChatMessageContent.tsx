@@ -54,14 +54,14 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-accent underline hover:text-accent/80 transition-colors"
+              className="inline-flex items-center gap-1 font-medium text-primary underline hover:text-primary/80 transition-colors"
             >
               <span>{children}</span>
               <ExternalLink className="inline h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />
             </a>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-accent pl-3 italic my-2 text-muted">
+            <blockquote className="border-l-2 border-primary pl-3 italic my-2 text-muted">
               {children}
             </blockquote>
           ),
