@@ -14,7 +14,7 @@ describe('route constants and builders', () => {
     expect(ROUTE_PATHS.home).toBe('/');
     expect(ROUTE_PATHS.hello).toBe('/hello');
     expect(ROUTE_PATHS.adminEvents).toBe('/admin/events');
-    expect(ROUTE_PATHS.adminMemberMilestones).toBe('/admin/members/milestones');
+
     expect(ROUTE_PATHS.adminMembersImport).toBe('/admin/members/import');
     expect(ROUTE_PATHS.adminRegistrationDetailPattern).toBe(
       '/admin/events/:id/registrations/:registration_id',
@@ -30,7 +30,7 @@ describe('route constants and builders', () => {
     expect(toRoute('hello')).toBe('/hello');
     expect(toRoute('eventRegister', { slug: 'summer-2026' })).toBe('/events/summer-2026/register');
     expect(toRoute('adminMembersImport')).toBe('/admin/members/import');
-    expect(toRoute('adminMemberMilestones')).toBe('/admin/members/milestones');
+
     expect(toRoute('adminMemberDetail', { id: 'member-1' })).toBe('/admin/members/member-1');
     expect(toRoute('adminEventDetail', { id: 'event-1' })).toBe('/admin/events/event-1');
     expect(toRoute('adminEventFields', { id: 'event-1' })).toBe('/admin/events/event-1/fields');

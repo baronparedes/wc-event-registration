@@ -58,6 +58,11 @@ const LoginPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('../pages/profile').then((module) => ({ default: module.ProfilePage })),
 );
+const AdminHubCalendarPage = lazy(() =>
+  import('../pages/admin/hub-calendar').then((module) => ({
+    default: module.AdminHubCalendarPage,
+  })),
+);
 const AdminUserRolesPage = lazy(() =>
   import('../pages/admin/users/roles').then((module) => ({
     default: module.AdminUserRolesPage,
@@ -65,11 +70,6 @@ const AdminUserRolesPage = lazy(() =>
 );
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
-);
-const AdminMemberMilestonesPage = lazy(() =>
-  import('../pages/admin/members/milestones').then((module) => ({
-    default: module.AdminMemberMilestonesPage,
-  })),
 );
 const AdminMembersImportPage = lazy(() =>
   import('../pages/admin/members/import/index').then((module) => ({
@@ -230,6 +230,7 @@ function isOfflineSupportedPath(pathname: string): boolean {
 
 const routeComponents: Record<AppRouteKey, ComponentType> = {
   home: HomePage,
+  adminHubCalendar: AdminHubCalendarPage,
   hello: HelloCarouselPage,
   privacy: PrivacyPolicyPage,
   privacyPolicy: PrivacyPolicyPage,
@@ -241,7 +242,6 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   profile: ProfilePage,
   adminUserRoles: AdminUserRolesPage,
   adminMembers: AdminMembersPage,
-  adminMemberMilestones: AdminMemberMilestonesPage,
   adminMembersImport: AdminMembersImportPage,
   adminMemberDetail: AdminMemberDetailPage,
   memberProfile: MemberProfilePage,

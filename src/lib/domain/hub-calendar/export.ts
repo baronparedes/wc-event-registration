@@ -1,19 +1,20 @@
-import { useState } from 'react';
-
-import { toast } from 'sonner';
-
-import { Button } from '@/components/ui';
+import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
 
-import type { MilestoneEntry } from '../';
+import type { MilestoneEntry } from './types';
 
-type ExportMonthMilestonesButtonProps = {
-  milestoneEntries: MilestoneEntry[];
-  year: number;
-  monthIndex: number;
+const TIME_SLOT_CONFIG: Record<TimeSlot, { label: string; order: number }> = {
+  '9AM': { label: '9:00 AM', order: 1 },
+  '12NN': { label: '12:00 NN', order: 2 },
+  '3PM': { label: '3:00 PM', order: 3 },
 };
 
-function escapeCsvValue(value: string): string {
+type ScheduleAssignment = {
+  slot: TimeSlot;
+  member: AdminMember;
+};
+
+export function escapeCsvValue(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;
   }
@@ -42,7 +43,7 @@ function getMilestoneTypeLabel(type: MilestoneEntry['type']): string {
   return type === 'birthday' ? 'Birthday' : 'Wedding Anniversary';
 }
 
-function buildMonthMilestoneCsvExport(params: {
+export function buildMonthMilestoneCsvExport(params: {
   milestoneEntries: MilestoneEntry[];
   year: number;
   monthIndex: number;
@@ -99,57 +100,48 @@ function buildMonthMilestoneCsvExport(params: {
   return { csvText, filename };
 }
 
-export function ExportMonthMilestonesButton({
-  milestoneEntries,
-  year,
-  monthIndex,
-}: ExportMonthMilestonesButtonProps) {
-  const [isExporting, setIsExporting] = useState(false);
-  const isDisabled = milestoneEntries.length === 0 || isExporting;
+export function buildSundaySchedulesCsvExport(params: {
+  selectedEntries: MemberScheduleEntry[];
+  year: number;
+  monthIndex: number;
+  dayNumber: number;
+}): { csvText: string; filename: string } {
+  const { selectedEntries, year, monthIndex, dayNumber } = params;
 
-  function handleExport() {
-    if (isDisabled) {
-      return;
+  const assignments: ScheduleAssignment[] = [];
+  for (const entry of selectedEntries) {
+    for (const slot of entry.timeSlots) {
+      assignments.push({ slot, member: entry.member });
     }
-
-    setIsExporting(true);
-    let url: string | null = null;
-    let link: HTMLAnchorElement | null = null;
-
-    try {
-      const { csvText, filename } = buildMonthMilestoneCsvExport({
-        milestoneEntries,
-        year,
-        monthIndex,
-      });
-      const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
-      url = URL.createObjectURL(blob);
-      link = document.createElement('a');
-
-      link.href = url;
-      link.download = filename;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to export milestones CSV.';
-      toast.error(message);
-    }
-
-    if (link && document.body.contains(link)) {
-      document.body.removeChild(link);
-    }
-
-    if (url) {
-      URL.revokeObjectURL(url);
-    }
-
-    setIsExporting(false);
   }
 
-  return (
-    <Button type="button" onClick={handleExport} disabled={isDisabled} className="w-full sm:w-auto">
-      {isExporting ? 'Exporting...' : 'Export Month Milestones CSV'}
-    </Button>
-  );
+  assignments.sort((left, right) => {
+    const slotDiff =
+      (TIME_SLOT_CONFIG[left.slot]?.order ?? 99) - (TIME_SLOT_CONFIG[right.slot]?.order ?? 99);
+    if (slotDiff !== 0) {
+      return slotDiff;
+    }
+
+    return left.member.full_name.localeCompare(right.member.full_name);
+  });
+
+  const rows: string[][] = [
+    ['Time Slot', 'Member ID', 'Full Name', 'Nickname', 'Role', 'Category', 'Email', 'Phone'],
+    ...assignments.map((item) => [
+      TIME_SLOT_CONFIG[item.slot]?.label ?? item.slot,
+      item.member.member_id,
+      item.member.full_name,
+      item.member.nickname ?? '',
+      item.member.role,
+      item.member.category,
+      item.member.email ?? '',
+      item.member.phone ?? '',
+    ]),
+  ];
+
+  const csvText = rows.map((row) => row.map((value) => escapeCsvValue(value)).join(',')).join('\n');
+  const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+  const filename = `service-schedules-${dateStr}.csv`;
+
+  return { csvText, filename };
 }

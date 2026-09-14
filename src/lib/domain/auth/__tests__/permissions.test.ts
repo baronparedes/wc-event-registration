@@ -20,6 +20,7 @@ describe('admin permission policies', () => {
           canAccessAttendanceCheckIn: true,
           canViewMemberHistory: true,
           canManageAdminRoles: false,
+          canReadDashboard: true,
         },
       },
       {
@@ -33,6 +34,7 @@ describe('admin permission policies', () => {
           canAccessAttendanceCheckIn: true,
           canViewMemberHistory: true,
           canManageAdminRoles: true,
+          canReadDashboard: true,
         },
       },
       {
@@ -46,6 +48,7 @@ describe('admin permission policies', () => {
           canAccessAttendanceCheckIn: false,
           canViewMemberHistory: true,
           canManageAdminRoles: false,
+          canReadDashboard: true,
         },
       },
       {
@@ -59,6 +62,7 @@ describe('admin permission policies', () => {
           canAccessAttendanceCheckIn: false,
           canViewMemberHistory: false,
           canManageAdminRoles: false,
+          canReadDashboard: true,
         },
       },
       {
@@ -72,6 +76,7 @@ describe('admin permission policies', () => {
           canAccessAttendanceCheckIn: true,
           canViewMemberHistory: false,
           canManageAdminRoles: false,
+          canReadDashboard: false,
         },
       },
     ]);
@@ -89,6 +94,7 @@ describe('admin permission policies', () => {
         canAccessAttendanceCheckIn: false,
         canViewMemberHistory: true,
         canManageAdminRoles: false,
+        canReadDashboard: true,
       },
     });
   });

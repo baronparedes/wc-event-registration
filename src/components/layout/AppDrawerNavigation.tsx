@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bot,
   Calendar,
+  CalendarDays,
   ClipboardList,
   FileText,
   FormInput,
@@ -104,6 +105,7 @@ export function AppDrawerNavigation({
   const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
   const canManageRoles = canAdminPerform(adminRole, 'canManageAdminRoles');
+  const canReadDashboard = canAdminPerform(adminRole, 'canReadDashboard');
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
   const displayName = currentProfile?.full_name ?? currentUserLabel;
@@ -170,6 +172,14 @@ export function AppDrawerNavigation({
               <div className="space-y-2">
                 <SectionHeading label="Admin" />
                 <>
+                  {canReadDashboard && (
+                    <DrawerNavLink
+                      to={ROUTE_PATHS.adminHubCalendar}
+                      label="Hub Calendar"
+                      icon={CalendarDays}
+                      onClose={onClose}
+                    />
+                  )}
                   {(canRead || canAccessCheckIn) && (
                     <DrawerNavLink
                       to={ROUTE_PATHS.adminEvents}
