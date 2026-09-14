@@ -2,7 +2,7 @@ import { Cake, HeartIcon } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
-import type { MilestoneType } from '../';
+import type { MilestoneType } from '../types';
 
 export type MilestoneAvatarProps = {
   name: string;

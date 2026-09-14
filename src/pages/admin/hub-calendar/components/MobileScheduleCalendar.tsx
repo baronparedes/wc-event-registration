@@ -1,7 +1,7 @@
 import { Avatar, Button } from '@/components/ui';
-import { MilestoneAvatar, MilestoneBadge } from '@/pages/admin/members/milestones';
 
-import type { WeekCell } from '../';
+import type { WeekCell } from '../types';
+import { MilestoneAvatar, MilestoneBadge } from './';
 
 type MobileScheduleCalendarProps = {
   viewYear: number;

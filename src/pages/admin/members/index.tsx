@@ -199,13 +199,6 @@ export function AdminMembersPage() {
         actions={
           <>
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="primaryOutline"
-                onClick={() => navigate(ROUTE_PATHS.adminMemberMilestones)}
-              >
-                Milestones
-              </Button>
               {canWrite && (
                 <>
                   <Button

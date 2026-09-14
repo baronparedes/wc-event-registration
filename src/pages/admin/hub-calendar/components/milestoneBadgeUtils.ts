@@ -1,6 +1,6 @@
 import { Cake, HeartIcon } from 'lucide-react';
 
-import type { MilestoneType } from '../';
+import type { MilestoneType } from '../types';
 
 export const MILESTONE_DEFINITIONS = [
   {

@@ -1,12 +1,8 @@
 import { Avatar } from '@/components/ui';
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
-import {
-  MilestoneAvatar,
-  MilestoneBadge,
-  type MilestoneEntry,
-} from '@/pages/admin/members/milestones';
 
-import type { CalendarCell } from '../';
+import type { CalendarCell, MilestoneEntry } from '../types';
+import { MilestoneAvatar, MilestoneBadge } from './';
 
 type DesktopScheduleCalendarProps = {
   calendarCells: CalendarCell[];

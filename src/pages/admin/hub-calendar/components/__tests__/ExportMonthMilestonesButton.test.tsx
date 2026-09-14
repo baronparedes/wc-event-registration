@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { MilestoneEntry } from '@/pages/admin/members/milestones';
-import { ExportMonthMilestonesButton } from '@/pages/admin/members/milestones/components/ExportMonthMilestonesButton';
+import type { MilestoneEntry } from '@/pages/admin/hub-calendar/types';
+
+import { ExportMonthMilestonesButton } from '../ExportMonthMilestonesButton';
 
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui';
 import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
 
-import type { MilestoneEntry } from '../';
+import type { MilestoneEntry } from '../types';
 
 type ExportMonthMilestonesButtonProps = {
   milestoneEntries: MilestoneEntry[];

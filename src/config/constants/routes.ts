@@ -18,7 +18,6 @@ export const ROUTE_PATHS = {
   adminHubCalendar: '/admin/hub-calendar',
   adminUserRoles: '/admin/users/roles',
   adminMembers: '/admin/members',
-  adminMemberMilestones: '/admin/members/milestones',
   adminMembersImport: '/admin/members/import',
   adminMemberDetailPattern: '/admin/members/:id',
   memberDetailPattern: '/member/:id',
@@ -49,7 +48,6 @@ export const ROUTE_PATHS = {
   adminFormSubmissionsPattern: '/admin/forms/:id/submissions',
   hello: '/hello',
 } as const;
-
 export type AppRouteKey =
   | 'home'
   | 'privacy'
@@ -62,7 +60,6 @@ export type AppRouteKey =
   | 'profile'
   | 'adminUserRoles'
   | 'adminMembers'
-  | 'adminMemberMilestones'
   | 'adminMembersImport'
   | 'adminMemberDetail'
   | 'memberProfile'
@@ -92,7 +89,6 @@ export type AppRouteKey =
   | 'formSubmit'
   | 'adminHubCalendar'
   | 'hello';
-
 export type AppRouteDefinition = {
   key: AppRouteKey;
   path: string;
@@ -101,7 +97,6 @@ export type AppRouteDefinition = {
   allowedRoles?: readonly AdminRole[];
   requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData' | 'canManageAdminRoles';
 };
-
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminHubCalendar',
@@ -130,12 +125,6 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminMembers',
     path: ROUTE_PATHS.adminMembers,
-    layout: 'shell',
-    requiredPermission: 'canReadAdminMemberData',
-  },
-  {
-    key: 'adminMemberMilestones',
-    path: ROUTE_PATHS.adminMemberMilestones,
     layout: 'shell',
     requiredPermission: 'canReadAdminMemberData',
   },
@@ -296,11 +285,9 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     requiresAuth: true,
   },
 ];
-
 export const ROUTE_PREFIXES = {
   admin: '/admin/',
 } as const;
-
 const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.eventRegisterPattern,
   ROUTE_PATHS.eventPublicRegisterPattern,
@@ -308,42 +295,34 @@ const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
   ROUTE_PATHS.hello,
 ] as const;
-
 export function isMinimizedAppShellRoute(pathname: string): boolean {
   return MINIMIZED_APP_SHELL_PATTERNS.some((pattern) =>
     Boolean(matchPath({ path: pattern, end: true }, pathname)),
   );
 }
-
 type RouteParams = Record<string, string>;
 type RouteQuery = Record<string, string | undefined>;
-
 function getAppRoutePath(routeKey: AppRouteKey): string {
   const route = APP_ROUTE_DEFINITIONS.find((definition) => definition.key === routeKey);
   if (!route) {
     throw new Error(`Unknown application route: ${routeKey}`);
   }
-
   return route.path;
 }
-
 export function toRoute(routeKey: AppRouteKey, params: RouteParams = {}): string {
   return generatePath(getAppRoutePath(routeKey), params);
 }
-
 export function toRouteWithQuery(
   routeKey: AppRouteKey,
   params: RouteParams,
   query: RouteQuery,
 ): string {
   const searchParams = new URLSearchParams();
-
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined) {
       searchParams.set(key, value);
     }
   }
-
   const search = searchParams.toString();
   return search ? `${toRoute(routeKey, params)}?${search}` : toRoute(routeKey, params);
 }

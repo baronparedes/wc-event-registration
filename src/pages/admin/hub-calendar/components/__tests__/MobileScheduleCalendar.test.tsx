@@ -3,8 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
-import type { WeekCell } from '@/pages/admin/hub-calendar';
-import type { MilestoneEntry } from '@/pages/admin/members/milestones';
+import type { MilestoneEntry, WeekCell } from '@/pages/admin/hub-calendar/types';
 
 import { MobileScheduleCalendar } from '../MobileScheduleCalendar';
 

@@ -15,34 +15,14 @@ import {
 } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
-import {
-  MilestoneAvatar,
-  MilestoneBadge,
-  type MilestoneEntry,
-  type MilestoneType,
-} from '@/pages/admin/members/milestones';
-import { ExportMonthMilestonesButton } from '@/pages/admin/members/milestones/components/ExportMonthMilestonesButton';
 
 import { DesktopScheduleCalendar } from './components/DesktopScheduleCalendar';
+import { ExportMonthMilestonesButton } from './components/ExportMonthMilestonesButton';
+import { MilestoneAvatar } from './components/MilestoneAvatar';
+import { MilestoneBadge } from './components/MilestoneBadge';
 import { MobileScheduleCalendar } from './components/MobileScheduleCalendar';
+import type { CalendarCell, MilestoneEntry, MilestoneType, WeekCell } from './types';
 import { type WeekRange, getMonthWeekRanges } from './utils/calendarUtils';
-
-export type CalendarCell = {
-  dayNumber: number | null;
-  monthDayKey: string | null;
-  isCurrentMonth: boolean;
-  isSunday: boolean;
-  sundayKey: SundayKey | null;
-};
-
-export type WeekCell = {
-  date: Date;
-  monthDayKey: string;
-  scheduleEntries: MemberScheduleEntry[];
-  milestoneEntries: MilestoneEntry[];
-  isSunday: boolean;
-  sundayKey: SundayKey | null;
-};
 
 const SUNDAY_KEYS: SundayKey[] = [
   'first_sunday',
