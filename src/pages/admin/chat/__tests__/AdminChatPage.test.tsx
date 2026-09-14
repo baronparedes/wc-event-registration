@@ -155,4 +155,50 @@ describe('AdminChatPage', () => {
     // Resolve stream and clean up
     resolveStream!();
   });
+
+  it('displays coffee break message when stream resolves with empty content', async () => {
+    mockStreamRequest.mockResolvedValue(undefined);
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'Any events?' } });
+
+    const sendButton = screen.getByRole('button', { name: /Send/i });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("I'm on a coffee break, you can come back later."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('displays coffee break message on RESOURCE_EXHAUSTED error', async () => {
+    mockStreamRequest.mockRejectedValue(
+      new Error('[GoogleGenerativeAI Error]: Resource has been exhausted (e.g. check quota)'),
+    );
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'Hello' } });
+
+    const sendButton = screen.getByRole('button', { name: /Send/i });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("I'm on a coffee break, you can come back later."),
+      ).toBeInTheDocument();
+    });
+  });
 });

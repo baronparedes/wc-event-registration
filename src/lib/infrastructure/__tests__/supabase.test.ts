@@ -479,4 +479,95 @@ describe('supabase edge function callers', () => {
     expect(onChunk).toHaveBeenCalledWith('First part');
     expect(onChunk).toHaveBeenCalledWith('First partSecond');
   });
+
+  it('throws coffee break error when protocol stream emits 3: quota error line', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const encoder = new TextEncoder();
+    const chunks = ['f:{"messageId":"msg-1"}\n3:"Resource has been exhausted (quota exceeded)"\n'];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow(
+      "I'm on a coffee break, you can come back later.",
+    );
+  });
+
+  it('sanitizes plain text containing quota exceeded to coffee break message', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const encoder = new TextEncoder();
+    const chunks = ['[GoogleGenerativeAI Error]: Resource has been exhausted (e.g. check quota)'];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    const onChunk = vi.fn();
+    await callStream({ prompt: 'hi' }, onChunk);
+
+    expect(onChunk).toHaveBeenCalledWith("I'm on a coffee break, you can come back later.");
+  });
+
+  it('throws coffee break error when stream yields empty content', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const encoder = new TextEncoder();
+    const chunks = ['   \n\n  '];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
+    await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow(
+      "I'm on a coffee break, you can come back later.",
+    );
+  });
 });

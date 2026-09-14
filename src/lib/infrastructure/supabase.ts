@@ -185,13 +185,35 @@ export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
               } catch {
                 // ignore parse errors for partial chunks if any
               }
+            } else if (line.startsWith('2:') || line.startsWith('3:')) {
+              let errorMsg: string;
+              try {
+                const parsed = JSON.parse(line.slice(2));
+                errorMsg =
+                  typeof parsed === 'string'
+                    ? parsed
+                    : parsed.error || parsed.message || JSON.stringify(parsed);
+              } catch {
+                errorMsg = line.slice(2);
+              }
+              if (/429|quota|resource_exhausted|rate\s*limit/i.test(errorMsg)) {
+                errorMsg = "I'm on a coffee break, you can come back later.";
+              }
+              throw new Error(errorMsg);
             }
           }
         } else {
           textBuffer += chunk;
+          if (/429|quota|resource_exhausted|rate\s*limit/i.test(textBuffer)) {
+            textBuffer = "I'm on a coffee break, you can come back later.";
+          }
           onChunk(textBuffer);
         }
       }
+    }
+
+    if (!textBuffer.trim()) {
+      throw new Error("I'm on a coffee break, you can come back later.");
     }
   };
 }

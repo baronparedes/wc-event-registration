@@ -60,17 +60,29 @@ export function AdminChatPage() {
           ),
         );
       });
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId && !msg.content.trim()
+            ? { ...msg, content: "I'm on a coffee break, you can come back later." }
+            : msg,
+        ),
+      );
     } catch (error) {
       console.error('Chat error:', error);
-      const isLowLevelError =
-        !error ||
-        !(error instanceof Error) ||
-        !error.message ||
-        error.message === 'Network error' ||
-        error.message === 'Failed to fetch' ||
-        error.message.startsWith('Edge function failed:');
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const isQuota = /429|quota|resource_exhausted|rate\s*limit/i.test(errMsg);
 
-      const fallbackContent = isLowLevelError ? 'Sorry, I encountered an error.' : error.message;
+      const isLowLevelError =
+        !errMsg ||
+        errMsg === 'Network error' ||
+        errMsg === 'Failed to fetch' ||
+        errMsg.startsWith('Edge function failed:');
+
+      const fallbackContent = isQuota
+        ? "I'm on a coffee break, you can come back later."
+        : isLowLevelError
+          ? 'Sorry, I encountered an error.'
+          : errMsg;
 
       setMessages((prev) =>
         prev.map((msg) =>

@@ -123,47 +123,45 @@ Deno.serve(async (req) => {
 
     const streamResult = await Promise.resolve(result);
 
-    let response: Response;
-    if (
-      typeof (streamResult as { toTextStreamResponse?: unknown }).toTextStreamResponse ===
-      'function'
-    ) {
-      response = (
-        streamResult as {
-          toTextStreamResponse: (opts?: { headers?: Record<string, string> }) => Response;
+    const encoder = new TextEncoder();
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        let sentText = false;
+        try {
+          const reader = (streamResult.textStream as ReadableStream<string>).getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value) {
+              sentText = true;
+              controller.enqueue(encoder.encode(value));
+            }
+          }
+          if (!sentText) {
+            controller.enqueue(encoder.encode("I'm on a coffee break, you can come back later."));
+          }
+          controller.close();
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error('[chat] Stream error caught in reader:', { requestId, error: errMsg });
+          const isQuota = /429|quota|resource_exhausted|rate\s*limit/i.test(errMsg);
+          const fallback = isQuota
+            ? "I'm on a coffee break, you can come back later."
+            : 'Sorry, I encountered an error.';
+          controller.enqueue(encoder.encode(fallback));
+          controller.close();
         }
-      ).toTextStreamResponse({
-        headers: corsHeaders,
-      });
-    } else if (
-      typeof (streamResult as { toDataStreamResponse?: unknown }).toDataStreamResponse ===
-      'function'
-    ) {
-      response = (
-        streamResult as {
-          toDataStreamResponse: (opts?: { headers?: Record<string, string> }) => Response;
-        }
-      ).toDataStreamResponse({
-        headers: corsHeaders,
-      });
-    } else {
-      response = new Response(
-        (streamResult as { textStream: ReadableStream<Uint8Array | string> })
-          .textStream as BodyInit,
-        {
-          headers: {
-            'Content-Type': 'text/plain; charset=utf-8',
-            ...corsHeaders,
-          },
-        },
-      );
-    }
+      },
+    });
 
-    for (const [key, value] of Object.entries(corsHeaders)) {
-      response.headers.set(key, value);
-    }
-
-    return response;
+    return new Response(responseStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        ...corsHeaders,
+      },
+    });
   } catch (err) {
     const durationMs = Math.round(performance.now() - startTime);
     const errorMessage = err instanceof Error ? err.message : String(err);
