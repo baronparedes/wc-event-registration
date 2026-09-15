@@ -1,69 +1,131 @@
 # N+1 Analysis of Supabase Edge Functions
 
-1. `supabase/functions/chat/tools/getEvents.ts`
-   - Line 114: `Promise.all` inside a `.map()` iterates over event `data` (up to 25 items based on schema limit) and fires two RPC calls (`get_event_registration_count` and `get_public_event_registration_count`) per iteration.
-   - **Optimization:** These counts can be gathered in a single query by fetching group counts from `registrations` and `public_registrations` grouped by `event_id`, or by creating a unified RPC that takes an array of event IDs and returns both member and public counts in a single payload.
+## Completed Optimizations
 
-2. `supabase/functions/list-attendees/index.ts`
-   - Line 237: `Promise.all` grouping `registrations` and `public_registrations`. (Concurrent queries, but not N+1 per se).
-   - Line 348: `Promise.all` grouping `check_ins`, `public_check_ins`, `attendance_answers`, `public_attendance_answers`, `registration_answers`, and `public_registration_answers`. (Also concurrent queries, not N+1).
+### Event Registration Counts
 
-3. `supabase/functions/search-attendees/index.ts`
-   - Line 353: `Promise.all` grouping `registrations` and `public_registrations` searches. (Concurrent, not N+1).
-   - Line 462: `Promise.all` grouping check-ins and answers for the search results. (Concurrent, not N+1).
+`supabase/functions/chat/tools/getEvents.ts` previously made two count RPC calls per event. It now calls `get_event_registration_counts` once with the event ID array and maps the returned member/public counts locally.
 
-4. `supabase/functions/submit-registration-v2/handlers/resolveEventContext.ts`
-   - Line 42: `Promise.all` fetching `event` and `user`. Followed by fetching `event_fields`. (Concurrent and sequential, but not strictly N+1 in a loop).
+Implemented by:
 
-## Loop Query Patterns
+- `supabase/migrations/20260915120000_add_event_registration_counts_rpc.sql`
+- `supabase/migrations/20260915180000_omit_unknown_event_registration_counts.sql`
+- `supabase/tests/event_registration_counts.test.sql`
 
-1. `supabase/functions/bulk-upsert-registrations/index.ts`
-   - Line 314: In a loop grouping member IDs into chunks, it queries `users` table via `adminClient.from('users').select(...).in('member_id', chunk)`.
-   - **Optimization:** While this uses chunking to avoid query limit size errors, a single RPC call that accepts an array of strings could process the entire array without loop overhead or breaking it into chunks manually, reducing network round-trips.
+The RPC groups both registration tables in PostgreSQL, deduplicates requested IDs, excludes cancelled rows, returns zero counts for known events without registrations, and omits unknown event IDs.
 
-2. `supabase/functions/bulk-upsert-attendance-answers/index.ts`
-   - Line 422: Loops over chunks of `registrationIds` making sequential calls to `registrations` table.
-   - Line 438: Loops over chunks of `publicRegistrationIds` making sequential calls to `public_registrations` table.
-   - **Optimization:** Similar to above, a single RPC passing an array of UUIDs can offload the set intersection/filtering to Postgres.
+### Member Registration V2
 
-3. `supabase/functions/submit-registration-v2/handlers/validateSlotCapacity.ts`
-   - Line 80: Note: not in a loop, but directly uses `in('id', registrationUserIds)`.
+The V2 member registration path no longer performs the previously documented event/user/field and mutation query chains.
 
-4. `supabase/functions/submit-registration/index.ts`
-   - Line 793: Directly queries `users` with `.in()`.
+- `resolveEventContext.ts` calls `get_registration_submission_context` for event metadata, member metadata, and active member fields.
+- `insertRegistration.ts` calls `apply_registration_submission` for idempotency, duplicate-policy handling, insert/update behavior, and conflict recovery.
+- `persistAnswers.ts` calls `persist_registration_answers` for answer replacement/insertion.
 
-## Sequential Query Patterns
+Implemented by:
 
-Several files exhibit sequential `await` patterns that are executed one after the other. While they do not iterate over arrays, they cause a cascading chain of network latency and could often be bundled using `Promise.all` or a unified Postgres function/RPC.
+- `supabase/migrations/20260915130000_add_registration_submission_context_rpc.sql`
+- `supabase/migrations/20260915140000_add_apply_registration_submission_rpc.sql`
+- `supabase/migrations/20260915150000_add_persist_registration_answers_rpc.sql`
 
-1. `supabase/functions/submit-registration/index.ts`
-   - **Issue:** Makes up to 15 sequential queries during the registration lifecycle, including lookups for `events`, `users`, `event_fields`, idempotency checks, conflict checks, updates, and inserts (`registration_answers`, etc.).
-   - **Optimization:** Consolidate the pre-checks (event lookup, user lookup, fields lookup, role-based slot validation) into a single read-only RPC `get_registration_context`. Consolidate mutations (idempotency, block policy, update/insert registration, delete/insert answers) into a single write RPC `apply_registration_submission`.
+### Public Registration Context and Mutation
 
-2. `supabase/functions/submit-public-registration/index.ts`
-   - **Issue:** Makes up to 11 sequential queries mirroring the member registration flow above.
-   - **Optimization:** Like above, wrap the pre-flight checks into `get_public_registration_context` and the mutation operations into `apply_public_registration_submission`.
+The public registration path now uses:
 
-3. `supabase/functions/submit-registration-v2/handlers/insertRegistration.ts` & `resolveEventContext.ts`
-   - **Issue:** The V2 refactor shows attempts to improve structure, but `insertRegistration.ts` still performs up to 9 sequential mutations (checking idempotency, finding conflicts, upserting, cleaning answers, inserting answers).
-   - **Optimization:** Offload these strict transactional multi-step operations entirely to a Postgres stored procedure.
+- `get_public_registration_submission_context` for the published event and active guest fields.
+- `apply_public_registration_submission` for insert, idempotency replay, duplicate blocking, compound-scope conflicts, and updates.
 
-4. `supabase/functions/submit-form-submission/index.ts`
-   - **Issue:** 9 sequential queries handling form lookups, user validation, idempotency checks, and answer cleaning/insertions.
-   - **Optimization:** Wrap pre-flight form and field lookups in one RPC, and the submission transaction in another.
+Implemented by:
 
-5. `supabase/functions/member-lookup/index.ts`
-   - **Issue:** 9 sequential queries validating roles, checking submissions, etc.
-   - **Optimization:** Wrap user/member validation into a consolidated RPC.
+- `supabase/migrations/20260915160000_add_public_registration_context_rpc.sql`
+- `supabase/migrations/20260915170000_add_apply_public_registration_submission_rpc.sql`
+- `supabase/functions/submit-public-registration/index.ts`
+- `supabase/tests/public_registration_context.test.sql`
+- `supabase/tests/apply_public_registration_submission.test.sql`
 
-6. `supabase/functions/check-in-attendee/index.ts`
-   - **Issue:** 8 sequential queries for validating attendees, updating check-ins, tracking attendance answers.
-   - **Optimization:** Use an `apply_checkin` RPC that takes an array of arguments, updates timestamps, and handles logic atomically in the database.
+The public capacity checks and answer persistence still execute in the Edge Function. The old public mutation branch remains as a guarded compatibility fallback and should be removed after runtime verification of the RPC path.
 
-7. `supabase/functions/export-attendance-csv/index.ts` & `download-registrations-template/index.ts`
-   - **Issue:** Multiple sequential fetches for event data, roles, users, registrations, check-ins.
-   - **Optimization:** Bundle read queries with `Promise.all()` where they don't explicitly rely on the output of the preceding query, or execute a single joined query inside an RPC to flatten the export payload.
+## Not N+1
 
----
+These grouped queries run concurrently and do not issue one query per result item:
 
-_This document was generated as part of a codebase technical debt analysis._
+- `supabase/functions/list-attendees/index.ts`
+  - Registration and public-registration reads.
+  - Check-ins and answer reads.
+- `supabase/functions/search-attendees/index.ts`
+  - Registration and public-registration searches.
+  - Check-ins and answer reads.
+
+The `Promise.all` calls in these functions are latency optimizations, not N+1 defects.
+
+## Remaining Loop Query Patterns
+
+### Bulk Member Resolution
+
+`supabase/functions/bulk-upsert-registrations/index.ts` resolves member IDs in chunks of 200 with `.in('member_id', chunk)`.
+
+This is intentional defensive behavior. Large PostgREST `.in(...)` filters can fail with a raw `URI too long` error, so replacing the chunks with one large request is not recommended. A future RPC could accept the complete CSV payload or a bounded array, but it should be benchmarked and preserve the current validation/error reporting behavior.
+
+### Bulk Attendance Registration Validation
+
+`supabase/functions/bulk-upsert-attendance-answers/index.ts` validates registered and public registration IDs in separate chunks of 200.
+
+The two independent chunk loops could be executed concurrently with `Promise.all` to reduce latency. This would not remove the database work and should remain a lower-priority optimization. Keep chunking unless a database-side RPC is introduced with equivalent URI-safety and event-boundary validation.
+
+## Remaining Sequential Query Patterns
+
+### Public Capacity Queries: Highest Priority
+
+`supabase/functions/submit-public-registration/index.ts` queries `public_registration_answers` once for each capacity-constrained field. An event with several constrained fields therefore creates several sequential reads.
+
+Recommended next step:
+
+1. Add one RPC that accepts the event field IDs, selected option values, and the current registration ID when updating.
+2. Return usage counts grouped by field and option.
+3. Keep option-capacity validation and user-facing error construction in the Edge Function.
+
+This is the remaining clear per-field query loop in the public registration path.
+
+### Legacy Member Registration Endpoint
+
+`supabase/functions/submit-registration/index.ts` still contains the older sequential registration flow. The V2 flow has already replaced this behavior for current callers.
+
+Before optimizing it, confirm whether the endpoint is still reachable from the frontend or retained for compatibility. If it is unused, prefer deprecation/removal over duplicating the V2 RPC work.
+
+### Form Submission
+
+`supabase/functions/submit-form-submission/index.ts` still performs sequential form lookup, validation, idempotency, answer deletion, and answer insertion work.
+
+Potential follow-up:
+
+- Add a read-only form submission context RPC for the form and active fields.
+- Add a mutation RPC for idempotency and answer replacement.
+
+This should follow the proven member/public registration pattern and include tests for new submission, replay, and update behavior.
+
+### Member Lookup
+
+`supabase/functions/member-lookup/index.ts` has several sequential validation and lookup operations. Profile the endpoint before consolidating them because lookup ambiguity and safety rules are user-visible. A context RPC is reasonable if the endpoint remains latency-sensitive.
+
+### Check-In
+
+`supabase/functions/check-in-attendee/index.ts` performs multiple dependent reads and writes. An `apply_checkin` RPC could make the operation atomic, but this has higher behavioral risk than the registration changes because it combines attendee resolution, first-check-in semantics, walk-in handling, and attendance answers. Treat it as a separate design task with concurrency tests.
+
+### Export and Template Downloads
+
+Review `supabase/functions/export-attendance-csv/index.ts` and `supabase/functions/download-registrations-template/index.ts` for independent reads that can safely use `Promise.all`. Prefer this small change before introducing export-specific RPCs, unless profiling shows the joined database query is materially faster.
+
+## Recommended Order
+
+1. Remove the guarded legacy mutation branch from `submit-public-registration/index.ts` after deployed/runtime verification.
+2. Consolidate public capacity usage into one bounded RPC.
+3. Profile and optimize form submission.
+4. Confirm whether the legacy member endpoint is still used.
+5. Evaluate check-in atomicity separately from general query-count cleanup.
+6. Apply small `Promise.all` improvements to export/template reads where dependencies permit.
+
+## Validation Status
+
+The current database suite passes with 75 pgTAP assertions across 10 files. The frontend unit suite passes with 1,916 tests across 271 files, and `npm run ci:gate` passes.
+
+The remaining items above are optimization candidates, not confirmed correctness defects. Measure request latency and query volume before expanding the RPC surface.
