@@ -118,28 +118,41 @@ export function CopyNamesButton({ eventId, eventTitle, disabled = false }: CopyN
   };
 
   const handleCopy = async () => {
+    let payload: Awaited<ReturnType<typeof loadRegistrationNames>>;
     try {
-      const payload = await loadRegistrationNames();
-
-      if (payload.rows.length === 0) {
-        throw new Error(UI_MESSAGES.empty.noRegistrationsYet);
+      payload = await loadRegistrationNames();
+    } catch (error) {
+      let message: string = TOAST_MESSAGES.registration.copyNamesFailed;
+      if (error instanceof Error) {
+        message = error.message;
       }
+      showError(message);
+      return;
+    }
 
-      const text = formatRegistrationShareText({
-        rows: payload.rows,
-        selectedFields,
-        selectedAnswerFieldIds,
-        answerFields: payload.answer_fields,
-        eventTitle: payload.event_title || eventTitle,
-      });
+    if (payload.rows.length === 0) {
+      showError(UI_MESSAGES.empty.noRegistrationsYet);
+      return;
+    }
 
+    const text = formatRegistrationShareText({
+      rows: payload.rows,
+      selectedFields,
+      selectedAnswerFieldIds,
+      answerFields: payload.answer_fields,
+      eventTitle: payload.event_title || eventTitle,
+    });
+
+    try {
       await copyTextToClipboard(text);
       toast.success(TOAST_MESSAGES.registration.namesCopied(payload.row_count));
       setIsDialogOpen(false);
     } catch (error) {
-      showError(
-        error instanceof Error ? error.message : TOAST_MESSAGES.registration.copyNamesFailed,
-      );
+      let message: string = TOAST_MESSAGES.registration.copyNamesFailed;
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      showError(message);
     }
   };
 

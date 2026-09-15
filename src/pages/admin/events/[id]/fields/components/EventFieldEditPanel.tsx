@@ -112,60 +112,62 @@ export function EventFieldEditPanel({
   }
 
   async function onSubmit(values: EventFieldFormValues) {
+    const validationRules = toValidationRules(values);
+    const normalizedOptions = showOptions
+      ? values.options.map((option) => ({
+          label: option.label,
+          value: option.value,
+          toggle_label: option.toggle_label,
+          ...(option.toggle_default !== undefined ? { toggle_default: option.toggle_default } : {}),
+        }))
+      : [];
+
+    const placeholder = values.placeholder || null;
+    const helpText = values.help_text || null;
+
+    let updatePayload: Parameters<typeof updateMutation.mutateAsync>[0] | null = null;
+    if (isEditing && field) {
+      const publishedCapacityRules: Record<string, unknown> = {};
+      if (validationRules.max_slots !== undefined) {
+        publishedCapacityRules.max_slots = validationRules.max_slots;
+      }
+      if (validationRules.max_slots_role_allotments !== undefined) {
+        publishedCapacityRules.max_slots_role_allotments =
+          validationRules.max_slots_role_allotments;
+      }
+      if (validationRules.unique_key_component !== undefined) {
+        publishedCapacityRules.unique_key_component = validationRules.unique_key_component;
+      }
+      if (validationRules.visibility_rule !== undefined) {
+        publishedCapacityRules.visibility_rule = validationRules.visibility_rule;
+      }
+
+      updatePayload = isPublished
+        ? {
+            id: field.id,
+            event_id: eventId,
+            label: values.label,
+            applicability: values.applicability,
+            placeholder,
+            help_text: helpText,
+            validation_rules: publishedCapacityRules,
+          }
+        : {
+            id: field.id,
+            event_id: eventId,
+            label: values.label,
+            applicability: values.applicability,
+            is_required: values.is_required,
+            is_active: values.is_active,
+            placeholder,
+            help_text: helpText,
+            options: normalizedOptions,
+            validation_rules: validationRules,
+          };
+    }
+
     try {
-      const validationRules = toValidationRules(values);
-      const normalizedOptions = showOptions
-        ? values.options.map((option) => ({
-            label: option.label,
-            value: option.value,
-            toggle_label: option.toggle_label,
-            ...(option.toggle_default !== undefined
-              ? { toggle_default: option.toggle_default }
-              : {}),
-          }))
-        : [];
-
-      if (isEditing && field) {
-        const publishedCapacityRules: Record<string, unknown> = {};
-        if (validationRules.max_slots !== undefined) {
-          publishedCapacityRules.max_slots = validationRules.max_slots;
-        }
-        if (validationRules.max_slots_role_allotments !== undefined) {
-          publishedCapacityRules.max_slots_role_allotments =
-            validationRules.max_slots_role_allotments;
-        }
-        if (validationRules.unique_key_component !== undefined) {
-          publishedCapacityRules.unique_key_component = validationRules.unique_key_component;
-        }
-        if (validationRules.visibility_rule !== undefined) {
-          publishedCapacityRules.visibility_rule = validationRules.visibility_rule;
-        }
-
-        const updatePayload = isPublished
-          ? // Published: cosmetic fields + registrant type + option capacity
-            {
-              id: field.id,
-              event_id: eventId,
-              label: values.label,
-              applicability: values.applicability,
-              placeholder: values.placeholder || null,
-              help_text: values.help_text || null,
-              validation_rules: publishedCapacityRules,
-            }
-          : // Draft: all fields
-            {
-              id: field.id,
-              event_id: eventId,
-              label: values.label,
-              applicability: values.applicability,
-              is_required: values.is_required,
-              is_active: values.is_active,
-              placeholder: values.placeholder || null,
-              help_text: values.help_text || null,
-              options: normalizedOptions,
-              validation_rules: validationRules,
-            };
-
+      if (updatePayload) {
         await updateMutation.mutateAsync(updatePayload);
         toast.success('Field updated.');
       } else {
@@ -177,8 +179,8 @@ export function EventFieldEditPanel({
           applicability: values.applicability,
           is_required: values.is_required,
           is_active: values.is_active,
-          placeholder: values.placeholder || null,
-          help_text: values.help_text || null,
+          placeholder,
+          help_text: helpText,
           options: normalizedOptions,
           validation_rules: validationRules,
           display_order: 0,
@@ -187,10 +189,10 @@ export function EventFieldEditPanel({
       }
       onClose();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Something went wrong. Please try again or contact support.';
+      let message = 'Something went wrong. Please try again or contact support.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
     }
   }

@@ -153,12 +153,13 @@ export function FormFieldEditPanel({
       toast.success(`"${field.label}" removed.`);
       onClose();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to remove field. Please try again.';
+      let message = 'Failed to remove field. Please try again.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
-    } finally {
-      setIsDeleteConfirmOpen(false);
     }
+    setIsDeleteConfirmOpen(false);
   }
 
   const canSave = isDirty && isValid && !isPending;

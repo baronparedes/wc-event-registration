@@ -23,15 +23,20 @@ export function CancelRegistrationDialog({
   const { showError } = useErrorWithFadeout();
 
   const handleConfirm = async () => {
+    const cancellationReason = reason || undefined;
     try {
       await cancelMutation.mutateAsync({
         registration_id: registration.id,
-        reason: reason || undefined,
+        reason: cancellationReason,
       });
       setReason('');
       onClose();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to cancel registration');
+      let message = 'Failed to cancel registration';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      showError(message);
     }
   };
 

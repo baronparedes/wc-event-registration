@@ -50,6 +50,93 @@ function formatAnswerCsv(ans: {
   return '';
 }
 
+function buildSubmissionsCsv(
+  submissions: FormSubmission[],
+  formSlug?: string,
+  formTitle?: string,
+): { csvContent: string; filename: string } {
+  // Collect all unique fields across submissions
+  const fieldMap = new Map<string, string>(); // fieldId -> label
+  for (const sub of submissions) {
+    for (const ans of sub.form_submission_answers ?? []) {
+      const fieldId = ans.form_field_id;
+      const label = ans.form_fields?.label || ans.form_fields?.field_key || fieldId;
+      if (!fieldMap.has(fieldId)) {
+        fieldMap.set(fieldId, label);
+      }
+    }
+  }
+
+  const fieldIds = Array.from(fieldMap.keys());
+  const baseHeaders = [
+    'Submission ID',
+    'Respondent Name',
+    'Source',
+    'Member ID',
+    'Email',
+    'Phone',
+    'Submitted At',
+  ];
+  const dynamicHeaders = fieldIds.map((id) => fieldMap.get(id) ?? id);
+  const allHeaders = [...baseHeaders, ...dynamicHeaders];
+
+  const rows: string[][] = submissions.map((sub) => {
+    const respondentName =
+      sub.users?.full_name ||
+      [sub.public_registrant_info?.first_name, sub.public_registrant_info?.last_name]
+        .filter(Boolean)
+        .join(' ') ||
+      'Anonymous';
+
+    const memberId = sub.users?.member_id || '';
+    const email = sub.users?.email || sub.public_registrant_info?.email || '';
+    const phone = sub.public_registrant_info?.phone || '';
+
+    // Map answer by field_id
+    const answersByField = new Map<string, string>();
+    for (const ans of sub.form_submission_answers ?? []) {
+      answersByField.set(ans.form_field_id, formatAnswerCsv(ans));
+    }
+
+    const fieldValues = fieldIds.map((id) => answersByField.get(id) ?? '');
+
+    return [
+      sub.id,
+      respondentName,
+      sub.source,
+      memberId,
+      email,
+      phone,
+      sub.submitted_at,
+      ...fieldValues,
+    ];
+  });
+
+  const csvContent = [
+    allHeaders.map(escapeCsvCell).join(','),
+    ...rows.map((r) => r.map(escapeCsvCell).join(',')),
+  ].join('\r\n');
+
+  const sanitizedName = (formSlug || formTitle || 'form')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '_');
+  const filename = `${sanitizedName}-submissions.csv`;
+
+  return { csvContent, filename };
+}
+
+function triggerCsvDownload(csvContent: string, filename: string) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function ExportSubmissionsButton({
   submissions,
   formTitle,
@@ -61,90 +148,15 @@ export function ExportSubmissionsButton({
   const handleExport = () => {
     if (disabled || submissions.length === 0) return;
 
+    setIsExporting(true);
     try {
-      setIsExporting(true);
-
-      // Collect all unique fields across submissions
-      const fieldMap = new Map<string, string>(); // fieldId -> label
-      for (const sub of submissions) {
-        for (const ans of sub.form_submission_answers ?? []) {
-          const fieldId = ans.form_field_id;
-          const label = ans.form_fields?.label || ans.form_fields?.field_key || fieldId;
-          if (!fieldMap.has(fieldId)) {
-            fieldMap.set(fieldId, label);
-          }
-        }
-      }
-
-      const fieldIds = Array.from(fieldMap.keys());
-      const baseHeaders = [
-        'Submission ID',
-        'Respondent Name',
-        'Source',
-        'Member ID',
-        'Email',
-        'Phone',
-        'Submitted At',
-      ];
-      const dynamicHeaders = fieldIds.map((id) => fieldMap.get(id) ?? id);
-      const allHeaders = [...baseHeaders, ...dynamicHeaders];
-
-      const rows: string[][] = submissions.map((sub) => {
-        const respondentName =
-          sub.users?.full_name ||
-          [sub.public_registrant_info?.first_name, sub.public_registrant_info?.last_name]
-            .filter(Boolean)
-            .join(' ') ||
-          'Anonymous';
-
-        const memberId = sub.users?.member_id || '';
-        const email = sub.users?.email || sub.public_registrant_info?.email || '';
-        const phone = sub.public_registrant_info?.phone || '';
-
-        // Map answer by field_id
-        const answersByField = new Map<string, string>();
-        for (const ans of sub.form_submission_answers ?? []) {
-          answersByField.set(ans.form_field_id, formatAnswerCsv(ans));
-        }
-
-        const fieldValues = fieldIds.map((id) => answersByField.get(id) ?? '');
-
-        return [
-          sub.id,
-          respondentName,
-          sub.source,
-          memberId,
-          email,
-          phone,
-          sub.submitted_at,
-          ...fieldValues,
-        ];
-      });
-
-      const csvContent = [
-        allHeaders.map(escapeCsvCell).join(','),
-        ...rows.map((r) => r.map(escapeCsvCell).join(',')),
-      ].join('\r\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      const sanitizedName = (formSlug || formTitle || 'form')
-        .toLowerCase()
-        .replace(/[^a-z0-9_-]/g, '_');
-      link.download = `${sanitizedName}-submissions.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
+      const { csvContent, filename } = buildSubmissionsCsv(submissions, formSlug, formTitle);
+      triggerCsvDownload(csvContent, filename);
       toast.success('Submissions exported to CSV');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to export submissions');
-    } finally {
-      setIsExporting(false);
     }
+    setIsExporting(false);
   };
 
   return (

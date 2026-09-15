@@ -174,23 +174,26 @@ export function BulkUploadPanel({
       return;
     }
 
+    let result: Awaited<ReturnType<typeof bulkUpsertMutation.mutateAsync>>;
     try {
-      const result = await bulkUpsertMutation.mutateAsync({
+      result = await bulkUpsertMutation.mutateAsync({
         event_id: eventId,
         rows: preparedRows,
         uploaded_field_keys: uploadedFieldKeys,
       });
-
-      if (!result.success) {
-        throw new Error(result.error ?? 'Bulk import failed.');
-      }
-
-      setIsConfirmOpen(false);
-      toast.success(`Imported attendance data for ${result.imported_count} attendee(s).`);
-      onClose();
     } catch (error) {
       setErrors(extractBulkUploadErrorMessages(error));
+      return;
     }
+
+    if (!result.success) {
+      setErrors(extractBulkUploadErrorMessages(new Error(result.error || 'Bulk import failed.')));
+      return;
+    }
+
+    setIsConfirmOpen(false);
+    toast.success(`Imported attendance data for ${result.imported_count} attendee(s).`);
+    onClose();
   }
 
   const content = (

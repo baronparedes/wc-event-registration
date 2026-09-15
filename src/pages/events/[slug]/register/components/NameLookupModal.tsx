@@ -56,9 +56,8 @@ export function NameLookupModal({
       handleClose();
     } catch {
       setErrorMessage('Unable to search by name. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleOpen = () => {

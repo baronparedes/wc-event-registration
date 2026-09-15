@@ -101,15 +101,21 @@ export function useCheckInSubmission({
 
       try {
         const { queued } = enqueueCheckIn(payload, attendee.registration_id);
-        toast[queued ? 'success' : 'info'](
-          queued
-            ? 'Check-in queued. Syncing in the background.'
-            : 'This check-in is already queued for sync.',
-        );
+        if (queued) {
+          toast.success('Check-in queued. Syncing in the background.');
+        } else {
+          toast.info('This check-in is already queued for sync.');
+        }
         onCheckInResultChange(null);
-        if (!keepConfirmationVisible) onComplete();
+        if (!keepConfirmationVisible) {
+          onComplete();
+        }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to queue check-in.');
+        let message = 'Failed to queue check-in.';
+        if (error instanceof Error) {
+          message = error.message;
+        }
+        toast.error(message);
       }
     },
     [
