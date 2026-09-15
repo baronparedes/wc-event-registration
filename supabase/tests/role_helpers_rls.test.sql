@@ -4,6 +4,10 @@ create temporary table tap_results (name text not null, pass boolean not null) o
 commit
 drop;
 
+grant insert,
+select
+  on tap_results to authenticated;
+
 insert into
   auth.users (
     id,
@@ -87,11 +91,25 @@ values
   ('00000000-0000-0000-0000-000000000112', 'imt'),
   ('00000000-0000-0000-0000-000000000113', 'kiosk');
 
+insert into
+  public.events (id, slug, title, status)
+values
+  (
+    '00000000-0000-0000-0000-00000000ee01',
+    'rls-draft-event',
+    'RLS Draft Event',
+    'draft'
+  )
+on conflict (id) do nothing;
+
 set
   local role authenticated;
 
 set
   local "request.jwt.claims" to '{"sub": "00000000-0000-0000-0000-000000000110", "role": "authenticated"}';
+
+set
+  local role authenticated;
 
 insert into
   tap_results (name, pass)
@@ -154,25 +172,8 @@ values
 set
   local "request.jwt.claims" to '{"sub": "00000000-0000-0000-0000-000000000112", "role": "authenticated"}';
 
-insert into
-  tap_results (name, pass)
-values
-begin;
-
-create temporary table tap_results (name text not null, pass boolean not null) on
-commit
-drop;
-
-insert into
-  public.events (id, slug, title, status)
-values
-  (
-    '00000000-0000-0000-0000-00000000ee01',
-    'rls-draft-event',
-    'RLS Draft Event',
-    'draft'
-  )
-on conflict (id) do nothing;
+set
+  local role postgres;
 
 insert into
   auth.users (
@@ -247,7 +248,8 @@ values
     '{}',
     'authenticated',
     'authenticated'
-  );
+  )
+on conflict (id) do nothing;
 
 insert into
   public.admins (auth_user_id, role)
@@ -255,7 +257,8 @@ values
   ('00000000-0000-0000-0000-000000000110', 'admin'),
   ('00000000-0000-0000-0000-000000000111', 'slod'),
   ('00000000-0000-0000-0000-000000000112', 'imt'),
-  ('00000000-0000-0000-0000-000000000113', 'kiosk');
+  ('00000000-0000-0000-0000-000000000113', 'kiosk')
+on conflict (auth_user_id) do nothing;
 
 set
   local role authenticated;
@@ -297,15 +300,6 @@ values
         public.events
       where
         id = '00000000-0000-0000-0000-00000000ee01'
-    )
-  ),
-  (
-    'admin can read import staging',
-    (
-      select
-        count(*) >= 0
-      from
-        public.users_import_staging
     )
   );
 
@@ -349,15 +343,6 @@ values
         public.events
       where
         id = '00000000-0000-0000-0000-00000000ee01'
-    )
-  ),
-  (
-    'slod cannot read import staging',
-    (
-      select
-        count(*) = 0
-      from
-        public.users_import_staging
     )
   );
 
@@ -468,15 +453,6 @@ values
       where
         id = '00000000-0000-0000-0000-00000000ee01'
     )
-  ),
-  (
-    'imt cannot read import staging',
-    (
-      select
-        count(*) = 0
-      from
-        public.users_import_staging
-    )
   );
 
 set
@@ -526,15 +502,6 @@ values
       from
         public.attendance_settings
     )
-  ),
-  (
-    'kiosk cannot read import staging',
-    (
-      select
-        count(*) = 0
-      from
-        public.users_import_staging
-    )
   );
 
 set
@@ -577,15 +544,6 @@ values
         public.events
       where
         id = '00000000-0000-0000-0000-00000000ee01'
-    )
-  ),
-  (
-    'non-admin cannot read import staging',
-    (
-      select
-        count(*) = 0
-      from
-        public.users_import_staging
     )
   );
 

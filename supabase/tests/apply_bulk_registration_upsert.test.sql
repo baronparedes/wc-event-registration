@@ -1,7 +1,8 @@
 begin;
 
-select
-  extensions.plan (2);
+create temporary table tap_results (name text not null, pass boolean not null) on
+commit
+drop;
 
 do $$
 declare
@@ -61,22 +62,37 @@ exception
       v_failed := true;
 end;
 
-  perform extensions.ok
-(v_failed, 'Bulk registration RPC rejects answers from another event');
-  perform extensions.ok
-(
-    not exists
-(
-      select 1
-from public.registrations
-where event_id = v_event_id
-    and user_id = v_user_id
-    )
-,
-    'Bulk registration RPC rolls back registration when answer insertion validation fails'
-  );
+  insert into tap_results values
+    ('Bulk registration RPC rejects answers from another event', v_failed);
+  insert into tap_results values
+    (
+      'Bulk registration RPC rolls back registration when answer insertion validation fails',
+      not exists (
+        select 1
+        from public.registrations
+        where event_id = v_event_id
+          and user_id = v_user_id
+      )
+    );
 end;
 $$;
+
+select
+  extensions.plan (
+    (
+      select
+        count(*)::integer
+      from
+        tap_results
+    )
+  );
+
+select
+  extensions.ok (pass, name)
+from
+  tap_results
+order by
+  name;
 
 select
   *

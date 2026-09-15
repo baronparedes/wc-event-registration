@@ -4,6 +4,27 @@ create temporary table tap_results (name text not null, pass boolean not null) o
 commit
 drop;
 
+insert into
+  public.events (id, slug, title, status)
+values
+  (
+    '00000000-0000-0000-0000-00000000ff01',
+    'sample-event',
+    'Context sample event',
+    'published'
+  )
+on conflict (id) do nothing;
+
+insert into
+  public.users (id, member_id, full_name)
+values
+  (
+    '00000000-0000-0000-0000-00000000ff02',
+    '3865598676',
+    'Context Test Member'
+  )
+on conflict (member_id) do nothing;
+
 do $$
 declare
   v_context record;
@@ -18,12 +39,12 @@ begin
   into v_context
   from public.get_registration_submission_context('sample-event', '3865598676');
 
-  v_field_count := jsonb_array_length(v_context.fields);
+  v_field_count := coalesce(jsonb_array_length(v_context.fields), 0);
 
   insert into tap_results values
-    ('Context RPC resolves the published event', v_context.event_id = v_event_id);
+    ('Context RPC resolves the published event', coalesce(v_context.event_id = v_event_id, false));
   insert into tap_results values
-    ('Context RPC resolves the member', v_context.user_id = v_user_id);
+    ('Context RPC resolves the member', coalesce(v_context.user_id = v_user_id, false));
   insert into tap_results values
     ('Context RPC returns a fields array', v_context.fields is not null);
   insert into tap_results values

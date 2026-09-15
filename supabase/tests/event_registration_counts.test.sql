@@ -6,6 +6,9 @@ drop;
 
 do $$
 declare
+  v_fixture_event_id uuid := '00000000-0000-0000-0000-00000000fd11';
+  v_fixture_future_event_id uuid := '00000000-0000-0000-0000-00000000fd12';
+  v_fixture_user_id uuid := '00000000-0000-0000-0000-00000000fd13';
   v_event_id uuid;
   v_future_event_id uuid;
   v_user_id uuid;
@@ -17,9 +20,18 @@ declare
   v_key text := 'test-counts-' || md5(random()::text);
   v_email text := 'test-counts-' || md5(random()::text) || '@example.test';
 begin
-  select id into v_event_id from events where slug = 'sample-event' limit 1;
-  select id into v_future_event_id from events where slug = 'future-event' limit 1;
-  select id into v_user_id from users where member_id = '3865598676' limit 1;
+  insert into public.events (id, slug, title)
+  values
+    (v_fixture_event_id, 'registration-counts-test', 'Registration counts test'),
+    (v_fixture_future_event_id, 'registration-counts-future-test', 'Registration counts future test')
+  on conflict (id) do nothing;
+  insert into public.users (id, member_id, full_name)
+  values (v_fixture_user_id, 'registration-counts-test', 'Registration Counts Test')
+  on conflict (id) do nothing;
+
+  select id into v_event_id from events where id = v_fixture_event_id;
+  select id into v_future_event_id from events where id = v_fixture_future_event_id;
+  select id into v_user_id from users where id = v_fixture_user_id;
 
   if v_event_id is null or v_future_event_id is null or v_user_id is null then
     insert into tap_results values ('Registration count fixtures are available', false);
@@ -68,6 +80,7 @@ begin
   delete from public_registrations where id = v_public_registration_id;
   delete from registrations where id = v_member_registration_id
     or idempotency_key = v_key || '-cancelled';
+  delete from public.events where id in (v_event_id, v_future_event_id);
 end
 $$;
 

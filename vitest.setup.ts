@@ -3,8 +3,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { afterAll, beforeAll } from 'vitest';
 
-// Load environment variables from .env.local
+// Load local overrides first, then fall back to the repository environment file.
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // Stub fetch if not available in test environment
 if (!globalThis.fetch) {

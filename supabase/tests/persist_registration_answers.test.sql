@@ -6,15 +6,28 @@ drop;
 
 do $$
 declare
+  v_fixture_event_id uuid := '00000000-0000-0000-0000-00000000fd21';
+  v_fixture_user_id uuid := '00000000-0000-0000-0000-00000000fd22';
+  v_fixture_field_id uuid := '00000000-0000-0000-0000-00000000fd23';
   v_event_id uuid;
   v_user_id uuid;
   v_field_id uuid;
   v_registration_id uuid;
   v_answer_count integer;
 begin
-  select id into v_event_id from events where slug = 'sample-event' limit 1;
-  select id into v_user_id from users where member_id = '3865598676' limit 1;
-  select id into v_field_id from event_fields where event_id = v_event_id limit 1;
+  insert into public.events (id, slug, title)
+  values (v_fixture_event_id, 'answer-persistence-test', 'Answer persistence test')
+  on conflict (id) do nothing;
+  insert into public.users (id, member_id, full_name)
+  values (v_fixture_user_id, 'answer-persistence-test', 'Answer Persistence Test')
+  on conflict (id) do nothing;
+  insert into public.event_fields (id, event_id, field_key, label, field_type)
+  values (v_fixture_field_id, v_fixture_event_id, 'answer', 'Answer', 'text')
+  on conflict (id) do nothing;
+
+  select id into v_event_id from events where id = v_fixture_event_id;
+  select id into v_user_id from users where id = v_fixture_user_id;
+  select id into v_field_id from event_fields where id = v_fixture_field_id;
 
   if v_event_id is null or v_user_id is null or v_field_id is null then
     insert into tap_results values ('Answer persistence fixtures are available', false);
@@ -52,6 +65,7 @@ begin
 
   insert into tap_results values
     ('Answer persistence RPC replaces existing answers atomically', v_answer_count = 1);
+  delete from public.events where id = v_fixture_event_id;
 end
 $$;
 

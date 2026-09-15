@@ -1,7 +1,8 @@
 begin;
 
-select
-  extensions.plan (2);
+create temporary table tap_results (name text not null, pass boolean not null) on
+commit
+drop;
 
 do $$
 declare
@@ -66,18 +67,37 @@ begin
       v_failed := true;
   end;
 
-  perform extensions.ok(v_failed, 'Attendance answer RPC rejects a field from another event');
-  perform extensions.ok(
+  insert into tap_results values
+    ('Attendance answer RPC rejects a field from another event', v_failed);
+  insert into tap_results values
     (
-      select answer_text = 'Existing answer'
-      from public.attendance_answers
-      where registration_id = v_registration_id
-        and attendance_field_id = v_field_id
-    ),
-    'Attendance answer RPC restores the deleted answer when a later write fails'
-  );
+      'Attendance answer RPC restores the deleted answer when a later write fails',
+      (
+        select answer_text = 'Existing answer'
+        from public.attendance_answers
+        where registration_id = v_registration_id
+          and attendance_field_id = v_field_id
+      )
+    );
 end;
 $$;
+
+select
+  extensions.plan (
+    (
+      select
+        count(*)::integer
+      from
+        tap_results
+    )
+  );
+
+select
+  extensions.ok (pass, name)
+from
+  tap_results
+order by
+  name;
 
 select
   *

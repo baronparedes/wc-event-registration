@@ -6,6 +6,8 @@ drop;
 
 do $$
 declare
+  v_fixture_event_id uuid := '00000000-0000-0000-0000-00000000fd01';
+  v_fixture_user_id uuid := '00000000-0000-0000-0000-00000000fd02';
   v_event_id uuid;
   v_user_id uuid;
   v_first record;
@@ -13,8 +15,15 @@ declare
   v_blocked record;
   v_key text := 'test-apply-registration-' || md5(random()::text);
 begin
-  select id into v_event_id from events where slug = 'sample-event' limit 1;
-  select id into v_user_id from users where member_id = '3865598676' limit 1;
+  insert into public.events (id, slug, title)
+  values (v_fixture_event_id, 'member-registration-rpc-test', 'Member registration RPC test')
+  on conflict (id) do nothing;
+  insert into public.users (id, member_id, full_name)
+  values (v_fixture_user_id, 'member-registration-rpc-test', 'Member Registration Test')
+  on conflict (id) do nothing;
+
+  select id into v_event_id from events where id = v_fixture_event_id;
+  select id into v_user_id from users where id = v_fixture_user_id;
 
   if v_event_id is null or v_user_id is null then
     insert into tap_results values ('Registration mutation fixtures are available', false);
@@ -38,6 +47,8 @@ begin
     ('Mutation RPC replays the same idempotency key', v_replay.registration_id = v_first.registration_id and not v_replay.should_write_answers);
   insert into tap_results values
     ('Mutation RPC blocks a duplicate registration', v_blocked.error_code = 'duplicate_blocked');
+
+  delete from public.events where id = v_fixture_event_id;
 end
 $$;
 

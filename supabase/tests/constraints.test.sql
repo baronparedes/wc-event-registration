@@ -4,6 +4,58 @@ create temporary table tap_results (name text not null, pass boolean not null) o
 commit
 drop;
 
+insert into
+  public.events (id, slug, title)
+values
+  (
+    '00000000-0000-0000-0000-00000000fe01',
+    'sample-event',
+    'Constraints sample event'
+  ),
+  (
+    '00000000-0000-0000-0000-00000000fe02',
+    'future-event',
+    'Constraints future event'
+  ),
+  (
+    '00000000-0000-0000-0000-00000000fe03',
+    'closed-event',
+    'Constraints closed event'
+  )
+on conflict (id) do nothing;
+
+insert into
+  public.users (id, member_id, full_name)
+values
+  (
+    '00000000-0000-0000-0000-00000000fe11',
+    '3865598676',
+    'Constraints Main Member'
+  ),
+  (
+    '00000000-0000-0000-0000-00000000fe12',
+    '1627890198',
+    'Constraints Other Member'
+  ),
+  (
+    '00000000-0000-0000-0000-00000000fe13',
+    '1628023334',
+    'Constraints Future Member'
+  )
+on conflict (member_id) do nothing;
+
+insert into
+  public.event_fields (id, event_id, field_key, label, field_type)
+values
+  (
+    '00000000-0000-0000-0000-00000000fe21',
+    '00000000-0000-0000-0000-00000000fe01',
+    'answer',
+    'Answer',
+    'text'
+  )
+on conflict (id) do nothing;
+
 create temporary table tap_fixture as
 select
   e.id as event_id,
