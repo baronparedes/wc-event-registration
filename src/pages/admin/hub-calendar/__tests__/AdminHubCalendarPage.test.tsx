@@ -77,6 +77,8 @@ function renderComponent() {
 describe('AdminHubCalendarPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
     mockUseIsMobileViewport.mockReturnValue(false);
   });
 

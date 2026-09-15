@@ -22,7 +22,7 @@ afterAll(() => {
   // Cleanup
 });
 
-const localStorageMock = (() => {
+const createStorageMock = () => {
   let store: Record<string, string> = {}; // 👈 Explicit type for string key-value pairs
   return {
     getItem: (key: string): string | null => store[key] || null,
@@ -38,8 +38,8 @@ const localStorageMock = (() => {
     length: 0, // 👈 Required by the Storage interface
     key: (index: number): string | null => Object.keys(store)[index] || null, // 👈 Required by the Storage interface
   };
-})();
+};
 
-// Define it globally before tests run
-Object.defineProperty(global, 'localStorage', { value: localStorageMock });
-Object.defineProperty(global, 'sessionStorage', { value: localStorageMock });
+// Define them globally before tests run with independent storage stores
+Object.defineProperty(global, 'localStorage', { value: createStorageMock() });
+Object.defineProperty(global, 'sessionStorage', { value: createStorageMock() });
