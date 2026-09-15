@@ -1,5 +1,6 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import { errorResponse, successResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
 
 const requestSchema = z.object({
@@ -7,23 +8,38 @@ const requestSchema = z.object({
   monthIndex: z.number().int().min(0).max(11), // 0-11
 });
 
-const REQUIRED_FIELD_KEYS = ['request_date', 'services'] as const;
-type FieldKey = (typeof REQUIRED_FIELD_KEYS)[number];
+type GetExcusedMembersRequest = z.infer<typeof requestSchema>;
+
+type EventFieldRelation = {
+  field_key: string;
+};
 
 type RegistrationAnswerRow = {
-  registration_id: string;
-  event_field_id: string;
   answer_text: string | null;
   answer_number: number | null;
   answer_boolean: boolean | null;
   answer_date: string | null;
   answer_json: unknown;
+  event_fields: EventFieldRelation | EventFieldRelation[] | null;
+};
+
+type UserRelation = {
+  member_id: string | null;
+  id: string | null;
+};
+
+type RegistrationRow = {
+  id: string;
+  users: UserRelation | UserRelation[] | null;
+  registration_answers: RegistrationAnswerRow[] | null;
 };
 
 export type ExcusedMemberRecord = {
+  userId: string;
   memberId: string;
   requestDate: string;
   services: string; // The services they are excused from
+  reason: string; // The reason they are excused
 };
 
 function readAnswerValue(answer: RegistrationAnswerRow): unknown {
@@ -57,128 +73,205 @@ function normalizeValueToText(value: unknown): string {
   return String(value);
 }
 
-function jsonResponse(status: number, payload: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  });
-}
-
 Deno.serve(async (req) => {
-  return await useEdgeHook(req, {
+  const guard = await useEdgeHook({
+    req,
     functionName: 'get-excused-members',
-    rateLimit: RATE_LIMIT_PRESETS.READ_MODERATE,
-    scope: 'admin',
-    onAccept: async (guard) => {
-      const body = await req.json();
-      const parsed = requestSchema.safeParse(body);
+    method: 'POST',
+    requireAdmin: true,
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+    rateLimit: {
+      scope: 'get-excused-members',
+      windowMs: RATE_LIMIT_PRESETS.getExcusedMembers.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.getExcusedMembers.maxHits,
+    },
+    schema: requestSchema,
+  });
 
-      if (!parsed.success) {
-        return jsonResponse(400, { success: false, error: parsed.error });
-      }
+  const corsHeaders = guard.corsHeaders;
 
-      const { year, monthIndex } = parsed.data;
-      const eventId = Deno.env.get('UPCOMING_SUNDAY_EVENT_ID');
+  if (!guard.valid) {
+    return guard.response;
+  }
 
-      if (!eventId) {
-        return jsonResponse(500, { success: false, error: 'Event ID not configured' });
-      }
+  try {
+    const { year, monthIndex }: GetExcusedMembersRequest = guard.data;
+    const supabase = guard.client;
+    const eventId = Deno.env.get('UPCOMING_SUNDAY_EVENT_ID');
 
-      // Fetch event fields to find request_date and services fields
-      const { data: eventFields, error: eventFieldsError } = await guard.client
-        .from('event_fields')
-        .select('id, field_key')
-        .eq('event_id', eventId)
-        .in('field_key', REQUIRED_FIELD_KEYS);
+    const monthStr = String(monthIndex + 1).padStart(2, '0');
+    const datePrefix = `${year}-${monthStr}`;
+    const startDate = `${datePrefix}-01`;
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const endDate = `${datePrefix}-${String(daysInMonth).padStart(2, '0')}`;
 
-      if (eventFieldsError || !eventFields) {
-        return jsonResponse(500, { success: false, error: 'Failed to fetch event fields' });
-      }
+    console.log('[get-excused-members] Starting request processing', {
+      requestId: guard.requestId,
+      year,
+      monthIndex,
+      datePrefix,
+      startDate,
+      endDate,
+      eventId: eventId ?? 'NOT_SET',
+    });
 
-      const fieldIdToKey = new Map<string, FieldKey>();
-      for (const field of eventFields) {
-        fieldIdToKey.set(field.id, field.field_key as FieldKey);
-      }
+    if (!eventId) {
+      console.error('[get-excused-members] Event ID not configured', {
+        requestId: guard.requestId,
+      });
+      return errorResponse(corsHeaders, 500, 'Event ID not configured');
+    }
 
-      const requestDateFieldId = eventFields.find((f) => f.field_key === 'request_date')?.id;
-      if (!requestDateFieldId) {
-        return jsonResponse(200, { success: true, records: [] }); // If no such field, return empty
-      }
+    // Pass 1: Find registration IDs that have a request_date matching the target month/year
+    console.log('[get-excused-members] Executing Pass 1 date filter query', {
+      requestId: guard.requestId,
+      datePrefix,
+      startDate,
+      endDate,
+      eventId,
+    });
 
-      const monthStr = String(monthIndex + 1).padStart(2, '0');
-      const datePrefix = `${year}-${monthStr}`;
+    const { data: dateAnswers, error: dateAnswersError } = await supabase
+      .from('registration_answers')
+      .select('registration_id, event_fields (field_key), registrations(status)')
+      .eq('registrations.event_id', eventId)
+      .neq('registrations.status', 'cancelled')
+      .eq('event_fields.field_key', 'request_date')
+      .or(
+        `answer_date.gte.${startDate},answer_date.lte.${endDate},answer_text.ilike.%${datePrefix}%`,
+      );
 
-      // Find registration IDs that have an answer for request_date in the given month
-      const { data: requestDateAnswers, error: requestDateAnswersError } = await guard.client
-        .from('registration_answers')
-        .select('registration_id, answer_text, answer_date')
-        .eq('event_field_id', requestDateFieldId)
-        .or(`answer_text.ilike.%${datePrefix}%,answer_date.ilike.${datePrefix}%`);
+    if (dateAnswersError) {
+      console.error('[get-excused-members] Pass 1 query error', {
+        requestId: guard.requestId,
+        error: dateAnswersError,
+      });
+      return errorResponse(
+        corsHeaders,
+        500,
+        'Failed to query matching excused requests',
+        dateAnswersError.message,
+      );
+    }
 
-      if (requestDateAnswersError) {
-        return jsonResponse(500, { success: false, error: 'Failed to fetch answers' });
-      }
+    const registrationIds = Array.from(
+      new Set(
+        ((dateAnswers as { registration_id: string }[] | null) ?? [])
+          .map((a) => a.registration_id)
+          .filter(Boolean),
+      ),
+    );
 
-      const registrationIds = (requestDateAnswers ?? []).map((a) => a.registration_id);
+    console.log('[get-excused-members] Pass 1 query complete', {
+      requestId: guard.requestId,
+      matchingRows: dateAnswers?.length ?? 0,
+      uniqueRegistrationCount: registrationIds.length,
+      registrationIds,
+    });
 
-      if (registrationIds.length === 0) {
-        return jsonResponse(200, { success: true, records: [] });
-      }
+    if (registrationIds.length === 0) {
+      console.log('[get-excused-members] No registrations matched, returning empty array', {
+        requestId: guard.requestId,
+        datePrefix,
+      });
+      return successResponse(corsHeaders, { records: [] });
+    }
 
-      // Fetch all answers for these registrations for the requested fields
-      const requestedFieldIds = eventFields.map((f) => f.id);
+    // Pass 2: Fetch member details and answers for only the matching registrations
+    console.log('[get-excused-members] Executing Pass 2 registrations lookup', {
+      requestId: guard.requestId,
+      registrationCount: registrationIds.length,
+    });
 
-      const { data: answers, error: answersError } = await guard.client
-        .from('registration_answers')
-        .select('*')
-        .in('registration_id', registrationIds)
-        .in('event_field_id', requestedFieldIds);
+    const { data: registrations, error: registrationsError } = await supabase
+      .from('registrations')
+      .select(
+        `
+        id,
+        users!inner (
+          member_id,
+          id
+        ),
+        registration_answers (
+          answer_text,
+          answer_date,
+          answer_number,
+          answer_boolean,
+          answer_json,
+          event_fields (
+            field_key
+          )
+        )
+      `,
+      )
+      .in('id', registrationIds);
 
-      if (answersError) {
-        return jsonResponse(500, { success: false, error: 'Failed to load registration answers' });
-      }
+    if (registrationsError) {
+      console.error('[get-excused-members] Pass 2 query error', {
+        requestId: guard.requestId,
+        error: registrationsError,
+      });
+      return errorResponse(
+        corsHeaders,
+        500,
+        'Failed to load registrations',
+        registrationsError.message,
+      );
+    }
 
-      // Fetch member associations from registrations table
-      const { data: registrations, error: registrationsError } = await guard.client
-        .from('registrations')
-        .select('id, users!inner(member_id)')
-        .eq('event_id', eventId)
-        .neq('status', 'cancelled')
-        .in('id', registrationIds);
+    console.log('[get-excused-members] Pass 2 records fetched', {
+      requestId: guard.requestId,
+      fetchedCount: registrations?.length ?? 0,
+    });
 
-      if (registrationsError) {
-        return jsonResponse(500, { success: false, error: 'Failed to load registrations' });
-      }
+    const records: ExcusedMemberRecord[] = [];
 
-      const answersByRegistration = new Map<string, Partial<Record<FieldKey, unknown>>>();
-      for (const answer of answers ?? []) {
-        const fieldKey = fieldIdToKey.get(answer.event_field_id);
-        if (!fieldKey) continue;
-        const current = answersByRegistration.get(answer.registration_id) ?? {};
-        current[fieldKey] = readAnswerValue(answer);
-        answersByRegistration.set(answer.registration_id, current);
-      }
+    for (const reg of (registrations as RegistrationRow[] | null) ?? []) {
+      const memberId = Array.isArray(reg.users) ? reg.users[0]?.member_id : reg.users?.member_id;
+      const userId = Array.isArray(reg.users) ? reg.users[0]?.id : reg.users?.id;
+      if (!memberId || !userId) continue;
 
-      const records: ExcusedMemberRecord[] = [];
-      for (const reg of registrations ?? []) {
-        // user association is required to know WHICH member this is
-        const memberId = Array.isArray(reg.users) ? reg.users[0]?.member_id : reg.users?.member_id;
-        if (!memberId) continue;
+      let requestDate = '';
+      let services = '';
+      let reason = '';
 
-        const answerMap = answersByRegistration.get(reg.id) ?? {};
+      for (const answer of reg.registration_answers ?? []) {
+        const fieldKey = Array.isArray(answer.event_fields)
+          ? answer.event_fields[0]?.field_key
+          : answer.event_fields?.field_key;
 
-        const requestDate = normalizeValueToText(answerMap.request_date);
-        // Only include if the date actually starts with our month string (extra safety check since ilike can sometimes match loosely)
-        if (requestDate.startsWith(datePrefix)) {
-          records.push({
-            memberId,
-            requestDate,
-            services: normalizeValueToText(answerMap.services),
-          });
+        if (fieldKey === 'request_date') {
+          requestDate = normalizeValueToText(readAnswerValue(answer));
+        } else if (fieldKey === 'services') {
+          services = normalizeValueToText(readAnswerValue(answer));
+        } else if (fieldKey === 'reason') {
+          reason = normalizeValueToText(readAnswerValue(answer));
         }
       }
 
-      return jsonResponse(200, { success: true, records });
-    },
-  });
+      if (requestDate.startsWith(datePrefix)) {
+        records.push({
+          userId,
+          memberId,
+          requestDate,
+          services,
+          reason,
+        });
+      }
+    }
+
+    console.log('[get-excused-members] Finished building response', {
+      requestId: guard.requestId,
+      recordsCount: records.length,
+    });
+
+    return successResponse(corsHeaders, { records });
+  } catch (err) {
+    console.error('[get-excused-members] Unexpected exception', {
+      requestId: guard.requestId,
+      error: err instanceof Error ? err.stack || err.message : err,
+    });
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return errorResponse(corsHeaders, 500, message);
+  }
 });
