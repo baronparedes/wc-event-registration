@@ -183,6 +183,28 @@ export function AdminRegistrationsPage() {
       </AdminPageShell.Filters>
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading registrations...">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          {canWrite && (
+            <Button
+              type="button"
+              variant="primaryOutline"
+              onClick={() =>
+                navigate(toRoute('adminAttendanceUnregisteredMembers', { id: eventId }))
+              }
+            >
+              View Unregistered Members
+            </Button>
+          )}
+          {canRead && (
+            <Button
+              variant="primaryOutline"
+              onClick={() => navigate(toRoute('adminPublicRegistrations', { id: eventId }))}
+            >
+              View Public Registrations
+            </Button>
+          )}
+        </div>
+
         <div className="rounded-2xl border border-border bg-surface">
           <RegistrationsList
             registrations={registrations}
@@ -221,28 +243,6 @@ export function AdminRegistrationsPage() {
             )}
           </div>
           <div ref={loadMoreRef} className="h-1" />
-        </div>
-
-        <div className="flex flex-col gap-2 pt-6 sm:flex-row sm:justify-end">
-          {canWrite && (
-            <Button
-              type="button"
-              variant="primaryOutline"
-              onClick={() =>
-                navigate(toRoute('adminAttendanceUnregisteredMembers', { id: eventId }))
-              }
-            >
-              View Unregistered Members
-            </Button>
-          )}
-          {canRead && (
-            <Button
-              variant="primaryOutline"
-              onClick={() => navigate(toRoute('adminPublicRegistrations', { id: eventId }))}
-            >
-              View Public Registrations
-            </Button>
-          )}
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>
