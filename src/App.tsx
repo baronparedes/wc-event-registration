@@ -19,6 +19,7 @@ function App() {
           <AppRouter />
           <Toaster
             richColors
+            closeButton
             position={isMobileToastLayout ? 'bottom-center' : 'bottom-right'}
             duration={7000}
             mobileOffset={8}
