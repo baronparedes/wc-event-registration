@@ -73,6 +73,7 @@ describe('MobileScheduleCalendar', () => {
       {
         date: new Date(2026, 4, 3),
         monthDayKey: '05-03',
+        isoDate: '2026-05-03',
         isSunday: true,
         sundayKey: 'first_sunday',
         scheduleEntries,
@@ -81,6 +82,7 @@ describe('MobileScheduleCalendar', () => {
       {
         date: new Date(2026, 4, 4),
         monthDayKey: '05-04',
+        isoDate: '2026-05-04',
         isSunday: false,
         sundayKey: null,
         scheduleEntries: [],
@@ -89,6 +91,7 @@ describe('MobileScheduleCalendar', () => {
       {
         date: new Date(2026, 4, 10),
         monthDayKey: '05-10',
+        isoDate: '2026-05-10',
         isSunday: true,
         sundayKey: 'second_sunday',
         scheduleEntries: [],

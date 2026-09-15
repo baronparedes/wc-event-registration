@@ -1,5 +1,10 @@
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
-import { type CalendarCell, type MilestoneEntry, isMemberExcused } from '@/lib/domain/hub-calendar';
+import {
+  type CalendarCell,
+  type ExcusedMemberMap,
+  type MilestoneEntry,
+  isMemberExcused,
+} from '@/lib/domain/hub-calendar';
 
 import { MilestoneAvatar, MilestoneBadge, ServiceScheduleAvatar } from './';
 
@@ -7,7 +12,7 @@ type DesktopScheduleCalendarProps = {
   calendarCells: CalendarCell[];
   scheduleMap: Map<string, MemberScheduleEntry[]>;
   milestoneMap: Map<string, MilestoneEntry[]>;
-  excusedMap?: Map<string, Set<string>>;
+  excusedMap?: ExcusedMemberMap;
   selectedDayNumber: number;
   onSelectDay: (dayNumber: number) => void;
 };
@@ -132,7 +137,7 @@ export function DesktopScheduleCalendar({
                             size="sm"
                             name={entry.member.full_name}
                             avatarObjectKey={entry.member.avatar_object_key}
-                            excused={isMemberExcused(excusedMap, cell.monthDayKey, entry.member)}
+                            excused={isMemberExcused(excusedMap, cell.isoDate, entry.member)}
                           />
                         ))}
                         {excessCount > 0 && (

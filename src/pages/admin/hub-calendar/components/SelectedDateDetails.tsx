@@ -4,7 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Badge, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
-import { type MilestoneEntry, isMemberExcused, toMonthDayKey } from '@/lib/domain/hub-calendar';
+import {
+  type ExcusedMemberMap,
+  type MilestoneEntry,
+  isMemberExcused,
+  toIsoDateKey,
+} from '@/lib/domain/hub-calendar';
 
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
@@ -35,7 +40,7 @@ type SelectedDateDetailsProps = {
   selectedEntries: MemberScheduleEntry[];
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   isCurrentSelectedSunday: boolean;
-  excusedMap?: Map<string, Set<string>>;
+  excusedMap?: ExcusedMemberMap;
   activeTab: TimeSlot;
   selectedRole: string | null;
   onTabChange: (slot: TimeSlot) => void;
@@ -126,8 +131,9 @@ export function SelectedDateDetails({
                   className="border-2 border-surface shadow-sm"
                   excused={isMemberExcused(
                     excusedMap,
-                    toMonthDayKey(viewMonthIndex + 1, selectedDayNumber),
+                    toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber),
                     entry.member,
+                    slot,
                   )}
                 />
                 <div className="min-w-0 w-full">

@@ -6,12 +6,15 @@ import {
   useGetExcusedMembers,
 } from '@/hooks/domain/members';
 import {
+  type ExcusedMemberMap,
   type MilestoneEntry,
   buildCalendarCells,
   buildMilestoneEntries,
   buildMobileWeekCells,
   getMonthDayKeyFromMember,
   getMonthWeekRanges,
+  parseServiceSlots,
+  toIsoDateKey,
   toMonthDayKey,
 } from '@/lib/domain/hub-calendar';
 import { type AdminMember } from '@/lib/domain/members';
@@ -25,36 +28,47 @@ export function useHubCalendarData(
 ) {
   const { data: excusedMembersArray = [] } = useGetExcusedMembers(viewYear, viewMonthIndex);
 
-  const excusedMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
+  const excusedMap: ExcusedMemberMap = useMemo(() => {
+    const map: ExcusedMemberMap = new Map();
     for (const record of excusedMembersArray) {
       if (!record.requestDate) continue;
       const cleanDate = record.requestDate.trim().split('T')[0];
       const parts = cleanDate.split('-');
       if (parts.length >= 3) {
-        const month = parseInt(parts[1], 10);
-        const day = parseInt(parts[2], 10);
-        if (!isNaN(month) && !isNaN(day)) {
-          const key = toMonthDayKey(month, day);
+        const recordYear = parseInt(parts[0], 10);
+        const recordMonth = parseInt(parts[1], 10);
+        const recordDay = parseInt(parts[2], 10);
 
-          if (!map.has(key)) {
-            map.set(key, new Set());
+        if (recordYear !== viewYear || recordMonth !== viewMonthIndex + 1 || isNaN(recordDay)) {
+          continue;
+        }
+
+        const isoKey = toIsoDateKey(recordYear, recordMonth, recordDay);
+        if (!map.has(isoKey)) {
+          map.set(isoKey, new Map());
+        }
+        const memberMap = map.get(isoKey)!;
+        const slots = parseServiceSlots(record.services);
+
+        const addSlots = (id: string) => {
+          const key = id.trim().toLowerCase();
+          const existing = memberMap.get(key) ?? new Set<TimeSlot>();
+          for (const slot of slots) {
+            existing.add(slot);
           }
-          const set = map.get(key)!;
-          if (record.userId) {
-            set.add(record.userId);
-            set.add(record.userId.toLowerCase());
-          }
-          if (record.memberId) {
-            const trimmed = record.memberId.trim();
-            set.add(trimmed);
-            set.add(trimmed.toLowerCase());
-          }
+          memberMap.set(key, existing);
+        };
+
+        if (record.userId) {
+          addSlots(record.userId);
+        }
+        if (record.memberId) {
+          addSlots(record.memberId);
         }
       }
     }
     return map;
-  }, [excusedMembersArray]);
+  }, [excusedMembersArray, viewYear, viewMonthIndex]);
 
   const calendarCells = useMemo(() => {
     return buildCalendarCells(viewYear, viewMonthIndex);

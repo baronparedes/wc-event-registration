@@ -1,6 +1,6 @@
-import type { MemberScheduleEntry, SundayKey } from '@/hooks/domain/members';
+import type { MemberScheduleEntry, SundayKey, TimeSlot } from '@/hooks/domain/members';
 
-import type { CalendarCell, MilestoneEntry, WeekCell, WeekRange } from './types';
+import type { CalendarCell, ExcusedMemberMap, MilestoneEntry, WeekCell, WeekRange } from './types';
 
 export const SUNDAY_KEYS: SundayKey[] = [
   'first_sunday',
@@ -12,6 +12,53 @@ export const SUNDAY_KEYS: SundayKey[] = [
 
 export function toMonthDayKey(month: number, day: number): string {
   return `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+export function toIsoDateKey(year: number, month: number, day: number): string {
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Parses a services string (e.g. "9AM, 12NN", "9am", "All") into a set of TimeSlot enum values.
+ * Empty text or "All" implies all service slots.
+ */
+export function parseServiceSlots(servicesText?: string | null): Set<TimeSlot> {
+  const slots = new Set<TimeSlot>();
+  if (!servicesText || !servicesText.trim()) {
+    slots.add('9AM');
+    slots.add('12NN');
+    slots.add('3PM');
+    return slots;
+  }
+
+  const normalized = servicesText.toUpperCase();
+  if (normalized.includes('ALL')) {
+    slots.add('9AM');
+    slots.add('12NN');
+    slots.add('3PM');
+    return slots;
+  }
+
+  const tokens = normalized.split(/[,;/]+/).map((t) => t.trim().replace(/\s+/g, ''));
+  for (const token of tokens) {
+    if (token === '9AM' || token === '9:00AM' || token.startsWith('9AM')) {
+      slots.add('9AM');
+    }
+    if (
+      token === '12NN' ||
+      token === '12:00NN' ||
+      token === '12PM' ||
+      token === '12:00PM' ||
+      token.startsWith('12NN')
+    ) {
+      slots.add('12NN');
+    }
+    if (token === '3PM' || token === '3:00PM' || token.startsWith('3PM')) {
+      slots.add('3PM');
+    }
+  }
+
+  return slots;
 }
 
 export function getMonthWeekRanges(year: number, monthIndex: number): WeekRange[] {
@@ -90,6 +137,7 @@ export function buildCalendarCells(year: number, monthIndex: number): CalendarCe
     cells.push({
       dayNumber: i,
       monthDayKey: toMonthDayKey(monthIndex + 1, i),
+      isoDate: toIsoDateKey(year, monthIndex + 1, i),
       isCurrentMonth: true,
       isSunday,
       sundayKey,
@@ -136,6 +184,7 @@ export function buildMobileWeekCells(
       return {
         date,
         monthDayKey,
+        isoDate: toIsoDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate()),
         scheduleEntries,
         milestoneEntries,
         isSunday,
@@ -148,22 +197,33 @@ export function buildMobileWeekCells(
  * Checks if a member is excused for a given date key.
  * Supports matching against both users.id (UUID) and users.member_id (e.g. "WC-001"),
  * with case-insensitive and whitespace-tolerant matching.
+ *
+ * If `serviceSlot` is provided, verifies if the member is excused for that specific slot.
+ * If `serviceSlot` is omitted, returns true if the member is excused for ANY slot on that date (for calendar day views).
  */
 export function isMemberExcused(
-  excusedMap: Map<string, Set<string>> | undefined,
-  monthDayKey: string | null | undefined,
+  excusedMap: ExcusedMemberMap | undefined,
+  dateKey: string | null | undefined,
   member: { id?: string | null; member_id?: string | null },
+  serviceSlot?: TimeSlot,
 ): boolean {
-  if (!excusedMap || !monthDayKey) return false;
-  const set = excusedMap.get(monthDayKey);
-  if (!set) return false;
+  if (!excusedMap || !dateKey) return false;
+  const memberMap = excusedMap.get(dateKey);
+  if (!memberMap) return false;
 
+  let memberSlots: Set<TimeSlot> | undefined;
   if (member.id) {
-    if (set.has(member.id) || set.has(member.id.toLowerCase())) return true;
+    memberSlots = memberMap.get(member.id.toLowerCase());
   }
-  if (member.member_id) {
-    const trimmed = member.member_id.trim();
-    if (set.has(trimmed) || set.has(trimmed.toLowerCase())) return true;
+  if (!memberSlots && member.member_id) {
+    memberSlots = memberMap.get(member.member_id.trim().toLowerCase());
   }
-  return false;
+
+  if (!memberSlots || memberSlots.size === 0) return false;
+
+  if (serviceSlot) {
+    return memberSlots.has(serviceSlot);
+  }
+
+  return true;
 }
