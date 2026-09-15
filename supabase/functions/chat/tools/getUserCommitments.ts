@@ -1,6 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
+import { getSundaysForTimeframe } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetUserCommitmentsTool({ client, requestId }: ToolContext) {
@@ -29,11 +30,16 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
       });
 
       // Start the query on users
-      let query = client.from('users').select(`
+      let query = client
+        .from('users')
+        .select(
+          `
           role,
           metadata,
           user_tokens ( token )
-        `);
+        `,
+        )
+        .eq('is_active', true);
 
       if (role) {
         // Assume role might be stored in the top-level 'role' column or inside metadata.
@@ -50,35 +56,11 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         return { error: error.message };
       }
 
-      const now = new Date();
-      const monthOffset = timeframe === 'next_month' ? 1 : 0;
-      const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-      const targetYear = targetMonth.getFullYear();
-      const targetMonthIndex = targetMonth.getMonth();
-
-      const sundayKeyForDate = (date: Date) => {
-        const occurrence = Math.ceil(date.getDate() / 7);
-        return `${['first', 'second', 'third', 'fourth', 'fifth'][occurrence - 1]}_sunday`;
-      };
-
-      const targetSundays: Date[] = [];
-      if (timeframe === 'coming_sunday') {
-        const comingSunday = new Date(now);
-        const daysUntilSunday = (7 - comingSunday.getDay()) % 7;
-        comingSunday.setDate(comingSunday.getDate() + daysUntilSunday);
-        targetSundays.push(comingSunday);
-      } else {
-        const daysInMonth = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
-        for (let day = 1; day <= daysInMonth; day += 1) {
-          const date = new Date(targetYear, targetMonthIndex, day);
-          if (date.getDay() === 0) targetSundays.push(date);
-        }
-      }
+      const targetSundays = getSundaysForTimeframe(timeframe);
+      const targetSundayDates = targetSundays.map(({ date }) => date);
 
       const targetSundayKeys = new Set(
-        sunday_availability
-          ? [sunday_availability]
-          : targetSundays.map((date) => sundayKeyForDate(date)),
+        sunday_availability ? [sunday_availability] : targetSundays.map(({ key }) => key),
       );
 
       const serviceSlots = ['9AM', '12NN', '3PM'] as const;
@@ -145,8 +127,8 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         );
 
       const buildSundayBreakdown = (users: typeof committedUsers) =>
-        targetSundays.map((date) => {
-          const sundayKey = sunday_availability ?? sundayKeyForDate(date);
+        targetSundayDates.map((date, index) => {
+          const sundayKey = sunday_availability ?? targetSundays[index].key;
           const sundayUsers = users.filter((user) =>
             getUsersForSundayKey(sundayKey).some((matchingUser) => matchingUser === user),
           );
@@ -205,7 +187,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         service_breakdown: serviceBreakdown,
         sunday_breakdown: sundayBreakdown,
         role_breakdown: roleBreakdown,
-        sundays: targetSundays.map((date) => date.toISOString().slice(0, 10)),
+        sundays: targetSundayDates.map((date) => date.toISOString().slice(0, 10)),
         hub_calendar_url: '/admin/hub-calendar',
       };
     },

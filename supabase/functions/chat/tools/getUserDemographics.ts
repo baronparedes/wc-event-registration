@@ -21,7 +21,8 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
 
       let query = client
         .from('users')
-        .select('role, date_of_birth, metadata, user_tokens ( token )');
+        .select('role, date_of_birth, metadata, user_tokens ( token )')
+        .eq('is_active', true);
       if (role) query = query.ilike('role', `%${role}%`);
 
       const { data, error } = await query;

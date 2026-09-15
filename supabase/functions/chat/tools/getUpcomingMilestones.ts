@@ -1,6 +1,11 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
+import {
+  describeMilestoneTimeframe,
+  isMonthDayInTimeframe,
+  normalizeMilestoneTimeframe,
+} from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 type Milestone = 'birthday' | 'wedding_anniversary';
@@ -8,29 +13,44 @@ type Milestone = 'birthday' | 'wedding_anniversary';
 export function createGetUpcomingMilestonesTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     timeframe: z
-      .enum(['this_week', 'this_month', 'next_month', 'today'])
+      .string()
+      .trim()
+      .min(1)
       .default('this_month')
-      .describe('The timeframe to find upcoming birthdays and wedding anniversaries.'),
+      .describe(
+        'A timeframe phrase such as today, upcoming, this week, next week, last week, last 2 weeks, this month, next month, or last month.',
+      ),
   });
 
   return tool({
     description:
       'Retrieve birthdays and wedding anniversaries as separate counts with user tokens within the specified timeframe. This tool NEVER returns PII like names or emails.',
     parameters: schema,
-    execute: async ({ timeframe }) => {
-      console.log('[chat:tool:getUpcomingMilestones] Executing', { timeframe, requestId });
-
+    execute: async ({ timeframe: requestedTimeframe }) => {
       const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentDay = now.getDate();
+      const timeframe = normalizeMilestoneTimeframe(requestedTimeframe, now);
+      console.log('[chat:tool:getUpcomingMilestones] Executing', {
+        requestedTimeframe,
+        timeframe,
+        requestId,
+      });
 
-      const { data, error } = await client.from('users').select(
-        `
+      if (!timeframe) {
+        return { error: `Unsupported timeframe: ${requestedTimeframe}` };
+      }
+
+      const timeframeDetails = describeMilestoneTimeframe(requestedTimeframe, timeframe, now);
+
+      const { data, error } = await client
+        .from('users')
+        .select(
+          `
           date_of_birth,
           metadata,
           user_tokens ( token )
         `,
-      );
+        )
+        .eq('is_active', true);
 
       if (error) {
         console.error('[chat:tool:getUpcomingMilestones] Query error', error);
@@ -70,26 +90,6 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
         return parseMonthDay(values.wedanniv_date);
       };
 
-      const isInTimeframe = (month: number, day: number) => {
-        if (timeframe === 'today') return month === currentMonth && day === currentDay;
-        if (timeframe === 'this_month') return month === currentMonth;
-
-        const candidate = new Date(now);
-        candidate.setHours(12, 0, 0, 0);
-
-        if (timeframe === 'next_month') {
-          candidate.setDate(1);
-          candidate.setMonth(candidate.getMonth() + 1);
-          return month === candidate.getMonth() + 1;
-        }
-
-        for (let offset = 0; offset <= 7; offset += 1) {
-          if (month === candidate.getMonth() + 1 && day === candidate.getDate()) return true;
-          candidate.setDate(candidate.getDate() + 1);
-        }
-        return false;
-      };
-
       const results = {
         birthdays: { count: 0, tokens: [] as string[] },
         wedding_anniversaries: { count: 0, tokens: [] as string[] },
@@ -109,7 +109,7 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
         ];
 
         for (const [type, date] of milestones) {
-          if (!date || !isInTimeframe(date.month, date.day)) continue;
+          if (!date || !isMonthDayInTimeframe(date.month, date.day, timeframe, now)) continue;
           const result = results[type === 'birthday' ? 'birthdays' : 'wedding_anniversaries'];
           result.count += 1;
           if (token) result.tokens.push(token);
@@ -126,6 +126,7 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
       });
 
       return {
+        timeframe: timeframeDetails,
         ...results,
         total_count: results.birthdays.count + results.wedding_anniversaries.count,
       };
