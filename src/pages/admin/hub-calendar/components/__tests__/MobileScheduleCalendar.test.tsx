@@ -109,6 +109,7 @@ describe('MobileScheduleCalendar', () => {
         mobileWeekCells={mobileWeekCells}
         currentWeekNumber={1}
         weekOptions={weekOptions}
+        excusedMap={new Map()}
         onSelectWeek={onSelectWeek}
         onSelectDay={onSelectDay}
       />,

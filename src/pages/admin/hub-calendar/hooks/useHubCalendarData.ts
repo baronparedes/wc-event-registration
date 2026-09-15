@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { useAdminHubCalendarExcusedMembers } from '@/hooks/domain/hub-calendar';
 import { type MemberScheduleEntry, type TimeSlot } from '@/hooks/domain/members';
 import {
   type MilestoneEntry,
@@ -19,6 +20,30 @@ export function useHubCalendarData(
   viewMonthIndex: number,
   selectedDayNumber: number,
 ) {
+  const { data: excusedMembersArray = [] } = useAdminHubCalendarExcusedMembers(
+    viewYear,
+    viewMonthIndex,
+  );
+
+  const excusedMap = useMemo(() => {
+    const map = new Map<string, Set<string>>(); // monthDayKey -> Set of memberIds
+    for (const record of excusedMembersArray) {
+      // requestDate is in YYYY-MM-DD format
+      const parts = record.requestDate.split('-');
+      if (parts.length >= 3) {
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        const key = toMonthDayKey(month, day);
+
+        if (!map.has(key)) {
+          map.set(key, new Set());
+        }
+        map.get(key)!.add(record.memberId);
+      }
+    }
+    return map;
+  }, [excusedMembersArray]);
+
   const calendarCells = useMemo(() => {
     return buildCalendarCells(viewYear, viewMonthIndex);
   }, [viewYear, viewMonthIndex]);
@@ -79,7 +104,7 @@ export function useHubCalendarData(
 
   const selectedEntries = useMemo(
     () => scheduleMap.get(selectedMonthDayKey) ?? [],
-    [scheduleMap, selectedMonthDayKey],
+    [scheduleMap, excusedMap, selectedMonthDayKey],
   );
   const selectedMilestones = useMemo(
     () => milestoneMap.get(selectedMonthDayKey) ?? [],
@@ -138,6 +163,7 @@ export function useHubCalendarData(
   return {
     calendarCells,
     scheduleMap,
+    excusedMap,
     milestoneEntries,
     milestoneMap,
     currentMonthMilestoneEntries,

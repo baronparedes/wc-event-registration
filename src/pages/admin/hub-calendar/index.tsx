@@ -53,6 +53,7 @@ export function AdminHubCalendarPage() {
   const {
     calendarCells,
     scheduleMap,
+    excusedMap,
     milestoneMap,
     currentMonthMilestoneEntries,
     birthdayCount,
@@ -145,6 +146,7 @@ export function AdminHubCalendarPage() {
                   mobileWeekCells={mobileWeekCells}
                   currentWeekNumber={currentWeekNumber}
                   weekOptions={weekOptions}
+                  excusedMap={excusedMap}
                   onSelectWeek={(week) => handleSelectWeek(week, monthWeeks)}
                   onSelectDay={handleSelectDay}
                 />
@@ -152,6 +154,7 @@ export function AdminHubCalendarPage() {
                 <DesktopScheduleCalendar
                   calendarCells={calendarCells}
                   scheduleMap={scheduleMap}
+                  excusedMap={excusedMap}
                   milestoneMap={milestoneMap}
                   selectedDayNumber={selectedDayNumber}
                   onSelectDay={handleSelectDay}
@@ -169,6 +172,7 @@ export function AdminHubCalendarPage() {
             selectedMilestones={selectedMilestones}
             selectedEntries={selectedEntries}
             entriesByTimeSlot={entriesByTimeSlot}
+            excusedMap={excusedMap}
             isCurrentSelectedSunday={isCurrentSelectedSunday}
             activeTab={activeTab}
             selectedRole={selectedRole}

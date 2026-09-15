@@ -1,11 +1,13 @@
 import { CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { Avatar, Badge, EmptyState, SectionCard } from '@/components/ui';
+import { Badge, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { MilestoneEntry } from '@/lib/domain/hub-calendar';
+import { toMonthDayKey } from '@/lib/domain/hub-calendar';
 
+import { ExcusedAvatar } from './ExcusedAvatar';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
@@ -34,6 +36,7 @@ type SelectedDateDetailsProps = {
   selectedEntries: MemberScheduleEntry[];
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   isCurrentSelectedSunday: boolean;
+  excusedMap?: Map<string, Set<string>>;
   activeTab: TimeSlot;
   selectedRole: string | null;
   onTabChange: (slot: TimeSlot) => void;
@@ -48,6 +51,7 @@ export function SelectedDateDetails({
   selectedEntries,
   entriesByTimeSlot,
   isCurrentSelectedSunday,
+  excusedMap,
   activeTab,
   selectedRole,
   onTabChange,
@@ -116,11 +120,16 @@ export function SelectedDateDetails({
                 }
                 className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center"
               >
-                <Avatar
+                <ExcusedAvatar
                   size="md"
                   name={entry.member.full_name}
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
+                  isExcused={
+                    excusedMap
+                      ?.get(toMonthDayKey(viewMonthIndex + 1, selectedDayNumber))
+                      ?.has(entry.member.id) ?? false
+                  }
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>
