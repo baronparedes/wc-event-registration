@@ -113,6 +113,8 @@ describe('LoginPage', () => {
   it('submits admin credentials and navigates on success', async () => {
     renderWithRouter(<LoginPage />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with email/password' }));
+
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
     });
@@ -143,6 +145,8 @@ describe('LoginPage', () => {
     });
 
     renderWithRouter(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with email/password' }));
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -199,6 +203,8 @@ describe('LoginPage', () => {
 
     renderWithRouter(<LoginPage />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with email/password' }));
+
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
     });
@@ -216,6 +222,8 @@ describe('LoginPage', () => {
     mockLoginMutateAsync.mockRejectedValueOnce('bad response');
 
     renderWithRouter(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with email/password' }));
 
     fireEvent.change(screen.getByLabelText('Email Address *'), {
       target: { value: 'admin@example.com' },
@@ -237,6 +245,8 @@ describe('LoginPage', () => {
     });
 
     renderWithRouter(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with email/password' }));
 
     expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled();
   });
