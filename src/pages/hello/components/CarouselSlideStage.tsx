@@ -111,7 +111,7 @@ export function CarouselSlideStage({
         variant="ghost"
         onClick={() => onPaginate(-1)}
         aria-label="Previous slide"
-        className={`group absolute top-1/2 z-50 -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80 hover:text-white active:scale-95 ${
+        className={`group absolute top-1/2 z-[100] -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl border-transparent bg-transparent text-white transition-all hover:scale-110 hover:bg-transparent hover:text-white active:scale-95 shadow-none ${
           isFullscreen ? '' : 'left-3 sm:left-6'
         }`}
         style={{
@@ -126,7 +126,7 @@ export function CarouselSlideStage({
         variant="ghost"
         onClick={() => onPaginate(1)}
         aria-label="Next slide"
-        className={`group absolute top-1/2 z-50 -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80 hover:text-white active:scale-95 ${
+        className={`group absolute top-1/2 z-[100] -translate-y-1/2 !h-12 !w-12 !min-h-12 !min-w-12 !p-0 !rounded-2xl border-transparent bg-transparent text-white transition-all hover:scale-110 hover:bg-transparent hover:text-white active:scale-95 shadow-none ${
           isFullscreen ? '' : 'right-3 sm:right-6'
         }`}
         style={{
