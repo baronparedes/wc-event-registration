@@ -79,9 +79,8 @@ export function useFullscreen() {
       }
     } catch {
       // Ignore errors when exiting fullscreen
-    } finally {
-      setIsFullscreen(false);
     }
+    setIsFullscreen(false);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {

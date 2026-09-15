@@ -292,9 +292,12 @@ export function useQueuedCheckInAttendeeMutation(
           break;
         }
       }
-    } finally {
       isDrainingRef.current = false;
       setIsDraining(false);
+    } catch (error) {
+      isDrainingRef.current = false;
+      setIsDraining(false);
+      throw error;
     }
   }, [eventId, queryClient, refreshCache, updateAttendee]);
 

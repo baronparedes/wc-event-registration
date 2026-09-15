@@ -138,9 +138,8 @@ export function AdminChatPage() {
           msg.id === assistantMessageId ? { ...msg, content: fallbackContent } : msg,
         ),
       );
-    } finally {
-      isSubmittingRef.current = false;
     }
+    isSubmittingRef.current = false;
   };
 
   return (

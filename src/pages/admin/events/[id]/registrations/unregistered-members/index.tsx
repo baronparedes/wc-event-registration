@@ -25,6 +25,20 @@ import {
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
+function downloadCsv(text: string, filename: string) {
+  const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = filename;
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function AdminUnregisteredMembersPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
@@ -105,21 +119,15 @@ export function AdminUnregisteredMembersPage() {
       return;
     }
 
+    const fallbackFilename = `event-${eventId}-unregistered-members.csv`;
     try {
       const { text, filename } = await exportMutation.mutateAsync();
-      const blob = new Blob([text], { type: 'text/csv; charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-
-      link.href = url;
-      link.download = filename ?? `event-${eventId}-unregistered-members.csv`;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      downloadCsv(text, filename || fallbackFilename);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to export CSV.';
+      let message = 'Failed to export CSV.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
     }
   }

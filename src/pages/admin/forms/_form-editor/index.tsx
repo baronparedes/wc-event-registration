@@ -64,31 +64,36 @@ export function FormEditorPage() {
   }, [existingForm, reset]);
 
   const onSubmit: SubmitHandler<AdminFormInput> = async (data) => {
+    let form: Awaited<ReturnType<typeof saveFormMutation.mutateAsync>> | undefined;
     try {
-      const form = await saveFormMutation.mutateAsync({ id, data });
-      if (form?.id) {
-        navigate(toRoute('adminFormFields', { id: form.id }));
-      } else {
-        navigate(ROUTE_PATHS.adminForms);
-      }
+      form = await saveFormMutation.mutateAsync({ id, data });
     } catch (err) {
       console.error('Failed to save form:', err);
+      return;
+    }
+
+    if (form && form.id) {
+      navigate(toRoute('adminFormFields', { id: form.id }));
+    } else {
+      navigate(ROUTE_PATHS.adminForms);
     }
   };
 
   async function handleUpdateStatus(newStatus: 'published' | 'draft' | 'archived') {
     if (!existingForm || !id) return;
+    const description = existingForm.description ?? '';
+    const metadata = existingForm.metadata ?? {};
     try {
       await saveFormMutation.mutateAsync({
         id,
         data: {
           title: existingForm.title,
           slug: existingForm.slug,
-          description: existingForm.description ?? '',
+          description,
           status: newStatus,
           duplicate_policy: existingForm.duplicate_policy,
           audience: existingForm.audience,
-          metadata: existingForm.metadata ?? {},
+          metadata,
         },
       });
       toast.success(`Form marked as ${newStatus}`);

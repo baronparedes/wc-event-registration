@@ -172,31 +172,33 @@ export function AttendanceFieldEditPanel({
   }
 
   async function onSubmit(values: AttendanceFieldPanelValues) {
+    const visibilityRule = values.val_visibility_depends_on_field_key
+      ? {
+          depends_on_field_key: values.val_visibility_depends_on_field_key.trim(),
+          equals_value: values.val_visibility_equals_value ?? '',
+        }
+      : undefined;
+
+    const validationRules = {
+      ...(values.val_min_length !== undefined && { min_length: values.val_min_length }),
+      ...(values.val_max_length !== undefined && { max_length: values.val_max_length }),
+      ...(values.val_pattern && { pattern: values.val_pattern }),
+      ...(values.val_min !== undefined && { min: values.val_min }),
+      ...(values.val_max !== undefined && { max: values.val_max }),
+      ...(values.val_min_selections !== undefined && {
+        min_selections: values.val_min_selections,
+      }),
+      ...(values.val_max_selections !== undefined && {
+        max_selections: values.val_max_selections,
+      }),
+      ...(values.val_min_date && { min_date: values.val_min_date }),
+      ...(values.val_max_date && { max_date: values.val_max_date }),
+      ...(visibilityRule && { visibility_rule: visibilityRule }),
+    };
+
+    const options = showOptions ? values.options : [];
+
     try {
-      const visibilityRule = values.val_visibility_depends_on_field_key
-        ? {
-            depends_on_field_key: values.val_visibility_depends_on_field_key.trim(),
-            equals_value: values.val_visibility_equals_value ?? '',
-          }
-        : undefined;
-
-      const validationRules = {
-        ...(values.val_min_length !== undefined && { min_length: values.val_min_length }),
-        ...(values.val_max_length !== undefined && { max_length: values.val_max_length }),
-        ...(values.val_pattern && { pattern: values.val_pattern }),
-        ...(values.val_min !== undefined && { min: values.val_min }),
-        ...(values.val_max !== undefined && { max: values.val_max }),
-        ...(values.val_min_selections !== undefined && {
-          min_selections: values.val_min_selections,
-        }),
-        ...(values.val_max_selections !== undefined && {
-          max_selections: values.val_max_selections,
-        }),
-        ...(values.val_min_date && { min_date: values.val_min_date }),
-        ...(values.val_max_date && { max_date: values.val_max_date }),
-        ...(visibilityRule && { visibility_rule: visibilityRule }),
-      };
-
       if (isEditing) {
         await updateMutation.mutateAsync({
           id: field.id,
@@ -204,7 +206,7 @@ export function AttendanceFieldEditPanel({
           label: values.label,
           is_required: values.is_required,
           is_active: values.is_active,
-          options: showOptions ? values.options : [],
+          options,
           validation_rules: validationRules,
         });
         toast.success('Attendance field updated.');
@@ -216,17 +218,17 @@ export function AttendanceFieldEditPanel({
           field_type: values.field_type,
           is_required: values.is_required,
           display_order: 0,
-          options: showOptions ? values.options : [],
+          options,
           validation_rules: validationRules,
         });
         toast.success('Attendance field added.');
       }
       onClose();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Something went wrong. Please try again or contact support.';
+      let message = 'Something went wrong. Please try again or contact support.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
     }
   }

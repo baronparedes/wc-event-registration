@@ -146,11 +146,13 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
       }
       navigate(ROUTE_PATHS.adminEvents);
     } catch (error) {
-      const message = error instanceof Error ? error.message : TOAST_MESSAGES.eventSaved.saveFailed;
+      let message: string = TOAST_MESSAGES.eventSaved.saveFailed;
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
-    } finally {
-      cancelSave();
     }
+    cancelSave();
   }
 
   async function handlePublish(eventId: string, eventTitle: string) {

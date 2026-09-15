@@ -59,12 +59,13 @@ export function FormFieldsList({ fields, formId, formStatus, onEdit }: FormField
       await deleteMutation.mutateAsync(fieldId);
       toast.success(`"${fieldLabel}" removed.`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to remove field. Please try again.';
+      let message = 'Failed to remove field. Please try again.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
-    } finally {
-      setDeletingFieldId(null);
     }
+    setDeletingFieldId(null);
   }
 
   async function handleMove(index: number, direction: 'up' | 'down') {

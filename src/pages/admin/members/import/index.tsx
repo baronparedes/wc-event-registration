@@ -174,19 +174,23 @@ export function AdminMembersImportPage() {
       return;
     }
 
+    let result: Awaited<ReturnType<typeof bulkUpsertMutation.mutateAsync>>;
     try {
-      const result = await bulkUpsertMutation.mutateAsync({ rows: preparedRows });
-      if (!result.success) {
-        throw new Error(result.error ?? 'Import failed.');
-      }
-
-      toast.success(
-        `Import complete. ${result.inserted_count} inserted, ${result.updated_count} updated.`,
-      );
-      navigate(ROUTE_PATHS.adminMembers);
+      result = await bulkUpsertMutation.mutateAsync({ rows: preparedRows });
     } catch (error) {
       setErrors(extractBulkImportErrors(error));
+      return;
     }
+
+    if (!result.success) {
+      setErrors(extractBulkImportErrors(new Error(result.error || 'Import failed.')));
+      return;
+    }
+
+    toast.success(
+      `Import complete. ${result.inserted_count} inserted, ${result.updated_count} updated.`,
+    );
+    navigate(ROUTE_PATHS.adminMembers);
   }
 
   return (

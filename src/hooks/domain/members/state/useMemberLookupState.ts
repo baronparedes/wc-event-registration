@@ -105,77 +105,19 @@ export function useMemberLookupState(
       // Clear previous state
       clearMember();
 
+      const trimmedEventSlug = eventSlug ? eventSlug.trim() : undefined;
+      const trimmedFormSlug = formSlug ? formSlug.trim() : undefined;
+
+      let result: Awaited<ReturnType<typeof runLookupMutation>>;
       try {
         logger.info('Member lookup attempt:', { memberId: values.memberId, name: values.name });
 
-        const result = await runLookupMutation({
+        result = await runLookupMutation({
           memberId: values.memberId,
           name: values.name,
-          eventSlug: eventSlug ? eventSlug.trim() : undefined,
-          formSlug: formSlug ? formSlug.trim() : undefined,
+          eventSlug: trimmedEventSlug,
+          formSlug: trimmedFormSlug,
         });
-
-        if (!result.profile) {
-          setMatchedMember(null);
-          setVerifiedMemberCredential(null);
-          resetLookupForm();
-          logger.warn('Member lookup returned null');
-          return {
-            success: false,
-            error: `We could not verify that entry. Please contact your administrator for support.`,
-            reason: 'not_found',
-          };
-        }
-
-        const existingRecord = formSlug ? result.existing_submission : result.existing_registration;
-
-        if (existingRecord?.exists && !existingRecord.edit_allowed) {
-          setMatchedMember(result.profile);
-          setVerifiedMemberCredential(null);
-          setIsRegistrationBlocked(true);
-          setIsUpdateMode(false);
-          setPrefillResponses(null);
-          setLockedStepMessage(
-            formSlug
-              ? 'Already submitted this form. Verify another member.'
-              : 'Already registered for this event. Verify another member.',
-          );
-          setMemberIdHighlight(true);
-          resetLookupForm();
-          logger.info('Duplicate blocked during lookup');
-          return {
-            success: false,
-            error: formSlug
-              ? 'You have already submitted this form.'
-              : 'You are already registered for this event.',
-            reason: 'already_registered',
-          };
-        }
-
-        if (!result.profile.member_token) {
-          setMatchedMember(null);
-          setVerifiedMemberCredential(null);
-          logger.error('Member lookup profile is missing member_token');
-          return {
-            success: false,
-            error: 'Lookup is unavailable right now. Please try again in a moment.',
-            reason: 'lookup_unavailable',
-          };
-        }
-
-        // Successful lookup - member found and eligible
-        setMatchedMember(result.profile);
-        setVerifiedMemberCredential(result.profile.member_token);
-        setIsRegistrationBlocked(false);
-        setIsUpdateMode(Boolean(existingRecord?.edit_allowed));
-        setPrefillResponses(existingRecord?.responses ?? null);
-        setMemberIdHighlight(Boolean(existingRecord?.edit_allowed));
-
-        logger.info('Member lookup successful:', result.profile);
-        return {
-          success: true,
-          mode: existingRecord?.edit_allowed ? 'update_registration' : 'new_registration',
-        };
       } catch (error) {
         setMatchedMember(null);
         setVerifiedMemberCredential(null);
@@ -187,6 +129,68 @@ export function useMemberLookupState(
           reason: 'lookup_unavailable',
         };
       }
+
+      if (!result.profile) {
+        setMatchedMember(null);
+        setVerifiedMemberCredential(null);
+        resetLookupForm();
+        logger.warn('Member lookup returned null');
+        return {
+          success: false,
+          error: `We could not verify that entry. Please contact your administrator for support.`,
+          reason: 'not_found',
+        };
+      }
+
+      const existingRecord = formSlug ? result.existing_submission : result.existing_registration;
+
+      if (existingRecord?.exists && !existingRecord.edit_allowed) {
+        setMatchedMember(result.profile);
+        setVerifiedMemberCredential(null);
+        setIsRegistrationBlocked(true);
+        setIsUpdateMode(false);
+        setPrefillResponses(null);
+        setLockedStepMessage(
+          formSlug
+            ? 'Already submitted this form. Verify another member.'
+            : 'Already registered for this event. Verify another member.',
+        );
+        setMemberIdHighlight(true);
+        resetLookupForm();
+        logger.info('Duplicate blocked during lookup');
+        return {
+          success: false,
+          error: formSlug
+            ? 'You have already submitted this form.'
+            : 'You are already registered for this event.',
+          reason: 'already_registered',
+        };
+      }
+
+      if (!result.profile.member_token) {
+        setMatchedMember(null);
+        setVerifiedMemberCredential(null);
+        logger.error('Member lookup profile is missing member_token');
+        return {
+          success: false,
+          error: 'Lookup is unavailable right now. Please try again in a moment.',
+          reason: 'lookup_unavailable',
+        };
+      }
+
+      // Successful lookup - member found and eligible
+      setMatchedMember(result.profile);
+      setVerifiedMemberCredential(result.profile.member_token);
+      setIsRegistrationBlocked(false);
+      setIsUpdateMode(Boolean(existingRecord?.edit_allowed));
+      setPrefillResponses(existingRecord?.responses ?? null);
+      setMemberIdHighlight(Boolean(existingRecord?.edit_allowed));
+
+      logger.info('Member lookup successful:', result.profile);
+      return {
+        success: true,
+        mode: existingRecord?.edit_allowed ? 'update_registration' : 'new_registration',
+      };
     },
     [eventSlug, formSlug, clearMember, runLookupMutation, resetLookupForm],
   );

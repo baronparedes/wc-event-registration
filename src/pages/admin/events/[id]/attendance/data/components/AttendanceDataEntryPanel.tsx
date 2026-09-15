@@ -231,62 +231,66 @@ export function AttendanceDataEntryPanel({
   }
 
   async function onSubmit(values: AnswerFormValues) {
-    try {
-      const valuesByKeyAtSubmit = buildFormValuesByKey(fields, values);
-      const visibleFieldsAtSubmit = fields.filter((field) =>
-        isFieldVisible(field, fields, valuesByKeyAtSubmit),
-      );
+    const valuesByKeyAtSubmit = buildFormValuesByKey(fields, values);
+    const visibleFieldsAtSubmit = fields.filter((field) =>
+      isFieldVisible(field, fields, valuesByKeyAtSubmit),
+    );
 
-      const missingRequiredMultiSelectFields = visibleFieldsAtSubmit.filter((field) => {
-        if (!(field.field_type === 'multi_select' && field.is_required)) {
-          return false;
-        }
-
-        const rawValue = values[field.id];
-        if (!Array.isArray(rawValue)) {
-          return true;
-        }
-
-        return rawValue.filter((value) => value.trim().length > 0).length === 0;
-      });
-
-      if (missingRequiredMultiSelectFields.length > 0) {
-        const nextErrors: Record<string, true> = {};
-        for (const field of missingRequiredMultiSelectFields) {
-          nextErrors[field.id] = true;
-        }
-
-        setRequiredMultiSelectErrors(nextErrors);
-        toast.error('Select at least one option for all required multi-select fields.');
-        return;
+    const missingRequiredMultiSelectFields = visibleFieldsAtSubmit.filter((field) => {
+      if (!(field.field_type === 'multi_select' && field.is_required)) {
+        return false;
       }
 
-      setRequiredMultiSelectErrors({});
+      const rawValue = values[field.id];
+      if (!Array.isArray(rawValue)) {
+        return true;
+      }
 
-      const answers = buildMutationAnswers(fields, visibleFieldsAtSubmit, values);
+      return rawValue.filter((value) => value.trim().length > 0).length === 0;
+    });
 
+    if (missingRequiredMultiSelectFields.length > 0) {
+      const nextErrors: Record<string, true> = {};
+      for (const field of missingRequiredMultiSelectFields) {
+        nextErrors[field.id] = true;
+      }
+
+      setRequiredMultiSelectErrors(nextErrors);
+      toast.error('Select at least one option for all required multi-select fields.');
+      return;
+    }
+
+    setRequiredMultiSelectErrors({});
+
+    const answers = buildMutationAnswers(fields, visibleFieldsAtSubmit, values);
+    const registrationId = registrant.registration_id ?? undefined;
+    const publicRegistrationId = registrant.public_registration_id ?? undefined;
+
+    try {
       await upsertMutation.mutateAsync({
         event_id: eventId,
         attendee_kind: registrant.attendee_kind,
-        registration_id: registrant.registration_id ?? undefined,
-        public_registration_id: registrant.public_registration_id ?? undefined,
+        registration_id: registrationId,
+        public_registration_id: publicRegistrationId,
         answers,
       });
 
-      onSaveSuccess?.({
-        attendeeKind: registrant.attendee_kind,
-        registrationId: registrant.registration_id,
-        publicRegistrationId: registrant.public_registration_id,
-        attendanceAnswers: buildAttendanceAnswerSummaries(fields, answers),
-      });
+      if (onSaveSuccess) {
+        onSaveSuccess({
+          attendeeKind: registrant.attendee_kind,
+          registrationId: registrant.registration_id,
+          publicRegistrationId: registrant.public_registration_id,
+          attendanceAnswers: buildAttendanceAnswerSummaries(fields, answers),
+        });
+      }
 
       toast.success(`Attendance data saved for ${registrant.full_name}.`);
       onClose();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to save attendance data. Please try again.';
+      let message = 'Failed to save attendance data. Please try again.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
     }
   }

@@ -273,52 +273,30 @@ export function useFormSubmissionPageState() {
         guestInfoToSubmit = guestInfo;
       }
 
+      const publicRegistrantInfoToSubmit = guestInfoToSubmit
+        ? {
+            first_name: guestInfoToSubmit.first_name,
+            last_name: guestInfoToSubmit.last_name,
+            email: guestInfoToSubmit.email,
+            phone: guestInfoToSubmit.phone,
+          }
+        : undefined;
+
+      let result: Awaited<ReturnType<typeof submitMutation.mutateAsync>>;
       try {
-        const result = await submitMutation.mutateAsync({
+        result = await submitMutation.mutateAsync({
           form_slug: slug,
           member_id: memberIdToSubmit,
-          public_registrant_info: guestInfoToSubmit
-            ? {
-                first_name: guestInfoToSubmit.first_name,
-                last_name: guestInfoToSubmit.last_name,
-                email: guestInfoToSubmit.email,
-                phone: guestInfoToSubmit.phone,
-              }
-            : undefined,
+          public_registrant_info: publicRegistrantInfoToSubmit,
           responses: cleanedResponses,
           idempotency_key: idempotencyKey,
         });
-
-        if (!result.success) {
-          if (result.error_code === 'duplicate_blocked') {
-            setSubmitErrorMessage('You have already submitted this form.');
-            toast.error('You have already submitted this form.');
-          } else if (result.error_code === 'VALIDATION_FAILED' && Array.isArray(result.errors)) {
-            result.errors.forEach((err: { fieldKey: string; message: string }) => {
-              dynamicForm.setError(err.fieldKey, {
-                type: 'manual',
-                message: err.message,
-              });
-            });
-            setSubmitErrorMessage('Some answers need attention. Please review highlighted fields.');
-            toast.error('Some answers need attention. Please review highlighted fields.');
-          } else {
-            setSubmitErrorMessage(result.error || 'Failed to submit form.');
-            toast.error(result.error || 'Failed to submit form.');
-          }
-          return;
-        }
-
-        setSubmissionResult({
-          submission_id: result.submission_id,
-          status: result.status,
-        });
-        setIsSubmissionConfirmed(true);
-        setSubmitSuccessMessage(result.message);
-        toast.success(result.message || 'Form submitted successfully!');
       } catch (error) {
         logger.error('Form submission error:', error);
-        const message = error instanceof Error ? error.message : 'Failed to submit form.';
+        let message = 'Failed to submit form.';
+        if (error instanceof Error) {
+          message = error.message;
+        }
         if (message.includes('already submitted') || message.includes('duplicate_blocked')) {
           setSubmitErrorMessage('You have already submitted this form.');
           toast.error('You have already submitted this form.');
@@ -326,7 +304,37 @@ export function useFormSubmissionPageState() {
           setSubmitErrorMessage(message);
           toast.error(message);
         }
+        return;
       }
+
+      if (!result.success) {
+        if (result.error_code === 'duplicate_blocked') {
+          setSubmitErrorMessage('You have already submitted this form.');
+          toast.error('You have already submitted this form.');
+        } else if (result.error_code === 'VALIDATION_FAILED' && Array.isArray(result.errors)) {
+          result.errors.forEach((err: { fieldKey: string; message: string }) => {
+            dynamicForm.setError(err.fieldKey, {
+              type: 'manual',
+              message: err.message,
+            });
+          });
+          setSubmitErrorMessage('Some answers need attention. Please review highlighted fields.');
+          toast.error('Some answers need attention. Please review highlighted fields.');
+        } else {
+          const fallbackError = result.error || 'Failed to submit form.';
+          setSubmitErrorMessage(fallbackError);
+          toast.error(fallbackError);
+        }
+        return;
+      }
+
+      setSubmissionResult({
+        submission_id: result.submission_id,
+        status: result.status,
+      });
+      setIsSubmissionConfirmed(true);
+      setSubmitSuccessMessage(result.message);
+      toast.success(result.message || 'Form submitted successfully!');
     },
     [
       slug,

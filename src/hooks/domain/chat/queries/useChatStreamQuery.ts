@@ -26,12 +26,12 @@ export function useChatStreamQuery() {
       setError(null);
       try {
         await callChatStream(payload, onChunk);
+        setIsLoading(false);
       } catch (err) {
+        setIsLoading(false);
         const e = err instanceof Error ? err : new Error('An unknown error occurred');
         setError(e);
         throw e;
-      } finally {
-        setIsLoading(false);
       }
     },
     [],

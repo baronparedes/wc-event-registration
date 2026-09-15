@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/Button';
 import {
   type AttendeeViewConfig,
@@ -16,6 +18,19 @@ type ExportAttendanceViewButtonProps = {
   disabled?: boolean;
 };
 
+function downloadCsv(csvText: string, filename: string) {
+  const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function ExportAttendanceViewButton({
   eventId,
   attendanceEnabled,
@@ -31,8 +46,8 @@ export function ExportAttendanceViewButton({
       return;
     }
 
+    setIsExporting(true);
     try {
-      setIsExporting(true);
       const { csvText, filename } = buildAttendanceViewCsvExport({
         eventId,
         filteredAttendees,
@@ -40,23 +55,15 @@ export function ExportAttendanceViewButton({
         visibleFields,
       });
 
-      const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      downloadCsv(csvText, filename);
     } catch (error) {
-      const { toast } = await import('sonner');
-      const message = error instanceof Error ? error.message : 'Failed to export attendance CSV.';
+      let message = 'Failed to export attendance CSV.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error(message);
-    } finally {
-      setIsExporting(false);
     }
+    setIsExporting(false);
   };
 
   return (
