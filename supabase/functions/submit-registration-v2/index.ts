@@ -2,7 +2,6 @@ import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
 
-import { checkDuplicatePolicy } from './handlers/checkDuplicatePolicy.ts';
 import { insertRegistration } from './handlers/insertRegistration.ts';
 import { parseRequest } from './handlers/parseRequest.ts';
 import { persistAnswers } from './handlers/persistAnswers.ts';
@@ -69,25 +68,7 @@ Deno.serve(async (req) => {
       });
     const { registrationScopeKey, hasCompoundScope } = scopeResult.data;
 
-    // Step 4: Block-policy duplicate pre-check
-    const duplicateCheckResult = await checkDuplicatePolicy(
-      supabase,
-      event.duplicate_policy,
-      event.id,
-      user.id,
-    );
-    if (!duplicateCheckResult.ok)
-      return errorResponse(
-        corsHeaders,
-        duplicateCheckResult.httpStatus,
-        duplicateCheckResult.message,
-        undefined,
-        {
-          error_code: duplicateCheckResult.errorCode,
-        },
-      );
-
-    // Step 5: Optimistic insert with full conflict recovery
+    // Step 4: Optimistic insert with full conflict recovery
     const insertResult = await insertRegistration(supabase, {
       eventId: event.id,
       userId: user.id,

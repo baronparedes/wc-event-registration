@@ -14,10 +14,6 @@ export async function persistAnswers(
 ): Promise<HandlerResult<void>> {
   const { registrationId, responses, fields, isNew } = params;
 
-  if (!isNew) {
-    await supabase.from('registration_answers').delete().eq('registration_id', registrationId);
-  }
-
   const fieldIdMap = new Map(fields.map((f) => [f.field_key, f.id]));
 
   const answersToInsert = Object.entries(responses)
@@ -32,19 +28,19 @@ export async function persistAnswers(
     })
     .filter((a): a is NonNullable<typeof a> => a !== null);
 
-  if (answersToInsert.length > 0) {
-    const { error: answersError } = await supabase
-      .from('registration_answers')
-      .insert(answersToInsert);
+  const { error: answersError } = await supabase.rpc('persist_registration_answers', {
+    p_registration_id: registrationId,
+    p_answers: answersToInsert,
+    p_replace_existing: !isNew,
+  });
 
-    if (answersError) {
-      return {
-        ok: false,
-        errorCode: 'ANSWERS_INSERT_FAILED',
-        message: 'Failed to process registration',
-        httpStatus: 500,
-      };
-    }
+  if (answersError) {
+    return {
+      ok: false,
+      errorCode: 'ANSWERS_INSERT_FAILED',
+      message: 'Failed to process registration',
+      httpStatus: 500,
+    };
   }
 
   return { ok: true, data: undefined };

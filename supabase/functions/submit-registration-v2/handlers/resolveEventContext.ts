@@ -27,6 +27,17 @@ interface EventFieldRow {
   validation_rules: unknown;
 }
 
+interface RegistrationContextRow {
+  event_id: string | null;
+  duplicate_policy: string | null;
+  registration_mode: 'open' | 'closed' | null;
+  registration_opens_at: string | null;
+  registration_closes_at: string | null;
+  user_id: string | null;
+  user_role: string | null;
+  fields: unknown;
+}
+
 export interface EventContext {
   event: EventRow;
   user: UserRow;
@@ -39,19 +50,12 @@ export async function resolveEventContext(
   eventSlug: string,
   memberId: string,
 ): Promise<HandlerResult<EventContext>> {
-  const [eventResult, userResult] = await Promise.all([
-    supabase
-      .from('events')
-      .select(
-        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at',
-      )
-      .eq('slug', eventSlug)
-      .eq('status', 'published')
-      .maybeSingle(),
-    supabase.from('users').select('id, role').eq('member_id', memberId).maybeSingle<UserRow>(),
-  ]);
+  const { data: contextData, error: contextError } = await supabase.rpc(
+    'get_registration_submission_context',
+    { p_event_slug: eventSlug, p_member_id: memberId },
+  );
 
-  if (eventResult.error) {
+  if (contextError) {
     return {
       ok: false,
       errorCode: 'EVENT_LOOKUP_FAILED',
@@ -60,11 +64,23 @@ export async function resolveEventContext(
     };
   }
 
-  if (!eventResult.data) {
+  const context = (
+    Array.isArray(contextData) ? contextData[0] : null
+  ) as RegistrationContextRow | null;
+
+  if (!context?.event_id) {
     return { ok: false, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found', httpStatus: 200 };
   }
 
-  if (!isRegistrationOpenNow(eventResult.data as EventRow)) {
+  const event: EventRow = {
+    id: context.event_id,
+    duplicate_policy: context.duplicate_policy ?? 'block',
+    registration_mode: context.registration_mode ?? 'closed',
+    registration_opens_at: context.registration_opens_at,
+    registration_closes_at: context.registration_closes_at,
+  };
+
+  if (!isRegistrationOpenNow(event)) {
     return {
       ok: false,
       errorCode: 'REGISTRATION_CLOSED',
@@ -73,16 +89,7 @@ export async function resolveEventContext(
     };
   }
 
-  if (userResult.error) {
-    return {
-      ok: false,
-      errorCode: 'USER_LOOKUP_FAILED',
-      message: 'Failed to process registration',
-      httpStatus: 500,
-    };
-  }
-
-  if (!userResult.data) {
+  if (!context.user_id) {
     return {
       ok: false,
       errorCode: 'MEMBER_NOT_FOUND',
@@ -91,43 +98,28 @@ export async function resolveEventContext(
     };
   }
 
-  const { data: eventFieldsData, error: fieldsError } = await supabase
-    .from('event_fields')
-    .select(
-      'id, field_key, label, field_type, applicability, is_required, options, validation_rules',
-    )
-    .eq('event_id', eventResult.data.id)
-    .eq('is_active', true)
-    .in('applicability', ['members', 'both']);
-
-  if (fieldsError) {
-    return {
-      ok: false,
-      errorCode: 'FIELDS_LOOKUP_FAILED',
-      message: 'Failed to process registration',
-      httpStatus: 500,
-    };
-  }
-
-  const fields: EventFieldWithValidation[] = (eventFieldsData ?? []).map(
-    (field: EventFieldRow) => ({
-      id: field.id,
-      field_key: field.field_key,
-      label: field.label,
-      field_type: field.field_type,
-      is_required: field.is_required,
-      options: Array.isArray(field.options) ? field.options : [],
-      validation_rules: (field.validation_rules ?? {}) as Record<string, unknown>,
-    }),
-  );
+  const user: UserRow = {
+    id: context.user_id,
+    role: context.user_role ?? '',
+  };
+  const eventFieldsData = Array.isArray(context.fields) ? (context.fields as EventFieldRow[]) : [];
+  const fields: EventFieldWithValidation[] = eventFieldsData.map((field: EventFieldRow) => ({
+    id: field.id,
+    field_key: field.field_key,
+    label: field.label,
+    field_type: field.field_type,
+    is_required: field.is_required,
+    options: Array.isArray(field.options) ? field.options : [],
+    validation_rules: (field.validation_rules ?? {}) as Record<string, unknown>,
+  }));
 
   return {
     ok: true,
     data: {
-      event: eventResult.data as EventRow,
-      user: userResult.data,
+      event,
+      user,
       fields,
-      primaryRole: normalizePrimaryRoleValue(userResult.data.role),
+      primaryRole: normalizePrimaryRoleValue(user.role),
     },
   };
 }

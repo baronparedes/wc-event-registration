@@ -3,6 +3,12 @@ import { z } from 'npm:zod';
 
 import type { ToolContext } from './types.ts';
 
+interface EventRegistrationCountsRow {
+  event_id: string;
+  member_count: number | string;
+  public_count: number | string;
+}
+
 export function createGetEventsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     status: z
@@ -110,38 +116,43 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
         return { error: error.message };
       }
 
-      // Concurrently fetch registration counts (both member and public) for each event
-      const eventCounts = await Promise.all(
-        (data ?? []).map(async (event) => {
-          try {
-            const [memberRes, publicRes] = await Promise.all([
-              client.rpc('get_event_registration_count', { p_event_id: event.id }),
-              client.rpc('get_public_event_registration_count', { p_event_id: event.id }),
-            ]);
+      let eventCounts: Array<{
+        id: string;
+        member_registrations: number;
+        public_registrations: number;
+      }>;
 
-            const memberCount =
-              typeof memberRes.data === 'number' ? memberRes.data : Number(memberRes.data ?? 0);
-            const publicCount =
-              typeof publicRes.data === 'number' ? publicRes.data : Number(publicRes.data ?? 0);
+      try {
+        const { data: countData, error: countError } = await client.rpc(
+          'get_event_registration_counts',
+          { p_event_ids: (data ?? []).map((event) => event.id) },
+        );
 
-            return {
-              id: event.id,
-              member_registrations: Number.isFinite(memberCount) ? memberCount : 0,
-              public_registrations: Number.isFinite(publicCount) ? publicCount : 0,
-            };
-          } catch (err) {
-            console.warn('[chat:tool:getEvents] Failed to fetch registration counts for event', {
-              eventId: event.id,
-              error: err,
-            });
-            return {
-              id: event.id,
-              member_registrations: 0,
-              public_registrations: 0,
-            };
-          }
-        }),
-      );
+        if (countError) {
+          throw countError;
+        }
+
+        const countRows = (
+          Array.isArray(countData) ? countData : []
+        ) as EventRegistrationCountsRow[];
+        eventCounts = countRows.map((row) => {
+          const memberCount = Number(row.member_count);
+          const publicCount = Number(row.public_count);
+
+          return {
+            id: row.event_id,
+            member_registrations: Number.isFinite(memberCount) ? memberCount : 0,
+            public_registrations: Number.isFinite(publicCount) ? publicCount : 0,
+          };
+        });
+      } catch (err) {
+        console.warn('[chat:tool:getEvents] Failed to fetch registration counts', { error: err });
+        eventCounts = (data ?? []).map((event) => ({
+          id: event.id,
+          member_registrations: 0,
+          public_registrations: 0,
+        }));
+      }
 
       const countsMap = new Map(eventCounts.map((c) => [c.id, c]));
 
