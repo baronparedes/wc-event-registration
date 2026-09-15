@@ -65,13 +65,7 @@ export function ExportSundaySchedulesButton({
   }
 
   return (
-    <Button
-      type="button"
-      variant="primaryOutline"
-      size="sm"
-      onClick={handleExport}
-      disabled={isDisabled}
-    >
+    <Button type="button" size="sm" onClick={handleExport} disabled={isDisabled}>
       {isExporting ? 'Exporting...' : 'Export Schedules CSV'}
     </Button>
   );
