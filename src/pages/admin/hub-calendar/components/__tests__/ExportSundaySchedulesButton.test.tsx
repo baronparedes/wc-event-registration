@@ -108,7 +108,9 @@ describe('ExportSundaySchedulesButton', () => {
     const csvText = await exportedBlob.text();
     const lines = csvText.split('\n');
 
-    expect(lines[0]).toBe('Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone');
+    expect(lines[0]).toBe(
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
+    );
     // 9AM slot: Alice Wonder first, then Zack Morris
     expect(lines[1]).toContain('9:00 AM,MEM-002,Alice Wonder,Johnny,Usher,adult');
     expect(lines[2]).toContain('9:00 AM,MEM-001,Zack Morris,Johnny,Greeter,adult');
@@ -183,5 +185,61 @@ describe('ExportSundaySchedulesButton', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Export Schedules CSV' })).toBeEnabled();
+  });
+
+  it('passes excusedMap to CSV generator and includes excused fields', async () => {
+    const member = makeMember({
+      id: 'member-excused-1',
+      member_id: 'MEM-001',
+      full_name: 'Excused Volunteer',
+    });
+
+    const entries: MemberScheduleEntry[] = [
+      {
+        member,
+        sundayKey: 'first_sunday',
+        timeSlots: ['9AM'],
+      },
+    ];
+
+    const excusedMap = new Map([
+      [
+        '2026-09-06',
+        new Map([
+          [
+            'member-excused-1',
+            {
+              slots: new Set(['9AM' as const]),
+              reasons: new Map([['9AM' as const, 'Vacation leave']]),
+            },
+          ],
+        ]),
+      ],
+    ]);
+
+    render(
+      <ExportSundaySchedulesButton
+        selectedEntries={entries}
+        year={2026}
+        monthIndex={8}
+        dayNumber={6}
+        excusedMap={excusedMap}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Schedules CSV' }));
+
+    const createObjectURLMock = URL.createObjectURL as unknown as {
+      mock: { calls: Array<[Blob]> };
+    };
+    const exportedBlob = createObjectURLMock.mock.calls[0]?.[0];
+    const csvText = await exportedBlob.text();
+    const lines = csvText.split('\n');
+
+    expect(lines[0]).toBe(
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
+    );
+    expect(lines[1]).toContain('9:00 AM,MEM-001,Excused Volunteer');
+    expect(lines[1]).toContain(',Yes,Vacation leave');
   });
 });

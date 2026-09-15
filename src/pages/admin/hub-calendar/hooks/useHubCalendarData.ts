@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 
-import { type MemberScheduleEntry, type TimeSlot } from '@/hooks/domain/members';
 import {
+  type MemberScheduleEntry,
+  type TimeSlot,
+  useGetExcusedMembers,
+} from '@/hooks/domain/members';
+import {
+  type ExcusedMemberMap,
   type MilestoneEntry,
   buildCalendarCells,
   buildMilestoneEntries,
   buildMobileWeekCells,
   getMonthDayKeyFromMember,
   getMonthWeekRanges,
+  parseServiceSlots,
+  toIsoDateKey,
   toMonthDayKey,
 } from '@/lib/domain/hub-calendar';
 import { type AdminMember } from '@/lib/domain/members';
@@ -19,6 +26,69 @@ export function useHubCalendarData(
   viewMonthIndex: number,
   selectedDayNumber: number,
 ) {
+  const { data: excusedMembersArray = [] } = useGetExcusedMembers(viewYear, viewMonthIndex);
+
+  const excusedMap: ExcusedMemberMap = useMemo(() => {
+    const map: ExcusedMemberMap = new Map();
+    for (const record of excusedMembersArray) {
+      if (!record.requestDate) continue;
+      const cleanDate = record.requestDate.trim().split('T')[0];
+      const parts = cleanDate.split('-');
+      if (parts.length >= 3) {
+        const recordYear = parseInt(parts[0], 10);
+        const recordMonth = parseInt(parts[1], 10);
+        const recordDay = parseInt(parts[2], 10);
+
+        if (recordYear !== viewYear || recordMonth !== viewMonthIndex + 1 || isNaN(recordDay)) {
+          continue;
+        }
+
+        const isoKey = toIsoDateKey(recordYear, recordMonth, recordDay);
+        if (!map.has(isoKey)) {
+          map.set(isoKey, new Map());
+        }
+        const memberMap = map.get(isoKey)!;
+        const slots = parseServiceSlots(record.services);
+
+        const addSlots = (id: string) => {
+          const key = id.trim().toLowerCase();
+          const existing = memberMap.get(key);
+          let slotSet: Set<TimeSlot>;
+          let reasonMap: Map<TimeSlot, string>;
+
+          if (!existing) {
+            slotSet = new Set<TimeSlot>();
+            reasonMap = new Map<TimeSlot, string>();
+            memberMap.set(key, { slots: slotSet, reasons: reasonMap });
+          } else if (existing instanceof Set) {
+            slotSet = existing;
+            reasonMap = new Map<TimeSlot, string>();
+            memberMap.set(key, { slots: slotSet, reasons: reasonMap });
+          } else {
+            slotSet = existing.slots;
+            reasonMap = existing.reasons ?? new Map<TimeSlot, string>();
+            existing.reasons = reasonMap;
+          }
+
+          for (const slot of slots) {
+            slotSet.add(slot);
+            if (record.reason) {
+              reasonMap.set(slot, record.reason);
+            }
+          }
+        };
+
+        if (record.userId) {
+          addSlots(record.userId);
+        }
+        if (record.memberId) {
+          addSlots(record.memberId);
+        }
+      }
+    }
+    return map;
+  }, [excusedMembersArray, viewYear, viewMonthIndex]);
+
   const calendarCells = useMemo(() => {
     return buildCalendarCells(viewYear, viewMonthIndex);
   }, [viewYear, viewMonthIndex]);
@@ -138,6 +208,7 @@ export function useHubCalendarData(
   return {
     calendarCells,
     scheduleMap,
+    excusedMap,
     milestoneEntries,
     milestoneMap,
     currentMonthMilestoneEntries,

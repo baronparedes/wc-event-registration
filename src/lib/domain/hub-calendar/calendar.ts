@@ -1,6 +1,13 @@
-import type { MemberScheduleEntry, SundayKey } from '@/hooks/domain/members';
+import type { MemberScheduleEntry, SundayKey, TimeSlot } from '@/hooks/domain/members';
 
-import type { CalendarCell, MilestoneEntry, WeekCell, WeekRange } from './types';
+import type {
+  CalendarCell,
+  ExcusedMemberMap,
+  ExcusedSlotData,
+  MilestoneEntry,
+  WeekCell,
+  WeekRange,
+} from './types';
 
 export const SUNDAY_KEYS: SundayKey[] = [
   'first_sunday',
@@ -12,6 +19,53 @@ export const SUNDAY_KEYS: SundayKey[] = [
 
 export function toMonthDayKey(month: number, day: number): string {
   return `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+export function toIsoDateKey(year: number, month: number, day: number): string {
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Parses a services string (e.g. "9AM, 12NN", "9am", "All") into a set of TimeSlot enum values.
+ * Empty text or "All" implies all service slots.
+ */
+export function parseServiceSlots(servicesText?: string | null): Set<TimeSlot> {
+  const slots = new Set<TimeSlot>();
+  if (!servicesText || !servicesText.trim()) {
+    slots.add('9AM');
+    slots.add('12NN');
+    slots.add('3PM');
+    return slots;
+  }
+
+  const normalized = servicesText.toUpperCase();
+  if (normalized.includes('ALL')) {
+    slots.add('9AM');
+    slots.add('12NN');
+    slots.add('3PM');
+    return slots;
+  }
+
+  const tokens = normalized.split(/[,;/]+/).map((t) => t.trim().replace(/\s+/g, ''));
+  for (const token of tokens) {
+    if (token === '9AM' || token === '9:00AM' || token.startsWith('9AM')) {
+      slots.add('9AM');
+    }
+    if (
+      token === '12NN' ||
+      token === '12:00NN' ||
+      token === '12PM' ||
+      token === '12:00PM' ||
+      token.startsWith('12NN')
+    ) {
+      slots.add('12NN');
+    }
+    if (token === '3PM' || token === '3:00PM' || token.startsWith('3PM')) {
+      slots.add('3PM');
+    }
+  }
+
+  return slots;
 }
 
 export function getMonthWeekRanges(year: number, monthIndex: number): WeekRange[] {
@@ -90,6 +144,7 @@ export function buildCalendarCells(year: number, monthIndex: number): CalendarCe
     cells.push({
       dayNumber: i,
       monthDayKey: toMonthDayKey(monthIndex + 1, i),
+      isoDate: toIsoDateKey(year, monthIndex + 1, i),
       isCurrentMonth: true,
       isSunday,
       sundayKey,
@@ -136,10 +191,76 @@ export function buildMobileWeekCells(
       return {
         date,
         monthDayKey,
+        isoDate: toIsoDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate()),
         scheduleEntries,
         milestoneEntries,
         isSunday,
         sundayKey,
       };
     });
+}
+
+/**
+ * Retrieves the excused status and reason for a member on a given date key.
+ * Supports matching against both users.id (UUID) and users.member_id (e.g. "WC-001"),
+ * with case-insensitive and whitespace-tolerant matching.
+ *
+ * If `serviceSlot` is provided, verifies if the member is excused for that specific slot and returns that slot's reason.
+ * If `serviceSlot` is omitted, returns true if the member is excused for ANY slot on that date, and the first available reason.
+ */
+export function getMemberExcusedDetails(
+  excusedMap: ExcusedMemberMap | undefined,
+  dateKey: string | null | undefined,
+  member: { id?: string | null; member_id?: string | null },
+  serviceSlot?: TimeSlot,
+): { isExcused: boolean; reason?: string } {
+  if (!excusedMap || !dateKey) return { isExcused: false };
+  const memberMap = excusedMap.get(dateKey);
+  if (!memberMap) return { isExcused: false };
+
+  let entry: Set<TimeSlot> | ExcusedSlotData | undefined;
+  if (member.id) {
+    entry = memberMap.get(member.id.toLowerCase());
+  }
+  if (!entry && member.member_id) {
+    entry = memberMap.get(member.member_id.trim().toLowerCase());
+  }
+
+  if (!entry) return { isExcused: false };
+
+  const slots = entry instanceof Set ? entry : entry.slots;
+  const reasons = entry instanceof Set ? undefined : entry.reasons;
+
+  if (!slots || slots.size === 0) return { isExcused: false };
+
+  if (serviceSlot) {
+    const isExcused = slots.has(serviceSlot);
+    return {
+      isExcused,
+      reason: isExcused ? (reasons?.get(serviceSlot) ?? '') : undefined,
+    };
+  }
+
+  const firstReason = reasons ? Array.from(reasons.values())[0] : undefined;
+  return {
+    isExcused: true,
+    reason: firstReason,
+  };
+}
+
+/**
+ * Checks if a member is excused for a given date key.
+ * Supports matching against both users.id (UUID) and users.member_id (e.g. "WC-001"),
+ * with case-insensitive and whitespace-tolerant matching.
+ *
+ * If `serviceSlot` is provided, verifies if the member is excused for that specific slot.
+ * If `serviceSlot` is omitted, returns true if the member is excused for ANY slot on that date (for calendar day views).
+ */
+export function isMemberExcused(
+  excusedMap: ExcusedMemberMap | undefined,
+  dateKey: string | null | undefined,
+  member: { id?: string | null; member_id?: string | null },
+  serviceSlot?: TimeSlot,
+): boolean {
+  return getMemberExcusedDetails(excusedMap, dateKey, member, serviceSlot).isExcused;
 }

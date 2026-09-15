@@ -1,14 +1,20 @@
 import { CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { Avatar, Badge, EmptyState, SectionCard } from '@/components/ui';
+import { Badge, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
-import type { MilestoneEntry } from '@/lib/domain/hub-calendar';
+import {
+  type ExcusedMemberMap,
+  type MilestoneEntry,
+  isMemberExcused,
+  toIsoDateKey,
+} from '@/lib/domain/hub-calendar';
 
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
+import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -34,6 +40,7 @@ type SelectedDateDetailsProps = {
   selectedEntries: MemberScheduleEntry[];
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   isCurrentSelectedSunday: boolean;
+  excusedMap?: ExcusedMemberMap;
   activeTab: TimeSlot;
   selectedRole: string | null;
   onTabChange: (slot: TimeSlot) => void;
@@ -48,6 +55,7 @@ export function SelectedDateDetails({
   selectedEntries,
   entriesByTimeSlot,
   isCurrentSelectedSunday,
+  excusedMap,
   activeTab,
   selectedRole,
   onTabChange,
@@ -65,21 +73,31 @@ export function SelectedDateDetails({
       );
     }
 
-    const uniqueRoles = Array.from(
-      new Set(entries.map((e) => e.member.role).filter(Boolean)),
-    ).sort();
+    const isoDateKey = toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber);
+    const hasExcusedMembers = entries.some((e) =>
+      isMemberExcused(excusedMap, isoDateKey, e.member, slot),
+    );
+
+    const EXCUSED_ROLE_FILTER = 'Excused';
+    const uniqueRoles = Array.from(new Set(entries.map((e) => e.member.role).filter(Boolean)))
+      .filter((role) => role !== EXCUSED_ROLE_FILTER)
+      .sort();
 
     const filteredEntries =
-      selectedRole === null ? entries : entries.filter((e) => e.member.role === selectedRole);
+      selectedRole === null
+        ? entries
+        : selectedRole === EXCUSED_ROLE_FILTER
+          ? entries.filter((e) => isMemberExcused(excusedMap, isoDateKey, e.member, slot))
+          : entries.filter((e) => e.member.role === selectedRole);
 
     return (
       <div className="flex flex-col gap-4">
-        {uniqueRoles.length > 1 && (
+        {(uniqueRoles.length > 1 || hasExcusedMembers) && (
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => onRoleChange(null)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 selectedRole === null
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
@@ -87,12 +105,25 @@ export function SelectedDateDetails({
             >
               All
             </button>
+            <button
+              type="button"
+              onClick={() =>
+                onRoleChange(selectedRole === EXCUSED_ROLE_FILTER ? null : EXCUSED_ROLE_FILTER)
+              }
+              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedRole === EXCUSED_ROLE_FILTER
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              Excused
+            </button>
             {uniqueRoles.map((role) => (
               <button
                 key={role}
                 type="button"
                 onClick={() => onRoleChange(role === selectedRole ? null : role)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   selectedRole === role
                     ? 'bg-primary text-white'
                     : 'bg-surface border border-border text-muted hover:text-text'
@@ -104,7 +135,11 @@ export function SelectedDateDetails({
           </div>
         )}
         {filteredEntries.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">No members for this role.</p>
+          <p className="py-6 text-center text-sm text-muted">
+            {selectedRole === EXCUSED_ROLE_FILTER
+              ? 'No excused members for this service.'
+              : 'No members for this role.'}
+          </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {filteredEntries.map((entry) => (
@@ -116,11 +151,12 @@ export function SelectedDateDetails({
                 }
                 className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center"
               >
-                <Avatar
+                <ServiceScheduleAvatar
                   size="md"
                   name={entry.member.full_name}
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
+                  excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>
@@ -147,7 +183,7 @@ export function SelectedDateDetails({
       <div className="space-y-8">
         {/* Section 1: Member Milestones */}
         <div>
-          <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
             <div>
               <h3 className="font-heading text-lg font-semibold text-text">
                 Birthdays &amp; Wedding Anniversaries
@@ -155,10 +191,12 @@ export function SelectedDateDetails({
               <p className="text-xs text-muted">Member milestones celebrated on this day</p>
             </div>
             {selectedMilestones.length > 0 && (
-              <Badge variant="neutral" className="text-xs">
-                {selectedMilestones.length} milestone
-                {selectedMilestones.length === 1 ? '' : 's'}
-              </Badge>
+              <div className="flex items-center gap-2 justify-end">
+                <Badge variant="neutral" className="text-xs">
+                  {selectedMilestones.length} milestone
+                  {selectedMilestones.length === 1 ? '' : 's'}
+                </Badge>
+              </div>
             )}
           </div>
 
@@ -214,7 +252,7 @@ export function SelectedDateDetails({
               </p>
             </div>
             {isCurrentSelectedSunday && selectedEntries.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end">
                 <Badge variant="neutral" className="text-xs">
                   {selectedEntries.length} scheduled
                 </Badge>
@@ -223,6 +261,7 @@ export function SelectedDateDetails({
                   year={viewYear}
                   monthIndex={viewMonthIndex}
                   dayNumber={selectedDayNumber}
+                  excusedMap={excusedMap}
                 />
               </div>
             )}

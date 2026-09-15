@@ -23,6 +23,7 @@ vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
   useAdminMembersMilestonesQuery: () => mockUseAdminMembersMilestonesQuery(),
   useMemberAvatarQuery: () => ({ data: null }),
+  useGetExcusedMembers: () => ({ data: [] }),
 }));
 
 vi.mock('@/hooks/utils', () => ({
@@ -76,6 +77,8 @@ function renderComponent() {
 describe('AdminHubCalendarPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
     mockUseIsMobileViewport.mockReturnValue(false);
   });
 

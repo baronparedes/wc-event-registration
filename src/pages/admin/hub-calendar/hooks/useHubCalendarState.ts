@@ -1,10 +1,74 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { TimeSlot } from '@/hooks/domain/members';
 import type { WeekRange } from '@/lib/domain/hub-calendar';
 
+export const HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY = 'wc:hub-calendar:selected-date';
+
+export interface StoredCalendarDate {
+  year: number;
+  monthIndex: number;
+  dayNumber: number;
+}
+
+export function getStoredCalendarDate(): StoredCalendarDate | null {
+  try {
+    const raw =
+      typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem(HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY)
+        : null;
+
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (
+      typeof parsed?.year === 'number' &&
+      Number.isInteger(parsed.year) &&
+      typeof parsed?.monthIndex === 'number' &&
+      Number.isInteger(parsed.monthIndex) &&
+      parsed.monthIndex >= 0 &&
+      parsed.monthIndex <= 11 &&
+      typeof parsed?.dayNumber === 'number' &&
+      Number.isInteger(parsed.dayNumber) &&
+      parsed.dayNumber >= 1 &&
+      parsed.dayNumber <= 31
+    ) {
+      const testDate = new Date(parsed.year, parsed.monthIndex, parsed.dayNumber);
+      if (
+        testDate.getFullYear() === parsed.year &&
+        testDate.getMonth() === parsed.monthIndex &&
+        testDate.getDate() === parsed.dayNumber
+      ) {
+        return {
+          year: parsed.year,
+          monthIndex: parsed.monthIndex,
+          dayNumber: parsed.dayNumber,
+        };
+      }
+    }
+  } catch {
+    // Ignore storage parse or access errors
+  }
+  return null;
+}
+
+export function saveStoredCalendarDate(date: StoredCalendarDate): void {
+  try {
+    const serialized = JSON.stringify(date);
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY, serialized);
+    }
+  } catch {
+    // Ignore storage quota or disabled storage errors
+  }
+}
+
 export function useHubCalendarState() {
   const [viewDate, setViewDate] = useState(() => {
+    const stored = getStoredCalendarDate();
+    if (stored) {
+      return new Date(stored.year, stored.monthIndex, 1);
+    }
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
@@ -13,9 +77,23 @@ export function useHubCalendarState() {
   const viewYear = viewDate.getFullYear();
   const viewMonthIndex = viewDate.getMonth();
 
-  const [selectedDayNumber, setSelectedDayNumber] = useState<number>(today.getDate());
+  const [selectedDayNumber, setSelectedDayNumber] = useState<number>(() => {
+    const stored = getStoredCalendarDate();
+    if (stored) {
+      return stored.dayNumber;
+    }
+    return today.getDate();
+  });
   const [activeTab, setActiveTab] = useState<TimeSlot>('9AM');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    saveStoredCalendarDate({
+      year: viewYear,
+      monthIndex: viewMonthIndex,
+      dayNumber: selectedDayNumber,
+    });
+  }, [viewYear, viewMonthIndex, selectedDayNumber]);
 
   function handleTabChange(slot: TimeSlot) {
     setActiveTab(slot);

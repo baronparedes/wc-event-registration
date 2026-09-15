@@ -1,5 +1,12 @@
-import type { MemberScheduleEntry, SundayKey } from '@/hooks/domain/members';
+import type { MemberScheduleEntry, SundayKey, TimeSlot } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
+
+export type ExcusedSlotData = {
+  slots: Set<TimeSlot>;
+  reasons?: Map<TimeSlot, string>;
+};
+
+export type ExcusedMemberMap = Map<string, Map<string, Set<TimeSlot> | ExcusedSlotData>>;
 
 export type MilestoneType = 'birthday' | 'wedding_anniversary';
 
@@ -12,6 +19,7 @@ export type MilestoneEntry = {
 export type CalendarCell = {
   dayNumber: number | null;
   monthDayKey: string | null;
+  isoDate?: string;
   isCurrentMonth: boolean;
   isSunday: boolean;
   sundayKey: SundayKey | null;
@@ -27,6 +35,7 @@ export type WeekRange = {
 export type WeekCell = {
   date: Date;
   monthDayKey: string;
+  isoDate?: string;
   scheduleEntries: MemberScheduleEntry[];
   milestoneEntries: MilestoneEntry[];
   isSunday: boolean;

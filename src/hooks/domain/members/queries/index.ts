@@ -8,6 +8,8 @@ export { useAdminMembersImportSnapshotQuery } from './useAdminMembersImportSnaps
 export { useMemberAvatarQuery } from './useMemberAvatarQuery';
 export { useMemberEventHistoryQuery } from './useMemberEventHistoryQuery';
 export { useCurrentProfileQuery, CURRENT_PROFILE_QUERY_KEY } from './useCurrentProfileQuery';
+export { useGetExcusedMembers } from './useGetExcusedMembers';
+export type { ExcusedMemberRecord } from './useGetExcusedMembers';
 
 export type {
   MemberLookupProfile,

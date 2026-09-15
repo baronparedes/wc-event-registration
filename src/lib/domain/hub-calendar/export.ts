@@ -1,7 +1,8 @@
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
 
-import type { MilestoneEntry } from './types';
+import { getMemberExcusedDetails, toIsoDateKey } from './calendar';
+import type { ExcusedMemberMap, MilestoneEntry } from './types';
 
 const TIME_SLOT_CONFIG: Record<TimeSlot, { label: string; order: number }> = {
   '9AM': { label: '9:00 AM', order: 1 },
@@ -105,8 +106,9 @@ export function buildSundaySchedulesCsvExport(params: {
   year: number;
   monthIndex: number;
   dayNumber: number;
+  excusedMap?: ExcusedMemberMap;
 }): { csvText: string; filename: string } {
-  const { selectedEntries, year, monthIndex, dayNumber } = params;
+  const { selectedEntries, year, monthIndex, dayNumber, excusedMap } = params;
 
   const assignments: ScheduleAssignment[] = [];
   for (const entry of selectedEntries) {
@@ -125,18 +127,39 @@ export function buildSundaySchedulesCsvExport(params: {
     return left.member.full_name.localeCompare(right.member.full_name);
   });
 
+  const isoDateKey = toIsoDateKey(year, monthIndex + 1, dayNumber);
+
   const rows: string[][] = [
-    ['Time Slot', 'Member ID', 'Full Name', 'Nickname', 'Role', 'Category', 'Email', 'Phone'],
-    ...assignments.map((item) => [
-      TIME_SLOT_CONFIG[item.slot]?.label ?? item.slot,
-      item.member.member_id,
-      item.member.full_name,
-      item.member.nickname ?? '',
-      item.member.role,
-      item.member.category,
-      item.member.email ?? '',
-      item.member.phone ?? '',
-    ]),
+    [
+      'Time Slot',
+      'Member ID',
+      'Full Name',
+      'Nickname',
+      'Role',
+      'Category',
+      'Email',
+      'Phone',
+      'Excused',
+      'Excused Reason',
+    ],
+    ...assignments.map((item) => {
+      const details = getMemberExcusedDetails(excusedMap, isoDateKey, item.member, item.slot);
+      const isExcused = details.isExcused;
+      const excusedReason = isExcused ? (details.reason ?? '') : '';
+
+      return [
+        TIME_SLOT_CONFIG[item.slot]?.label ?? item.slot,
+        item.member.member_id,
+        item.member.full_name,
+        item.member.nickname ?? '',
+        item.member.role,
+        item.member.category,
+        item.member.email ?? '',
+        item.member.phone ?? '',
+        isExcused ? 'Yes' : 'No',
+        excusedReason,
+      ];
+    }),
   ];
 
   const csvText = rows.map((row) => row.map((value) => escapeCsvValue(value)).join(',')).join('\n');
