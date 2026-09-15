@@ -23,6 +23,7 @@ vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
   useAdminMembersMilestonesQuery: () => mockUseAdminMembersMilestonesQuery(),
   useMemberAvatarQuery: () => ({ data: null }),
+  useGetExcusedMembers: () => ({ data: [] }),
 }));
 
 vi.mock('@/hooks/utils', () => ({

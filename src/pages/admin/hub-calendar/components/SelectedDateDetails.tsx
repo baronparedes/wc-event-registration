@@ -4,13 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Badge, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
-import type { MilestoneEntry } from '@/lib/domain/hub-calendar';
-import { toMonthDayKey } from '@/lib/domain/hub-calendar';
+import { type MilestoneEntry, isMemberExcused, toMonthDayKey } from '@/lib/domain/hub-calendar';
 
-import { ExcusedAvatar } from './ExcusedAvatar';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
+import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -120,16 +119,16 @@ export function SelectedDateDetails({
                 }
                 className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center"
               >
-                <ExcusedAvatar
+                <ServiceScheduleAvatar
                   size="md"
                   name={entry.member.full_name}
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
-                  isExcused={
-                    excusedMap
-                      ?.get(toMonthDayKey(viewMonthIndex + 1, selectedDayNumber))
-                      ?.has(entry.member.id) ?? false
-                  }
+                  excused={isMemberExcused(
+                    excusedMap,
+                    toMonthDayKey(viewMonthIndex + 1, selectedDayNumber),
+                    entry.member,
+                  )}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>

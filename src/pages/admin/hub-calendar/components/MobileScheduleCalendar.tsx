@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui';
-import type { WeekCell } from '@/lib/domain/hub-calendar';
+import { type WeekCell, isMemberExcused } from '@/lib/domain/hub-calendar';
 
-import { ExcusedAvatar, MilestoneAvatar, MilestoneBadge } from './';
+import { MilestoneAvatar, MilestoneBadge, ServiceScheduleAvatar } from './';
 
 type MobileScheduleCalendarProps = {
   viewYear: number;
@@ -22,6 +22,7 @@ export function MobileScheduleCalendar({
   mobileWeekCells,
   currentWeekNumber,
   weekOptions,
+  excusedMap,
   onSelectWeek,
   onSelectDay,
 }: MobileScheduleCalendarProps) {
@@ -152,11 +153,12 @@ export function MobileScheduleCalendar({
                       />
                     ))}
                     {visibleSchedules.map((entry) => (
-                      <ExcusedAvatar
+                      <ServiceScheduleAvatar
                         key={entry.member.id}
                         size="sm"
                         name={entry.member.full_name}
                         avatarObjectKey={entry.member.avatar_object_key}
+                        excused={isMemberExcused(excusedMap, cell.monthDayKey, entry.member)}
                       />
                     ))}
                     {excessCount > 0 && (

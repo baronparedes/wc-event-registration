@@ -4,6 +4,7 @@ import {
   buildCalendarCells,
   buildMobileWeekCells,
   getMonthWeekRanges,
+  isMemberExcused,
   toMonthDayKey,
 } from '../calendar';
 import type { MilestoneEntry } from '../types';
@@ -58,5 +59,63 @@ describe('hub-calendar calendar utils', () => {
     expect(mobileCells[0].monthDayKey).toBe('09-01');
     expect(mobileCells[5].isSunday).toBe(true);
     expect(mobileCells[5].sundayKey).toBe('first_sunday');
+  });
+
+  describe('isMemberExcused', () => {
+    const excusedMap = new Map<string, Set<string>>([
+      ['09-20', new Set(['mem-001', 'MEM-001', '550e8400-e29b-41d4-a716-446655440000'])],
+    ]);
+
+    it('matches by member_id string', () => {
+      expect(
+        isMemberExcused(excusedMap, '09-20', {
+          id: 'other-id',
+          member_id: 'MEM-001',
+        }),
+      ).toBe(true);
+    });
+
+    it('matches by member_id case-insensitively and with whitespace', () => {
+      expect(
+        isMemberExcused(excusedMap, '09-20', {
+          id: 'other-id',
+          member_id: '  mem-001  ',
+        }),
+      ).toBe(true);
+    });
+
+    it('matches by user UUID (id)', () => {
+      expect(
+        isMemberExcused(excusedMap, '09-20', {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          member_id: 'DIFFERENT-CODE',
+        }),
+      ).toBe(true);
+    });
+
+    it('returns false when member is not excused on that date', () => {
+      expect(
+        isMemberExcused(excusedMap, '09-20', {
+          id: 'unexcused-id',
+          member_id: 'UNEXCUSED-MEM',
+        }),
+      ).toBe(false);
+    });
+
+    it('returns false for different dates or missing map', () => {
+      expect(
+        isMemberExcused(excusedMap, '09-27', {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          member_id: 'MEM-001',
+        }),
+      ).toBe(false);
+
+      expect(
+        isMemberExcused(undefined, '09-20', {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          member_id: 'MEM-001',
+        }),
+      ).toBe(false);
+    });
   });
 });

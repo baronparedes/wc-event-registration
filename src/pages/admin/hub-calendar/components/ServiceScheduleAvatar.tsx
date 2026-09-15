@@ -2,22 +2,22 @@ import { CalendarOff } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
-export type ExcusedAvatarProps = {
+export type ServiceScheduleAvatarProps = {
   name: string;
   avatarObjectKey?: string | null;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-  isExcused?: boolean;
+  excused?: boolean;
 };
 
-export function ExcusedAvatar({
+export function ServiceScheduleAvatar({
   name,
   avatarObjectKey,
   size = 'sm',
   className = '',
-  isExcused = false,
-}: ExcusedAvatarProps) {
-  if (!isExcused) {
+  excused = false,
+}: ServiceScheduleAvatarProps) {
+  if (!excused) {
     return (
       <Avatar name={name} avatarObjectKey={avatarObjectKey} size={size} className={className} />
     );
@@ -36,11 +36,11 @@ export function ExcusedAvatar({
   }[size];
 
   return (
-    <div className={`relative inline-flex shrink-0 ${className}`}>
-      <Avatar name={name} avatarObjectKey={avatarObjectKey} size={size} />
+    <div className="relative inline-flex shrink-0">
+      <Avatar name={name} avatarObjectKey={avatarObjectKey} size={size} className={className} />
       <span
         title="Excused"
-        className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-accent text-white ${badgeSizeClasses}`}
+        className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-danger text-white ${badgeSizeClasses}`}
       >
         <CalendarOff className={`${iconSizeClasses} shrink-0`} />
       </span>

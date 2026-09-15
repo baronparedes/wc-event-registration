@@ -43,10 +43,17 @@ export type ExcusedMemberRecord = {
 };
 
 function readAnswerValue(answer: RegistrationAnswerRow): unknown {
+  if (answer.answer_date !== null && answer.answer_date !== undefined) {
+    return answer.answer_date;
+  }
   if (answer.answer_json !== null && answer.answer_json !== undefined) {
     return answer.answer_json;
   }
-  if (answer.answer_text !== null) {
+  if (
+    answer.answer_text !== null &&
+    answer.answer_text !== undefined &&
+    answer.answer_text !== ''
+  ) {
     try {
       return JSON.parse(answer.answer_text);
     } catch {
@@ -55,9 +62,6 @@ function readAnswerValue(answer: RegistrationAnswerRow): unknown {
   }
   if (answer.answer_boolean !== null) {
     return answer.answer_boolean;
-  }
-  if (answer.answer_date !== null) {
-    return answer.answer_date;
   }
   if (answer.answer_number !== null) {
     return answer.answer_number;
@@ -133,12 +137,14 @@ Deno.serve(async (req) => {
 
     const { data: dateAnswers, error: dateAnswersError } = await supabase
       .from('registration_answers')
-      .select('registration_id, event_fields (field_key), registrations(status)')
+      .select(
+        'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id)',
+      )
       .eq('registrations.event_id', eventId)
       .neq('registrations.status', 'cancelled')
       .eq('event_fields.field_key', 'request_date')
       .or(
-        `answer_date.gte.${startDate},answer_date.lte.${endDate},answer_text.ilike.%${datePrefix}%`,
+        `and(answer_date.gte.${startDate},answer_date.lte.${endDate}),answer_text.ilike.%${datePrefix}%`,
       );
 
     if (dateAnswersError) {
@@ -249,11 +255,18 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (requestDate.startsWith(datePrefix)) {
+      const cleanDate = requestDate.split('T')[0].trim();
+      const dateParts = cleanDate.split('-');
+      const isDateInMonth =
+        dateParts.length >= 3 &&
+        parseInt(dateParts[0], 10) === year &&
+        parseInt(dateParts[1], 10) === monthIndex + 1;
+
+      if (isDateInMonth || cleanDate.startsWith(datePrefix)) {
         records.push({
           userId,
           memberId,
-          requestDate,
+          requestDate: cleanDate,
           services,
           reason,
         });

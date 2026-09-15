@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 
-import { useAdminHubCalendarExcusedMembers } from '@/hooks/domain/hub-calendar';
-import { type MemberScheduleEntry, type TimeSlot } from '@/hooks/domain/members';
+import {
+  type MemberScheduleEntry,
+  type TimeSlot,
+  useGetExcusedMembers,
+} from '@/hooks/domain/members';
 import {
   type MilestoneEntry,
   buildCalendarCells,
@@ -20,25 +23,34 @@ export function useHubCalendarData(
   viewMonthIndex: number,
   selectedDayNumber: number,
 ) {
-  const { data: excusedMembersArray = [] } = useAdminHubCalendarExcusedMembers(
-    viewYear,
-    viewMonthIndex,
-  );
+  const { data: excusedMembersArray = [] } = useGetExcusedMembers(viewYear, viewMonthIndex);
 
   const excusedMap = useMemo(() => {
-    const map = new Map<string, Set<string>>(); // monthDayKey -> Set of memberIds
+    const map = new Map<string, Set<string>>();
     for (const record of excusedMembersArray) {
-      // requestDate is in YYYY-MM-DD format
-      const parts = record.requestDate.split('-');
+      if (!record.requestDate) continue;
+      const cleanDate = record.requestDate.trim().split('T')[0];
+      const parts = cleanDate.split('-');
       if (parts.length >= 3) {
         const month = parseInt(parts[1], 10);
         const day = parseInt(parts[2], 10);
-        const key = toMonthDayKey(month, day);
+        if (!isNaN(month) && !isNaN(day)) {
+          const key = toMonthDayKey(month, day);
 
-        if (!map.has(key)) {
-          map.set(key, new Set());
+          if (!map.has(key)) {
+            map.set(key, new Set());
+          }
+          const set = map.get(key)!;
+          if (record.userId) {
+            set.add(record.userId);
+            set.add(record.userId.toLowerCase());
+          }
+          if (record.memberId) {
+            const trimmed = record.memberId.trim();
+            set.add(trimmed);
+            set.add(trimmed.toLowerCase());
+          }
         }
-        map.get(key)!.add(record.memberId);
       }
     }
     return map;
@@ -104,7 +116,7 @@ export function useHubCalendarData(
 
   const selectedEntries = useMemo(
     () => scheduleMap.get(selectedMonthDayKey) ?? [],
-    [scheduleMap, excusedMap, selectedMonthDayKey],
+    [scheduleMap, selectedMonthDayKey],
   );
   const selectedMilestones = useMemo(
     () => milestoneMap.get(selectedMonthDayKey) ?? [],

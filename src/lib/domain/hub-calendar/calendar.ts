@@ -143,3 +143,27 @@ export function buildMobileWeekCells(
       };
     });
 }
+
+/**
+ * Checks if a member is excused for a given date key.
+ * Supports matching against both users.id (UUID) and users.member_id (e.g. "WC-001"),
+ * with case-insensitive and whitespace-tolerant matching.
+ */
+export function isMemberExcused(
+  excusedMap: Map<string, Set<string>> | undefined,
+  monthDayKey: string | null | undefined,
+  member: { id?: string | null; member_id?: string | null },
+): boolean {
+  if (!excusedMap || !monthDayKey) return false;
+  const set = excusedMap.get(monthDayKey);
+  if (!set) return false;
+
+  if (member.id) {
+    if (set.has(member.id) || set.has(member.id.toLowerCase())) return true;
+  }
+  if (member.member_id) {
+    const trimmed = member.member_id.trim();
+    if (set.has(trimmed) || set.has(trimmed.toLowerCase())) return true;
+  }
+  return false;
+}

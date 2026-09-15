@@ -1,7 +1,7 @@
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
-import type { CalendarCell, MilestoneEntry } from '@/lib/domain/hub-calendar';
+import { type CalendarCell, type MilestoneEntry, isMemberExcused } from '@/lib/domain/hub-calendar';
 
-import { ExcusedAvatar, MilestoneAvatar, MilestoneBadge } from './';
+import { MilestoneAvatar, MilestoneBadge, ServiceScheduleAvatar } from './';
 
 type DesktopScheduleCalendarProps = {
   calendarCells: CalendarCell[];
@@ -127,14 +127,12 @@ export function DesktopScheduleCalendar({
                           />
                         ))}
                         {visibleSchedules.map((entry) => (
-                          <ExcusedAvatar
+                          <ServiceScheduleAvatar
                             key={entry.member.id}
                             size="sm"
                             name={entry.member.full_name}
                             avatarObjectKey={entry.member.avatar_object_key}
-                            isExcused={
-                              excusedMap?.get(cell.monthDayKey!)?.has(entry.member.id) ?? false
-                            }
+                            excused={isMemberExcused(excusedMap, cell.monthDayKey, entry.member)}
                           />
                         ))}
                         {excessCount > 0 && (
