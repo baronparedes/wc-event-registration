@@ -73,16 +73,26 @@ export function SelectedDateDetails({
       );
     }
 
-    const uniqueRoles = Array.from(
-      new Set(entries.map((e) => e.member.role).filter(Boolean)),
-    ).sort();
+    const isoDateKey = toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber);
+    const hasExcusedMembers = entries.some((e) =>
+      isMemberExcused(excusedMap, isoDateKey, e.member, slot),
+    );
+
+    const EXCUSED_ROLE_FILTER = 'Excused';
+    const uniqueRoles = Array.from(new Set(entries.map((e) => e.member.role).filter(Boolean)))
+      .filter((role) => role !== EXCUSED_ROLE_FILTER)
+      .sort();
 
     const filteredEntries =
-      selectedRole === null ? entries : entries.filter((e) => e.member.role === selectedRole);
+      selectedRole === null
+        ? entries
+        : selectedRole === EXCUSED_ROLE_FILTER
+          ? entries.filter((e) => isMemberExcused(excusedMap, isoDateKey, e.member, slot))
+          : entries.filter((e) => e.member.role === selectedRole);
 
     return (
       <div className="flex flex-col gap-4">
-        {uniqueRoles.length > 1 && (
+        {(uniqueRoles.length > 1 || hasExcusedMembers) && (
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -94,6 +104,19 @@ export function SelectedDateDetails({
               }`}
             >
               All
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onRoleChange(selectedRole === EXCUSED_ROLE_FILTER ? null : EXCUSED_ROLE_FILTER)
+              }
+              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedRole === EXCUSED_ROLE_FILTER
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              Excused
             </button>
             {uniqueRoles.map((role) => (
               <button
@@ -112,7 +135,11 @@ export function SelectedDateDetails({
           </div>
         )}
         {filteredEntries.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">No members for this role.</p>
+          <p className="py-6 text-center text-sm text-muted">
+            {selectedRole === EXCUSED_ROLE_FILTER
+              ? 'No excused members for this service.'
+              : 'No members for this role.'}
+          </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {filteredEntries.map((entry) => (
@@ -129,12 +156,7 @@ export function SelectedDateDetails({
                   name={entry.member.full_name}
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
-                  excused={isMemberExcused(
-                    excusedMap,
-                    toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber),
-                    entry.member,
-                    slot,
-                  )}
+                  excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>
@@ -239,6 +261,7 @@ export function SelectedDateDetails({
                   year={viewYear}
                   monthIndex={viewMonthIndex}
                   dayNumber={selectedDayNumber}
+                  excusedMap={excusedMap}
                 />
               </div>
             )}

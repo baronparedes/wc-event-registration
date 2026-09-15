@@ -1,7 +1,12 @@
 import type { MemberScheduleEntry, SundayKey, TimeSlot } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
 
-export type ExcusedMemberMap = Map<string, Map<string, Set<TimeSlot>>>;
+export type ExcusedSlotData = {
+  slots: Set<TimeSlot>;
+  reasons?: Map<TimeSlot, string>;
+};
+
+export type ExcusedMemberMap = Map<string, Map<string, Set<TimeSlot> | ExcusedSlotData>>;
 
 export type MilestoneType = 'birthday' | 'wedding_anniversary';
 

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -150,5 +150,94 @@ describe('SelectedDateDetails', () => {
     );
 
     expect(screen.queryByTitle('Excused')).not.toBeInTheDocument();
+  });
+
+  it('renders Excused button right after All and calls onRoleChange on click', () => {
+    const excusedMap: ExcusedMemberMap = new Map([
+      ['2026-09-20', new Map([['mem-001', new Set<TimeSlot>(['9AM'])]])],
+    ]);
+    const handleRoleChange = vi.fn();
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          excusedMap={excusedMap}
+          activeTab="9AM"
+          selectedRole={null}
+          onTabChange={vi.fn()}
+          onRoleChange={handleRoleChange}
+        />
+      </MemoryRouter>,
+    );
+
+    const buttons = screen.getAllByRole('button');
+    const allBtnIndex = buttons.findIndex((btn) => btn.textContent === 'All');
+    expect(allBtnIndex).toBeGreaterThanOrEqual(0);
+    expect(buttons[allBtnIndex + 1].textContent).toBe('Excused');
+
+    // Click Excused button
+    fireEvent.click(buttons[allBtnIndex + 1]);
+    expect(handleRoleChange).toHaveBeenCalledWith('Excused');
+
+    // Rerender with selectedRole="Excused"
+    rerender(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          excusedMap={excusedMap}
+          activeTab="9AM"
+          selectedRole="Excused"
+          onTabChange={vi.fn()}
+          onRoleChange={handleRoleChange}
+        />
+      </MemoryRouter>,
+    );
+
+    // Clicking Excused again should toggle back to null
+    const excusedBtn = screen.getByRole('button', { name: 'Excused' });
+    fireEvent.click(excusedBtn);
+    expect(handleRoleChange).toHaveBeenCalledWith(null);
+
+    // Only excused member (John Doe) should be visible
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
+  });
+
+  it('displays empty message when Excused filter is active and no members are excused', () => {
+    // No excused members in map
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          excusedMap={new Map()}
+          activeTab="9AM"
+          selectedRole="Excused"
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('No excused members for this service.')).toBeInTheDocument();
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
   });
 });

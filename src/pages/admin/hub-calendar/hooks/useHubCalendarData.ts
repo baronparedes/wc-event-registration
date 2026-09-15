@@ -52,11 +52,30 @@ export function useHubCalendarData(
 
         const addSlots = (id: string) => {
           const key = id.trim().toLowerCase();
-          const existing = memberMap.get(key) ?? new Set<TimeSlot>();
-          for (const slot of slots) {
-            existing.add(slot);
+          const existing = memberMap.get(key);
+          let slotSet: Set<TimeSlot>;
+          let reasonMap: Map<TimeSlot, string>;
+
+          if (!existing) {
+            slotSet = new Set<TimeSlot>();
+            reasonMap = new Map<TimeSlot, string>();
+            memberMap.set(key, { slots: slotSet, reasons: reasonMap });
+          } else if (existing instanceof Set) {
+            slotSet = existing;
+            reasonMap = new Map<TimeSlot, string>();
+            memberMap.set(key, { slots: slotSet, reasons: reasonMap });
+          } else {
+            slotSet = existing.slots;
+            reasonMap = existing.reasons ?? new Map<TimeSlot, string>();
+            existing.reasons = reasonMap;
           }
-          memberMap.set(key, existing);
+
+          for (const slot of slots) {
+            slotSet.add(slot);
+            if (record.reason) {
+              reasonMap.set(slot, record.reason);
+            }
+          }
         };
 
         if (record.userId) {

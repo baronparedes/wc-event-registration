@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
+import type { TimeSlot } from '@/hooks/domain/members';
+
 import {
   buildCalendarCells,
   buildMobileWeekCells,
+  getMemberExcusedDetails,
   getMonthWeekRanges,
   isMemberExcused,
   parseServiceSlots,
   toIsoDateKey,
   toMonthDayKey,
 } from '../calendar';
-import type { ExcusedMemberMap, MilestoneEntry } from '../types';
+import type { ExcusedMemberMap, ExcusedSlotData, MilestoneEntry } from '../types';
 
 describe('hub-calendar calendar utils', () => {
   it('formats month and day keys with padding', () => {
@@ -205,6 +208,87 @@ describe('hub-calendar calendar utils', () => {
           member_id: 'MEM-001',
         }),
       ).toBe(false);
+    });
+  });
+
+  describe('getMemberExcusedDetails', () => {
+    const detailedExcusedMap: ExcusedMemberMap = new Map([
+      [
+        '2026-09-20',
+        new Map<string, Set<TimeSlot> | ExcusedSlotData>([
+          [
+            'mem-with-reason',
+            {
+              slots: new Set<TimeSlot>(['9AM', '12NN']),
+              reasons: new Map<TimeSlot, string>([
+                ['9AM', 'Family reunion'],
+                ['12NN', 'Family reunion lunch'],
+              ]),
+            },
+          ],
+          ['mem-legacy-set', new Set<TimeSlot>(['9AM'])],
+        ]),
+      ],
+    ]);
+
+    it('returns isExcused: true and the slot-specific reason', () => {
+      const result9AM = getMemberExcusedDetails(
+        detailedExcusedMap,
+        '2026-09-20',
+        { member_id: 'MEM-WITH-REASON' },
+        '9AM',
+      );
+      expect(result9AM).toEqual({
+        isExcused: true,
+        reason: 'Family reunion',
+      });
+
+      const result12NN = getMemberExcusedDetails(
+        detailedExcusedMap,
+        '2026-09-20',
+        { member_id: 'MEM-WITH-REASON' },
+        '12NN',
+      );
+      expect(result12NN).toEqual({
+        isExcused: true,
+        reason: 'Family reunion lunch',
+      });
+    });
+
+    it('returns isExcused: false when queried for an unexcused slot', () => {
+      const result = getMemberExcusedDetails(
+        detailedExcusedMap,
+        '2026-09-20',
+        { member_id: 'MEM-WITH-REASON' },
+        '3PM',
+      );
+      expect(result).toEqual({
+        isExcused: false,
+        reason: undefined,
+      });
+    });
+
+    it('handles legacy Set<TimeSlot> gracefully with undefined reason', () => {
+      const result = getMemberExcusedDetails(
+        detailedExcusedMap,
+        '2026-09-20',
+        { member_id: 'MEM-LEGACY-SET' },
+        '9AM',
+      );
+      expect(result).toEqual({
+        isExcused: true,
+        reason: '',
+      });
+    });
+
+    it('returns isExcused: false for unknown member or missing map', () => {
+      expect(
+        getMemberExcusedDetails(detailedExcusedMap, '2026-09-20', { member_id: 'UNKNOWN' }, '9AM'),
+      ).toEqual({ isExcused: false });
+
+      expect(
+        getMemberExcusedDetails(undefined, '2026-09-20', { member_id: 'MEM-WITH-REASON' }, '9AM'),
+      ).toEqual({ isExcused: false });
     });
   });
 });

@@ -92,11 +92,75 @@ describe('hub-calendar export functions', () => {
 
     expect(filename).toBe('service-schedules-2026-09-06.csv');
     const lines = csvText.split('\n');
-    expect(lines[0]).toBe('Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone');
+    expect(lines[0]).toBe(
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
+    );
     // 9AM slot: Adam first, then Zack
-    expect(lines[1]).toContain('9:00 AM,MEM-001,Adam');
-    expect(lines[2]).toContain('9:00 AM,MEM-001,Zack');
+    expect(lines[1]).toContain(
+      '9:00 AM,MEM-001,Adam,Johnny,Usher,adult,john@example.com,123-456,No,',
+    );
+    expect(lines[2]).toContain(
+      '9:00 AM,MEM-001,Zack,Johnny,Usher,adult,john@example.com,123-456,No,',
+    );
     // 12NN slot: Zack
-    expect(lines[3]).toContain('12:00 NN,MEM-001,Zack');
+    expect(lines[3]).toContain(
+      '12:00 NN,MEM-001,Zack,Johnny,Usher,adult,john@example.com,123-456,No,',
+    );
+  });
+
+  it('exports excused status and reason when excusedMap is provided', () => {
+    const excusedMember = makeMember({ id: 'm-excused', member_id: 'MEM-EXC', full_name: 'Bob' });
+    const normalMember = makeMember({ id: 'm-normal', member_id: 'MEM-NORM', full_name: 'Alice' });
+
+    const entries: MemberScheduleEntry[] = [
+      {
+        member: excusedMember,
+        sundayKey: 'third_sunday',
+        timeSlots: ['9AM', '12NN'],
+      },
+      {
+        member: normalMember,
+        sundayKey: 'third_sunday',
+        timeSlots: ['9AM'],
+      },
+    ];
+
+    const excusedMap = new Map([
+      [
+        '2026-09-20',
+        new Map([
+          [
+            'm-excused',
+            {
+              slots: new Set(['9AM' as const]),
+              reasons: new Map([['9AM' as const, 'Medical rest, doctor advise']]),
+            },
+          ],
+        ]),
+      ],
+    ]);
+
+    const { csvText } = buildSundaySchedulesCsvExport({
+      selectedEntries: entries,
+      year: 2026,
+      monthIndex: 8,
+      dayNumber: 20,
+      excusedMap,
+    });
+
+    const lines = csvText.split('\n');
+    // Header
+    expect(lines[0]).toBe(
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
+    );
+    // 9AM: Alice (not excused)
+    expect(lines[1]).toContain('9:00 AM,MEM-NORM,Alice');
+    expect(lines[1]).toContain(',No,');
+    // 9AM: Bob (excused with reason, quoted for comma)
+    expect(lines[2]).toContain('9:00 AM,MEM-EXC,Bob');
+    expect(lines[2]).toContain(',Yes,"Medical rest, doctor advise"');
+    // 12NN: Bob (not excused for 12NN)
+    expect(lines[3]).toContain('12:00 NN,MEM-EXC,Bob');
+    expect(lines[3]).toContain(',No,');
   });
 });

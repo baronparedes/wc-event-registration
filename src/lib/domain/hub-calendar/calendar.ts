@@ -1,6 +1,13 @@
 import type { MemberScheduleEntry, SundayKey, TimeSlot } from '@/hooks/domain/members';
 
-import type { CalendarCell, ExcusedMemberMap, MilestoneEntry, WeekCell, WeekRange } from './types';
+import type {
+  CalendarCell,
+  ExcusedMemberMap,
+  ExcusedSlotData,
+  MilestoneEntry,
+  WeekCell,
+  WeekRange,
+} from './types';
 
 export const SUNDAY_KEYS: SundayKey[] = [
   'first_sunday',
@@ -194,6 +201,54 @@ export function buildMobileWeekCells(
 }
 
 /**
+ * Retrieves the excused status and reason for a member on a given date key.
+ * Supports matching against both users.id (UUID) and users.member_id (e.g. "WC-001"),
+ * with case-insensitive and whitespace-tolerant matching.
+ *
+ * If `serviceSlot` is provided, verifies if the member is excused for that specific slot and returns that slot's reason.
+ * If `serviceSlot` is omitted, returns true if the member is excused for ANY slot on that date, and the first available reason.
+ */
+export function getMemberExcusedDetails(
+  excusedMap: ExcusedMemberMap | undefined,
+  dateKey: string | null | undefined,
+  member: { id?: string | null; member_id?: string | null },
+  serviceSlot?: TimeSlot,
+): { isExcused: boolean; reason?: string } {
+  if (!excusedMap || !dateKey) return { isExcused: false };
+  const memberMap = excusedMap.get(dateKey);
+  if (!memberMap) return { isExcused: false };
+
+  let entry: Set<TimeSlot> | ExcusedSlotData | undefined;
+  if (member.id) {
+    entry = memberMap.get(member.id.toLowerCase());
+  }
+  if (!entry && member.member_id) {
+    entry = memberMap.get(member.member_id.trim().toLowerCase());
+  }
+
+  if (!entry) return { isExcused: false };
+
+  const slots = entry instanceof Set ? entry : entry.slots;
+  const reasons = entry instanceof Set ? undefined : entry.reasons;
+
+  if (!slots || slots.size === 0) return { isExcused: false };
+
+  if (serviceSlot) {
+    const isExcused = slots.has(serviceSlot);
+    return {
+      isExcused,
+      reason: isExcused ? (reasons?.get(serviceSlot) ?? '') : undefined,
+    };
+  }
+
+  const firstReason = reasons ? Array.from(reasons.values())[0] : undefined;
+  return {
+    isExcused: true,
+    reason: firstReason,
+  };
+}
+
+/**
  * Checks if a member is excused for a given date key.
  * Supports matching against both users.id (UUID) and users.member_id (e.g. "WC-001"),
  * with case-insensitive and whitespace-tolerant matching.
@@ -207,23 +262,5 @@ export function isMemberExcused(
   member: { id?: string | null; member_id?: string | null },
   serviceSlot?: TimeSlot,
 ): boolean {
-  if (!excusedMap || !dateKey) return false;
-  const memberMap = excusedMap.get(dateKey);
-  if (!memberMap) return false;
-
-  let memberSlots: Set<TimeSlot> | undefined;
-  if (member.id) {
-    memberSlots = memberMap.get(member.id.toLowerCase());
-  }
-  if (!memberSlots && member.member_id) {
-    memberSlots = memberMap.get(member.member_id.trim().toLowerCase());
-  }
-
-  if (!memberSlots || memberSlots.size === 0) return false;
-
-  if (serviceSlot) {
-    return memberSlots.has(serviceSlot);
-  }
-
-  return true;
+  return getMemberExcusedDetails(excusedMap, dateKey, member, serviceSlot).isExcused;
 }
