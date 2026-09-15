@@ -1,18 +1,24 @@
+import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
 import { createGetEventsTool } from './getEvents.ts';
+import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
 import { createGetUpcomingBirthdaysTool } from './getUpcomingBirthdays.ts';
 import { createGetUserCommitmentsTool } from './getUserCommitments.ts';
 import { createGetUserDemographicsTool } from './getUserDemographics.ts';
 import type { ToolContext } from './types.ts';
 
 export * from './types.ts';
+export * from './getAdminRoutes.ts';
 export * from './getEvents.ts';
+export * from './getExcusedMembers.ts';
 export * from './getUpcomingBirthdays.ts';
 export * from './getUserCommitments.ts';
 export * from './getUserDemographics.ts';
 
 export function createChatTools(context: ToolContext) {
   return {
+    getAdminRoutes: createGetAdminRoutesTool(context),
     getEvents: createGetEventsTool(context),
+    getExcusedMembers: createGetExcusedMembersTool(context),
     getUpcomingBirthdays: createGetUpcomingBirthdaysTool(context),
     getUserCommitments: createGetUserCommitmentsTool(context),
     getUserDemographics: createGetUserDemographicsTool(context),
