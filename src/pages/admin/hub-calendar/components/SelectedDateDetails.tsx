@@ -87,7 +87,7 @@ export function SelectedDateDetails({
             <button
               type="button"
               onClick={() => onRoleChange(null)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 selectedRole === null
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
@@ -100,7 +100,7 @@ export function SelectedDateDetails({
                 key={role}
                 type="button"
                 onClick={() => onRoleChange(role === selectedRole ? null : role)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   selectedRole === role
                     ? 'bg-primary text-white'
                     : 'bg-surface border border-border text-muted hover:text-text'
@@ -161,7 +161,7 @@ export function SelectedDateDetails({
       <div className="space-y-8">
         {/* Section 1: Member Milestones */}
         <div>
-          <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
             <div>
               <h3 className="font-heading text-lg font-semibold text-text">
                 Birthdays &amp; Wedding Anniversaries
@@ -169,10 +169,12 @@ export function SelectedDateDetails({
               <p className="text-xs text-muted">Member milestones celebrated on this day</p>
             </div>
             {selectedMilestones.length > 0 && (
-              <Badge variant="neutral" className="text-xs">
-                {selectedMilestones.length} milestone
-                {selectedMilestones.length === 1 ? '' : 's'}
-              </Badge>
+              <div className="flex items-center gap-2 justify-end">
+                <Badge variant="neutral" className="text-xs">
+                  {selectedMilestones.length} milestone
+                  {selectedMilestones.length === 1 ? '' : 's'}
+                </Badge>
+              </div>
             )}
           </div>
 
@@ -228,7 +230,7 @@ export function SelectedDateDetails({
               </p>
             </div>
             {isCurrentSelectedSunday && selectedEntries.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end">
                 <Badge variant="neutral" className="text-xs">
                   {selectedEntries.length} scheduled
                 </Badge>
