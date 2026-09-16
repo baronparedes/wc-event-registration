@@ -1,6 +1,6 @@
 import { ClipboardList, Copy, FormInput, QrCode, Settings, UserCheck, Users } from 'lucide-react';
 
-import { ActionLink } from '@/components/ui/ActionLink';
+import { ActionButton, ActionLink } from '@/components/ui/ActionLink';
 import {
   ListTable,
   ListTableBody,
@@ -86,18 +86,16 @@ export function AdminEventsTable({
                     </ActionLink>
                   )}
                   {canWrite && onDuplicateClick && (
-                    <button
-                      type="button"
+                    <ActionButton
                       title="Duplicate"
                       aria-label="Duplicate"
-                      className="text-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDuplicateClick(event);
                       }}
                     >
                       <Copy className="h-5 w-5" />
-                    </button>
+                    </ActionButton>
                   )}
                   {canWrite && (
                     <ActionLink
