@@ -30,6 +30,7 @@
     "supabase:fn": "supabase functions serve --env-file .env",
     "seed:members:generate": "ruby scripts/generate-local-member-seed.rb",
     "env:validate:production": "node scripts/validate-production-env.mjs",
+    "git:clean": "bash scripts/clean-merged-branches.sh",
     "prepare": "husky"
   },
   "dependencies": {
