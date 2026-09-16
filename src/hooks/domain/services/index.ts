@@ -10,3 +10,4 @@ export * from './mutations/useDeleteServiceSeatMutation';
 export * from './mutations/useRecordServiceAttendanceMutation';
 export * from './mutations/useUpdateServiceAttendanceMutation';
 export * from './mutations/useDeleteServiceAttendanceMutation';
+export * from './mutations/useBulkUpsertServiceAttendanceMutation';
