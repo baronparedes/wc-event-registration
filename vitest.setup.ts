@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { afterAll, beforeAll } from 'vitest';
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+// Load environment variables from .env.example
+dotenv.config({ path: path.resolve(__dirname, '.env.example') });
 
 // Stub fetch if not available in test environment
 if (!globalThis.fetch) {
@@ -15,7 +15,7 @@ if (!globalThis.fetch) {
 
 // Setup any global test utilities or environment variables
 beforeAll(() => {
-  // Environment variables are loaded from .env.local by dotenv above
+  // Environment variables are loaded from .env.example by dotenv above
 });
 
 afterAll(() => {

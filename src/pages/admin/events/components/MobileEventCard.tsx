@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import {
   ClipboardList,
+  Copy,
   Edit,
   FormInput,
   MapPin,
@@ -26,6 +27,7 @@ type MobileEventCardProps = {
   canWrite: boolean;
   canRead: boolean;
   canAccessCheckIn: boolean;
+  onDuplicateClick?: (event: AdminEvent) => void;
 };
 
 export function MobileEventCard({
@@ -33,6 +35,7 @@ export function MobileEventCard({
   canWrite,
   canRead,
   canAccessCheckIn,
+  onDuplicateClick,
 }: MobileEventCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -123,6 +126,19 @@ export function MobileEventCard({
               </Button>
             }
           >
+            {canWrite && onDuplicateClick && (
+              <DropdownMenuItem
+                onClick={() => {
+                  onDuplicateClick(event);
+                  setIsMenuOpen(false);
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <Copy className="h-4 w-4" />
+                  Duplicate
+                </span>
+              </DropdownMenuItem>
+            )}
             {canWrite && (
               <DropdownMenuItem to={toRoute('adminEventAttendance', { id: event.id })}>
                 <span className="flex items-center gap-2">
