@@ -10,8 +10,10 @@ const {
   mockUseAdminAuthQuery,
   mockUseAdminLoginMutation,
   mockUseGoogleLoginMutation,
+  mockUseYahooLoginMutation,
   mockLoginMutateAsync,
   mockGoogleLoginMutateAsync,
+  mockYahooLoginMutateAsync,
   mockToastSuccess,
   mockToastError,
   mockSignOut,
@@ -22,8 +24,10 @@ const {
   mockUseAdminAuthQuery: vi.fn(),
   mockUseAdminLoginMutation: vi.fn(),
   mockUseGoogleLoginMutation: vi.fn(),
+  mockUseYahooLoginMutation: vi.fn(),
   mockLoginMutateAsync: vi.fn(),
   mockGoogleLoginMutateAsync: vi.fn(),
+  mockYahooLoginMutateAsync: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
   mockSignOut: vi.fn(),
@@ -77,6 +81,7 @@ vi.mock('@/hooks/domain/auth', async () => {
     useAdminAuthQuery: () => mockUseAdminAuthQuery(),
     useAdminLoginMutation: () => mockUseAdminLoginMutation(),
     useGoogleLoginMutation: () => mockUseGoogleLoginMutation(),
+    useYahooLoginMutation: () => mockUseYahooLoginMutation(),
   };
 });
 
@@ -105,6 +110,10 @@ describe('LoginPage', () => {
     });
     mockUseGoogleLoginMutation.mockReturnValue({
       mutateAsync: mockGoogleLoginMutateAsync,
+      isPending: false,
+    });
+    mockUseYahooLoginMutation.mockReturnValue({
+      mutateAsync: mockYahooLoginMutateAsync,
       isPending: false,
     });
     mockSignOut.mockResolvedValue({ error: null });
@@ -272,6 +281,30 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('Google OAuth failed');
+    });
+  });
+
+  it('triggers yahoo sign in mutation on yahoo button click', async () => {
+    render(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with Yahoo' }));
+
+    await waitFor(() => {
+      expect(mockYahooLoginMutateAsync).toHaveBeenCalledWith({
+        redirectTo: '/login?redirect=%2Fadmin%2Fevents',
+      });
+    });
+  });
+
+  it('shows error toast when yahoo sign in mutation fails', async () => {
+    mockYahooLoginMutateAsync.mockRejectedValueOnce(new Error('Yahoo OAuth failed'));
+
+    render(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with Yahoo' }));
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Yahoo OAuth failed');
     });
   });
 
