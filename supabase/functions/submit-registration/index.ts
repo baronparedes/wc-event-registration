@@ -10,6 +10,7 @@ import {
   createOptionUsageCounter,
   extractSelectedOptionValuesFromStoredAnswer,
   incrementOptionUsageFromSelection,
+  isFieldVisible,
   normalizePrimaryRoleValue,
   parseRequestBody,
   validateFieldValue,
@@ -726,7 +727,11 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const error = validateFieldValue(fieldKey, value, field);
+      if (!isFieldVisible(field, eventFields, responses)) {
+        continue;
+      }
+
+      const error = validateFieldValue(fieldKey, value, field, eventFields, responses);
       if (error) {
         validationErrors.push(error);
       }
@@ -734,7 +739,11 @@ Deno.serve(async (req) => {
 
     // Check for missing required fields
     for (const [fieldKey, field] of fieldMap) {
-      if (field.is_required && !(fieldKey in responses)) {
+      if (
+        field.is_required &&
+        isFieldVisible(field, eventFields, responses) &&
+        !(fieldKey in responses)
+      ) {
         validationErrors.push({
           fieldKey,
           message: `${field.label} is required.`,
