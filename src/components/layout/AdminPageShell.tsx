@@ -18,11 +18,11 @@ export function AdminPageShell({ children, wide = false }: AdminPageShellProps) 
   return (
     <div
       className={cx(
-        `mx-auto w-full ${wide ? 'max-w-7xl' : 'max-w-6xl'} print:px-8 print:py-8`,
-        isMinimizedShell ? 'px-1 py-3 sm:px-2' : 'px-4 py-6',
+        `mx-auto w-full ${wide ? 'max-w-screen-2xl' : 'max-w-7xl'} print:px-8 print:py-8`,
+        isMinimizedShell ? 'px-2 py-4 sm:px-4' : 'px-4 py-8 sm:px-6 lg:px-8',
       )}
     >
-      <div className={cx(isMinimizedShell ? 'space-y-4' : 'space-y-5')}>{children}</div>
+      <div className={cx(isMinimizedShell ? 'space-y-4' : 'space-y-6')}>{children}</div>
     </div>
   );
 }
@@ -48,7 +48,7 @@ function AdminPageHeader({
   navLinks,
 }: AdminPageHeaderProps) {
   return (
-    <div className="space-y-3 print:hidden">
+    <div className="space-y-4 print:hidden">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted print:hidden">
           {breadcrumbs.map((crumb, index) => (
@@ -99,7 +99,12 @@ type AdminPageFiltersProps = {
 
 function AdminPageFilters({ children, className }: AdminPageFiltersProps) {
   return (
-    <div className={cx('rounded-2xl border border-border bg-surface p-4 print:hidden', className)}>
+    <div
+      className={cx(
+        'rounded-2xl border border-border bg-surface p-4 sm:p-6 print:hidden',
+        className,
+      )}
+    >
       {children}
     </div>
   );
