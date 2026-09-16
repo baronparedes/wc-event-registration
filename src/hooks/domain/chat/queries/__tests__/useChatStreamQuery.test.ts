@@ -39,6 +39,9 @@ describe('useChatStreamQuery', () => {
     expect(mockCallChatStream).toHaveBeenCalledWith(
       { messages: [{ role: 'user', content: 'Hi' }] },
       onChunk,
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
     );
     expect(onChunk).toHaveBeenCalledWith('Hello');
     expect(result.current.isLoading).toBe(false);
