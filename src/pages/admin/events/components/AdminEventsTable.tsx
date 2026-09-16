@@ -1,4 +1,4 @@
-import { ClipboardList, FormInput, QrCode, Settings, UserCheck, Users } from 'lucide-react';
+import { ClipboardList, Copy, FormInput, QrCode, Settings, UserCheck, Users } from 'lucide-react';
 
 import { ActionLink } from '@/components/ui/ActionLink';
 import {
@@ -23,6 +23,7 @@ type AdminEventsTableProps = {
   canRead: boolean;
   canAccessCheckIn: boolean;
   onEventSelect: (eventId: string) => void;
+  onDuplicateClick?: (event: AdminEvent) => void;
 };
 
 export function AdminEventsTable({
@@ -31,6 +32,7 @@ export function AdminEventsTable({
   canRead,
   canAccessCheckIn,
   onEventSelect,
+  onDuplicateClick,
 }: AdminEventsTableProps) {
   return (
     <div>
@@ -82,6 +84,20 @@ export function AdminEventsTable({
                     >
                       <Settings className="h-5 w-5" />
                     </ActionLink>
+                  )}
+                  {canWrite && onDuplicateClick && (
+                    <button
+                      type="button"
+                      title="Duplicate"
+                      aria-label="Duplicate"
+                      className="text-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicateClick(event);
+                      }}
+                    >
+                      <Copy className="h-5 w-5" />
+                    </button>
                   )}
                   {canWrite && (
                     <ActionLink

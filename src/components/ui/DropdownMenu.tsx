@@ -38,12 +38,24 @@ export function DropdownMenu({ trigger, children, open, onOpenChange }: Dropdown
 }
 
 type DropdownMenuItemProps = {
-  to: string;
+  to?: string;
   children: ReactNode;
   onClick?: () => void;
 };
 
 export function DropdownMenuItem({ to, children, onClick }: DropdownMenuItemProps) {
+  if (!to) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="block w-full text-left px-4 py-2.5 text-sm text-text transition hover:bg-background/50"
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
     <Link
       to={to}

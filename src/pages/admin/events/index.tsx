@@ -2,16 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Loader2, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
+import { useDuplicateEventMutation } from '@/hooks/domain/events/mutations';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
+import type { AdminEvent } from '@/lib/domain/events';
 
-import { AdminEventsTable, MobileEventCard } from './components';
+import { AdminEventsTable, DuplicateEventDialog, MobileEventCard } from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
@@ -50,6 +53,24 @@ export function AdminEventsPage() {
   const isMobileViewport = useIsMobileViewport();
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  const [duplicateEvent, setDuplicateEvent] = useState<AdminEvent | null>(null);
+  const duplicateMutation = useDuplicateEventMutation();
+
+  const handleDuplicateEvent = async (sourceEventId: string, newTitle: string, newSlug: string) => {
+    try {
+      const newEventId = await duplicateMutation.mutateAsync({
+        source_event_id: sourceEventId,
+        new_title: newTitle,
+        new_slug: newSlug,
+      });
+      toast.success('Event duplicated successfully');
+      setDuplicateEvent(null);
+      navigate(toRoute('adminEventDetail', { id: newEventId }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate event');
+    }
+  };
 
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -160,6 +181,7 @@ export function AdminEventsPage() {
                     canWrite={canWrite}
                     canRead={canRead}
                     canAccessCheckIn={canAccessCheckIn}
+                    onDuplicateClick={setDuplicateEvent}
                   />
                 ))}
               </div>
@@ -170,8 +192,17 @@ export function AdminEventsPage() {
                 canRead={canRead}
                 canAccessCheckIn={canAccessCheckIn}
                 onEventSelect={(eventId) => navigate(toRoute('adminEventDetail', { id: eventId }))}
+                onDuplicateClick={setDuplicateEvent}
               />
             )}
+
+            <DuplicateEventDialog
+              isOpen={Boolean(duplicateEvent)}
+              onClose={() => setDuplicateEvent(null)}
+              event={duplicateEvent}
+              isPending={duplicateMutation.isPending}
+              onDuplicate={handleDuplicateEvent}
+            />
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="text-xs text-muted">

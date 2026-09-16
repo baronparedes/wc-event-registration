@@ -1,13 +1,16 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdminEventsPage } from '@/pages/admin/events';
 
-const { mockUseAdminEventsQuery, mockUseAdminAuthQuery } = vi.hoisted(() => ({
-  mockUseAdminEventsQuery: vi.fn(),
-  mockUseAdminAuthQuery: vi.fn(),
-}));
+const { mockUseAdminEventsQuery, mockUseAdminAuthQuery, mockUseDuplicateEventMutation } =
+  vi.hoisted(() => ({
+    mockUseAdminEventsQuery: vi.fn(),
+    mockUseAdminAuthQuery: vi.fn(),
+    mockUseDuplicateEventMutation: vi.fn(),
+  }));
 
 class MockIntersectionObserver {
   observe = vi.fn();
@@ -35,6 +38,16 @@ vi.mock('@/hooks/domain/events', async () => {
   return {
     ...actual,
     useAdminEventsQuery: (...args: unknown[]) => mockUseAdminEventsQuery(...args),
+  };
+});
+
+vi.mock('@/hooks/domain/events/mutations', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/events/mutations')>(
+    '@/hooks/domain/events/mutations',
+  );
+  return {
+    ...actual,
+    useDuplicateEventMutation: (...args: unknown[]) => mockUseDuplicateEventMutation(...args),
   };
 });
 
@@ -67,8 +80,23 @@ vi.mock('@/pages/admin/events/components', async () => {
   };
 });
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+  },
+});
+
+function wrapWithProviders(ui: React.ReactElement) {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
 describe('AdminEventsPage', () => {
   beforeEach(() => {
+    queryClient.clear();
     vi.clearAllMocks();
     mockUseAdminAuthQuery.mockReturnValue({
       data: { isAuthenticated: true, session: null, adminRole: 'admin' },
@@ -103,14 +131,14 @@ describe('AdminEventsPage', () => {
       isLoading: false,
       error: null,
     });
+    mockUseDuplicateEventMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
   });
 
   it('renders event rows without publish/archive actions and displays total count', () => {
-    render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.getByText('Sample Event')).toBeInTheDocument();
     expect(screen.getByText('sample-event')).toBeInTheDocument();
@@ -153,11 +181,7 @@ describe('AdminEventsPage', () => {
       error: null,
     });
 
-    render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.getByText('Showing 1 of 50 events')).toBeInTheDocument();
     const loadMoreBtn = screen.getByRole('button', { name: 'Load More' });
@@ -168,35 +192,31 @@ describe('AdminEventsPage', () => {
   });
 
   it('renders loading, error, and empty states', () => {
-    mockUseAdminEventsQuery.mockReturnValueOnce({
+    mockUseAdminEventsQuery.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
     });
 
-    const { rerender } = render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    const { unmount: unmount1 } = wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.getByText('Loading events...')).toBeInTheDocument();
 
-    mockUseAdminEventsQuery.mockReturnValueOnce({
+    unmount1();
+
+    mockUseAdminEventsQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error('boom'),
     });
 
-    rerender(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    const { unmount: unmount2 } = wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.getByText('Failed to load events. Please refresh.')).toBeInTheDocument();
 
-    mockUseAdminEventsQuery.mockReturnValueOnce({
+    unmount2();
+
+    mockUseAdminEventsQuery.mockReturnValue({
       data: {
         pages: [
           {
@@ -215,22 +235,14 @@ describe('AdminEventsPage', () => {
       error: null,
     });
 
-    rerender(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.getByText('No events yet')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create Event' })).toBeInTheDocument();
   });
 
   it('renders search controls and passes search term to events query', async () => {
-    render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    wrapWithProviders(<AdminEventsPage />);
 
     const searchInput = screen.getByPlaceholderText('Search by event title or slug');
     fireEvent.change(searchInput, { target: { value: 'sample' } });
@@ -243,11 +255,7 @@ describe('AdminEventsPage', () => {
   });
 
   it('keeps clear disabled when search is empty and resets search when clicked', async () => {
-    render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    wrapWithProviders(<AdminEventsPage />);
 
     const clearButton = screen.getByRole('button', { name: 'Clear' });
     expect(clearButton).toBeDisabled();
@@ -274,11 +282,7 @@ describe('AdminEventsPage', () => {
       isLoading: false,
     });
 
-    render(
-      <MemoryRouter>
-        <AdminEventsPage />
-      </MemoryRouter>,
-    );
+    wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Edit' })).not.toBeInTheDocument();
