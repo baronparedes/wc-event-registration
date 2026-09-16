@@ -4,11 +4,10 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
-    "ignoreDeprecations": "6.0",
+    "strict": true,
     "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"],
     "skipLibCheck": true,
 

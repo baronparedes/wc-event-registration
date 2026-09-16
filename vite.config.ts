@@ -50,6 +50,28 @@ function getVendorChunkName(id: string) {
     return 'ui-vendor';
   }
 
+  if (
+    id.includes('node_modules/react-markdown/') ||
+    id.includes('node_modules/remark-gfm/') ||
+    id.includes('node_modules/micromark') ||
+    id.includes('node_modules/mdast-') ||
+    id.includes('node_modules/unist-') ||
+    id.includes('node_modules/vfile') ||
+    id.includes('node_modules/unified/') ||
+    id.includes('node_modules/dompurify/') ||
+    id.includes('node_modules/hast-')
+  ) {
+    return 'markdown-vendor';
+  }
+
+  if (
+    id.includes('node_modules/zod/') ||
+    id.includes('node_modules/react-hook-form/') ||
+    id.includes('node_modules/@hookform/')
+  ) {
+    return 'form-vendor';
+  }
+
   return 'vendor';
 }
 
