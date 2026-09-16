@@ -13,6 +13,7 @@ import {
   useAdminAuthQuery,
   useAdminLoginMutation,
   useGoogleLoginMutation,
+  useYahooLoginMutation,
 } from '@/hooks/domain/auth';
 
 const adminLoginSchema = z.object({
@@ -42,6 +43,7 @@ export function LoginPage() {
   const location = useLocation();
   const loginMutation = useAdminLoginMutation();
   const googleLoginMutation = useGoogleLoginMutation();
+  const yahooLoginMutation = useYahooLoginMutation();
   const { data: adminAuth, isLoading } = useAdminAuthQuery();
   const redirectTarget = getSafeRedirectTarget(location.search);
   const [showEmailLogin, setShowEmailLogin] = useState(false);
@@ -80,6 +82,16 @@ export function LoginPage() {
     }
   }
 
+  async function handleYahooSignIn() {
+    try {
+      const fullRedirectPath = `${ROUTE_PATHS.login}?redirect=${encodeURIComponent(redirectTarget)}`;
+      await yahooLoginMutation.mutateAsync({ redirectTo: fullRedirectPath });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : TOAST_MESSAGES.adminSignInFailure;
+      toast.error(message);
+    }
+  }
+
   async function handleSubmit(values: AdminLoginForm) {
     try {
       await loginMutation.mutateAsync(values);
@@ -95,11 +107,11 @@ export function LoginPage() {
   return (
     <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <h1 className="font-heading text-2xl font-semibold text-text">Login</h1>
-      <p className="mt-2 text-sm text-muted">Sign in with your Google account.</p>
+      <p className="mt-2 text-sm text-muted">Sign in with your Google or Yahoo account.</p>
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-4">
         <Button
-          disabled={googleLoginMutation.isPending}
+          disabled={googleLoginMutation.isPending || yahooLoginMutation.isPending}
           fullWidth
           size="md"
           variant="outline"
@@ -125,6 +137,23 @@ export function LoginPage() {
             />
           </svg>
           {googleLoginMutation.isPending ? 'Redirecting...' : 'Sign in with Google'}
+        </Button>
+
+        <Button
+          disabled={googleLoginMutation.isPending || yahooLoginMutation.isPending}
+          fullWidth
+          size="md"
+          variant="outline"
+          type="button"
+          onClick={handleYahooSignIn}
+        >
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M22.776 5.419c-.067-.066-.195-.121-.351-.121h-2.909c-.218 0-.424.086-.549.255L14.712 11.7l-3.327-5.992c-.105-.181-.295-.288-.501-.288H7.994c-.183 0-.306.071-.359.16-.051.089-.033.228.053.374l5.337 9.088v6.622c0 .245.195.441.444.441h2.518c.247 0 .444-.196.444-.441v-6.69l6.302-9.155c.074-.107.106-.239.043-.397z"
+              fill="#400090"
+            />
+          </svg>
+          {yahooLoginMutation.isPending ? 'Redirecting...' : 'Sign in with Yahoo'}
         </Button>
       </div>
 
