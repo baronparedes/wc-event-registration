@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { VALIDATION_PATTERNS } from '@/config/constants';
 import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 import type { AdminEventField, PublicEventField } from '@/lib/domain/event-fields';
+import { isFieldVisible } from '@/lib/domain/field-visibility';
 
 import type { SubmitPublicRegistrationRequest } from './types';
 
@@ -33,19 +34,32 @@ export type PublicAttendeeInfoInput = z.infer<typeof publicAttendeeInfoSchema>;
 
 /**
  * Schema for public registration submission
- * Composes attendee info + event field responses
+ * Composes attendee info + event field responses with conditional visibility support
  */
 export function buildSubmitPublicRegistrationSchema(
   fields: PublicEventField[],
-): z.ZodSchema<SubmitPublicRegistrationRequest> {
-  const responseSchema = buildDynamicFieldResponseSchema(fields);
+): z.ZodType<SubmitPublicRegistrationRequest> {
+  return z
+    .object({
+      event_slug: z.string().min(1, 'Event slug is required'),
+      attendee: publicAttendeeInfoSchema,
+      responses: z.record(z.string(), z.unknown()),
+      idempotency_key: z.string().min(1, 'Idempotency key is required'),
+    })
+    .superRefine((data, ctx) => {
+      const visibleFields = fields.filter((field) => isFieldVisible(field, fields, data.responses));
+      const responseSchema = buildDynamicFieldResponseSchema(visibleFields);
+      const result = responseSchema.safeParse(data.responses);
 
-  return z.object({
-    event_slug: z.string().min(1, 'Event slug is required'),
-    attendee: publicAttendeeInfoSchema,
-    responses: responseSchema,
-    idempotency_key: z.string().min(1, 'Idempotency key is required'),
-  });
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          ctx.addIssue({
+            ...issue,
+            path: ['responses', ...issue.path],
+          });
+        });
+      }
+    });
 }
 
 /**

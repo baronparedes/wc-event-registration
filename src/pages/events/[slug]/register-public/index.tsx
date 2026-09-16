@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -208,7 +209,11 @@ export function PublicEventRegistrationPage() {
         schema.parse(requestData);
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : TOAST_MESSAGES.registration.submitFailed;
+          error instanceof z.ZodError
+            ? error.issues[0]?.message || TOAST_MESSAGES.registration.submitFailed
+            : error instanceof Error
+              ? error.message
+              : TOAST_MESSAGES.registration.submitFailed;
         toast.error(message);
         return;
       }
