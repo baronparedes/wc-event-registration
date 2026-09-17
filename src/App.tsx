@@ -34,7 +34,9 @@ function App() {
                   : 'min-h-16 rounded-2xl px-5 py-4 shadow-lg',
                 title: isMobileToastLayout ? 'font-semibold leading-8' : 'font-semibold leading-6',
                 description: isMobileToastLayout ? 'leading-7 text-muted' : 'leading-5 text-muted',
-                closeButton: isMobileToastLayout ? 'h-10 w-10' : 'h-8 w-8',
+                closeButton: isMobileToastLayout
+                  ? '!h-10 !w-10 !min-h-0 !min-w-0 !p-0 !rounded-full aspect-square flex items-center justify-center'
+                  : '!h-8 !w-8 !min-h-0 !min-w-0 !p-0 !rounded-full aspect-square flex items-center justify-center',
               },
             }}
           />
