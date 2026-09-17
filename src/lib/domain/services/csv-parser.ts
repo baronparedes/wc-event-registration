@@ -129,6 +129,19 @@ export interface ServiceAttendanceCsvPreviewRow {
   member_name?: string;
 }
 
+export const USHER_BACKROOM_TABLE = 'Usher / Backroom';
+
+export function mapServiceAttendanceTableNumber(tableInput: string): string {
+  const trimmed = tableInput.trim();
+  if (!trimmed) return trimmed;
+
+  const parsed = Number(trimmed.replace(/^table\s*/i, '').trim());
+  if (!Number.isNaN(parsed) && parsed > 100) {
+    return USHER_BACKROOM_TABLE;
+  }
+  return trimmed;
+}
+
 export function processParsedCsvData(
   parsedData: ParsedServiceAttendanceCsv,
 ): ServiceAttendanceCsvPreviewRow[] {
@@ -141,7 +154,8 @@ export function processParsedCsvData(
     const dateStr = rowData['Date']?.trim() ?? '';
     const timeStr = rowData['Time']?.trim() ?? '';
     const timeSlot = rowData['Time_Slot']?.trim() ?? '';
-    const tableNum = rowData['Table']?.trim() ?? '';
+    const rawTableNum = rowData['Table']?.trim() ?? '';
+    const tableNum = mapServiceAttendanceTableNumber(rawTableNum);
 
     if (!rfid) {
       errors.push('RFID is missing');
@@ -152,7 +166,7 @@ export function processParsedCsvData(
     if (!timeSlot) {
       errors.push('Time_Slot is missing');
     }
-    if (!tableNum) {
+    if (!rawTableNum) {
       errors.push('Table is missing');
     }
 
@@ -183,6 +197,9 @@ export function processParsedCsvData(
     if (rowData['VolunteerID']) metadata.volunteer_id = rowData['VolunteerID'];
     if (rowData['Id']) metadata.legacy_id = rowData['Id'];
     if (rowData['Name']) metadata.legacy_name = rowData['Name'];
+    if (tableNum === USHER_BACKROOM_TABLE && rawTableNum !== USHER_BACKROOM_TABLE) {
+      metadata.original_table_number = rawTableNum;
+    }
 
     const isManualEntry =
       rowData['Manual_Entry'] === '1' || rowData['Manual_Entry']?.toLowerCase() === 'true';

@@ -25,6 +25,8 @@ import {
 } from '@/hooks/domain/services';
 import {
   type ServiceAttendanceCsvPreviewRow,
+  USHER_BACKROOM_TABLE,
+  mapServiceAttendanceTableNumber,
   parseServiceAttendanceCsv,
   processParsedCsvData,
 } from '@/lib/domain/services';
@@ -39,10 +41,17 @@ function getMemberNameFromRow(originalData: Record<string, string>): string {
   return '';
 }
 
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(' ');
+}
+
+type StatusFilter = 'all' | 'failed' | 'valid';
+
 export function ServiceAttendanceMigrationPanel() {
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
   const [fileInputKey, setFileInputKey] = useState<number>(0);
   const [rawRows, setRawRows] = useState<ServiceAttendanceCsvPreviewRow[]>([]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const { data: layouts } = useServiceLayoutsQuery();
@@ -86,7 +95,31 @@ export function ServiceAttendanceMigrationPanel() {
 
   const nameToUserMap = useMemo(() => {
     const map = new Map<string, LookupUserByNameResult>();
-    (usersByName ?? []).forEach((u) => map.set(u.full_name.trim().toLowerCase(), u));
+    (usersByName ?? []).forEach((u) => {
+      // 1. Primary: nickname + ' ' + last name
+      const nickname = (u.nickname ?? '').trim();
+      const lastName = (u.last_name ?? '').trim();
+      if (nickname && lastName) {
+        map.set(`${nickname} ${lastName}`.toLowerCase(), u);
+      }
+
+      // 2. Fallback: full_name
+      if (u.full_name) {
+        const fullNameKey = u.full_name.trim().toLowerCase();
+        if (!map.has(fullNameKey)) {
+          map.set(fullNameKey, u);
+        }
+      }
+
+      // 3. Fallback: first_name + ' ' + last_name
+      const firstName = (u.first_name ?? '').trim();
+      if (firstName && lastName) {
+        const firstLast = `${firstName} ${lastName}`.toLowerCase();
+        if (!map.has(firstLast)) {
+          map.set(firstLast, u);
+        }
+      }
+    });
     return map;
   }, [usersByName]);
 
@@ -96,7 +129,7 @@ export function ServiceAttendanceMigrationPanel() {
   const tableToSeatIdMap = useMemo(() => {
     const map = new Map<string, string>();
     (seats ?? []).forEach((s) => {
-      tableToSeatIdMap.set(s.table_number.toLowerCase(), s.id);
+      map.set(s.table_number.toLowerCase(), s.id);
     });
     return map;
   }, [seats]);
@@ -107,19 +140,38 @@ export function ServiceAttendanceMigrationPanel() {
     return rawRows.map((row) => {
       const enriched = { ...row, errors: [...row.errors] };
       const rowName = getMemberNameFromRow(row.originalData);
+      const normalizedRowName = rowName.trim().replace(/\s+/g, ' ').toLowerCase();
 
-      // Try matching by RFID first, then fallback to full name matching
+      // Try matching by RFID first, then fallback to nickname + last name / name matching
       const matchedUser =
         (row.rfid ? rfidToUserMap.get(row.rfid) : undefined) ??
-        (rowName ? nameToUserMap.get(rowName.toLowerCase()) : undefined);
+        (normalizedRowName ? nameToUserMap.get(normalizedRowName) : undefined);
 
-      const seatId = row.table_number
-        ? tableToSeatIdMap.get(row.table_number.toLowerCase())
+      const effectiveTableNumber = mapServiceAttendanceTableNumber(row.table_number);
+      enriched.table_number = effectiveTableNumber;
+
+      if (
+        effectiveTableNumber === USHER_BACKROOM_TABLE &&
+        row.table_number !== USHER_BACKROOM_TABLE
+      ) {
+        enriched.metadata = {
+          ...enriched.metadata,
+          original_table_number: enriched.metadata.original_table_number ?? row.table_number,
+        };
+      }
+
+      const seatId = effectiveTableNumber
+        ? tableToSeatIdMap.get(effectiveTableNumber.toLowerCase())
         : undefined;
 
       if (matchedUser) {
         enriched.user_id = matchedUser.id;
         enriched.member_name = matchedUser.full_name;
+        if (!enriched.rfid && matchedUser.member_id) {
+          enriched.rfid = matchedUser.member_id;
+        }
+        enriched.errors = enriched.errors.filter((e) => e !== 'RFID is missing');
+        enriched.isValid = enriched.errors.length === 0;
       } else {
         enriched.isValid = false;
         if (rowName) {
@@ -135,7 +187,9 @@ export function ServiceAttendanceMigrationPanel() {
         enriched.service_seat_id = seatId;
       } else {
         enriched.isValid = false;
-        enriched.errors.push(`Table ${row.table_number} not found in selected layout.`);
+        enriched.errors.push(
+          `Table ${effectiveTableNumber || row.table_number} not found in selected layout.`,
+        );
       }
 
       return enriched;
@@ -200,10 +254,12 @@ export function ServiceAttendanceMigrationPanel() {
 
       const initialPreview = processParsedCsvData(parseResult.data);
       setRawRows(initialPreview);
+      setStatusFilter('all');
     } catch (err) {
       console.error(err);
       toast.error('Failed to read CSV file');
       setRawRows([]);
+      setStatusFilter('all');
     } finally {
       setFileInputKey((k) => k + 1);
     }
@@ -248,6 +304,7 @@ export function ServiceAttendanceMigrationPanel() {
       toast.success('Migration completed successfully');
       setRawRows([]);
       setSelectedLayoutId('');
+      setStatusFilter('all');
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : 'Migration failed');
@@ -257,7 +314,19 @@ export function ServiceAttendanceMigrationPanel() {
   };
 
   const hasSelectedFile = previewRows.length > 0;
+  const totalRowCount = previewRows.length;
   const invalidRowCount = previewRows.filter((r) => !r.isValid).length;
+  const validRowCount = totalRowCount - invalidRowCount;
+
+  const filteredRows = useMemo(() => {
+    if (statusFilter === 'failed') {
+      return previewRows.filter((r) => !r.isValid);
+    }
+    if (statusFilter === 'valid') {
+      return previewRows.filter((r) => r.isValid);
+    }
+    return previewRows;
+  }, [previewRows, statusFilter]);
 
   return (
     <div className="rounded-2xl border border-border bg-surface shadow-sm">
@@ -277,6 +346,7 @@ export function ServiceAttendanceMigrationPanel() {
             onChange={(val) => {
               setSelectedLayoutId(val);
               setRawRows([]);
+              setStatusFilter('all');
             }}
             placeholder="Select a layout..."
             options={(layouts ?? []).map((l) => ({ value: l.id, label: l.description }))}
@@ -300,22 +370,103 @@ export function ServiceAttendanceMigrationPanel() {
 
         {hasSelectedFile && (
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">
-                Preview ({previewRows.length} row{previewRows.length === 1 ? '' : 's'})
-              </h3>
-              {invalidRowCount > 0 && (
-                <span className="text-sm font-medium text-red-500">
-                  {invalidRowCount} row{invalidRowCount === 1 ? '' : 's'} have errors. Migration
-                  will fail.
-                </span>
-              )}
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold">
+                  Preview ({totalRowCount} row{totalRowCount === 1 ? '' : 's'})
+                </h3>
+                {invalidRowCount > 0 && (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                    {invalidRowCount} with error{invalidRowCount === 1 ? '' : 's'}
+                  </span>
+                )}
+              </div>
+
+              <div className="inline-flex rounded-lg border border-border bg-surface-elevated/40 p-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('all')}
+                  className={cx(
+                    'rounded-md px-3 py-1.5 font-medium transition-colors',
+                    statusFilter === 'all'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-text-secondary hover:text-text-primary',
+                  )}
+                >
+                  All ({totalRowCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('failed')}
+                  className={cx(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors',
+                    statusFilter === 'failed'
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'text-text-secondary hover:text-red-600',
+                  )}
+                >
+                  <span>Failed</span>
+                  <span
+                    className={cx(
+                      'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                      statusFilter === 'failed'
+                        ? 'bg-white/25 text-white'
+                        : invalidRowCount > 0
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-border text-text-secondary',
+                    )}
+                  >
+                    {invalidRowCount}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('valid')}
+                  className={cx(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors',
+                    statusFilter === 'valid'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-text-secondary hover:text-emerald-600',
+                  )}
+                >
+                  <span>Valid</span>
+                  <span
+                    className={cx(
+                      'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                      statusFilter === 'valid'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-emerald-100 text-emerald-700',
+                    )}
+                  >
+                    {validRowCount}
+                  </span>
+                </button>
+              </div>
             </div>
+
+            {invalidRowCount > 0 && statusFilter === 'all' && (
+              <div className="mb-3 flex items-center justify-between rounded-lg border border-red-200 bg-red-50/75 px-3.5 py-2 text-xs text-red-700">
+                <span>
+                  <strong>
+                    {invalidRowCount} row{invalidRowCount === 1 ? '' : 's'} have errors
+                  </strong>{' '}
+                  and will prevent migration from running.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('failed')}
+                  className="font-semibold underline hover:text-red-800"
+                >
+                  Show only failed rows
+                </button>
+              </div>
+            )}
 
             <div className="max-h-[500px] overflow-auto rounded-lg border border-border bg-surface">
               <ListTable>
                 <ListTableHead>
                   <ListTableHeaderRow>
+                    <ListTableHeaderCell>Row</ListTableHeaderCell>
                     <ListTableHeaderCell>Status</ListTableHeaderCell>
                     <ListTableHeaderCell>RFID (User)</ListTableHeaderCell>
                     <ListTableHeaderCell>Date</ListTableHeaderCell>
@@ -325,36 +476,57 @@ export function ServiceAttendanceMigrationPanel() {
                   </ListTableHeaderRow>
                 </ListTableHead>
                 <ListTableBody>
-                  {previewRows.map((row, index) => (
-                    <ListTableRow key={index} className={!row.isValid ? 'bg-red-50/50' : ''}>
-                      <ListTableCell>
-                        {row.isValid ? (
-                          <span className="text-green-600 font-medium text-sm">Valid</span>
-                        ) : (
-                          <div className="flex flex-col gap-1">
-                            <span className="text-red-600 font-medium text-sm">Error</span>
-                            {row.errors.map((e, i) => (
-                              <span key={i} className="text-xs text-red-500">
-                                {e}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                  {filteredRows.length === 0 ? (
+                    <ListTableRow>
+                      <ListTableCell
+                        colSpan={7}
+                        className="py-8 text-center text-sm text-text-secondary"
+                      >
+                        {statusFilter === 'failed'
+                          ? 'No failed rows found! All rows are valid.'
+                          : statusFilter === 'valid'
+                            ? 'No valid rows found.'
+                            : 'No preview data available.'}
                       </ListTableCell>
-                      <ListTableCell>
-                        <div className="flex flex-col">
-                          <span>{row.rfid}</span>
-                          {row.member_name && (
-                            <span className="text-xs text-text-secondary">{row.member_name}</span>
-                          )}
-                        </div>
-                      </ListTableCell>
-                      <ListTableCell>{row.service_date}</ListTableCell>
-                      <ListTableCell>{row.time_slot}</ListTableCell>
-                      <ListTableCell>{row.table_number}</ListTableCell>
-                      <ListTableCell>{row.metadata?.role as string}</ListTableCell>
                     </ListTableRow>
-                  ))}
+                  ) : (
+                    filteredRows.map((row) => (
+                      <ListTableRow
+                        key={row.row_number}
+                        className={!row.isValid ? 'bg-red-50/50' : ''}
+                      >
+                        <ListTableCell className="text-xs text-text-secondary">
+                          #{row.row_number}
+                        </ListTableCell>
+                        <ListTableCell>
+                          {row.isValid ? (
+                            <span className="text-green-600 font-medium text-sm">Valid</span>
+                          ) : (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-red-600 font-medium text-sm">Error</span>
+                              {row.errors.map((e, i) => (
+                                <span key={i} className="text-xs text-red-500">
+                                  {e}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell>
+                          <div className="flex flex-col">
+                            <span>{row.rfid}</span>
+                            {row.member_name && (
+                              <span className="text-xs text-text-secondary">{row.member_name}</span>
+                            )}
+                          </div>
+                        </ListTableCell>
+                        <ListTableCell>{row.service_date}</ListTableCell>
+                        <ListTableCell>{row.time_slot}</ListTableCell>
+                        <ListTableCell>{row.table_number}</ListTableCell>
+                        <ListTableCell>{row.metadata?.role as string}</ListTableCell>
+                      </ListTableRow>
+                    ))
+                  )}
                 </ListTableBody>
               </ListTable>
             </div>

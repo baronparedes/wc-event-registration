@@ -178,8 +178,22 @@ describe('Services Domain Hooks', () => {
 
     it('useLookupUsersByNamesQuery fetches users by names with escaped or filter', async () => {
       const mockUsers = [
-        { id: 'user-1', member_id: 'RFID-1', full_name: 'Alice Smith' },
-        { id: 'user-2', member_id: 'RFID-2', full_name: 'Bob Jones, Jr.' },
+        {
+          id: 'user-1',
+          member_id: 'RFID-1',
+          full_name: 'Alice Smith',
+          first_name: 'Alice',
+          last_name: 'Smith',
+          nickname: 'Ali',
+        },
+        {
+          id: 'user-2',
+          member_id: 'RFID-2',
+          full_name: 'Bob Jones, Jr.',
+          first_name: 'Bob',
+          last_name: 'Jones, Jr.',
+          nickname: 'Bobby',
+        },
       ];
       const mockBuilder = {
         select: vi.fn().mockReturnThis(),
@@ -200,9 +214,11 @@ describe('Services Domain Hooks', () => {
 
       expect(result.current.data).toEqual(mockUsers);
       expect(mockFrom).toHaveBeenCalledWith('users');
-      expect(mockBuilder.select).toHaveBeenCalledWith('id, member_id, full_name');
+      expect(mockBuilder.select).toHaveBeenCalledWith(
+        'id, member_id, full_name, first_name, last_name, nickname',
+      );
       expect(mockBuilder.or).toHaveBeenCalledWith(
-        'full_name.ilike.Alice Smith,full_name.ilike.Bob Jones\\, Jr.',
+        expect.stringContaining('and(nickname.ilike.Alice,last_name.ilike.Smith)'),
       );
     });
 
