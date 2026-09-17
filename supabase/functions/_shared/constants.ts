@@ -61,6 +61,10 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 6,
   },
+  bulkUpsertServiceAttendance: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
   bulkUpsertMembers: {
     windowMs: 60_000,
     maxHits: 60,

@@ -187,6 +187,9 @@ verify_jwt = true
 [functions.bulk-upsert-public-registrations]
 verify_jwt = true
 
+[functions.bulk-upsert-service-attendance]
+verify_jwt = true
+
 [functions.event-slot-availability]
 verify_jwt = false
 

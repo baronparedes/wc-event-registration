@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import {
   useActiveServiceLayoutQuery,
+  useBulkUpsertServiceAttendanceMutation,
   useCreateServiceLayoutMutation,
   useCreateServiceSeatMutation,
   useDeleteServiceAttendanceMutation,
@@ -26,9 +27,12 @@ vi.mock('@/config/env', () => ({
   },
 }));
 
-const { mockFrom } = vi.hoisted(() => {
+const { mockFrom, mockBulkCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const caller = vi.fn();
   return {
     mockFrom: vi.fn(),
+    mockBulkCaller: caller,
+    mockCreateEdgeFunctionCaller: vi.fn(() => caller),
   };
 });
 
@@ -38,6 +42,7 @@ vi.mock('@/lib/infrastructure', async () => {
 
   return {
     ...actual,
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
     supabase: {
       from: mockFrom,
     },
@@ -409,6 +414,67 @@ describe('Services Domain Hooks', () => {
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
+    });
+
+    it('useBulkUpsertServiceAttendanceMutation invokes edge function and invalidates caches on success', async () => {
+      mockBulkCaller.mockResolvedValueOnce({
+        success: true,
+        insertedCount: 5,
+      });
+
+      const { result, queryClient } = renderHookWithClient(() =>
+        useBulkUpsertServiceAttendanceMutation(),
+      );
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      result.current.mutate({
+        layout_id: '123e4567-e89b-12d3-a456-426614174000',
+        rows: [
+          {
+            user_id: '123e4567-e89b-12d3-a456-426614174001',
+            service_date: '2025-03-09',
+            time_slot: '9AM',
+          },
+        ],
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(mockCreateEdgeFunctionCaller).toHaveBeenCalledWith('bulk-upsert-service-attendance');
+      expect(mockBulkCaller).toHaveBeenCalledWith({
+        layout_id: '123e4567-e89b-12d3-a456-426614174000',
+        rows: [
+          {
+            user_id: '123e4567-e89b-12d3-a456-426614174001',
+            service_date: '2025-03-09',
+            time_slot: '9AM',
+          },
+        ],
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['service-attendance'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['service-seats'] });
+    });
+
+    it('useBulkUpsertServiceAttendanceMutation throws error when edge function response fails', async () => {
+      mockBulkCaller.mockResolvedValueOnce({
+        success: false,
+        message: 'Invalid layout',
+      });
+
+      const { result } = renderHookWithClient(() => useBulkUpsertServiceAttendanceMutation());
+
+      result.current.mutate({
+        layout_id: '123e4567-e89b-12d3-a456-426614174000',
+        rows: [],
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(result.current.error?.message).toBe('Invalid layout');
     });
   });
 });
