@@ -111,8 +111,20 @@ export function createEdgeFunctionTextCaller<TRequest>(functionName: string) {
  * Factory for Edge Function callers that stream responses.
  * Automatically includes the current session's auth token in the Authorization header.
  */
+export interface StreamCallerOptions {
+  signal?: AbortSignal;
+}
+
+/**
+ * Factory for Edge Function callers that stream responses.
+ * Automatically includes the current session's auth token in the Authorization header.
+ */
 export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
-  return async (payload: TRequest, onChunk: (text: string) => void): Promise<void> => {
+  return async (
+    payload: TRequest,
+    onChunk: (text: string) => void,
+    options?: StreamCallerOptions,
+  ): Promise<void> => {
     const { data: session } = await supabase.auth.getSession();
     const token = session?.session?.access_token;
 
@@ -130,6 +142,7 @@ export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
+      signal: options?.signal,
     });
 
     if (!response.ok) {

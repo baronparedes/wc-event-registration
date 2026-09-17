@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
-import { Loader2, RotateCcw, Send } from 'lucide-react';
+import { Loader2, RotateCcw, Send, Square } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
 import { Avatar, Badge, BrandAvatar, Button, FormInputField } from '@/components/ui';
@@ -47,7 +47,7 @@ function loadStoredMessages(): Message[] {
 export function AdminChatPage() {
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
-  const { streamRequest, isLoading } = useChatStreamQuery();
+  const { streamRequest, stopStream, isLoading } = useChatStreamQuery();
   const { data: adminAuth } = useAdminAuthQuery();
   const { data: currentProfile } = useCurrentProfileQuery();
 
@@ -118,26 +118,40 @@ export function AdminChatPage() {
       );
     } catch (error) {
       console.error('Chat error:', error);
-      const errMsg = error instanceof Error ? error.message : String(error);
-      const isQuota = /429|quota|resource_exhausted|rate\s*limit/i.test(errMsg);
+      const isAbortError =
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (error instanceof Error && error.name === 'AbortError');
 
-      const isLowLevelError =
-        !errMsg ||
-        errMsg === 'Network error' ||
-        errMsg === 'Failed to fetch' ||
-        errMsg.startsWith('Edge function failed:');
+      if (isAbortError) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId && !msg.content.trim()
+              ? { ...msg, content: '[Request aborted]' }
+              : msg,
+          ),
+        );
+      } else {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const isQuota = /429|quota|resource_exhausted|rate\s*limit/i.test(errMsg);
 
-      const fallbackContent = isQuota
-        ? "I'm on a coffee break, you can come back later."
-        : isLowLevelError
-          ? 'Sorry, I encountered an error.'
-          : errMsg;
+        const isLowLevelError =
+          !errMsg ||
+          errMsg === 'Network error' ||
+          errMsg === 'Failed to fetch' ||
+          errMsg.startsWith('Edge function failed:');
 
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMessageId ? { ...msg, content: fallbackContent } : msg,
-        ),
-      );
+        const fallbackContent = isQuota
+          ? "I'm on a coffee break, you can come back later."
+          : isLowLevelError
+            ? 'Sorry, I encountered an error.'
+            : errMsg;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId ? { ...msg, content: fallbackContent } : msg,
+          ),
+        );
+      }
     }
     isSubmittingRef.current = false;
   };
@@ -242,15 +256,28 @@ export function AdminChatPage() {
                 className="flex-1"
                 inputClassName="w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
               />
-              <Button
-                type="submit"
-                variant="default"
-                disabled={isLoading || !input.trim()}
-                className="shrink-0"
-              >
-                <Send className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Send</span>
-              </Button>
+              {isLoading ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={stopStream}
+                  className="shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200"
+                  aria-label="Stop generating"
+                >
+                  <Square className="h-4 w-4 sm:mr-2 fill-current" />
+                  <span className="hidden sm:inline">Stop</span>
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  variant="default"
+                  disabled={!input.trim()}
+                  className="shrink-0"
+                >
+                  <Send className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Send</span>
+                </Button>
+              )}
             </form>
           </div>
         </div>
