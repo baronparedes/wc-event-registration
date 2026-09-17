@@ -104,4 +104,33 @@ describe('ServiceAttendanceMigrationPanel', () => {
     expect(screen.getByText('Marrion Torres')).toBeInTheDocument();
     expect(screen.queryByText(/Unknown Person/)).not.toBeInTheDocument();
   });
+
+  it('displays loading state indicator while looking up member details', async () => {
+    mockUseLookupUsersByRfidsQuery.mockReturnValue({
+      data: [],
+      isLoading: true,
+    });
+
+    render(<ServiceAttendanceMigrationPanel />);
+
+    // Upload with selected layout
+    const trigger = screen.getByRole('button', { name: /Select a layout.../i });
+    fireEvent.click(trigger);
+    const option = screen.getByRole('option', { name: 'Base Layout' });
+    fireEvent.click(option);
+
+    const csvContent = [
+      'RFID,Date,Time,Time_Slot,Table,Name',
+      '1322281947,3/9/2026,09:00:00,9AM,10,Bong Torres',
+    ].join('\n');
+    const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Looking up member details and seat assignments\.\.\./i),
+      ).toBeInTheDocument();
+    });
+  });
 });

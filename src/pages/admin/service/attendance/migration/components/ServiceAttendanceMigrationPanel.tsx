@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
@@ -50,6 +51,7 @@ type StatusFilter = 'all' | 'failed' | 'valid';
 export function ServiceAttendanceMigrationPanel() {
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
   const [fileInputKey, setFileInputKey] = useState<number>(0);
+  const [isParsingCsv, setIsParsingCsv] = useState(false);
   const [rawRows, setRawRows] = useState<ServiceAttendanceCsvPreviewRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -126,6 +128,8 @@ export function ServiceAttendanceMigrationPanel() {
   const isLoadingLookups =
     (isLoadingRfids && rfidsToLookup.length > 0) || (isLoadingNames && namesToLookup.length > 0);
 
+  const isProcessing = isParsingCsv || isLoadingLookups;
+
   const tableToSeatIdMap = useMemo(() => {
     const map = new Map<string, string>();
     (seats ?? []).forEach((s) => {
@@ -198,7 +202,7 @@ export function ServiceAttendanceMigrationPanel() {
 
   const notifiedFileKeyRef = useRef<number>(-1);
   useEffect(() => {
-    if (rawRows.length === 0 || isLoadingLookups || notifiedFileKeyRef.current === fileInputKey) {
+    if (rawRows.length === 0 || isProcessing || notifiedFileKeyRef.current === fileInputKey) {
       return;
     }
     notifiedFileKeyRef.current = fileInputKey;
@@ -216,7 +220,7 @@ export function ServiceAttendanceMigrationPanel() {
     } else {
       toast.success('CSV parsed and validated');
     }
-  }, [rawRows.length, isLoadingLookups, fileInputKey, previewRows]);
+  }, [rawRows.length, isProcessing, fileInputKey, previewRows]);
 
   useEffect(() => {
     if (rfidLookupError) {
@@ -242,7 +246,10 @@ export function ServiceAttendanceMigrationPanel() {
       return;
     }
 
+    setIsParsingCsv(true);
     try {
+      // Yield slightly to paint the loading state
+      await new Promise((resolve) => setTimeout(resolve, 10));
       const text = await file.text();
       const parseResult = parseServiceAttendanceCsv(text);
 
@@ -261,6 +268,7 @@ export function ServiceAttendanceMigrationPanel() {
       setRawRows([]);
       setStatusFilter('all');
     } finally {
+      setIsParsingCsv(false);
       setFileInputKey((k) => k + 1);
     }
   };
@@ -360,11 +368,18 @@ export function ServiceAttendanceMigrationPanel() {
             type="file"
             accept=".csv"
             onChange={handleFileChange}
-            disabled={!selectedLayoutId || isLoadingLookups}
+            disabled={!selectedLayoutId || isProcessing}
             className="block w-full max-w-sm text-sm text-text-secondary file:mr-4 file:rounded-md file:border-0 file:bg-surface-elevated file:px-4 file:py-2 file:text-sm file:font-medium file:text-text-primary hover:file:bg-surface-elevated-hover focus:outline-none disabled:opacity-50"
           />
-          {isLoadingLookups && (
-            <p className="mt-2 text-sm text-text-secondary">Looking up data...</p>
+          {isProcessing && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-text-secondary">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span>
+                {isParsingCsv
+                  ? 'Parsing and validating CSV file...'
+                  : 'Looking up member details and seat assignments...'}
+              </span>
+            </div>
           )}
         </div>
 
@@ -372,8 +387,16 @@ export function ServiceAttendanceMigrationPanel() {
           <div>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold">
-                  Preview ({totalRowCount} row{totalRowCount === 1 ? '' : 's'})
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <span>
+                    Preview ({totalRowCount} row{totalRowCount === 1 ? '' : 's'})
+                  </span>
+                  {isLoadingLookups && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Matching members...
+                    </span>
+                  )}
                 </h3>
                 {invalidRowCount > 0 && (
                   <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
@@ -462,7 +485,7 @@ export function ServiceAttendanceMigrationPanel() {
               </div>
             )}
 
-            <div className="max-h-[500px] overflow-auto rounded-lg border border-border bg-surface">
+            <div className="overflow-x-auto rounded-lg border border-border bg-surface">
               <ListTable>
                 <ListTableHead>
                   <ListTableHeaderRow>
@@ -537,7 +560,9 @@ export function ServiceAttendanceMigrationPanel() {
       <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
         <Button
           onClick={() => setIsConfirmOpen(true)}
-          disabled={bulkUpsertMutation.isPending || !hasSelectedFile || invalidRowCount > 0}
+          disabled={
+            bulkUpsertMutation.isPending || !hasSelectedFile || invalidRowCount > 0 || isProcessing
+          }
           type="button"
         >
           {bulkUpsertMutation.isPending ? 'Migrating...' : 'Run Migration'}
