@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ROUTE_PATHS } from '@/config/constants';
 
 import { AdminDrawerToggle, AdminNavigationDrawer } from '../AdminNavigationDrawer';
-import { useAdminDrawer } from '../useAdminDrawer';
+import { useAdminDrawer } from '../hooks/useAdminDrawer';
 
 describe('AdminNavigationDrawer', () => {
   function renderDrawer(props?: {
@@ -32,18 +32,22 @@ describe('AdminNavigationDrawer', () => {
     return { onClose };
   }
 
-  it('renders all four admin links with large senior-friendly touch targets when opened', () => {
+  it('renders all admin links with large senior-friendly touch targets when opened', () => {
     renderDrawer({ isOpen: true, adminRole: 'super_admin' });
 
     const manageEvents = screen.getByRole('link', { name: /Manage Events/i });
     const manageForms = screen.getByRole('link', { name: /Manage Forms/i });
     const manageMembers = screen.getByRole('link', { name: /Manage Members/i });
     const userRoles = screen.getByRole('link', { name: /User Roles/i });
+    const manageServices = screen.getByRole('link', {
+      name: /Manage Services/i,
+    });
 
     expect(manageEvents).toHaveAttribute('href', ROUTE_PATHS.adminEvents);
     expect(manageForms).toHaveAttribute('href', ROUTE_PATHS.adminForms);
     expect(manageMembers).toHaveAttribute('href', ROUTE_PATHS.adminMembers);
     expect(userRoles).toHaveAttribute('href', ROUTE_PATHS.adminUserRoles);
+    expect(manageServices).toHaveAttribute('href', ROUTE_PATHS.adminServices);
 
     // Verify touch target requirements for senior users
     expect(manageEvents.className).toContain('min-h-[48px]');
@@ -54,6 +58,7 @@ describe('AdminNavigationDrawer', () => {
     expect(manageForms.className).toContain('min-h-[48px]');
     expect(manageMembers.className).toContain('min-h-[48px]');
     expect(userRoles.className).toContain('min-h-[48px]');
+    expect(manageServices.className).toContain('min-h-[48px]');
   });
 
   it('displays all links when showAllAdminLinks is true regardless of role', () => {
@@ -63,6 +68,7 @@ describe('AdminNavigationDrawer', () => {
     expect(screen.getByRole('link', { name: /Manage Forms/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Manage Members/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /User Roles/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Manage Services/i })).toBeInTheDocument();
   });
 
   it('calls onClose when overlay backdrop is clicked', () => {

@@ -1,6 +1,16 @@
 import { type ComponentType, useEffect, useId } from 'react';
 
-import { Bot, Calendar, CalendarDays, ClipboardList, Menu, UserCog, Users, X } from 'lucide-react';
+import {
+  Bot,
+  Calendar,
+  CalendarDays,
+  ClipboardList,
+  Layers,
+  Menu,
+  UserCog,
+  Users,
+  X,
+} from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 import { ROUTE_PATHS } from '@/config/constants';
@@ -101,6 +111,7 @@ export function AdminNavigationDrawer({
   const canManageRoles = showAllAdminLinks || canAdminPerform(adminRole, 'canManageAdminRoles');
   const canReadDashboard =
     showAllAdminLinks || (adminRole && ['super_admin', 'admin', 'slod'].includes(adminRole));
+  const canManageServices = showAllAdminLinks || canAdminPerform(adminRole, 'canManageServices');
 
   const adminNavItems: AdminNavItem[] = [
     {
@@ -138,6 +149,12 @@ export function AdminNavigationDrawer({
       label: 'User Roles',
       icon: UserCog,
       isAllowed: canManageRoles,
+    },
+    {
+      to: ROUTE_PATHS.adminServices,
+      label: 'Manage Services',
+      icon: Layers,
+      isAllowed: canManageServices ?? false,
     },
   ];
 

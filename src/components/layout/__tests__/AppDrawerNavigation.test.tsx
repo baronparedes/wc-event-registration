@@ -156,6 +156,10 @@ describe('AppDrawerNavigation', () => {
       'href',
       ROUTE_PATHS.adminMembers,
     );
+    expect(screen.getByRole('link', { name: 'Manage Services' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminServices,
+    );
     expect(screen.getByText('admin@example.com')).toBeInTheDocument();
     expect(screen.getByText('(admin)')).toBeInTheDocument();
 
@@ -179,6 +183,7 @@ describe('AppDrawerNavigation', () => {
       ROUTE_PATHS.adminMembers,
     );
     expect(screen.queryByRole('link', { name: 'Manage Events' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Manage Services' })).not.toBeInTheDocument();
   });
 
   it('renders event workspace and attendance links with event title when on event routes', () => {

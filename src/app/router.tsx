@@ -84,6 +84,16 @@ const AdminMemberDetailPage = lazy(() =>
 const AdminChatPage = lazy(() =>
   import('@/pages/admin/chat').then((module) => ({ default: module.AdminChatPage })),
 );
+const AdminServicesPage = lazy(() =>
+  import('../pages/admin/service').then((module) => ({
+    default: module.AdminServicesPage,
+  })),
+);
+const AdminServiceAttendanceMigrationPage = lazy(() =>
+  import('../pages/admin/service/attendance/migration').then((module) => ({
+    default: module.AdminServiceAttendanceMigrationPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -270,6 +280,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminFormFields: AdminFormFieldsPage,
   adminFormSubmissions: AdminFormSubmissionsPage,
   formSubmit: FormSubmissionPage,
+  adminServices: AdminServicesPage,
+  adminServiceAttendanceMigration: AdminServiceAttendanceMigrationPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {
