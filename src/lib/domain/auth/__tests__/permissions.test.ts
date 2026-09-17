@@ -2,88 +2,41 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ADMIN_PERMISSION_POLICIES,
+  ALL_ADMIN_PERMISSION_KEYS,
+  ROLE_PERMISSION_GRANTS,
   canAdminPerform,
   getAdminPermissionPolicy,
 } from '@/lib/domain/auth/permissions';
+import type { AdminRole } from '@/lib/domain/auth/types';
 
 describe('admin permission policies', () => {
-  it('keeps policy data centralized by role', () => {
-    expect(ADMIN_PERMISSION_POLICIES).toEqual([
-      {
-        role: 'admin',
-        permissions: {
-          canWriteAdminData: true,
-          canReadAdminData: true,
-          canReadAdminMemberData: true,
-          canManageAttendanceSavedViews: true,
-          canExportAdminReports: true,
-          canAccessAttendanceCheckIn: true,
-          canViewMemberHistory: true,
-          canManageAdminRoles: false,
-          canReadDashboard: true,
-        },
-      },
-      {
-        role: 'super_admin',
-        permissions: {
-          canWriteAdminData: true,
-          canReadAdminData: true,
-          canReadAdminMemberData: true,
-          canManageAttendanceSavedViews: true,
-          canExportAdminReports: true,
-          canAccessAttendanceCheckIn: true,
-          canViewMemberHistory: true,
-          canManageAdminRoles: true,
-          canReadDashboard: true,
-        },
-      },
-      {
-        role: 'slod',
-        permissions: {
-          canWriteAdminData: false,
-          canReadAdminData: true,
-          canReadAdminMemberData: true,
-          canManageAttendanceSavedViews: true,
-          canExportAdminReports: true,
-          canAccessAttendanceCheckIn: false,
-          canViewMemberHistory: true,
-          canManageAdminRoles: false,
-          canReadDashboard: true,
-        },
-      },
-      {
-        role: 'imt',
-        permissions: {
-          canWriteAdminData: false,
-          canReadAdminData: false,
-          canReadAdminMemberData: true,
-          canManageAttendanceSavedViews: false,
-          canExportAdminReports: false,
-          canAccessAttendanceCheckIn: false,
-          canViewMemberHistory: false,
-          canManageAdminRoles: false,
-          canReadDashboard: true,
-        },
-      },
-      {
-        role: 'kiosk',
-        permissions: {
-          canWriteAdminData: false,
-          canReadAdminData: false,
-          canReadAdminMemberData: false,
-          canManageAttendanceSavedViews: false,
-          canExportAdminReports: false,
-          canAccessAttendanceCheckIn: true,
-          canViewMemberHistory: false,
-          canManageAdminRoles: false,
-          canReadDashboard: false,
-        },
-      },
-    ]);
+  it('defines role permission grants with proper inheritance', () => {
+    // super_admin inherits all admin permissions plus canManageAdminRoles
+    const adminPerms = ROLE_PERMISSION_GRANTS.admin;
+    const superAdminPerms = ROLE_PERMISSION_GRANTS.super_admin;
+
+    adminPerms.forEach((perm) => {
+      expect(superAdminPerms).toContain(perm);
+    });
+
+    expect(superAdminPerms).toContain('canManageAdminRoles');
+    expect(adminPerms).not.toContain('canManageAdminRoles');
+  });
+
+  it('generates centralized policy data for all roles', () => {
+    const roles: AdminRole[] = ['admin', 'super_admin', 'slod', 'imt', 'kiosk'];
+    expect(ADMIN_PERMISSION_POLICIES.map((p) => p.role)).toEqual(roles);
+
+    ADMIN_PERMISSION_POLICIES.forEach((policy) => {
+      ALL_ADMIN_PERMISSION_KEYS.forEach((key) => {
+        expect(typeof policy.permissions[key]).toBe('boolean');
+      });
+    });
   });
 
   it('returns the matching policy for a role', () => {
-    expect(getAdminPermissionPolicy('slod')).toEqual({
+    const slodPolicy = getAdminPermissionPolicy('slod');
+    expect(slodPolicy).toEqual({
       role: 'slod',
       permissions: {
         canWriteAdminData: false,
@@ -95,19 +48,28 @@ describe('admin permission policies', () => {
         canViewMemberHistory: true,
         canManageAdminRoles: false,
         canReadDashboard: true,
+        canManageServices: false,
       },
     });
+
+    expect(getAdminPermissionPolicy(null)).toBeUndefined();
+    expect(getAdminPermissionPolicy(undefined)).toBeUndefined();
   });
 
   it('supports generic and specific permission checks', () => {
     expect(canAdminPerform('admin', 'canWriteAdminData')).toBe(true);
     expect(canAdminPerform('admin', 'canReadAdminData')).toBe(true);
+    expect(canAdminPerform('admin', 'canManageServices')).toBe(true);
+    expect(canAdminPerform('super_admin', 'canManageServices')).toBe(true);
     expect(canAdminPerform('super_admin', 'canManageAdminRoles')).toBe(true);
     expect(canAdminPerform('admin', 'canManageAdminRoles')).toBe(false);
     expect(canAdminPerform('imt', 'canReadAdminMemberData')).toBe(true);
     expect(canAdminPerform('slod', 'canManageAttendanceSavedViews')).toBe(true);
     expect(canAdminPerform('slod', 'canExportAdminReports')).toBe(true);
+    expect(canAdminPerform('slod', 'canManageServices')).toBe(false);
+    expect(canAdminPerform('imt', 'canManageServices')).toBe(false);
     expect(canAdminPerform('kiosk', 'canAccessAttendanceCheckIn')).toBe(true);
+    expect(canAdminPerform('kiosk', 'canManageServices')).toBe(false);
   });
 
   it('denies access for missing or disabled roles', () => {

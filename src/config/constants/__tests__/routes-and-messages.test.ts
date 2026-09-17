@@ -23,6 +23,8 @@ describe('route constants and builders', () => {
       '/admin/events/:id/registrations/unregistered-members',
     );
     expect(ROUTE_PATHS.adminRegistrationNamesPattern).toBe('/admin/events/:id/registrations/names');
+    expect(ROUTE_PATHS.adminServices).toBe('/admin/services');
+    expect(ROUTE_PATHS.adminServiceAttendanceMigration).toBe('/admin/service/attendance/migration');
     expect(ROUTE_PREFIXES.admin).toBe('/admin/');
   });
 
@@ -30,6 +32,8 @@ describe('route constants and builders', () => {
     expect(toRoute('hello')).toBe('/hello');
     expect(toRoute('eventRegister', { slug: 'summer-2026' })).toBe('/events/summer-2026/register');
     expect(toRoute('adminMembersImport')).toBe('/admin/members/import');
+    expect(toRoute('adminServices')).toBe('/admin/services');
+    expect(toRoute('adminServiceAttendanceMigration')).toBe('/admin/service/attendance/migration');
 
     expect(toRoute('adminMemberDetail', { id: 'member-1' })).toBe('/admin/members/member-1');
     expect(toRoute('adminEventDetail', { id: 'event-1' })).toBe('/admin/events/event-1');

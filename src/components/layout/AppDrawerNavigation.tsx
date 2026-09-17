@@ -1,37 +1,14 @@
 import { type ComponentType } from 'react';
 
-import {
-  BarChart3,
-  Bot,
-  Calendar,
-  CalendarDays,
-  ClipboardList,
-  FileText,
-  FormInput,
-  Globe,
-  LayoutDashboard,
-  LogIn,
-  LogOut,
-  QrCode,
-  Settings,
-  ShieldCheck,
-  Sliders,
-  User,
-  UserCheck,
-  UserCog,
-  UserX,
-  Users,
-  X,
-} from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { FileText, LogOut, ShieldCheck, X } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
-import { ROUTE_PATHS, toRoute } from '@/config/constants';
-import { useAdminEventQuery } from '@/hooks/domain/events';
-import { useCurrentProfileQuery } from '@/hooks/domain/members';
-import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
+import { ROUTE_PATHS } from '@/config/constants';
+import type { AdminRole } from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
 import { UserIdentity } from './UserIdentity';
+import { useAppDrawerNavigation } from './hooks/useAppDrawerNavigation';
 
 type AppDrawerNavigationProps = {
   isOpen: boolean;
@@ -46,18 +23,6 @@ type AppDrawerNavigationProps = {
 const linkClassName =
   'flex min-h-[48px] items-center gap-3.5 rounded-xl border-2 border-transparent px-4 py-3 text-base font-semibold text-text transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:bg-primary/15';
 const activeLinkClassName = 'border-primary bg-primary/20 font-bold text-text shadow-sm';
-
-function getEventIdFromPath(pathname: string): string | null {
-  if (
-    pathname === ROUTE_PATHS.adminEventNew ||
-    pathname.startsWith(`${ROUTE_PATHS.adminEventNew}/`)
-  ) {
-    return null;
-  }
-
-  const eventRouteMatch = pathname.match(/^\/admin\/events\/([^/]+)/);
-  return eventRouteMatch?.[1] ?? null;
-}
 
 function SectionHeading({ label }: { label: string }) {
   return <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-muted">{label}</p>;
@@ -95,22 +60,23 @@ export function AppDrawerNavigation({
   currentUserLabel = null,
   onLogout,
 }: AppDrawerNavigationProps) {
-  const location = useLocation();
-  const eventId = getEventIdFromPath(location.pathname);
-  const { data: selectedEvent } = useAdminEventQuery(eventId ?? undefined);
-  const { data: currentProfile } = useCurrentProfileQuery();
-
-  const canWrite = canAdminPerform(adminRole, 'canWriteAdminData');
-  const canRead = canAdminPerform(adminRole, 'canReadAdminData');
-  const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
-  const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
-  const canManageRoles = canAdminPerform(adminRole, 'canManageAdminRoles');
-  const canReadDashboard = canAdminPerform(adminRole, 'canReadDashboard');
-
-  const hasProfileAccess = hasSession && Boolean(currentProfile);
-  const displayName = currentProfile?.full_name ?? currentUserLabel;
-  const avatarObjectKey = currentProfile?.avatar_object_key;
-  const roleLabel = adminRole ? `(${adminRole})` : '';
+  const {
+    mainNavItems,
+    adminNavItems,
+    eventWorkspaceNavItems,
+    attendanceNavItems,
+    eventId,
+    selectedEvent,
+    hasProfileAccess,
+    displayName,
+    avatarObjectKey,
+    roleLabel,
+  } = useAppDrawerNavigation({
+    isAuthenticated,
+    hasSession,
+    adminRole,
+    currentUserLabel,
+  });
 
   return (
     <>
@@ -144,178 +110,62 @@ export function AppDrawerNavigation({
 
           <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
             <div className="space-y-2">
-              <DrawerNavLink
-                to={ROUTE_PATHS.home}
-                label="Hub"
-                icon={LayoutDashboard}
-                onClose={onClose}
-              />
-              {hasProfileAccess && (
+              {mainNavItems.map((item) => (
                 <DrawerNavLink
-                  to={ROUTE_PATHS.profile}
-                  label="My Profile"
-                  icon={User}
+                  key={item.to}
+                  to={item.to}
+                  label={item.label}
+                  icon={item.icon}
                   onClose={onClose}
                 />
-              )}
-              {!hasSession && (
-                <DrawerNavLink
-                  to={ROUTE_PATHS.login}
-                  label="Sign In"
-                  icon={LogIn}
-                  onClose={onClose}
-                />
-              )}
+              ))}
             </div>
 
-            {isAuthenticated && (
+            {isAuthenticated && adminNavItems.length > 0 && (
               <div className="space-y-2">
                 <SectionHeading label="Admin" />
-                <>
-                  {canReadDashboard && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminHubCalendar}
-                      label="Hub Calendar"
-                      icon={CalendarDays}
-                      onClose={onClose}
-                    />
-                  )}
-                  {(canRead || canAccessCheckIn) && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminEvents}
-                      label="Manage Events"
-                      icon={Calendar}
-                      onClose={onClose}
-                    />
-                  )}
-                  {canRead && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminForms}
-                      label="Manage Forms"
-                      icon={ClipboardList}
-                      onClose={onClose}
-                    />
-                  )}
-                  {canReadMembers && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminMembers}
-                      label="Manage Members"
-                      icon={Users}
-                      onClose={onClose}
-                    />
-                  )}
-                  {canManageRoles && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminUserRoles}
-                      label="Manage Roles"
-                      icon={UserCog}
-                      onClose={onClose}
-                    />
-                  )}
-                  {canRead && (
-                    <DrawerNavLink
-                      to={ROUTE_PATHS.adminChat}
-                      label="AI Assistant"
-                      icon={Bot}
-                      onClose={onClose}
-                    />
-                  )}
-                </>
+                {adminNavItems.map((item) => (
+                  <DrawerNavLink
+                    key={item.to}
+                    to={item.to}
+                    label={item.label}
+                    icon={item.icon}
+                    onClose={onClose}
+                  />
+                ))}
               </div>
             )}
 
-            {eventId && (
+            {eventId && eventWorkspaceNavItems.length > 0 && (
               <div className="space-y-2">
                 <SectionHeading label="Event Workspace" />
                 <p className="px-1 font-heading text-lg font-semibold leading-tight text-text">
                   {selectedEvent?.title ?? eventId}
                 </p>
-                {canWrite && (
+                {eventWorkspaceNavItems.map((item) => (
                   <DrawerNavLink
-                    to={toRoute('adminEventDetail', { id: eventId })}
-                    label="Manage Event"
-                    icon={Settings}
+                    key={item.to}
+                    to={item.to}
+                    label={item.label}
+                    icon={item.icon}
                     onClose={onClose}
                   />
-                )}
-                {canWrite && (
-                  <DrawerNavLink
-                    to={toRoute('adminEventFields', { id: eventId })}
-                    label="Manage Registration Fields"
-                    icon={FormInput}
-                    onClose={onClose}
-                  />
-                )}
-                {canRead && (
-                  <DrawerNavLink
-                    to={toRoute('adminRegistrations', { id: eventId })}
-                    label="Manage Registrations"
-                    icon={ClipboardList}
-                    onClose={onClose}
-                  />
-                )}
-                {canRead && (
-                  <DrawerNavLink
-                    to={toRoute('adminPublicRegistrations', { id: eventId })}
-                    label="Manage Public Registrations"
-                    icon={Globe}
-                    onClose={onClose}
-                  />
-                )}
-                {canWrite && (
-                  <DrawerNavLink
-                    to={toRoute('adminEventAttendance', { id: eventId })}
-                    label="Manage Attendance"
-                    icon={UserCheck}
-                    onClose={onClose}
-                  />
-                )}
+                ))}
               </div>
             )}
 
-            {eventId && (
+            {eventId && attendanceNavItems.length > 0 && (
               <div className="space-y-2">
                 <SectionHeading label="Attendance" />
-                {canAccessCheckIn && (
+                {attendanceNavItems.map((item) => (
                   <DrawerNavLink
-                    to={toRoute('adminAttendanceCheckIn', { id: eventId })}
-                    label="Check-In"
-                    icon={QrCode}
+                    key={item.to}
+                    to={item.to}
+                    label={item.label}
+                    icon={item.icon}
                     onClose={onClose}
                   />
-                )}
-                {canWrite && (
-                  <DrawerNavLink
-                    to={toRoute('adminAttendanceFields', { id: eventId })}
-                    label="Attendance Fields"
-                    icon={Sliders}
-                    onClose={onClose}
-                  />
-                )}
-                {canRead && (
-                  <DrawerNavLink
-                    to={toRoute('adminAttendanceData', { id: eventId })}
-                    label="Attendee Details"
-                    icon={Users}
-                    onClose={onClose}
-                  />
-                )}
-                {canRead && (
-                  <DrawerNavLink
-                    to={toRoute('adminAttendanceDashboard', { id: eventId })}
-                    label="Attendance Dashboard"
-                    icon={BarChart3}
-                    onClose={onClose}
-                  />
-                )}
-                {canWrite && (
-                  <DrawerNavLink
-                    to={toRoute('adminAttendanceUnregisteredMembers', { id: eventId })}
-                    label="Unregistered Members"
-                    icon={UserX}
-                    onClose={onClose}
-                  />
-                )}
+                ))}
               </div>
             )}
           </div>

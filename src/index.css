@@ -91,6 +91,10 @@ select {
   min-height: 2.5rem;
 }
 
+button[data-close-button] {
+  min-height: unset;
+}
+
 button,
 input,
 select,

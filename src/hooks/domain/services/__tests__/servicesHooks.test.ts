@@ -4,10 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import {
   useActiveServiceLayoutQuery,
+  useBulkUpsertServiceAttendanceMutation,
   useCreateServiceLayoutMutation,
   useCreateServiceSeatMutation,
   useDeleteServiceAttendanceMutation,
   useDeleteServiceSeatMutation,
+  useLookupUsersByNamesQuery,
+  useLookupUsersByRfidsQuery,
   useRecordServiceAttendanceMutation,
   useServiceAttendanceQuery,
   useServiceLayoutsQuery,
@@ -24,9 +27,12 @@ vi.mock('@/config/env', () => ({
   },
 }));
 
-const { mockFrom } = vi.hoisted(() => {
+const { mockFrom, mockBulkCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const caller = vi.fn();
   return {
     mockFrom: vi.fn(),
+    mockBulkCaller: caller,
+    mockCreateEdgeFunctionCaller: vi.fn(() => caller),
   };
 });
 
@@ -36,6 +42,7 @@ vi.mock('@/lib/infrastructure', async () => {
 
   return {
     ...actual,
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
     supabase: {
       from: mockFrom,
     },
@@ -137,6 +144,94 @@ describe('Services Domain Hooks', () => {
 
       expect(result.current.data).toEqual([{ id: 'att-1', time_slot: '9AM' }]);
       expect(mockFrom).toHaveBeenCalledWith('service_attendance');
+    });
+
+    it('useLookupUsersByRfidsQuery fetches users by RFIDs', async () => {
+      const mockUsers = [
+        { id: 'user-1', member_id: 'RFID-1', full_name: 'Alice Smith' },
+        { id: 'user-2', member_id: 'RFID-2', full_name: 'Bob Jones' },
+      ];
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: mockUsers,
+          error: null,
+        }),
+      };
+      mockFrom.mockReturnValue(mockBuilder);
+
+      const { result } = renderHookWithClient(() =>
+        useLookupUsersByRfidsQuery(['RFID-1', 'RFID-2']),
+      );
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(result.current.data).toEqual(mockUsers);
+      expect(mockFrom).toHaveBeenCalledWith('users');
+      expect(mockBuilder.select).toHaveBeenCalledWith('id, member_id, full_name');
+      expect(mockBuilder.in).toHaveBeenCalledWith('member_id', ['RFID-1', 'RFID-2']);
+    });
+
+    it('useLookupUsersByRfidsQuery is disabled when rfids array is empty', async () => {
+      const { result } = renderHookWithClient(() => useLookupUsersByRfidsQuery([]));
+
+      expect(result.current.fetchStatus).toBe('idle');
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it('useLookupUsersByNamesQuery fetches users by names with escaped or filter', async () => {
+      const mockUsers = [
+        {
+          id: 'user-1',
+          member_id: 'RFID-1',
+          full_name: 'Alice Smith',
+          first_name: 'Alice',
+          last_name: 'Smith',
+          nickname: 'Ali',
+        },
+        {
+          id: 'user-2',
+          member_id: 'RFID-2',
+          full_name: 'Bob Jones, Jr.',
+          first_name: 'Bob',
+          last_name: 'Jones, Jr.',
+          nickname: 'Bobby',
+        },
+      ];
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        or: vi.fn().mockResolvedValue({
+          data: mockUsers,
+          error: null,
+        }),
+      };
+      mockFrom.mockReturnValue(mockBuilder);
+
+      const { result } = renderHookWithClient(() =>
+        useLookupUsersByNamesQuery(['Alice Smith', 'Bob Jones, Jr.']),
+      );
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(result.current.data).toEqual(mockUsers);
+      expect(mockFrom).toHaveBeenCalledWith('users');
+      expect(mockBuilder.select).toHaveBeenCalledWith(
+        'id, member_id, full_name, first_name, last_name, nickname',
+      );
+      expect(mockBuilder.or).toHaveBeenCalledWith(
+        expect.stringContaining('and(nickname.ilike.Alice,last_name.ilike.Smith)'),
+      );
+    });
+
+    it('useLookupUsersByNamesQuery is disabled when names array is empty', async () => {
+      const { result } = renderHookWithClient(() => useLookupUsersByNamesQuery(['   ', '']));
+
+      expect(result.current.fetchStatus).toBe('idle');
+      expect(mockFrom).not.toHaveBeenCalled();
     });
   });
 
@@ -319,6 +414,67 @@ describe('Services Domain Hooks', () => {
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
+    });
+
+    it('useBulkUpsertServiceAttendanceMutation invokes edge function and invalidates caches on success', async () => {
+      mockBulkCaller.mockResolvedValueOnce({
+        success: true,
+        insertedCount: 5,
+      });
+
+      const { result, queryClient } = renderHookWithClient(() =>
+        useBulkUpsertServiceAttendanceMutation(),
+      );
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      result.current.mutate({
+        layout_id: '123e4567-e89b-12d3-a456-426614174000',
+        rows: [
+          {
+            user_id: '123e4567-e89b-12d3-a456-426614174001',
+            service_date: '2025-03-09',
+            time_slot: '9AM',
+          },
+        ],
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(mockCreateEdgeFunctionCaller).toHaveBeenCalledWith('bulk-upsert-service-attendance');
+      expect(mockBulkCaller).toHaveBeenCalledWith({
+        layout_id: '123e4567-e89b-12d3-a456-426614174000',
+        rows: [
+          {
+            user_id: '123e4567-e89b-12d3-a456-426614174001',
+            service_date: '2025-03-09',
+            time_slot: '9AM',
+          },
+        ],
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['service-attendance'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['service-seats'] });
+    });
+
+    it('useBulkUpsertServiceAttendanceMutation throws error when edge function response fails', async () => {
+      mockBulkCaller.mockResolvedValueOnce({
+        success: false,
+        message: 'Invalid layout',
+      });
+
+      const { result } = renderHookWithClient(() => useBulkUpsertServiceAttendanceMutation());
+
+      result.current.mutate({
+        layout_id: '123e4567-e89b-12d3-a456-426614174000',
+        rows: [],
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(result.current.error?.message).toBe('Invalid layout');
     });
   });
 });
