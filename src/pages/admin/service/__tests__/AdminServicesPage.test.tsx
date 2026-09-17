@@ -15,6 +15,18 @@ vi.mock('react-router-dom', async (importOriginal) => {
   };
 });
 
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => ({
+    data: {
+      adminRole: 'admin',
+      isAuthenticated: true,
+      session: null,
+    },
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 describe('AdminServicesPage', () => {
   it('renders page header, sub-navigation, and empty state', () => {
     render(
@@ -24,13 +36,9 @@ describe('AdminServicesPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Manage Services' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminServices,
-    );
-    expect(screen.getByRole('link', { name: 'Attendance Migration' })).toHaveAttribute(
-      'href',
-      ROUTE_PATHS.adminServiceAttendanceMigration,
     );
     expect(screen.getByText('Service Management Coming Soon')).toBeInTheDocument();
 

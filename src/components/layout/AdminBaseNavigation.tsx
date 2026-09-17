@@ -8,6 +8,7 @@ export function AdminBaseNavigation() {
   const { data: authState } = useAdminAuthQuery();
   const canReadAdminMemberData = canAdminPerform(authState?.adminRole, 'canReadAdminMemberData');
   const canManageAdminRoles = canAdminPerform(authState?.adminRole, 'canManageAdminRoles');
+  const canManageServices = canAdminPerform(authState?.adminRole, 'canManageServices');
 
   return (
     <AdminPageShell.SubNav>
@@ -18,6 +19,9 @@ export function AdminBaseNavigation() {
       )}
       {canManageAdminRoles && (
         <AdminSubNavLink to={ROUTE_PATHS.adminUserRoles}>User Roles</AdminSubNavLink>
+      )}
+      {canManageServices && (
+        <AdminSubNavLink to={ROUTE_PATHS.adminServices}>Services</AdminSubNavLink>
       )}
     </AdminPageShell.SubNav>
   );

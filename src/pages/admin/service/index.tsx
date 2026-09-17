@@ -1,11 +1,9 @@
 import { Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { AdminPageShell } from '@/components/layout';
+import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
-
-import { ServiceNavigationLinks } from './components/ServiceNavigationLinks';
 
 export function AdminServicesPage() {
   const navigate = useNavigate();
@@ -16,7 +14,7 @@ export function AdminServicesPage() {
         title="Manage Services"
         description="Configure services, layouts, seating, and attendance."
       />
-      <ServiceNavigationLinks />
+      <AdminBaseNavigation />
       <AdminPageShell.Content className="mt-6">
         <EmptyState
           icon={<Layers className="h-8 w-8" />}
