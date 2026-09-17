@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { toast } from 'sonner';
 
@@ -15,8 +15,11 @@ import {
   ListTableRow,
 } from '@/components/ui/ListTable';
 import {
+  type LookupUserByNameResult,
+  type LookupUserByRfidResult,
   useBulkUpsertServiceAttendanceMutation,
-  useLookupUsersByRfidsMutation,
+  useLookupUsersByNamesQuery,
+  useLookupUsersByRfidsQuery,
   useServiceLayoutsQuery,
   useServiceSeatsQuery,
 } from '@/hooks/domain/services';
@@ -26,18 +29,154 @@ import {
   processParsedCsvData,
 } from '@/lib/domain/services';
 
+function getMemberNameFromRow(originalData: Record<string, string>): string {
+  const candidateKeys = ['name', 'full name', 'member name'];
+  for (const [key, value] of Object.entries(originalData)) {
+    if (candidateKeys.includes(key.trim().toLowerCase()) && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
 export function ServiceAttendanceMigrationPanel() {
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
   const [fileInputKey, setFileInputKey] = useState<number>(0);
-  const [previewRows, setPreviewRows] = useState<ServiceAttendanceCsvPreviewRow[]>([]);
+  const [rawRows, setRawRows] = useState<ServiceAttendanceCsvPreviewRow[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isLoadingLookups, setIsLoadingLookups] = useState(false);
 
   const { data: layouts } = useServiceLayoutsQuery();
   const { data: seats } = useServiceSeatsQuery(selectedLayoutId);
 
   const bulkUpsertMutation = useBulkUpsertServiceAttendanceMutation();
-  const lookupUsersByRfidsMutation = useLookupUsersByRfidsMutation();
+
+  const rfidsToLookup = useMemo(() => {
+    return Array.from(new Set(rawRows.map((r) => r.rfid).filter(Boolean)));
+  }, [rawRows]);
+
+  const {
+    data: usersByRfid,
+    isLoading: isLoadingRfids,
+    error: rfidLookupError,
+  } = useLookupUsersByRfidsQuery(rfidsToLookup);
+
+  const rfidToUserMap = useMemo(() => {
+    const map = new Map<string, LookupUserByRfidResult>();
+    (usersByRfid ?? []).forEach((u) => map.set(u.member_id, u));
+    return map;
+  }, [usersByRfid]);
+
+  const namesToLookup = useMemo(() => {
+    if (rawRows.length === 0 || isLoadingRfids) return [];
+    const set = new Set<string>();
+    rawRows.forEach((row) => {
+      if (!rfidToUserMap.has(row.rfid)) {
+        const name = getMemberNameFromRow(row.originalData);
+        if (name) set.add(name);
+      }
+    });
+    return Array.from(set);
+  }, [rawRows, isLoadingRfids, rfidToUserMap]);
+
+  const {
+    data: usersByName,
+    isLoading: isLoadingNames,
+    error: nameLookupError,
+  } = useLookupUsersByNamesQuery(namesToLookup);
+
+  const nameToUserMap = useMemo(() => {
+    const map = new Map<string, LookupUserByNameResult>();
+    (usersByName ?? []).forEach((u) => map.set(u.full_name.trim().toLowerCase(), u));
+    return map;
+  }, [usersByName]);
+
+  const isLoadingLookups =
+    (isLoadingRfids && rfidsToLookup.length > 0) || (isLoadingNames && namesToLookup.length > 0);
+
+  const tableToSeatIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (seats ?? []).forEach((s) => {
+      tableToSeatIdMap.set(s.table_number.toLowerCase(), s.id);
+    });
+    return map;
+  }, [seats]);
+
+  const previewRows = useMemo(() => {
+    if (rawRows.length === 0) return [];
+
+    return rawRows.map((row) => {
+      const enriched = { ...row, errors: [...row.errors] };
+      const rowName = getMemberNameFromRow(row.originalData);
+
+      // Try matching by RFID first, then fallback to full name matching
+      const matchedUser =
+        (row.rfid ? rfidToUserMap.get(row.rfid) : undefined) ??
+        (rowName ? nameToUserMap.get(rowName.toLowerCase()) : undefined);
+
+      const seatId = row.table_number
+        ? tableToSeatIdMap.get(row.table_number.toLowerCase())
+        : undefined;
+
+      if (matchedUser) {
+        enriched.user_id = matchedUser.id;
+        enriched.member_name = matchedUser.full_name;
+      } else {
+        enriched.isValid = false;
+        if (rowName) {
+          enriched.errors.push(
+            `Member "${rowName}" (RFID: ${row.rfid || 'N/A'}) not found in system.`,
+          );
+        } else {
+          enriched.errors.push(`RFID ${row.rfid} not found in system.`);
+        }
+      }
+
+      if (seatId) {
+        enriched.service_seat_id = seatId;
+      } else {
+        enriched.isValid = false;
+        enriched.errors.push(`Table ${row.table_number} not found in selected layout.`);
+      }
+
+      return enriched;
+    });
+  }, [rawRows, rfidToUserMap, nameToUserMap, tableToSeatIdMap]);
+
+  const notifiedFileKeyRef = useRef<number>(-1);
+  useEffect(() => {
+    if (rawRows.length === 0 || isLoadingLookups || notifiedFileKeyRef.current === fileInputKey) {
+      return;
+    }
+    notifiedFileKeyRef.current = fileInputKey;
+
+    const unresolved = previewRows
+      .filter((r) => !r.user_id)
+      .map((r) => {
+        const name = getMemberNameFromRow(r.originalData);
+        return name ? `"${name}" (RFID: ${r.rfid || 'N/A'})` : `RFID: ${r.rfid}`;
+      });
+    const uniqueUnresolved = Array.from(new Set(unresolved));
+
+    if (uniqueUnresolved.length > 0) {
+      toast.error(`Could not resolve member(s): ${uniqueUnresolved.join(', ')}`);
+    } else {
+      toast.success('CSV parsed and validated');
+    }
+  }, [rawRows.length, isLoadingLookups, fileInputKey, previewRows]);
+
+  useEffect(() => {
+    if (rfidLookupError) {
+      toast.error('Failed to look up users by RFID');
+      console.error(rfidLookupError);
+    }
+  }, [rfidLookupError]);
+
+  useEffect(() => {
+    if (nameLookupError) {
+      toast.error('Failed to look up users by name');
+      console.error(nameLookupError);
+    }
+  }, [nameLookupError]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,69 +194,17 @@ export function ServiceAttendanceMigrationPanel() {
 
       if (!parseResult.success) {
         toast.error(parseResult.error);
+        setRawRows([]);
         return;
       }
 
       const initialPreview = processParsedCsvData(parseResult.data);
-
-      setIsLoadingLookups(true);
-
-      const rfidsToLookup = Array.from(new Set(initialPreview.map((r) => r.rfid).filter(Boolean)));
-
-      const rfidToUserIdMap = new Map<string, string>();
-      const rfidToNameMap = new Map<string, string>();
-
-      if (rfidsToLookup.length > 0) {
-        try {
-          const users = await lookupUsersByRfidsMutation.mutateAsync(rfidsToLookup);
-          users.forEach((u) => {
-            rfidToUserIdMap.set(u.member_id, u.id);
-            rfidToNameMap.set(u.member_id, u.full_name);
-          });
-        } catch (error) {
-          toast.error('Failed to look up users');
-          console.error(error);
-        }
-      }
-
-      const layoutSeats = seats ?? [];
-      const tableToSeatIdMap = new Map<string, string>();
-      layoutSeats.forEach((s) => {
-        tableToSeatIdMap.set(s.table_number.toLowerCase(), s.id);
-      });
-
-      const enrichedPreview = initialPreview.map((row) => {
-        const enriched = { ...row };
-        const userId = row.rfid ? rfidToUserIdMap.get(row.rfid) : undefined;
-        const seatId = row.table_number
-          ? tableToSeatIdMap.get(row.table_number.toLowerCase())
-          : undefined;
-
-        if (userId) {
-          enriched.user_id = userId;
-          enriched.member_name = rfidToNameMap.get(row.rfid);
-        } else {
-          enriched.isValid = false;
-          enriched.errors.push(`RFID ${row.rfid} not found in system.`);
-        }
-
-        if (seatId) {
-          enriched.service_seat_id = seatId;
-        } else {
-          enriched.isValid = false;
-          enriched.errors.push(`Table ${row.table_number} not found in selected layout.`);
-        }
-
-        return enriched;
-      });
-
-      setPreviewRows(enrichedPreview);
-      toast.success('CSV parsed and validated');
+      setRawRows(initialPreview);
     } catch (err) {
       console.error(err);
       toast.error('Failed to read CSV file');
+      setRawRows([]);
     } finally {
-      setIsLoadingLookups(false);
       setFileInputKey((k) => k + 1);
     }
   };
@@ -159,7 +246,7 @@ export function ServiceAttendanceMigrationPanel() {
 
       await bulkUpsertMutation.mutateAsync(payload);
       toast.success('Migration completed successfully');
-      setPreviewRows([]);
+      setRawRows([]);
       setSelectedLayoutId('');
     } catch (err) {
       console.error(err);
@@ -189,7 +276,7 @@ export function ServiceAttendanceMigrationPanel() {
             value={selectedLayoutId}
             onChange={(val) => {
               setSelectedLayoutId(val);
-              setPreviewRows([]);
+              setRawRows([]);
             }}
             placeholder="Select a layout..."
             options={(layouts ?? []).map((l) => ({ value: l.id, label: l.description }))}
