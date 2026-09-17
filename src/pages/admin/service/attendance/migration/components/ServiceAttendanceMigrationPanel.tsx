@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/ListTable';
 import {
   useBulkUpsertServiceAttendanceMutation,
+  useLookupUsersByRfidsMutation,
   useServiceLayoutsQuery,
   useServiceSeatsQuery,
 } from '@/hooks/domain/services';
@@ -24,7 +25,6 @@ import {
   parseServiceAttendanceCsv,
   processParsedCsvData,
 } from '@/lib/domain/services';
-import { supabase } from '@/lib/infrastructure';
 
 export function ServiceAttendanceMigrationPanel() {
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
@@ -37,6 +37,7 @@ export function ServiceAttendanceMigrationPanel() {
   const { data: seats } = useServiceSeatsQuery(selectedLayoutId);
 
   const bulkUpsertMutation = useBulkUpsertServiceAttendanceMutation();
+  const lookupUsersByRfidsMutation = useLookupUsersByRfidsMutation();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -67,19 +68,15 @@ export function ServiceAttendanceMigrationPanel() {
       const rfidToNameMap = new Map<string, string>();
 
       if (rfidsToLookup.length > 0) {
-        const { data: users, error } = await supabase
-          .from('users')
-          .select('id, member_id, full_name')
-          .in('member_id', rfidsToLookup);
-
-        if (error) {
-          toast.error('Failed to look up users');
-          console.error(error);
-        } else if (users) {
+        try {
+          const users = await lookupUsersByRfidsMutation.mutateAsync(rfidsToLookup);
           users.forEach((u) => {
             rfidToUserIdMap.set(u.member_id, u.id);
             rfidToNameMap.set(u.member_id, u.full_name);
           });
+        } catch (error) {
+          toast.error('Failed to look up users');
+          console.error(error);
         }
       }
 

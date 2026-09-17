@@ -8,6 +8,7 @@ import {
   useCreateServiceSeatMutation,
   useDeleteServiceAttendanceMutation,
   useDeleteServiceSeatMutation,
+  useLookupUsersByRfidsMutation,
   useRecordServiceAttendanceMutation,
   useServiceAttendanceQuery,
   useServiceLayoutsQuery,
@@ -319,6 +320,54 @@ describe('Services Domain Hooks', () => {
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
+    });
+
+    it('useLookupUsersByRfidsMutation looks up users by RFIDs', async () => {
+      const mockUsers = [
+        { id: 'user-1', member_id: 'RFID-1', full_name: 'Alice Smith' },
+        { id: 'user-2', member_id: 'RFID-2', full_name: 'Bob Jones' },
+      ];
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: mockUsers,
+          error: null,
+        }),
+      };
+      mockFrom.mockReturnValue(mockBuilder);
+
+      const { result } = renderHookWithClient(() => useLookupUsersByRfidsMutation());
+
+      const dataPromise = result.current.mutateAsync(['RFID-1', 'RFID-2']);
+
+      await expect(dataPromise).resolves.toEqual(mockUsers);
+      expect(mockFrom).toHaveBeenCalledWith('users');
+      expect(mockBuilder.select).toHaveBeenCalledWith('id, member_id, full_name');
+      expect(mockBuilder.in).toHaveBeenCalledWith('member_id', ['RFID-1', 'RFID-2']);
+    });
+
+    it('useLookupUsersByRfidsMutation returns empty array when given empty RFIDs without querying', async () => {
+      const { result } = renderHookWithClient(() => useLookupUsersByRfidsMutation());
+
+      const dataPromise = result.current.mutateAsync([]);
+
+      await expect(dataPromise).resolves.toEqual([]);
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it('useLookupUsersByRfidsMutation throws error when Supabase query fails', async () => {
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: null,
+          error: new Error('Database error'),
+        }),
+      };
+      mockFrom.mockReturnValue(mockBuilder);
+
+      const { result } = renderHookWithClient(() => useLookupUsersByRfidsMutation());
+
+      await expect(result.current.mutateAsync(['RFID-1'])).rejects.toThrow('Database error');
     });
   });
 });
