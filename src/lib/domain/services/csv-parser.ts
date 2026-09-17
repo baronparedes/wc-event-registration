@@ -121,6 +121,7 @@ export interface ServiceAttendanceCsvPreviewRow {
   checked_in_at: string;
   is_manual_entry: boolean;
   is_override: boolean;
+  is_walk_in: boolean;
   table_number: string;
   metadata: Record<string, unknown>;
   // Looked up fields (will be populated during preview phase by React component)
@@ -130,10 +131,13 @@ export interface ServiceAttendanceCsvPreviewRow {
 }
 
 export const USHER_BACKROOM_TABLE = 'Usher / Backroom';
+export const UNASSIGNED_TABLE = 'Unassigned';
 
 export function mapServiceAttendanceTableNumber(tableInput: string): string {
   const trimmed = tableInput.trim();
-  if (!trimmed) return trimmed;
+  if (!trimmed || trimmed.toLowerCase() === 'x') {
+    return UNASSIGNED_TABLE;
+  }
 
   const parsed = Number(trimmed.replace(/^table\s*/i, '').trim());
   if (!Number.isNaN(parsed) && parsed > 100) {
@@ -166,7 +170,7 @@ export function processParsedCsvData(
     if (!timeSlot) {
       errors.push('Time_Slot is missing');
     }
-    if (!rawTableNum) {
+    if (!tableNum) {
       errors.push('Table is missing');
     }
 
@@ -197,13 +201,27 @@ export function processParsedCsvData(
     if (rowData['VolunteerID']) metadata.volunteer_id = rowData['VolunteerID'];
     if (rowData['Id']) metadata.legacy_id = rowData['Id'];
     if (rowData['Name']) metadata.legacy_name = rowData['Name'];
-    if (tableNum === USHER_BACKROOM_TABLE && rawTableNum !== USHER_BACKROOM_TABLE) {
+    if (
+      (tableNum === USHER_BACKROOM_TABLE && rawTableNum !== USHER_BACKROOM_TABLE) ||
+      (tableNum === UNASSIGNED_TABLE && rawTableNum !== UNASSIGNED_TABLE && rawTableNum !== '')
+    ) {
       metadata.original_table_number = rawTableNum;
     }
 
     const isManualEntry =
       rowData['Manual_Entry'] === '1' || rowData['Manual_Entry']?.toLowerCase() === 'true';
     const isOverride = rowData['Override'] === '1' || rowData['Override']?.toLowerCase() === 'true';
+    const walkInVal =
+      rowData['Walkin'] ??
+      rowData['Walk_In'] ??
+      rowData['Walk-In'] ??
+      rowData['Walk In'] ??
+      rowData['Is_Walk_In'];
+    const isWalkIn =
+      walkInVal === '1' ||
+      walkInVal?.toLowerCase() === 'true' ||
+      walkInVal?.toLowerCase() === 'yes' ||
+      walkInVal?.toLowerCase() === 'y';
 
     previewRows.push({
       row_number: i + 2, // 1-based, +1 for header
@@ -216,6 +234,7 @@ export function processParsedCsvData(
       checked_in_at: checkedInAt,
       is_manual_entry: isManualEntry,
       is_override: isOverride,
+      is_walk_in: isWalkIn,
       table_number: tableNum,
       metadata,
     });

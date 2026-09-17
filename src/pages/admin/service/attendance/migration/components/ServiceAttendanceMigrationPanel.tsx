@@ -300,7 +300,7 @@ export function ServiceAttendanceMigrationPanel() {
           service_date: r.service_date,
           time_slot: r.time_slot,
           checked_in_at: r.checked_in_at,
-          is_walk_in: false,
+          is_walk_in: r.is_walk_in,
           is_override: r.is_override,
           is_manual_entry: r.is_manual_entry,
           service_seat_id: r.service_seat_id,
@@ -546,7 +546,16 @@ export function ServiceAttendanceMigrationPanel() {
                         <ListTableCell>{row.service_date}</ListTableCell>
                         <ListTableCell>{row.time_slot}</ListTableCell>
                         <ListTableCell>{row.table_number}</ListTableCell>
-                        <ListTableCell>{row.metadata?.role as string}</ListTableCell>
+                        <ListTableCell>
+                          <div className="flex flex-col items-start gap-1">
+                            <span>{(row.metadata?.role as string) || '—'}</span>
+                            {row.is_walk_in && (
+                              <span className="inline-flex items-center rounded-sm border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                                Walk-in
+                              </span>
+                            )}
+                          </div>
+                        </ListTableCell>
                       </ListTableRow>
                     ))
                   )}

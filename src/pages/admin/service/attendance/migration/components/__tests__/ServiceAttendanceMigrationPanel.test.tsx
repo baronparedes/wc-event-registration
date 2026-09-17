@@ -31,6 +31,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
       data: [
         { id: 'seat-10', table_number: '10' },
         { id: 'seat-usher', table_number: 'Usher / Backroom' },
+        { id: 'seat-unassigned', table_number: 'Unassigned' },
       ],
       isLoading: false,
     });
