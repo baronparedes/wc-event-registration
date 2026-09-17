@@ -1,0 +1,6 @@
+<<<<<<< SEARCH
+import { SundayAvailabilityDisplay } from './components/SundayAvailabilityDisplay';
+=======
+import { ServiceAttendanceHistoryTab } from './components/ServiceAttendanceHistoryTab';
+import { SundayAvailabilityDisplay } from './components/SundayAvailabilityDisplay';
+>>>>>>> REPLACE

@@ -8,6 +8,8 @@ export interface FetchServiceAttendanceFilters {
   time_slot?: string;
   user_id?: string;
   rfid?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 export const serviceAttendanceQueryKey = (filters: FetchServiceAttendanceFilters) =>
@@ -24,6 +26,12 @@ export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters
 
       if (filters.service_date) {
         query = query.eq('service_date', filters.service_date);
+      }
+      if (filters.start_date) {
+        query = query.gte('service_date', filters.start_date);
+      }
+      if (filters.end_date) {
+        query = query.lte('service_date', filters.end_date);
       }
       if (filters.time_slot) {
         query = query.eq('time_slot', filters.time_slot);

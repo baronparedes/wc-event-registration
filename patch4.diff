@@ -1,0 +1,13 @@
+<<<<<<< SEARCH
+  const { data: attendance, isLoading, isError } = useServiceAttendanceQuery({
+    user_id: memberId,
+    start_date: startDateStr,
+    end_date: endDateStr,
+  });
+=======
+  const { data: attendance, isLoading, isError } = useServiceAttendanceQuery({
+    user_id: memberId,
+    start_date: startDateStr,
+    end_date: endDateStr,
+  });
+>>>>>>> REPLACE
