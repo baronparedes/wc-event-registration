@@ -142,7 +142,7 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getByText('Failed to load attendance history.')).toBeInTheDocument();
   });
 
-  it('renders empty attendance state using EmptyState component when no records exist', () => {
+  it('renders matrix table consistently even when no attendance records exist', () => {
     mockUseServiceAttendanceQuery.mockReturnValue({
       data: [],
       isLoading: false,
@@ -150,11 +150,13 @@ describe('ServiceAttendanceHistoryTab', () => {
     });
 
     render(<ServiceAttendanceHistoryTab memberId="user-1" />);
-    expect(screen.getByText('No attendance found')).toBeInTheDocument();
-    expect(screen.getByText(/No service attendance recorded for/)).toBeInTheDocument();
+    expect(screen.getByText('0 Total')).toBeInTheDocument();
+    expect(screen.getByText('Schedule Alignment:')).toBeInTheDocument();
+    expect(screen.getAllByText('1st Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('9AM').length).toBeGreaterThan(0);
   });
 
-  it('renders monthly attendance list table with records and status badges', () => {
+  it('renders monthly attendance matrix with records, Sundays, and status badges', () => {
     render(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     expect(screen.getByText('4 Total')).toBeInTheDocument();
@@ -163,6 +165,12 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('2026-09-13').length).toBeGreaterThan(0);
     expect(screen.getAllByText('2026-09-20').length).toBeGreaterThan(0);
     expect(screen.getAllByText('2026-09-27').length).toBeGreaterThan(0);
+
+    expect(screen.getAllByText('1st Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2nd Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('3rd Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('4th Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('5th Sunday').length).toBeGreaterThan(0);
 
     expect(screen.getAllByText('9AM').length).toBeGreaterThan(0);
     expect(screen.getAllByText('12NN').length).toBeGreaterThan(0);
@@ -173,10 +181,60 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('Override').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Manual').length).toBeGreaterThan(0);
 
-    expect(screen.getByText('Assignment')).toBeInTheDocument();
+    expect(screen.getAllByText(/Assignment:/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('14, Seat 2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Usher / Backroom').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Unassigned').length).toBeGreaterThan(0);
+  });
+
+  it('displays committed vs unscheduled alignment badges and missed commitments', () => {
+    const metadata = {
+      first_sunday: '9AM',
+      second_sunday: '9AM, 12NN',
+      third_sunday: '9AM',
+      fourth_sunday: '9AM',
+      fifth_sunday: '',
+    };
+
+    render(<ServiceAttendanceHistoryTab memberId="user-1" metadata={metadata} />);
+
+    expect(screen.getAllByText('Committed').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Unscheduled').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Missed Committed').length).toBeGreaterThan(0);
+  });
+
+  it('renders other services attended for attendances on non-Sundays', () => {
+    const nonSundayData: ServiceAttendance[] = [
+      ...sampleAttendance,
+      {
+        id: 'att-special',
+        user_id: 'user-1',
+        rfid: 'rfid-1',
+        service_date: '2026-09-18',
+        time_slot: '7PM',
+        checked_in_at: '2026-09-18T18:50:00Z',
+        is_walk_in: false,
+        is_override: false,
+        is_manual_entry: false,
+        service_seat_id: null,
+        service_seats: null,
+        metadata: {},
+        created_at: '2026-09-18T18:50:00Z',
+        updated_at: '2026-09-18T18:50:00Z',
+        created_by: null,
+        updated_by: null,
+      },
+    ];
+
+    mockUseServiceAttendanceQuery.mockReturnValue({
+      data: nonSundayData,
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    expect(screen.getByText('Other Services Attended')).toBeInTheDocument();
+    expect(screen.getByText('2026-09-18 • 7PM')).toBeInTheDocument();
   });
 
   it('navigates to next and previous months and today', () => {

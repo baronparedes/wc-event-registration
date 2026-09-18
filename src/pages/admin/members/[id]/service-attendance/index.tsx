@@ -17,7 +17,7 @@ export function AdminMemberServiceAttendancePage() {
       <AdminPageShell>
         <AdminPageShell.Header title="Service Attendance History" />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Member ID is missing.</p>
+          <p className="text-sm text-danger">Member ID is missing.</p>
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -38,7 +38,7 @@ export function AdminMemberServiceAttendancePage() {
       <AdminPageShell>
         <AdminPageShell.Header title="Service Attendance History" />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">{UI_MESSAGES.errors.memberNotFound}</p>
+          <p className="text-sm text-danger">{UI_MESSAGES.errors.memberNotFound}</p>
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -62,7 +62,7 @@ export function AdminMemberServiceAttendancePage() {
       <AdminPageShell.Content>
         <div className="space-y-6">
           <MemberOverviewCard member={member} />
-          <ServiceAttendanceHistoryTab memberId={member.id} />
+          <ServiceAttendanceHistoryTab memberId={member.id} metadata={member.extra_metadata} />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

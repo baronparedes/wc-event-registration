@@ -197,7 +197,7 @@ export function ProfilePage() {
                   <p className="text-sm text-muted">Loading event history...</p>
                 )}
                 {historyQuery.isError && (
-                  <p className="text-sm text-red-600">Failed to load event history.</p>
+                  <p className="text-sm text-danger">Failed to load event history.</p>
                 )}
                 {!historyQuery.isLoading && !historyQuery.isError && eventGroups.length === 0 && (
                   <p className="text-sm text-muted">No events found.</p>
@@ -226,7 +226,7 @@ export function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="service_attendance">
-              <ServiceAttendanceHistoryTab memberId={member.id} />
+              <ServiceAttendanceHistoryTab memberId={member.id} metadata={extraMetadata} />
             </TabsContent>
           </Tabs>
         </div>
