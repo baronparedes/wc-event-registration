@@ -1,4 +1,4 @@
-import { AlertCircle, CalendarDays, CheckCircle2, Clock } from 'lucide-react';
+import { AlertCircle, CalendarDays, CheckCircle2, Clock, Info } from 'lucide-react';
 
 import { Badge } from '@/components/ui';
 import type { MatrixCellData } from '@/lib/domain/services';
@@ -88,6 +88,20 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
           <span>Upcoming Committed</span>
         </div>
         <p className="text-[11px] text-muted font-medium">Committed Sunday slot</p>
+      </div>
+    );
+  }
+
+  if (status === 'excused') {
+    return (
+      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1 rounded-xl border-2 border-accent bg-surface p-2.5 text-left shadow-xs">
+        <div className="flex items-center gap-1 text-xs font-bold text-accent">
+          <Info className="h-3.5 w-3.5 shrink-0 text-accent" />
+          <span>Excused</span>
+        </div>
+        <p className="text-[11px] text-muted font-medium">
+          {cell.excusedReason ? cell.excusedReason : 'Excused from schedule'}
+        </p>
       </div>
     );
   }

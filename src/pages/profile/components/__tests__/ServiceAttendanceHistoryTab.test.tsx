@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,14 +6,40 @@ import type { ServiceAttendance } from '@/lib/domain/services';
 
 import { ServiceAttendanceHistoryTab } from '../ServiceAttendanceHistoryTab';
 
-const { mockUseServiceAttendanceQuery, mockUseUserCommitmentHistoryQuery } = vi.hoisted(() => ({
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+const {
+  mockUseServiceAttendanceQuery,
+  mockUseUserCommitmentHistoryQuery,
+  mockUseGetMemberExcusedSchedule,
+  mockUseGetExcusedMembers,
+} = vi.hoisted(() => ({
   mockUseServiceAttendanceQuery: vi.fn(),
   mockUseUserCommitmentHistoryQuery: vi.fn(),
+  mockUseGetMemberExcusedSchedule: vi.fn(() => ({ data: [] })),
+  mockUseGetExcusedMembers: vi.fn(() => ({ data: [] })),
 }));
 
 vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: (...args: unknown[]) => mockUseServiceAttendanceQuery(...args),
   useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
+}));
+
+vi.mock('@/hooks/domain/members', () => ({
+  useGetExcusedMembers: () => mockUseGetExcusedMembers(),
+}));
+
+vi.mock('@/hooks/domain/members/queries', () => ({
+  useGetMemberExcusedSchedule: () => mockUseGetMemberExcusedSchedule(),
 }));
 
 const sampleAttendance: ServiceAttendance[] = [
@@ -117,7 +144,7 @@ describe('ServiceAttendanceHistoryTab', () => {
   });
 
   it('renders section card header and navigation controls', () => {
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     expect(
       screen.getByRole('heading', { level: 2, name: 'Service Attendance History' }),
@@ -135,7 +162,7 @@ describe('ServiceAttendanceHistoryTab', () => {
       isError: false,
     });
 
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
     expect(screen.getByText('Loading attendance history...')).toBeInTheDocument();
   });
 
@@ -146,7 +173,7 @@ describe('ServiceAttendanceHistoryTab', () => {
       isError: true,
     });
 
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
     expect(screen.getByText('Failed to load attendance history.')).toBeInTheDocument();
   });
 
@@ -157,7 +184,7 @@ describe('ServiceAttendanceHistoryTab', () => {
       isError: false,
     });
 
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
     expect(screen.getByText('0 Total')).toBeInTheDocument();
     expect(screen.getByText('Schedule Alignment:')).toBeInTheDocument();
     expect(screen.getAllByText('1st Sunday').length).toBeGreaterThan(0);
@@ -165,7 +192,7 @@ describe('ServiceAttendanceHistoryTab', () => {
   });
 
   it('renders monthly attendance matrix with records, Sundays, and status badges', () => {
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     expect(screen.getByText('4 Total')).toBeInTheDocument();
 
@@ -204,7 +231,7 @@ describe('ServiceAttendanceHistoryTab', () => {
       fifth_sunday: '',
     };
 
-    render(<ServiceAttendanceHistoryTab memberId="user-1" metadata={metadata} />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" metadata={metadata} />);
 
     expect(screen.getAllByText('Committed').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Unscheduled').length).toBeGreaterThan(0);
@@ -240,13 +267,13 @@ describe('ServiceAttendanceHistoryTab', () => {
       isError: false,
     });
 
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
     expect(screen.getByText('Other Services Attended')).toBeInTheDocument();
     expect(screen.getByText('2026-09-18 • 7PM')).toBeInTheDocument();
   });
 
   it('navigates to next and previous months and today', () => {
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     const nextBtn = screen.getByRole('button', { name: 'Next month' });
     fireEvent.click(nextBtn);
@@ -261,7 +288,7 @@ describe('ServiceAttendanceHistoryTab', () => {
   });
 
   it('allows explicitly selecting a year and respects month bounds', () => {
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     const yearSelect = screen.getByRole('button', { name: 'Select year' });
     expect(yearSelect).toBeInTheDocument();
@@ -290,7 +317,7 @@ describe('ServiceAttendanceHistoryTab', () => {
       isError: false,
     });
 
-    render(<ServiceAttendanceHistoryTab memberId="user-1" />);
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     expect(screen.getByText('(updating...)')).toBeInTheDocument();
     expect(screen.getByText('4 Total')).toBeInTheDocument();

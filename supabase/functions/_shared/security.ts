@@ -516,3 +516,85 @@ export function createObscuredDenyResponse(corsHeaders: Record<string, string>) 
     headers: { ...corsHeaders, [HTTP_HEADERS.contentType]: MIME_TYPES.json },
   });
 }
+export interface AuthGuardOptions {
+  requestId: string;
+  logPrefix: string;
+  supabaseUrl: string;
+  supabaseServiceKey: string;
+  authHeader: string | null;
+  corsHeaders: Record<string, string>;
+}
+
+export type AuthGuardResult = { ok: true; userId: string } | { ok: false; response: Response };
+
+export async function requireAuthAccess(options: AuthGuardOptions): Promise<AuthGuardResult> {
+  const { requestId, logPrefix, supabaseUrl, supabaseServiceKey, authHeader, corsHeaders } =
+    options;
+
+  if (!authHeader || !authHeader.startsWith(AUTH.bearerPrefix)) {
+    return {
+      ok: false,
+      response: createJsonResponse(
+        {
+          success: false,
+          error: 'Unauthorized',
+          error_code: ERROR_CODES.unauthorized,
+        },
+        HTTP_STATUS.unauthorized,
+        corsHeaders,
+      ),
+    };
+  }
+
+  const token = authHeader.replace(AUTH.bearerPrefix, '').trim();
+  if (!token) {
+    return {
+      ok: false,
+      response: createJsonResponse(
+        {
+          success: false,
+          error: 'Unauthorized',
+          error_code: ERROR_CODES.unauthorized,
+        },
+        HTTP_STATUS.unauthorized,
+        corsHeaders,
+      ),
+    };
+  }
+
+  const authClient = createClient(supabaseUrl, supabaseServiceKey, {
+    global: {
+      headers: {
+        [HTTP_HEADERS.authorization]: authHeader,
+      },
+    },
+  });
+
+  const { data: authData, error: authError } = await authClient.auth.getUser(token);
+  const userId = authData?.user?.id ?? null;
+
+  console.log(`[${logPrefix}] auth user check`, {
+    requestId,
+    hasUser: Boolean(authData?.user),
+    userId: maskValue(userId),
+    authErrorStatus: authError?.status ?? null,
+    authErrorMessage: authError?.message ?? null,
+  });
+
+  if (!userId) {
+    return {
+      ok: false,
+      response: createJsonResponse(
+        {
+          success: false,
+          error: 'Unauthorized',
+          error_code: ERROR_CODES.unauthorized,
+        },
+        HTTP_STATUS.unauthorized,
+        corsHeaders,
+      ),
+    };
+  }
+
+  return { ok: true, userId };
+}

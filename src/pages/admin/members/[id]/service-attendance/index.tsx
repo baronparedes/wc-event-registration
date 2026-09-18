@@ -62,7 +62,11 @@ export function AdminMemberServiceAttendancePage() {
       <AdminPageShell.Content>
         <div className="space-y-6">
           <MemberOverviewCard member={member} />
-          <ServiceAttendanceHistoryTab memberId={member.id} metadata={member.extra_metadata} />
+          <ServiceAttendanceHistoryTab
+            memberId={member.id}
+            metadata={member.extra_metadata}
+            isAdminView={true}
+          />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

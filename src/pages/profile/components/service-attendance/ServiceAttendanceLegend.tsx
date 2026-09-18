@@ -15,6 +15,10 @@ export function ServiceAttendanceLegend() {
         <span className="font-medium text-text">Missed Committed</span>
       </div>
       <div className="flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+        <span className="font-medium text-text">Excused</span>
+      </div>
+      <div className="flex items-center gap-1.5">
         <span className="h-2.5 w-2.5 rounded-full border-2 border-dashed border-primary" />
         <span className="font-medium text-text">Upcoming Committed</span>
       </div>

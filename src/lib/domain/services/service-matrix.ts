@@ -46,7 +46,8 @@ export type MatrixSlotStatus =
   | 'missed_committed'
   | 'upcoming_committed'
   | 'off_schedule'
-  | 'not_applicable';
+  | 'not_applicable'
+  | 'excused';
 
 export interface MatrixCellData {
   sundayKey: ServiceSundayKey;
@@ -55,6 +56,7 @@ export interface MatrixCellData {
   isCommitted: boolean;
   attendance?: ServiceAttendance;
   status: MatrixSlotStatus;
+  excusedReason?: string;
 }
 
 export function toISODate(date: Date): string {
@@ -158,6 +160,7 @@ export function computeMatrixGrid(
   attendances: ServiceAttendance[],
   currentMetadata: Record<string, string> | null | undefined,
   snapshots: UserCommitmentSnapshot[],
+  excusedRecords: { requestDate: string; services: string; reason?: string }[] = [],
   todayStr: string = toISODate(new Date()),
 ): Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>> {
   const grid = {} as Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>>;
@@ -201,11 +204,21 @@ export function computeMatrixGrid(
         (a) => a.service_date === sunday.dateStr && normalizeTimeSlot(a.time_slot) === timeSlot,
       );
 
+      const excusedRecord = excusedRecords.find(
+        (er) =>
+          er.requestDate === sunday.dateStr &&
+          er.services.toUpperCase().replace(/\s+/g, '').includes(timeSlot.toUpperCase()),
+      );
+
       let status: MatrixSlotStatus;
       if (attendance) {
         status = isCommitted ? 'attended_committed' : 'attended_unscheduled';
       } else if (isCommitted) {
-        status = sunday.dateStr < todayStr ? 'missed_committed' : 'upcoming_committed';
+        if (excusedRecord) {
+          status = 'excused';
+        } else {
+          status = sunday.dateStr < todayStr ? 'missed_committed' : 'upcoming_committed';
+        }
       } else {
         status = 'off_schedule';
       }
@@ -217,6 +230,7 @@ export function computeMatrixGrid(
         isCommitted,
         attendance,
         status,
+        excusedReason: excusedRecord?.reason,
       };
     }
   }

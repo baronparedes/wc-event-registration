@@ -120,14 +120,15 @@ describe('service-matrix domain logic', () => {
       },
     ];
 
+    const currentMetadata = {
+      first_sunday: '9AM',
+      second_sunday: '12NN',
+      third_sunday: '9AM',
+      fourth_sunday: '3PM',
+    };
+
     it('classifies attended_committed when attended and scheduled', () => {
-      const grid = computeMatrixGrid(
-        sundays,
-        attendances,
-        { first_sunday: '9AM', second_sunday: '12NN', third_sunday: '9AM', fourth_sunday: '3PM' },
-        [],
-        '2026-09-20',
-      );
+      const grid = computeMatrixGrid(sundays, attendances, currentMetadata, [], [], '2026-09-20');
       const cell = grid.first_sunday['9AM'];
       expect(cell.status).toBe('attended_committed');
       expect(cell.isCommitted).toBe(true);
@@ -135,13 +136,7 @@ describe('service-matrix domain logic', () => {
     });
 
     it('classifies attended_unscheduled when attended but not committed', () => {
-      const grid = computeMatrixGrid(
-        sundays,
-        attendances,
-        { first_sunday: '9AM', second_sunday: '12NN', third_sunday: '9AM', fourth_sunday: '3PM' },
-        [],
-        '2026-09-20',
-      );
+      const grid = computeMatrixGrid(sundays, attendances, currentMetadata, [], [], '2026-09-20');
       const cell = grid.second_sunday['9AM'];
       expect(cell.status).toBe('attended_unscheduled');
       expect(cell.isCommitted).toBe(false);
@@ -149,13 +144,7 @@ describe('service-matrix domain logic', () => {
     });
 
     it('classifies missed_committed when committed in the past and not attended', () => {
-      const grid = computeMatrixGrid(
-        sundays,
-        attendances,
-        { first_sunday: '9AM', second_sunday: '12NN', third_sunday: '9AM', fourth_sunday: '3PM' },
-        [],
-        '2026-09-20',
-      );
+      const grid = computeMatrixGrid(sundays, attendances, currentMetadata, [], [], '2026-09-20');
       // Second Sunday 12NN was committed, not attended, and is before 2026-09-20
       const cell = grid.second_sunday['12NN'];
       expect(cell.status).toBe('missed_committed');
@@ -164,13 +153,7 @@ describe('service-matrix domain logic', () => {
     });
 
     it('classifies upcoming_committed when committed in the future and not attended', () => {
-      const grid = computeMatrixGrid(
-        sundays,
-        attendances,
-        { first_sunday: '9AM', second_sunday: '12NN', third_sunday: '9AM', fourth_sunday: '3PM' },
-        [],
-        '2026-09-20',
-      );
+      const grid = computeMatrixGrid(sundays, attendances, currentMetadata, [], [], '2026-09-20');
       // Fourth Sunday 3PM is after 2026-09-20
       const cell = grid.fourth_sunday['3PM'];
       expect(cell.status).toBe('upcoming_committed');
@@ -178,28 +161,33 @@ describe('service-matrix domain logic', () => {
     });
 
     it('classifies off_schedule when not committed and not attended', () => {
-      const grid = computeMatrixGrid(
-        sundays,
-        attendances,
-        { first_sunday: '9AM', second_sunday: '12NN', third_sunday: '9AM', fourth_sunday: '3PM' },
-        [],
-        '2026-09-20',
-      );
+      const grid = computeMatrixGrid(sundays, attendances, currentMetadata, [], [], '2026-09-20');
       const cell = grid.first_sunday['3PM'];
       expect(cell.status).toBe('off_schedule');
       expect(cell.isCommitted).toBe(false);
     });
 
     it('classifies not_applicable when the month has no 5th Sunday', () => {
+      const grid = computeMatrixGrid(sundays, attendances, currentMetadata, [], [], '2026-09-20');
+      const cell = grid.fifth_sunday['9AM'];
+      expect(cell.status).toBe('not_applicable');
+    });
+
+    it('classifies excused when not attended, committed, but excused', () => {
+      const excusedRecords = [{ requestDate: '2026-09-13', services: '12NN', reason: 'sick' }];
       const grid = computeMatrixGrid(
         sundays,
         attendances,
-        { first_sunday: '9AM', second_sunday: '12NN', third_sunday: '9AM', fourth_sunday: '3PM' },
+        currentMetadata,
         [],
+        excusedRecords,
         '2026-09-20',
       );
-      const cell = grid.fifth_sunday['9AM'];
-      expect(cell.status).toBe('not_applicable');
+      const cell = grid.second_sunday['12NN'];
+      expect(cell.status).toBe('excused');
+      expect(cell.isCommitted).toBe(true);
+      expect(cell.attendance).toBeUndefined();
+      expect(cell.excusedReason).toBe('sick');
     });
   });
 

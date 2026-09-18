@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui';
+import { useGetExcusedMembers } from '@/hooks/domain/members';
+import { useGetMemberExcusedSchedule } from '@/hooks/domain/members/queries';
 import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import {
   MATRIX_TIME_SLOTS,
@@ -23,11 +25,13 @@ import {
 interface ServiceAttendanceHistoryTabProps {
   memberId: string;
   metadata?: Record<string, string>;
+  isAdminView?: boolean;
 }
 
 export function ServiceAttendanceHistoryTab({
   memberId,
   metadata,
+  isAdminView = false,
 }: ServiceAttendanceHistoryTabProps) {
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(
@@ -73,6 +77,18 @@ export function ServiceAttendanceHistoryTab({
   const isFetching = isAttendanceFetching || isSnapshotsFetching;
   const isError = isAttendanceError || isSnapshotsError;
 
+  const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex);
+  const allExcusedMembersQuery = useGetExcusedMembers(viewYear, viewMonthIndex);
+
+  const excusedRecords = useMemo(() => {
+    if (isAdminView) {
+      if (!allExcusedMembersQuery.data) return [];
+      return allExcusedMembersQuery.data.filter((r) => r.userId === memberId);
+    } else {
+      return memberScheduleQuery.data || [];
+    }
+  }, [isAdminView, allExcusedMembersQuery.data, memberScheduleQuery.data, memberId]);
+
   const isInitialLoading = isLoading && attendance.length === 0;
 
   const currentYear = today.getFullYear();
@@ -94,8 +110,8 @@ export function ServiceAttendanceHistoryTab({
   const todayStr = useMemo(() => toISODate(today), [today]);
 
   const matrixGrid = useMemo(
-    () => computeMatrixGrid(sundays, attendance, metadata, snapshots, todayStr),
-    [sundays, attendance, metadata, snapshots, todayStr],
+    () => computeMatrixGrid(sundays, attendance, metadata, snapshots, excusedRecords, todayStr),
+    [sundays, attendance, metadata, snapshots, excusedRecords, todayStr],
   );
 
   const nonSundayAttendances = useMemo(
