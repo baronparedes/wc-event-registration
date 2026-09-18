@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES, toRoute } from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import {
   useAdminMemberQuery,
@@ -22,6 +22,7 @@ import {
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
+import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
 
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
@@ -188,20 +189,12 @@ export function AdminMemberDetailPage() {
           { label: 'Members', to: ROUTE_PATHS.adminMembers },
           { label: member.full_name },
         ]}
+        navLinks={<MemberNavigationLinks memberId={id} />}
         title={canWrite ? 'Edit Member' : 'View Member'}
         description={
           canWrite
             ? 'Update the member profile, contact details, and admin metadata.'
             : 'View the member profile, contact details, and admin metadata.'
-        }
-        actions={
-          <>
-            {(canWrite || canRead) && (
-              <Button variant="primaryOutline" asChild>
-                <Link to={toRoute('memberProfile', { id })}>View Event History</Link>
-              </Button>
-            )}
-          </>
         }
       />
 

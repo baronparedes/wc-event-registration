@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
 import { useCurrentProfileQuery, useMemberEventHistoryQuery } from '@/hooks/domain/members';
 import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
-
 import {
   EventGroupCard,
   EventSingleCard,
   type MemberEventGroup,
-} from '../member/[id]/components/EventHistoryCard';
-import { EventRegistrationsModal } from '../member/[id]/components/EventRegistrationsModal';
+} from '@/pages/admin/members/[id]/event-history/components/EventHistoryCard';
+import { EventRegistrationsModal } from '@/pages/admin/members/[id]/event-history/components/EventRegistrationsModal';
+
 import { ServiceAttendanceHistoryTab } from './components/ServiceAttendanceHistoryTab';
 import { SundayAvailabilityDisplay } from './components/SundayAvailabilityDisplay';
 

@@ -20,7 +20,8 @@ export const ROUTE_PATHS = {
   adminMembers: '/admin/members',
   adminMembersImport: '/admin/members/import',
   adminMemberDetailPattern: '/admin/members/:id',
-  memberDetailPattern: '/member/:id',
+  adminMemberServiceAttendancePattern: '/admin/members/:id/service-attendance',
+  adminMemberEventHistoryPattern: '/admin/members/:id/event-history',
   adminEvents: '/admin/events',
   adminEventNew: '/admin/events/new',
   adminEventDetailPattern: '/admin/events/:id',
@@ -65,7 +66,8 @@ export type AppRouteKey =
   | 'adminMembers'
   | 'adminMembersImport'
   | 'adminMemberDetail'
-  | 'memberProfile'
+  | 'adminMemberServiceAttendance'
+  | 'adminMemberEventHistory'
   | 'adminEvents'
   | 'adminEventNew'
   | 'adminEventDetail'
@@ -148,10 +150,16 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     requiredPermission: 'canReadAdminMemberData',
   },
   {
-    key: 'memberProfile',
-    path: ROUTE_PATHS.memberDetailPattern,
+    key: 'adminMemberServiceAttendance',
+    path: ROUTE_PATHS.adminMemberServiceAttendancePattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canReadAdminMemberData',
+  },
+  {
+    key: 'adminMemberEventHistory',
+    path: ROUTE_PATHS.adminMemberEventHistoryPattern,
+    layout: 'shell',
+    requiredPermission: 'canReadAdminMemberData',
   },
   {
     key: 'adminEvents',

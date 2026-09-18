@@ -3,7 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeAdminMember, makeMemberEventHistoryItem } from '@/__tests__/factories';
-import { MemberProfilePage } from '@/pages/member/[id]';
+
+import { AdminMemberEventHistoryPage } from '../index';
 
 const { mockUseParams, mockUseAdminMemberQuery, mockUseMemberEventHistoryQuery } = vi.hoisted(
   () => ({
@@ -35,14 +36,14 @@ vi.mock('@/hooks/domain/members', async () => {
 function renderPage() {
   return render(
     <MemoryRouter>
-      <MemberProfilePage />
+      <AdminMemberEventHistoryPage />
     </MemoryRouter>,
   );
 }
 
 const member = makeAdminMember({ full_name: 'Jane Doe', member_id: 'WC-001', role: 'player' });
 
-describe('MemberProfilePage', () => {
+describe('AdminMemberEventHistoryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: member.id });
