@@ -104,6 +104,7 @@ describe('Service Attendance CSV Parser', () => {
       expect(result[0].metadata.original_table_number).toBe('105');
       expect(result[0].metadata.role).toBe('Usher');
       expect(result[0].service_date).toBe('2026-03-09');
+      expect(result[0].checked_in_at).toBe('2026-03-09T09:00:00+08:00');
 
       // Row 2 (Table 42 -> 42)
       expect(result[1].table_number).toBe('42');
