@@ -244,7 +244,7 @@ export function AdminChatPage() {
                 </div>
               </div>
             ))}
-            <div ref={bottomRef} className="h-1" />
+            {messages.length > 0 && <div ref={bottomRef} className="h-1" />}
           </div>
 
           <div className="border-t border-border bg-background p-4">
