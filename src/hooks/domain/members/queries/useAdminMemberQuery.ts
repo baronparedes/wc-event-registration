@@ -32,7 +32,7 @@ export function useAdminMemberQuery(
       let query = supabase
         .from('users')
         .select(
-          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
+          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, service_attendance(checked_in_at)',
         )
         .eq('id', memberId);
 
@@ -44,6 +44,16 @@ export function useAdminMemberQuery(
 
       if (error) throw error;
       if (!member) throw new Error('Member not found');
+
+      let last_activity: string | undefined = undefined;
+      const attendanceList = member.service_attendance as { checked_in_at: string }[] | undefined;
+      if (attendanceList && Array.isArray(attendanceList) && attendanceList.length > 0) {
+        // Sort descending by checked_in_at to get the most recent activity
+        attendanceList.sort(
+          (a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime(),
+        );
+        last_activity = attendanceList[0]?.checked_in_at;
+      }
 
       const metadata = (member.metadata as Record<string, unknown> | null | undefined) ?? {};
 
@@ -72,6 +82,7 @@ export function useAdminMemberQuery(
         extra_metadata,
         created_at: member.created_at,
         updated_at: member.updated_at,
+        last_activity,
       } satisfies AdminMember;
     },
     staleTime: 0,

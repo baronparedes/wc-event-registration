@@ -84,4 +84,5 @@ export type AdminMember = {
   extra_metadata: Record<string, string>;
   created_at: string;
   updated_at: string;
+  last_activity?: string;
 };

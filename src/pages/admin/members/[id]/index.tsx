@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
 import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -22,6 +23,7 @@ import {
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
+import { formatDateTime } from '@/lib/infrastructure';
 import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
 
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
@@ -208,6 +210,13 @@ export function AdminMemberDetailPage() {
           <SectionCard
             title="Member Profile"
             subtitle="Member ID stays read-only because it is used for lookup and registration linking."
+            headerAction={
+              member.last_activity && (
+                <Badge variant="outline">
+                  Last Activity: {formatDateTime(member.last_activity)}
+                </Badge>
+              )
+            }
           >
             <div className="flex items-center justify-center">
               {canWrite && !isDeletedMember ? (
