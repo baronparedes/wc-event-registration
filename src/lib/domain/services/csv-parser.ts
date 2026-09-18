@@ -193,7 +193,7 @@ export function processParsedCsvData(
 
     let checkedInAt = '';
     if (serviceDate && timeStr) {
-      checkedInAt = `${serviceDate}T${timeStr}Z`;
+      checkedInAt = `${serviceDate}T${timeStr}+08:00`;
     }
 
     const metadata: Record<string, unknown> = {};
