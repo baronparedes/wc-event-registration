@@ -100,9 +100,7 @@ export function ProfilePage() {
             title="Personal Details"
             headerAction={
               member.last_activity && (
-                <Badge variant="outline">
-                  Last Activity: {formatDateTime(member.last_activity)}
-                </Badge>
+                <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
               )
             }
           >

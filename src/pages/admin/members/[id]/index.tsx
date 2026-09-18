@@ -212,9 +212,7 @@ export function AdminMemberDetailPage() {
             subtitle="Member ID stays read-only because it is used for lookup and registration linking."
             headerAction={
               member.last_activity && (
-                <Badge variant="outline">
-                  Last Activity: {formatDateTime(member.last_activity)}
-                </Badge>
+                <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
               )
             }
           >
