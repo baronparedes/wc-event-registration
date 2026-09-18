@@ -101,11 +101,8 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
       <div className="flex h-[75vh] flex-col space-y-4">
         {/* Search and Filter Inputs */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="auth-user-search"
-              className="mb-1 block text-xs font-semibold text-text"
-            >
+          <div className="space-y-1.5">
+            <label htmlFor="auth-user-search" className="block text-sm font-semibold text-text">
               Search Auth Users
             </label>
             <div className="relative">
@@ -116,7 +113,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
                 onChange={(e) => setSearchTerm(e.target.value)}
                 inputClassName="pl-9"
               />
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted" aria-hidden="true" />
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted" aria-hidden="true" />
             </div>
           </div>
           <div>
