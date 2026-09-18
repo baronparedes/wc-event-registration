@@ -197,6 +197,32 @@ describe('AdminUserRolesPage', () => {
     const searchInput = screen.getByPlaceholderText('Search by email...');
     fireEvent.change(searchInput, { target: { value: 'new' } });
 
+    // Check that we can filter using the dropdown
+    // The FormSelectField renders a button trigger with aria-haspopup="listbox" whose text matches the selected label.
+    // By default it shows "All Profiles".
+    const buttons = screen.getAllByRole('button');
+    const allProfilesButton = buttons.find(
+      (b) =>
+        b.getAttribute('aria-haspopup') === 'listbox' && b.textContent?.includes('All Profiles'),
+    );
+    if (allProfilesButton) fireEvent.click(allProfilesButton);
+    fireEvent.click(screen.getByRole('option', { name: 'Unverified Only' }));
+
+    // The user has a member profile, so they should NOT be visible when "Unverified Only" is selected
+    expect(screen.queryByText('newuser@example.com')).not.toBeInTheDocument();
+
+    // Now switch back to all
+    const updatedButtons = screen.getAllByRole('button');
+    const unverifiedButton = updatedButtons.find(
+      (b) =>
+        b.getAttribute('aria-haspopup') === 'listbox' && b.textContent?.includes('Unverified Only'),
+    );
+    if (unverifiedButton) fireEvent.click(unverifiedButton);
+    fireEvent.click(screen.getByRole('option', { name: 'All Profiles' }));
+
+    // User should be visible again
+    expect(screen.getByText('newuser@example.com')).toBeInTheDocument();
+
     fireEvent.click(screen.getByText('newuser@example.com'));
 
     // Check that verified badge appears in the main table + dialog search list + summary (3 total)

@@ -40,14 +40,33 @@ const ROLE_OPTIONS: Array<{ value: AssignableAdminRole; label: string }> = [
 
 export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: AssignRoleDialogProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<AuthUserItem | null>(null);
   const [selectedRole, setSelectedRole] = useState<AssignableAdminRole>('admin');
 
   const { data: authUsers, isLoading: isSearching } = useAuthUsersQuery(searchTerm, isOpen);
   const roleMutation = useManageAdminRoleMutation();
 
+  const FILTER_OPTIONS = [
+    { value: 'all', label: 'All Profiles' },
+    { value: 'verified', label: 'Verified Only' },
+    { value: 'unverified', label: 'Unverified Only' },
+    { value: 'assigned', label: 'Assigned Only' },
+    { value: 'unassigned', label: 'Unassigned Only' },
+  ];
+
+  const filteredAuthUsers = (authUsers || []).filter((user) => {
+    const isAssigned = assignedAuthUserIds.has(user.id);
+    if (filterType === 'verified') return user.has_member_profile;
+    if (filterType === 'unverified') return !user.has_member_profile;
+    if (filterType === 'assigned') return isAssigned;
+    if (filterType === 'unassigned') return !isAssigned;
+    return true;
+  });
+
   function handleClose() {
     setSearchTerm('');
+    setFilterType('all');
     setSelectedUser(null);
     setSelectedRole('admin');
     onClose();
@@ -79,31 +98,48 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
       maxWidthClass="max-w-3xl"
       showCloseIcon
     >
-      <div className="space-y-4">
-        {/* Search Input */}
-        <div>
-          <label htmlFor="auth-user-search" className="block text-xs font-semibold text-text mb-1">
-            Search Auth Users
-          </label>
-          <div className="relative">
-            <FormInputField
-              id="auth-user-search"
-              placeholder="Search by email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              inputClassName="pl-9"
+      <div className="flex h-[75vh] flex-col space-y-4">
+        {/* Search and Filter Inputs */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="auth-user-search"
+              className="mb-1 block text-xs font-semibold text-text"
+            >
+              Search Auth Users
+            </label>
+            <div className="relative">
+              <FormInputField
+                id="auth-user-search"
+                placeholder="Search by email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                inputClassName="pl-9"
+              />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted" aria-hidden="true" />
+            </div>
+          </div>
+          <div>
+            <FormSelectField
+              id="auth-user-filter"
+              label="Filter Profiles"
+              value={filterType}
+              onChange={setFilterType}
+              options={FILTER_OPTIONS}
+              placeholder=""
             />
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted" aria-hidden="true" />
           </div>
         </div>
 
         {/* User Search Results List */}
-        <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-surface">
+        <div className="flex-1 overflow-y-auto rounded-lg border border-border bg-surface">
           {isSearching ? (
             <p className="p-3 text-xs text-muted">Searching auth users...</p>
-          ) : !authUsers || authUsers.length === 0 ? (
+          ) : filteredAuthUsers.length === 0 ? (
             <p className="p-3 text-xs text-muted">
-              {searchTerm ? 'No matching auth users found.' : 'Type to search auth users...'}
+              {searchTerm || filterType !== 'all'
+                ? 'No matching auth users found.'
+                : 'Type to search auth users...'}
             </p>
           ) : (
             <ListTable density="dense">
@@ -115,7 +151,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
                 </ListTableHeaderRow>
               </ListTableHead>
               <ListTableBody>
-                {authUsers.map((user) => {
+                {filteredAuthUsers.map((user) => {
                   const isAssigned = assignedAuthUserIds.has(user.id);
                   const isSelected = selectedUser?.id === user.id;
 
@@ -198,7 +234,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
         )}
 
         {/* Dialog Actions */}
-        <div className="flex justify-end gap-2 border-t border-border pt-3">
+        <div className="mt-auto flex justify-end gap-2 border-t border-border pt-3">
           <Button type="button" variant="primaryOutline" size="sm" onClick={handleClose}>
             Cancel
           </Button>
