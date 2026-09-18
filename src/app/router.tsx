@@ -81,6 +81,11 @@ const AdminMemberDetailPage = lazy(() =>
     default: module.AdminMemberDetailPage,
   })),
 );
+const AdminMemberServiceAttendancePage = lazy(() =>
+  import('../pages/admin/members/[id]/service-attendance').then((module) => ({
+    default: module.AdminMemberServiceAttendancePage,
+  })),
+);
 const AdminChatPage = lazy(() =>
   import('@/pages/admin/chat').then((module) => ({ default: module.AdminChatPage })),
 );
@@ -201,8 +206,10 @@ const AdminFormSubmissionsPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('../pages/not-found').then((module) => ({ default: module.NotFoundPage })),
 );
-const MemberProfilePage = lazy(() =>
-  import('../pages/member/[id]').then((module) => ({ default: module.MemberProfilePage })),
+const AdminMemberEventHistoryPage = lazy(() =>
+  import('../pages/admin/members/[id]/event-history').then((module) => ({
+    default: module.AdminMemberEventHistoryPage,
+  })),
 );
 
 function RouteLoadingFallback() {
@@ -254,7 +261,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminMembers: AdminMembersPage,
   adminMembersImport: AdminMembersImportPage,
   adminMemberDetail: AdminMemberDetailPage,
-  memberProfile: MemberProfilePage,
+  adminMemberServiceAttendance: AdminMemberServiceAttendancePage,
+  adminMemberEventHistory: AdminMemberEventHistoryPage,
   adminChat: AdminChatPage,
   adminEvents: AdminEventsPage,
   adminEventNew: AdminNewEventPage,

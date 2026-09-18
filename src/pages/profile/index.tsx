@@ -5,16 +5,18 @@ import { Navigate } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { Avatar } from '@/components/ui/Avatar';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
 import { useCurrentProfileQuery, useMemberEventHistoryQuery } from '@/hooks/domain/members';
 import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
-
 import {
   EventGroupCard,
   EventSingleCard,
   type MemberEventGroup,
-} from '../member/[id]/components/EventHistoryCard';
-import { EventRegistrationsModal } from '../member/[id]/components/EventRegistrationsModal';
+} from '@/pages/admin/members/[id]/event-history/components/EventHistoryCard';
+import { EventRegistrationsModal } from '@/pages/admin/members/[id]/event-history/components/EventRegistrationsModal';
+
+import { ServiceAttendanceHistoryTab } from './components/ServiceAttendanceHistoryTab';
 import { SundayAvailabilityDisplay } from './components/SundayAvailabilityDisplay';
 
 const SUNDAY_KEYS = [
@@ -59,6 +61,7 @@ export function ProfilePage() {
   }, [historyQuery.data]);
 
   const [selectedGroup, setSelectedGroup] = useState<MemberEventGroup | null>(null);
+  const [activeTab, setActiveTab] = useState<'events' | 'service_attendance'>('events');
 
   if (profileQuery.isLoading) {
     return (
@@ -176,40 +179,56 @@ export function ProfilePage() {
             </SectionCard>
           )}
 
-          <SectionCard
-            title={`Event History (${eventGroups.length})`}
-            subtitle="All events you have registered for, sorted most recent first."
+          <Tabs
+            value={activeTab}
+            onValueChange={(val) => setActiveTab(val as 'events' | 'service_attendance')}
           >
-            {historyQuery.isLoading && (
-              <p className="text-sm text-muted">Loading event history...</p>
-            )}
-            {historyQuery.isError && (
-              <p className="text-sm text-red-600">Failed to load event history.</p>
-            )}
-            {!historyQuery.isLoading && !historyQuery.isError && eventGroups.length === 0 && (
-              <p className="text-sm text-muted">No events found.</p>
-            )}
-            {eventGroups.length > 0 && (
-              <div className="space-y-4">
-                {eventGroups.map((group) =>
-                  group.registrations.length === 1 ? (
-                    <EventSingleCard
-                      key={group.event_id}
-                      group={group}
-                      formatDateTime={formatDateTime}
-                    />
-                  ) : (
-                    <EventGroupCard
-                      key={group.event_id}
-                      group={group}
-                      formatDateTime={formatDateTime}
-                      onView={() => setSelectedGroup(group)}
-                    />
-                  ),
+            <TabsList>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="service_attendance">Service Attendance</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="events">
+              <SectionCard
+                title={`Event History (${eventGroups.length})`}
+                subtitle="All events you have registered for, sorted most recent first."
+              >
+                {historyQuery.isLoading && (
+                  <p className="text-sm text-muted">Loading event history...</p>
                 )}
-              </div>
-            )}
-          </SectionCard>
+                {historyQuery.isError && (
+                  <p className="text-sm text-danger">Failed to load event history.</p>
+                )}
+                {!historyQuery.isLoading && !historyQuery.isError && eventGroups.length === 0 && (
+                  <p className="text-sm text-muted">No events found.</p>
+                )}
+                {eventGroups.length > 0 && (
+                  <div className="space-y-4">
+                    {eventGroups.map((group) =>
+                      group.registrations.length === 1 ? (
+                        <EventSingleCard
+                          key={group.event_id}
+                          group={group}
+                          formatDateTime={formatDateTime}
+                        />
+                      ) : (
+                        <EventGroupCard
+                          key={group.event_id}
+                          group={group}
+                          formatDateTime={formatDateTime}
+                          onView={() => setSelectedGroup(group)}
+                        />
+                      ),
+                    )}
+                  </div>
+                )}
+              </SectionCard>
+            </TabsContent>
+
+            <TabsContent value="service_attendance">
+              <ServiceAttendanceHistoryTab memberId={member.id} metadata={extraMetadata} />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <EventRegistrationsModal

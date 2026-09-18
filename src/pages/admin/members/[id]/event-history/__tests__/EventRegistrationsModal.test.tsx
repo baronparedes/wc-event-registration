@@ -2,12 +2,13 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { makeMemberEventHistoryItem } from '@/__tests__/factories';
-import type { MemberEventGroup } from '@/pages/member/[id]/components/EventHistoryCard';
+
+import type { MemberEventGroup } from '../components/EventHistoryCard';
 import {
   EventRegistrationsModal,
   type FormatDateTime,
   RegistrationDetail,
-} from '@/pages/member/[id]/components/EventRegistrationsModal';
+} from '../components/EventRegistrationsModal';
 
 const formatDateTime: FormatDateTime = (value, fallback = '—') =>
   value === null ? fallback : `formatted:${value}`;

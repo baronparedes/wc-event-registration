@@ -22,6 +22,13 @@ export type ServiceSeat = {
   updated_by: string | null;
 };
 
+export type ServiceAttendanceSeat = {
+  id: string;
+  table_number: string;
+  area: string | null;
+  seat_number: string | null;
+};
+
 export type ServiceAttendance = {
   id: string;
   user_id: string;
@@ -38,4 +45,5 @@ export type ServiceAttendance = {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+  service_seats?: ServiceAttendanceSeat | null;
 };

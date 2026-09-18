@@ -3,11 +3,12 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Avatar } from '@/components/ui/Avatar';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminMemberQuery, useMemberEventHistoryQuery } from '@/hooks/domain/members';
-import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
+import { formatDateTime } from '@/lib/infrastructure';
+import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
+import { MemberOverviewCard } from '@/pages/admin/members/components/MemberOverviewCard';
 
 import {
   EventGroupCard,
@@ -16,7 +17,7 @@ import {
 } from './components/EventHistoryCard';
 import { EventRegistrationsModal } from './components/EventRegistrationsModal';
 
-export function MemberProfilePage() {
+export function AdminMemberEventHistoryPage() {
   const { id } = useParams<{ id: string }>();
 
   const memberQuery = useAdminMemberQuery(id, { includeInactive: true });
@@ -46,7 +47,7 @@ export function MemberProfilePage() {
   if (!id) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Member Profile" />
+        <AdminPageShell.Header title="Event History" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">Member ID is missing.</p>
         </AdminPageShell.Content>
@@ -67,7 +68,7 @@ export function MemberProfilePage() {
   if (memberQuery.isError || !memberQuery.data) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Member Profile" />
+        <AdminPageShell.Header title="Event History" />
         <AdminPageShell.Content>
           <p className="text-sm text-red-600">{UI_MESSAGES.errors.memberNotFound}</p>
         </AdminPageShell.Content>
@@ -76,8 +77,6 @@ export function MemberProfilePage() {
   }
 
   const member = memberQuery.data;
-  const trimmedName = `${member.nickname ?? ''} ${member.last_name ?? ''}`.trim();
-  const avatarName = trimmedName !== '' ? trimmedName : member.full_name;
 
   return (
     <AdminPageShell>
@@ -87,54 +86,14 @@ export function MemberProfilePage() {
           { label: member.full_name, to: toRoute('adminMemberDetail', { id }) },
           { label: 'Event History' },
         ]}
+        navLinks={<MemberNavigationLinks memberId={id} />}
         title="Event History"
         description="Member's event registrations and attendance."
       />
 
       <AdminPageShell.Content>
         <div className="space-y-6">
-          <SectionCard>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <Avatar
-                name={avatarName}
-                avatarObjectKey={member.avatar_object_key}
-                size="xl"
-                className="shrink-0 self-center sm:self-start"
-              />
-              <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                <div className="min-w-0">
-                  <dt className="text-muted">Full Name</dt>
-                  <dd className="break-words font-medium text-text">{member.full_name}</dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-muted">Member ID</dt>
-                  <dd className="break-words font-medium text-text">{member.member_id}</dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-muted">Role</dt>
-                  <dd className="break-words font-medium text-text">{member.role}</dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-muted">Category</dt>
-                  <dd className="break-words font-medium text-text">{member.category}</dd>
-                </div>
-                {member.email && (
-                  <div className="min-w-0">
-                    <dt className="text-muted">Email</dt>
-                    <dd className="break-all font-medium text-text">{member.email}</dd>
-                  </div>
-                )}
-                {member.date_of_birth && (
-                  <div className="min-w-0">
-                    <dt className="text-muted">Date of Birth</dt>
-                    <dd className="break-words font-medium text-text">
-                      {formatDateOnly(member.date_of_birth)}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          </SectionCard>
+          <MemberOverviewCard member={member} />
 
           <SectionCard
             title={`Event History (${eventGroups.length})`}
