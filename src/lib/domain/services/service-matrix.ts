@@ -1,3 +1,6 @@
+import { isMemberExcused } from '@/lib/domain/hub-calendar/calendar';
+import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar/types';
+
 import type { ServiceAttendance } from './types';
 
 export const SERVICE_SUNDAY_KEYS = [
@@ -46,7 +49,8 @@ export type MatrixSlotStatus =
   | 'missed_committed'
   | 'upcoming_committed'
   | 'off_schedule'
-  | 'not_applicable';
+  | 'not_applicable'
+  | 'excused';
 
 export interface MatrixCellData {
   sundayKey: ServiceSundayKey;
@@ -55,6 +59,7 @@ export interface MatrixCellData {
   isCommitted: boolean;
   attendance?: ServiceAttendance;
   status: MatrixSlotStatus;
+  isExcused?: boolean;
 }
 
 export function toISODate(date: Date): string {
@@ -144,6 +149,8 @@ export function computeMatrixGrid(
   attendances: ServiceAttendance[],
   committedSlots: Record<ServiceSundayKey, Set<MatrixTimeSlot>>,
   todayStr: string = toISODate(new Date()),
+  excusedMap?: ExcusedMemberMap,
+  memberId?: string,
 ): Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>> {
   const grid = {} as Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>>;
   const sundayByKey = new Map<ServiceSundayKey, MonthSunday>();
@@ -172,9 +179,16 @@ export function computeMatrixGrid(
         (a) => a.service_date === sunday.dateStr && normalizeTimeSlot(a.time_slot) === timeSlot,
       );
 
+      let isExcused = false;
+      if (excusedMap && memberId && sunday.dateStr) {
+        isExcused = isMemberExcused(excusedMap, sunday.dateStr, { id: memberId }, timeSlot);
+      }
+
       let status: MatrixSlotStatus;
       if (attendance) {
         status = isCommitted ? 'attended_committed' : 'attended_unscheduled';
+      } else if (isExcused) {
+        status = 'excused';
       } else if (isCommitted) {
         status = sunday.dateStr < todayStr ? 'missed_committed' : 'upcoming_committed';
       } else {
@@ -188,6 +202,7 @@ export function computeMatrixGrid(
         isCommitted,
         attendance,
         status,
+        isExcused,
       };
     }
   }
