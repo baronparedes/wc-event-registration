@@ -7,14 +7,28 @@ begin
   -- 1. Find existing 'Base Layout' or insert a new one
   select id into v_layout_id
   from public.service_layouts
-  where description = 'Base Layout'
+  where lower(description) = lower('Base Layout')
   order by created_at desc
   limit 1;
 
   if v_layout_id is null then
     insert into public.service_layouts (description, is_active)
-    values ('Base Layout', true)
+    select 'Base Layout', true
+    where not exists (
+      select 1
+      from public.service_layouts
+      where lower(description) = lower('Base Layout')
+    )
+    on conflict (lower(description)) do nothing
     returning id into v_layout_id;
+
+    if v_layout_id is null then
+      select id into v_layout_id
+      from public.service_layouts
+      where lower(description) = lower('Base Layout')
+      order by created_at desc
+      limit 1;
+    end if;
   end if;
 
   -- 2. Insert tables '1' through '100' (skipping any that already exist for this layout)
