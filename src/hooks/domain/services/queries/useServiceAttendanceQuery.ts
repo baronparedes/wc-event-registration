@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import type { ServiceAttendance } from '@/lib/domain/services';
 import { supabase } from '@/lib/infrastructure';
@@ -18,6 +18,7 @@ export const serviceAttendanceQueryKey = (filters: FetchServiceAttendanceFilters
 export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters = {}) {
   return useQuery({
     queryKey: serviceAttendanceQueryKey(filters),
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<ServiceAttendance[]> => {
       let query = supabase
         .from('service_attendance')
