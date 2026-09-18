@@ -13,7 +13,7 @@ import {
   ListTableRow,
 } from '@/components/ui/ListTable';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
-import type { ServiceAttendance } from '@/lib/domain/services';
+import type { ServiceAttendance, ServiceAttendanceSeat } from '@/lib/domain/services';
 import { formatDateTime } from '@/lib/infrastructure';
 
 interface ServiceAttendanceHistoryTabProps {
@@ -25,6 +25,22 @@ function toISODate(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function formatAssignedSeat(seat?: ServiceAttendanceSeat | null): string {
+  if (!seat || !seat.table_number || seat.table_number.toLowerCase() === 'unassigned') {
+    return 'Unassigned';
+  }
+
+  const parts = [seat.table_number];
+  if (seat.seat_number) {
+    parts.push(`Seat ${seat.seat_number}`);
+  }
+  if (seat.area) {
+    parts.push(`(${seat.area})`);
+  }
+
+  return parts.join(', ');
 }
 
 function renderStatusBadge(record: ServiceAttendance) {
@@ -241,6 +257,7 @@ export function ServiceAttendanceHistoryTab({ memberId }: ServiceAttendanceHisto
                             {record.service_date}
                           </div>
                           <div className="text-xs text-muted truncate">
+                            {formatAssignedSeat(record.service_seats)} •{' '}
                             {formatDateTime(record.checked_in_at)}
                           </div>
                         </div>
@@ -257,6 +274,7 @@ export function ServiceAttendanceHistoryTab({ memberId }: ServiceAttendanceHisto
                       <ListTableHeaderRow>
                         <ListTableHeaderCell>Service Date</ListTableHeaderCell>
                         <ListTableHeaderCell>Time Slot</ListTableHeaderCell>
+                        <ListTableHeaderCell>Assignment</ListTableHeaderCell>
                         <ListTableHeaderCell>Checked In At</ListTableHeaderCell>
                         <ListTableHeaderCell>Status</ListTableHeaderCell>
                       </ListTableHeaderRow>
@@ -268,6 +286,15 @@ export function ServiceAttendanceHistoryTab({ memberId }: ServiceAttendanceHisto
                             {record.service_date}
                           </ListTableCell>
                           <ListTableCell>{record.time_slot}</ListTableCell>
+                          <ListTableCell>
+                            <span
+                              className={
+                                record.service_seats ? 'text-text font-medium' : 'text-muted'
+                              }
+                            >
+                              {formatAssignedSeat(record.service_seats)}
+                            </span>
+                          </ListTableCell>
                           <ListTableCell>{formatDateTime(record.checked_in_at)}</ListTableCell>
                           <ListTableCell>{renderStatusBadge(record)}</ListTableCell>
                         </ListTableRow>

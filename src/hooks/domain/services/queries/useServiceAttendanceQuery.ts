@@ -22,7 +22,17 @@ export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters
     queryFn: async (): Promise<ServiceAttendance[]> => {
       let query = supabase
         .from('service_attendance')
-        .select('*')
+        .select(
+          `
+          *,
+          service_seats (
+            id,
+            table_number,
+            seat_number,
+            area
+          )
+        `,
+        )
         .order('checked_in_at', { ascending: false });
 
       if (filters.service_date) {

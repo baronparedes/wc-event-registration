@@ -24,7 +24,13 @@ const sampleAttendance: ServiceAttendance[] = [
     is_walk_in: false,
     is_override: false,
     is_manual_entry: false,
-    service_seat_id: null,
+    service_seat_id: 'seat-1',
+    service_seats: {
+      id: 'seat-1',
+      table_number: '14',
+      seat_number: '2',
+      area: null,
+    },
     metadata: {},
     created_at: '2026-09-06T08:50:00Z',
     updated_at: '2026-09-06T08:50:00Z',
@@ -41,7 +47,13 @@ const sampleAttendance: ServiceAttendance[] = [
     is_walk_in: true,
     is_override: false,
     is_manual_entry: false,
-    service_seat_id: null,
+    service_seat_id: 'seat-2',
+    service_seats: {
+      id: 'seat-2',
+      table_number: 'Usher / Backroom',
+      seat_number: null,
+      area: null,
+    },
     metadata: {},
     created_at: '2026-09-13T11:55:00Z',
     updated_at: '2026-09-13T11:55:00Z',
@@ -59,6 +71,7 @@ const sampleAttendance: ServiceAttendance[] = [
     is_override: true,
     is_manual_entry: false,
     service_seat_id: null,
+    service_seats: null,
     metadata: {},
     created_at: '2026-09-20T14:50:00Z',
     updated_at: '2026-09-20T14:50:00Z',
@@ -76,6 +89,7 @@ const sampleAttendance: ServiceAttendance[] = [
     is_override: false,
     is_manual_entry: true,
     service_seat_id: null,
+    service_seats: null,
     metadata: {},
     created_at: '2026-09-27T08:45:00Z',
     updated_at: '2026-09-27T08:45:00Z',
@@ -158,6 +172,11 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('Walk-in').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Override').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Manual').length).toBeGreaterThan(0);
+
+    expect(screen.getByText('Assignment')).toBeInTheDocument();
+    expect(screen.getAllByText('14, Seat 2').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Usher / Backroom').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Unassigned').length).toBeGreaterThan(0);
   });
 
   it('navigates to next and previous months and today', () => {
