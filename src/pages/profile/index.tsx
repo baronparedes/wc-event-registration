@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { Avatar } from '@/components/ui/Avatar';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
 import { useCurrentProfileQuery, useMemberEventHistoryQuery } from '@/hooks/domain/members';
 import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
@@ -178,71 +179,56 @@ export function ProfilePage() {
             </SectionCard>
           )}
 
-          <div className="flex items-center rounded-xl border border-border bg-background p-1 w-fit">
-            <button
-              type="button"
-              onClick={() => setActiveTab('events')}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                activeTab === 'events'
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'text-muted hover:text-text'
-              }`}
-            >
-              Events
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('service_attendance')}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                activeTab === 'service_attendance'
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'text-muted hover:text-text'
-              }`}
-            >
-              Service Attendance
-            </button>
-          </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={(val) => setActiveTab(val as 'events' | 'service_attendance')}
+          >
+            <TabsList>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="service_attendance">Service Attendance</TabsTrigger>
+            </TabsList>
 
-          {activeTab === 'events' && (
-            <SectionCard
-              title={`Event History (${eventGroups.length})`}
-              subtitle="All events you have registered for, sorted most recent first."
-            >
-              {historyQuery.isLoading && (
-                <p className="text-sm text-muted">Loading event history...</p>
-              )}
-              {historyQuery.isError && (
-                <p className="text-sm text-red-600">Failed to load event history.</p>
-              )}
-              {!historyQuery.isLoading && !historyQuery.isError && eventGroups.length === 0 && (
-                <p className="text-sm text-muted">No events found.</p>
-              )}
-              {eventGroups.length > 0 && (
-                <div className="space-y-4">
-                  {eventGroups.map((group) =>
-                    group.registrations.length === 1 ? (
-                      <EventSingleCard
-                        key={group.event_id}
-                        group={group}
-                        formatDateTime={formatDateTime}
-                      />
-                    ) : (
-                      <EventGroupCard
-                        key={group.event_id}
-                        group={group}
-                        formatDateTime={formatDateTime}
-                        onView={() => setSelectedGroup(group)}
-                      />
-                    ),
-                  )}
-                </div>
-              )}
-            </SectionCard>
-          )}
+            <TabsContent value="events">
+              <SectionCard
+                title={`Event History (${eventGroups.length})`}
+                subtitle="All events you have registered for, sorted most recent first."
+              >
+                {historyQuery.isLoading && (
+                  <p className="text-sm text-muted">Loading event history...</p>
+                )}
+                {historyQuery.isError && (
+                  <p className="text-sm text-red-600">Failed to load event history.</p>
+                )}
+                {!historyQuery.isLoading && !historyQuery.isError && eventGroups.length === 0 && (
+                  <p className="text-sm text-muted">No events found.</p>
+                )}
+                {eventGroups.length > 0 && (
+                  <div className="space-y-4">
+                    {eventGroups.map((group) =>
+                      group.registrations.length === 1 ? (
+                        <EventSingleCard
+                          key={group.event_id}
+                          group={group}
+                          formatDateTime={formatDateTime}
+                        />
+                      ) : (
+                        <EventGroupCard
+                          key={group.event_id}
+                          group={group}
+                          formatDateTime={formatDateTime}
+                          onView={() => setSelectedGroup(group)}
+                        />
+                      ),
+                    )}
+                  </div>
+                )}
+              </SectionCard>
+            </TabsContent>
 
-          {activeTab === 'service_attendance' && (
-            <ServiceAttendanceHistoryTab memberId={member.id} />
-          )}
+            <TabsContent value="service_attendance">
+              <ServiceAttendanceHistoryTab memberId={member.id} />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <EventRegistrationsModal
