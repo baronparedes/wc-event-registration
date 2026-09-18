@@ -35,6 +35,17 @@ export function useCurrentProfileQuery() {
       if (error) throw error;
       if (!member) return null;
 
+      // Fetch the single most recent service attendance record to calculate last_activity
+      const { data: latestAttendance } = await supabase
+        .from('service_attendance')
+        .select('checked_in_at')
+        .eq('user_id', member.id)
+        .order('checked_in_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const last_activity = latestAttendance?.checked_in_at;
+
       const metadata = (member.metadata as Record<string, unknown> | null | undefined) ?? {};
 
       const extra_metadata: Record<string, string> = {};
@@ -62,6 +73,7 @@ export function useCurrentProfileQuery() {
         extra_metadata,
         created_at: member.created_at,
         updated_at: member.updated_at,
+        last_activity,
       } satisfies AdminMember;
     },
     staleTime: 1000 * 60 * 5,

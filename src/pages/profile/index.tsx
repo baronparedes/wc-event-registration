@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
@@ -95,7 +96,16 @@ export function ProfilePage() {
 
       <AdminPageShell.Content>
         <div className="space-y-6">
-          <SectionCard title="Personal Details">
+          <SectionCard
+            title="Personal Details"
+            headerAction={
+              member.last_activity && (
+                <Badge variant="outline">
+                  Last Activity: {formatDateTime(member.last_activity)}
+                </Badge>
+              )
+            }
+          >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <Avatar
                 name={avatarName}

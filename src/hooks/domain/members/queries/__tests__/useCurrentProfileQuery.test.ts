@@ -10,11 +10,17 @@ const { mockQueryBuilder, mockFrom, mockGetSession } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     ilike: vi.fn(),
+    eq: vi.fn(),
+    limit: vi.fn(),
+    order: vi.fn(),
     maybeSingle: vi.fn(),
   };
 
   queryBuilder.select.mockReturnValue(queryBuilder);
   queryBuilder.ilike.mockReturnValue(queryBuilder);
+  queryBuilder.eq.mockReturnValue(queryBuilder);
+  queryBuilder.limit.mockReturnValue(queryBuilder);
+  queryBuilder.order.mockReturnValue(queryBuilder);
 
   return {
     mockQueryBuilder: queryBuilder,
@@ -98,6 +104,10 @@ describe('useCurrentProfileQuery', () => {
       },
       error: null,
     });
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: { checked_in_at: '2026-09-01T10:00:00Z' },
+      error: null,
+    });
 
     const { result } = renderHookWithClient(() => useCurrentProfileQuery());
 
@@ -107,6 +117,7 @@ describe('useCurrentProfileQuery', () => {
 
     expect(result.current.data).toEqual({
       ...member,
+      last_activity: '2026-09-01T10:00:00Z',
       extra_metadata: { club: 'North' },
     });
     expect(mockQueryBuilder.ilike).toHaveBeenCalledWith('email', userEmail);

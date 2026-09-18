@@ -10,11 +10,15 @@ const { mockQueryBuilder, mockFrom } = vi.hoisted(() => {
   const queryBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
+    limit: vi.fn(),
+    order: vi.fn(),
     maybeSingle: vi.fn(),
   };
 
   queryBuilder.select.mockReturnValue(queryBuilder);
   queryBuilder.eq.mockReturnValue(queryBuilder);
+  queryBuilder.limit.mockReturnValue(queryBuilder);
+  queryBuilder.order.mockReturnValue(queryBuilder);
 
   return {
     mockQueryBuilder: queryBuilder,
@@ -72,6 +76,10 @@ describe('useAdminMemberQuery', () => {
       },
       error: null,
     });
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({
+      data: { checked_in_at: '2026-09-01T10:00:00Z' },
+      error: null,
+    });
 
     const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id));
 
@@ -79,7 +87,7 @@ describe('useAdminMemberQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual(member);
+    expect(result.current.data).toEqual({ ...member, last_activity: '2026-09-01T10:00:00Z' });
   });
 
   it('returns error state when member is not found', async () => {
@@ -122,6 +130,7 @@ describe('useAdminMemberQuery', () => {
       },
       error: null,
     });
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
     const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id));
 
@@ -156,6 +165,7 @@ describe('useAdminMemberQuery', () => {
       },
       error: null,
     });
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
     const { result } = renderHookWithClient(() => useAdminMemberQuery(member.id));
 
@@ -223,6 +233,7 @@ describe('useAdminMemberQuery', () => {
       },
       error: null,
     });
+    mockQueryBuilder.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
     const { result } = renderHookWithClient(() =>
       useAdminMemberQuery(member.id, { includeInactive: true }),
