@@ -1,4 +1,4 @@
-import type { ServiceAttendance } from './types';
+import type { ServiceAttendance, UserCommitmentSnapshot } from './types';
 
 export const SERVICE_SUNDAY_KEYS = [
   'first_sunday',
@@ -139,10 +139,25 @@ function getOrdinalSuffix(n: number): string {
   return 'th';
 }
 
+export function resolveMetadataForDate(
+  targetDate: string,
+  currentMetadata: Record<string, string> | null | undefined,
+  snapshots: UserCommitmentSnapshot[],
+): Record<string, string> | null | undefined {
+  // snapshots are assumed to be sorted by effective_date descending
+  const applicableSnapshot = snapshots.find((s) => s.effective_date <= targetDate);
+  if (applicableSnapshot) {
+    return applicableSnapshot.metadata as Record<string, string>;
+  }
+  // If no snapshot applies (or before the first snapshot), fall back to current metadata
+  return currentMetadata;
+}
+
 export function computeMatrixGrid(
   sundays: MonthSunday[],
   attendances: ServiceAttendance[],
-  committedSlots: Record<ServiceSundayKey, Set<MatrixTimeSlot>>,
+  currentMetadata: Record<string, string> | null | undefined,
+  snapshots: UserCommitmentSnapshot[],
   todayStr: string = toISODate(new Date()),
 ): Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>> {
   const grid = {} as Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>>;
@@ -151,12 +166,26 @@ export function computeMatrixGrid(
     sundayByKey.set(s.key, s);
   }
 
+  // Pre-parse current metadata to be used when there is no sunday matched
+  const currentCommittedSlots = parseCommittedSlots(currentMetadata);
+
   for (const key of SERVICE_SUNDAY_KEYS) {
     grid[key] = {} as Record<MatrixTimeSlot, MatrixCellData>;
     const sunday = sundayByKey.get(key);
 
+    // Determine committed slots for the specific sunday
+    let sundayCommittedSlots: Set<MatrixTimeSlot>;
+
+    if (sunday) {
+      const activeMetadata = resolveMetadataForDate(sunday.dateStr, currentMetadata, snapshots);
+      const parsedSlots = parseCommittedSlots(activeMetadata);
+      sundayCommittedSlots = parsedSlots[key];
+    } else {
+      sundayCommittedSlots = currentCommittedSlots[key];
+    }
+
     for (const timeSlot of MATRIX_TIME_SLOTS) {
-      const isCommitted = committedSlots[key].has(timeSlot);
+      const isCommitted = sundayCommittedSlots.has(timeSlot);
 
       if (!sunday) {
         grid[key][timeSlot] = {
