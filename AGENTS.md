@@ -64,6 +64,8 @@ This file contains the core principles, architecture rules, and domain logic con
 
 - Service attendance and seat layout configurations are managed as an _independent domain_ (`service_attendance`, `service_layouts`, `service_seats`), entirely separate from standard events.
 - In this domain, RFID tags correspond to `users.member_id`.
+- Service commitments are snapshotted in `public.user_commitment_history` via the `users_snapshot_commitment_metadata` trigger on `public.users`. The trigger function `snapshot_user_commitment_metadata` is declared `SECURITY DEFINER` with `search_path = public`, and only snapshots when Sunday commitment keys (`first_sunday` through `fifth_sunday`) change. Snapshots are effective-dated to the nearest upcoming Sunday (`get_nearest_upcoming_sunday`).
+- The profile service attendance history UI (`ServiceAttendanceHistoryTab`) queries snapshots to evaluate historical schedule alignment per Sunday using `resolveMetadataForDate`.
 
 ## 8. Testing
 
