@@ -12,14 +12,8 @@ describe('Badge', () => {
   });
 
   it('renders each variant class', () => {
-    const { rerender } = render(<Badge variant="warning">Warning</Badge>);
-    expect(screen.getByText('Warning')).toHaveClass('bg-secondary');
-
-    rerender(<Badge variant="neutral">Neutral</Badge>);
-    expect(screen.getByText('Neutral')).toHaveClass('bg-slate-200');
-
-    rerender(<Badge variant="danger">Danger</Badge>);
-    expect(screen.getByText('Danger')).toHaveClass('bg-red-100');
+    const { rerender } = render(<Badge variant="secondary">Secondary</Badge>);
+    expect(screen.getByText('Secondary')).toHaveClass('bg-secondary');
 
     rerender(<Badge variant="outline">Outline</Badge>);
     expect(screen.getByText('Outline')).toHaveClass('border-primary/60');
@@ -33,6 +27,12 @@ describe('Badge', () => {
 
     rerender(<Badge variant="primaryOutline">Primary Outline</Badge>);
     expect(screen.getByText('Primary Outline')).toHaveClass('border-primary');
+
+    rerender(<Badge variant="ghost">Ghost</Badge>);
+    expect(screen.getByText('Ghost')).toHaveClass('bg-transparent');
+
+    rerender(<Badge variant="link">Link</Badge>);
+    expect(screen.getByText('Link')).toHaveClass('underline');
   });
 
   it('renders icon slot and custom class names', () => {

@@ -5,21 +5,25 @@ import type { FormStatus } from '@/lib/domain/forms';
 
 const statusConfig: Record<
   FormStatus,
-  { label: string; variant: 'success' | 'warning' | 'neutral' | 'danger'; icon: React.ReactNode }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'outline' | 'destructive';
+    icon: React.ReactNode;
+  }
 > = {
   draft: {
     label: 'Draft',
-    variant: 'neutral',
+    variant: 'outline',
     icon: <FileText className="h-3 w-3" />,
   },
   published: {
     label: 'Published',
-    variant: 'success',
+    variant: 'default',
     icon: <CheckCircle2 className="h-3 w-3" />,
   },
   archived: {
     label: 'Archived',
-    variant: 'danger',
+    variant: 'destructive',
     icon: <Trash2 className="h-3 w-3" />,
   },
 };

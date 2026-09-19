@@ -195,7 +195,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
                         </div>
                       </ListTableCell>
                       <ListTableCell>
-                        {isAssigned && <Badge variant="neutral">Assigned</Badge>}
+                        {isAssigned && <Badge variant="outline">Assigned</Badge>}
                       </ListTableCell>
                     </ListTableRow>
                   );

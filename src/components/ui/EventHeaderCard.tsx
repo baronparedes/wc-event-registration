@@ -26,10 +26,10 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
   const title = event?.title ?? 'Register for This Event';
   const statusBadgeVariant =
     availability?.status === 'available'
-      ? 'success'
+      ? 'default'
       : availability?.status === 'unavailable' && availability.reason === 'not_open_yet'
-        ? 'warning'
-        : 'neutral';
+        ? 'secondary'
+        : 'outline';
   const statusBadgeLabel =
     availability?.status === 'available'
       ? 'Open'

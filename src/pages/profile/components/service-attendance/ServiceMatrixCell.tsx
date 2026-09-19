@@ -19,7 +19,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
       <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-primary bg-surface p-2.5 text-left shadow-xs transition-shadow hover:shadow-sm">
         <div className="flex items-center justify-between gap-1.5 flex-wrap">
           <Badge
-            variant="success"
+            variant="default"
             icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
             className="px-2 py-0.5 text-[11px]"
           >
@@ -46,7 +46,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
       <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-secondary bg-surface p-2.5 text-left shadow-xs transition-shadow hover:shadow-sm">
         <div className="flex items-center justify-between gap-1.5 flex-wrap">
           <Badge
-            variant="warning"
+            variant="secondary"
             icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
             className="px-2 py-0.5 text-[11px]"
           >
@@ -73,7 +73,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
       <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-danger bg-surface p-2.5 text-left shadow-xs">
         <div>
           <Badge
-            variant="danger"
+            variant="destructive"
             icon={<AlertCircle className="h-3 w-3 shrink-0" />}
             className="px-2 py-0.5 text-[11px]"
           >

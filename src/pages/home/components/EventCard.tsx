@@ -88,10 +88,10 @@ export function EventCard({ event }: EventCardProps) {
           <Badge
             variant={
               event.listingStatus === 'open'
-                ? 'success'
+                ? 'default'
                 : event.listingStatus === 'upcoming'
-                  ? 'warning'
-                  : 'neutral'
+                  ? 'secondary'
+                  : 'outline'
             }
           >
             {event.listingStatus === 'open'

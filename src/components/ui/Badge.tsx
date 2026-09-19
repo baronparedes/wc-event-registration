@@ -8,11 +8,7 @@ export type BadgeVariant =
   | 'primaryOutline'
   | 'ghost'
   | 'link'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'neutral'
-  | 'danger';
+  | 'destructive';
 
 export type BadgeProps = {
   variant?: BadgeVariant;
@@ -30,27 +26,21 @@ const variantClassName: Record<BadgeVariant, string> = {
   ghost: 'bg-transparent text-text',
   link: 'bg-transparent text-primary underline',
   destructive: 'bg-red-600 text-white',
-  // Semantic status aliases
-  success: 'bg-primary text-white',
-  warning: 'bg-secondary text-white',
-  neutral: 'bg-slate-200 text-slate-700',
-  danger: 'bg-red-100 text-red-700',
 };
 
 /**
  * Styled badge component for status labels and tags.
  * Supports icon slot for visual clarity.
  *
- * Variants align with Button variants while supporting semantic status aliases:
- * - default / success    → primary color  (active, open, published)
- * - secondary / warning  → secondary color (pending, upcoming, unscheduled)
- * - accent               → accent color   (excused, highlighted)
- * - neutral              → grey slate     (inactive, closed, draft)
- * - destructive / danger → red            (error, archived, missed)
- * - outline              → bordered transparent (secondary info, guest access)
- * - primaryOutline       → bordered primary
- * - ghost                → subtle text
- * - link                 → text link
+ * Variants align with Button variants:
+ * - default        → primary color  (active, open, published, committed)
+ * - secondary      → secondary color (pending, upcoming, unscheduled, walk-in)
+ * - accent         → accent color   (excused, highlighted)
+ * - outline        → bordered transparent (draft, closed, past, secondary info)
+ * - primaryOutline → bordered primary
+ * - ghost          → subtle text
+ * - link           → text link
+ * - destructive    → red alert      (error, archived, missed)
  */
 export function Badge({ variant = 'default', icon, children, className }: BadgeProps) {
   const baseClasses = 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium';

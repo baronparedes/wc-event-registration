@@ -35,7 +35,7 @@ export function PastEventList({ events }: PastEventListProps) {
               {event.location && (
                 <Badge
                   icon={<MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
-                  variant="neutral"
+                  variant="outline"
                 >
                   {event.location}
                 </Badge>
