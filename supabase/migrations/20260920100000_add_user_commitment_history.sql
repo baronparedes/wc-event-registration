@@ -21,17 +21,21 @@ select
 create policy "users can read their own user_commitment_history" on public.user_commitment_history for
 select
   to authenticated using (
-    user_id = (
+    exists (
       select
-        u.id
+        1
       from
         public.users u
       where
-        u.auth_user_id = auth.uid ()
-      limit
-        1
+        u.id = user_commitment_history.user_id
+        and u.email is not null
+        and lower(u.email) = lower(auth.jwt () ->> 'email')
     )
   );
+
+create policy "service role full access to user_commitment_history" on public.user_commitment_history for all to service_role using (true)
+with
+  check (true);
 
 grant
 select
@@ -58,7 +62,9 @@ end;
 $$ language plpgsql immutable;
 
 -- Trigger function to snapshot commitment metadata
-create or replace function public.snapshot_user_commitment_metadata () returns trigger as $$
+create or replace function public.snapshot_user_commitment_metadata () returns trigger language plpgsql security definer
+set
+  search_path = public as $$
 declare
   old_commitments jsonb;
   new_commitments jsonb;
@@ -103,7 +109,7 @@ begin
 
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 create trigger users_snapshot_commitment_metadata
 after update on public.users for each row

@@ -13,7 +13,6 @@ const { mockUseServiceAttendanceQuery, mockUseUserCommitmentHistoryQuery } = vi.
 vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: (...args: unknown[]) => mockUseServiceAttendanceQuery(...args),
   useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
-  useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
 }));
 
 const sampleAttendance: ServiceAttendance[] = [
@@ -105,19 +104,16 @@ describe('ServiceAttendanceHistoryTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseServiceAttendanceQuery.mockReturnValue({
-      data: [],
+      data: sampleAttendance,
       isLoading: false,
-      isFetching: false,
       isError: false,
-      refetch: vi.fn(),
-    } as any);
+    });
 
     mockUseUserCommitmentHistoryQuery.mockReturnValue({
       data: [],
       isLoading: false,
-      isFetching: false,
       isError: false,
-    } as any);
+    });
   });
 
   it('renders section card header and navigation controls', () => {
@@ -135,16 +131,7 @@ describe('ServiceAttendanceHistoryTab', () => {
   it('renders loading state', () => {
     mockUseServiceAttendanceQuery.mockReturnValue({
       data: [],
-      isLoading: false,
-      isFetching: false,
-      isError: false,
-      refetch: vi.fn(),
-    } as any);
-
-    mockUseUserCommitmentHistoryQuery.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isFetching: false,
+      isLoading: true,
       isError: false,
     });
 
@@ -156,16 +143,7 @@ describe('ServiceAttendanceHistoryTab', () => {
     mockUseServiceAttendanceQuery.mockReturnValue({
       data: [],
       isLoading: false,
-      isFetching: false,
-      isError: false,
-      refetch: vi.fn(),
-    } as any);
-
-    mockUseUserCommitmentHistoryQuery.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isFetching: false,
-      isError: false,
+      isError: true,
     });
 
     render(<ServiceAttendanceHistoryTab memberId="user-1" />);
@@ -176,15 +154,6 @@ describe('ServiceAttendanceHistoryTab', () => {
     mockUseServiceAttendanceQuery.mockReturnValue({
       data: [],
       isLoading: false,
-      isFetching: false,
-      isError: false,
-      refetch: vi.fn(),
-    } as any);
-
-    mockUseUserCommitmentHistoryQuery.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isFetching: false,
       isError: false,
     });
 
@@ -266,17 +235,8 @@ describe('ServiceAttendanceHistoryTab', () => {
     ];
 
     mockUseServiceAttendanceQuery.mockReturnValue({
-      data: [],
+      data: nonSundayData,
       isLoading: false,
-      isFetching: false,
-      isError: false,
-      refetch: vi.fn(),
-    } as any);
-
-    mockUseUserCommitmentHistoryQuery.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isFetching: false,
       isError: false,
     });
 
@@ -324,17 +284,9 @@ describe('ServiceAttendanceHistoryTab', () => {
 
   it('keeps data visible and displays updating indicator when isFetching is true without layout collapse', () => {
     mockUseServiceAttendanceQuery.mockReturnValue({
-      data: [],
+      data: sampleAttendance,
       isLoading: false,
-      isFetching: false,
-      isError: false,
-      refetch: vi.fn(),
-    } as any);
-
-    mockUseUserCommitmentHistoryQuery.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isFetching: false,
+      isFetching: true,
       isError: false,
     });
 
