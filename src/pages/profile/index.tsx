@@ -62,7 +62,9 @@ export function ProfilePage() {
   }, [historyQuery.data]);
 
   const [selectedGroup, setSelectedGroup] = useState<MemberEventGroup | null>(null);
-  const [activeTab, setActiveTab] = useState<'events' | 'service_attendance'>('events');
+  const [activeTab, setActiveTab] = useState<'member_info' | 'events' | 'service_attendance'>(
+    'member_info',
+  );
 
   if (profileQuery.isLoading) {
     return (
@@ -170,31 +172,37 @@ export function ProfilePage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Sunday Availability">
-            <SundayAvailabilityDisplay metadata={extraMetadata} />
-          </SectionCard>
-
-          {generalMetadataEntries.length > 0 && (
-            <SectionCard title="Additional Information">
-              <dl className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                {generalMetadataEntries.map(([key, value]) => (
-                  <div key={key} className="min-w-0">
-                    <dt className="text-muted">{toTitleCase(key)}</dt>
-                    <dd className="break-words font-medium text-text">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </SectionCard>
-          )}
-
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as 'events' | 'service_attendance')}
+            onValueChange={(val) =>
+              setActiveTab(val as 'member_info' | 'events' | 'service_attendance')
+            }
           >
             <TabsList>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="service_attendance">Service Attendance</TabsTrigger>
+              <TabsTrigger value="member_info">My Info</TabsTrigger>
+              <TabsTrigger value="events">My Events</TabsTrigger>
+              <TabsTrigger value="service_attendance">My Commitment</TabsTrigger>
             </TabsList>
+            <TabsContent value="member_info">
+              <div className="space-y-6">
+                <SectionCard title="Sunday Availability">
+                  <SundayAvailabilityDisplay metadata={extraMetadata} />
+                </SectionCard>
+
+                {generalMetadataEntries.length > 0 && (
+                  <SectionCard title="Additional Information">
+                    <dl className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                      {generalMetadataEntries.map(([key, value]) => (
+                        <div key={key} className="min-w-0">
+                          <dt className="text-muted">{toTitleCase(key)}</dt>
+                          <dd className="break-words font-medium text-text">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </SectionCard>
+                )}
+              </div>
+            </TabsContent>
 
             <TabsContent value="events">
               <SectionCard
