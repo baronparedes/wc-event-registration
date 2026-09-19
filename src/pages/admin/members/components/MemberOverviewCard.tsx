@@ -1,20 +1,34 @@
 import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
 import { SectionCard } from '@/components/ui/SectionCard';
 import type { AdminMember } from '@/lib/domain/members';
-import { formatDateOnly } from '@/lib/infrastructure';
+import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 
 export type MemberOverviewCardProps = {
   member: AdminMember;
   title?: string;
   className?: string;
+  hideLastActivityBadge?: boolean;
 };
 
-export function MemberOverviewCard({ member, title, className }: MemberOverviewCardProps) {
+export function MemberOverviewCard({
+  member,
+  title,
+  className,
+  hideLastActivityBadge,
+}: MemberOverviewCardProps) {
   const trimmedName = `${member.nickname ?? ''} ${member.last_name ?? ''}`.trim();
   const avatarName = trimmedName !== '' ? trimmedName : member.full_name;
 
   return (
-    <SectionCard title={title} wrapperClassName={className}>
+    <SectionCard
+      title={title}
+      wrapperClassName={className}
+      headerAction={
+        !hideLastActivityBadge &&
+        member.last_activity && <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
+      }
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <Avatar
           name={avatarName}
