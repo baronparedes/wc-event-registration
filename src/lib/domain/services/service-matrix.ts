@@ -47,7 +47,8 @@ export type MatrixSlotStatus =
   | 'upcoming_committed'
   | 'off_schedule'
   | 'not_applicable'
-  | 'excused';
+  | 'excused'
+  | 'loading';
 
 export interface MatrixCellData {
   sundayKey: ServiceSundayKey;
@@ -162,6 +163,7 @@ export function computeMatrixGrid(
   snapshots: UserCommitmentSnapshot[],
   excusedRecords: { requestDate: string; services: string; reason?: string }[] = [],
   todayStr: string = toISODate(new Date()),
+  isLoadingAttendance: boolean = false,
 ): Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>> {
   const grid = {} as Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>>;
   const sundayByKey = new Map<ServiceSundayKey, MonthSunday>();
@@ -213,6 +215,8 @@ export function computeMatrixGrid(
       let status: MatrixSlotStatus;
       if (attendance) {
         status = isCommitted ? 'attended_committed' : 'attended_unscheduled';
+      } else if (isLoadingAttendance) {
+        status = isCommitted ? 'loading' : 'off_schedule';
       } else if (isCommitted) {
         if (excusedRecord) {
           status = 'excused';

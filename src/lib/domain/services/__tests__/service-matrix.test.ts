@@ -189,6 +189,24 @@ describe('service-matrix domain logic', () => {
       expect(cell.attendance).toBeUndefined();
       expect(cell.excusedReason).toBe('sick');
     });
+
+    it('classifies committed slots as loading when isLoadingAttendance is true', () => {
+      const grid = computeMatrixGrid(
+        sundays,
+        [], // no attendances loaded yet
+        currentMetadata,
+        [],
+        [],
+        '2026-09-20',
+        true, // isLoadingAttendance = true
+      );
+      // first_sunday 9AM is committed -> should be loading, NOT missed_committed
+      expect(grid.first_sunday['9AM'].status).toBe('loading');
+      expect(grid.first_sunday['9AM'].isCommitted).toBe(true);
+      // first_sunday 12NN is not committed -> should be off_schedule
+      expect(grid.first_sunday['12NN'].status).toBe('off_schedule');
+      expect(grid.first_sunday['12NN'].isCommitted).toBe(false);
+    });
   });
 
   describe('getNonSundayAttendances', () => {

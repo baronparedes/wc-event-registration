@@ -1,6 +1,6 @@
 import { AlertCircle, CalendarDays, CheckCircle2, Clock, Info } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge, Skeleton } from '@/components/ui';
 import type { MatrixCellData } from '@/lib/domain/services';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -13,6 +13,19 @@ interface ServiceMatrixCellProps {
 
 export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
   const { status, attendance: record } = cell;
+
+  if (status === 'loading') {
+    return (
+      <div
+        data-testid="service-matrix-cell-loading"
+        className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border border-border/70 bg-surface p-2.5 text-left shadow-xs"
+      >
+        <Skeleton className="h-5 w-24 rounded-full" />
+        <Skeleton className="h-3.5 w-28 rounded" />
+        <Skeleton className="h-3 w-20 rounded" />
+      </div>
+    );
+  }
 
   if (status === 'attended_committed' && record) {
     return (

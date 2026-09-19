@@ -59,6 +59,7 @@ export function ServiceAttendanceHistoryTab({
     data: attendance = [],
     isLoading: isAttendanceLoading,
     isFetching: isAttendanceFetching,
+    isPlaceholderData: isAttendancePlaceholderData = false,
     isError: isAttendanceError,
   } = useServiceAttendanceQuery({
     user_id: memberId,
@@ -76,6 +77,7 @@ export function ServiceAttendanceHistoryTab({
   const isLoading = isAttendanceLoading || isSnapshotsLoading;
   const isFetching = isAttendanceFetching || isSnapshotsFetching;
   const isError = isAttendanceError || isSnapshotsError;
+  const isLoadingAttendance = isAttendanceLoading || isAttendancePlaceholderData;
 
   const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex);
   const allExcusedMembersQuery = useGetExcusedMembers(viewYear, viewMonthIndex);
@@ -110,13 +112,22 @@ export function ServiceAttendanceHistoryTab({
   const todayStr = useMemo(() => toISODate(today), [today]);
 
   const matrixGrid = useMemo(
-    () => computeMatrixGrid(sundays, attendance, metadata, snapshots, excusedRecords, todayStr),
-    [sundays, attendance, metadata, snapshots, excusedRecords, todayStr],
+    () =>
+      computeMatrixGrid(
+        sundays,
+        attendance,
+        metadata,
+        snapshots,
+        excusedRecords,
+        todayStr,
+        isLoadingAttendance,
+      ),
+    [sundays, attendance, metadata, snapshots, excusedRecords, todayStr, isLoadingAttendance],
   );
 
   const nonSundayAttendances = useMemo(
-    () => getNonSundayAttendances(attendance, sundays),
-    [attendance, sundays],
+    () => (!isLoadingAttendance ? getNonSundayAttendances(attendance, sundays) : []),
+    [attendance, sundays, isLoadingAttendance],
   );
 
   const missedCount = useMemo(() => {
@@ -190,14 +201,10 @@ export function ServiceAttendanceHistoryTab({
               missedCount={missedCount}
               isFetching={isFetching}
             />
-
             <ServiceAttendanceLegend />
-
             <ServiceAttendanceMobileCards sundays={sundays} matrixGrid={matrixGrid} />
-
             <ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={matrixGrid} />
-
-            <NonSundayAttendanceList records={nonSundayAttendances} />
+            {!isLoadingAttendance && <NonSundayAttendanceList records={nonSundayAttendances} />}
           </div>
         )}
       </div>

@@ -169,6 +169,15 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
     };
     rerender(<ServiceMatrixCell cell={offScheduleCell} />);
     expect(screen.getByText('Off Schedule')).toBeInTheDocument();
+
+    const loadingCell: MatrixCellData = {
+      status: 'loading',
+      isCommitted: true,
+      sundayKey: 'first_sunday',
+      timeSlot: '9AM',
+    };
+    rerender(<ServiceMatrixCell cell={loadingCell} />);
+    expect(screen.getByTestId('service-matrix-cell-loading')).toBeInTheDocument();
   });
 });
 

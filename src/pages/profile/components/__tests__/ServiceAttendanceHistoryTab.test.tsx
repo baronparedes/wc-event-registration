@@ -322,4 +322,32 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getByText('4 Total')).toBeInTheDocument();
     expect(screen.queryByText('Loading attendance history...')).not.toBeInTheDocument();
   });
+
+  it('keeps table layout stable and displays in-cell loading shimmers instead of false missed statuses when isPlaceholderData is true', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue({
+      data: sampleAttendance,
+      isLoading: false,
+      isFetching: true,
+      isPlaceholderData: true,
+      isError: false,
+    });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab
+        memberId="user-1"
+        metadata={{ first_sunday: '9AM', second_sunday: '9AM' }}
+      />,
+    );
+
+    // Table structure remains intact
+    expect(screen.getByText('Schedule Alignment:')).toBeInTheDocument();
+    expect(screen.getAllByText('1st Sunday').length).toBeGreaterThan(0);
+    // In-cell loading skeletons are displayed for pending committed cells
+    expect(screen.getAllByTestId('service-matrix-cell-loading').length).toBeGreaterThan(0);
+    // Never displays false missed commitments while data is in-flight
+    expect(screen.queryByText('Scheduled commitment not attended')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+    // Non-Sunday attendances are only shown when data is fully loaded and computed
+    expect(screen.queryByText('Other Services Attended')).not.toBeInTheDocument();
+  });
 });
