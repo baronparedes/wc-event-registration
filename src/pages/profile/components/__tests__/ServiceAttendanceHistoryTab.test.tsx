@@ -211,7 +211,6 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('12NN').length).toBeGreaterThan(0);
     expect(screen.getAllByText('3PM').length).toBeGreaterThan(0);
 
-    expect(screen.getAllByText('Regular').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Walk-in').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Override').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Manual').length).toBeGreaterThan(0);

@@ -10,10 +10,10 @@ export function ServiceAttendanceStatusBadge({ record }: ServiceAttendanceStatus
     return <Badge variant="warning">Walk-in</Badge>;
   }
   if (record.is_override) {
-    return <Badge variant="outline">Override</Badge>;
+    return <Badge variant="neutral">Override</Badge>;
   }
   if (record.is_manual_entry) {
     return <Badge variant="neutral">Manual</Badge>;
   }
-  return <Badge variant="success">Regular</Badge>;
+  return null;
 }

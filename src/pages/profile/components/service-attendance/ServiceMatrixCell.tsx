@@ -70,10 +70,15 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'missed_committed') {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1 rounded-xl border-2 border-danger bg-surface p-2.5 text-left shadow-xs">
-        <div className="flex items-center gap-1 text-xs font-bold text-danger">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-danger" />
-          <span>Missed Committed</span>
+      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-danger bg-surface p-2.5 text-left shadow-xs">
+        <div>
+          <Badge
+            variant="danger"
+            icon={<AlertCircle className="h-3 w-3 shrink-0" />}
+            className="px-2 py-0.5 text-[11px]"
+          >
+            Missed Committed
+          </Badge>
         </div>
         <p className="text-[11px] text-muted font-medium">Scheduled commitment not attended</p>
       </div>
@@ -82,10 +87,15 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'upcoming_committed') {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1 rounded-xl border-2 border-dashed border-primary bg-surface p-2.5 text-left shadow-xs">
-        <div className="flex items-center gap-1 text-xs font-bold text-primary">
-          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <span>Upcoming Committed</span>
+      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-dashed border-primary bg-surface p-2.5 text-left shadow-xs">
+        <div>
+          <Badge
+            variant="outline"
+            icon={<CalendarDays className="h-3 w-3 shrink-0 text-primary" />}
+            className="border-dashed border-primary px-2 py-0.5 text-[11px] text-primary"
+          >
+            Upcoming Committed
+          </Badge>
         </div>
         <p className="text-[11px] text-muted font-medium">Committed Sunday slot</p>
       </div>
@@ -94,10 +104,15 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'excused') {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1 rounded-xl border-2 border-accent bg-surface p-2.5 text-left shadow-xs">
-        <div className="flex items-center gap-1 text-xs font-bold text-accent">
-          <Info className="h-3.5 w-3.5 shrink-0 text-accent" />
-          <span>Excused</span>
+      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-accent bg-surface p-2.5 text-left shadow-xs">
+        <div>
+          <Badge
+            variant="accent"
+            icon={<Info className="h-3 w-3 shrink-0 text-amber-800" />}
+            className="border border-accent/40 bg-accent/20 px-2 py-0.5 text-[11px] text-amber-900"
+          >
+            Excused
+          </Badge>
         </div>
         <p className="text-[11px] text-muted font-medium">
           {cell.excusedReason ? cell.excusedReason : 'Excused from schedule'}

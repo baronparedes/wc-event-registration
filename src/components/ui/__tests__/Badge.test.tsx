@@ -23,6 +23,16 @@ describe('Badge', () => {
 
     rerender(<Badge variant="outline">Outline</Badge>);
     expect(screen.getByText('Outline')).toHaveClass('border-primary/60');
+
+    rerender(<Badge variant="accent">Accent</Badge>);
+    expect(screen.getByText('Accent')).toHaveClass('bg-accent');
+    expect(screen.getByText('Accent')).toHaveClass('text-text');
+
+    rerender(<Badge variant="destructive">Destructive</Badge>);
+    expect(screen.getByText('Destructive')).toHaveClass('bg-red-600');
+
+    rerender(<Badge variant="primaryOutline">Primary Outline</Badge>);
+    expect(screen.getByText('Primary Outline')).toHaveClass('border-primary');
   });
 
   it('renders icon slot and custom class names', () => {

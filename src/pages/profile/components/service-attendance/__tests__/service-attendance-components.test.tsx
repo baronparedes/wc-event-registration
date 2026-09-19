@@ -50,11 +50,6 @@ function createMockAttendance(overrides?: Partial<ServiceAttendance>): ServiceAt
 }
 
 describe('ServiceAttendanceStatusBadge', () => {
-  it('renders Regular badge for standard check-ins', () => {
-    render(<ServiceAttendanceStatusBadge record={createMockAttendance()} />);
-    expect(screen.getByText('Regular')).toBeInTheDocument();
-  });
-
   it('renders Walk-in badge when is_walk_in is true', () => {
     render(<ServiceAttendanceStatusBadge record={createMockAttendance({ is_walk_in: true })} />);
     expect(screen.getByText('Walk-in')).toBeInTheDocument();
@@ -107,7 +102,6 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
 
     render(<ServiceMatrixCell cell={cell} />);
     expect(screen.getByText('Committed')).toBeInTheDocument();
-    expect(screen.getByText('Regular')).toBeInTheDocument();
     expect(screen.getByText('Table 1, Seat 3')).toBeInTheDocument();
   });
 
@@ -146,6 +140,17 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
     };
     rerender(<ServiceMatrixCell cell={upcomingCell} />);
     expect(screen.getByText('Upcoming Committed')).toBeInTheDocument();
+
+    const excusedCell: MatrixCellData = {
+      status: 'excused',
+      isCommitted: true,
+      sundayKey: 'fourth_sunday',
+      timeSlot: '9AM',
+      excusedReason: 'Vacation leave',
+    };
+    rerender(<ServiceMatrixCell cell={excusedCell} />);
+    expect(screen.getByText('Excused')).toBeInTheDocument();
+    expect(screen.getByText('Vacation leave')).toBeInTheDocument();
 
     const naCell: MatrixCellData = {
       status: 'not_applicable',
