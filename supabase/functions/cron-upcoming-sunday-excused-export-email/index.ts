@@ -49,7 +49,7 @@ const cronEnvironmentSchema = z.object({
     .string()
     .trim()
     .email('UPCOMING_SUNDAY_TARGET_EMAIL must be a valid email address'),
-  UPCOMING_SUNDAY_EVENT_ID: z.string().trim().uuid('UPCOMING_SUNDAY_EVENT_ID must be a valid UUID'),
+  EXCUSE_REQUEST_EVENT_ID: z.string().trim().uuid('EXCUSE_REQUEST_EVENT_ID must be a valid UUID'),
   RESEND_FROM_EMAIL: z
     .string()
     .trim()
@@ -77,7 +77,7 @@ function parseCronEnvironment(): CronEnvironment | null {
   const parsed = cronEnvironmentSchema.safeParse({
     RESEND_API_KEY: Deno.env.get('RESEND_API_KEY') ?? '',
     UPCOMING_SUNDAY_TARGET_EMAIL: Deno.env.get('UPCOMING_SUNDAY_TARGET_EMAIL') ?? '',
-    UPCOMING_SUNDAY_EVENT_ID: Deno.env.get('UPCOMING_SUNDAY_EVENT_ID') ?? '',
+    EXCUSE_REQUEST_EVENT_ID: Deno.env.get('EXCUSE_REQUEST_EVENT_ID') ?? '',
     RESEND_FROM_EMAIL: Deno.env.get('RESEND_FROM_EMAIL') ?? undefined,
   });
 
@@ -91,7 +91,7 @@ function parseCronEnvironment(): CronEnvironment | null {
   return {
     resendApiKey: parsed.data.RESEND_API_KEY,
     targetEmail: parsed.data.UPCOMING_SUNDAY_TARGET_EMAIL,
-    eventId: parsed.data.UPCOMING_SUNDAY_EVENT_ID,
+    eventId: parsed.data.EXCUSE_REQUEST_EVENT_ID,
     fromEmail: parsed.data.RESEND_FROM_EMAIL,
   };
 }

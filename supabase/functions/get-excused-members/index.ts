@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
   try {
     const { year, monthIndex }: GetExcusedMembersRequest = guard.data;
     const supabase = guard.client;
-    const eventId = Deno.env.get('UPCOMING_SUNDAY_EVENT_ID');
+    const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
 
     const monthStr = String(monthIndex + 1).padStart(2, '0');
     const datePrefix = `${year}-${monthStr}`;

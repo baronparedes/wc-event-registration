@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
   try {
     const { year, monthIndex }: GetMemberExcusedScheduleRequest = guard.data;
     const supabase = guard.client;
-    const eventId = Deno.env.get('UPCOMING_SUNDAY_EVENT_ID');
+    const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
     const authUserId = guard.userId;
 
     if (!authUserId) {

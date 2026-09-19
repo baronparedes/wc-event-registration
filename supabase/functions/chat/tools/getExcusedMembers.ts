@@ -81,7 +81,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
       const targetYear = queryMonth.getFullYear();
       const targetMonthIndex = queryMonth.getMonth();
 
-      const eventId = Deno.env.get('UPCOMING_SUNDAY_EVENT_ID');
+      const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
       if (!eventId) return { error: 'Event ID not configured' };
 
       const monthStr = String(targetMonthIndex + 1).padStart(2, '0');
