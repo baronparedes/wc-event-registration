@@ -161,7 +161,7 @@ describe('ServiceAttendanceHistoryTab', () => {
     renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     expect(
-      screen.getByRole('heading', { level: 2, name: 'Service Attendance History' }),
+      screen.getByRole('heading', { level: 2, name: 'Service Commitment History' }),
     ).toBeInTheDocument();
     expect(screen.getByText('View your service attendance by month.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Today' })).toBeInTheDocument();

@@ -173,7 +173,7 @@ export function ServiceAttendanceHistoryTab({
 
   return (
     <SectionCard
-      title="Service Attendance History"
+      title="Service Commitment History"
       subtitle="View your service attendance by month."
       headerAction={
         <ServiceAttendanceHeaderControls

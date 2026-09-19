@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -64,7 +64,7 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Home Page Destination')).toBeInTheDocument();
   });
 
-  it('renders member details and event history', () => {
+  it('renders member details and tab triggers', () => {
     renderPage();
     expect(screen.getByRole('heading', { name: 'User Profile' })).toBeInTheDocument();
     expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -74,6 +74,9 @@ describe('ProfilePage', () => {
     expect(screen.getByText('john@example.com')).toBeInTheDocument();
     expect(screen.getByText('Membershiptype')).toBeInTheDocument(); // Title Cased as defined by toTitleCase helper
     expect(screen.getByText('Gold')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'My Info' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'My Events' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'My Commitment' })).toBeInTheDocument();
   });
 
   it('renders event history items when present', () => {
@@ -84,16 +87,17 @@ describe('ProfilePage', () => {
       isError: false,
     });
     renderPage();
+    fireEvent.click(screen.getByRole('tab', { name: 'My Events' }));
     expect(screen.getByText('Annual Championship')).toBeInTheDocument();
   });
 
   it('displays empty state when user has no event history', () => {
     renderPage();
+    fireEvent.click(screen.getByRole('tab', { name: 'My Events' }));
     expect(screen.getByText('No events found.')).toBeInTheDocument();
   });
 
   it('opens modal when clicking View on a group card', async () => {
-    const { fireEvent } = await import('@testing-library/react');
     const eventId = 'shared-event-id';
     const items = [
       makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
@@ -105,6 +109,7 @@ describe('ProfilePage', () => {
       isError: false,
     });
     renderPage();
+    fireEvent.click(screen.getByRole('tab', { name: 'My Events' }));
 
     expect(
       screen.queryByRole('heading', { level: 2, name: 'Shared Event' }),

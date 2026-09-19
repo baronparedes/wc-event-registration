@@ -15,7 +15,7 @@ export function AdminMemberServiceAttendancePage() {
   if (!id) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Service Attendance History" />
+        <AdminPageShell.Header title="Service Commitment History" />
         <AdminPageShell.Content>
           <p className="text-sm text-danger">Member ID is missing.</p>
         </AdminPageShell.Content>
@@ -36,7 +36,7 @@ export function AdminMemberServiceAttendancePage() {
   if (memberQuery.isError || !memberQuery.data) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Service Attendance History" />
+        <AdminPageShell.Header title="Service Commitment History" />
         <AdminPageShell.Content>
           <p className="text-sm text-danger">{UI_MESSAGES.errors.memberNotFound}</p>
         </AdminPageShell.Content>
@@ -55,7 +55,7 @@ export function AdminMemberServiceAttendancePage() {
           { label: 'Service Attendance' },
         ]}
         navLinks={<MemberNavigationLinks memberId={id} />}
-        title="Service Attendance History"
+        title="Service Commitment History"
         description="Member's church service attendance and seat assignments."
       />
 

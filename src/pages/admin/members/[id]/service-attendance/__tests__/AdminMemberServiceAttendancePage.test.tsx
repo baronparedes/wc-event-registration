@@ -70,7 +70,7 @@ describe('AdminMemberServiceAttendancePage', () => {
   it('renders header with breadcrumbs, navigation links, and ServiceAttendanceHistoryTab', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Service Attendance History' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Service Commitment History' })).toBeInTheDocument();
     expect(
       screen.getByText("Member's church service attendance and seat assignments."),
     ).toBeInTheDocument();
