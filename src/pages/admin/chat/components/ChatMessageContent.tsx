@@ -1,12 +1,40 @@
+import { useMemo } from 'react';
+
 import { ExternalLink } from 'lucide-react';
 import Markdown from 'react-markdown';
+import { Link } from 'react-router-dom';
 import remarkGfm from 'remark-gfm';
+
+import { useResolveUserTokensQuery } from '@/hooks/domain/chat';
 
 type ChatMessageContentProps = {
   content: string;
 };
 
+const TOKEN_REGEX = /USR_\d{6}/g;
+
 export function ChatMessageContent({ content }: ChatMessageContentProps) {
+  const uniqueTokens = useMemo(() => {
+    const matches = content.match(TOKEN_REGEX);
+    if (!matches) return [];
+    return Array.from(new Set(matches));
+  }, [content]);
+
+  const { data: resolvedTokens = {} } = useResolveUserTokensQuery(uniqueTokens);
+
+  const processedContent = useMemo(() => {
+    let result = content;
+    if (Object.keys(resolvedTokens).length === 0) return result;
+
+    for (const [token, user] of Object.entries(resolvedTokens)) {
+      if (user && user.id && user.name) {
+        // Use an internal markdown format for links. We will intercept internal admin routes in the a tag.
+        result = result.replaceAll(token, `[${user.name}](/admin/members/${user.id})`);
+      }
+    }
+    return result;
+  }, [content, resolvedTokens]);
+
   return (
     <div className="text-sm text-text space-y-2">
       <Markdown
@@ -49,17 +77,29 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
               {children}
             </pre>
           ),
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-primary underline hover:text-primary/80 transition-colors"
-            >
-              <span>{children}</span>
-              <ExternalLink className="inline h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />
-            </a>
-          ),
+          a: ({ href, children }) => {
+            if (href?.startsWith('/admin/members/')) {
+              return (
+                <Link
+                  to={href}
+                  className="inline-flex items-center gap-1 font-medium text-primary underline hover:text-primary/80 transition-colors"
+                >
+                  <span>{children}</span>
+                </Link>
+              );
+            }
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-medium text-primary underline hover:text-primary/80 transition-colors"
+              >
+                <span>{children}</span>
+                <ExternalLink className="inline h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />
+              </a>
+            );
+          },
           blockquote: ({ children }) => (
             <blockquote className="border-l-2 border-primary pl-3 italic my-2 text-muted">
               {children}
@@ -80,7 +120,7 @@ export function ChatMessageContent({ content }: ChatMessageContentProps) {
           hr: () => <hr className="my-3 border-border" />,
         }}
       >
-        {content}
+        {processedContent}
       </Markdown>
     </div>
   );

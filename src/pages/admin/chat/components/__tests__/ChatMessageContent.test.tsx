@@ -1,11 +1,20 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ChatMessageContent } from '../ChatMessageContent';
 
+vi.mock('@/hooks/domain/chat', () => ({
+  useResolveUserTokensQuery: () => ({ data: {} }),
+}));
+
 describe('ChatMessageContent', () => {
   it('renders standard text and paragraphs', () => {
-    render(<ChatMessageContent content="Hello world" />);
+    render(
+      <MemoryRouter>
+        <ChatMessageContent content="Hello world" />
+      </MemoryRouter>,
+    );
     expect(screen.getByText('Hello world')).toBeInTheDocument();
   });
 
