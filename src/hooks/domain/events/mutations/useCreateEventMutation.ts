@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
 import type { CreateEventInput } from '@/lib/domain/events';
 import { mapPublicRegistrationAccessToEventFlags } from '@/lib/domain/events';
 import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
@@ -65,17 +64,6 @@ export function useCreateEventMutation() {
         .single();
 
       if (error) throw error;
-
-      await writeAdminAuditLogSafely({
-        action: 'create_event',
-        resourceType: 'event',
-        resourceId: data.id,
-        metadata: {
-          slug: input.slug,
-          title: input.title,
-          status: input.status,
-        },
-      });
 
       return data.id as string;
     },

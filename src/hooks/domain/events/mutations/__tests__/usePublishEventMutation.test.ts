@@ -8,38 +8,35 @@ import { usePublishEventMutation } from '@/hooks/domain/events/mutations/usePubl
 import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
-const { mockSelectBuilder, mockUpdateBuilder, mockFrom, mockWriteAdminAuditLogSafely } = vi.hoisted(
-  () => {
-    const selectBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-      select: vi.fn(),
-      eq: vi.fn(),
-      single: vi.fn(),
-    };
-    selectBuilder.select.mockReturnValue(selectBuilder);
-    selectBuilder.eq.mockReturnValue(selectBuilder);
+const { mockSelectBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
+  const selectBuilder: Record<string, ReturnType<typeof vi.fn>> = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    single: vi.fn(),
+  };
+  selectBuilder.select.mockReturnValue(selectBuilder);
+  selectBuilder.eq.mockReturnValue(selectBuilder);
 
-    const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-      update: vi.fn(),
-      eq: vi.fn(),
-    };
-    updateBuilder.update.mockReturnValue(updateBuilder);
+  const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
+    update: vi.fn(),
+    eq: vi.fn(),
+  };
+  updateBuilder.update.mockReturnValue(updateBuilder);
 
-    return {
-      mockSelectBuilder: selectBuilder,
-      mockUpdateBuilder: updateBuilder,
-      mockFrom: vi.fn((table: string) => {
-        if (table !== 'events') throw new Error(`Unexpected table: ${table}`);
-        return {
-          select: selectBuilder.select,
-          eq: selectBuilder.eq,
-          single: selectBuilder.single,
-          update: updateBuilder.update,
-        };
-      }),
-      mockWriteAdminAuditLogSafely: vi.fn(),
-    };
-  },
-);
+  return {
+    mockSelectBuilder: selectBuilder,
+    mockUpdateBuilder: updateBuilder,
+    mockFrom: vi.fn((table: string) => {
+      if (table !== 'events') throw new Error(`Unexpected table: ${table}`);
+      return {
+        select: selectBuilder.select,
+        eq: selectBuilder.eq,
+        single: selectBuilder.single,
+        update: updateBuilder.update,
+      };
+    }),
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
@@ -49,16 +46,6 @@ vi.mock('@/lib/infrastructure', async () => {
     supabase: {
       from: mockFrom,
     },
-  };
-});
-
-vi.mock('@/lib/domain/admin-audit', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/domain/admin-audit')>(
-    '@/lib/domain/admin-audit',
-  );
-  return {
-    ...actual,
-    writeAdminAuditLogSafely: mockWriteAdminAuditLogSafely,
   };
 });
 
@@ -91,15 +78,6 @@ describe('usePublishEventMutation', () => {
     });
 
     expect(mockUpdateBuilder.update).toHaveBeenCalledWith({ status: 'published' });
-    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
-      action: 'publish_event',
-      resourceType: 'event',
-      resourceId: event.id,
-      metadata: {
-        previous_status: 'draft',
-        next_status: 'published',
-      },
-    });
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
@@ -168,6 +146,5 @@ describe('usePublishEventMutation', () => {
     const { result } = renderHookWithClient(() => usePublishEventMutation());
 
     await expect(result.current.mutateAsync(event.id)).rejects.toThrow('publish failed');
-    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled();
   });
 });
