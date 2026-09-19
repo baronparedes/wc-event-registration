@@ -35,7 +35,7 @@ describe('AdminServicesPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Manage Services' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Services' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminServices,

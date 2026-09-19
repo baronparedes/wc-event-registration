@@ -11,8 +11,9 @@ export function AdminServicesPage() {
   return (
     <AdminPageShell wide>
       <AdminPageShell.Header
-        title="Manage Services"
+        title="Services"
         description="Configure services, layouts, seating, and attendance."
+        breadcrumbs={[{ label: 'Services' }]}
       />
       <AdminBaseNavigation />
       <AdminPageShell.Content className="mt-6">
