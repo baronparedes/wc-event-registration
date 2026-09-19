@@ -18,8 +18,8 @@ export function AdminPageShell({ children, wide = false }: AdminPageShellProps) 
   return (
     <div
       className={cx(
-        `mx-auto w-full ${wide ? 'max-w-screen-2xl' : 'max-w-7xl'} print:px-8 print:py-8`,
-        isMinimizedShell ? 'px-2 py-4 sm:px-4' : 'px-4 py-8 sm:px-6 lg:px-8',
+        `mx-auto w-full ${wide ? 'max-w-screen-2xl' : 'max-w-7xl'} print:px-8`,
+        isMinimizedShell ? 'px-2 sm:px-4' : 'px-4 sm:px-6 lg:px-8',
       )}
     >
       <div className={cx(isMinimizedShell ? 'space-y-4' : 'space-y-6')}>{children}</div>
