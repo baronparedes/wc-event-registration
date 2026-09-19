@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui';
-import { useServiceAttendanceQuery } from '@/hooks/domain/services';
+import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import {
   MATRIX_TIME_SLOTS,
   SERVICE_SUNDAY_KEYS,
   computeMatrixGrid,
   getMonthSundays,
   getNonSundayAttendances,
-  parseCommittedSlots,
   toISODate,
 } from '@/lib/domain/services';
 
@@ -54,14 +53,25 @@ export function ServiceAttendanceHistoryTab({
 
   const {
     data: attendance = [],
-    isLoading,
-    isFetching,
-    isError,
+    isLoading: isAttendanceLoading,
+    isFetching: isAttendanceFetching,
+    isError: isAttendanceError,
   } = useServiceAttendanceQuery({
     user_id: memberId,
     start_date: startDateStr,
     end_date: endDateStr,
   });
+
+  const {
+    data: snapshots = [],
+    isLoading: isSnapshotsLoading,
+    isFetching: isSnapshotsFetching,
+    isError: isSnapshotsError,
+  } = useUserCommitmentHistoryQuery(memberId);
+
+  const isLoading = isAttendanceLoading || isSnapshotsLoading;
+  const isFetching = isAttendanceFetching || isSnapshotsFetching;
+  const isError = isAttendanceError || isSnapshotsError;
 
   const isInitialLoading = isLoading && attendance.length === 0;
 
@@ -81,13 +91,11 @@ export function ServiceAttendanceHistoryTab({
     [viewYear, viewMonthIndex],
   );
 
-  const committedSlots = useMemo(() => parseCommittedSlots(metadata), [metadata]);
-
   const todayStr = useMemo(() => toISODate(today), [today]);
 
   const matrixGrid = useMemo(
-    () => computeMatrixGrid(sundays, attendance, committedSlots, todayStr),
-    [sundays, attendance, committedSlots, todayStr],
+    () => computeMatrixGrid(sundays, attendance, metadata, snapshots, todayStr),
+    [sundays, attendance, metadata, snapshots, todayStr],
   );
 
   const nonSundayAttendances = useMemo(

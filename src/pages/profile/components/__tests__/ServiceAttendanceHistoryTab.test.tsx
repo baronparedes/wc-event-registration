@@ -5,12 +5,14 @@ import type { ServiceAttendance } from '@/lib/domain/services';
 
 import { ServiceAttendanceHistoryTab } from '../ServiceAttendanceHistoryTab';
 
-const { mockUseServiceAttendanceQuery } = vi.hoisted(() => ({
+const { mockUseServiceAttendanceQuery, mockUseUserCommitmentHistoryQuery } = vi.hoisted(() => ({
   mockUseServiceAttendanceQuery: vi.fn(),
+  mockUseUserCommitmentHistoryQuery: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: (...args: unknown[]) => mockUseServiceAttendanceQuery(...args),
+  useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
 }));
 
 const sampleAttendance: ServiceAttendance[] = [
@@ -103,6 +105,12 @@ describe('ServiceAttendanceHistoryTab', () => {
     vi.clearAllMocks();
     mockUseServiceAttendanceQuery.mockReturnValue({
       data: sampleAttendance,
+      isLoading: false,
+      isError: false,
+    });
+
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({
+      data: [],
       isLoading: false,
       isError: false,
     });

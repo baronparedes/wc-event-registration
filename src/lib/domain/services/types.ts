@@ -47,3 +47,11 @@ export type ServiceAttendance = {
   updated_by: string | null;
   service_seats?: ServiceAttendanceSeat | null;
 };
+
+export type UserCommitmentSnapshot = {
+  id: string;
+  user_id: string;
+  effective_date: string;
+  metadata: Record<string, string | null>;
+  created_at: string;
+};
