@@ -2,16 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Loader2, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminFormsQuery } from '@/hooks/domain/forms';
+import { useDuplicateFormMutation } from '@/hooks/domain/forms/mutations';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
+import type { AdminForm } from '@/lib/domain/forms';
 
-import { AdminFormsTable, MobileFormCard } from './components';
+import { AdminFormsTable, DuplicateFormDialog, MobileFormCard } from './components';
 
 export function AdminFormsPage() {
   const navigate = useNavigate();
@@ -49,6 +52,24 @@ export function AdminFormsPage() {
   const isMobileViewport = useIsMobileViewport();
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  const [duplicateForm, setDuplicateForm] = useState<AdminForm | null>(null);
+  const duplicateMutation = useDuplicateFormMutation();
+
+  const handleDuplicateForm = async (sourceFormId: string, newTitle: string, newSlug: string) => {
+    try {
+      const newFormId = await duplicateMutation.mutateAsync({
+        source_form_id: sourceFormId,
+        new_title: newTitle,
+        new_slug: newSlug,
+      });
+      toast.success('Form duplicated successfully');
+      setDuplicateForm(null);
+      navigate(toRoute('adminFormDetail', { id: newFormId }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate form');
+    }
+  };
 
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -149,7 +170,13 @@ export function AdminFormsPage() {
             {isMobileViewport ? (
               <div className="space-y-3 p-3">
                 {forms.map((form) => (
-                  <MobileFormCard key={form.id} form={form} canWrite={canWrite} canRead={canRead} />
+                  <MobileFormCard
+                    key={form.id}
+                    form={form}
+                    canWrite={canWrite}
+                    canRead={canRead}
+                    onDuplicateClick={setDuplicateForm}
+                  />
                 ))}
               </div>
             ) : (
@@ -158,8 +185,17 @@ export function AdminFormsPage() {
                 canWrite={canWrite}
                 canRead={canRead}
                 onFormSelect={(formId) => navigate(toRoute('adminFormDetail', { id: formId }))}
+                onDuplicateClick={setDuplicateForm}
               />
             )}
+
+            <DuplicateFormDialog
+              isOpen={Boolean(duplicateForm)}
+              onClose={() => setDuplicateForm(null)}
+              form={duplicateForm}
+              isPending={duplicateMutation.isPending}
+              onDuplicate={handleDuplicateForm}
+            />
 
             <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <p className="text-xs text-muted">

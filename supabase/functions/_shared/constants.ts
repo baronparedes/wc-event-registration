@@ -157,6 +157,10 @@ export const RATE_LIMIT_PRESETS = {
     windowMs: 60_000,
     maxHits: 30,
   },
+  duplicateForm: {
+    windowMs: 60_000,
+    maxHits: 30,
+  },
   defaultAdmin: {
     windowMs: 60_000,
     maxHits: 60,

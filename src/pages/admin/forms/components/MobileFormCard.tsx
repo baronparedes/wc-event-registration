@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ClipboardList, Edit, FormInput, MoreHorizontal } from 'lucide-react';
+import { ClipboardList, Copy, Edit, FormInput, MoreHorizontal } from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
@@ -16,9 +16,10 @@ type MobileFormCardProps = {
   form: AdminForm;
   canWrite: boolean;
   canRead: boolean;
+  onDuplicateClick?: (form: AdminForm) => void;
 };
 
-export function MobileFormCard({ form, canWrite, canRead }: MobileFormCardProps) {
+export function MobileFormCard({ form, canWrite, canRead, onDuplicateClick }: MobileFormCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -109,6 +110,19 @@ export function MobileFormCard({ form, canWrite, canRead }: MobileFormCardProps)
                 <span className="flex items-center gap-2">
                   <FormInput className="h-4 w-4" />
                   Form fields
+                </span>
+              </DropdownMenuItem>
+            )}
+            {canWrite && onDuplicateClick && (
+              <DropdownMenuItem
+                onClick={() => {
+                  onDuplicateClick(form);
+                  setIsMenuOpen(false);
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <Copy className="h-4 w-4" />
+                  Duplicate
                 </span>
               </DropdownMenuItem>
             )}

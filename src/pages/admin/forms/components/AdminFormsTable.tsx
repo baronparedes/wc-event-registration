@@ -1,6 +1,6 @@
-import { ClipboardList, FormInput, Settings } from 'lucide-react';
+import { ClipboardList, Copy, FormInput, Settings } from 'lucide-react';
 
-import { ActionLink } from '@/components/ui/ActionLink';
+import { ActionButton, ActionLink } from '@/components/ui/ActionLink';
 import {
   ListTable,
   ListTableBody,
@@ -22,9 +22,16 @@ type AdminFormsTableProps = {
   canWrite: boolean;
   canRead: boolean;
   onFormSelect: (formId: string) => void;
+  onDuplicateClick?: (form: AdminForm) => void;
 };
 
-export function AdminFormsTable({ forms, canWrite, canRead, onFormSelect }: AdminFormsTableProps) {
+export function AdminFormsTable({
+  forms,
+  canWrite,
+  canRead,
+  onFormSelect,
+  onDuplicateClick,
+}: AdminFormsTableProps) {
   return (
     <div>
       <ListTable>
@@ -73,6 +80,18 @@ export function AdminFormsTable({ forms, canWrite, canRead, onFormSelect }: Admi
                     >
                       <Settings className="h-5 w-5" />
                     </ActionLink>
+                  )}
+                  {canWrite && onDuplicateClick && (
+                    <ActionButton
+                      title="Duplicate"
+                      aria-label="Duplicate"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicateClick(form);
+                      }}
+                    >
+                      <Copy className="h-5 w-5" />
+                    </ActionButton>
                   )}
                   {canWrite && (
                     <ActionLink
