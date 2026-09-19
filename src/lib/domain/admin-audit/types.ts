@@ -6,9 +6,14 @@ export type AdminAuditAction =
   | 'cancel_registration'
   | 'reactivate_registration'
   | 'export_registrations_csv'
-  | 'create_form';
+  | 'create_form'
+  | 'update_form'
+  | 'create_member'
+  | 'update_member'
+  | 'soft_delete_member'
+  | 'restore_member';
 
-export type AdminAuditResourceType = 'event' | 'registration' | 'export' | 'form';
+export type AdminAuditResourceType = 'event' | 'registration' | 'export' | 'form' | 'member';
 
 export interface AdminAuditPayload {
   action: AdminAuditAction;
