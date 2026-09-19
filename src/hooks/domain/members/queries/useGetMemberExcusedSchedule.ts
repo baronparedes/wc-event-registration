@@ -13,6 +13,7 @@ export type ExcusedMemberRecord = {
 type GetMemberExcusedScheduleRequest = {
   year: number;
   monthIndex: number;
+  userId?: string;
 };
 
 type GetMemberExcusedScheduleResponse = {
@@ -29,12 +30,13 @@ const getMemberExcusedSchedule = createEdgeFunctionCaller<
 export function useGetMemberExcusedSchedule(
   year: number,
   monthIndex: number,
+  userId?: string,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: ['member-excused-schedule', year, monthIndex],
+    queryKey: ['member-excused-schedule', year, monthIndex, userId ?? 'me'],
     queryFn: async () => {
-      const result = await getMemberExcusedSchedule({ year, monthIndex });
+      const result = await getMemberExcusedSchedule({ year, monthIndex, userId });
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch excused schedule');
       }

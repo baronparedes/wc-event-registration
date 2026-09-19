@@ -44,7 +44,36 @@ describe('useGetMemberExcusedSchedule', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockCaller).toHaveBeenCalledWith({ year: 2026, monthIndex: 8 });
+    expect(mockCaller).toHaveBeenCalledWith({ year: 2026, monthIndex: 8, userId: undefined });
+    expect(result.current.data).toEqual(mockRecords);
+  });
+
+  it('passes target userId to edge function caller when provided', async () => {
+    const mockRecords = [
+      {
+        userId: 'target-user-uuid',
+        memberId: 'MEM-002',
+        requestDate: '2026-09-20',
+        services: '9AM',
+      },
+    ];
+
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+      records: mockRecords,
+    });
+
+    const { result } = renderHookWithClient(() =>
+      useGetMemberExcusedSchedule(2026, 8, 'target-user-uuid'),
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockCaller).toHaveBeenCalledWith({
+      year: 2026,
+      monthIndex: 8,
+      userId: 'target-user-uuid',
+    });
     expect(result.current.data).toEqual(mockRecords);
   });
 

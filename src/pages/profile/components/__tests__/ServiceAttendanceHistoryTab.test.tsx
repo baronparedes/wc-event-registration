@@ -29,12 +29,17 @@ const {
   mockUseServiceAttendanceQuery,
   mockUseUserCommitmentHistoryQuery,
   mockUseGetMemberExcusedSchedule,
-  mockUseGetExcusedMembers,
 } = vi.hoisted(() => ({
   mockUseServiceAttendanceQuery: vi.fn(),
   mockUseUserCommitmentHistoryQuery: vi.fn(),
-  mockUseGetMemberExcusedSchedule: vi.fn((): MockExcusedQueryResult => ({ data: [] })),
-  mockUseGetExcusedMembers: vi.fn((): MockExcusedQueryResult => ({ data: [] })),
+  mockUseGetMemberExcusedSchedule: vi.fn<
+    (
+      year?: number,
+      monthIndex?: number,
+      userId?: string,
+      options?: { enabled?: boolean },
+    ) => MockExcusedQueryResult
+  >(() => ({ data: [] })),
 }));
 
 vi.mock('@/hooks/domain/services', () => ({
@@ -42,12 +47,13 @@ vi.mock('@/hooks/domain/services', () => ({
   useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
 }));
 
-vi.mock('@/hooks/domain/members', () => ({
-  useGetExcusedMembers: () => mockUseGetExcusedMembers(),
-}));
-
 vi.mock('@/hooks/domain/members/queries', () => ({
-  useGetMemberExcusedSchedule: () => mockUseGetMemberExcusedSchedule(),
+  useGetMemberExcusedSchedule: (
+    year: number,
+    monthIndex: number,
+    userId?: string,
+    options?: { enabled?: boolean },
+  ) => mockUseGetMemberExcusedSchedule(year, monthIndex, userId, options),
 }));
 
 const sampleAttendance: ServiceAttendance[] = [

@@ -6,6 +6,7 @@ import { z } from '@/shared/validation.ts';
 const requestSchema = z.object({
   year: z.number().int().min(2000).max(2100),
   monthIndex: z.number().int().min(0).max(11), // 0-11
+  userId: z.string().uuid().optional(),
 });
 
 type GetMemberExcusedScheduleRequest = z.infer<typeof requestSchema>;
@@ -98,13 +99,37 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { year, monthIndex }: GetMemberExcusedScheduleRequest = guard.data;
+    const {
+      year,
+      monthIndex,
+      userId: requestedUserId,
+    }: GetMemberExcusedScheduleRequest = guard.data;
     const supabase = guard.client;
     const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
     const authUserId = guard.userId;
 
     if (!authUserId) {
       return errorResponse(corsHeaders, 401, 'Unauthorized');
+    }
+
+    let targetUserId = authUserId;
+    if (requestedUserId && requestedUserId !== authUserId) {
+      const { data: adminRecord, error: adminCheckError } = await supabase
+        .from('admins')
+        .select('id, role')
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+
+      const isAdmin =
+        !adminCheckError &&
+        adminRecord &&
+        ['admin', 'super_admin', 'slod', 'imt'].includes(adminRecord.role);
+
+      if (!isAdmin) {
+        return errorResponse(corsHeaders, 403, 'Forbidden');
+      }
+
+      targetUserId = requestedUserId;
     }
 
     const monthStr = String(monthIndex + 1).padStart(2, '0');
@@ -115,7 +140,8 @@ Deno.serve(async (req) => {
 
     console.log('[get-member-excused-schedule] Starting request processing', {
       requestId: guard.requestId,
-      userId: authUserId,
+      authUserId,
+      targetUserId,
       year,
       monthIndex,
       datePrefix,
@@ -133,7 +159,7 @@ Deno.serve(async (req) => {
         'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id, user_id)',
       )
       .eq('registrations.event_id', eventId)
-      .eq('registrations.user_id', authUserId)
+      .eq('registrations.user_id', targetUserId)
       .neq('registrations.status', 'cancelled')
       .eq('event_fields.field_key', 'request_date')
       .or(
@@ -206,7 +232,7 @@ Deno.serve(async (req) => {
     for (const reg of (registrations as RegistrationRow[] | null) ?? []) {
       const memberId = Array.isArray(reg.users) ? reg.users[0]?.member_id : reg.users?.member_id;
       const userId = Array.isArray(reg.users) ? reg.users[0]?.id : reg.users?.id;
-      if (!memberId || !userId || userId !== authUserId) continue;
+      if (!memberId || !userId || userId !== targetUserId) continue;
 
       let requestDate = '';
       let services = '';

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui';
-import { useGetExcusedMembers } from '@/hooks/domain/members';
 import { useGetMemberExcusedSchedule } from '@/hooks/domain/members/queries';
 import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import {
@@ -31,7 +30,6 @@ interface ServiceAttendanceHistoryTabProps {
 export function ServiceAttendanceHistoryTab({
   memberId,
   metadata,
-  isAdminView = false,
 }: ServiceAttendanceHistoryTabProps) {
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(
@@ -79,30 +77,15 @@ export function ServiceAttendanceHistoryTab({
   const isError = isAttendanceError || isSnapshotsError;
   const isLoadingAttendance = isAttendanceLoading || isAttendancePlaceholderData;
 
-  const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex, {
-    enabled: !isAdminView,
-  });
-  const allExcusedMembersQuery = useGetExcusedMembers(viewYear, viewMonthIndex, {
-    enabled: isAdminView,
-  });
+  const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex, memberId);
 
-  const activeExcusedQuery = isAdminView ? allExcusedMembersQuery : memberScheduleQuery;
   const isExcusedLoading =
-    activeExcusedQuery.isLoading ||
-    activeExcusedQuery.isPlaceholderData ||
-    activeExcusedQuery.isFetching ||
-    activeExcusedQuery.data === undefined;
+    memberScheduleQuery.isLoading ||
+    memberScheduleQuery.isPlaceholderData ||
+    memberScheduleQuery.isFetching ||
+    memberScheduleQuery.data === undefined;
 
-  const excusedRecords = useMemo(() => {
-    if (isAdminView) {
-      if (!allExcusedMembersQuery.data) return [];
-      return allExcusedMembersQuery.data.filter(
-        (r) => r.userId === memberId || r.memberId === memberId,
-      );
-    } else {
-      return memberScheduleQuery.data || [];
-    }
-  }, [isAdminView, allExcusedMembersQuery.data, memberScheduleQuery.data, memberId]);
+  const excusedRecords = useMemo(() => memberScheduleQuery.data || [], [memberScheduleQuery.data]);
 
   const isInitialLoading = isLoading && attendance.length === 0;
 
