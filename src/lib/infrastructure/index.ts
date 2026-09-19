@@ -25,3 +25,4 @@ export {
   getPageCursor,
   getTotalPages,
 } from './pagination';
+export { parseErrorToJsonOrString } from './errorUtils';

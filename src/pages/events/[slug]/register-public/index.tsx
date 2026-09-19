@@ -23,7 +23,7 @@ import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
 import { buildSubmitPublicRegistrationSchema } from '@/lib/domain/public-registrations';
-import { formatDateTime } from '@/lib/infrastructure';
+import { formatDateTime, parseErrorToJsonOrString } from '@/lib/infrastructure';
 
 import {
   PublicAttendeeInfoStep,
@@ -117,7 +117,7 @@ export function PublicEventRegistrationPage() {
         existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to check attendee';
-        toast.error(message);
+        toast.error(parseErrorToJsonOrString(message));
         setIsCheckingAttendee(false);
         return;
       }
@@ -134,7 +134,7 @@ export function PublicEventRegistrationPage() {
           detail = await fetchPublicRegistrationDetail(existingRegistration.id);
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to check attendee';
-          toast.error(message);
+          toast.error(parseErrorToJsonOrString(message));
           setIsCheckingAttendee(false);
           return;
         }
@@ -214,7 +214,7 @@ export function PublicEventRegistrationPage() {
             : error instanceof Error
               ? error.message
               : TOAST_MESSAGES.registration.submitFailed;
-        toast.error(message);
+        toast.error(parseErrorToJsonOrString(message));
         return;
       }
 
@@ -224,7 +224,7 @@ export function PublicEventRegistrationPage() {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : TOAST_MESSAGES.registration.submitFailed;
-        toast.error(message);
+        toast.error(parseErrorToJsonOrString(message));
         return;
       }
 
