@@ -38,10 +38,12 @@ export function AdminHubCalendarPage() {
     selectedDayNumber,
     activeTab,
     selectedRole,
+    searchQuery,
     isAtMinimumMonth,
     isAtMaximumMonth,
     isAtToday,
     setSelectedRole,
+    setSearchQuery,
     handleTabChange,
     handlePreviousMonth,
     handleNextMonth,
@@ -171,8 +173,10 @@ export function AdminHubCalendarPage() {
           isCurrentSelectedSunday={isCurrentSelectedSunday}
           activeTab={activeTab}
           selectedRole={selectedRole}
+          searchQuery={searchQuery}
           onTabChange={handleTabChange}
           onRoleChange={setSelectedRole}
+          onSearchQueryChange={setSearchQuery}
         />
       </div>
     );

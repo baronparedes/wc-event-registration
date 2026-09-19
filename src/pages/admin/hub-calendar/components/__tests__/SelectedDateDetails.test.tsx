@@ -89,8 +89,10 @@ describe('SelectedDateDetails', () => {
           excusedMap={excusedMap}
           activeTab="9AM"
           selectedRole={null}
+          searchQuery=""
           onTabChange={vi.fn()}
           onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
         />
       </MemoryRouter>,
     );
@@ -113,8 +115,10 @@ describe('SelectedDateDetails', () => {
           excusedMap={excusedMap}
           activeTab="12NN"
           selectedRole={null}
+          searchQuery=""
           onTabChange={vi.fn()}
           onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
         />
       </MemoryRouter>,
     );
@@ -143,8 +147,10 @@ describe('SelectedDateDetails', () => {
           excusedMap={excusedMap}
           activeTab="9AM"
           selectedRole={null}
+          searchQuery=""
           onTabChange={vi.fn()}
           onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
         />
       </MemoryRouter>,
     );
@@ -171,8 +177,10 @@ describe('SelectedDateDetails', () => {
           excusedMap={excusedMap}
           activeTab="9AM"
           selectedRole={null}
+          searchQuery=""
           onTabChange={vi.fn()}
           onRoleChange={handleRoleChange}
+          onSearchQueryChange={vi.fn()}
         />
       </MemoryRouter>,
     );
@@ -200,8 +208,10 @@ describe('SelectedDateDetails', () => {
           excusedMap={excusedMap}
           activeTab="9AM"
           selectedRole="Excused"
+          searchQuery=""
           onTabChange={vi.fn()}
           onRoleChange={handleRoleChange}
+          onSearchQueryChange={vi.fn()}
         />
       </MemoryRouter>,
     );
@@ -231,8 +241,10 @@ describe('SelectedDateDetails', () => {
           excusedMap={new Map()}
           activeTab="9AM"
           selectedRole="Excused"
+          searchQuery=""
           onTabChange={vi.fn()}
           onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
         />
       </MemoryRouter>,
     );
