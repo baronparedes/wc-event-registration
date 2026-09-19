@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
@@ -26,7 +26,11 @@ const getExcusedMembers = createEdgeFunctionCaller<
   GetExcusedMembersResponse
 >('get-excused-members');
 
-export function useGetExcusedMembers(year: number, monthIndex: number) {
+export function useGetExcusedMembers(
+  year: number,
+  monthIndex: number,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['admin-hub-calendar-excused', year, monthIndex],
     queryFn: async () => {
@@ -36,6 +40,8 @@ export function useGetExcusedMembers(year: number, monthIndex: number) {
       }
       return result.records;
     },
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 }

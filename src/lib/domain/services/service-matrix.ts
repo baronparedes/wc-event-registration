@@ -164,6 +164,7 @@ export function computeMatrixGrid(
   excusedRecords: { requestDate: string; services: string; reason?: string }[] = [],
   todayStr: string = toISODate(new Date()),
   isLoadingAttendance: boolean = false,
+  isLoadingExcused: boolean = false,
 ): Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>> {
   const grid = {} as Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>>;
   const sundayByKey = new Map<ServiceSundayKey, MonthSunday>();
@@ -220,6 +221,8 @@ export function computeMatrixGrid(
       } else if (isCommitted) {
         if (excusedRecord) {
           status = 'excused';
+        } else if (isLoadingExcused) {
+          status = 'loading';
         } else {
           status = sunday.dateStr < todayStr ? 'missed_committed' : 'upcoming_committed';
         }

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ExcusedMemberRecord } from '@/hooks/domain/members';
 import type { ServiceAttendance } from '@/lib/domain/services';
 
 import { ServiceAttendanceHistoryTab } from '../ServiceAttendanceHistoryTab';
@@ -17,6 +18,13 @@ function renderWithClient(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
+interface MockExcusedQueryResult {
+  data?: ExcusedMemberRecord[];
+  isLoading?: boolean;
+  isFetching?: boolean;
+  isPlaceholderData?: boolean;
+}
+
 const {
   mockUseServiceAttendanceQuery,
   mockUseUserCommitmentHistoryQuery,
@@ -25,8 +33,8 @@ const {
 } = vi.hoisted(() => ({
   mockUseServiceAttendanceQuery: vi.fn(),
   mockUseUserCommitmentHistoryQuery: vi.fn(),
-  mockUseGetMemberExcusedSchedule: vi.fn(() => ({ data: [] })),
-  mockUseGetExcusedMembers: vi.fn(() => ({ data: [] })),
+  mockUseGetMemberExcusedSchedule: vi.fn((): MockExcusedQueryResult => ({ data: [] })),
+  mockUseGetExcusedMembers: vi.fn((): MockExcusedQueryResult => ({ data: [] })),
 }));
 
 vi.mock('@/hooks/domain/services', () => ({
@@ -349,5 +357,87 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
     // Non-Sunday attendances are only shown when data is fully loaded and computed
     expect(screen.queryByText('Other Services Attended')).not.toBeInTheDocument();
+  });
+
+  it('does not display missed commitment while excused query is still loading', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue({
+      data: [], // Attendance returned empty (user did not attend)
+      isLoading: false,
+      isFetching: false,
+      isPlaceholderData: false,
+      isError: false,
+    });
+    mockUseGetMemberExcusedSchedule.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isFetching: true,
+      isPlaceholderData: false,
+    });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+    );
+
+    // In-cell loading skeleton is displayed for the pending committed cell while waiting for excused records
+    expect(screen.getAllByTestId('service-matrix-cell-loading').length).toBeGreaterThan(0);
+    // Never displays false missed commitments while excused records are in-flight
+    expect(screen.queryByText('Scheduled commitment not attended')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+  });
+
+  it('does not display missed commitment while excused query is refetching without data', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+      isPlaceholderData: false,
+      isError: false,
+    });
+    mockUseGetMemberExcusedSchedule.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isFetching: true, // e.g. refetching / month change without previous data
+      isPlaceholderData: false,
+    });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+    );
+
+    // In-cell loading skeleton is displayed, never premature missed
+    expect(screen.getAllByTestId('service-matrix-cell-loading').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+  });
+
+  it('displays excused immediately without loading skeleton when excused record is already present during refetch', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+      isPlaceholderData: false,
+      isError: false,
+    });
+    mockUseGetMemberExcusedSchedule.mockReturnValue({
+      data: [
+        {
+          memberId: 'user-1',
+          requestDate: '2026-09-06',
+          services: '9AM',
+          reason: 'Family event',
+        },
+      ],
+      isLoading: false,
+      isFetching: true, // background refetch with cached data
+      isPlaceholderData: false,
+    });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+    );
+
+    // Displays excused badge immediately, not loading skeleton or missed
+    expect(screen.getAllByText('Excused').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('service-matrix-cell-loading')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
   });
 });

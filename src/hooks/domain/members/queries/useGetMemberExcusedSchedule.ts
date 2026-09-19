@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
@@ -26,7 +26,11 @@ const getMemberExcusedSchedule = createEdgeFunctionCaller<
   GetMemberExcusedScheduleResponse
 >('get-member-excused-schedule');
 
-export function useGetMemberExcusedSchedule(year: number, monthIndex: number) {
+export function useGetMemberExcusedSchedule(
+  year: number,
+  monthIndex: number,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['member-excused-schedule', year, monthIndex],
     queryFn: async () => {
@@ -36,6 +40,8 @@ export function useGetMemberExcusedSchedule(year: number, monthIndex: number) {
       }
       return result.records;
     },
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 }

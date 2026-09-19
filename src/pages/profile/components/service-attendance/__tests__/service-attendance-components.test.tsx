@@ -1,14 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  MatrixCellData,
-  ServiceAttendance,
-  ServiceAttendanceSeat,
+import {
+  type MatrixCellData,
+  type ServiceAttendance,
+  type ServiceAttendanceSeat,
+  computeMatrixGrid,
+  getMonthSundays,
 } from '@/lib/domain/services';
 
 import {
   NonSundayAttendanceList,
+  ServiceAttendanceDesktopMatrix,
   ServiceAttendanceHeaderControls,
   ServiceAttendanceLegend,
   ServiceAttendanceMonthSummary,
@@ -272,5 +275,26 @@ describe('NonSundayAttendanceList', () => {
     render(<NonSundayAttendanceList records={[record]} />);
     expect(screen.getByText('Other Services Attended')).toBeInTheDocument();
     expect(screen.getByText(/2026-06-03 • 7PM/)).toBeInTheDocument();
+  });
+});
+
+describe('ServiceAttendanceDesktopMatrix', () => {
+  it('renders table with table-fixed layout and uniform column distribution', () => {
+    const sundays = getMonthSundays(2026, 5); // June 2026
+    const grid = computeMatrixGrid(sundays, [], null, [], [], '2026-06-01');
+
+    render(<ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={grid} />);
+
+    const table = screen.getByRole('table');
+    expect(table).toHaveClass('table-fixed');
+
+    const sundayHeader = screen.getByRole('columnheader', { name: /Sunday/i });
+    expect(sundayHeader).toHaveClass('w-[160px]');
+
+    const slotHeaders = screen.getAllByRole('columnheader', { name: /(9AM|12NN|3PM)/i });
+    expect(slotHeaders).toHaveLength(3);
+    slotHeaders.forEach((header) => {
+      expect(header).toHaveClass('w-1/3');
+    });
   });
 });

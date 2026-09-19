@@ -79,13 +79,26 @@ export function ServiceAttendanceHistoryTab({
   const isError = isAttendanceError || isSnapshotsError;
   const isLoadingAttendance = isAttendanceLoading || isAttendancePlaceholderData;
 
-  const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex);
-  const allExcusedMembersQuery = useGetExcusedMembers(viewYear, viewMonthIndex);
+  const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex, {
+    enabled: !isAdminView,
+  });
+  const allExcusedMembersQuery = useGetExcusedMembers(viewYear, viewMonthIndex, {
+    enabled: isAdminView,
+  });
+
+  const activeExcusedQuery = isAdminView ? allExcusedMembersQuery : memberScheduleQuery;
+  const isExcusedLoading =
+    activeExcusedQuery.isLoading ||
+    activeExcusedQuery.isPlaceholderData ||
+    activeExcusedQuery.isFetching ||
+    activeExcusedQuery.data === undefined;
 
   const excusedRecords = useMemo(() => {
     if (isAdminView) {
       if (!allExcusedMembersQuery.data) return [];
-      return allExcusedMembersQuery.data.filter((r) => r.userId === memberId);
+      return allExcusedMembersQuery.data.filter(
+        (r) => r.userId === memberId || r.memberId === memberId,
+      );
     } else {
       return memberScheduleQuery.data || [];
     }
@@ -121,8 +134,18 @@ export function ServiceAttendanceHistoryTab({
         excusedRecords,
         todayStr,
         isLoadingAttendance,
+        isExcusedLoading,
       ),
-    [sundays, attendance, metadata, snapshots, excusedRecords, todayStr, isLoadingAttendance],
+    [
+      sundays,
+      attendance,
+      metadata,
+      snapshots,
+      excusedRecords,
+      todayStr,
+      isLoadingAttendance,
+      isExcusedLoading,
+    ],
   );
 
   const nonSundayAttendances = useMemo(

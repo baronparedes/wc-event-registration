@@ -207,6 +207,38 @@ describe('service-matrix domain logic', () => {
       expect(grid.first_sunday['12NN'].status).toBe('off_schedule');
       expect(grid.first_sunday['12NN'].isCommitted).toBe(false);
     });
+
+    it('classifies committed slots without attendance as loading when isLoadingExcused is true', () => {
+      const grid = computeMatrixGrid(
+        sundays,
+        [], // attendance query finished and returned no attendance
+        currentMetadata,
+        [],
+        [],
+        '2026-09-20',
+        false, // isLoadingAttendance = false
+        true, // isLoadingExcused = true
+      );
+      // first_sunday 9AM is committed and unattended, but excused records are still loading
+      expect(grid.first_sunday['9AM'].status).toBe('loading');
+      expect(grid.first_sunday['9AM'].isCommitted).toBe(true);
+    });
+
+    it('classifies committed slots as excused immediately when excusedRecord is present even if isLoadingExcused is true', () => {
+      const grid = computeMatrixGrid(
+        sundays,
+        [],
+        currentMetadata,
+        [],
+        [{ requestDate: '2026-09-06', services: '9AM, 12NN', reason: 'medical' }],
+        '2026-09-20',
+        false, // isLoadingAttendance = false
+        true, // isLoadingExcused = true (e.g. background refetch)
+      );
+      // first_sunday 9AM is excused -> must be 'excused' immediately, no delay
+      expect(grid.first_sunday['9AM'].status).toBe('excused');
+      expect(grid.first_sunday['9AM'].excusedReason).toBe('medical');
+    });
   });
 
   describe('getNonSundayAttendances', () => {

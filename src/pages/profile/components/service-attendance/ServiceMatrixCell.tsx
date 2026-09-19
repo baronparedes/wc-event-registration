@@ -18,7 +18,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
     return (
       <div
         data-testid="service-matrix-cell-loading"
-        className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border border-border/70 bg-surface p-2.5 text-left shadow-xs"
+        className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border border-border/70 bg-surface p-2.5 text-left shadow-xs"
       >
         <Skeleton className="h-5 w-24 rounded-full" />
         <Skeleton className="h-3.5 w-28 rounded" />
@@ -29,7 +29,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'attended_committed' && record) {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-primary bg-surface p-2.5 text-left shadow-xs transition-shadow hover:shadow-sm">
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-primary bg-surface p-2.5 text-left shadow-xs transition-shadow hover:shadow-sm">
         <div className="flex items-center justify-between gap-1.5 flex-wrap">
           <Badge
             variant="default"
@@ -40,7 +40,10 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
           </Badge>
           <ServiceAttendanceStatusBadge record={record} />
         </div>
-        <div className="text-xs font-medium text-text">
+        <div
+          className="text-xs font-medium text-text truncate"
+          title={formatAssignedSeat(record.service_seats)}
+        >
           <span className="text-muted mr-1">Assignment:</span>
           <span className="font-semibold text-text">
             {formatAssignedSeat(record.service_seats)}
@@ -56,7 +59,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'attended_unscheduled' && record) {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-secondary bg-surface p-2.5 text-left shadow-xs transition-shadow hover:shadow-sm">
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-secondary bg-surface p-2.5 text-left shadow-xs transition-shadow hover:shadow-sm">
         <div className="flex items-center justify-between gap-1.5 flex-wrap">
           <Badge
             variant="secondary"
@@ -67,7 +70,10 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
           </Badge>
           <ServiceAttendanceStatusBadge record={record} />
         </div>
-        <div className="text-xs font-medium text-text">
+        <div
+          className="text-xs font-medium text-text truncate"
+          title={formatAssignedSeat(record.service_seats)}
+        >
           <span className="text-muted mr-1">Assignment:</span>
           <span className="font-semibold text-text">
             {formatAssignedSeat(record.service_seats)}
@@ -83,7 +89,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'missed_committed') {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-danger bg-surface p-2.5 text-left shadow-xs">
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-danger bg-surface p-2.5 text-left shadow-xs">
         <div>
           <Badge
             variant="destructive"
@@ -100,7 +106,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'upcoming_committed') {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-dashed border-primary bg-surface p-2.5 text-left shadow-xs">
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-dashed border-primary bg-surface p-2.5 text-left shadow-xs">
         <div>
           <Badge
             variant="outline"
@@ -117,7 +123,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'excused') {
     return (
-      <div className="flex h-full min-h-[92px] flex-col justify-between gap-1.5 rounded-xl border-2 border-accent bg-surface p-2.5 text-left shadow-xs">
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-accent bg-surface p-2.5 text-left shadow-xs">
         <div>
           <Badge
             variant="accent"
@@ -127,7 +133,10 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
             Excused
           </Badge>
         </div>
-        <p className="text-[11px] text-muted font-medium">
+        <p
+          className="text-[11px] text-muted font-medium line-clamp-2"
+          title={cell.excusedReason || undefined}
+        >
           {cell.excusedReason ? cell.excusedReason : 'Excused from schedule'}
         </p>
       </div>
@@ -136,14 +145,14 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'not_applicable') {
     return (
-      <div className="flex h-full min-h-[92px] items-center justify-center rounded-xl border border-border/40 bg-surface/50 p-2 text-center text-xs text-muted/40">
+      <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-border/40 bg-surface/50 p-2 text-center text-xs text-muted/40">
         —
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-[92px] items-center justify-center rounded-xl border border-dashed border-border bg-surface p-2 text-center text-xs text-muted/60">
+    <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-surface p-2 text-center text-xs text-muted/60">
       Off Schedule
     </div>
   );
