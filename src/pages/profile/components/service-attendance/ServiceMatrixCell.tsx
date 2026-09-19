@@ -96,10 +96,10 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
             icon={<AlertCircle className="h-3 w-3 shrink-0" />}
             className="px-2 py-0.5 text-[11px]"
           >
-            Missed Committed
+            No Check-In (Committed)
           </Badge>
         </div>
-        <p className="text-[11px] text-muted font-medium">Scheduled commitment not attended</p>
+        <p className="text-[11px] text-muted font-medium">Scheduled slot, no check-in recorded</p>
       </div>
     );
   }

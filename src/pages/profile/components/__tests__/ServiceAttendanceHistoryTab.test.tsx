@@ -248,7 +248,7 @@ describe('ServiceAttendanceHistoryTab', () => {
 
     expect(screen.getAllByText('Committed').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Unscheduled').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Missed Committed').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('No Check-In (Committed)').length).toBeGreaterThan(0);
   });
 
   it('renders other services attended for attendances on non-Sundays', () => {
@@ -359,8 +359,8 @@ describe('ServiceAttendanceHistoryTab', () => {
     // In-cell loading skeletons are displayed for pending committed cells
     expect(screen.getAllByTestId('service-matrix-cell-loading').length).toBeGreaterThan(0);
     // Never displays false missed commitments while data is in-flight
-    expect(screen.queryByText('Scheduled commitment not attended')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Scheduled slot, no check-in recorded')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
     // Non-Sunday attendances are only shown when data is fully loaded and computed
     expect(screen.queryByText('Other Services Attended')).not.toBeInTheDocument();
   });
@@ -387,8 +387,8 @@ describe('ServiceAttendanceHistoryTab', () => {
     // In-cell loading skeleton is displayed for the pending committed cell while waiting for excused records
     expect(screen.getAllByTestId('service-matrix-cell-loading').length).toBeGreaterThan(0);
     // Never displays false missed commitments while excused records are in-flight
-    expect(screen.queryByText('Scheduled commitment not attended')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Scheduled slot, no check-in recorded')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
   });
 
   it('does not display missed commitment while excused query is refetching without data', () => {
@@ -412,7 +412,7 @@ describe('ServiceAttendanceHistoryTab', () => {
 
     // In-cell loading skeleton is displayed, never premature missed
     expect(screen.getAllByTestId('service-matrix-cell-loading').length).toBeGreaterThan(0);
-    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
   });
 
   it('displays excused immediately without loading skeleton when excused record is already present during refetch', () => {
@@ -444,6 +444,6 @@ describe('ServiceAttendanceHistoryTab', () => {
     // Displays excused badge immediately, not loading skeleton or missed
     expect(screen.getAllByText('Excused').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('service-matrix-cell-loading')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Missed$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
   });
 });

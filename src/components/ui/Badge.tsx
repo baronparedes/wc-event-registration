@@ -25,7 +25,7 @@ const variantClassName: Record<BadgeVariant, string> = {
   primaryOutline: 'border border-primary bg-background text-primary',
   ghost: 'bg-transparent text-text',
   link: 'bg-transparent text-primary underline',
-  destructive: 'bg-red-600 text-white',
+  destructive: 'bg-red-600/50 text-text',
 };
 
 /**

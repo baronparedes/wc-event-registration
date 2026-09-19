@@ -23,7 +23,7 @@ describe('Badge', () => {
     expect(screen.getByText('Accent')).toHaveClass('text-text');
 
     rerender(<Badge variant="destructive">Destructive</Badge>);
-    expect(screen.getByText('Destructive')).toHaveClass('bg-red-600');
+    expect(screen.getByText('Destructive')).toHaveClass('bg-red-600/50');
 
     rerender(<Badge variant="primaryOutline">Primary Outline</Badge>);
     expect(screen.getByText('Primary Outline')).toHaveClass('border-primary');
