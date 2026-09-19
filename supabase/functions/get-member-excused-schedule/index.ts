@@ -6,9 +6,10 @@ import { z } from '@/shared/validation.ts';
 const requestSchema = z.object({
   year: z.number().int().min(2000).max(2100),
   monthIndex: z.number().int().min(0).max(11), // 0-11
+  userId: z.string().uuid().optional(),
 });
 
-type GetExcusedMembersRequest = z.infer<typeof requestSchema>;
+type GetMemberExcusedScheduleRequest = z.infer<typeof requestSchema>;
 
 type EventFieldRelation = {
   field_key: string;
@@ -80,12 +81,11 @@ function normalizeValueToText(value: unknown): string {
 Deno.serve(async (req) => {
   const guard = await useEdgeHook({
     req,
-    functionName: 'get-excused-members',
+    functionName: 'get-member-excused-schedule',
     method: 'POST',
-    requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
-    rateLimit: {
-      scope: 'get-excused-members',
+    requireAuth: true,
+    publicRateLimit: {
+      scope: 'get-member-excused-schedule',
       windowMs: RATE_LIMIT_PRESETS.getExcusedMembers.windowMs,
       maxHits: RATE_LIMIT_PRESETS.getExcusedMembers.maxHits,
     },
@@ -99,9 +99,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { year, monthIndex }: GetExcusedMembersRequest = guard.data;
+    const {
+      year,
+      monthIndex,
+      userId: requestedUserId,
+    }: GetMemberExcusedScheduleRequest = guard.data;
     const supabase = guard.client;
     const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
+    const authUserId = guard.userId;
+
+    if (!authUserId) {
+      return errorResponse(corsHeaders, 401, 'Unauthorized');
+    }
+
+    let targetUserId = authUserId;
+    if (requestedUserId && requestedUserId !== authUserId) {
+      const { data: adminRecord, error: adminCheckError } = await supabase
+        .from('admins')
+        .select('id, role')
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+
+      const isAdmin =
+        !adminCheckError &&
+        adminRecord &&
+        ['admin', 'super_admin', 'slod', 'imt'].includes(adminRecord.role);
+
+      if (!isAdmin) {
+        return errorResponse(corsHeaders, 403, 'Forbidden');
+      }
+
+      targetUserId = requestedUserId;
+    }
 
     const monthStr = String(monthIndex + 1).padStart(2, '0');
     const datePrefix = `${year}-${monthStr}`;
@@ -109,38 +138,28 @@ Deno.serve(async (req) => {
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
     const endDate = `${datePrefix}-${String(daysInMonth).padStart(2, '0')}`;
 
-    console.log('[get-excused-members] Starting request processing', {
+    console.log('[get-member-excused-schedule] Starting request processing', {
       requestId: guard.requestId,
+      authUserId,
+      targetUserId,
       year,
       monthIndex,
       datePrefix,
-      startDate,
-      endDate,
       eventId: eventId ?? 'NOT_SET',
     });
 
     if (!eventId) {
-      console.error('[get-excused-members] Event ID not configured', {
-        requestId: guard.requestId,
-      });
+      console.error('[get-member-excused-schedule] Event ID not configured');
       return errorResponse(corsHeaders, 500, 'Event ID not configured');
     }
-
-    // Pass 1: Find registration IDs that have a request_date matching the target month/year
-    console.log('[get-excused-members] Executing Pass 1 date filter query', {
-      requestId: guard.requestId,
-      datePrefix,
-      startDate,
-      endDate,
-      eventId,
-    });
 
     const { data: dateAnswers, error: dateAnswersError } = await supabase
       .from('registration_answers')
       .select(
-        'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id)',
+        'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id, user_id)',
       )
       .eq('registrations.event_id', eventId)
+      .eq('registrations.user_id', targetUserId)
       .neq('registrations.status', 'cancelled')
       .eq('event_fields.field_key', 'request_date')
       .or(
@@ -148,7 +167,7 @@ Deno.serve(async (req) => {
       );
 
     if (dateAnswersError) {
-      console.error('[get-excused-members] Pass 1 query error', {
+      console.error('[get-member-excused-schedule] Pass 1 query error', {
         requestId: guard.requestId,
         error: dateAnswersError,
       });
@@ -168,26 +187,9 @@ Deno.serve(async (req) => {
       ),
     );
 
-    console.log('[get-excused-members] Pass 1 query complete', {
-      requestId: guard.requestId,
-      matchingRows: dateAnswers?.length ?? 0,
-      uniqueRegistrationCount: registrationIds.length,
-      registrationIds,
-    });
-
     if (registrationIds.length === 0) {
-      console.log('[get-excused-members] No registrations matched, returning empty array', {
-        requestId: guard.requestId,
-        datePrefix,
-      });
       return successResponse(corsHeaders, { records: [] });
     }
-
-    // Pass 2: Fetch member details and answers for only the matching registrations
-    console.log('[get-excused-members] Executing Pass 2 registrations lookup', {
-      requestId: guard.requestId,
-      registrationCount: registrationIds.length,
-    });
 
     const { data: registrations, error: registrationsError } = await supabase
       .from('registrations')
@@ -213,7 +215,7 @@ Deno.serve(async (req) => {
       .in('id', registrationIds);
 
     if (registrationsError) {
-      console.error('[get-excused-members] Pass 2 query error', {
+      console.error('[get-member-excused-schedule] Pass 2 query error', {
         requestId: guard.requestId,
         error: registrationsError,
       });
@@ -225,17 +227,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[get-excused-members] Pass 2 records fetched', {
-      requestId: guard.requestId,
-      fetchedCount: registrations?.length ?? 0,
-    });
-
     const records: ExcusedMemberRecord[] = [];
 
     for (const reg of (registrations as RegistrationRow[] | null) ?? []) {
       const memberId = Array.isArray(reg.users) ? reg.users[0]?.member_id : reg.users?.member_id;
       const userId = Array.isArray(reg.users) ? reg.users[0]?.id : reg.users?.id;
-      if (!memberId || !userId) continue;
+      if (!memberId || !userId || userId !== targetUserId) continue;
 
       let requestDate = '';
       let services = '';
@@ -273,14 +270,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('[get-excused-members] Finished building response', {
-      requestId: guard.requestId,
-      recordsCount: records.length,
-    });
-
     return successResponse(corsHeaders, { records });
   } catch (err) {
-    console.error('[get-excused-members] Unexpected exception', {
+    console.error('[get-member-excused-schedule] Unexpected exception', {
       requestId: guard.requestId,
       error: err instanceof Error ? err.stack || err.message : err,
     });

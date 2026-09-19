@@ -27,8 +27,8 @@ export function ServiceAttendanceMonthSummary({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="success">{attendanceCount} Total</Badge>
-        {missedCount > 0 && <Badge variant="danger">{missedCount} Missed</Badge>}
+        <Badge variant="default">{attendanceCount} Total</Badge>
+        {missedCount > 0 && <Badge variant="destructive">{missedCount} Missed</Badge>}
       </div>
     </div>
   );

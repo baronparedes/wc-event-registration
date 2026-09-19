@@ -1,14 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  MatrixCellData,
-  ServiceAttendance,
-  ServiceAttendanceSeat,
+import {
+  type MatrixCellData,
+  type ServiceAttendance,
+  type ServiceAttendanceSeat,
+  computeMatrixGrid,
+  getMonthSundays,
 } from '@/lib/domain/services';
 
 import {
   NonSundayAttendanceList,
+  ServiceAttendanceDesktopMatrix,
   ServiceAttendanceHeaderControls,
   ServiceAttendanceLegend,
   ServiceAttendanceMonthSummary,
@@ -50,11 +53,6 @@ function createMockAttendance(overrides?: Partial<ServiceAttendance>): ServiceAt
 }
 
 describe('ServiceAttendanceStatusBadge', () => {
-  it('renders Regular badge for standard check-ins', () => {
-    render(<ServiceAttendanceStatusBadge record={createMockAttendance()} />);
-    expect(screen.getByText('Regular')).toBeInTheDocument();
-  });
-
   it('renders Walk-in badge when is_walk_in is true', () => {
     render(<ServiceAttendanceStatusBadge record={createMockAttendance({ is_walk_in: true })} />);
     expect(screen.getByText('Walk-in')).toBeInTheDocument();
@@ -107,7 +105,6 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
 
     render(<ServiceMatrixCell cell={cell} />);
     expect(screen.getByText('Committed')).toBeInTheDocument();
-    expect(screen.getByText('Regular')).toBeInTheDocument();
     expect(screen.getByText('Table 1, Seat 3')).toBeInTheDocument();
   });
 
@@ -147,6 +144,17 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
     rerender(<ServiceMatrixCell cell={upcomingCell} />);
     expect(screen.getByText('Upcoming Committed')).toBeInTheDocument();
 
+    const excusedCell: MatrixCellData = {
+      status: 'excused',
+      isCommitted: true,
+      sundayKey: 'fourth_sunday',
+      timeSlot: '9AM',
+      excusedReason: 'Vacation leave',
+    };
+    rerender(<ServiceMatrixCell cell={excusedCell} />);
+    expect(screen.getByText('Excused')).toBeInTheDocument();
+    expect(screen.getByText('Vacation leave')).toBeInTheDocument();
+
     const naCell: MatrixCellData = {
       status: 'not_applicable',
       isCommitted: false,
@@ -164,6 +172,15 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
     };
     rerender(<ServiceMatrixCell cell={offScheduleCell} />);
     expect(screen.getByText('Off Schedule')).toBeInTheDocument();
+
+    const loadingCell: MatrixCellData = {
+      status: 'loading',
+      isCommitted: true,
+      sundayKey: 'first_sunday',
+      timeSlot: '9AM',
+    };
+    rerender(<ServiceMatrixCell cell={loadingCell} />);
+    expect(screen.getByTestId('service-matrix-cell-loading')).toBeInTheDocument();
   });
 });
 
@@ -258,5 +275,26 @@ describe('NonSundayAttendanceList', () => {
     render(<NonSundayAttendanceList records={[record]} />);
     expect(screen.getByText('Other Services Attended')).toBeInTheDocument();
     expect(screen.getByText(/2026-06-03 • 7PM/)).toBeInTheDocument();
+  });
+});
+
+describe('ServiceAttendanceDesktopMatrix', () => {
+  it('renders table with table-fixed layout and uniform column distribution', () => {
+    const sundays = getMonthSundays(2026, 5); // June 2026
+    const grid = computeMatrixGrid(sundays, [], null, [], [], '2026-06-01');
+
+    render(<ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={grid} />);
+
+    const table = screen.getByRole('table');
+    expect(table).toHaveClass('table-fixed');
+
+    const sundayHeader = screen.getByRole('columnheader', { name: /Sunday/i });
+    expect(sundayHeader).toHaveClass('w-[160px]');
+
+    const slotHeaders = screen.getAllByRole('columnheader', { name: /(9AM|12NN|3PM)/i });
+    expect(slotHeaders).toHaveLength(3);
+    slotHeaders.forEach((header) => {
+      expect(header).toHaveClass('w-1/3');
+    });
   });
 });

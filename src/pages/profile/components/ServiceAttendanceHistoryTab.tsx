@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui';
+import { useGetMemberExcusedSchedule } from '@/hooks/domain/members/queries';
 import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import {
   MATRIX_TIME_SLOTS,
@@ -23,6 +24,7 @@ import {
 interface ServiceAttendanceHistoryTabProps {
   memberId: string;
   metadata?: Record<string, string>;
+  isAdminView?: boolean;
 }
 
 export function ServiceAttendanceHistoryTab({
@@ -55,6 +57,7 @@ export function ServiceAttendanceHistoryTab({
     data: attendance = [],
     isLoading: isAttendanceLoading,
     isFetching: isAttendanceFetching,
+    isPlaceholderData: isAttendancePlaceholderData = false,
     isError: isAttendanceError,
   } = useServiceAttendanceQuery({
     user_id: memberId,
@@ -72,6 +75,17 @@ export function ServiceAttendanceHistoryTab({
   const isLoading = isAttendanceLoading || isSnapshotsLoading;
   const isFetching = isAttendanceFetching || isSnapshotsFetching;
   const isError = isAttendanceError || isSnapshotsError;
+  const isLoadingAttendance = isAttendanceLoading || isAttendancePlaceholderData;
+
+  const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex, memberId);
+
+  const isExcusedLoading =
+    memberScheduleQuery.isLoading ||
+    memberScheduleQuery.isPlaceholderData ||
+    memberScheduleQuery.isFetching ||
+    memberScheduleQuery.data === undefined;
+
+  const excusedRecords = useMemo(() => memberScheduleQuery.data || [], [memberScheduleQuery.data]);
 
   const isInitialLoading = isLoading && attendance.length === 0;
 
@@ -94,13 +108,32 @@ export function ServiceAttendanceHistoryTab({
   const todayStr = useMemo(() => toISODate(today), [today]);
 
   const matrixGrid = useMemo(
-    () => computeMatrixGrid(sundays, attendance, metadata, snapshots, todayStr),
-    [sundays, attendance, metadata, snapshots, todayStr],
+    () =>
+      computeMatrixGrid(
+        sundays,
+        attendance,
+        metadata,
+        snapshots,
+        excusedRecords,
+        todayStr,
+        isLoadingAttendance,
+        isExcusedLoading,
+      ),
+    [
+      sundays,
+      attendance,
+      metadata,
+      snapshots,
+      excusedRecords,
+      todayStr,
+      isLoadingAttendance,
+      isExcusedLoading,
+    ],
   );
 
   const nonSundayAttendances = useMemo(
-    () => getNonSundayAttendances(attendance, sundays),
-    [attendance, sundays],
+    () => (!isLoadingAttendance ? getNonSundayAttendances(attendance, sundays) : []),
+    [attendance, sundays, isLoadingAttendance],
   );
 
   const missedCount = useMemo(() => {
@@ -174,14 +207,10 @@ export function ServiceAttendanceHistoryTab({
               missedCount={missedCount}
               isFetching={isFetching}
             />
-
             <ServiceAttendanceLegend />
-
             <ServiceAttendanceMobileCards sundays={sundays} matrixGrid={matrixGrid} />
-
             <ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={matrixGrid} />
-
-            <NonSundayAttendanceList records={nonSundayAttendances} />
+            {!isLoadingAttendance && <NonSundayAttendanceList records={nonSundayAttendances} />}
           </div>
         )}
       </div>

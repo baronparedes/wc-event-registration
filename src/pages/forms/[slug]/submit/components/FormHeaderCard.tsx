@@ -39,7 +39,7 @@ export function FormHeaderCard({
           </Badge>
         )}
         {form.audience !== 'members_and_public' && <Badge variant="outline">{audienceLabel}</Badge>}
-        <Badge variant={isOpen ? 'success' : 'neutral'}>{isOpen ? 'Open' : 'Closed'}</Badge>
+        <Badge variant={isOpen ? 'default' : 'outline'}>{isOpen ? 'Open' : 'Closed'}</Badge>
       </div>
     </div>
   ) : (

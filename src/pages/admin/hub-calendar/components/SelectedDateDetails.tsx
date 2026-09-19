@@ -192,7 +192,7 @@ export function SelectedDateDetails({
             </div>
             {selectedMilestones.length > 0 && (
               <div className="flex items-center gap-2 justify-end">
-                <Badge variant="neutral" className="text-xs">
+                <Badge variant="outline" className="text-xs">
                   {selectedMilestones.length} milestone
                   {selectedMilestones.length === 1 ? '' : 's'}
                 </Badge>
@@ -253,7 +253,7 @@ export function SelectedDateDetails({
             </div>
             {isCurrentSelectedSunday && selectedEntries.length > 0 && (
               <div className="flex items-center gap-2 justify-end">
-                <Badge variant="neutral" className="text-xs">
+                <Badge variant="outline" className="text-xs">
                   {selectedEntries.length} scheduled
                 </Badge>
                 <ExportSundaySchedulesButton

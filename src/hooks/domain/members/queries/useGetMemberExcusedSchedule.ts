@@ -10,33 +10,35 @@ export type ExcusedMemberRecord = {
   reason?: string;
 };
 
-type GetExcusedMembersRequest = {
+type GetMemberExcusedScheduleRequest = {
   year: number;
   monthIndex: number;
+  userId?: string;
 };
 
-type GetExcusedMembersResponse = {
+type GetMemberExcusedScheduleResponse = {
   success: boolean;
   records: ExcusedMemberRecord[];
   error?: string;
 };
 
-const getExcusedMembers = createEdgeFunctionCaller<
-  GetExcusedMembersRequest,
-  GetExcusedMembersResponse
->('get-excused-members');
+const getMemberExcusedSchedule = createEdgeFunctionCaller<
+  GetMemberExcusedScheduleRequest,
+  GetMemberExcusedScheduleResponse
+>('get-member-excused-schedule');
 
-export function useGetExcusedMembers(
+export function useGetMemberExcusedSchedule(
   year: number,
   monthIndex: number,
+  userId?: string,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: ['admin-hub-calendar-excused', year, monthIndex],
+    queryKey: ['member-excused-schedule', year, monthIndex, userId ?? 'me'],
     queryFn: async () => {
-      const result = await getExcusedMembers({ year, monthIndex });
+      const result = await getMemberExcusedSchedule({ year, monthIndex, userId });
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch excused members');
+        throw new Error(result.error || 'Failed to fetch excused schedule');
       }
       return result.records;
     },

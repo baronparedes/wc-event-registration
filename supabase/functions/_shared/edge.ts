@@ -10,6 +10,7 @@ import {
   isOriginAllowed,
   readAllowedOrigins,
   requireAdminAccess,
+  requireAuthAccess,
 } from './security.ts';
 import { parseFunctionEnvironment, parseRequestBody, z } from './validation.ts';
 
@@ -41,6 +42,7 @@ type EdgeHookBaseOptions = {
 type EdgeHookAdminOptions =
   | {
       requireAdmin: true;
+      requireAuth?: never;
       rateLimit?: AdminRateLimitConfig;
       allowedRoles?: AdminAccountRole[];
       /** Also accept SUPABASE_SERVICE_ROLE_KEY as a valid caller (e.g. cron jobs). */
@@ -48,6 +50,14 @@ type EdgeHookAdminOptions =
     }
   | {
       requireAdmin?: false;
+      requireAuth: true;
+      rateLimit?: never;
+      allowedRoles?: never;
+      allowServiceRole?: never;
+    }
+  | {
+      requireAdmin?: false;
+      requireAuth?: false;
       rateLimit?: never;
       allowedRoles?: never;
       allowServiceRole?: never;
@@ -78,8 +88,8 @@ type EdgeHookSuccess<TData> = {
   client: EdgeClient;
   data: TData;
   userId: string | null;
-  /** 'service_role' when called by a cron/server key, 'admin' when called by an admin JWT, null otherwise. */
-  callerType: 'service_role' | 'admin' | null;
+  /** 'service_role' when called by a cron/server key, 'admin' when called by an admin JWT, 'user' when called by a normal JWT, null otherwise. */
+  callerType: 'service_role' | 'admin' | 'user' | null;
 };
 
 export type EdgeHookResult<TData> = EdgeHookFailure | EdgeHookSuccess<TData>;
@@ -212,7 +222,7 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   }
 
   let userId: string | null = null;
-  let callerType: 'service_role' | 'admin' | null = null;
+  let callerType: 'service_role' | 'admin' | 'user' | null = null;
 
   if (options.requireAdmin) {
     if (options.allowServiceRole) {
@@ -269,6 +279,27 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
       callerType = 'admin';
       userId = adminAccess.userId;
     }
+  } else if (options.requireAuth) {
+    const authAccess = await requireAuthAccess({
+      requestId,
+      logPrefix: options.functionName,
+      supabaseUrl: env.supabaseUrl,
+      supabaseServiceKey: env.supabaseServiceKey,
+      authHeader: options.req.headers.get('authorization'),
+      corsHeaders,
+    });
+
+    if (!authAccess.ok) {
+      return {
+        valid: false,
+        response: authAccess.response,
+        requestId,
+        corsHeaders,
+      };
+    }
+
+    callerType = 'user';
+    userId = authAccess.userId;
   }
 
   const client = createClient(env.supabaseUrl, env.supabaseServiceKey, {

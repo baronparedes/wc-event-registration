@@ -32,14 +32,14 @@ export function ServiceAttendanceDesktopMatrix({
 }: ServiceAttendanceDesktopMatrixProps) {
   return (
     <div className="hidden sm:block overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
-      <ListTable density="default" className="min-w-[720px]">
+      <ListTable density="default" className="min-w-[720px] table-fixed">
         <ListTableHead>
           <ListTableHeaderRow variant="default">
-            <ListTableHeaderCell className="w-[180px] px-4 py-3 text-left font-semibold">
+            <ListTableHeaderCell className="w-[160px] px-4 py-3 text-left font-semibold">
               Sunday
             </ListTableHeaderCell>
             {MATRIX_TIME_SLOTS.map((slot) => (
-              <ListTableHeaderCell key={slot} className="px-3 py-3 text-left font-semibold">
+              <ListTableHeaderCell key={slot} className="w-1/3 px-3 py-3 text-left font-semibold">
                 <span className="font-bold">{slot}</span>
                 <span className="ml-1 text-xs text-muted font-normal">
                   ({slot === '9AM' ? '9:00 AM' : slot === '12NN' ? '12:00 NN' : '3:00 PM'})
@@ -58,7 +58,7 @@ export function ServiceAttendanceDesktopMatrix({
                 hover="none"
                 className="bg-surface hover:bg-background/60 transition-colors"
               >
-                <ListTableCell className="px-4 py-3.5 align-top">
+                <ListTableCell className="w-[160px] px-4 py-3.5 align-top">
                   <div className="flex flex-col">
                     <span className="font-semibold text-sm text-text">
                       {SERVICE_SUNDAY_LABELS[key].label}
@@ -71,7 +71,7 @@ export function ServiceAttendanceDesktopMatrix({
                   </div>
                 </ListTableCell>
                 {MATRIX_TIME_SLOTS.map((slot) => (
-                  <ListTableCell key={slot} className="px-3 py-2.5 align-top">
+                  <ListTableCell key={slot} className="w-1/3 px-3 py-2.5 align-top">
                     <ServiceMatrixCell cell={matrixGrid[key][slot]} />
                   </ListTableCell>
                 ))}
