@@ -86,6 +86,7 @@ export function useHubCalendarState() {
   });
   const [activeTab, setActiveTab] = useState<TimeSlot>('9AM');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     saveStoredCalendarDate({
@@ -98,6 +99,7 @@ export function useHubCalendarState() {
   function handleTabChange(slot: TimeSlot) {
     setActiveTab(slot);
     setSelectedRole(null);
+    setSearchQuery('');
   }
 
   const minViewDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
@@ -158,10 +160,12 @@ export function useHubCalendarState() {
     selectedDayNumber,
     activeTab,
     selectedRole,
+    searchQuery,
     isAtMinimumMonth,
     isAtMaximumMonth,
     isAtToday,
     setSelectedRole,
+    setSearchQuery,
     handleTabChange,
     handlePreviousMonth,
     handleNextMonth,

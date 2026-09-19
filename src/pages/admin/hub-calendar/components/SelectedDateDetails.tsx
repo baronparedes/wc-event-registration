@@ -1,4 +1,4 @@
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Badge, EmptyState, SectionCard } from '@/components/ui';
@@ -43,8 +43,10 @@ type SelectedDateDetailsProps = {
   excusedMap?: ExcusedMemberMap;
   activeTab: TimeSlot;
   selectedRole: string | null;
+  searchQuery: string;
   onTabChange: (slot: TimeSlot) => void;
   onRoleChange: (role: string | null) => void;
+  onSearchQueryChange: (query: string) => void;
 };
 
 export function SelectedDateDetails({
@@ -58,8 +60,10 @@ export function SelectedDateDetails({
   excusedMap,
   activeTab,
   selectedRole,
+  searchQuery,
   onTabChange,
   onRoleChange,
+  onSearchQueryChange,
 }: SelectedDateDetailsProps) {
   const navigate = useNavigate();
 
@@ -83,15 +87,42 @@ export function SelectedDateDetails({
       .filter((role) => role !== EXCUSED_ROLE_FILTER)
       .sort();
 
-    const filteredEntries =
+    const filteredByRole =
       selectedRole === null
         ? entries
         : selectedRole === EXCUSED_ROLE_FILTER
           ? entries.filter((e) => isMemberExcused(excusedMap, isoDateKey, e.member, slot))
           : entries.filter((e) => e.member.role === selectedRole);
 
+    const query = searchQuery.trim().toLowerCase();
+    const filteredEntries = query
+      ? filteredByRole.filter(
+          (e) =>
+            (e.member.first_name && e.member.first_name.toLowerCase().includes(query)) ||
+            (e.member.last_name && e.member.last_name.toLowerCase().includes(query)) ||
+            (e.member.nickname && e.member.nickname.toLowerCase().includes(query)),
+        )
+      : filteredByRole;
+
     return (
       <div className="flex flex-col gap-4">
+        <div className="relative w-full">
+          <label className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              value={searchQuery}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              placeholder="Search by name or nickname..."
+              className="min-h-11 w-full rounded-md border border-border bg-background py-3 pl-11 pr-3 text-base text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
+        </div>
+
         {(uniqueRoles.length > 1 || hasExcusedMembers) && (
           <div className="flex flex-wrap gap-2">
             <button
@@ -136,9 +167,11 @@ export function SelectedDateDetails({
         )}
         {filteredEntries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted">
-            {selectedRole === EXCUSED_ROLE_FILTER
-              ? 'No excused members for this service.'
-              : 'No members for this role.'}
+            {searchQuery
+              ? 'No members match your search criteria.'
+              : selectedRole === EXCUSED_ROLE_FILTER
+                ? 'No excused members for this service.'
+                : 'No members for this role.'}
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
