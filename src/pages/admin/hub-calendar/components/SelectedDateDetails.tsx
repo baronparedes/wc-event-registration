@@ -1,4 +1,4 @@
-import { CalendarDays, Search, X } from 'lucide-react';
+import { CalendarDays, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Badge, EmptyState, SectionCard } from '@/components/ui';
@@ -106,27 +106,21 @@ export function SelectedDateDetails({
 
     return (
       <div className="flex flex-col gap-4">
-        <div className="relative max-w-sm">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <Search className="h-4 w-4 text-muted" aria-hidden="true" />
-          </div>
-          <input
-            type="text"
-            className="block w-full rounded-md border-border py-1.5 pl-9 pr-8 text-sm text-text placeholder:text-muted focus:border-primary focus:ring-primary/30 sm:leading-6"
-            placeholder="Search by name or nickname..."
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted hover:text-text"
-              onClick={() => onSearchQueryChange('')}
-              aria-label="Clear search"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        <div className="relative w-full">
+          <label className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              value={searchQuery}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              placeholder="Search by name or nickname..."
+              className="min-h-11 w-full rounded-md border border-border bg-background py-3 pl-11 pr-3 text-base text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
         </div>
 
         {(uniqueRoles.length > 1 || hasExcusedMembers) && (
