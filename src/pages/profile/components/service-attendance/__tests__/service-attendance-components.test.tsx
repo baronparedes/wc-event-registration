@@ -133,7 +133,7 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
       timeSlot: '9AM',
     };
     const { rerender } = render(<ServiceMatrixCell cell={missedCell} />);
-    expect(screen.getByText('Missed Committed')).toBeInTheDocument();
+    expect(screen.getByText('No Check-In (Committed)')).toBeInTheDocument();
 
     const upcomingCell: MatrixCellData = {
       status: 'upcoming_committed',
@@ -232,7 +232,7 @@ describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {
     expect(screen.getByText('1 service attended in June 2026')).toBeInTheDocument();
     expect(screen.getByText('(updating...)')).toBeInTheDocument();
     expect(screen.getByText('1 Total')).toBeInTheDocument();
-    expect(screen.queryByText(/Missed/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No-Check In/)).not.toBeInTheDocument();
 
     rerender(
       <ServiceAttendanceMonthSummary
@@ -245,7 +245,7 @@ describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {
 
     expect(screen.getByText('3 services attended in June 2026')).toBeInTheDocument();
     expect(screen.getByText('3 Total')).toBeInTheDocument();
-    expect(screen.getByText('2 Missed')).toBeInTheDocument();
+    expect(screen.getByText('2 No-Check In')).toBeInTheDocument();
   });
 
   it('renders schedule alignment legend', () => {
@@ -253,7 +253,7 @@ describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {
     expect(screen.getByText('Schedule Alignment:')).toBeInTheDocument();
     expect(screen.getByText('Attended (Committed)')).toBeInTheDocument();
     expect(screen.getByText('Attended (Unscheduled)')).toBeInTheDocument();
-    expect(screen.getByText('Missed Committed')).toBeInTheDocument();
+    expect(screen.getByText('No Check-In (Committed)')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Committed')).toBeInTheDocument();
   });
 });

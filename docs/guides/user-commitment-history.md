@@ -13,7 +13,7 @@ Members and volunteers specify their Sunday service commitments (e.g., attending
 If the profile attendance history UI evaluated past attendance records using only the volunteer's _current_ metadata:
 
 - An attendance from 3 months ago (when they were committed to 9AM) would be falsely flagged as **Unscheduled** if their current commitment is 12NN.
-- Their new commitment (12NN) would be falsely marked as **Missed Committed** for that past Sunday.
+- Their new commitment (12NN) would be falsely marked as **No Check-In (Committed)** for that past Sunday.
 
 ### The Solution
 
@@ -241,11 +241,11 @@ export function resolveMetadataForDate(
 
 Once the active commitment metadata is resolved for that Sunday, `computeMatrixGrid` compares recorded check-ins against committed slots:
 
-| Status Badge                                  | Condition                                                                                                       |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **Committed** (`attended_committed`)          | Member checked into a time slot they were scheduled for on that date.                                           |
-| **Unscheduled** (`attended_unscheduled`)      | Member checked into a time slot they were NOT scheduled for.                                                    |
-| **Missed Committed** (`missed_committed`)     | The Sunday date is in the past (`sunday.dateStr < todayStr`), the slot was committed, but no check-in occurred. |
-| **Upcoming Committed** (`upcoming_committed`) | Future Sunday commitment where service has not yet taken place.                                                 |
-| **Off Schedule** (`off_schedule`)             | Not committed and no check-in recorded.                                                                         |
-| **Not Applicable** (`not_applicable`)         | Sunday does not occur in that month (e.g. 5th Sunday in a 4-Sunday month).                                      |
+| Status Badge                                     | Condition                                                                                                       |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| **Committed** (`attended_committed`)             | Member checked into a time slot they were scheduled for on that date.                                           |
+| **Unscheduled** (`attended_unscheduled`)         | Member checked into a time slot they were NOT scheduled for.                                                    |
+| **No Check-In (Committed)** (`missed_committed`) | The Sunday date is in the past (`sunday.dateStr < todayStr`), the slot was committed, but no check-in occurred. |
+| **Upcoming Committed** (`upcoming_committed`)    | Future Sunday commitment where service has not yet taken place.                                                 |
+| **Off Schedule** (`off_schedule`)                | Not committed and no check-in recorded.                                                                         |
+| **Not Applicable** (`not_applicable`)            | Sunday does not occur in that month (e.g. 5th Sunday in a 4-Sunday month).                                      |
