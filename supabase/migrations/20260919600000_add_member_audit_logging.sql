@@ -23,26 +23,31 @@ begin
     values (v_admin_id, v_action, 'member', new.id::text, v_metadata);
 
   elsif TG_OP = 'UPDATE' then
-    if old.is_active is distinct from new.is_active then
-      if new.is_active = false then
-        v_action := 'soft_delete_member';
+    declare
+      v_changed_fields jsonb := public.jsonb_diff(to_jsonb(old), to_jsonb(new));
+    begin
+      if old.is_active is distinct from new.is_active then
+        if new.is_active = false then
+          v_action := 'soft_delete_member';
+        else
+          v_action := 'restore_member';
+        end if;
+        v_metadata := jsonb_build_object(
+          'member_id', new.member_id,
+          'full_name', new.full_name,
+          'previous_is_active', old.is_active,
+          'next_is_active', new.is_active,
+          'changed_fields', v_changed_fields
+        );
       else
-        v_action := 'restore_member';
+        v_action := 'update_member';
+        v_metadata := jsonb_build_object(
+          'member_id', new.member_id,
+          'full_name', new.full_name,
+          'changed_fields', v_changed_fields
+        );
       end if;
-      v_metadata := jsonb_build_object(
-        'member_id', new.member_id,
-        'full_name', new.full_name,
-        'previous_is_active', old.is_active,
-        'next_is_active', new.is_active
-      );
-    else
-      v_action := 'update_member';
-      v_metadata := jsonb_build_object(
-        'member_id', new.member_id,
-        'full_name', new.full_name,
-        'updated_at', now()
-      );
-    end if;
+    end;
 
     insert into public.admin_audit_logs (admin_id, action, resource_type, resource_id, metadata)
     values (v_admin_id, v_action, 'member', new.id::text, v_metadata);
