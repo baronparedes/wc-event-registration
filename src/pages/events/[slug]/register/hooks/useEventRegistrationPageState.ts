@@ -22,7 +22,7 @@ import {
   filterVisibleFieldValues,
   isFieldVisible,
 } from '@/lib/domain';
-import { logger } from '@/lib/infrastructure';
+import { logger, parseErrorToJsonOrString } from '@/lib/infrastructure';
 
 export type WizardStep = 1 | 2 | 3;
 
@@ -582,8 +582,12 @@ export function useEventRegistrationPageState() {
           setSubmitErrorMessage('A registration with the same unique field values already exists.');
           toast.error('A registration with the same unique field values already exists.');
         } else {
-          setSubmitErrorMessage(result.error || TOAST_MESSAGES.registration.submitFailed);
-          toast.error(result.error || TOAST_MESSAGES.registration.submitFailed);
+          setSubmitErrorMessage(
+            parseErrorToJsonOrString(result.error || TOAST_MESSAGES.registration.submitFailed),
+          );
+          toast.error(
+            parseErrorToJsonOrString(result.error || TOAST_MESSAGES.registration.submitFailed),
+          );
         }
         return;
       }
