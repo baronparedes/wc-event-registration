@@ -6,13 +6,7 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useCreateEventMutation } from '@/hooks/domain/events/mutations/useCreateEventMutation';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
-const {
-  mockGetSession,
-  mockAdminsBuilder,
-  mockEventsInsertBuilder,
-  mockFrom,
-  mockWriteAdminAuditLogSafely,
-} = vi.hoisted(() => {
+const { mockGetSession, mockAdminsBuilder, mockEventsInsertBuilder, mockFrom } = vi.hoisted(() => {
   const adminsBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
@@ -38,7 +32,6 @@ const {
       if (table === 'events') return eventsInsertBuilder;
       throw new Error(`Unexpected table: ${table}`);
     }),
-    mockWriteAdminAuditLogSafely: vi.fn(),
   };
 });
 
@@ -54,17 +47,6 @@ vi.mock('@/lib/infrastructure', async () => {
       },
       from: mockFrom,
     },
-  };
-});
-
-vi.mock('@/lib/domain/admin-audit', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/domain/admin-audit')>(
-    '@/lib/domain/admin-audit',
-  );
-
-  return {
-    ...actual,
-    writeAdminAuditLogSafely: mockWriteAdminAuditLogSafely,
   };
 });
 
@@ -130,12 +112,6 @@ describe('useCreateEventMutation', () => {
         },
       }),
     );
-    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
-      action: 'create_event',
-      resourceType: 'event',
-      resourceId: eventId,
-      metadata: { slug, title, status: 'draft' },
-    });
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
@@ -221,7 +197,6 @@ describe('useCreateEventMutation', () => {
       }),
     ).rejects.toThrow('insert failed');
 
-    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled();
     expect(invalidateSpy).not.toHaveBeenCalled();
   });
 });

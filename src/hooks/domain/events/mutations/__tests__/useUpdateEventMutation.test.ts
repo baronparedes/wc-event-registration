@@ -7,40 +7,37 @@ import { useUpdateEventMutation } from '@/hooks/domain/events/mutations/useUpdat
 import { adminEventQueryKey } from '@/hooks/domain/events/queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
-const { mockSelectBuilder, mockUpdateBuilder, mockFrom, mockWriteAdminAuditLogSafely } = vi.hoisted(
-  () => {
-    const selectBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-      select: vi.fn(),
-      eq: vi.fn(),
-      maybeSingle: vi.fn(),
-    };
-    selectBuilder.select.mockReturnValue(selectBuilder);
-    selectBuilder.eq.mockReturnValue(selectBuilder);
+const { mockSelectBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
+  const selectBuilder: Record<string, ReturnType<typeof vi.fn>> = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    maybeSingle: vi.fn(),
+  };
+  selectBuilder.select.mockReturnValue(selectBuilder);
+  selectBuilder.eq.mockReturnValue(selectBuilder);
 
-    const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-      update: vi.fn(),
-      eq: vi.fn(),
-    };
-    updateBuilder.update.mockReturnValue(updateBuilder);
+  const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
+    update: vi.fn(),
+    eq: vi.fn(),
+  };
+  updateBuilder.update.mockReturnValue(updateBuilder);
 
-    return {
-      mockSelectBuilder: selectBuilder,
-      mockUpdateBuilder: updateBuilder,
-      mockFrom: vi.fn((table: string) => {
-        if (table !== 'events') {
-          throw new Error(`Unexpected table: ${table}`);
-        }
-        return {
-          select: selectBuilder.select,
-          eq: selectBuilder.eq,
-          maybeSingle: selectBuilder.maybeSingle,
-          update: updateBuilder.update,
-        };
-      }),
-      mockWriteAdminAuditLogSafely: vi.fn(),
-    };
-  },
-);
+  return {
+    mockSelectBuilder: selectBuilder,
+    mockUpdateBuilder: updateBuilder,
+    mockFrom: vi.fn((table: string) => {
+      if (table !== 'events') {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+      return {
+        select: selectBuilder.select,
+        eq: selectBuilder.eq,
+        maybeSingle: selectBuilder.maybeSingle,
+        update: updateBuilder.update,
+      };
+    }),
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
@@ -50,16 +47,6 @@ vi.mock('@/lib/infrastructure', async () => {
     supabase: {
       from: mockFrom,
     },
-  };
-});
-
-vi.mock('@/lib/domain/admin-audit', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/domain/admin-audit')>(
-    '@/lib/domain/admin-audit',
-  );
-  return {
-    ...actual,
-    writeAdminAuditLogSafely: mockWriteAdminAuditLogSafely,
   };
 });
 
@@ -125,22 +112,6 @@ describe('useUpdateEventMutation', () => {
         public_registration_access: 'members',
       },
     });
-    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
-      action: 'update_event',
-      resourceType: 'event',
-      resourceId: eventId,
-      metadata: {
-        changed_fields: [
-          'title',
-          'description',
-          'location',
-          'status',
-          'duplicate_policy',
-          'registration_mode',
-          'metadata',
-        ],
-      },
-    });
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
@@ -185,8 +156,6 @@ describe('useUpdateEventMutation', () => {
         public_registration_access: 'members',
       }),
     ).rejects.toThrow('update failed');
-
-    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled();
   });
 
   it('records every field as changed when previous event is missing', async () => {
@@ -210,28 +179,6 @@ describe('useUpdateEventMutation', () => {
         public_registration_access: 'public',
       });
     });
-
-    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: {
-          changed_fields: [
-            'title',
-            'description',
-            'location',
-            'starts_at',
-            'ends_at',
-            'registration_opens_at',
-            'registration_closes_at',
-            'status',
-            'duplicate_policy',
-            'registration_mode',
-            'allow_public_registrations',
-            'require_id_lookup',
-            'metadata',
-          ],
-        },
-      }),
-    );
   });
 
   it('merges allow_name_lookup into metadata when provided', async () => {

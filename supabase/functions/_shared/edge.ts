@@ -303,6 +303,9 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   }
 
   const client = createClient(env.supabaseUrl, env.supabaseServiceKey, {
+    global: {
+      headers: userId ? { 'x-admin-id': userId } : {},
+    },
     auth: { autoRefreshToken: false, persistSession: false },
   });
 

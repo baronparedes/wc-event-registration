@@ -6,9 +6,8 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useDuplicateEventMutation } from '@/hooks/domain/events/mutations/useDuplicateEventMutation';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
-const { mockFunctionsInvoke, mockWriteAdminAuditLogSafely } = vi.hoisted(() => ({
+const { mockFunctionsInvoke } = vi.hoisted(() => ({
   mockFunctionsInvoke: vi.fn(),
-  mockWriteAdminAuditLogSafely: vi.fn(),
 }));
 
 vi.mock('@/lib/infrastructure', async () => {
@@ -21,16 +20,6 @@ vi.mock('@/lib/infrastructure', async () => {
         invoke: mockFunctionsInvoke,
       },
     },
-  };
-});
-
-vi.mock('@/lib/domain/admin-audit', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/domain/admin-audit')>(
-    '@/lib/domain/admin-audit',
-  );
-  return {
-    ...actual,
-    writeAdminAuditLogSafely: mockWriteAdminAuditLogSafely,
   };
 });
 
@@ -74,18 +63,6 @@ describe('useDuplicateEventMutation', () => {
       },
     });
 
-    expect(mockWriteAdminAuditLogSafely).toHaveBeenCalledWith({
-      action: 'create_event',
-      resourceType: 'event',
-      resourceId: newEventId,
-      metadata: {
-        slug: newSlug,
-        title: newTitle,
-        status: 'draft',
-        duplicated_from: sourceEventId,
-      },
-    });
-
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
   });
 
@@ -104,8 +81,6 @@ describe('useDuplicateEventMutation', () => {
         new_slug: 'duplicated-slug',
       }),
     ).rejects.toThrow('Network error');
-
-    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled();
   });
 
   it('throws an error if data indicates failure with custom error message', async () => {
@@ -126,7 +101,5 @@ describe('useDuplicateEventMutation', () => {
         new_slug: 'duplicated-slug',
       }),
     ).rejects.toThrow('An event with this slug already exists. Please choose a different slug.');
-
-    expect(mockWriteAdminAuditLogSafely).not.toHaveBeenCalled();
   });
 });

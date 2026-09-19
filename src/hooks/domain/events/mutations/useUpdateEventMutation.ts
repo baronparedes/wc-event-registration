@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { writeAdminAuditLogSafely } from '@/lib/domain/admin-audit';
 import type { UpdateEventInput } from '@/lib/domain/events';
 import { mapPublicRegistrationAccessToEventFlags } from '@/lib/domain/events';
 import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
@@ -62,22 +61,6 @@ export function useUpdateEventMutation() {
       const { error } = await supabase.from('events').update(nextValues).eq('id', id);
 
       if (error) throw error;
-
-      const changedFields = Object.entries(nextValues).reduce<string[]>((acc, [key, value]) => {
-        if ((previousEvent as Record<string, unknown> | null)?.[key] !== value) {
-          acc.push(key);
-        }
-        return acc;
-      }, []);
-
-      await writeAdminAuditLogSafely({
-        action: 'update_event',
-        resourceType: 'event',
-        resourceId: id,
-        metadata: {
-          changed_fields: changedFields,
-        },
-      });
     },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
