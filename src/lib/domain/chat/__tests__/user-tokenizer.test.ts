@@ -5,6 +5,7 @@ import type { ResolvedToken } from '@/hooks/domain/chat/queries/useResolveUserTo
 import {
   buildReverseUserTokenMap,
   findMentionCandidates,
+  splitTextByMentions,
   tokenizeUserText,
   untokenizeUserText,
 } from '../user-tokenizer';
@@ -138,6 +139,36 @@ describe('user-tokenizer', () => {
     it('returns top members when query is empty', () => {
       const candidates = findMentionCandidates('', mockTokenMap, 3);
       expect(candidates.length).toBe(3);
+    });
+  });
+
+  describe('splitTextByMentions', () => {
+    it('splits text into mention and regular segments', () => {
+      const segments = splitTextByMentions('Is @John Doe scheduled for Sunday?', mockTokenMap);
+      expect(segments).toEqual([
+        { text: 'Is ', isMention: false },
+        { text: '@John Doe', isMention: true },
+        { text: ' scheduled for Sunday?', isMention: false },
+      ]);
+    });
+
+    it('identifies multiple mentions in a single string', () => {
+      const segments = splitTextByMentions('Ask @Peter Parker and @Mary Jane Watson', mockTokenMap);
+      expect(segments).toEqual([
+        { text: 'Ask ', isMention: false },
+        { text: '@Peter Parker', isMention: true },
+        { text: ' and ', isMention: false },
+        { text: '@Mary Jane Watson', isMention: true },
+      ]);
+    });
+
+    it('returns single non-mention segment for plain text', () => {
+      const segments = splitTextByMentions('Hello world', mockTokenMap);
+      expect(segments).toEqual([{ text: 'Hello world', isMention: false }]);
+    });
+
+    it('returns empty array for empty string', () => {
+      expect(splitTextByMentions('', mockTokenMap)).toEqual([]);
     });
   });
 });
