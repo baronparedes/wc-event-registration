@@ -145,10 +145,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           }
         }
 
-        // Sort by count descending, return top 50
-        const sorted = Array.from(userStats.values())
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 50);
+        const sorted = Array.from(userStats.values()).sort((a, b) => b.count - a.count);
 
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
