@@ -45,9 +45,9 @@ begin
     -- Return empty skeleton if no Sundays found in range
     return jsonb_build_object(
       'time_slots', jsonb_build_object(
-        '9:00 AM', jsonb_build_object('committed', 0, 'present', 0, 'walk_ins', 0, 'late_tardy', 0, 'roles', '{}'::jsonb),
+        '9AM', jsonb_build_object('committed', 0, 'present', 0, 'walk_ins', 0, 'late_tardy', 0, 'roles', '{}'::jsonb),
         '12NN', jsonb_build_object('committed', 0, 'present', 0, 'walk_ins', 0, 'late_tardy', 0, 'roles', '{}'::jsonb),
-        '3:00 PM', jsonb_build_object('committed', 0, 'present', 0, 'walk_ins', 0, 'late_tardy', 0, 'roles', '{}'::jsonb)
+        '3PM', jsonb_build_object('committed', 0, 'present', 0, 'walk_ins', 0, 'late_tardy', 0, 'roles', '{}'::jsonb)
       ),
       'roles', '[]'::jsonb
     );
@@ -73,7 +73,7 @@ begin
       ts.time_slot,
       count(u.id) as count
     from expanded_sundays es
-    cross join (values ('9:00 AM'), ('12NN'), ('3:00 PM')) as ts(time_slot)
+    cross join (values ('9AM'), ('12NN'), ('3PM')) as ts(time_slot)
     cross join public.users u
     where (
       coalesce(
@@ -102,7 +102,7 @@ begin
     from public.service_attendance sa
     join public.users u on u.id = sa.user_id
     where sa.service_date = any(v_sundays)
-      and sa.time_slot in ('9:00 AM', '12NN', '3:00 PM')
+      and sa.time_slot in ('9AM', '12NN', '3PM')
   ),
   aggregated_attendance as (
     select
@@ -127,7 +127,7 @@ begin
     select distinct role_name from role_data
   ),
   time_slots as (
-    select unnest(array['9:00 AM', '12NN', '3:00 PM']) as time_slot
+    select unnest(array['9AM', '12NN', '3PM']) as time_slot
   ),
   combined_stats as (
     select
@@ -156,7 +156,7 @@ begin
         'roles', coalesce(role_counts, '{}'::jsonb)
       )
     ),
-    'roles', (select jsonb_agg(role_name) from all_roles)
+    'roles', coalesce((select jsonb_agg(role_name) from all_roles), '[]'::jsonb)
   ) into v_result
   from combined_stats;
 

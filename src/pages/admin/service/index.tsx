@@ -24,7 +24,7 @@ const MONTHS = [
   'November',
   'December',
 ];
-const TIME_SLOTS = ['9:00 AM', '12NN', '3:00 PM'] as const;
+const TIME_SLOTS = ['9AM', '12NN', '3PM'] as const;
 
 export function AdminServicesPage() {
   const navigate = useNavigate();
@@ -169,154 +169,168 @@ export function AdminServicesPage() {
             description="There was an error fetching the service dashboard statistics."
           />
         ) : (
-          <div className="space-y-8">
-            {/* Top Level Stats */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              {/* Committed */}
-              <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-                <div className="flex w-24 flex-col items-center justify-center bg-blue-50 p-4 text-blue-600">
-                  <Handshake className="mb-2 h-8 w-8" />
-                  <span className="text-center text-xs font-semibold uppercase tracking-wider">
-                    Committed
-                  </span>
-                </div>
-                <div className="grid flex-1 grid-cols-3 divide-x">
-                  {TIME_SLOTS.map((ts) => (
-                    <div key={ts} className="flex flex-col items-center justify-center p-4">
-                      <span className="mb-1 text-sm font-medium text-gray-500">{ts}</span>
-                      <span className="text-2xl font-bold">{stats.time_slots[ts].committed}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          (() => {
+            const getSlot = (ts: (typeof TIME_SLOTS)[number]) =>
+              stats.time_slots?.[ts] ?? {
+                committed: 0,
+                present: 0,
+                walk_ins: 0,
+                late_tardy: 0,
+                roles: {},
+              };
 
-              {/* Present */}
-              <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-                <div className="flex w-24 flex-col items-center justify-center bg-emerald-50 p-4 text-emerald-600">
-                  <Users className="mb-2 h-8 w-8" />
-                  <span className="text-center text-xs font-semibold uppercase tracking-wider">
-                    Present
-                    <br />
-                    <span className="text-[10px] text-emerald-500">(No walk-ins)</span>
-                  </span>
-                </div>
-                <div className="grid flex-1 grid-cols-3 divide-x">
-                  {TIME_SLOTS.map((ts) => (
-                    <div key={ts} className="flex flex-col items-center justify-center p-4">
-                      <span className="mb-1 text-sm font-medium text-gray-500">{ts}</span>
-                      <span className="text-2xl font-bold">{stats.time_slots[ts].present}</span>
-                      {stats.time_slots[ts].walk_ins > 0 && (
-                        <div className="mt-1 w-full bg-red-100 px-2 py-0.5 text-center text-xs font-bold text-red-600">
-                          {stats.time_slots[ts].walk_ins} Walk-ins
+            return (
+              <div className="space-y-8">
+                {/* Top Level Stats */}
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                  {/* Committed */}
+                  <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
+                    <div className="flex w-24 flex-col items-center justify-center bg-blue-50 p-4 text-blue-600">
+                      <Handshake className="mb-2 h-8 w-8" />
+                      <span className="text-center text-xs font-semibold uppercase tracking-wider">
+                        Committed
+                      </span>
+                    </div>
+                    <div className="grid flex-1 grid-cols-3 divide-x">
+                      {TIME_SLOTS.map((ts) => (
+                        <div key={ts} className="flex flex-col items-center justify-center p-4">
+                          <span className="mb-1 text-sm font-medium text-gray-500">{ts}</span>
+                          <span className="text-2xl font-bold">{getSlot(ts).committed}</span>
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Turn-up % */}
-              <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-                <div className="flex w-24 flex-col items-center justify-center bg-indigo-50 p-4 text-indigo-600">
-                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-indigo-200">
-                    <span className="font-bold">%</span>
                   </div>
-                  <span className="text-center text-xs font-semibold uppercase tracking-wider">
-                    Turn-Up
-                  </span>
-                </div>
-                <div className="grid flex-1 grid-cols-3 divide-x">
-                  {TIME_SLOTS.map((ts) => {
-                    const perc = getTurnupPercentage(
-                      stats.time_slots[ts].present,
-                      stats.time_slots[ts].committed,
-                    );
-                    const isLow = perc < 50;
-                    return (
-                      <div
-                        key={ts}
-                        className={`flex flex-col items-center justify-center p-4 ${isLow ? 'bg-red-50' : 'bg-emerald-50'}`}
-                      >
-                        <span className="mb-1 text-sm font-medium text-gray-700">{ts}</span>
-                        <span
-                          className={`text-2xl font-bold ${isLow ? 'text-red-700' : 'text-emerald-700'}`}
-                        >
-                          {perc}%
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
 
-            {/* Role Breakdowns */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {stats.roles.map((role) => (
-                <div
-                  key={role}
-                  className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm"
-                >
-                  <div className="bg-gray-50 px-4 py-2 border-b">
-                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-gray-500" />
-                      {role}
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-3 divide-x flex-1">
-                    {TIME_SLOTS.map((ts) => (
-                      <div key={ts} className="flex flex-col items-center justify-center p-3">
-                        <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
-                        <span className="text-lg font-bold">
-                          {stats.time_slots[ts].roles[role] || 0}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {/* Late / Tardy */}
-              <div className="flex flex-col overflow-hidden rounded-lg border border-orange-200 bg-white shadow-sm">
-                <div className="bg-orange-50 px-4 py-2 border-b border-orange-100">
-                  <h3 className="font-semibold text-orange-800 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-orange-500" />
-                    LATE / TARDY
-                  </h3>
-                </div>
-                <div className="grid grid-cols-3 divide-x flex-1">
-                  {TIME_SLOTS.map((ts) => (
-                    <div key={ts} className="flex flex-col items-center justify-center p-3">
-                      <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
-                      <span className="text-lg font-bold text-orange-700">
-                        {stats.time_slots[ts].late_tardy}
+                  {/* Present */}
+                  <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
+                    <div className="flex w-24 flex-col items-center justify-center bg-emerald-50 p-4 text-emerald-600">
+                      <Users className="mb-2 h-8 w-8" />
+                      <span className="text-center text-xs font-semibold uppercase tracking-wider">
+                        Present
+                        <br />
+                        <span className="text-[10px] text-emerald-500">(No walk-ins)</span>
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="grid flex-1 grid-cols-3 divide-x">
+                      {TIME_SLOTS.map((ts) => {
+                        const slot = getSlot(ts);
+                        return (
+                          <div key={ts} className="flex flex-col items-center justify-center p-4">
+                            <span className="mb-1 text-sm font-medium text-gray-500">{ts}</span>
+                            <span className="text-2xl font-bold">{slot.present}</span>
+                            {slot.walk_ins > 0 && (
+                              <div className="mt-1 w-full bg-red-100 px-2 py-0.5 text-center text-xs font-bold text-red-600">
+                                {slot.walk_ins} Walk-ins
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-              {/* Total Walk-in */}
-              <div className="flex flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-sm">
-                <div className="bg-blue-50 px-4 py-2 border-b border-blue-100">
-                  <h3 className="font-semibold text-blue-800 flex items-center gap-2">
-                    <Users className="h-4 w-4 text-blue-500" />
-                    TOTAL WALK-IN
-                  </h3>
-                </div>
-                <div className="grid grid-cols-3 divide-x flex-1">
-                  {TIME_SLOTS.map((ts) => (
-                    <div key={ts} className="flex flex-col items-center justify-center p-3">
-                      <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
-                      <span className="text-lg font-bold text-blue-700">
-                        {stats.time_slots[ts].walk_ins}
+                  {/* Turn-up % */}
+                  <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
+                    <div className="flex w-24 flex-col items-center justify-center bg-indigo-50 p-4 text-indigo-600">
+                      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-indigo-200">
+                        <span className="font-bold">%</span>
+                      </div>
+                      <span className="text-center text-xs font-semibold uppercase tracking-wider">
+                        Turn-Up
                       </span>
                     </div>
+                    <div className="grid flex-1 grid-cols-3 divide-x">
+                      {TIME_SLOTS.map((ts) => {
+                        const slot = getSlot(ts);
+                        const perc = getTurnupPercentage(slot.present, slot.committed);
+                        const isLow = perc < 50;
+                        return (
+                          <div
+                            key={ts}
+                            className={`flex flex-col items-center justify-center p-4 ${isLow ? 'bg-red-50' : 'bg-emerald-50'}`}
+                          >
+                            <span className="mb-1 text-sm font-medium text-gray-700">{ts}</span>
+                            <span
+                              className={`text-2xl font-bold ${isLow ? 'text-red-700' : 'text-emerald-700'}`}
+                            >
+                              {perc}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role Breakdowns */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+                  {(stats.roles ?? []).map((role) => (
+                    <div
+                      key={role}
+                      className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm"
+                    >
+                      <div className="bg-gray-50 px-4 py-2 border-b">
+                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-gray-500" />
+                          {role}
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-3 divide-x flex-1">
+                        {TIME_SLOTS.map((ts) => (
+                          <div key={ts} className="flex flex-col items-center justify-center p-3">
+                            <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
+                            <span className="text-lg font-bold">
+                              {getSlot(ts).roles?.[role] || 0}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ))}
+
+                  {/* Late / Tardy */}
+                  <div className="flex flex-col overflow-hidden rounded-lg border border-orange-200 bg-white shadow-sm">
+                    <div className="bg-orange-50 px-4 py-2 border-b border-orange-100">
+                      <h3 className="font-semibold text-orange-800 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-orange-500" />
+                        LATE / TARDY
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-3 divide-x flex-1">
+                      {TIME_SLOTS.map((ts) => (
+                        <div key={ts} className="flex flex-col items-center justify-center p-3">
+                          <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
+                          <span className="text-lg font-bold text-orange-700">
+                            {getSlot(ts).late_tardy}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Total Walk-in */}
+                  <div className="flex flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-sm">
+                    <div className="bg-blue-50 px-4 py-2 border-b border-blue-100">
+                      <h3 className="font-semibold text-blue-800 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-blue-500" />
+                        TOTAL WALK-IN
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-3 divide-x flex-1">
+                      {TIME_SLOTS.map((ts) => (
+                        <div key={ts} className="flex flex-col items-center justify-center p-3">
+                          <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
+                          <span className="text-lg font-bold text-blue-700">
+                            {getSlot(ts).walk_ins}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })()
         )}
       </AdminPageShell.Content>
     </AdminPageShell>

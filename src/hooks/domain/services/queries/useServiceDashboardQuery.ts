@@ -18,15 +18,23 @@ export interface TimeSlotStats {
 
 export interface DashboardStatsResponse {
   time_slots: {
-    '9:00 AM': TimeSlotStats;
+    '9AM': TimeSlotStats;
     '12NN': TimeSlotStats;
-    '3:00 PM': TimeSlotStats;
+    '3PM': TimeSlotStats;
   };
   roles: string[];
 }
 
 export const serviceDashboardQueryKey = (filters: DashboardStatsFilters) =>
   ['service-dashboard-stats', filters] as const;
+
+const DEFAULT_SLOT_STATS: TimeSlotStats = {
+  committed: 0,
+  present: 0,
+  walk_ins: 0,
+  late_tardy: 0,
+  roles: {},
+};
 
 export function useServiceDashboardQuery(filters: DashboardStatsFilters) {
   return useQuery({
@@ -51,8 +59,20 @@ export function useServiceDashboardQuery(filters: DashboardStatsFilters) {
         throw new Error(`Failed to fetch service dashboard stats: ${error.message}`);
       }
 
-      // The RPC returns a single jsonb object representing DashboardStatsResponse
-      return data as DashboardStatsResponse;
+      const response = (data ?? {}) as {
+        time_slots?: Record<string, TimeSlotStats>;
+        roles?: string[];
+      };
+      const rawSlots = response.time_slots ?? {};
+
+      return {
+        time_slots: {
+          '9AM': rawSlots['9AM'] ?? rawSlots['9:00 AM'] ?? DEFAULT_SLOT_STATS,
+          '12NN': rawSlots['12NN'] ?? DEFAULT_SLOT_STATS,
+          '3PM': rawSlots['3PM'] ?? rawSlots['3:00 PM'] ?? DEFAULT_SLOT_STATS,
+        },
+        roles: response.roles ?? [],
+      };
     },
   });
 }
