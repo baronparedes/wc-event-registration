@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { RotateCcw, Shield } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
 import { Badge, BrandAvatar, Button } from '@/components/ui';
