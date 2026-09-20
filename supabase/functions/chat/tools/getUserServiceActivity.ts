@@ -17,18 +17,31 @@ function getUser(usersData: unknown): { role?: string; user_tokens?: unknown } |
   return usersData as { role?: string; user_tokens?: unknown };
 }
 
+function isSpecificRole(role?: string): boolean {
+  if (!role) return false;
+  const trimmed = role.trim().toLowerCase();
+  return (
+    trimmed.length > 0 &&
+    !['volunteer', 'volunteers', 'all', 'any', 'member', 'members'].includes(trimmed)
+  );
+}
+
+const PAGE_SIZE = 1000;
+
 export function createGetUserServiceActivityTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     activityType: z
       .enum(['active', 'inactive'])
       .describe(
-        'Whether to query for "active" volunteers (who checked in) or "inactive" volunteers (who did not check in) within the specified date range.',
+        'Whether to query for "active" volunteers (who checked in or served as walk-in) or "inactive" volunteers (who did not check in or serve) within the specified date range.',
       ),
     role: z
       .string()
       .trim()
       .optional()
-      .describe('Optional role filter, such as "volunteer", "usher", or "pastor".'),
+      .describe(
+        'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer".',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -45,7 +58,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
   return tool({
     description:
-      "Determine a user's service attendance check-in activity within a specific date range. Use this to find active volunteers, check-in counts, last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
+      "Determine a user's service attendance check-in activity within a specific date range. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
     parameters: schema,
     execute: async ({ activityType, role, targetStartDate, targetEndDate }) => {
       const now = new Date();
@@ -70,24 +83,46 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
       const formattedEnd = formatDate(range.end);
 
       if (activityType === 'active') {
-        // Find active users by joining service_attendance -> users -> user_tokens
-        let query = client
-          .from('service_attendance')
-          .select(
-            'service_date, checked_in_at, time_slot, is_override, is_walk_in, users!inner(role, user_tokens(token))',
-          )
-          .gte('service_date', formattedStart)
-          .lte('service_date', formattedEnd)
-          .order('checked_in_at', { ascending: false });
+        // Find active users by joining service_attendance -> users -> user_tokens across paginated pages
+        const allRecords: Array<{
+          service_date: string;
+          checked_in_at: string | null;
+          time_slot: string;
+          is_override: boolean;
+          is_walk_in: boolean;
+          users: unknown;
+        }> = [];
 
-        if (role) {
-          query = query.ilike('users.role', `%${role}%`);
-        }
+        let from = 0;
+        while (true) {
+          let query = client
+            .from('service_attendance')
+            .select(
+              'service_date, checked_in_at, time_slot, is_override, is_walk_in, users!inner(role, user_tokens(token))',
+            )
+            .gte('service_date', formattedStart)
+            .lte('service_date', formattedEnd)
+            .order('checked_in_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
 
-        const { data, error } = await query;
-        if (error) {
-          console.error('[chat:tool:getUserServiceActivity] Active query error', error);
-          return { error: 'Failed to retrieve active users.' };
+          if (isSpecificRole(role)) {
+            query = query.ilike('users.role', `%${role!.trim()}%`);
+          }
+
+          const { data, error } = await query;
+          if (error) {
+            console.error('[chat:tool:getUserServiceActivity] Active query error', error);
+            return { error: 'Failed to retrieve active users.' };
+          }
+
+          if (data && data.length > 0) {
+            allRecords.push(...(data as typeof allRecords));
+          }
+
+          if (!data || data.length < PAGE_SIZE) {
+            break;
+          }
+          from += PAGE_SIZE;
         }
 
         // Aggregate counts and track latest activity
@@ -96,9 +131,11 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           {
             token: string;
             role: string;
-            count: number;
-            lates: number;
+            total_checkins: number;
+            scheduled_checkins: number;
             walk_ins: number;
+            lates: number;
+            count: number;
             slots: Record<string, number>;
             last_service_date: string | null;
             last_checked_in_at: string | null;
@@ -106,7 +143,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           }
         >();
 
-        for (const record of data || []) {
+        for (const record of allRecords) {
           const u = getUser(record.users);
           const token = getToken(u?.user_tokens);
           if (!token) continue;
@@ -119,9 +156,11 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
             stats = {
               token,
               role: userRole,
-              count: 0,
-              lates: 0,
+              total_checkins: 0,
+              scheduled_checkins: 0,
               walk_ins: 0,
+              lates: 0,
+              count: 0,
               slots: {},
               last_service_date: record.service_date || null,
               last_checked_in_at: record.checked_in_at || null,
@@ -130,10 +169,17 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
             userStats.set(token, stats);
           }
 
-          stats.count += 1;
+          stats.total_checkins += 1;
+          stats.count += 1; // Backwards compatibility for existing prompt logic
           stats.slots[slot] = (stats.slots[slot] || 0) + 1;
-          if (record.is_override) stats.lates += 1;
-          if (record.is_walk_in) stats.walk_ins += 1;
+          if (record.is_walk_in) {
+            stats.walk_ins += 1;
+          } else {
+            stats.scheduled_checkins += 1;
+          }
+          if (record.is_override) {
+            stats.lates += 1;
+          }
 
           if (
             record.checked_in_at &&
@@ -145,13 +191,30 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           }
         }
 
-        const sorted = Array.from(userStats.values()).sort((a, b) => b.count - a.count);
+        const sorted = Array.from(userStats.values()).sort(
+          (a, b) => b.total_checkins - a.total_checkins,
+        );
+
+        let totalWalkIns = 0;
+        let totalLates = 0;
+        let totalCheckins = 0;
+        for (const s of sorted) {
+          totalCheckins += s.total_checkins;
+          totalWalkIns += s.walk_ins;
+          totalLates += s.lates;
+        }
 
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
           activity_type: activityType,
           role_filter: role || null,
           volunteers: sorted,
+          summary: {
+            total_active_volunteers: sorted.length,
+            total_checkins: totalCheckins,
+            total_walk_ins: totalWalkIns,
+            total_lates: totalLates,
+          },
         };
       } else {
         // Find inactive users
@@ -161,8 +224,8 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           .select('id, role, user_tokens(token)')
           .eq('is_active', true);
 
-        if (role) {
-          usersQuery = usersQuery.ilike('role', `%${role}%`);
+        if (isSpecificRole(role)) {
+          usersQuery = usersQuery.ilike('role', `%${role!.trim()}%`);
         }
 
         const { data: allUsers, error: usersError } = await usersQuery;
@@ -175,22 +238,36 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           return { error: 'Failed to retrieve users.' };
         }
 
-        // Get all user IDs who DID check in during the period
-        const { data: attendanceData, error: attendanceError } = await client
-          .from('service_attendance')
-          .select('user_id')
-          .gte('service_date', formattedStart)
-          .lte('service_date', formattedEnd);
+        // Get all user IDs who DID check in (scheduled or walk-in) during the period across paginated pages
+        const activeUserIds = new Set<string>();
+        let attendanceFrom = 0;
+        while (true) {
+          const { data: attendanceData, error: attendanceError } = await client
+            .from('service_attendance')
+            .select('user_id')
+            .gte('service_date', formattedStart)
+            .lte('service_date', formattedEnd)
+            .range(attendanceFrom, attendanceFrom + PAGE_SIZE - 1);
 
-        if (attendanceError) {
-          console.error(
-            '[chat:tool:getUserServiceActivity] Inactive attendance query error',
-            attendanceError,
-          );
-          return { error: 'Failed to retrieve attendance records.' };
+          if (attendanceError) {
+            console.error(
+              '[chat:tool:getUserServiceActivity] Inactive attendance query error',
+              attendanceError,
+            );
+            return { error: 'Failed to retrieve attendance records.' };
+          }
+
+          if (attendanceData) {
+            for (const a of attendanceData) {
+              if (a.user_id) activeUserIds.add(a.user_id);
+            }
+          }
+
+          if (!attendanceData || attendanceData.length < PAGE_SIZE) {
+            break;
+          }
+          attendanceFrom += PAGE_SIZE;
         }
-
-        const activeUserIds = new Set(attendanceData?.map((a) => a.user_id) || []);
 
         // Filter users who are NOT in the activeUserIds set
         const inactiveUsers = (allUsers || [])

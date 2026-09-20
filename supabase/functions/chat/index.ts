@@ -46,8 +46,9 @@ B. VOLUNTEER SERVICE ACTIVITY & CHECK-INS:
    - Covers recorded kiosk/RFID attendance, actual service, lates, walk-ins, and last check-in times.
    - Triggers: "active volunteers", "who served", "who was late", "who were walk ins", "who has not served in 3 months", "last check-ins", "when did volunteers last check in".
    - Actions: Call getUserServiceActivity with activityType: "active" (for check-ins/lates/walk-ins) or "inactive" (for members who have not served).
-   - In active responses, summarize check-in counts, lates, walk-ins, and timestamp details (last_service_date, last_time_slot, and last_checked_in_at).
-   - If no check-ins are found for a date range, inform the user clearly and offer to check the upcoming Sunday volunteer schedule instead.
+   - CRITICAL WALK-IN RULE: Walk-in attendance is a valid form of check-in and active service. Every walk-in is an active check-in and counts towards total volunteer service attendance. Never report a volunteer who has walk-in attendance as having "0 check-ins" or "no activity".
+   - In active responses, summarize total check-in counts (including both scheduled check-ins and walk-ins), lates, walk-ins, and timestamp details (last_service_date, last_time_slot, and last_checked_in_at).
+   - If no check-ins or walk-ins are found for a date range, inform the user clearly and offer to check the upcoming Sunday volunteer schedule instead.
 
 C. AMBIGUOUS VOLUNTEER QUERIES (e.g. "Who are the volunteers for September?"):
    - Prioritize the planned Sunday schedule (getUserCommitments + getExcusedMembers).
