@@ -85,6 +85,8 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
         return 'unspecified';
       };
 
+      const usersWithoutBirthdayTokens: string[] = [];
+
       for (const user of data) {
         const token = getToken(user);
         const gender = getGender(user.metadata);
@@ -109,10 +111,13 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
         if (token) roleEntry.gender_breakdown[gender].tokens.push(token);
         roleBreakdown.set(roleName, roleEntry);
 
-        if (!user.date_of_birth) continue;
-        // Parse date_of_birth as local date parts to avoid UTC timezone shift.
-        // "1990-05-15" parsed via new Date() becomes UTC midnight which shifts
-        // the day by -1 in UTC+8, making birthday boundary checks unreliable.
+        if (!user.date_of_birth) {
+          if (token) usersWithoutBirthdayTokens.push(token);
+          continue;
+        }
+        // Parse as local date parts to avoid UTC timezone shift.
+        // "1990-05-15" via new Date() becomes UTC midnight, which in UTC+8
+        // shifts the day by -1 and makes birthday boundary checks unreliable.
         const dobStr = String(user.date_of_birth).split('T')[0];
         const [dobYear, dobMonth, dobDay] = dobStr.split('-').map(Number);
         const age = (() => {
@@ -137,9 +142,13 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
           );
       }
 
+      const usersWithBirthday = data.filter((u) => Boolean(u.date_of_birth)).length;
+
       return {
         total_users: data.length,
-        total_users_with_age: data.filter((user) => Boolean(user.date_of_birth)).length,
+        total_users_with_birthday: usersWithBirthday,
+        total_users_without_birthday: data.length - usersWithBirthday,
+        users_without_birthday_tokens: usersWithoutBirthdayTokens,
         age_distribution: ageDistribution,
         gender_breakdown: genderDistribution,
         role_breakdown: Object.fromEntries(roleBreakdown),

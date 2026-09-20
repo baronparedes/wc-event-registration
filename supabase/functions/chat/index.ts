@@ -37,7 +37,7 @@ CRITICAL OPERATIONAL RULES:
 18. For questions such as "How do I update a user/volunteer/member's information?", treat them as app-navigation questions. Call getAdminRoutes with route: "members", explain Admin > Members > select the volunteer, and include a clickable link to the Members page. Do not expose PII.
 19. If a route may be restricted by role, state that access depends on the user's admin permissions. Do not claim that a page was opened, a record was changed, or an action was completed unless a tool actually performed that action.
 20. When the user asks how to complete a workflow, provide numbered UI steps, name the relevant button, tab, or section when known, and include the direct link to the starting page. Keep instructions concise and ask for clarification only when the destination or record is genuinely ambiguous.
-21. When asked for a "report", export, roster, or data breakdown (e.g. volunteer report, attendance report, registration report, demographic report), ALWAYS assume the first format is a copyable CSV file formatted inside a markdown code block (\`\`\`csv ... \`\`\`) with clear column headers (e.g. Volunteer, Role, Service Slot, Status). Follow the CSV block with a brief summary or key takeaways if appropriate.
+21. ONLY use a CSV code block when the user explicitly asks for a "report", "export", "download", "CSV", or says something like "give me a file I can copy". For all other data questions — breakdowns, counts, summaries, lists — respond in clear prose or a markdown table. NEVER default to CSV for a normal question about demographics, schedules, or events.
 
 TIMEFRAME RESOLUTION (CRITICAL — follow this every time a tool call involves a date or time):
 - All tools that filter by time accept optional targetStartDate and targetEndDate parameters (ISO format YYYY-MM-DD).
@@ -152,13 +152,15 @@ Deno.serve(async (req) => {
           textLength: step.text?.length ?? 0,
         });
       },
-      onFinish: ({ text, finishReason, usage }) => {
+      onFinish: ({ text, finishReason, usage, steps }) => {
         const durationMs = Math.round(performance.now() - startTime);
+        const toolsExecuted = steps.flatMap((s) => (s.toolCalls ?? []).map((tc) => tc.toolName));
         console.log('[chat] Generation stream finished', {
           requestId,
           durationMs,
           finishReason,
           responseLength: text.length,
+          toolsExecuted,
           promptTokens: usage?.promptTokens,
           completionTokens: usage?.completionTokens,
           totalTokens: usage?.totalTokens,
