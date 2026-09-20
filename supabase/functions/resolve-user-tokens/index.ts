@@ -1,10 +1,22 @@
-import { z } from 'npm:zod';
-
-import { errorResponse, useEdgeHook } from '../_shared/index.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
+import { errorResponse, successResponse } from '@/shared/http.ts';
+import { z } from '@/shared/validation.ts';
 
 const resolveTokensRequestSchema = z.object({
-  tokens: z.array(z.string()).max(100),
+  tokens: z.array(z.string()).optional(),
 });
+
+type UserRow = {
+  nickname: string | null;
+  first_name: string | null;
+  full_name: string | null;
+};
+
+type UserTokenRow = {
+  token: string;
+  user_id: string;
+  users: UserRow | UserRow[] | null;
+};
 
 Deno.serve(async (req) => {
   const guard = await useEdgeHook({
@@ -18,35 +30,34 @@ Deno.serve(async (req) => {
 
   if (!guard.valid) return guard.response;
 
-  const { tokens } = guard.data;
+  const tokens = guard.data?.tokens;
   const { corsHeaders, client } = guard;
 
-  if (tokens.length === 0) {
-    return new Response(JSON.stringify({ data: {} }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
-  }
-
   try {
-    const { data, error } = await client
+    let query = client
       .from('user_tokens')
-      .select('token, user_id, users ( nickname, first_name, full_name )')
-      .in('token', tokens);
+      .select('token, user_id, users ( nickname, first_name, full_name )');
+
+    if (tokens && tokens.length > 0) {
+      query = query.in('token', tokens);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('[resolve-user-tokens] Query error', error);
       return errorResponse(corsHeaders, 500, 'Failed to fetch user tokens');
     }
 
-    const resolvedTokens = data.reduce(
+    const rows = (data ?? []) as unknown as UserTokenRow[];
+
+    const resolvedTokens = rows.reduce(
       (acc, row) => {
         const user = row.users;
-        // Handle the case where users might be returned as an array or object depending on relationship setup.
-        // Usually it's an object for a many-to-one or one-to-one.
         const userObj = Array.isArray(user) ? user[0] : user;
 
         const displayName =
-          userObj?.nickname || userObj?.first_name || userObj?.full_name || 'Unknown';
+          userObj?.nickname || userObj?.first_name || userObj?.full_name || row.token;
         acc[row.token] = {
           id: row.user_id,
           name: displayName,
@@ -56,9 +67,7 @@ Deno.serve(async (req) => {
       {} as Record<string, { id: string; name: string }>,
     );
 
-    return new Response(JSON.stringify({ data: resolvedTokens }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return successResponse(corsHeaders, { data: resolvedTokens }, 200);
   } catch (err) {
     console.error('[resolve-user-tokens] Unexpected error', err);
     return errorResponse(corsHeaders, 500, 'Internal server error');

@@ -100,98 +100,77 @@ api_url = "http://127.0.0.1"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
 openai_api_key = "env(OPENAI_API_KEY)"
 
-[functions.member-lookup]
-verify_jwt = false
-
-[functions.submit-registration]
-verify_jwt = false
-
-[functions.submit-registration-v2]
-verify_jwt = false
-
-[functions.export-registrations-csv]
-verify_jwt = true
-
-[functions.export-attendance-csv]
-verify_jwt = true
-
-[functions.cancel-registration]
-verify_jwt = true
-
-[functions.reactivate-registration]
-verify_jwt = true
-
-[functions.create-member]
-verify_jwt = true
-
-[functions.update-member-id]
-verify_jwt = true
-
-[functions.manage-admin-role]
-verify_jwt = true
-
-[functions.upload-member-avatar]
-verify_jwt = true
-
-[functions.public-attendee-lookup]
-verify_jwt = false
-
-[functions.submit-public-registration]
-verify_jwt = false
-
-[functions.cancel-public-registration]
-verify_jwt = false
-
-[functions.reactivate-public-registration]
-verify_jwt = true
-
-[functions.update-attendance-settings]
-verify_jwt = true
-
-[functions.search-attendees]
-verify_jwt = true
-
-[functions.list-attendees]
-verify_jwt = true
-
-[functions.list-attendees-v2]
-verify_jwt = true
-
-[functions.list-unregistered-members]
-verify_jwt = true
-
-[functions.export-unregistered-members-csv]
-verify_jwt = true
-
-[functions.check-in-attendee]
-verify_jwt = true
-
-[functions.download-attendance-csv]
-verify_jwt = true
-
 [functions.bulk-upsert-attendance-answers]
 verify_jwt = true
 
 [functions.bulk-upsert-members]
 verify_jwt = true
 
-[functions.download-registrations-template]
-verify_jwt = true
-
-[functions.download-public-registrations-template]
+[functions.bulk-upsert-public-registrations]
 verify_jwt = true
 
 [functions.bulk-upsert-registrations]
 verify_jwt = true
 
-[functions.bulk-upsert-public-registrations]
+[functions.bulk-upsert-service-attendance]
 verify_jwt = true
 
-[functions.bulk-upsert-service-attendance]
+[functions.cancel-public-registration]
+verify_jwt = true
+
+[functions.cancel-registration]
+verify_jwt = true
+
+[functions.chat]
+verify_jwt = true
+
+[functions.check-in-attendee]
+verify_jwt = true
+
+[functions.create-member]
+verify_jwt = true
+
+[functions.cron-tokenize-users]
+verify_jwt = true
+
+[functions.cron-upcoming-sunday-excused-export-email]
+verify_jwt = true
+
+[functions.delete-attendance-saved-view]
+verify_jwt = true
+
+[functions.download-attendance-csv]
+verify_jwt = true
+
+[functions.download-public-registrations-template]
+verify_jwt = true
+
+[functions.download-registrations-template]
+verify_jwt = true
+
+[functions.duplicate-event]
+verify_jwt = true
+
+[functions.duplicate-form]
 verify_jwt = true
 
 [functions.event-slot-availability]
 verify_jwt = false
+
+[functions.export-attendance-csv]
+verify_jwt = true
+
+[functions.export-registrations-csv]
+verify_jwt = true
+
+[functions.export-unregistered-members-csv]
+verify_jwt = true
+
+[functions.get-excused-members]
+verify_jwt = true
+
+[functions.get-member-excused-schedule]
+verify_jwt = true
 
 [functions.get-public-event]
 verify_jwt = false
@@ -202,42 +181,72 @@ verify_jwt = false
 [functions.get-public-event-listing]
 verify_jwt = false
 
-[functions.get-public-forms]
-verify_jwt = false
-
 [functions.get-public-form]
 verify_jwt = false
 
 [functions.get-public-form-fields]
 verify_jwt = false
 
+[functions.get-public-forms]
+verify_jwt = false
+
+[functions.list-attendees]
+verify_jwt = true
+
+[functions.list-attendees-v2]
+verify_jwt = true
+
+[functions.list-unregistered-members]
+verify_jwt = true
+
+[functions.manage-admin-role]
+verify_jwt = true
+
+[functions.member-lookup]
+verify_jwt = false
+
+[functions.public-attendee-lookup]
+verify_jwt = false
+
+[functions.reactivate-public-registration]
+verify_jwt = true
+
+[functions.reactivate-registration]
+verify_jwt = true
+
+[functions.resolve-user-tokens]
+verify_jwt = true
+
+[functions.search-attendees]
+verify_jwt = true
+
 [functions.submit-form-submission]
 verify_jwt = false
+
+[functions.submit-public-registration]
+verify_jwt = false
+
+[functions.submit-registration]
+verify_jwt = false
+
+[functions.submit-registration-v2]
+verify_jwt = false
+
+[functions.update-attendance-settings]
+verify_jwt = true
+
+[functions.update-member-id]
+verify_jwt = true
+
+[functions.upload-member-avatar]
+verify_jwt = true
 
 [functions.upsert-attendance-saved-view]
 verify_jwt = true
 
-[functions.delete-attendance-saved-view]
-verify_jwt = true
-
-[functions.cron-upcoming-sunday-excused-export-email]
-verify_jwt = true
-
-[functions.chat]
-verify_jwt = true
-
-[functions.cron-tokenize-users]
-verify_jwt = true
-
-[functions.duplicate-form]
-verify_jwt = true
-
-[functions.get-member-excused-schedule]
-verify_jwt = true
-
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
-[inbucket]
+[local_smtp]
 enabled = true
 # Port to use for the email testing server web interface.
 port = 54324

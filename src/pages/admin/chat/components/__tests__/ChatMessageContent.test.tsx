@@ -4,11 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ChatMessageContent } from '../ChatMessageContent';
 
+const mockResolvedTokens = vi.fn().mockReturnValue({});
+
 vi.mock('@/hooks/domain/chat', () => ({
-  useResolveUserTokensQuery: () => ({ data: {} }),
+  useResolveUserTokensQuery: () => ({ data: mockResolvedTokens() }),
 }));
 
 describe('ChatMessageContent', () => {
+  beforeEach(() => {
+    mockResolvedTokens.mockReturnValue({});
+  });
   it('renders standard text and paragraphs', () => {
     render(
       <MemoryRouter>
@@ -78,5 +83,16 @@ describe('ChatMessageContent', () => {
     render(<ChatMessageContent content={markdown} />);
     expect(screen.getByText('Event')).toBeInTheDocument();
     expect(screen.getByText('Baptism')).toBeInTheDocument();
+  });
+
+  it('renders untokenized user links targeting a new tab with secure attributes', () => {
+    mockResolvedTokens.mockReturnValue({
+      USR_000123: { id: 'user-456', name: 'John Doe' },
+    });
+    render(<ChatMessageContent content="Assigned to USR_000123" />);
+    const link = screen.getByRole('link', { name: /John Doe/i });
+    expect(link).toHaveAttribute('href', '/admin/members/user-456');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 });

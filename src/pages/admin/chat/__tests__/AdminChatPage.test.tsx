@@ -16,6 +16,7 @@ vi.mock('@/hooks/domain/chat', () => ({
   useChatStreamQuery: () => mockUseChatStream(),
   useChatStream: () => mockUseChatStream(),
   useResolveUserTokensQuery: () => ({ data: {} }),
+  useUserTokenMapQuery: () => ({ data: {} }),
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({

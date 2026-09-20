@@ -5,7 +5,7 @@ import { Loader2, RotateCcw, Send, Square } from 'lucide-react';
 import { AdminPageShell } from '@/components/layout';
 import { Avatar, Badge, BrandAvatar, Button, FormInputField } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
-import { useChatStreamQuery } from '@/hooks/domain/chat';
+import { useChatStreamQuery, useUserTokenMapQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
 import { ChatMessageContent, CopyButton } from './components';
@@ -45,6 +45,7 @@ function loadStoredMessages(): Message[] {
 }
 
 export function AdminChatPage() {
+  useUserTokenMapQuery();
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
   const { streamRequest, stopStream, isLoading } = useChatStreamQuery();
