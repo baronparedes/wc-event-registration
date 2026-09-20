@@ -65,8 +65,14 @@ export function AppDrawerNavigation({
     adminNavItems,
     eventWorkspaceNavItems,
     attendanceNavItems,
+    formWorkspaceNavItems,
+    memberWorkspaceNavItems,
     eventId,
     selectedEvent,
+    formId,
+    selectedForm,
+    memberId,
+    selectedMember,
     hasProfileAccess,
     displayName,
     avatarObjectKey,
@@ -158,6 +164,42 @@ export function AppDrawerNavigation({
               <div className="space-y-2">
                 <SectionHeading label="Attendance" />
                 {attendanceNavItems.map((item) => (
+                  <DrawerNavLink
+                    key={item.to}
+                    to={item.to}
+                    label={item.label}
+                    icon={item.icon}
+                    onClose={onClose}
+                  />
+                ))}
+              </div>
+            )}
+
+            {formId && formWorkspaceNavItems.length > 0 && (
+              <div className="space-y-2">
+                <SectionHeading label="Form Workspace" />
+                <p className="px-1 font-heading text-lg font-semibold leading-tight text-text">
+                  {selectedForm?.title ?? formId}
+                </p>
+                {formWorkspaceNavItems.map((item) => (
+                  <DrawerNavLink
+                    key={item.to}
+                    to={item.to}
+                    label={item.label}
+                    icon={item.icon}
+                    onClose={onClose}
+                  />
+                ))}
+              </div>
+            )}
+
+            {memberId && memberWorkspaceNavItems.length > 0 && (
+              <div className="space-y-2">
+                <SectionHeading label="Member Workspace" />
+                <p className="px-1 font-heading text-lg font-semibold leading-tight text-text">
+                  {selectedMember?.full_name ?? memberId}
+                </p>
+                {memberWorkspaceNavItems.map((item) => (
                   <DrawerNavLink
                     key={item.to}
                     to={item.to}
