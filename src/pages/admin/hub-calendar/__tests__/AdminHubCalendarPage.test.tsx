@@ -83,26 +83,28 @@ describe('AdminHubCalendarPage', () => {
   });
 
   it('renders loading state and error state correctly', () => {
-    mockUseAdminMembersSchedulesQuery.mockReturnValueOnce({
+    mockUseAdminMembersSchedulesQuery.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
     });
-    mockUseAdminMembersMilestonesQuery.mockReturnValueOnce({
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
     });
 
-    renderComponent();
+    const { unmount } = renderComponent();
     expect(screen.getByText('Loading calendar data...')).toBeInTheDocument();
 
-    mockUseAdminMembersSchedulesQuery.mockReturnValueOnce({
+    unmount();
+
+    mockUseAdminMembersSchedulesQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error('Failed to load schedules'),
     });
-    mockUseAdminMembersMilestonesQuery.mockReturnValueOnce({
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
