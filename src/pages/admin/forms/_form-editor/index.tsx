@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, FormInputField, FormSelectField, SlugField } from '@/components/ui';
+import { Button, CheckboxField, FormInputField, FormSelectField, SlugField } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useSaveFormMutation } from '@/hooks/domain/forms';
@@ -264,21 +264,13 @@ export function FormEditorPage() {
               ]}
             />
 
-            <div className="rounded-lg border border-border bg-background p-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="send-email-after-completion"
-                  {...register('metadata.send_email_after_completion')}
-                  className="h-4 w-4 cursor-pointer rounded border-border"
-                />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-text">Send email after completion</span>
-                  <span className="text-xs text-muted">
-                    Send an email confirmation when submission is completed
-                  </span>
-                </div>
-              </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <CheckboxField
+                id="send-email-after-completion"
+                label="Send email after completion"
+                description="Send an email confirmation when submission is completed"
+                registration={register('metadata.send_email_after_completion')}
+              />
             </div>
           </div>
 

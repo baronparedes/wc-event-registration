@@ -1,5 +1,6 @@
 import type { UseFormRegister, UseFormWatch } from 'react-hook-form';
 
+import { CheckboxField } from '@/components/ui/CheckboxField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import type { CreateEventInput } from '@/lib/domain/events';
@@ -66,41 +67,21 @@ export function EventRegistrationSettingsSection({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-border bg-background p-4">
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="allow-name-lookup"
-                disabled={disabled}
-                {...register('allow_name_lookup')}
-                className="h-4 w-4 cursor-pointer rounded border-border"
-              />
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-text">Allow name-based lookup</span>
-                <span className="text-xs text-muted">
-                  Members can search by name if they don't have their RFID
-                </span>
-              </div>
-            </label>
-          </div>
+          <CheckboxField
+            id="allow-name-lookup"
+            label="Allow name-based lookup"
+            description="Members can search by name if they don't have their RFID"
+            registration={register('allow_name_lookup')}
+            disabled={disabled}
+          />
 
-          <div className="rounded-lg border border-border bg-background p-4">
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="send-email-after-completion"
-                disabled={disabled}
-                {...register('send_email_after_completion')}
-                className="h-4 w-4 cursor-pointer rounded border-border"
-              />
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-text">Send email after completion</span>
-                <span className="text-xs text-muted">
-                  Send an email confirmation when registration is completed
-                </span>
-              </div>
-            </label>
-          </div>
+          <CheckboxField
+            id="send-email-after-completion"
+            label="Send email after completion"
+            description="Send an email confirmation when registration is completed"
+            registration={register('send_email_after_completion')}
+            disabled={disabled}
+          />
         </div>
       </div>
     </SectionCard>
