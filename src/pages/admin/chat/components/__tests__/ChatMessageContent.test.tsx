@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -94,5 +94,32 @@ describe('ChatMessageContent', () => {
     expect(link).toHaveAttribute('href', '/admin/members/user-456');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('renders clean plain names without markdown link syntax inside code blocks', () => {
+    mockResolvedTokens.mockReturnValue({
+      USR_000123: { id: 'user-456', name: 'John Doe' },
+    });
+    const markdown = '```csv\nName,Role\nUSR_000123,Usher\n```';
+    render(<ChatMessageContent content={markdown} />);
+    expect(screen.getByText(/John Doe,Usher/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /John Doe/i })).not.toBeInTheDocument();
+  });
+
+  it('provides a copy button on code blocks', async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    });
+
+    render(<ChatMessageContent content={'```csv\nName,Role\nAlice,Usher\n```'} />);
+    const copyButton = screen.getByRole('button', { name: /copy to clipboard/i });
+    expect(copyButton).toBeInTheDocument();
+
+    await act(async () => {
+      copyButton.click();
+    });
+    expect(writeTextMock).toHaveBeenCalledWith('Name,Role\nAlice,Usher');
   });
 });

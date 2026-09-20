@@ -1,16 +1,20 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import { getSundaysForTimeframe } from './timeframes.ts';
+import { getSundaysForTimeframe, normalizeSundayTimeframe } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetUserCommitmentsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     role: z.string().optional().describe('Filter by user role (e.g., "prayer coach", "usher").'),
     timeframe: z
-      .enum(['coming_sunday', 'this_month', 'next_month'])
+      .string()
+      .optional()
       .default('coming_sunday')
-      .describe('The commitment period to summarize.'),
+      .transform(normalizeSundayTimeframe)
+      .describe(
+        'The commitment period to summarize: "coming_sunday" (or "this_sunday"), "this_month", or "next_month". Defaults to "coming_sunday".',
+      ),
     sunday_availability: z
       .enum(['first_sunday', 'second_sunday', 'third_sunday', 'fourth_sunday', 'fifth_sunday'])
       .optional()
@@ -19,7 +23,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
 
   return tool({
     description:
-      'Retrieve total, per-role, and per-Sunday service breakdowns for volunteers committed on the coming Sunday, this month, or next month, optionally filtered by role. Each breakdown includes 9AM, 12NN, and 3PM counts. This tool NEVER returns PII like names or emails.',
+      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed on the coming Sunday, this month, or next month, optionally filtered by role. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ role, timeframe, sunday_availability }) => {
       console.log('[chat:tool:getUserCommitments] Executing', {

@@ -1,7 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import { getSundaysForTimeframe } from './timeframes.ts';
+import { getSundaysForTimeframe, normalizeSundayTimeframe } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 const serviceSlots = ['9AM', '12NN', '3PM'] as const;
@@ -62,14 +62,18 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
   const schema = z.object({
     role: z.string().optional().describe('Filter by user role, such as "volunteer" or "usher".'),
     timeframe: z
-      .enum(['coming_sunday', 'this_month', 'next_month'])
+      .string()
+      .optional()
       .default('coming_sunday')
-      .describe('The excuse period to summarize.'),
+      .transform(normalizeSundayTimeframe)
+      .describe(
+        'The excuse period to summarize: "coming_sunday" (or "this_sunday"), "this_month", or "next_month". Defaults to "coming_sunday".',
+      ),
   });
 
   return tool({
     description:
-      'Retrieve approved volunteer excuses by Sunday, role, and service. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
+      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ role, timeframe }) => {
       console.log('[chat:tool:getExcusedMembers] Executing', { role, timeframe, requestId });

@@ -13,6 +13,17 @@ export type MilestoneTimeframe =
   | 'last_month';
 export type SundayTimeframe = 'coming_sunday' | 'this_month' | 'next_month';
 
+export function normalizeSundayTimeframe(input?: string | null): SundayTimeframe {
+  if (!input) return 'coming_sunday';
+  const clean = input
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (clean === 'next_month') return 'next_month';
+  if (clean === 'this_month' || clean === 'current_month') return 'this_month';
+  return 'coming_sunday';
+}
+
 const timeframeAliases: Record<string, MilestoneTimeframe> = {
   upcoming: 'upcoming',
   'next 7 days': 'upcoming',
