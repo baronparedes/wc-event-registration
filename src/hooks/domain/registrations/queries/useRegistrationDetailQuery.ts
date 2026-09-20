@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { EventFieldType } from '@/lib/domain/event-fields';
 import type {
   AdminRegistrationDetail,
@@ -140,6 +141,6 @@ export function useRegistrationDetailQuery(registrationId: string) {
         fieldResponses,
       };
     },
-    staleTime: 0,
+    staleTime: QUERY_STALE_TIME_MS.detail,
   });
 }

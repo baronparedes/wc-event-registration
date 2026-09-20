@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { AdminMember } from '@/lib/domain/members';
 import { supabase } from '@/lib/infrastructure';
 
@@ -86,6 +87,6 @@ export function useAdminMemberQuery(
         last_activity,
       } satisfies AdminMember;
     },
-    staleTime: 0,
+    staleTime: QUERY_STALE_TIME_MS.detail,
   });
 }

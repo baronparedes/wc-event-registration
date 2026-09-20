@@ -28,6 +28,6 @@ export function useAdminFormQuery(formId?: string) {
       if (error) throw error;
       return data as AdminForm | null;
     },
-    staleTime: QUERY_STALE_TIME_MS.immediate,
+    staleTime: QUERY_STALE_TIME_MS.detail,
   });
 }

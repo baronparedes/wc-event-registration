@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { PublicRegistrationCheckResult } from '@/lib/domain/public-registrations';
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 
@@ -43,6 +44,6 @@ export function usePublicAttendeeCheckQuery(email: string | null, eventSlug: str
       return fetchPublicAttendeeCheck(email, eventSlug);
     },
     enabled: Boolean(email && eventSlug),
-    staleTime: 0,
+    staleTime: QUERY_STALE_TIME_MS.immediate,
   });
 }

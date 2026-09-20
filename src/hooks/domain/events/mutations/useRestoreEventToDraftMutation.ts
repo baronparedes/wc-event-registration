@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { QUERY_KEYS } from '@/config/constants';
 import { supabase } from '@/lib/infrastructure';
 
 import { adminEventQueryKey } from '../queries/useAdminEventQuery';
@@ -18,6 +19,8 @@ export function useRestoreEventToDraftMutation() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: adminEventQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicEventListing() });
+      queryClient.invalidateQueries({ queryKey: ['public-event-by-slug'] });
     },
   });
 }

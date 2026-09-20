@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { QUERY_STALE_TIME_MS } from '@/config/constants';
 import { QUERY_KEYS } from '@/config/constants/queryKeys';
 import type { AttendanceSavedView } from '@/lib/domain/attendance-views';
 import { supabase } from '@/lib/infrastructure/supabase';
@@ -25,6 +26,6 @@ export function useAttendanceSavedViewsQuery(eventId: string | undefined) {
       return (data || []) as AttendanceSavedView[];
     },
     enabled: !!eventId,
-    staleTime: 0,
+    staleTime: QUERY_STALE_TIME_MS.short,
   });
 }

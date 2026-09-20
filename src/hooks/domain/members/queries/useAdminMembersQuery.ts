@@ -137,6 +137,6 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         totalPages: getTotalPages(totalCount, pageSize),
       };
     },
-    staleTime: QUERY_STALE_TIME_MS.immediate,
+    staleTime: QUERY_STALE_TIME_MS.adminList,
   });
 }

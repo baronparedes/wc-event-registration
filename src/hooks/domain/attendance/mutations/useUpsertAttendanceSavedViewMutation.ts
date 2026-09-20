@@ -42,10 +42,15 @@ export function useUpsertAttendanceSavedViewMutation() {
 
       return response;
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.adminAttendanceSavedViews(variables.event_id),
       });
+      if (result.id) {
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.adminAttendanceSavedView(result.id),
+        });
+      }
     },
   });
 }
