@@ -44,16 +44,16 @@ begin
       and existing.table_number = s.table_num::text
   );
 
-  -- 3. Insert generic 'Usher / Backroom' entry
+  -- 3. Insert generic 'Usher / Backroom / IMT / VMT' entry
   insert into public.service_seats (layout_id, table_number)
   select
     v_layout_id,
-    'Usher / Backroom'
+    'Usher / Backroom / IMT / VMT'
   where not exists (
     select 1
     from public.service_seats existing
     where existing.layout_id = v_layout_id
-      and existing.table_number = 'Usher / Backroom'
+      and existing.table_number = 'Usher / Backroom / IMT / VMT'
   );
 
   -- 4. Insert generic 'Unassigned' entry

@@ -130,7 +130,7 @@ export interface ServiceAttendanceCsvPreviewRow {
   member_name?: string;
 }
 
-export const USHER_BACKROOM_TABLE = 'Usher / Backroom';
+export const USHER_BACKROOM_TABLE = 'Usher / Backroom / IMT / VMT';
 export const UNASSIGNED_TABLE = 'Unassigned';
 
 export function mapServiceAttendanceTableNumber(tableInput: string): string {

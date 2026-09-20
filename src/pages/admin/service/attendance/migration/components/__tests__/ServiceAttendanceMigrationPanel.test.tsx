@@ -30,7 +30,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     mockUseServiceSeatsQuery.mockReturnValue({
       data: [
         { id: 'seat-10', table_number: '10' },
-        { id: 'seat-usher', table_number: 'Usher / Backroom' },
+        { id: 'seat-usher', table_number: 'Usher / Backroom / IMT / VMT' },
         { id: 'seat-unassigned', table_number: 'Unassigned' },
       ],
       isLoading: false,
@@ -54,7 +54,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     });
   });
 
-  it('matches members by nickname + last_name, maps tables > 100 to Usher / Backroom, and filters status', async () => {
+  it('matches members by nickname + last_name, maps tables > 100 to Usher / Backroom / IMT / VMT, and filters status', async () => {
     render(<ServiceAttendanceMigrationPanel />);
 
     // 1. Select layout
@@ -81,8 +81,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     // Bong Torres should resolve to Marrion Torres via nickname + last name matching
     expect(screen.getByText('Marrion Torres')).toBeInTheDocument();
-    // Table 105 should map to Usher / Backroom
-    const usherCells = screen.getAllByText('Usher / Backroom');
+    // Table 105 should map to Usher / Backroom / IMT / VMT
+    const usherCells = screen.getAllByText('Usher / Backroom / IMT / VMT');
     expect(usherCells.length).toBeGreaterThan(0);
 
     // Row 2 is Unknown Person, which fails user matching

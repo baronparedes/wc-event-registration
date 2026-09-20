@@ -93,7 +93,7 @@ const sampleAttendance: ServiceAttendance[] = [
     service_seat_id: 'seat-2',
     service_seats: {
       id: 'seat-2',
-      table_number: 'Usher / Backroom',
+      table_number: 'Usher / Backroom / IMT / VMT',
       seat_number: null,
       area: null,
     },
@@ -231,7 +231,7 @@ describe('ServiceAttendanceHistoryTab', () => {
 
     expect(screen.getAllByText(/Assignment:/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('14, Seat 2').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Usher / Backroom').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Usher / Backroom / IMT / VMT').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Unassigned').length).toBeGreaterThan(0);
   });
 

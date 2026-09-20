@@ -18,7 +18,7 @@ describe('Service Attendance CSV Parser', () => {
       expect(mapServiceAttendanceTableNumber('x')).toBe(UNASSIGNED_TABLE);
     });
 
-    it('maps numbers strictly greater than 100 to Usher / Backroom', () => {
+    it('maps numbers strictly greater than 100 to Usher / Backroom / IMT / VMT', () => {
       expect(mapServiceAttendanceTableNumber('101')).toBe(USHER_BACKROOM_TABLE);
       expect(mapServiceAttendanceTableNumber('102')).toBe(USHER_BACKROOM_TABLE);
       expect(mapServiceAttendanceTableNumber('150')).toBe(USHER_BACKROOM_TABLE);
@@ -32,7 +32,9 @@ describe('Service Attendance CSV Parser', () => {
     });
 
     it('retains non-numeric table names as-is', () => {
-      expect(mapServiceAttendanceTableNumber('Usher / Backroom')).toBe('Usher / Backroom');
+      expect(mapServiceAttendanceTableNumber('Usher / Backroom / IMT / VMT')).toBe(
+        'Usher / Backroom / IMT / VMT',
+      );
       expect(mapServiceAttendanceTableNumber('VIP Lounge')).toBe('VIP Lounge');
     });
   });
@@ -71,7 +73,7 @@ describe('Service Attendance CSV Parser', () => {
   });
 
   describe('processParsedCsvData', () => {
-    it('processes rows and maps table > 100 to Usher / Backroom preserving original table in metadata', () => {
+    it('processes rows and maps table > 100 to Usher / Backroom / IMT / VMT preserving original table in metadata', () => {
       const parsed = {
         headers: ['RFID', 'Date', 'Time', 'Time_Slot', 'Table', 'Name', 'Role'],
         rows: [
@@ -99,7 +101,7 @@ describe('Service Attendance CSV Parser', () => {
       const result = processParsedCsvData(parsed);
       expect(result).toHaveLength(2);
 
-      // Row 1 (Table 105 -> Usher / Backroom)
+      // Row 1 (Table 105 -> Usher / Backroom / IMT / VMT)
       expect(result[0].table_number).toBe(USHER_BACKROOM_TABLE);
       expect(result[0].metadata.original_table_number).toBe('105');
       expect(result[0].metadata.role).toBe('Usher');
