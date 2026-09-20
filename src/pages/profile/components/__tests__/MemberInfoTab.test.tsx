@@ -6,7 +6,7 @@ import { makeAdminMember } from '@/__tests__/factories';
 import { MemberInfoTab } from '../MemberInfoTab';
 
 describe('MemberInfoTab', () => {
-  it('renders Personal Details and Sunday Availability, and omits Additional Information when metadata is empty', () => {
+  it('renders Personal Details and Sunday Availability', () => {
     const member = makeAdminMember({
       member_id: 'MEM-001',
       email: 'alex@example.com',
@@ -19,14 +19,17 @@ describe('MemberInfoTab', () => {
 
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
     expect(screen.getByText('alex@example.com')).toBeInTheDocument();
+    expect(screen.getByText('alex@example.com').closest('div')).toHaveClass(
+      'col-span-2',
+      'md:col-span-1',
+    );
     expect(screen.getByText('555-1234')).toBeInTheDocument();
     expect(screen.getByText('May 15, 1990')).toBeInTheDocument();
 
     expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
-    expect(screen.queryByText('Additional Information')).not.toBeInTheDocument();
   });
 
-  it('filters out sunday availability keys from Additional Information', () => {
+  it('renders Sunday Availability with slots when sunday metadata is present', () => {
     const member = makeAdminMember({
       extra_metadata: {
         first_sunday: '9AM',
@@ -40,27 +43,31 @@ describe('MemberInfoTab', () => {
     render(<MemberInfoTab member={member} />);
 
     expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
-    expect(screen.queryByText('Additional Information')).not.toBeInTheDocument();
   });
 
-  it('renders Additional Information with title-cased keys for general metadata', () => {
+  it('promotes Civil Status, DGroup Leader, DGroup Status, and DGroup Member Since to Personal Details', () => {
     const member = makeAdminMember({
       extra_metadata: {
-        first_sunday: '9AM',
-        t_shirt_size: 'Large',
-        dietary_restrictions: 'Vegetarian',
+        civil_status: 'Married',
+        dgroup_leader: 'Jane Smith',
+        dgroup_status: 'Active',
+        dgroup_member_since: '2020',
       },
     });
 
     render(<MemberInfoTab member={member} />);
 
-    expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
-    expect(screen.getByText('Additional Information')).toBeInTheDocument();
+    // Promoted under Personal Details
+    expect(screen.getByText('Civil Status')).toBeInTheDocument();
+    expect(screen.getByText('Married')).toBeInTheDocument();
 
-    expect(screen.getByText('T Shirt Size')).toBeInTheDocument();
-    expect(screen.getByText('Large')).toBeInTheDocument();
+    expect(screen.getByText('DGroup Leader')).toBeInTheDocument();
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
 
-    expect(screen.getByText('Dietary Restrictions')).toBeInTheDocument();
-    expect(screen.getByText('Vegetarian')).toBeInTheDocument();
+    expect(screen.getByText('DGroup Status')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+
+    expect(screen.getByText('DGroup Member Since')).toBeInTheDocument();
+    expect(screen.getByText('2020')).toBeInTheDocument();
   });
 });

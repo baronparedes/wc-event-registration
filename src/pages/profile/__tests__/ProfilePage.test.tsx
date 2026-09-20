@@ -70,8 +70,6 @@ describe('ProfilePage', () => {
     expect(screen.getByText(/Athlete/)).toBeInTheDocument();
     expect(screen.getByText(/Adult/)).toBeInTheDocument();
     expect(screen.getByText('john@example.com')).toBeInTheDocument();
-    expect(screen.getByText('Membershiptype')).toBeInTheDocument(); // Title Cased as defined by toTitleCase helper
-    expect(screen.getByText('Gold')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Info' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Commitments' })).toBeInTheDocument();
