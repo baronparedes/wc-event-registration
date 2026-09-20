@@ -24,7 +24,8 @@ import { useLocation } from 'react-router-dom';
 
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
-import { useCurrentProfileQuery } from '@/hooks/domain/members';
+import { useAdminFormQuery } from '@/hooks/domain/forms';
+import { useAdminMemberQuery, useCurrentProfileQuery } from '@/hooks/domain/members';
 import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
 export type DrawerNavItem = {
@@ -52,6 +53,30 @@ export function getEventIdFromPath(pathname: string): string | null {
   return eventRouteMatch?.[1] ?? null;
 }
 
+export function getFormIdFromPath(pathname: string): string | null {
+  if (
+    pathname === ROUTE_PATHS.adminFormNew ||
+    pathname.startsWith(`${ROUTE_PATHS.adminFormNew}/`)
+  ) {
+    return null;
+  }
+
+  const formRouteMatch = pathname.match(/^\/admin\/forms\/([^/]+)/);
+  return formRouteMatch?.[1] ?? null;
+}
+
+export function getMemberIdFromPath(pathname: string): string | null {
+  if (
+    pathname === ROUTE_PATHS.adminMembersImport ||
+    pathname.startsWith(`${ROUTE_PATHS.adminMembersImport}/`)
+  ) {
+    return null;
+  }
+
+  const memberRouteMatch = pathname.match(/^\/admin\/members\/([^/]+)/);
+  return memberRouteMatch?.[1] ?? null;
+}
+
 export function useAppDrawerNavigation({
   isAuthenticated,
   hasSession = isAuthenticated,
@@ -60,7 +85,12 @@ export function useAppDrawerNavigation({
 }: UseAppDrawerNavigationProps) {
   const location = useLocation();
   const eventId = getEventIdFromPath(location.pathname);
+  const formId = getFormIdFromPath(location.pathname);
+  const memberId = getMemberIdFromPath(location.pathname);
+
   const { data: selectedEvent } = useAdminEventQuery(eventId ?? undefined);
+  const { data: selectedForm } = useAdminFormQuery(formId ?? undefined);
+  const { data: selectedMember } = useAdminMemberQuery(memberId ?? undefined);
   const { data: currentProfile } = useCurrentProfileQuery();
 
   const canWrite = canAdminPerform(adminRole, 'canWriteAdminData');
@@ -263,13 +293,74 @@ export function useAppDrawerNavigation({
     return items;
   }, [eventId, canAccessCheckIn, canWrite, canRead]);
 
+  const formWorkspaceNavItems = useMemo<DrawerNavItem[]>(() => {
+    if (!formId) return [];
+
+    const items: DrawerNavItem[] = [];
+
+    if (canWrite) {
+      items.push({
+        to: toRoute('adminFormDetail', { id: formId }),
+        label: 'Manage Form',
+        icon: Settings,
+      });
+      items.push({
+        to: toRoute('adminFormFields', { id: formId }),
+        label: 'Manage Form Fields',
+        icon: FormInput,
+      });
+    }
+
+    if (canRead) {
+      items.push({
+        to: toRoute('adminFormSubmissions', { id: formId }),
+        label: 'Manage Submissions',
+        icon: ClipboardList,
+      });
+    }
+
+    return items;
+  }, [formId, canWrite, canRead]);
+
+  const memberWorkspaceNavItems = useMemo<DrawerNavItem[]>(() => {
+    if (!memberId) return [];
+
+    const items: DrawerNavItem[] = [];
+
+    if (canReadMembers) {
+      items.push({
+        to: toRoute('adminMemberDetail', { id: memberId }),
+        label: 'Edit Member',
+        icon: Settings,
+      });
+      items.push({
+        to: toRoute('adminMemberServiceAttendance', { id: memberId }),
+        label: 'Service Attendance',
+        icon: UserCheck,
+      });
+      items.push({
+        to: toRoute('adminMemberEventHistory', { id: memberId }),
+        label: 'Event History',
+        icon: Calendar,
+      });
+    }
+
+    return items;
+  }, [memberId, canReadMembers]);
+
   return {
     mainNavItems,
     adminNavItems,
     eventWorkspaceNavItems,
     attendanceNavItems,
+    formWorkspaceNavItems,
+    memberWorkspaceNavItems,
     eventId,
     selectedEvent,
+    formId,
+    selectedForm,
+    memberId,
+    selectedMember,
     hasProfileAccess,
     displayName,
     avatarObjectKey,

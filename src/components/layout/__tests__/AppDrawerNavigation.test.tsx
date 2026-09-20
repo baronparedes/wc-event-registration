@@ -7,19 +7,30 @@ import { ROUTE_PATHS } from '@/config/constants';
 
 import { AppDrawerNavigation } from '../AppDrawerNavigation';
 
-const { mockUseAdminEventQuery, mockUseCurrentProfileQuery, mockUseMemberAvatarQuery } = vi.hoisted(
-  () => ({
-    mockUseAdminEventQuery: vi.fn(),
-    mockUseCurrentProfileQuery: vi.fn(),
-    mockUseMemberAvatarQuery: vi.fn(),
-  }),
-);
+const {
+  mockUseAdminEventQuery,
+  mockUseAdminFormQuery,
+  mockUseAdminMemberQuery,
+  mockUseCurrentProfileQuery,
+  mockUseMemberAvatarQuery,
+} = vi.hoisted(() => ({
+  mockUseAdminEventQuery: vi.fn(),
+  mockUseAdminFormQuery: vi.fn(),
+  mockUseAdminMemberQuery: vi.fn(),
+  mockUseCurrentProfileQuery: vi.fn(),
+  mockUseMemberAvatarQuery: vi.fn(),
+}));
 
 vi.mock('@/hooks/domain/events', () => ({
   useAdminEventQuery: (...args: unknown[]) => mockUseAdminEventQuery(...args),
 }));
 
+vi.mock('@/hooks/domain/forms', () => ({
+  useAdminFormQuery: (...args: unknown[]) => mockUseAdminFormQuery(...args),
+}));
+
 vi.mock('@/hooks/domain/members', () => ({
+  useAdminMemberQuery: (...args: unknown[]) => mockUseAdminMemberQuery(...args),
   useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
   useMemberAvatarQuery: (...args: unknown[]) => mockUseMemberAvatarQuery(...args),
 }));
@@ -57,6 +68,8 @@ function renderDrawer(options?: {
 describe('AppDrawerNavigation', () => {
   it('does not render overlay when drawer is closed', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -67,6 +80,8 @@ describe('AppDrawerNavigation', () => {
 
   it('shows Hub link and sign-in link for unauthenticated users and hides My Profile link', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -83,6 +98,8 @@ describe('AppDrawerNavigation', () => {
 
   it('shows My Profile link and avatar when user has a session and matching member profile', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
     const member = makeAdminMember({ full_name: 'John Smith' });
     mockUseCurrentProfileQuery.mockReturnValue({ data: member });
@@ -103,6 +120,8 @@ describe('AppDrawerNavigation', () => {
 
   it('hides My Profile link when user has a session but no matching member profile', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -118,6 +137,8 @@ describe('AppDrawerNavigation', () => {
 
   it('shows user identity and sign-out for authenticated non-admin users while hiding admin links', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -137,6 +158,8 @@ describe('AppDrawerNavigation', () => {
 
   it('shows admin links and handles sign out for authenticated users', async () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
     const { onClose, onLogout } = renderDrawer({
@@ -173,6 +196,8 @@ describe('AppDrawerNavigation', () => {
 
   it('shows member navigation for imt users without admin write links', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -188,6 +213,8 @@ describe('AppDrawerNavigation', () => {
 
   it('renders event workspace and attendance links with event title when on event routes', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -225,6 +252,8 @@ describe('AppDrawerNavigation', () => {
 
   it('uses event id as fallback label when event title is unavailable', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -235,6 +264,8 @@ describe('AppDrawerNavigation', () => {
 
   it('does not render event workspace for new event route variants', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -246,6 +277,8 @@ describe('AppDrawerNavigation', () => {
 
   it('closes when overlay or close button is clicked', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
     const { onClose } = renderDrawer();
@@ -258,6 +291,8 @@ describe('AppDrawerNavigation', () => {
 
   it('invokes onClose when clicking navigation links', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
     const { onClose } = renderDrawer({ path: '/admin/events/event-1' });
@@ -269,6 +304,8 @@ describe('AppDrawerNavigation', () => {
 
   it('hides write-only links for slod users while preserving read navigation', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 
@@ -307,6 +344,8 @@ describe('AppDrawerNavigation', () => {
 
   it('shows check-in only navigation for kiosk users on event routes', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: { title: 'Event Alpha' } });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
 

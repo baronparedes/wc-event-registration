@@ -6,10 +6,22 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
 
-import { getEventIdFromPath, useAppDrawerNavigation } from '../hooks/useAppDrawerNavigation';
+import {
+  getEventIdFromPath,
+  getFormIdFromPath,
+  getMemberIdFromPath,
+  useAppDrawerNavigation,
+} from '../hooks/useAppDrawerNavigation';
 
-const { mockUseAdminEventQuery, mockUseCurrentProfileQuery } = vi.hoisted(() => ({
+const {
+  mockUseAdminEventQuery,
+  mockUseAdminFormQuery,
+  mockUseAdminMemberQuery,
+  mockUseCurrentProfileQuery,
+} = vi.hoisted(() => ({
   mockUseAdminEventQuery: vi.fn(),
+  mockUseAdminFormQuery: vi.fn(),
+  mockUseAdminMemberQuery: vi.fn(),
   mockUseCurrentProfileQuery: vi.fn(),
 }));
 
@@ -17,7 +29,12 @@ vi.mock('@/hooks/domain/events', () => ({
   useAdminEventQuery: (...args: unknown[]) => mockUseAdminEventQuery(...args),
 }));
 
+vi.mock('@/hooks/domain/forms', () => ({
+  useAdminFormQuery: (...args: unknown[]) => mockUseAdminFormQuery(...args),
+}));
+
 vi.mock('@/hooks/domain/members', () => ({
+  useAdminMemberQuery: (...args: unknown[]) => mockUseAdminMemberQuery(...args),
   useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
 }));
 
@@ -42,9 +59,41 @@ describe('getEventIdFromPath', () => {
   });
 });
 
+describe('getFormIdFromPath', () => {
+  it('extracts form ID from admin form routes', () => {
+    expect(getFormIdFromPath('/admin/forms/form-123')).toBe('form-123');
+    expect(getFormIdFromPath('/admin/forms/form-123/submissions')).toBe('form-123');
+    expect(getFormIdFromPath('/admin/forms/form-123/fields')).toBe('form-123');
+  });
+
+  it('returns null for new form creation routes or non-form routes', () => {
+    expect(getFormIdFromPath(ROUTE_PATHS.adminFormNew)).toBeNull();
+    expect(getFormIdFromPath(`${ROUTE_PATHS.adminFormNew}/sub`)).toBeNull();
+    expect(getFormIdFromPath(ROUTE_PATHS.home)).toBeNull();
+    expect(getFormIdFromPath(ROUTE_PATHS.adminEvents)).toBeNull();
+  });
+});
+
+describe('getMemberIdFromPath', () => {
+  it('extracts member ID from admin member routes', () => {
+    expect(getMemberIdFromPath('/admin/members/member-123')).toBe('member-123');
+    expect(getMemberIdFromPath('/admin/members/member-123/service-attendance')).toBe('member-123');
+    expect(getMemberIdFromPath('/admin/members/member-123/event-history')).toBe('member-123');
+  });
+
+  it('returns null for import routes or non-member routes', () => {
+    expect(getMemberIdFromPath(ROUTE_PATHS.adminMembersImport)).toBeNull();
+    expect(getMemberIdFromPath(`${ROUTE_PATHS.adminMembersImport}/sub`)).toBeNull();
+    expect(getMemberIdFromPath(ROUTE_PATHS.home)).toBeNull();
+    expect(getMemberIdFromPath(ROUTE_PATHS.adminEvents)).toBeNull();
+  });
+});
+
 describe('useAppDrawerNavigation', () => {
   it('returns basic main navigation for unauthenticated guest', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     const { result } = renderHook(
@@ -114,6 +163,8 @@ describe('useAppDrawerNavigation', () => {
 
   it('filters permissions strictly for kiosk role', () => {
     mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 
     const { result } = renderHook(
@@ -131,5 +182,57 @@ describe('useAppDrawerNavigation', () => {
     expect(result.current.adminNavItems.map((i) => i.label)).toEqual(['Manage Events']);
     expect(result.current.eventWorkspaceNavItems).toEqual([]);
     expect(result.current.attendanceNavItems.map((i) => i.label)).toEqual(['Check-In']);
+  });
+
+  it('builds form workspace navigation for admin on a form route', () => {
+    mockUseAdminFormQuery.mockReturnValue({
+      data: { title: 'Registration Form' },
+    });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
+
+    const { result } = renderHook(
+      () =>
+        useAppDrawerNavigation({
+          isAuthenticated: true,
+          hasSession: true,
+          adminRole: 'admin',
+        }),
+      {
+        wrapper: createWrapper('/admin/forms/form-123'),
+      },
+    );
+
+    expect(result.current.formWorkspaceNavItems.map((i) => i.label)).toEqual([
+      'Manage Form',
+      'Manage Form Fields',
+      'Manage Submissions',
+    ]);
+    expect(result.current.formId).toBe('form-123');
+  });
+
+  it('builds member workspace navigation for admin on a member route', () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: { full_name: 'John Doe' },
+    });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
+
+    const { result } = renderHook(
+      () =>
+        useAppDrawerNavigation({
+          isAuthenticated: true,
+          hasSession: true,
+          adminRole: 'admin',
+        }),
+      {
+        wrapper: createWrapper('/admin/members/member-123'),
+      },
+    );
+
+    expect(result.current.memberWorkspaceNavItems.map((i) => i.label)).toEqual([
+      'Edit Member',
+      'Service Attendance',
+      'Event History',
+    ]);
+    expect(result.current.memberId).toBe('member-123');
   });
 });
