@@ -21,7 +21,7 @@ vi.mock('@/hooks/domain/members', async () => {
   return {
     ...actual,
     useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
-    useMemberEventHistoryQuery: (...args: unknown[]) => mockUseMemberEventHistoryQuery(...args),
+    useMemberEventHistoryQuery: (memberId?: string) => mockUseMemberEventHistoryQuery(memberId),
   };
 });
 
@@ -66,6 +66,11 @@ describe('ProfilePage', () => {
 
   it('renders member details and tab triggers', () => {
     renderPage();
+    expect(
+      screen.getByRole('region', { name: /Welcome to CCF Hello Brochure Banner/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('8 Interactive Slides')).toBeInTheDocument();
+    expect(screen.getByText('Explore →')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
     expect(screen.getByText(/Athlete/)).toBeInTheDocument();
     expect(screen.getByText(/Adult/)).toBeInTheDocument();

@@ -10,6 +10,7 @@ import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { formatDateTime } from '@/lib';
+import { WelcomeHelloBanner } from '@/pages/home/components';
 
 import { EventHistoryTab } from './components/EventHistoryTab';
 import { MemberInfoTab } from './components/MemberInfoTab';
@@ -46,47 +47,48 @@ export function ProfilePage() {
   return (
     <AdminPageShell>
       <AdminPageShell.Content>
-        <div className="space-y-6">
-          <div className="flex grid justify-center text-center">
-            <Avatar
-              name={avatarName}
-              avatarObjectKey={member.avatar_object_key}
-              size={isMobile ? 'xl' : '2xl'}
-              className="shrink-0 self-center sm:self-start"
-            />
-            <h1 className="text-2xl font-semi-bold pt-4">{avatarName}</h1>
-            {member.last_activity && (
+        <WelcomeHelloBanner translucentBackground />
+        <div className="relative z-10 -mt-14 sm:-mt-44 md:-mt-52 mb-6 flex flex-col items-center text-center">
+          <Avatar
+            name={avatarName}
+            avatarObjectKey={member.avatar_object_key}
+            size={isMobile ? 'lg' : '2xl'}
+            className="ring-1 ring-surface shadow-md"
+          />
+          <h1 className="text-2xl font-bold text-text pt-3 sm:text-3xl">{avatarName}</h1>
+          <p className="text-muted text-sm mt-1">
+            {member.role} • {member.category} • {member.member_id}
+          </p>
+          {member.last_activity && (
+            <div className="mt-2.5">
               <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
-            )}
-            <p className="text-muted text-sm">
-              {member.role} • {member.category} • {member.member_id}
-            </p>
-          </div>
-
-          <Tabs
-            value={activeTab}
-            onValueChange={(val) =>
-              setActiveTab(val as 'member_info' | 'events' | 'service_attendance')
-            }
-          >
-            <TabsList>
-              <TabsTrigger value="member_info">Info</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="service_attendance">Commitments</TabsTrigger>
-            </TabsList>
-            <TabsContent value="member_info">
-              <MemberInfoTab member={member} />
-            </TabsContent>
-
-            <TabsContent value="events">
-              <EventHistoryTab memberId={member.id} />
-            </TabsContent>
-
-            <TabsContent value="service_attendance">
-              <ServiceAttendanceHistoryTab memberId={member.id} metadata={extraMetadata} />
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) =>
+            setActiveTab(val as 'member_info' | 'events' | 'service_attendance')
+          }
+        >
+          <TabsList>
+            <TabsTrigger value="member_info">Info</TabsTrigger>
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="service_attendance">Commitments</TabsTrigger>
+          </TabsList>
+          <TabsContent value="member_info">
+            <MemberInfoTab member={member} />
+          </TabsContent>
+
+          <TabsContent value="events">
+            <EventHistoryTab memberId={member.id} />
+          </TabsContent>
+
+          <TabsContent value="service_attendance">
+            <ServiceAttendanceHistoryTab memberId={member.id} metadata={extraMetadata} />
+          </TabsContent>
+        </Tabs>
       </AdminPageShell.Content>
     </AdminPageShell>
   );

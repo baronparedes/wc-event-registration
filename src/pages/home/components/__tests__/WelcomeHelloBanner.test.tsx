@@ -38,4 +38,12 @@ describe('WelcomeHelloBanner', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.hello);
   });
+
+  it('hides the center graphic but keeps explore controls when translucentBackground is true', () => {
+    render(<WelcomeHelloBanner translucentBackground />);
+
+    expect(screen.queryByAltText('CCF Hello Brochure Preview')).not.toBeInTheDocument();
+    expect(screen.getByText('8 Interactive Slides')).toBeInTheDocument();
+    expect(screen.getByText('Explore →')).toBeInTheDocument();
+  });
 });
