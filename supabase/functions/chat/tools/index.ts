@@ -1,3 +1,4 @@
+import { createAnalyzeEventAttendeesTool } from './analyzeEventAttendees.ts';
 import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
 import { createGetEventsTool } from './getEvents.ts';
 import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
@@ -11,6 +12,7 @@ import type { ToolContext } from './types.ts';
 
 export * from './types.ts';
 export * from './getAdminRoutes.ts';
+export * from './analyzeEventAttendees.ts';
 export * from './getEvents.ts';
 export * from './getExcusedMembers.ts';
 export * from './getServiceDashboardStats.ts';
@@ -32,5 +34,6 @@ export function createChatTools(context: ToolContext) {
     getUserDemographics: createGetUserDemographicsTool(context),
     getUserServiceActivity: createGetUserServiceActivityTool(context),
     getUnexcusedVolunteers: createGetUnexcusedVolunteersTool(context),
+    analyzeEventAttendees: createAnalyzeEventAttendeesTool(context),
   };
 }
