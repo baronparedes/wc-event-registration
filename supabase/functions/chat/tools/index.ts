@@ -4,6 +4,7 @@ import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
 import { createGetUpcomingMilestonesTool } from './getUpcomingMilestones.ts';
 import { createGetUserCommitmentsTool } from './getUserCommitments.ts';
 import { createGetUserDemographicsTool } from './getUserDemographics.ts';
+import { createGetUserServiceActivityTool } from './getUserServiceActivity.ts';
 import type { ToolContext } from './types.ts';
 
 export * from './types.ts';
@@ -13,6 +14,7 @@ export * from './getExcusedMembers.ts';
 export * from './getUpcomingMilestones.ts';
 export * from './getUserCommitments.ts';
 export * from './getUserDemographics.ts';
+export * from './getUserServiceActivity.ts';
 
 export function createChatTools(context: ToolContext) {
   return {
@@ -22,5 +24,6 @@ export function createChatTools(context: ToolContext) {
     getUpcomingMilestones: createGetUpcomingMilestonesTool(context),
     getUserCommitments: createGetUserCommitmentsTool(context),
     getUserDemographics: createGetUserDemographicsTool(context),
+    getUserServiceActivity: createGetUserServiceActivityTool(context),
   };
 }

@@ -252,4 +252,36 @@ describe('AdminChatPage', () => {
     expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
     expect(window.sessionStorage.getItem('wc_admin_chat_messages')).toBeNull();
   });
+
+  it('limits payload messages sent to streamRequest using sliding context window', async () => {
+    const historicalMessages = Array.from({ length: 25 }, (_, i) => ({
+      id: `msg-${i}`,
+      role: (i % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: `Message ${i}`,
+    }));
+    window.sessionStorage.setItem('wc_admin_chat_messages', JSON.stringify(historicalMessages));
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'New query' } });
+
+    const sendButton = screen.getByRole('button', { name: /Send/i });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(mockStreamRequest).toHaveBeenCalledTimes(1);
+    });
+
+    const callPayload = mockStreamRequest.mock.calls[0][0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(callPayload.messages).toHaveLength(20);
+    expect(callPayload.messages[callPayload.messages.length - 1]?.content).toBe('New query');
+    expect(callPayload.messages[0]?.content).toBe('Message 6'); // 26 total (25 historical + 1 new), last 20 starts at index 6
+  });
 });

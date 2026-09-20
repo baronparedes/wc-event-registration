@@ -1,22 +1,19 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Loader2, RotateCcw, Send, Square } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Avatar, Badge, BrandAvatar, Button, FormInputField } from '@/components/ui';
+import { Badge, BrandAvatar, Button } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useChatStreamQuery, useUserTokenMapQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
-import { ChatMessageContent, CopyButton } from './components';
+import { ChatInputForm, ChatMessageItem, type ChatMessageItemData } from './components';
 
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
+type Message = ChatMessageItemData;
 
 const CHAT_STORAGE_KEY = 'wc_admin_chat_messages';
+const MAX_CONTEXT_MESSAGES = 20;
 
 function isValidMessage(item: unknown): item is Message {
   if (typeof item !== 'object' || item === null) return false;
@@ -47,7 +44,6 @@ function loadStoredMessages(): Message[] {
 export function AdminChatPage() {
   useUserTokenMapQuery();
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
-  const [input, setInput] = useState('');
   const { streamRequest, stopStream, isLoading } = useChatStreamQuery();
   const { data: adminAuth } = useAdminAuthQuery();
   const { data: currentProfile } = useCurrentProfileQuery();
@@ -60,7 +56,9 @@ export function AdminChatPage() {
 
   const isSubmittingRef = useRef(false);
 
+  // Only persist to sessionStorage when not actively streaming to avoid heavy JSON.stringify blocking
   useEffect(() => {
+    if (isLoading) return;
     try {
       if (messages.length > 0) {
         window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
@@ -70,7 +68,7 @@ export function AdminChatPage() {
     } catch (error) {
       console.error('Failed to save chat messages to sessionStorage', error);
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleClearChat = () => {
     setMessages([]);
@@ -81,35 +79,62 @@ export function AdminChatPage() {
     }
   };
 
-  useEffect(() => {
-    if (bottomRef.current?.scrollIntoView) {
+  const scrollToBottom = useCallback((smooth = false) => {
+    if (smooth && bottomRef.current?.scrollIntoView) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     } else if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, []);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading || isSubmittingRef.current) return;
+  useEffect(() => {
+    scrollToBottom(!isLoading);
+  }, [messages.length, isLoading, scrollToBottom]);
+
+  const handleSendMessage = async (trimmedInput: string) => {
+    if (!trimmedInput || isLoading || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    const trimmedInput = input.trim();
     const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: trimmedInput };
     const assistantMessageId = crypto.randomUUID();
     const currentMessages = [...messages, userMessage];
 
     setMessages([...currentMessages, { id: assistantMessageId, role: 'assistant', content: '' }]);
-    setInput('');
+    scrollToBottom(true);
+
+    // Sliding context window: send at most the last MAX_CONTEXT_MESSAGES to keep AI latency low
+    const contextMessages = currentMessages.slice(-MAX_CONTEXT_MESSAGES);
+
+    let pendingBuffer = '';
+    let rafId: number | null = null;
+
+    const flushBuffer = () => {
+      if (pendingBuffer !== '') {
+        const text = pendingBuffer;
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, content: text } : msg)),
+        );
+        scrollToBottom(false);
+        rafId = null;
+      }
+    };
 
     try {
-      await streamRequest({ messages: currentMessages }, (textBuffer: string) => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMessageId ? { ...msg, content: textBuffer } : msg,
-          ),
-        );
+      await streamRequest({ messages: contextMessages }, (textBuffer: string) => {
+        pendingBuffer = textBuffer;
+        if (!rafId) {
+          rafId =
+            typeof requestAnimationFrame === 'function'
+              ? requestAnimationFrame(flushBuffer)
+              : (flushBuffer(), null);
+        }
       });
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      flushBuffer();
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMessageId && !msg.content.trim()
@@ -118,6 +143,12 @@ export function AdminChatPage() {
         ),
       );
     } catch (error) {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      flushBuffer();
+
       console.error('Chat error:', error);
       const isAbortError =
         (error instanceof DOMException && error.name === 'AbortError') ||
@@ -153,14 +184,14 @@ export function AdminChatPage() {
           ),
         );
       }
+    } finally {
+      isSubmittingRef.current = false;
     }
-    isSubmittingRef.current = false;
   };
 
   return (
     <AdminPageShell>
       <AdminPageShell.Header
-        breadcrumbs={[{ label: 'AI Assistant' }]}
         title="AI Assistant"
         badge={
           <Badge
@@ -170,7 +201,12 @@ export function AdminChatPage() {
             Beta
           </Badge>
         }
-        description="Ask questions about data and events."
+        description={
+          <p className="text-xs opacity-90 leading-relaxed italic">
+            AI responses can be inaccurate. Always verify critical data independently. This tool is
+            for informational purposes and does not replace human judgment.
+          </p>
+        }
         actions={
           messages.length > 0 ? (
             <Button
@@ -207,79 +243,19 @@ export function AdminChatPage() {
               </div>
             )}
             {messages.map((m) => (
-              <div
+              <ChatMessageItem
                 key={m.id}
-                className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-              >
-                {m.role === 'user' ? (
-                  <Avatar
-                    name={displayName}
-                    avatarObjectKey={avatarObjectKey}
-                    size="sm"
-                    className="h-8 w-8 shrink-0 text-xs"
-                  />
-                ) : (
-                  <BrandAvatar size="xs" />
-                )}
-                <div className="flex flex-col gap-1 max-w-[90%] sm:max-w-[85%]">
-                  <div
-                    className={`rounded-2xl px-4 py-2.5 ${
-                      m.role === 'user'
-                        ? 'bg-primary text-white rounded-tr-none'
-                        : 'bg-background border border-border rounded-tl-none shadow-sm'
-                    }`}
-                  >
-                    {m.role === 'user' ? (
-                      <p className="whitespace-pre-wrap text-sm">{m.content}</p>
-                    ) : m.content.trim() ? (
-                      <ChatMessageContent content={m.content} />
-                    ) : (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted" />
-                    )}
-                  </div>
-                  {m.role === 'assistant' && m.content.trim() && !isLoading && (
-                    <div className="flex px-1">
-                      <CopyButton content={m.content} />
-                    </div>
-                  )}
-                </div>
-              </div>
+                message={m}
+                displayName={displayName}
+                avatarObjectKey={avatarObjectKey}
+                isLoading={isLoading && m.id === messages[messages.length - 1]?.id}
+              />
             ))}
             {messages.length > 0 && <div ref={bottomRef} className="h-1" />}
           </div>
 
           <div className="border-t border-border bg-background p-4">
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <FormInputField
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything..."
-                className="flex-1"
-                inputClassName="w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-              />
-              {isLoading ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={stopStream}
-                  className="shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200"
-                  aria-label="Stop generating"
-                >
-                  <Square className="h-4 w-4 sm:mr-2 fill-current" />
-                  <span className="hidden sm:inline">Stop</span>
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  variant="default"
-                  disabled={!input.trim()}
-                  className="shrink-0"
-                >
-                  <Send className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Send</span>
-                </Button>
-              )}
-            </form>
+            <ChatInputForm isLoading={isLoading} onSubmit={handleSendMessage} onStop={stopStream} />
           </div>
         </div>
       </AdminPageShell.Content>

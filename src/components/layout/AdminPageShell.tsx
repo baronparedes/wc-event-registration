@@ -24,7 +24,7 @@ export function AdminPageShell({ children, wide = false }: AdminPageShellProps) 
 
 type AdminPageHeaderProps = {
   title: string;
-  description?: string;
+  description?: ReactNode;
   badge?: ReactNode;
   actions?: ReactNode;
   breadcrumbs?: Array<{
