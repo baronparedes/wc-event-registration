@@ -46,6 +46,11 @@ export type ServiceAttendance = {
   created_by: string | null;
   updated_by: string | null;
   service_seats?: ServiceAttendanceSeat | null;
+  user?: {
+    member_id: string;
+    full_name: string;
+    nickname: string | null;
+  } | null;
 };
 
 export type UserCommitmentSnapshot = {

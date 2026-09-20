@@ -1,15 +1,30 @@
 import { Briefcase } from 'lucide-react';
 
 import { Badge, SectionCard } from '@/components/ui';
+import { ROUTE_PATHS } from '@/config/constants';
 import type { DashboardStatsResponse } from '@/hooks/domain/services';
 
 import { type ServiceTimeSlot, TIME_SLOTS } from '../constants';
 
 interface ServiceDashboardRoleBreakdownProps {
   stats: DashboardStatsResponse;
+  dateFilterParams: URLSearchParams;
 }
 
-export function ServiceDashboardRoleBreakdown({ stats }: ServiceDashboardRoleBreakdownProps) {
+export function ServiceDashboardRoleBreakdown({
+  stats,
+  dateFilterParams,
+}: ServiceDashboardRoleBreakdownProps) {
+  const handleRoleDrillDown = (role: string, ts: ServiceTimeSlot) => {
+    const params = new URLSearchParams(dateFilterParams);
+    params.set('role', role);
+    params.set('time_slot', ts);
+
+    // We open in a new tab
+    const url = `${ROUTE_PATHS.adminServiceAttendanceData}?${params.toString()}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const getSlot = (ts: ServiceTimeSlot) =>
     stats.time_slots?.[ts] ?? {
       committed: 0,
@@ -60,14 +75,22 @@ export function ServiceDashboardRoleBreakdown({ stats }: ServiceDashboardRoleBre
                   </Badge>
                 </div>
                 <div className="mt-3 grid grid-cols-3 divide-x divide-border/60 rounded-lg border border-border/60 bg-surface py-2">
-                  {TIME_SLOTS.map((ts) => (
-                    <div key={ts} className="flex flex-col items-center px-1 text-center">
-                      <span className="text-[10px] font-medium text-muted">{ts}</span>
-                      <span className="font-heading text-base font-bold text-text">
-                        {getSlot(ts).roles?.[role] || 0}
-                      </span>
-                    </div>
-                  ))}
+                  {TIME_SLOTS.map((ts) => {
+                    const count = getSlot(ts).roles?.[role] || 0;
+                    return (
+                      <button
+                        key={ts}
+                        type="button"
+                        onClick={() => handleRoleDrillDown(role, ts)}
+                        disabled={count === 0}
+                        className="flex flex-col items-center px-1 text-center hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-default"
+                        title={count > 0 ? `View ${role} attendance for ${ts}` : undefined}
+                      >
+                        <span className="text-[10px] font-medium text-muted">{ts}</span>
+                        <span className="font-heading text-base font-bold text-text">{count}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );

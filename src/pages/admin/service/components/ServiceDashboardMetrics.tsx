@@ -1,12 +1,14 @@
 import { Clock, Handshake, Percent, UserCheck, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui';
+import { ROUTE_PATHS } from '@/config/constants';
 import type { DashboardStatsResponse } from '@/hooks/domain/services';
 
 import { type ServiceTimeSlot, TIME_SLOTS } from '../constants';
 
 interface ServiceDashboardMetricsProps {
   stats: DashboardStatsResponse;
+  dateFilterParams: URLSearchParams;
 }
 
 function getTurnupPercentage(present: number, committed: number) {
@@ -14,7 +16,21 @@ function getTurnupPercentage(present: number, committed: number) {
   return Math.round((present / committed) * 100);
 }
 
-export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps) {
+export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDashboardMetricsProps) {
+  const handleDrillDown = (ts: ServiceTimeSlot | null, extraParams?: Record<string, string>) => {
+    const params = new URLSearchParams(dateFilterParams);
+    if (ts) {
+      params.set('time_slot', ts);
+    }
+    if (extraParams) {
+      Object.entries(extraParams).forEach(([key, val]) => params.set(key, val));
+    }
+
+    // Open in a new tab
+    const url = `${ROUTE_PATHS.adminServiceAttendanceData}?${params.toString()}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const getSlot = (ts: ServiceTimeSlot) =>
     stats.time_slots?.[ts] ?? {
       committed: 0,
@@ -89,9 +105,13 @@ export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps)
             {TIME_SLOTS.map((ts) => {
               const slot = getSlot(ts);
               return (
-                <div
+                <button
                   key={ts}
-                  className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center"
+                  type="button"
+                  onClick={() => handleDrillDown(ts)}
+                  disabled={slot.present === 0}
+                  className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center hover:border-primary/40 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-background transition-colors cursor-pointer disabled:cursor-default"
+                  title={slot.present > 0 ? `View present attendees for ${ts}` : undefined}
                 >
                   <span className="text-xs font-medium text-muted">{ts}</span>
                   <span className="font-heading text-2xl font-bold text-text">{slot.present}</span>
@@ -104,7 +124,7 @@ export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps)
                       <span className="text-[10px] text-muted">—</span>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -178,9 +198,15 @@ export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps)
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
             {TIME_SLOTS.map((ts) => (
-              <div
+              <button
                 key={ts}
-                className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center"
+                type="button"
+                onClick={() => handleDrillDown(ts, { is_late_tardy: 'true' })}
+                disabled={getSlot(ts).late_tardy === 0}
+                className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center hover:border-primary/40 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-background transition-colors cursor-pointer disabled:cursor-default"
+                title={
+                  getSlot(ts).late_tardy > 0 ? `View late/tardy attendees for ${ts}` : undefined
+                }
               >
                 <span className="text-xs font-medium text-muted">{ts}</span>
                 <span className="font-heading text-2xl font-bold text-text">
@@ -189,7 +215,7 @@ export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps)
                 <div className="flex h-5 w-full items-center justify-center">
                   <span className="text-[10px] text-muted">—</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -212,9 +238,13 @@ export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps)
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
             {TIME_SLOTS.map((ts) => (
-              <div
+              <button
                 key={ts}
-                className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center"
+                type="button"
+                onClick={() => handleDrillDown(ts, { is_walk_in: 'true' })}
+                disabled={getSlot(ts).walk_ins === 0}
+                className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center hover:border-primary/40 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-background transition-colors cursor-pointer disabled:cursor-default"
+                title={getSlot(ts).walk_ins > 0 ? `View walk-in attendees for ${ts}` : undefined}
               >
                 <span className="text-xs font-medium text-muted">{ts}</span>
                 <span className="font-heading text-2xl font-bold text-text">
@@ -223,7 +253,7 @@ export function ServiceDashboardMetrics({ stats }: ServiceDashboardMetricsProps)
                 <div className="flex h-5 w-full items-center justify-center">
                   <span className="text-[10px] text-muted">—</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

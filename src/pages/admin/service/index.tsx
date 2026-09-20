@@ -43,6 +43,16 @@ export function AdminServicesPage() {
 
   const { data: stats, isLoading, isError } = useServiceDashboardQuery(queryFilters);
 
+  const dateFilterParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filterMode === 'sunday' && selectedSunday) {
+      params.set('service_date', selectedSunday);
+    }
+    // For month and annual, drill down currently wouldn't map exactly to a single day,
+    // so we can omit date or handle start/end dates if useServiceAttendanceQuery supports them.
+    return params;
+  }, [filterMode, selectedSunday]);
+
   return (
     <AdminPageShell wide>
       <AdminPageShell.Header
@@ -82,8 +92,8 @@ export function AdminServicesPage() {
           />
         ) : (
           <div className="space-y-6">
-            <ServiceDashboardMetrics stats={stats} />
-            <ServiceDashboardRoleBreakdown stats={stats} />
+            <ServiceDashboardMetrics stats={stats} dateFilterParams={dateFilterParams} />
+            <ServiceDashboardRoleBreakdown stats={stats} dateFilterParams={dateFilterParams} />
           </div>
         )}
       </AdminPageShell.Content>

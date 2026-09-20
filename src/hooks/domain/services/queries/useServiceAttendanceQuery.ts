@@ -30,6 +30,11 @@ export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters
             table_number,
             seat_number,
             area
+          ),
+          user:users!service_attendance_user_id_fkey(
+            member_id,
+            full_name,
+            nickname
           )
         `,
         )
