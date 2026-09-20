@@ -58,6 +58,13 @@ export function useUpdateEventMutation() {
         };
       }
 
+      if (input.send_email_after_completion !== undefined) {
+        nextValues.metadata = {
+          ...(nextValues.metadata as Record<string, unknown>),
+          send_email_after_completion: input.send_email_after_completion,
+        };
+      }
+
       const { error } = await supabase.from('events').update(nextValues).eq('id', id);
 
       if (error) throw error;

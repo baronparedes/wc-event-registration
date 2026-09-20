@@ -43,7 +43,7 @@ export function FormEditorPage() {
       status: 'draft',
       duplicate_policy: 'block',
       audience: 'members',
-      metadata: {},
+      metadata: { send_email_after_completion: false },
     },
   });
 
@@ -58,7 +58,9 @@ export function FormEditorPage() {
         status: existingForm.status,
         duplicate_policy: existingForm.duplicate_policy,
         audience: existingForm.audience,
-        metadata: existingForm.metadata ?? {},
+        metadata: {
+          ...((existingForm.metadata as Record<string, unknown> | null) ?? {}),
+        },
       });
     }
   }, [existingForm, reset]);
@@ -261,6 +263,23 @@ export function FormEditorPage() {
                 { label: 'Allow Multiple with Update', value: 'allow_multiple_update' },
               ]}
             />
+
+            <div className="rounded-lg border border-border bg-background p-4">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="send-email-after-completion"
+                  {...register('metadata.send_email_after_completion')}
+                  className="h-4 w-4 cursor-pointer rounded border-border"
+                />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-text">Send email after completion</span>
+                  <span className="text-xs text-muted">
+                    Send an email confirmation when submission is completed
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">

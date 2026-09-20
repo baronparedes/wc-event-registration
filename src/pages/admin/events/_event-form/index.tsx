@@ -59,6 +59,7 @@ const DEFAULT_VALUES: CreateEventInput = {
   registration_mode: 'open',
   public_registration_access: 'members',
   allow_name_lookup: false,
+  send_email_after_completion: false,
 };
 
 export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
@@ -120,6 +121,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           require_id_lookup: existingEvent.require_id_lookup,
         }),
         allow_name_lookup: eventMetadata.allow_name_lookup === true,
+        send_email_after_completion: eventMetadata.send_email_after_completion === true,
       });
     }
   }, [isEditMode, existingEvent, reset]);
