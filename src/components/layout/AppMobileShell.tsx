@@ -78,7 +78,7 @@ export function AppMobileShell() {
         onLogout={handleLogout}
       />
 
-      <main className="relative mx-auto w-full max-w-6xl flex-1 animate-fadeIn py-4">
+      <main className="relative mx-auto w-full max-w-6xl flex-1 animate-fadeIn px-4 py-4">
         <Outlet />
       </main>
 

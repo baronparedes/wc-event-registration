@@ -76,7 +76,7 @@ export function AppShell() {
         onLogout={handleLogout}
       />
 
-      <main className="relative mx-auto w-full max-w-7xl flex-1 animate-fadeIn sm:py-2 md:py-4 print:p-0">
+      <main className="relative mx-auto w-full max-w-7xl flex-1 animate-fadeIn px-2 py-4 print:p-0">
         <Outlet />
       </main>
 

@@ -40,7 +40,7 @@ export function AppShellHeader({ isMinimizedShell, userBadge, onOpenDrawer }: Ap
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-1">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-2 py-1">
         <div className="flex items-center gap-3">
           <img src={brandLogo} alt="Welcome Hub" className="h-20 object-cover object-center" />
         </div>
