@@ -1,6 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
+import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import { formatDate, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
@@ -17,15 +18,6 @@ function getUser(usersData: unknown): { role?: string; user_tokens?: unknown } |
   return usersData as { role?: string; user_tokens?: unknown };
 }
 
-function isSpecificRole(role?: string): boolean {
-  if (!role) return false;
-  const trimmed = role.trim().toLowerCase();
-  return (
-    trimmed.length > 0 &&
-    !['volunteer', 'volunteers', 'all', 'any', 'member', 'members'].includes(trimmed)
-  );
-}
-
 const PAGE_SIZE = 1000;
 
 export function createGetUserServiceActivityTool({ client, requestId }: ToolContext) {
@@ -40,7 +32,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
       .trim()
       .optional()
       .describe(
-        'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer".',
+        'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
       ),
     targetStartDate: z
       .string()
@@ -58,7 +50,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
   return tool({
     description:
-      "Determine a user's service attendance check-in activity within a specific date range. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
+      "Determine a user's service attendance check-in activity within a specific date range. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Secondary roles (after '/') are ignored for role filtering and reporting; only the primary role (before '/') is evaluated. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
     parameters: schema,
     execute: async ({ activityType, role, targetStartDate, targetEndDate }) => {
       const now = new Date();
@@ -106,7 +98,8 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
             .range(from, from + PAGE_SIZE - 1);
 
           if (isSpecificRole(role)) {
-            query = query.ilike('users.role', `%${role!.trim()}%`);
+            const cleanRole = getPrimaryRole(role).toLowerCase();
+            query = query.ilike('users.role', `%${cleanRole}%`);
           }
 
           const { data, error } = await query;
@@ -148,7 +141,11 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           const token = getToken(u?.user_tokens);
           if (!token) continue;
 
-          const userRole = u?.role || 'Unspecified';
+          if (!matchesPrimaryRole(u?.role, role)) {
+            continue;
+          }
+
+          const userRole = getPrimaryRole(u?.role);
           const slot = record.time_slot || 'Unknown';
 
           let stats = userStats.get(token);
@@ -207,7 +204,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
           activity_type: activityType,
-          role_filter: role || null,
+          role_filter: role ? getPrimaryRole(role) : null,
           volunteers: sorted,
           summary: {
             total_active_volunteers: sorted.length,
@@ -225,7 +222,8 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           .eq('is_active', true);
 
         if (isSpecificRole(role)) {
-          usersQuery = usersQuery.ilike('role', `%${role!.trim()}%`);
+          const cleanRole = getPrimaryRole(role).toLowerCase();
+          usersQuery = usersQuery.ilike('role', `%${cleanRole}%`);
         }
 
         const { data: allUsers, error: usersError } = await usersQuery;
@@ -237,6 +235,9 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           );
           return { error: 'Failed to retrieve users.' };
         }
+
+        // Filter users whose primary role matches the target role
+        const filteredUsers = (allUsers || []).filter((u) => matchesPrimaryRole(u.role, role));
 
         // Get all user IDs who DID check in (scheduled or walk-in) during the period across paginated pages
         const activeUserIds = new Set<string>();
@@ -270,18 +271,18 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
         }
 
         // Filter users who are NOT in the activeUserIds set
-        const inactiveUsers = (allUsers || [])
+        const inactiveUsers = filteredUsers
           .filter((u) => !activeUserIds.has(u.id))
           .map((u) => ({
             token: getToken(u.user_tokens),
-            role: u.role || 'Unspecified',
+            role: getPrimaryRole(u.role),
           }))
           .filter((u): u is { token: string; role: string } => Boolean(u.token));
 
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
           activity_type: 'inactive',
-          role_filter: role || null,
+          role_filter: role ? getPrimaryRole(role) : null,
           inactive_volunteers: inactiveUsers,
           total_inactive_count: inactiveUsers.length,
         };

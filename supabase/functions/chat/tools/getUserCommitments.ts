@@ -1,12 +1,19 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
+import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import { formatDate, getSundaysInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetUserCommitmentsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    role: z.string().optional().describe('Filter by user role (e.g., "prayer coach", "usher").'),
+    role: z
+      .string()
+      .trim()
+      .optional()
+      .describe(
+        'Filter by user role (e.g., "prayer coach", "usher"). If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -27,7 +34,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
 
   return tool({
     description:
-      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed within the specified date range, optionally filtered by role. Defaults to the coming Sunday when no dates are provided. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
+      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed within the specified date range, optionally filtered by role. Defaults to the coming Sunday when no dates are provided. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ role, targetStartDate, targetEndDate, sunday_availability }) => {
       const now = new Date();
@@ -60,8 +67,9 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         )
         .eq('is_active', true);
 
-      if (role) {
-        query = query.ilike('role', `%${role.trim()}%`);
+      if (isSpecificRole(role)) {
+        const cleanRole = getPrimaryRole(role).toLowerCase();
+        query = query.ilike('role', `%${cleanRole}%`);
       }
 
       const { data, error } = await query;
@@ -70,6 +78,8 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         console.error('[chat:tool:getUserCommitments] Query error', error);
         return { error: error.message };
       }
+
+      const roleFilteredData = (data || []).filter((user) => matchesPrimaryRole(user.role, role));
 
       const targetSundays = getSundaysInRange(range);
       const targetSundayDates = targetSundays.map(({ date }) => date);
@@ -93,7 +103,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
 
       const serviceSlots = ['9AM', '12NN', '3PM'] as const;
       const getUsersForSundayKey = (sundayKey: string) =>
-        (data || []).filter((user) => {
+        roleFilteredData.filter((user) => {
           const metadata = user.metadata as Record<string, unknown> | null;
           if (!metadata) return false;
 
@@ -117,7 +127,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
           .includes(serviceSlot);
       };
 
-      const committedUsers = (data || []).filter((user) => {
+      const committedUsers = roleFilteredData.filter((user) => {
         const metadata = user.metadata as Record<string, unknown> | null;
         if (!metadata) return false;
 
@@ -185,28 +195,23 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
       const sundayBreakdown = buildSundayBreakdown(committedUsers);
 
       const roleBreakdown = Object.fromEntries(
-        Array.from(
-          new Set(
-            committedUsers.map((user) =>
-              typeof user.role === 'string' && user.role.trim() ? user.role.trim() : 'Unspecified',
-            ),
-          ),
-        ).map((roleName) => {
-          const roleUsers = committedUsers.filter((user) => {
-            const userRole = typeof user.role === 'string' ? user.role.trim() : 'Unspecified';
-            return userRole === roleName;
-          });
+        Array.from(new Set(committedUsers.map((user) => getPrimaryRole(user.role)))).map(
+          (roleName) => {
+            const roleUsers = committedUsers.filter((user) => {
+              return getPrimaryRole(user.role) === roleName;
+            });
 
-          return [
-            roleName,
-            {
-              count: roleUsers.length,
-              tokens: roleUsers.map(getToken).filter((token): token is string => Boolean(token)),
-              service_breakdown: buildServiceBreakdown(roleUsers),
-              sunday_breakdown: buildSundayBreakdown(roleUsers),
-            },
-          ];
-        }),
+            return [
+              roleName,
+              {
+                count: roleUsers.length,
+                tokens: roleUsers.map(getToken).filter((token): token is string => Boolean(token)),
+                service_breakdown: buildServiceBreakdown(roleUsers),
+                sunday_breakdown: buildSundayBreakdown(roleUsers),
+              },
+            ];
+          },
+        ),
       );
 
       return {
