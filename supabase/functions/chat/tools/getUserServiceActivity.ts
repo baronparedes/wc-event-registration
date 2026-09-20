@@ -4,6 +4,19 @@ import { z } from 'npm:zod';
 import { formatDate, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
+function getToken(userTokens: unknown): string | undefined {
+  if (!userTokens) return undefined;
+  if (Array.isArray(userTokens)) return userTokens[0]?.token;
+  return (userTokens as { token?: string })?.token;
+}
+
+function getUser(usersData: unknown): { role?: string; user_tokens?: unknown } | null {
+  if (!usersData) return null;
+  if (Array.isArray(usersData))
+    return (usersData[0] as { role?: string; user_tokens?: unknown }) ?? null;
+  return usersData as { role?: string; user_tokens?: unknown };
+}
+
 export function createGetUserServiceActivityTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     activityType: z
@@ -32,7 +45,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
   return tool({
     description:
-      "Determine a user's service attendance check-in activity within a specific date range. Use this to find the most active volunteers, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
+      "Determine a user's service attendance check-in activity within a specific date range. Use this to find active volunteers, check-in counts, last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
     parameters: schema,
     execute: async ({ activityType, role, targetStartDate, targetEndDate }) => {
       const now = new Date();
@@ -60,9 +73,12 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
         // Find active users by joining service_attendance -> users -> user_tokens
         let query = client
           .from('service_attendance')
-          .select('time_slot, is_override, is_walk_in, users!inner(role, user_tokens!inner(token))')
+          .select(
+            'service_date, checked_in_at, time_slot, is_override, is_walk_in, users!inner(role, user_tokens(token))',
+          )
           .gte('service_date', formattedStart)
-          .lte('service_date', formattedEnd);
+          .lte('service_date', formattedEnd)
+          .order('checked_in_at', { ascending: false });
 
         if (role) {
           query = query.ilike('users.role', `%${role}%`);
@@ -74,7 +90,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           return { error: 'Failed to retrieve active users.' };
         }
 
-        // Aggregate counts manually
+        // Aggregate counts and track latest activity
         const userStats = new Map<
           string,
           {
@@ -84,23 +100,33 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
             lates: number;
             walk_ins: number;
             slots: Record<string, number>;
+            last_service_date: string | null;
+            last_checked_in_at: string | null;
+            last_time_slot: string | null;
           }
         >();
 
         for (const record of data || []) {
-          const u = record.users as unknown as {
-            role: string;
-            user_tokens: { token: string }[];
-          };
-          if (!u || !u.user_tokens || !u.user_tokens[0]) continue;
+          const u = getUser(record.users);
+          const token = getToken(u?.user_tokens);
+          if (!token) continue;
 
-          const token = u.user_tokens[0].token;
-          const userRole = u.role || 'Unspecified';
+          const userRole = u?.role || 'Unspecified';
           const slot = record.time_slot || 'Unknown';
 
           let stats = userStats.get(token);
           if (!stats) {
-            stats = { token, role: userRole, count: 0, lates: 0, walk_ins: 0, slots: {} };
+            stats = {
+              token,
+              role: userRole,
+              count: 0,
+              lates: 0,
+              walk_ins: 0,
+              slots: {},
+              last_service_date: record.service_date || null,
+              last_checked_in_at: record.checked_in_at || null,
+              last_time_slot: record.time_slot || null,
+            };
             userStats.set(token, stats);
           }
 
@@ -108,6 +134,15 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           stats.slots[slot] = (stats.slots[slot] || 0) + 1;
           if (record.is_override) stats.lates += 1;
           if (record.is_walk_in) stats.walk_ins += 1;
+
+          if (
+            record.checked_in_at &&
+            (!stats.last_checked_in_at || record.checked_in_at > stats.last_checked_in_at)
+          ) {
+            stats.last_checked_in_at = record.checked_in_at;
+            stats.last_service_date = record.service_date || null;
+            stats.last_time_slot = record.time_slot || null;
+          }
         }
 
         // Sort by count descending, return top 50
@@ -164,10 +199,10 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
         const inactiveUsers = (allUsers || [])
           .filter((u) => !activeUserIds.has(u.id))
           .map((u) => ({
-            token: u.user_tokens?.[0]?.token,
+            token: getToken(u.user_tokens),
             role: u.role || 'Unspecified',
           }))
-          .filter((u) => u.token); // ensure token exists
+          .filter((u): u is { token: string; role: string } => Boolean(u.token));
 
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
