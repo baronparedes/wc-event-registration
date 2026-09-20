@@ -15,6 +15,7 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import {
   type LookupUserByNameResult,
   type LookupUserByRfidResult,
@@ -405,66 +406,64 @@ export function ServiceAttendanceMigrationPanel() {
                 )}
               </div>
 
-              <div className="inline-flex rounded-lg border border-border bg-surface-elevated/40 p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('all')}
-                  className={cx(
-                    'rounded-md px-3 py-1.5 font-medium transition-colors',
-                    statusFilter === 'all'
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'text-text-secondary hover:text-text-primary',
-                  )}
+              <Tabs
+                value={statusFilter}
+                onValueChange={(val) => setStatusFilter(val as StatusFilter)}
+                className="w-auto"
+              >
+                <TabsList
+                  containerClassName="w-auto justify-start sm:justify-end"
+                  className="w-auto"
                 >
-                  All ({totalRowCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('failed')}
-                  className={cx(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors',
-                    statusFilter === 'failed'
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'text-text-secondary hover:text-red-600',
-                  )}
-                >
-                  <span>Failed</span>
-                  <span
+                  <TabsTrigger value="all" className="!px-3 !py-1.5 !text-xs">
+                    All ({totalRowCount})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="failed"
                     className={cx(
-                      'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                      '!px-3 !py-1.5 !text-xs',
                       statusFilter === 'failed'
-                        ? 'bg-white/25 text-white'
-                        : invalidRowCount > 0
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-border text-text-secondary',
+                        ? '!bg-red-600 text-white shadow-xs'
+                        : 'hover:text-red-600',
                     )}
                   >
-                    {invalidRowCount}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('valid')}
-                  className={cx(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors',
-                    statusFilter === 'valid'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-text-secondary hover:text-emerald-600',
-                  )}
-                >
-                  <span>Valid</span>
-                  <span
+                    <span>Failed</span>
+                    <span
+                      className={cx(
+                        'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                        statusFilter === 'failed'
+                          ? 'bg-white/25 text-white'
+                          : invalidRowCount > 0
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-border text-text-secondary',
+                      )}
+                    >
+                      {invalidRowCount}
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="valid"
                     className={cx(
-                      'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                      '!px-3 !py-1.5 !text-xs',
                       statusFilter === 'valid'
-                        ? 'bg-white/25 text-white'
-                        : 'bg-emerald-100 text-emerald-700',
+                        ? '!bg-emerald-600 text-white shadow-xs'
+                        : 'hover:text-emerald-600',
                     )}
                   >
-                    {validRowCount}
-                  </span>
-                </button>
-              </div>
+                    <span>Valid</span>
+                    <span
+                      className={cx(
+                        'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                        statusFilter === 'valid'
+                          ? 'bg-white/25 text-white'
+                          : 'bg-emerald-100 text-emerald-700',
+                      )}
+                    >
+                      {validRowCount}
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
             {invalidRowCount > 0 && statusFilter === 'all' && (

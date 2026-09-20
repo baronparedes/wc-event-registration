@@ -89,7 +89,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     expect(screen.getByText(/1 with error/i)).toBeInTheDocument();
 
     // 4. Test filtering
-    const failedFilterBtn = screen.getByRole('button', { name: /^Failed/i });
+    const failedFilterBtn = screen.getByRole('tab', { name: /^Failed/i });
     fireEvent.click(failedFilterBtn);
 
     // Only Unknown Person should be visible in failed filter view
@@ -99,7 +99,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     expect(screen.queryByText('Marrion Torres')).not.toBeInTheDocument();
 
     // Switch to valid filter view
-    const validFilterBtn = screen.getByRole('button', { name: /Valid/i });
+    const validFilterBtn = screen.getByRole('tab', { name: /Valid/i });
     fireEvent.click(validFilterBtn);
 
     expect(screen.getByText('Marrion Torres')).toBeInTheDocument();
