@@ -35,9 +35,21 @@ export function formatDate(date: Date): string {
 // Date-range resolution
 // ---------------------------------------------------------------------------
 
+export const PHILIPPINES_TIMEZONE = 'Asia/Manila';
+
+/**
+ * Returns a Date representing the current instant in Philippine Standard Time (Asia/Manila, UTC+8).
+ * Its local methods (.getFullYear(), .getMonth(), .getDate(), .getDay(), .getHours())
+ * reflect the current date and time in the Philippines.
+ */
+export function getPhNow(base = new Date()): Date {
+  const phString = base.toLocaleString('en-US', { timeZone: PHILIPPINES_TIMEZONE });
+  return new Date(phString);
+}
+
 export type DateRange = { start: Date; end: Date };
 
-type FallbackStrategy = 'this_month' | 'coming_sunday' | 'none'; // no filter — return null
+type FallbackStrategy = 'this_month' | 'coming_sunday' | 'previous_sunday' | 'none'; // no filter — return null
 
 /**
  * Resolve optional ISO date strings into a concrete DateRange.
@@ -48,7 +60,7 @@ export function resolveDateRange(
   targetStartDate: string | null | undefined,
   targetEndDate: string | null | undefined,
   fallback: FallbackStrategy,
-  now = new Date(),
+  now = getPhNow(),
 ): DateRange | null {
   const start = parseIsoDate(targetStartDate);
   const end = parseIsoDate(targetEndDate);
@@ -72,6 +84,17 @@ export function resolveDateRange(
     const daysUntilSunday = (7 - today.getDay()) % 7;
     const sunday = new Date(today);
     sunday.setDate(today.getDate() + daysUntilSunday);
+    return { start: sunday, end: sunday };
+  }
+
+  if (fallback === 'previous_sunday') {
+    const today = new Date(now);
+    today.setHours(12, 0, 0, 0);
+    const day = today.getDay(); // 0 is Sunday
+    const sunday = new Date(today);
+    if (day !== 0) {
+      sunday.setDate(today.getDate() - day);
+    }
     return { start: sunday, end: sunday };
   }
 

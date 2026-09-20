@@ -1,7 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import { formatDate, getSundaysInRange, resolveDateRange } from './timeframes.ts';
+import { formatDate, getPhNow, getSundaysInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 const serviceSlots = ['9AM', '12NN', '3PM'] as const;
@@ -86,7 +86,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
       'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by this tool) and Unexcused (committed volunteers who did not check in and have no approved excuse request, handled by getUnexcusedVolunteers). Defaults to the coming Sunday when no dates are provided. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ role, targetStartDate, targetEndDate }) => {
-      const now = new Date();
+      const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);
 
       console.log('[chat:tool:getExcusedMembers] Executing', {
