@@ -1,6 +1,7 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
 
@@ -27,22 +28,52 @@ vi.mock('@/hooks/domain/auth', () => ({
   }),
 }));
 
+vi.mock('@/hooks/domain/services', () => ({
+  useServiceDashboardQuery: () => ({
+    data: {
+      time_slots: {
+        '9:00 AM': { committed: 10, present: 8, walk_ins: 2, late_tardy: 1, roles: { Usher: 5 } },
+        '12NN': { committed: 20, present: 15, walk_ins: 5, late_tardy: 2, roles: { Usher: 10 } },
+        '3:00 PM': {
+          committed: 30,
+          present: 25,
+          walk_ins: 10,
+          late_tardy: 3,
+          roles: { Usher: 15 },
+        },
+      },
+      roles: ['Usher'],
+    },
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+const queryClient = new QueryClient();
+
 describe('AdminServicesPage', () => {
-  it('renders page header, sub-navigation, and empty state', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders page header and dashboard UI', () => {
     render(
-      <MemoryRouter initialEntries={[ROUTE_PATHS.adminServices]}>
-        <AdminServicesPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[ROUTE_PATHS.adminServices]}>
+          <AdminServicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Services' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute(
-      'href',
-      ROUTE_PATHS.adminServices,
-    );
-    expect(screen.getByText('Service Management Coming Soon')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Services Dashboard' })).toBeInTheDocument();
 
-    const ctaButton = screen.getByRole('button', { name: 'Go to Attendance Migration' });
+    // Check for some data rendering
+    expect(screen.getByText('Committed')).toBeInTheDocument();
+    expect(screen.getAllByText('10')[0]).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('30')).toBeInTheDocument();
+
+    const ctaButton = screen.getByRole('button', { name: 'Import Records' });
     fireEvent.click(ctaButton);
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceMigration);
   });

@@ -14,3 +14,4 @@ export * from './mutations/useUpdateServiceAttendanceMutation';
 export * from './mutations/useDeleteServiceAttendanceMutation';
 export * from './mutations/useBulkUpsertServiceAttendanceMutation';
 export * from './queries/useUserCommitmentHistoryQuery';
+export * from './queries/useServiceDashboardQuery';
