@@ -65,6 +65,6 @@ export function useFormSubmissionsQuery(formId?: string) {
       if (error) throw error;
       return (data ?? []) as unknown as FormSubmission[];
     },
-    staleTime: QUERY_STALE_TIME_MS.immediate,
+    staleTime: QUERY_STALE_TIME_MS.adminList,
   });
 }

@@ -38,6 +38,6 @@ export function useAdminMembersImportSnapshotQuery() {
         is_active: member.is_active,
       }));
     },
-    staleTime: QUERY_STALE_TIME_MS.immediate,
+    staleTime: QUERY_STALE_TIME_MS.adminList,
   });
 }
