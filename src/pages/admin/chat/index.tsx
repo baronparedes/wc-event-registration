@@ -7,6 +7,7 @@ import { Badge, BrandAvatar, Button } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useChatStreamQuery, useUserTokenMapQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
+import { tokenizeUserText } from '@/lib/domain/chat';
 
 import { ChatInputForm, ChatMessageItem, type ChatMessageItemData } from './components';
 
@@ -42,7 +43,7 @@ function loadStoredMessages(): Message[] {
 }
 
 export function AdminChatPage() {
-  useUserTokenMapQuery();
+  const { data: userTokenMap = {} } = useUserTokenMapQuery();
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const { streamRequest, stopStream, isLoading } = useChatStreamQuery();
   const { data: adminAuth } = useAdminAuthQuery();
@@ -95,7 +96,8 @@ export function AdminChatPage() {
     if (!trimmedInput || isLoading || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: trimmedInput };
+    const tokenizedInput = tokenizeUserText(trimmedInput, userTokenMap);
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: tokenizedInput };
     const assistantMessageId = crypto.randomUUID();
     const currentMessages = [...messages, userMessage];
 
@@ -103,7 +105,11 @@ export function AdminChatPage() {
     scrollToBottom(true);
 
     // Sliding context window: send at most the last MAX_CONTEXT_MESSAGES to keep AI latency low
-    const contextMessages = currentMessages.slice(-MAX_CONTEXT_MESSAGES);
+    const contextMessages = currentMessages.slice(-MAX_CONTEXT_MESSAGES).map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.role === 'user' ? tokenizeUserText(msg.content, userTokenMap) : msg.content,
+    }));
 
     let pendingBuffer = '';
     let rafId: number | null = null;
@@ -255,7 +261,12 @@ export function AdminChatPage() {
           </div>
 
           <div className="border-t border-border bg-background p-4">
-            <ChatInputForm isLoading={isLoading} onSubmit={handleSendMessage} onStop={stopStream} />
+            <ChatInputForm
+              isLoading={isLoading}
+              onSubmit={handleSendMessage}
+              onStop={stopStream}
+              tokenMap={userTokenMap}
+            />
           </div>
         </div>
       </AdminPageShell.Content>

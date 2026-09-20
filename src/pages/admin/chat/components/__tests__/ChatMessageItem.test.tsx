@@ -3,9 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ChatMessageItem } from '../ChatMessageItem';
 
+const mockTokens: Record<string, { id: string; name: string }> = {
+  USR_000123: { id: 'user-1', name: 'John Doe' },
+};
+
 vi.mock('@/hooks/domain/chat', () => ({
-  useResolveUserTokensQuery: () => ({ data: {} }),
-  useUserTokenMapQuery: () => ({ data: {} }),
+  useResolveUserTokensQuery: () => ({ data: mockTokens }),
+  useUserTokenMapQuery: () => ({ data: mockTokens }),
 }));
 
 vi.mock('@/hooks/domain/members', () => ({
@@ -23,6 +27,17 @@ describe('ChatMessageItem', () => {
 
     expect(screen.getByText('Can you show me the attendees?')).toBeInTheDocument();
     expect(screen.getByTitle('Jane Doe')).toBeInTheDocument();
+  });
+
+  it('untokenizes member tokens for display in user message bubbles', () => {
+    render(
+      <ChatMessageItem
+        message={{ id: '1', role: 'user', content: 'Is USR_000123 scheduled for Sunday?' }}
+        displayName="Jane Doe"
+      />,
+    );
+
+    expect(screen.getByText('Is John Doe scheduled for Sunday?')).toBeInTheDocument();
   });
 
   it('renders assistant message with brand avatar and content', () => {

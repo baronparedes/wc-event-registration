@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { Loader2 } from 'lucide-react';
 
 import { Avatar, BrandAvatar } from '@/components/ui';
+import { useResolveUserTokensQuery } from '@/hooks/domain/chat';
+import { untokenizeUserText } from '@/lib/domain/chat';
 
 import { ChatMessageContent } from './ChatMessageContent';
 import { CopyButton } from './CopyButton';
@@ -27,6 +29,12 @@ export const ChatMessageItem = memo(function ChatMessageItem({
   isLoading = false,
 }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
+  const { data: tokenMap = {} } = useResolveUserTokensQuery();
+
+  const userDisplayContent = useMemo(() => {
+    if (!isUser) return message.content;
+    return untokenizeUserText(message.content, tokenMap);
+  }, [isUser, message.content, tokenMap]);
 
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -49,7 +57,7 @@ export const ChatMessageItem = memo(function ChatMessageItem({
           }`}
         >
           {isUser ? (
-            <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+            <p className="whitespace-pre-wrap text-sm">{userDisplayContent}</p>
           ) : message.content.trim() ? (
             <ChatMessageContent content={message.content} />
           ) : (
