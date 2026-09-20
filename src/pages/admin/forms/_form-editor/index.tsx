@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, FormInputField, FormSelectField, SlugField } from '@/components/ui';
+import { Button, CheckboxField, FormInputField, FormSelectField, SlugField } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useSaveFormMutation } from '@/hooks/domain/forms';
@@ -43,7 +43,7 @@ export function FormEditorPage() {
       status: 'draft',
       duplicate_policy: 'block',
       audience: 'members',
-      metadata: {},
+      metadata: { send_email_after_completion: false },
     },
   });
 
@@ -58,7 +58,9 @@ export function FormEditorPage() {
         status: existingForm.status,
         duplicate_policy: existingForm.duplicate_policy,
         audience: existingForm.audience,
-        metadata: existingForm.metadata ?? {},
+        metadata: {
+          ...((existingForm.metadata as Record<string, unknown> | null) ?? {}),
+        },
       });
     }
   }, [existingForm, reset]);
@@ -261,6 +263,15 @@ export function FormEditorPage() {
                 { label: 'Allow Multiple with Update', value: 'allow_multiple_update' },
               ]}
             />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <CheckboxField
+                id="send-email-after-completion"
+                label="Send email after completion"
+                description="Send an email confirmation when submission is completed"
+                registration={register('metadata.send_email_after_completion')}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">

@@ -58,6 +58,7 @@ export function useCreateEventMutation() {
           metadata: {
             allow_name_lookup: input.allow_name_lookup ?? false,
             public_registration_access: input.public_registration_access,
+            send_email_after_completion: input.send_email_after_completion ?? false,
           },
           created_by_admin_id: createdByAdminId,
         })

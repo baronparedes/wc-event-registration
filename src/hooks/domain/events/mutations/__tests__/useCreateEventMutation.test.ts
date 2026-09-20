@@ -109,6 +109,7 @@ describe('useCreateEventMutation', () => {
         metadata: {
           allow_name_lookup: false,
           public_registration_access: 'members',
+          send_email_after_completion: false,
         },
       }),
     );
@@ -163,6 +164,7 @@ describe('useCreateEventMutation', () => {
         metadata: {
           allow_name_lookup: false,
           public_registration_access: 'members_and_public',
+          send_email_after_completion: false,
         },
       }),
     );
