@@ -1,6 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
+import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetUserDemographicsTool({ client, requestId }: ToolContext) {
@@ -9,12 +10,14 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
       .string()
       .trim()
       .optional()
-      .describe('Optional role filter, such as "volunteer" or "usher".'),
+      .describe(
+        'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
+      ),
   });
 
   return tool({
     description:
-      'Retrieve aggregate volunteer demographics, including role and gender breakdowns (men or ladies) and age distribution. This tool NEVER returns PII like names or emails.',
+      'Retrieve aggregate volunteer demographics, including role and gender breakdowns (men or ladies) and age distribution. Secondary roles (after "/") are ignored for role filtering and grouping; only the primary role (before "/") is evaluated. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ role }) => {
       console.log('[chat:tool:getUserDemographics] Executing', { role, requestId });
@@ -23,14 +26,19 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
         .from('users')
         .select('role, date_of_birth, metadata, user_tokens ( token )')
         .eq('is_active', true);
-      if (role) query = query.ilike('role', `%${role}%`);
+      if (isSpecificRole(role)) {
+        const cleanRole = getPrimaryRole(role).toLowerCase();
+        query = query.ilike('role', `%${cleanRole}%`);
+      }
 
-      const { data, error } = await query;
+      const { data: rawData, error } = await query;
 
       if (error) {
         console.error('[chat:tool:getUserDemographics] Query error', error);
         return { error: error.message };
       }
+
+      const data = (rawData || []).filter((user) => matchesPrimaryRole(user.role, role));
 
       const now = new Date();
       const ageDistribution = {
@@ -93,8 +101,7 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
         genderDistribution[gender].count++;
         if (token) genderDistribution[gender].tokens.push(token);
 
-        const roleName =
-          typeof user.role === 'string' && user.role.trim() ? user.role.trim() : 'Unspecified';
+        const roleName = getPrimaryRole(user.role);
         const roleEntry = roleBreakdown.get(roleName) ?? {
           count: 0,
           tokens: [],

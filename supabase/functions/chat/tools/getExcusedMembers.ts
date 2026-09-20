@@ -60,7 +60,13 @@ function parseServiceSlots(servicesText: string) {
 
 export function createGetExcusedMembersTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    role: z.string().optional().describe('Filter by user role, such as "volunteer" or "usher".'),
+    role: z
+      .string()
+      .trim()
+      .optional()
+      .describe(
+        'Filter by user role, such as "usher" or "prayer coach". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -77,7 +83,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
 
   return tool({
     description:
-      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. Defaults to the coming Sunday when no dates are provided. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
+      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by this tool) and Unexcused (committed volunteers who did not check in and have no approved excuse request, handled by getUnexcusedVolunteers). Defaults to the coming Sunday when no dates are provided. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ role, targetStartDate, targetEndDate }) => {
       const now = new Date();
@@ -223,15 +229,20 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         .select('id, member_id, role, user_tokens ( token )')
         .in('id', userIds)
         .eq('is_active', true);
-      if (role) userQuery = userQuery.ilike('role', `%${role.trim()}%`);
+      if (isSpecificRole(role)) {
+        const cleanRole = getPrimaryRole(role).toLowerCase();
+        userQuery = userQuery.ilike('role', `%${cleanRole}%`);
+      }
 
-      const { data: users, error: userError } = await userQuery;
+      const { data: rawUsers, error: userError } = await userQuery;
       if (userError) {
         console.error('[chat:tool:getExcusedMembers] User query error', userError);
         return { error: userError.message };
       }
 
-      const userById = new Map((users ?? []).map((user) => [user.id, user]));
+      const users = (rawUsers ?? []).filter((user) => matchesPrimaryRole(user.role, role));
+
+      const userById = new Map(users.map((user) => [user.id, user]));
       const matchingRecords = filteredRecords.filter((record) => userById.has(record.userId));
       const getToken = (user: (typeof users)[number]) => {
         const tokens = user.user_tokens;
@@ -248,7 +259,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
 
       const usersFor = (date: string, serviceSlot?: string) => {
         const ids = new Set(recordsFor(date, serviceSlot).map((record) => record.userId));
-        return (users ?? []).filter((user) => ids.has(user.id));
+        return users.filter((user) => ids.has(user.id));
       };
 
       const breakdownFor = (date: string) => {
@@ -275,13 +286,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
 
       const dateKeys = targetSundayDates.map((date) => formatDate(date));
       const allUsers = [...new Set(dateKeys.flatMap((date) => usersFor(date)))];
-      const roleNames = [
-        ...new Set(
-          allUsers.map((user) =>
-            typeof user.role === 'string' && user.role.trim() ? user.role.trim() : 'Unspecified',
-          ),
-        ),
-      ];
+      const roleNames = [...new Set(allUsers.map((user) => getPrimaryRole(user.role)))];
 
       return {
         count: allUsers.length,
@@ -309,8 +314,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         role_breakdown: Object.fromEntries(
           roleNames.map((roleName) => {
             const roleUsers = allUsers.filter((user) => {
-              const userRole = typeof user.role === 'string' ? user.role.trim() : 'Unspecified';
-              return userRole === roleName;
+              return getPrimaryRole(user.role) === roleName;
             });
             return [
               roleName,

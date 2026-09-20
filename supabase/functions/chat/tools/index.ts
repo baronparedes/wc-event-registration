@@ -1,6 +1,7 @@
 import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
 import { createGetEventsTool } from './getEvents.ts';
 import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
+import { createGetUnexcusedVolunteersTool } from './getUnexcusedVolunteers.ts';
 import { createGetUpcomingMilestonesTool } from './getUpcomingMilestones.ts';
 import { createGetUserCommitmentsTool } from './getUserCommitments.ts';
 import { createGetUserDemographicsTool } from './getUserDemographics.ts';
@@ -15,6 +16,8 @@ export * from './getUpcomingMilestones.ts';
 export * from './getUserCommitments.ts';
 export * from './getUserDemographics.ts';
 export * from './getUserServiceActivity.ts';
+export * from './getUnexcusedVolunteers.ts';
+export * from './roles.ts';
 
 export function createChatTools(context: ToolContext) {
   return {
@@ -25,5 +28,6 @@ export function createChatTools(context: ToolContext) {
     getUserCommitments: createGetUserCommitmentsTool(context),
     getUserDemographics: createGetUserDemographicsTool(context),
     getUserServiceActivity: createGetUserServiceActivityTool(context),
+    getUnexcusedVolunteers: createGetUnexcusedVolunteersTool(context),
   };
 }
