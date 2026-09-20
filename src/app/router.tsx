@@ -356,15 +356,9 @@ function RequireAdminAuth({
   }
 
   if (isLoading) {
-    return (
-      <section className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-6">
-        <div className="space-y-3" aria-hidden="true">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-4/5" />
-        </div>
-      </section>
-    );
+    // Avoid rendering full-page skeletons to prevent double layout shifts
+    // during route chunk resolutions.
+    return null;
   }
 
   const isAuthenticated = data?.isAuthenticated ?? false;
