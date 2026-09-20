@@ -72,8 +72,8 @@ describe('AdminServicesPage', () => {
     // Check for some data rendering
     expect(screen.getByText('Committed')).toBeInTheDocument();
     expect(screen.getAllByText('10')[0]).toBeInTheDocument();
-    expect(screen.getByText('20')).toBeInTheDocument();
-    expect(screen.getByText('30')).toBeInTheDocument();
+    expect(screen.getAllByText('20')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('30')[0]).toBeInTheDocument();
 
     const ctaButton = screen.getByRole('button', { name: 'Import Records' });
     fireEvent.click(ctaButton);

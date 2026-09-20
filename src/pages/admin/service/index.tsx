@@ -1,11 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { format, getDay } from 'date-fns';
-import { Briefcase, Clock, Download, Handshake, SearchX, Users } from 'lucide-react';
+import {
+  Briefcase,
+  Clock,
+  Download,
+  Handshake,
+  Percent,
+  SearchX,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Button, EmptyState } from '@/components/ui';
+import { Badge, Button, EmptyState, FormSelectField, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useServiceDashboardQuery } from '@/hooks/domain/services';
 
@@ -53,7 +62,6 @@ export function AdminServicesPage() {
   const sundaysInMonth = useMemo(() => {
     const sundays = [];
     if (filterType === 'sunday') {
-      // Need a way to select a Sunday, let's just create a list of recent sundays
       const d = new Date();
       d.setHours(0, 0, 0, 0);
       const day = getDay(d);
@@ -69,9 +77,32 @@ export function AdminServicesPage() {
     return sundays;
   }, [filterType]);
 
-  const handleSundayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSunday(e.target.value);
-  };
+  const monthOptions = useMemo(
+    () =>
+      MONTHS.map((m, i) => ({
+        value: (i + 1).toString(),
+        label: m,
+      })),
+    [],
+  );
+
+  const yearOptions = useMemo(
+    () =>
+      YEARS.map((y) => ({
+        value: y.toString(),
+        label: y.toString(),
+      })),
+    [],
+  );
+
+  const sundayOptions = useMemo(
+    () =>
+      sundaysInMonth.map((d) => ({
+        value: d,
+        label: format(new Date(d), 'EEEE, MMM d, yyyy'),
+      })),
+    [sundaysInMonth],
+  );
 
   const getTurnupPercentage = (present: number, committed: number) => {
     if (committed === 0) return 0;
@@ -84,78 +115,80 @@ export function AdminServicesPage() {
         title="Services Dashboard"
         description="Monitor service attendance and volunteer turn-up statistics."
         breadcrumbs={[{ label: 'Services' }]}
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Import Records
+          </Button>
+        }
       />
       <AdminBaseNavigation />
-      <AdminPageShell.Content className="mt-6">
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-4 rounded-lg border bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Filter by:</span>
-            <select
-              value={filterType}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                setFilterType(e.target.value as 'month' | 'sunday')
-              }
-              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              <option value="month">Month & Year</option>
-              <option value="sunday">Specific Sunday</option>
-            </select>
-          </div>
+      <AdminPageShell.Content className="mt-6 space-y-6">
+        {/* Filter Controls Card */}
+        <SectionCard wrapperClassName="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Filter By
+              </span>
+              <div className="inline-flex rounded-full border border-border bg-background p-1">
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={filterType === 'month' ? 'default' : 'ghost'}
+                  className="rounded-full shadow-none"
+                  onClick={() => setFilterType('month')}
+                >
+                  Month & Year
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={filterType === 'sunday' ? 'default' : 'ghost'}
+                  className="rounded-full shadow-none"
+                  onClick={() => setFilterType('sunday')}
+                >
+                  Specific Sunday
+                </Button>
+              </div>
+            </div>
 
-          {filterType === 'month' ? (
-            <>
-              <select
-                value={selectedMonth.toString()}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setSelectedMonth(parseInt(e.target.value))
-                }
-                className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {MONTHS.map((m, i) => (
-                  <option key={m} value={(i + 1).toString()}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedYear.toString()}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setSelectedYear(parseInt(e.target.value))
-                }
-                className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {YEARS.map((y) => (
-                  <option key={y} value={y.toString()}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : (
-            <select
-              value={selectedSunday}
-              onChange={handleSundayChange}
-              className="w-48 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              {sundaysInMonth.map((d) => (
-                <option key={d} value={d}>
-                  {format(new Date(d), 'MMM d, yyyy')}
-                </option>
-              ))}
-            </select>
-          )}
-
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Import Records
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {filterType === 'month' ? (
+                <>
+                  <div className="w-36">
+                    <FormSelectField
+                      ariaLabel="Select month"
+                      value={selectedMonth.toString()}
+                      onChange={(val) => setSelectedMonth(parseInt(val))}
+                      options={monthOptions}
+                    />
+                  </div>
+                  <div className="w-28">
+                    <FormSelectField
+                      ariaLabel="Select year"
+                      value={selectedYear.toString()}
+                      onChange={(val) => setSelectedYear(parseInt(val))}
+                      options={yearOptions}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="w-60">
+                  <FormSelectField
+                    ariaLabel="Select Sunday"
+                    value={selectedSunday}
+                    onChange={setSelectedSunday}
+                    options={sundayOptions}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Dashboard Content */}
         {isLoading ? (
@@ -164,7 +197,7 @@ export function AdminServicesPage() {
           </div>
         ) : isError || !stats ? (
           <EmptyState
-            icon={<SearchX className="h-8 w-8 text-gray-400" />}
+            icon={<SearchX className="h-8 w-8 text-muted" />}
             title="Failed to load dashboard"
             description="There was an error fetching the service dashboard statistics."
           />
@@ -179,49 +212,89 @@ export function AdminServicesPage() {
                 roles: {},
               };
 
+            const totalCommitted = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).committed, 0);
+            const totalPresent = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).present, 0);
+            const overallTurnup = getTurnupPercentage(totalPresent, totalCommitted);
+
+            const totalLateTardy = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).late_tardy, 0);
+            const totalWalkIns = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).walk_ins, 0);
+
             return (
-              <div className="space-y-8">
-                {/* Top Level Stats */}
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <div className="space-y-6">
+                {/* Primary Metric Cards */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   {/* Committed */}
-                  <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-                    <div className="flex w-24 flex-col items-center justify-center bg-blue-50 p-4 text-blue-600">
-                      <Handshake className="mb-2 h-8 w-8" />
-                      <span className="text-center text-xs font-semibold uppercase tracking-wider">
-                        Committed
-                      </span>
+                  <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                    <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <Handshake className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading font-semibold text-text">Committed</h3>
+                          <p className="text-xs text-muted">Expected volunteers</p>
+                        </div>
+                      </div>
+                      <Badge variant="default">{totalCommitted} Total</Badge>
                     </div>
-                    <div className="grid flex-1 grid-cols-3 divide-x">
+                    <div className="mt-4 grid grid-cols-3 gap-2">
                       {TIME_SLOTS.map((ts) => (
-                        <div key={ts} className="flex flex-col items-center justify-center p-4">
-                          <span className="mb-1 text-sm font-medium text-gray-500">{ts}</span>
-                          <span className="text-2xl font-bold">{getSlot(ts).committed}</span>
+                        <div
+                          key={ts}
+                          className="flex h-[104px] flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-3 text-center"
+                        >
+                          <span className="text-xs font-medium text-muted">{ts}</span>
+                          <span className="font-heading text-2xl font-bold text-text">
+                            {getSlot(ts).committed}
+                          </span>
+                          <span
+                            className="invisible select-none text-[10px] text-muted"
+                            aria-hidden="true"
+                          >
+                            -
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Present */}
-                  <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-                    <div className="flex w-24 flex-col items-center justify-center bg-emerald-50 p-4 text-emerald-600">
-                      <Users className="mb-2 h-8 w-8" />
-                      <span className="text-center text-xs font-semibold uppercase tracking-wider">
-                        Present
-                        <br />
-                        <span className="text-[10px] text-emerald-500">(No walk-ins)</span>
-                      </span>
+                  <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                    <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-secondary">
+                          <UserCheck className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading font-semibold text-text">Present</h3>
+                          <p className="text-xs text-muted">Scheduled turn-up</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{totalPresent} Total</Badge>
                     </div>
-                    <div className="grid flex-1 grid-cols-3 divide-x">
+                    <div className="mt-4 grid grid-cols-3 gap-2">
                       {TIME_SLOTS.map((ts) => {
                         const slot = getSlot(ts);
                         return (
-                          <div key={ts} className="flex flex-col items-center justify-center p-4">
-                            <span className="mb-1 text-sm font-medium text-gray-500">{ts}</span>
-                            <span className="text-2xl font-bold">{slot.present}</span>
-                            {slot.walk_ins > 0 && (
-                              <div className="mt-1 w-full bg-red-100 px-2 py-0.5 text-center text-xs font-bold text-red-600">
-                                {slot.walk_ins} Walk-ins
-                              </div>
+                          <div
+                            key={ts}
+                            className="flex h-[104px] flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-3 text-center"
+                          >
+                            <span className="text-xs font-medium text-muted">{ts}</span>
+                            <span className="font-heading text-2xl font-bold text-text">
+                              {slot.present}
+                            </span>
+                            {slot.walk_ins > 0 ? (
+                              <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary">
+                                +{slot.walk_ins} walk-in
+                              </span>
+                            ) : (
+                              <span
+                                className="invisible select-none text-[10px] text-muted"
+                                aria-hidden="true"
+                              >
+                                -
+                              </span>
                             )}
                           </div>
                         );
@@ -230,16 +303,22 @@ export function AdminServicesPage() {
                   </div>
 
                   {/* Turn-up % */}
-                  <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-                    <div className="flex w-24 flex-col items-center justify-center bg-indigo-50 p-4 text-indigo-600">
-                      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-indigo-200">
-                        <span className="font-bold">%</span>
+                  <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                    <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-text">
+                          <Percent className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading font-semibold text-text">Turn-Up Rate</h3>
+                          <p className="text-xs text-muted">Attended vs Committed</p>
+                        </div>
                       </div>
-                      <span className="text-center text-xs font-semibold uppercase tracking-wider">
-                        Turn-Up
-                      </span>
+                      <Badge variant={overallTurnup < 50 ? 'destructive' : 'default'}>
+                        {overallTurnup}% Avg
+                      </Badge>
                     </div>
-                    <div className="grid flex-1 grid-cols-3 divide-x">
+                    <div className="mt-4 grid grid-cols-3 gap-2">
                       {TIME_SLOTS.map((ts) => {
                         const slot = getSlot(ts);
                         const perc = getTurnupPercentage(slot.present, slot.committed);
@@ -247,13 +326,22 @@ export function AdminServicesPage() {
                         return (
                           <div
                             key={ts}
-                            className={`flex flex-col items-center justify-center p-4 ${isLow ? 'bg-red-50' : 'bg-emerald-50'}`}
+                            className={`flex h-[104px] flex-col items-center justify-between rounded-xl border p-3 text-center transition-colors ${
+                              isLow
+                                ? 'border-danger/30 bg-danger/5'
+                                : 'border-border/50 bg-background'
+                            }`}
                           >
-                            <span className="mb-1 text-sm font-medium text-gray-700">{ts}</span>
+                            <span className="text-xs font-medium text-muted">{ts}</span>
                             <span
-                              className={`text-2xl font-bold ${isLow ? 'text-red-700' : 'text-emerald-700'}`}
+                              className={`font-heading text-2xl font-bold ${
+                                isLow ? 'text-danger' : 'text-primary'
+                              }`}
                             >
                               {perc}%
+                            </span>
+                            <span className="text-[10px] text-muted">
+                              {slot.present}/{slot.committed}
                             </span>
                           </div>
                         );
@@ -262,72 +350,136 @@ export function AdminServicesPage() {
                   </div>
                 </div>
 
-                {/* Role Breakdowns */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-                  {(stats.roles ?? []).map((role) => (
-                    <div
-                      key={role}
-                      className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm"
-                    >
-                      <div className="bg-gray-50 px-4 py-2 border-b">
-                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                          <Briefcase className="h-4 w-4 text-gray-500" />
-                          {role}
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-3 divide-x flex-1">
-                        {TIME_SLOTS.map((ts) => (
-                          <div key={ts} className="flex flex-col items-center justify-center p-3">
-                            <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
-                            <span className="text-lg font-bold">
-                              {getSlot(ts).roles?.[role] || 0}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-
+                {/* Secondary Exceptions: Late/Tardy & Total Walk-Ins */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Late / Tardy */}
-                  <div className="flex flex-col overflow-hidden rounded-lg border border-orange-200 bg-white shadow-sm">
-                    <div className="bg-orange-50 px-4 py-2 border-b border-orange-100">
-                      <h3 className="font-semibold text-orange-800 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-orange-500" />
-                        LATE / TARDY
-                      </h3>
+                  <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                    <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-text">
+                          <Clock className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading font-semibold text-text">Late / Tardy</h3>
+                          <p className="text-xs text-muted">Override check-ins</p>
+                        </div>
+                      </div>
+                      <Badge variant="accent">{totalLateTardy} Total</Badge>
                     </div>
-                    <div className="grid grid-cols-3 divide-x flex-1">
+                    <div className="mt-4 grid grid-cols-3 gap-2">
                       {TIME_SLOTS.map((ts) => (
-                        <div key={ts} className="flex flex-col items-center justify-center p-3">
-                          <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
-                          <span className="text-lg font-bold text-orange-700">
+                        <div
+                          key={ts}
+                          className="flex h-[104px] flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-3 text-center"
+                        >
+                          <span className="text-xs font-medium text-muted">{ts}</span>
+                          <span className="font-heading text-2xl font-bold text-text">
                             {getSlot(ts).late_tardy}
+                          </span>
+                          <span
+                            className="invisible select-none text-[10px] text-muted"
+                            aria-hidden="true"
+                          >
+                            -
                           </span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Total Walk-in */}
-                  <div className="flex flex-col overflow-hidden rounded-lg border border-blue-200 bg-white shadow-sm">
-                    <div className="bg-blue-50 px-4 py-2 border-b border-blue-100">
-                      <h3 className="font-semibold text-blue-800 flex items-center gap-2">
-                        <Users className="h-4 w-4 text-blue-500" />
-                        TOTAL WALK-IN
-                      </h3>
+                  {/* Total Walk-In */}
+                  <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                    <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-secondary">
+                          <Users className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading font-semibold text-text">Total Walk-In</h3>
+                          <p className="text-xs text-muted">Uncommitted attendees</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{totalWalkIns} Total</Badge>
                     </div>
-                    <div className="grid grid-cols-3 divide-x flex-1">
+                    <div className="mt-4 grid grid-cols-3 gap-2">
                       {TIME_SLOTS.map((ts) => (
-                        <div key={ts} className="flex flex-col items-center justify-center p-3">
-                          <span className="mb-1 text-xs font-medium text-gray-500">{ts}</span>
-                          <span className="text-lg font-bold text-blue-700">
+                        <div
+                          key={ts}
+                          className="flex h-[104px] flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-3 text-center"
+                        >
+                          <span className="text-xs font-medium text-muted">{ts}</span>
+                          <span className="font-heading text-2xl font-bold text-text">
                             {getSlot(ts).walk_ins}
+                          </span>
+                          <span
+                            className="invisible select-none text-[10px] text-muted"
+                            aria-hidden="true"
+                          >
+                            -
                           </span>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
+
+                {/* Role Breakdowns */}
+                <SectionCard
+                  title="Attendance by Role"
+                  subtitle="Volunteer counts per role across service time slots"
+                  contentClassName="mt-4"
+                >
+                  {(stats.roles ?? []).length === 0 ? (
+                    <div className="py-8 text-center text-sm text-muted">
+                      No volunteer roles recorded for this period.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {(stats.roles ?? []).map((role) => {
+                        const roleTotal = TIME_SLOTS.reduce(
+                          (sum, ts) => sum + (getSlot(ts).roles?.[role] || 0),
+                          0,
+                        );
+                        return (
+                          <div
+                            key={role}
+                            className="flex flex-col justify-between rounded-xl border border-border bg-background p-4 shadow-xs transition hover:border-primary/40 hover:bg-surface"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                  <Briefcase className="h-3.5 w-3.5" />
+                                </div>
+                                <h4
+                                  className="truncate font-heading text-sm font-semibold text-text"
+                                  title={role}
+                                >
+                                  {role}
+                                </h4>
+                              </div>
+                              <Badge variant="outline" className="shrink-0 text-[11px]">
+                                {roleTotal}
+                              </Badge>
+                            </div>
+                            <div className="mt-3 grid grid-cols-3 divide-x divide-border/60 rounded-lg border border-border/60 bg-surface py-2">
+                              {TIME_SLOTS.map((ts) => (
+                                <div
+                                  key={ts}
+                                  className="flex flex-col items-center px-1 text-center"
+                                >
+                                  <span className="text-[10px] font-medium text-muted">{ts}</span>
+                                  <span className="font-heading text-base font-bold text-text">
+                                    {getSlot(ts).roles?.[role] || 0}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </SectionCard>
               </div>
             );
           })()
