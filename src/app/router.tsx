@@ -1,11 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import { type ComponentType, type ReactElement, Suspense, lazy, useEffect, useRef } from 'react';
 
 import { WifiOff } from 'lucide-react';
 import {
   Navigate,
   Outlet,
-  Route,
-  Routes,
+  createBrowserRouter,
   matchPath,
   useLocation,
   useNavigate,
@@ -417,31 +417,36 @@ function renderAppRoute({
   );
 }
 
-export function AppRouter() {
-  return (
-    <Routes>
-      <Route element={<ResponsiveShellLayout />}>
-        <Route element={<OfflineNavigationGuard />}>
-          {APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'shell').map((route) => (
-            <Route key={route.path} path={route.path} element={renderAppRoute(route)} />
-          ))}
-        </Route>
-      </Route>
-
-      <Route element={<OfflineNavigationGuard />}>
-        {APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'standalone').map((route) => (
-          <Route key={route.path} path={route.path} element={renderAppRoute(route)} />
-        ))}
-      </Route>
-
-      <Route
-        path={ROUTE_PATHS.notFound}
-        element={
-          <LazyRoute>
-            <NotFoundPage />
-          </LazyRoute>
-        }
-      />
-    </Routes>
-  );
-}
+export const appRouter = createBrowserRouter([
+  {
+    element: <ResponsiveShellLayout />,
+    children: [
+      {
+        element: <OfflineNavigationGuard />,
+        children: APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'shell').map(
+          (route) => ({
+            path: route.path,
+            element: renderAppRoute(route),
+          }),
+        ),
+      },
+    ],
+  },
+  {
+    element: <OfflineNavigationGuard />,
+    children: APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'standalone').map(
+      (route) => ({
+        path: route.path,
+        element: renderAppRoute(route),
+      }),
+    ),
+  },
+  {
+    path: ROUTE_PATHS.notFound,
+    element: (
+      <LazyRoute>
+        <NotFoundPage />
+      </LazyRoute>
+    ),
+  },
+]);
