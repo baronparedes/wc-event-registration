@@ -1,7 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import { getSundaysForTimeframe, normalizeSundayTimeframe } from './timeframes.ts';
+import { formatDate, getSundaysInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 const serviceSlots = ['9AM', '12NN', '3PM'] as const;
@@ -61,25 +61,57 @@ function parseServiceSlots(servicesText: string) {
 export function createGetExcusedMembersTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     role: z.string().optional().describe('Filter by user role, such as "volunteer" or "usher".'),
-    timeframe: z
+    targetStartDate: z
       .string()
       .optional()
-      .default('coming_sunday')
-      .transform(normalizeSundayTimeframe)
       .describe(
-        'The excuse period to summarize: "coming_sunday" (or "this_sunday"), "this_month", or "next_month". Defaults to "coming_sunday".',
+        'Start of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe (e.g. "this Sunday", "next month") to a concrete date before calling this tool.',
+      ),
+    targetEndDate: z
+      .string()
+      .optional()
+      .describe(
+        'End of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe to a concrete date before calling this tool.',
       ),
   });
 
   return tool({
     description:
-      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
+      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. Defaults to the coming Sunday when no dates are provided. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
     parameters: schema,
-    execute: async ({ role, timeframe }) => {
-      console.log('[chat:tool:getExcusedMembers] Executing', { role, timeframe, requestId });
+    execute: async ({ role, targetStartDate, targetEndDate }) => {
+      const now = new Date();
+      const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);
 
-      const targetSundays = getSundaysForTimeframe(timeframe);
+      console.log('[chat:tool:getExcusedMembers] Executing', {
+        role,
+        targetStartDate,
+        targetEndDate,
+        resolvedRange: range
+          ? { start: range.start.toISOString(), end: range.end.toISOString() }
+          : null,
+        requestId,
+      });
+
+      if (!range) {
+        return { error: 'Could not resolve a date range for the request.' };
+      }
+
+      const targetSundays = getSundaysInRange(range);
       const targetSundayDates = targetSundays.map(({ date }) => date);
+
+      if (targetSundayDates.length === 0) {
+        return {
+          count: 0,
+          tokens: [],
+          service_breakdown: Object.fromEntries(
+            serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
+          ),
+          sunday_breakdown: [],
+          role_breakdown: {},
+          note: 'No Sundays found within the specified date range.',
+        };
+      }
 
       const queryMonth = targetSundayDates[0];
       const targetYear = queryMonth.getFullYear();
@@ -164,7 +196,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         }
       }
 
-      const targetDates = new Set(targetSundayDates.map((date) => date.toISOString().slice(0, 10)));
+      const targetDates = new Set(targetSundayDates.map((date) => formatDate(date)));
       const filteredRecords = records.filter((record) => targetDates.has(record.requestDate));
       const userIds = [...new Set(filteredRecords.map((record) => record.userId).filter(Boolean))];
 
@@ -176,7 +208,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
             serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
           ),
           sunday_breakdown: targetSundayDates.map((date) => ({
-            date: date.toISOString().slice(0, 10),
+            date: formatDate(date),
             count: 0,
             service_breakdown: Object.fromEntries(
               serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
@@ -241,7 +273,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         };
       };
 
-      const dateKeys = targetSundayDates.map((date) => date.toISOString().slice(0, 10));
+      const dateKeys = targetSundayDates.map((date) => formatDate(date));
       const allUsers = [...new Set(dateKeys.flatMap((date) => usersFor(date)))];
       const roleNames = [
         ...new Set(
@@ -271,8 +303,8 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
           }),
         ),
         sunday_breakdown: targetSundayDates.map((date) => ({
-          date: date.toISOString().slice(0, 10),
-          ...breakdownFor(date.toISOString().slice(0, 10)),
+          date: formatDate(date),
+          ...breakdownFor(formatDate(date)),
         })),
         role_breakdown: Object.fromEntries(
           roleNames.map((roleName) => {

@@ -1,6 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
+import { parseIsoDate } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetEventsTool({ client, requestId }: ToolContext) {
@@ -13,7 +14,19 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
       .enum(['upcoming', 'past', 'all'])
       .default('all')
       .describe(
-        'Filter events by schedule: "upcoming" to filter out past events and return only future or currently ongoing events; "past" for completed events; "all" for all events. Always use "upcoming" when the user asks for upcoming, next, future, or scheduled events.',
+        'Directional filter: "upcoming" for future/ongoing events; "past" for completed events; "all" for no directional filter. Ignored when targetStartDate or targetEndDate are provided.',
+      ),
+    targetStartDate: z
+      .string()
+      .optional()
+      .describe(
+        'Precise start of the date range in YYYY-MM-DD format. When provided, overrides the timeframe enum and filters events whose starts_at is on or after this date.',
+      ),
+    targetEndDate: z
+      .string()
+      .optional()
+      .describe(
+        'Precise end of the date range in YYYY-MM-DD format. When provided, overrides the timeframe enum and filters events whose starts_at is on or before this date.',
       ),
     search: z
       .string()
@@ -32,46 +45,31 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
 
   return tool({
     description:
-      'Retrieve events from the database with their schedule, location, registration status, registration counts (member_registrations, public_registrations, total_registrations), and app URLs (admin_url, public_url).',
+      'Retrieve events from the database with their schedule, location, registration status, registration counts (member_registrations, public_registrations, total_registrations), and app URLs (admin_url, public_url). Provide targetStartDate and targetEndDate for precise date-range filtering, or use timeframe for a directional filter.',
     parameters: schema,
     inputSchema: schema,
-    execute: async ({ status, timeframe = 'all', search, limit }) => {
+    execute: async ({
+      status,
+      timeframe = 'all',
+      targetStartDate,
+      targetEndDate,
+      search,
+      limit,
+    }) => {
+      const startDate = parseIsoDate(targetStartDate);
+      const endDate = parseIsoDate(targetEndDate);
+      const hasDateRange = startDate !== null || endDate !== null;
+
       console.log('[chat:tool:getEvents] Executing', {
         status,
         timeframe,
+        targetStartDate,
+        targetEndDate,
+        hasDateRange,
         search,
         limit,
         requestId,
       });
-
-      // Automatically detect and handle keywords like "upcoming", "future", "past" in search
-      let effectiveTimeframe = timeframe;
-      let effectiveSearch = search?.trim();
-
-      if (effectiveSearch) {
-        const lowerSearch = effectiveSearch.toLowerCase();
-        if (/^(upcoming|future|next)(\s+events?)?$/i.test(lowerSearch)) {
-          effectiveTimeframe = 'upcoming';
-          effectiveSearch = undefined;
-        } else if (/^(past|previous|ended|completed)(\s+events?)?$/i.test(lowerSearch)) {
-          effectiveTimeframe = 'past';
-          effectiveSearch = undefined;
-        } else if (/\b(upcoming|future|next)\b/i.test(effectiveSearch)) {
-          effectiveTimeframe = 'upcoming';
-          effectiveSearch = effectiveSearch
-            .replace(/\b(upcoming|future|next)\b/gi, '')
-            .replace(/\bevents?\b/gi, '')
-            .trim();
-        } else if (/\b(past|previous)\b/i.test(effectiveSearch)) {
-          effectiveTimeframe = 'past';
-          effectiveSearch = effectiveSearch
-            .replace(/\b(past|previous)\b/gi, '')
-            .replace(/\bevents?\b/gi, '')
-            .trim();
-        } else if (/^events?$/i.test(lowerSearch)) {
-          effectiveSearch = undefined;
-        }
-      }
 
       const nowIso = new Date().toISOString();
       let query = client
@@ -80,12 +78,35 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
           'id, title, slug, description, starts_at, ends_at, registration_opens_at, registration_closes_at, status, registration_mode, location',
         );
 
-      if (effectiveTimeframe === 'upcoming') {
-        // Events that have not finished yet (ends_at >= now, or if ends_at is null, starts_at >= now)
+      if (hasDateRange) {
+        // Precise date-range mode — filter on starts_at directly
+        if (startDate) {
+          const startIso = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+            0,
+            0,
+            0,
+          ).toISOString();
+          query = query.gte('starts_at', startIso);
+        }
+        if (endDate) {
+          const endIso = new Date(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            23,
+            59,
+            59,
+          ).toISOString();
+          query = query.lte('starts_at', endIso);
+        }
+        query = query.order('starts_at', { ascending: true, nullsFirst: false });
+      } else if (timeframe === 'upcoming') {
         query = query.or(`ends_at.gte.${nowIso},starts_at.gte.${nowIso}`);
         query = query.order('starts_at', { ascending: true, nullsFirst: false });
-      } else if (effectiveTimeframe === 'past') {
-        // Events that have finished
+      } else if (timeframe === 'past') {
         query = query.or(`ends_at.lt.${nowIso},and(ends_at.is.null,starts_at.lt.${nowIso})`);
         query = query.order('starts_at', { ascending: false, nullsFirst: false });
       } else {
@@ -98,8 +119,9 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
         query = query.eq('registration_mode', 'closed');
       }
 
-      if (effectiveSearch && effectiveSearch.trim()) {
-        query = query.ilike('title', `%${effectiveSearch.trim()}%`);
+      const effectiveSearch = search?.trim();
+      if (effectiveSearch) {
+        query = query.ilike('title', `%${effectiveSearch}%`);
       }
 
       query = query.limit(limit);
@@ -178,18 +200,24 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
         };
       });
 
+      // In date-range mode we trust the DB filter; in timeframe mode apply a secondary guard
       let finalEvents = enrichedEvents;
-      if (effectiveTimeframe === 'upcoming') {
-        finalEvents = enrichedEvents.filter(
-          (e) => e.time_status === 'upcoming' || e.time_status === 'ongoing',
-        );
-      } else if (effectiveTimeframe === 'past') {
-        finalEvents = enrichedEvents.filter((e) => e.time_status === 'past');
+      if (!hasDateRange) {
+        if (timeframe === 'upcoming') {
+          finalEvents = enrichedEvents.filter(
+            (e) => e.time_status === 'upcoming' || e.time_status === 'ongoing',
+          );
+        } else if (timeframe === 'past') {
+          finalEvents = enrichedEvents.filter((e) => e.time_status === 'past');
+        }
       }
 
       console.log('[chat:tool:getEvents] Fetched events:', {
         count: finalEvents.length,
-        effectiveTimeframe,
+        timeframe,
+        hasDateRange,
+        targetStartDate,
+        targetEndDate,
         effectiveSearch,
         events: finalEvents.map((e) => ({
           title: e.title,

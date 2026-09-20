@@ -52,7 +52,7 @@ describe('AdminChatPage', () => {
     );
 
     expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
-    expect(screen.getByText('Ask me questions about your events.')).toBeInTheDocument();
+    expect(screen.getByText('Ask me questions about data and events.')).toBeInTheDocument();
     expect(screen.getByAltText('AI Assistant')).toBeInTheDocument();
     expect(screen.getAllByText('Beta').length).toBeGreaterThanOrEqual(1);
   });

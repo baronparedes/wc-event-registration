@@ -1,194 +1,156 @@
-import * as chrono from 'npm:chrono-node@2.8.0';
+/**
+ * Timeframe utilities for chat tools.
+ *
+ * Tools accept optional `targetStartDate` and `targetEndDate` (ISO YYYY-MM-DD).
+ * The LLM resolves natural-language timeframe phrases into concrete dates before
+ * calling any tool. These helpers operate purely on resolved Date objects so that
+ * no individual tool needs to understand natural language.
+ */
 
-export type MilestoneTimeframe =
-  | 'upcoming'
-  | 'today'
-  | 'this_week'
-  | 'next_week'
-  | 'last_week'
-  | 'next_2_weeks'
-  | 'last_2_weeks'
-  | 'this_month'
-  | 'next_month'
-  | 'last_month';
-export type SundayTimeframe = 'coming_sunday' | 'this_month' | 'next_month';
+// ---------------------------------------------------------------------------
+// Date helpers
+// ---------------------------------------------------------------------------
 
-export function normalizeSundayTimeframe(input?: string | null): SundayTimeframe {
-  if (!input) return 'coming_sunday';
-  const clean = input
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, '_');
-  if (clean === 'next_month') return 'next_month';
-  if (clean === 'this_month' || clean === 'current_month') return 'this_month';
-  return 'coming_sunday';
+/** Parse an optional ISO date string (YYYY-MM-DD or full ISO) into a Date at noon local time. */
+export function parseIsoDate(value?: string | null): Date | null {
+  if (!value) return null;
+  // Accept YYYY-MM-DD or full ISO strings
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const [, year, month, day] = match.map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-const timeframeAliases: Record<string, MilestoneTimeframe> = {
-  upcoming: 'upcoming',
-  'next 7 days': 'upcoming',
-  'coming week': 'upcoming',
-  today: 'today',
-  now: 'today',
-  'this week': 'this_week',
-  'current week': 'this_week',
-  'next week': 'next_week',
-  'week after next': 'next_week',
-  'last week': 'last_week',
-  'previous week': 'last_week',
-  'next 2 weeks': 'next_2_weeks',
-  'coming 2 weeks': 'next_2_weeks',
-  'last 2 weeks': 'last_2_weeks',
-  'past 2 weeks': 'last_2_weeks',
-  'previous 2 weeks': 'last_2_weeks',
-  'next two weeks': 'next_2_weeks',
-  'coming two weeks': 'next_2_weeks',
-  'last two weeks': 'last_2_weeks',
-  'past two weeks': 'last_2_weeks',
-  'previous two weeks': 'last_2_weeks',
-  'this month': 'this_month',
-  'current month': 'this_month',
-  'next month': 'next_month',
-  'last month': 'last_month',
-  'previous month': 'last_month',
-};
-
-export function normalizeMilestoneTimeframe(
-  input: string,
-  now = new Date(),
-): MilestoneTimeframe | null {
-  const normalized = input.trim().toLowerCase().replace(/\s+/g, ' ');
-  const directMatch = timeframeAliases[normalized];
-  if (directMatch) return directMatch;
-
-  const parsed = chrono.parseDate(normalized, now, { forwardDate: true });
-  if (!parsed) return null;
-
-  const dayStart = new Date(now);
-  dayStart.setHours(12, 0, 0, 0);
-  const parsedStart = new Date(parsed);
-  parsedStart.setHours(12, 0, 0, 0);
-  const dayDifference = Math.round(
-    (parsedStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000),
-  );
-
-  if (dayDifference === 0) return 'today';
-  if (dayDifference > 0 && dayDifference <= 7) return 'upcoming';
-  if (dayDifference < 0 && dayDifference >= -7) return 'last_week';
-
-  const monthDifference =
-    (parsedStart.getFullYear() - now.getFullYear()) * 12 + parsedStart.getMonth() - now.getMonth();
-  if (monthDifference === 0) return 'this_month';
-  if (monthDifference === 1) return 'next_month';
-  if (monthDifference === -1) return 'last_month';
-
-  return null;
-}
-
-function getDateRangeForTimeframe(timeframe: MilestoneTimeframe, now: Date): Date[] {
-  const start = new Date(now);
-  start.setHours(12, 0, 0, 0);
-
-  if (timeframe === 'this_month' || timeframe === 'next_month' || timeframe === 'last_month') {
-    const monthOffset = timeframe === 'next_month' ? 1 : timeframe === 'last_month' ? -1 : 0;
-    const firstDay = new Date(start.getFullYear(), start.getMonth() + monthOffset, 1, 12);
-    const daysInMonth = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0).getDate();
-    return Array.from(
-      { length: daysInMonth },
-      (_, index) => new Date(firstDay.getFullYear(), firstDay.getMonth(), index + 1, 12),
-    );
-  }
-
-  const ranges: Record<MilestoneTimeframe, [number, number]> = {
-    upcoming: [0, 7],
-    today: [0, 0],
-    this_week: [0, 7],
-    next_week: [8, 14],
-    last_week: [-7, -1],
-    next_2_weeks: [0, 14],
-    last_2_weeks: [-14, -1],
-    this_month: [0, 0],
-    next_month: [0, 0],
-    last_month: [0, 0],
-  };
-  const [startOffset, endOffset] = ranges[timeframe];
-
-  return Array.from({ length: endOffset - startOffset + 1 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + startOffset + index);
-    return date;
-  });
-}
-
-function formatDate(date: Date): string {
+/** Format a Date as YYYY-MM-DD. */
+export function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
-export function describeMilestoneTimeframe(
-  requestedTimeframe: string,
-  timeframe: MilestoneTimeframe,
+// ---------------------------------------------------------------------------
+// Date-range resolution
+// ---------------------------------------------------------------------------
+
+export type DateRange = { start: Date; end: Date };
+
+type FallbackStrategy = 'this_month' | 'coming_sunday' | 'none'; // no filter — return null
+
+/**
+ * Resolve optional ISO date strings into a concrete DateRange.
+ * When both are omitted the `fallback` strategy is applied.
+ * Returns `null` only when `fallback === 'none'` and both dates are absent.
+ */
+export function resolveDateRange(
+  targetStartDate: string | null | undefined,
+  targetEndDate: string | null | undefined,
+  fallback: FallbackStrategy,
   now = new Date(),
-): {
-  requested: string;
+): DateRange | null {
+  const start = parseIsoDate(targetStartDate);
+  const end = parseIsoDate(targetEndDate);
+
+  if (start && end) return { start, end };
+
+  // One-sided: pad the missing boundary
+  if (start && !end) return { start, end: start };
+  if (!start && end) return { start: end, end };
+
+  // Both absent — apply fallback
+  if (fallback === 'this_month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 12);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 12);
+    return { start: monthStart, end: monthEnd };
+  }
+
+  if (fallback === 'coming_sunday') {
+    const today = new Date(now);
+    today.setHours(12, 0, 0, 0);
+    const daysUntilSunday = (7 - today.getDay()) % 7;
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() + daysUntilSunday);
+    return { start: sunday, end: sunday };
+  }
+
+  return null;
+}
+
+/**
+ * Build a human-readable description of the resolved date range to include
+ * in tool responses (so the LLM can relay it back to the user).
+ */
+export function describeDateRange(range: DateRange): {
   start_date: string;
   end_date: string;
 } {
-  const dates = getDateRangeForTimeframe(timeframe, now);
-
   return {
-    requested: requestedTimeframe,
-    start_date: formatDate(dates[0]),
-    end_date: formatDate(dates[dates.length - 1]),
+    start_date: formatDate(range.start),
+    end_date: formatDate(range.end),
   };
 }
 
-export function getMonthDayKeysForTimeframe(
-  timeframe: MilestoneTimeframe,
-  now = new Date(),
-): Set<string> {
-  return new Set(
-    getDateRangeForTimeframe(timeframe, now).map(
-      (date) => `${date.getMonth() + 1}-${date.getDate()}`,
-    ),
-  );
-}
-
-export function isMonthDayInTimeframe(
-  month: number,
-  day: number,
-  timeframe: MilestoneTimeframe,
-  now = new Date(),
-): boolean {
-  return getMonthDayKeysForTimeframe(timeframe, now).has(`${month}-${day}`);
-}
+// ---------------------------------------------------------------------------
+// Sunday utilities
+// ---------------------------------------------------------------------------
 
 function sundayKeyForDate(date: Date): string {
   const occurrence = Math.ceil(date.getDate() / 7);
   return `${['first', 'second', 'third', 'fourth', 'fifth'][occurrence - 1]}_sunday`;
 }
 
-export function getSundaysForTimeframe(
-  timeframe: SundayTimeframe,
-  now = new Date(),
-): { date: Date; key: string }[] {
-  if (timeframe === 'coming_sunday') {
-    const comingSunday = new Date(now);
-    comingSunday.setDate(comingSunday.getDate() + ((7 - comingSunday.getDay()) % 7));
-    return [{ date: comingSunday, key: sundayKeyForDate(comingSunday) }];
-  }
-
-  const monthOffset = timeframe === 'next_month' ? 1 : 0;
-  const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+/**
+ * Return all Sundays (with their metadata key) that fall within [range.start, range.end].
+ * When the range spans only a single day that IS a Sunday, that Sunday is returned.
+ * When it spans a single day that is NOT a Sunday (e.g. coming-Sunday fallback
+ * returned the exact next Sunday), we still include only the Sundays within range.
+ */
+export function getSundaysInRange(range: DateRange): { date: Date; key: string }[] {
   const sundays: { date: Date; key: string }[] = [];
-  const daysInMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
 
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), day);
-    if (date.getDay() === 0) sundays.push({ date, key: sundayKeyForDate(date) });
+  const cursor = new Date(range.start);
+  cursor.setHours(12, 0, 0, 0);
+
+  // Advance to the first Sunday on or after range.start
+  const daysUntilSunday = (7 - cursor.getDay()) % 7;
+  cursor.setDate(cursor.getDate() + daysUntilSunday);
+
+  const rangeEnd = new Date(range.end);
+  rangeEnd.setHours(23, 59, 59, 999);
+
+  while (cursor <= rangeEnd) {
+    sundays.push({ date: new Date(cursor), key: sundayKeyForDate(cursor) });
+    cursor.setDate(cursor.getDate() + 7);
   }
 
   return sundays;
+}
+
+// ---------------------------------------------------------------------------
+// Month-day matching (for milestone tools — birthday / anniversary)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a Set of "M-D" strings for every calendar day within [range.start, range.end].
+ * Month-day strings are year-agnostic so they work for birthdays / anniversaries.
+ */
+export function getMonthDayKeysForRange(range: DateRange): Set<string> {
+  const keys = new Set<string>();
+  const cursor = new Date(range.start);
+  cursor.setHours(12, 0, 0, 0);
+  const end = new Date(range.end);
+  end.setHours(12, 0, 0, 0);
+
+  while (cursor <= end) {
+    keys.add(`${cursor.getMonth() + 1}-${cursor.getDate()}`);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return keys;
+}
+
+export function isMonthDayInRange(month: number, day: number, range: DateRange): boolean {
+  return getMonthDayKeysForRange(range).has(`${month}-${day}`);
 }

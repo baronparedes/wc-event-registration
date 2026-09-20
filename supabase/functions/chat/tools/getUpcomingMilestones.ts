@@ -1,45 +1,49 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import {
-  describeMilestoneTimeframe,
-  isMonthDayInTimeframe,
-  normalizeMilestoneTimeframe,
-} from './timeframes.ts';
+import { describeDateRange, isMonthDayInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 type Milestone = 'birthday' | 'wedding_anniversary';
 
 export function createGetUpcomingMilestonesTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    timeframe: z
+    targetStartDate: z
       .string()
-      .trim()
-      .min(1)
-      .default('this_month')
+      .optional()
       .describe(
-        'A timeframe phrase such as today, upcoming, this week, next week, last week, last 2 weeks, this month, next month, or last month.',
+        'Start of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe (e.g. "this week", "next month") to a concrete date before calling this tool.',
+      ),
+    targetEndDate: z
+      .string()
+      .optional()
+      .describe(
+        'End of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe to a concrete date before calling this tool.',
       ),
   });
 
   return tool({
     description:
-      'Retrieve birthdays and wedding anniversaries as separate counts with user tokens within the specified timeframe. This tool NEVER returns PII like names or emails.',
+      'Retrieve birthdays and wedding anniversaries as separate counts with user tokens within the specified date range. Defaults to the current month when no dates are provided. This tool NEVER returns PII like names or emails.',
     parameters: schema,
-    execute: async ({ timeframe: requestedTimeframe }) => {
+    execute: async ({ targetStartDate, targetEndDate }) => {
       const now = new Date();
-      const timeframe = normalizeMilestoneTimeframe(requestedTimeframe, now);
+      const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);
+
       console.log('[chat:tool:getUpcomingMilestones] Executing', {
-        requestedTimeframe,
-        timeframe,
+        targetStartDate,
+        targetEndDate,
+        resolvedRange: range
+          ? { start: range.start.toISOString(), end: range.end.toISOString() }
+          : null,
         requestId,
       });
 
-      if (!timeframe) {
-        return { error: `Unsupported timeframe: ${requestedTimeframe}` };
+      if (!range) {
+        return { error: 'Could not resolve a date range for the request.' };
       }
 
-      const timeframeDetails = describeMilestoneTimeframe(requestedTimeframe, timeframe, now);
+      const timeframeDetails = describeDateRange(range);
 
       const { data, error } = await client
         .from('users')
@@ -109,7 +113,7 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
         ];
 
         for (const [type, date] of milestones) {
-          if (!date || !isMonthDayInTimeframe(date.month, date.day, timeframe, now)) continue;
+          if (!date || !isMonthDayInRange(date.month, date.day, range)) continue;
           const result = results[type === 'birthday' ? 'birthdays' : 'wedding_anniversaries'];
           result.count += 1;
           if (token) result.tokens.push(token);
@@ -118,7 +122,7 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
 
       console.log('[chat:tool:getUpcomingMilestones] Filter results', {
         requestId,
-        timeframe,
+        resolvedRange: timeframeDetails,
         userCount: data.length,
         birthdayCount: results.birthdays.count,
         weddingAnniversaryCount: results.wedding_anniversaries.count,

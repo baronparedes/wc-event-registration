@@ -203,7 +203,7 @@ export function AdminChatPage() {
                     Beta
                   </Badge>
                 </div>
-                <p className="text-sm">Ask me questions about your events.</p>
+                <p className="text-sm">Ask me questions about data and events.</p>
               </div>
             )}
             {messages.map((m) => (

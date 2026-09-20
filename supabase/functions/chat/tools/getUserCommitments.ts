@@ -1,37 +1,52 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import { getSundaysForTimeframe, normalizeSundayTimeframe } from './timeframes.ts';
+import { formatDate, getSundaysInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetUserCommitmentsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     role: z.string().optional().describe('Filter by user role (e.g., "prayer coach", "usher").'),
-    timeframe: z
+    targetStartDate: z
       .string()
       .optional()
-      .default('coming_sunday')
-      .transform(normalizeSundayTimeframe)
       .describe(
-        'The commitment period to summarize: "coming_sunday" (or "this_sunday"), "this_month", or "next_month". Defaults to "coming_sunday".',
+        'Start of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe (e.g. "this Sunday", "next month") to a concrete date before calling this tool.',
+      ),
+    targetEndDate: z
+      .string()
+      .optional()
+      .describe(
+        'End of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe to a concrete date before calling this tool.',
       ),
     sunday_availability: z
       .enum(['first_sunday', 'second_sunday', 'third_sunday', 'fourth_sunday', 'fifth_sunday'])
       .optional()
-      .describe('Filter by availability on a specific Sunday.'),
+      .describe('Filter by availability on a specific Sunday within the resolved date range.'),
   });
 
   return tool({
     description:
-      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed on the coming Sunday, this month, or next month, optionally filtered by role. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
+      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed within the specified date range, optionally filtered by role. Defaults to the coming Sunday when no dates are provided. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
     parameters: schema,
-    execute: async ({ role, timeframe, sunday_availability }) => {
+    execute: async ({ role, targetStartDate, targetEndDate, sunday_availability }) => {
+      const now = new Date();
+      const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);
+
       console.log('[chat:tool:getUserCommitments] Executing', {
         role,
-        timeframe,
+        targetStartDate,
+        targetEndDate,
+        resolvedRange: range
+          ? { start: range.start.toISOString(), end: range.end.toISOString() }
+          : null,
         sunday_availability,
         requestId,
       });
+
+      if (!range) {
+        return { error: 'Could not resolve a date range for the request.' };
+      }
 
       // Start the query on users
       let query = client
@@ -46,10 +61,6 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         .eq('is_active', true);
 
       if (role) {
-        // Assume role might be stored in the top-level 'role' column or inside metadata.
-        // It's safer to filter in JS if it's case-insensitive or complex, but let's try direct DB filter for the column first, or just fetch and filter.
-        // For simplicity and to handle metadata JSON accurately, we can fetch users and filter in-memory if dataset isn't huge, or use PostgREST filters.
-        // Let's use ilike on role column
         query = query.ilike('role', `%${role.trim()}%`);
       }
 
@@ -60,8 +71,21 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         return { error: error.message };
       }
 
-      const targetSundays = getSundaysForTimeframe(timeframe);
+      const targetSundays = getSundaysInRange(range);
       const targetSundayDates = targetSundays.map(({ date }) => date);
+
+      if (targetSundayDates.length === 0) {
+        return {
+          count: 0,
+          tokens: [],
+          service_breakdown: {},
+          sunday_breakdown: [],
+          role_breakdown: {},
+          sundays: [],
+          hub_calendar_url: '/admin/hub-calendar',
+          note: 'No Sundays found within the specified date range.',
+        };
+      }
 
       const targetSundayKeys = new Set(
         sunday_availability ? [sunday_availability] : targetSundays.map(({ key }) => key),
@@ -150,7 +174,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
           );
 
           return {
-            date: date.toISOString().slice(0, 10),
+            date: formatDate(date),
             sunday_key: sundayKey,
             count: sundayUsers.length,
             service_breakdown: services,
@@ -191,7 +215,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         service_breakdown: serviceBreakdown,
         sunday_breakdown: sundayBreakdown,
         role_breakdown: roleBreakdown,
-        sundays: targetSundayDates.map((date) => date.toISOString().slice(0, 10)),
+        sundays: targetSundayDates.map(formatDate),
         hub_calendar_url: '/admin/hub-calendar',
       };
     },

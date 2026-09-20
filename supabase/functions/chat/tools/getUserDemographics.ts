@@ -110,10 +110,17 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
         roleBreakdown.set(roleName, roleEntry);
 
         if (!user.date_of_birth) continue;
-        const dob = new Date(user.date_of_birth);
-        let age = now.getFullYear() - dob.getFullYear();
-        const monthDifference = now.getMonth() - dob.getMonth();
-        if (monthDifference < 0 || (monthDifference === 0 && now.getDate() < dob.getDate())) age--;
+        // Parse date_of_birth as local date parts to avoid UTC timezone shift.
+        // "1990-05-15" parsed via new Date() becomes UTC midnight which shifts
+        // the day by -1 in UTC+8, making birthday boundary checks unreliable.
+        const dobStr = String(user.date_of_birth).split('T')[0];
+        const [dobYear, dobMonth, dobDay] = dobStr.split('-').map(Number);
+        const age = (() => {
+          let years = now.getFullYear() - dobYear;
+          const monthDiff = now.getMonth() + 1 - dobMonth;
+          if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dobDay)) years--;
+          return years;
+        })();
 
         let group = '55+';
         if (age <= 17) group = '0-17';
