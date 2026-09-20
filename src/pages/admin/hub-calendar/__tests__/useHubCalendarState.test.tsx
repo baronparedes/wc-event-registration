@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { MemoryRouter, useSearchParams } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY,
@@ -178,6 +178,73 @@ describe('useHubCalendarState & persistence helpers', () => {
         monthIndex: today.getMonth(),
         dayNumber: today.getDate(),
       });
+    });
+
+    it('clears date parameter when clicking handleToday', () => {
+      const trackerRef = { current: null as URLSearchParams | null };
+      function Tracker() {
+        const [params] = useSearchParams();
+        trackerRef.current = params;
+        return null;
+      }
+
+      const customWrapper = ({ children }: { children: React.ReactNode }) => (
+        <MemoryRouter initialEntries={['/admin/hub-calendar?date=2025-01-01']}>
+          {children}
+          <Tracker />
+        </MemoryRouter>
+      );
+
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper: customWrapper });
+
+      expect(trackerRef.current?.get('date')).toBe('2025-01-01');
+
+      act(() => {
+        result.current.handleToday();
+      });
+
+      expect(trackerRef.current?.get('date')).toBeNull();
+    });
+
+    it('omits date parameter when at today, but sets date parameter when navigating to other dates', () => {
+      const trackerRef = { current: null as URLSearchParams | null };
+      function Tracker() {
+        const [params] = useSearchParams();
+        trackerRef.current = params;
+        return null;
+      }
+
+      const customWrapper = ({ children }: { children: React.ReactNode }) => (
+        <MemoryRouter initialEntries={['/admin/hub-calendar']}>
+          {children}
+          <Tracker />
+        </MemoryRouter>
+      );
+
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper: customWrapper });
+
+      expect(trackerRef.current?.get('date')).toBeNull();
+
+      act(() => {
+        result.current.handleNextMonth();
+      });
+
+      expect(trackerRef.current?.get('date')).toBeTruthy();
+      expect(trackerRef.current?.get('date')).not.toBeNull();
+    });
+
+    it('clears window location hash when clicking handleToday', () => {
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+      window.location.hash = '#details';
+
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
+
+      act(() => {
+        result.current.handleToday();
+      });
+
+      expect(replaceStateSpy).toHaveBeenCalled();
+      replaceStateSpy.mockRestore();
     });
   });
 });

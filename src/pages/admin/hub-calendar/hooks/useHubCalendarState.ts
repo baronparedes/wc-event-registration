@@ -118,6 +118,17 @@ export function useHubCalendarState() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const minViewDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
+  const maxViewDate = new Date(today.getFullYear() + 2, today.getMonth(), 1);
+
+  const isAtMinimumMonth = viewYear === minViewDate.getFullYear() && viewMonthIndex === 0;
+  const isAtMaximumMonth =
+    viewYear === maxViewDate.getFullYear() && viewMonthIndex === maxViewDate.getMonth();
+  const isAtToday =
+    viewYear === today.getFullYear() &&
+    viewMonthIndex === today.getMonth() &&
+    selectedDayNumber === today.getDate();
+
   useEffect(() => {
     saveStoredCalendarDate({
       year: viewYear,
@@ -131,6 +142,13 @@ export function useHubCalendarState() {
 
     setSearchParams(
       (prev) => {
+        if (isAtToday) {
+          if (!prev.has('date')) return prev;
+          const next = new URLSearchParams(prev);
+          next.delete('date');
+          return next;
+        }
+
         if (prev.get('date') === newDateStr) return prev;
         const next = new URLSearchParams(prev);
         next.set('date', newDateStr);
@@ -138,24 +156,13 @@ export function useHubCalendarState() {
       },
       { replace: true },
     );
-  }, [viewYear, viewMonthIndex, selectedDayNumber, setSearchParams]);
+  }, [viewYear, viewMonthIndex, selectedDayNumber, isAtToday, setSearchParams]);
 
   function handleTabChange(slot: TimeSlot) {
     setActiveTab(slot);
     setSelectedRole(null);
     setSearchQuery('');
   }
-
-  const minViewDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
-  const maxViewDate = new Date(today.getFullYear() + 2, today.getMonth(), 1);
-
-  const isAtMinimumMonth = viewYear === minViewDate.getFullYear() && viewMonthIndex === 0;
-  const isAtMaximumMonth =
-    viewYear === maxViewDate.getFullYear() && viewMonthIndex === maxViewDate.getMonth();
-  const isAtToday =
-    viewYear === today.getFullYear() &&
-    viewMonthIndex === today.getMonth() &&
-    selectedDayNumber === today.getDate();
 
   function handlePreviousMonth() {
     if (isAtMinimumMonth) return;
@@ -186,6 +193,11 @@ export function useHubCalendarState() {
   function handleToday() {
     setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDayNumber(today.getDate());
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const url = new URL(window.location.href);
+      url.hash = '';
+      window.history.replaceState(null, '', url.pathname + url.search);
+    }
   }
 
   function handleSelectDay(dayNumber: number, date?: Date) {
