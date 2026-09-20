@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Shield } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
 import { Badge, BrandAvatar, Button } from '@/components/ui';
@@ -192,7 +192,6 @@ export function AdminChatPage() {
   return (
     <AdminPageShell>
       <AdminPageShell.Header
-        breadcrumbs={[{ label: 'AI Assistant' }]}
         title="AI Assistant"
         badge={
           <Badge
@@ -202,7 +201,12 @@ export function AdminChatPage() {
             Beta
           </Badge>
         }
-        description="Ask questions about data and events."
+        description={
+          <p className="text-xs opacity-90 leading-relaxed italic">
+            AI responses can be inaccurate. Always verify critical data independently. This tool is
+            for informational purposes and does not replace human judgment.
+          </p>
+        }
         actions={
           messages.length > 0 ? (
             <Button
