@@ -149,4 +149,26 @@ describe('ChatInputForm', () => {
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
   });
+
+  it('renders primary underlined mention styling in backdrop when @ mention is present', () => {
+    const { container } = render(
+      <ChatInputForm
+        isLoading={false}
+        onSubmit={vi.fn()}
+        onStop={vi.fn()}
+        tokenMap={mockTokenMap}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText(/Ask/i);
+    fireEvent.change(input, { target: { value: 'Ask @John Doe about Sunday' } });
+
+    // The input becomes text-transparent so the backdrop is visible beneath it
+    expect(input.className).toContain('text-transparent');
+
+    // The backdrop renders the styled mention
+    const mentionSpan = container.querySelector('span.text-primary.underline');
+    expect(mentionSpan).toBeInTheDocument();
+    expect(mentionSpan).toHaveTextContent('@John Doe');
+  });
 });

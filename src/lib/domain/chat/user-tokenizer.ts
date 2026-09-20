@@ -162,3 +162,54 @@ export function findMentionCandidates(
 
   return scored.slice(0, limit).map((s) => s.user);
 }
+
+export type TextMentionSegment = {
+  text: string;
+  isMention: boolean;
+};
+
+/**
+ * Splits text into segments identifying '@' mentions for UI syntax highlighting.
+ */
+export function splitTextByMentions(
+  text: string,
+  tokenMap: Record<string, ResolvedToken>,
+): TextMentionSegment[] {
+  if (!text) return [];
+
+  const entries = buildReverseUserTokenMap(tokenMap);
+  const mentionPatterns = entries.map((e) => `@${escapeRegExp(e.name)}`);
+
+  const patternString =
+    mentionPatterns.length > 0
+      ? `(${mentionPatterns.join('|')}|@[a-zA-Z0-9_]+)`
+      : '(@[a-zA-Z0-9_]+)';
+
+  const regex = new RegExp(patternString, 'gi');
+  const segments: TextMentionSegment[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        text: text.slice(lastIndex, match.index),
+        isMention: false,
+      });
+    }
+    segments.push({
+      text: match[0],
+      isMention: true,
+    });
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({
+      text: text.slice(lastIndex),
+      isMention: false,
+    });
+  }
+
+  return segments;
+}

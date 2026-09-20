@@ -1,10 +1,19 @@
-import { type FormEvent, type KeyboardEvent, memo, useCallback, useMemo, useState } from 'react';
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type UIEvent,
+  memo,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Send, Square } from 'lucide-react';
 
 import { Button, FormInputField } from '@/components/ui';
 import type { ResolvedToken } from '@/hooks/domain/chat/queries/useResolveUserTokensQuery';
-import { findMentionCandidates } from '@/lib/domain/chat';
+import { findMentionCandidates, splitTextByMentions } from '@/lib/domain/chat';
 
 import { ChatMentionPopover } from './ChatMentionPopover';
 
@@ -25,6 +34,8 @@ export const ChatInputForm = memo(function ChatInputForm({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [dismissedAtIndex, setDismissedAtIndex] = useState<number | null>(null);
 
+  const backdropRef = useRef<HTMLDivElement | null>(null);
+
   // Compute active mention query if '@' is present before cursor / end
   const mentionInfo = useMemo(() => {
     const lastAtIndex = input.lastIndexOf('@');
@@ -44,6 +55,19 @@ export const ChatInputForm = memo(function ChatInputForm({
   }, [mentionInfo, tokenMap]);
 
   const showMentionPopover = Boolean(mentionInfo && candidates.length > 0);
+
+  // Split input into segments to style mentions as primary underlined
+  const hasMention = Boolean(input && /@/.test(input));
+  const segments = useMemo(() => {
+    if (!hasMention) return [];
+    return splitTextByMentions(input, tokenMap);
+  }, [hasMention, input, tokenMap]);
+
+  const handleScroll = (e: UIEvent<HTMLInputElement>) => {
+    if (backdropRef.current) {
+      backdropRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  };
 
   const handleSelectCandidate = useCallback(
     (candidate: ResolvedToken) => {
@@ -110,6 +134,27 @@ export const ChatInputForm = memo(function ChatInputForm({
     onSubmit(trimmed);
   };
 
+  const backdrop = hasMention ? (
+    <div
+      aria-hidden="true"
+      ref={backdropRef}
+      className="pointer-events-none absolute inset-0 flex items-center overflow-hidden px-4 py-2 text-sm whitespace-pre font-normal text-text select-none"
+    >
+      {segments.map((seg, i) =>
+        seg.isMention ? (
+          <span
+            key={i}
+            className="text-primary font-medium underline underline-offset-2 decoration-primary/80"
+          >
+            {seg.text}
+          </span>
+        ) : (
+          <span key={i}>{seg.text}</span>
+        ),
+      )}
+    </div>
+  ) : null;
+
   return (
     <div className="relative">
       {showMentionPopover && (
@@ -125,9 +170,13 @@ export const ChatInputForm = memo(function ChatInputForm({
           value={input}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          onScroll={handleScroll}
+          backdrop={backdrop}
           placeholder="Ask about volunteers, schedules, events... (type @ to mention a member)"
           className="flex-1"
-          inputClassName="w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
+          inputClassName={`w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25 ${
+            hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
+          }`}
         />
         {isLoading ? (
           <Button
