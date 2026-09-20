@@ -7,9 +7,9 @@ import type { ToolContext } from './types.ts';
 export function createGetUserServiceActivityTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     activityType: z
-      .enum(['active', 'inactive', 'late'])
+      .enum(['active', 'inactive'])
       .describe(
-        'Whether to query for "active" volunteers (who checked in), "inactive" volunteers (who did not check in), or "late" volunteers (who checked in late, indicated by is_override) within the specified date range.',
+        'Whether to query for "active" volunteers (who checked in) or "inactive" volunteers (who did not check in) within the specified date range.',
       ),
     role: z
       .string()
@@ -32,7 +32,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
   return tool({
     description:
-      'Determine a user\'s service attendance check-in activity within a specific date range. Use this to find the most active volunteers, identify members who have not served (inactive), or find members who checked in late within a timeframe like "last month" or "more than 3 months". Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.',
+      "Determine a user's service attendance check-in activity within a specific date range. Use this to find the most active volunteers, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
     parameters: schema,
     execute: async ({ activityType, role, targetStartDate, targetEndDate }) => {
       const now = new Date();
@@ -56,17 +56,13 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
       const formattedStart = formatDate(range.start);
       const formattedEnd = formatDate(range.end);
 
-      if (activityType === 'active' || activityType === 'late') {
-        // Find active/late users by joining service_attendance -> users -> user_tokens
+      if (activityType === 'active') {
+        // Find active users by joining service_attendance -> users -> user_tokens
         let query = client
           .from('service_attendance')
-          .select('time_slot, users!inner(role, user_tokens!inner(token))')
+          .select('time_slot, is_override, is_walk_in, users!inner(role, user_tokens!inner(token))')
           .gte('service_date', formattedStart)
           .lte('service_date', formattedEnd);
-
-        if (activityType === 'late') {
-          query = query.eq('is_override', true);
-        }
 
         if (role) {
           query = query.ilike('users.role', `%${role}%`);
@@ -81,7 +77,14 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
         // Aggregate counts manually
         const userStats = new Map<
           string,
-          { token: string; role: string; count: number; slots: Record<string, number> }
+          {
+            token: string;
+            role: string;
+            count: number;
+            lates: number;
+            walk_ins: number;
+            slots: Record<string, number>;
+          }
         >();
 
         for (const record of data || []) {
@@ -97,18 +100,20 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
           let stats = userStats.get(token);
           if (!stats) {
-            stats = { token, role: userRole, count: 0, slots: {} };
+            stats = { token, role: userRole, count: 0, lates: 0, walk_ins: 0, slots: {} };
             userStats.set(token, stats);
           }
 
           stats.count += 1;
           stats.slots[slot] = (stats.slots[slot] || 0) + 1;
+          if (record.is_override) stats.lates += 1;
+          if (record.is_walk_in) stats.walk_ins += 1;
         }
 
-        // Sort by count descending, return top 20
+        // Sort by count descending, return top 50
         const sorted = Array.from(userStats.values())
           .sort((a, b) => b.count - a.count)
-          .slice(0, 20);
+          .slice(0, 50);
 
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
