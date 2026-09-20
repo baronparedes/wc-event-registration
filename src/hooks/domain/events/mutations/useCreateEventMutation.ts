@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { QUERY_KEYS } from '@/config/constants';
 import type { CreateEventInput } from '@/lib/domain/events';
 import { mapPublicRegistrationAccessToEventFlags } from '@/lib/domain/events';
 import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
@@ -69,6 +70,7 @@ export function useCreateEventMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicEventListing() });
     },
   });
 }

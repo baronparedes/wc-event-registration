@@ -46,6 +46,15 @@ export function useCancelPublicRegistrationMutation(eventId: string) {
       queryClient.invalidateQueries({
         queryKey: ['publicRegistrationCount', eventId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['publicAttendeeCheck'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['public-event-by-slug'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['event-slot-availability', eventId],
+      });
     },
   });
 }

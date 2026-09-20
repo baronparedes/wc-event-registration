@@ -14,7 +14,7 @@ export const QUERY_STALE_TIME_MS = {
   immediate: 0,
   adminList: 5 * 60 * 1000,
   detail: 5 * 60 * 1000,
-  short: 5 * 60 * 1000,
+  short: 30 * 1000,
   long: 15 * 60 * 1000,
   oneHour: 60 * 60 * 1000,
   oneDay: 24 * 60 * 60 * 1000,

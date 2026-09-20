@@ -42,6 +42,9 @@ export function useDeleteAttendanceSavedViewMutation() {
         queryClient.invalidateQueries({
           queryKey: QUERY_KEYS.adminAttendanceSavedViews(variables.eventId),
         });
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.adminAttendanceSavedView(variables.id),
+        });
       }
     },
   });

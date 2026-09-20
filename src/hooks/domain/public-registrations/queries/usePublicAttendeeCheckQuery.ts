@@ -44,6 +44,6 @@ export function usePublicAttendeeCheckQuery(email: string | null, eventSlug: str
       return fetchPublicAttendeeCheck(email, eventSlug);
     },
     enabled: Boolean(email && eventSlug),
-    staleTime: QUERY_STALE_TIME_MS.detail,
+    staleTime: QUERY_STALE_TIME_MS.immediate,
   });
 }
