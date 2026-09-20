@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -64,9 +65,13 @@ describe('useHubCalendarState & persistence helpers', () => {
   });
 
   describe('useHubCalendarState hook', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter>{children}</MemoryRouter>
+    );
+
     it('initializes to today when storage is empty and persists to storage', () => {
       const today = new Date();
-      const { result } = renderHook(() => useHubCalendarState());
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
 
       expect(result.current.viewYear).toBe(today.getFullYear());
       expect(result.current.viewMonthIndex).toBe(today.getMonth());
@@ -83,7 +88,7 @@ describe('useHubCalendarState & persistence helpers', () => {
     it('initializes from stored date if present in storage', () => {
       saveStoredCalendarDate({ year: 2025, monthIndex: 5, dayNumber: 20 });
 
-      const { result } = renderHook(() => useHubCalendarState());
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
 
       expect(result.current.viewYear).toBe(2025);
       expect(result.current.viewMonthIndex).toBe(5);
@@ -92,7 +97,7 @@ describe('useHubCalendarState & persistence helpers', () => {
 
     it('updates storage when selecting a day', () => {
       saveStoredCalendarDate({ year: 2026, monthIndex: 3, dayNumber: 5 });
-      const { result } = renderHook(() => useHubCalendarState());
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
 
       act(() => {
         result.current.handleSelectDay(18);
@@ -108,7 +113,7 @@ describe('useHubCalendarState & persistence helpers', () => {
 
     it('updates storage when selecting a day with another month date', () => {
       saveStoredCalendarDate({ year: 2026, monthIndex: 3, dayNumber: 5 });
-      const { result } = renderHook(() => useHubCalendarState());
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
 
       const nextMonthDate = new Date(2026, 4, 2);
       act(() => {
@@ -127,7 +132,7 @@ describe('useHubCalendarState & persistence helpers', () => {
 
     it('updates storage when navigating months', () => {
       saveStoredCalendarDate({ year: 2026, monthIndex: 3, dayNumber: 15 });
-      const { result } = renderHook(() => useHubCalendarState());
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
 
       act(() => {
         result.current.handleNextMonth();
@@ -159,7 +164,7 @@ describe('useHubCalendarState & persistence helpers', () => {
     it('updates storage when clicking handleToday', () => {
       const today = new Date();
       saveStoredCalendarDate({ year: 2025, monthIndex: 0, dayNumber: 1 });
-      const { result } = renderHook(() => useHubCalendarState());
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
 
       act(() => {
         result.current.handleToday();

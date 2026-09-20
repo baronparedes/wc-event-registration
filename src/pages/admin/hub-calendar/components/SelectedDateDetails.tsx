@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
+
 import { CalendarDays, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Badge, EmptyState, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
@@ -66,6 +68,17 @@ export function SelectedDateDetails({
   onSearchQueryChange,
 }: SelectedDateDetailsProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Only scroll if there is an explicit ?date parameter in the URL on mount
+    if (searchParams.has('date') && containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    // Intentionally empty dependency array to run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function renderMemberList(slot: TimeSlot) {
     const entries = entriesByTimeSlot[slot];
@@ -209,147 +222,149 @@ export function SelectedDateDetails({
   }
 
   return (
-    <SectionCard
-      title="Selected Date Details"
-      subtitle={formatSelectedDate(viewYear, viewMonthIndex, selectedDayNumber)}
-    >
-      <div className="space-y-8">
-        {/* Section 1: Member Milestones */}
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
-            <div>
-              <h3 className="font-heading text-lg font-semibold text-text">
-                Birthdays &amp; Wedding Anniversaries
-              </h3>
-              <p className="text-xs text-muted">Member milestones celebrated on this day</p>
-            </div>
-            {selectedMilestones.length > 0 && (
-              <div className="flex items-center gap-2 justify-end">
-                <Badge variant="outline" className="text-xs">
-                  {selectedMilestones.length} milestone
-                  {selectedMilestones.length === 1 ? '' : 's'}
-                </Badge>
-              </div>
-            )}
-          </div>
-
-          {selectedMilestones.length === 0 ? (
-            <p className="py-3 text-sm text-muted">
-              No birthdays or wedding anniversaries on this date.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {selectedMilestones.map((milestone) => (
-                <div
-                  key={milestone.id}
-                  onClick={() =>
-                    navigate(
-                      ROUTE_PATHS.adminMemberDetailPattern.replace(':id', milestone.member.id),
-                    )
-                  }
-                  className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer"
-                >
-                  <MilestoneAvatar
-                    size="md"
-                    name={milestone.member.full_name}
-                    avatarObjectKey={milestone.member.avatar_object_key}
-                    type={milestone.type}
-                    className="shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-text">
-                        {milestone.member.full_name}
-                      </p>
-                      <MilestoneBadge type={milestone.type} />
-                    </div>
-                    <p className="mt-1 truncate text-xs text-muted">
-                      {milestone.member.member_id} • {milestone.member.nickname || 'No nickname'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Section 2: Service Schedules */}
-        <div className="pt-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
-            <div>
-              <h3 className="font-heading text-lg font-semibold text-text">Service Schedules</h3>
-              <p className="text-xs text-muted">
-                {isCurrentSelectedSunday
-                  ? 'Scheduled service volunteers and teams for this Sunday'
-                  : 'Service schedules are held on Sundays'}
-              </p>
-            </div>
-            {isCurrentSelectedSunday && selectedEntries.length > 0 && (
-              <div className="flex items-center gap-2 justify-end">
-                <Badge variant="outline" className="text-xs">
-                  {selectedEntries.length} scheduled
-                </Badge>
-                <ExportSundaySchedulesButton
-                  selectedEntries={selectedEntries}
-                  year={viewYear}
-                  monthIndex={viewMonthIndex}
-                  dayNumber={selectedDayNumber}
-                  excusedMap={excusedMap}
-                />
-              </div>
-            )}
-          </div>
-
-          {isCurrentSelectedSunday ? (
-            selectedEntries.length === 0 ? (
-              <EmptyState
-                icon={<CalendarDays className="h-6 w-6" />}
-                title="No schedules on this Sunday"
-                description="No members are scheduled for this Sunday."
-                className="px-4 py-8"
-              />
-            ) : (
+    <div ref={containerRef}>
+      <SectionCard
+        title="Selected Date Details"
+        subtitle={formatSelectedDate(viewYear, viewMonthIndex, selectedDayNumber)}
+      >
+        <div className="space-y-8">
+          {/* Section 1: Member Milestones */}
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
               <div>
-                <div className="flex border-b border-border mb-4">
-                  {TIME_SLOT_TABS.map(({ slot, label }) => {
-                    const count = entriesByTimeSlot[slot].length;
-                    const isActive = activeTab === slot;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => onTabChange(slot)}
-                        className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
-                          isActive
-                            ? 'text-primary border-b-2 border-primary -mb-px font-semibold'
-                            : 'text-muted hover:text-text'
-                        }`}
-                      >
-                        {label}
-                        {count > 0 && (
-                          <span
-                            className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
-                              isActive ? 'bg-primary text-white' : 'bg-muted/20 text-muted'
-                            }`}
-                          >
-                            {count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {renderMemberList(activeTab)}
+                <h3 className="font-heading text-lg font-semibold text-text">
+                  Birthdays &amp; Wedding Anniversaries
+                </h3>
+                <p className="text-xs text-muted">Member milestones celebrated on this day</p>
               </div>
-            )
-          ) : (
-            <p className="py-3 text-sm text-muted">
-              Sunday services are only scheduled on Sundays. Select a Sunday on the calendar to view
-              volunteer teams.
-            </p>
-          )}
+              {selectedMilestones.length > 0 && (
+                <div className="flex items-center gap-2 justify-end">
+                  <Badge variant="outline" className="text-xs">
+                    {selectedMilestones.length} milestone
+                    {selectedMilestones.length === 1 ? '' : 's'}
+                  </Badge>
+                </div>
+              )}
+            </div>
+
+            {selectedMilestones.length === 0 ? (
+              <p className="py-3 text-sm text-muted">
+                No birthdays or wedding anniversaries on this date.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {selectedMilestones.map((milestone) => (
+                  <div
+                    key={milestone.id}
+                    onClick={() =>
+                      navigate(
+                        ROUTE_PATHS.adminMemberDetailPattern.replace(':id', milestone.member.id),
+                      )
+                    }
+                    className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer"
+                  >
+                    <MilestoneAvatar
+                      size="md"
+                      name={milestone.member.full_name}
+                      avatarObjectKey={milestone.member.avatar_object_key}
+                      type={milestone.type}
+                      className="shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-text">
+                          {milestone.member.full_name}
+                        </p>
+                        <MilestoneBadge type={milestone.type} />
+                      </div>
+                      <p className="mt-1 truncate text-xs text-muted">
+                        {milestone.member.member_id} • {milestone.member.nickname || 'No nickname'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Service Schedules */}
+          <div className="pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
+              <div>
+                <h3 className="font-heading text-lg font-semibold text-text">Service Schedules</h3>
+                <p className="text-xs text-muted">
+                  {isCurrentSelectedSunday
+                    ? 'Scheduled service volunteers and teams for this Sunday'
+                    : 'Service schedules are held on Sundays'}
+                </p>
+              </div>
+              {isCurrentSelectedSunday && selectedEntries.length > 0 && (
+                <div className="flex items-center gap-2 justify-end">
+                  <Badge variant="outline" className="text-xs">
+                    {selectedEntries.length} scheduled
+                  </Badge>
+                  <ExportSundaySchedulesButton
+                    selectedEntries={selectedEntries}
+                    year={viewYear}
+                    monthIndex={viewMonthIndex}
+                    dayNumber={selectedDayNumber}
+                    excusedMap={excusedMap}
+                  />
+                </div>
+              )}
+            </div>
+
+            {isCurrentSelectedSunday ? (
+              selectedEntries.length === 0 ? (
+                <EmptyState
+                  icon={<CalendarDays className="h-6 w-6" />}
+                  title="No schedules on this Sunday"
+                  description="No members are scheduled for this Sunday."
+                  className="px-4 py-8"
+                />
+              ) : (
+                <div>
+                  <div className="flex border-b border-border mb-4">
+                    {TIME_SLOT_TABS.map(({ slot, label }) => {
+                      const count = entriesByTimeSlot[slot].length;
+                      const isActive = activeTab === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => onTabChange(slot)}
+                          className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
+                            isActive
+                              ? 'text-primary border-b-2 border-primary -mb-px font-semibold'
+                              : 'text-muted hover:text-text'
+                          }`}
+                        >
+                          {label}
+                          {count > 0 && (
+                            <span
+                              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                                isActive ? 'bg-primary text-white' : 'bg-muted/20 text-muted'
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {renderMemberList(activeTab)}
+                </div>
+              )
+            ) : (
+              <p className="py-3 text-sm text-muted">
+                Sunday services are only scheduled on Sundays. Select a Sunday on the calendar to
+                view volunteer teams.
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </SectionCard>
+      </SectionCard>
+    </div>
   );
 }

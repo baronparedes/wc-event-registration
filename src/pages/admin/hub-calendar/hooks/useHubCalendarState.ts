@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { useSearchParams } from 'react-router-dom';
+
 import type { TimeSlot } from '@/hooks/domain/members';
 import type { WeekRange } from '@/lib/domain/hub-calendar';
 
@@ -63,8 +65,32 @@ export function saveStoredCalendarDate(date: StoredCalendarDate): void {
   }
 }
 
+function parseQueryDate(dateStr: string | null): StoredCalendarDate | null {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const monthIndex = parseInt(monthStr, 10) - 1;
+  const dayNumber = parseInt(dayStr, 10);
+
+  const testDate = new Date(year, monthIndex, dayNumber);
+  if (
+    testDate.getFullYear() === year &&
+    testDate.getMonth() === monthIndex &&
+    testDate.getDate() === dayNumber
+  ) {
+    return { year, monthIndex, dayNumber };
+  }
+  return null;
+}
+
 export function useHubCalendarState() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [viewDate, setViewDate] = useState(() => {
+    const queryDate = parseQueryDate(searchParams.get('date'));
+    if (queryDate) {
+      return new Date(queryDate.year, queryDate.monthIndex, 1);
+    }
     const stored = getStoredCalendarDate();
     if (stored) {
       return new Date(stored.year, stored.monthIndex, 1);
@@ -78,6 +104,10 @@ export function useHubCalendarState() {
   const viewMonthIndex = viewDate.getMonth();
 
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(() => {
+    const queryDate = parseQueryDate(searchParams.get('date'));
+    if (queryDate) {
+      return queryDate.dayNumber;
+    }
     const stored = getStoredCalendarDate();
     if (stored) {
       return stored.dayNumber;
@@ -94,7 +124,21 @@ export function useHubCalendarState() {
       monthIndex: viewMonthIndex,
       dayNumber: selectedDayNumber,
     });
-  }, [viewYear, viewMonthIndex, selectedDayNumber]);
+
+    const monthStr = String(viewMonthIndex + 1).padStart(2, '0');
+    const dayStr = String(selectedDayNumber).padStart(2, '0');
+    const newDateStr = `${viewYear}-${monthStr}-${dayStr}`;
+
+    setSearchParams(
+      (prev) => {
+        if (prev.get('date') === newDateStr) return prev;
+        const next = new URLSearchParams(prev);
+        next.set('date', newDateStr);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [viewYear, viewMonthIndex, selectedDayNumber, setSearchParams]);
 
   function handleTabChange(slot: TimeSlot) {
     setActiveTab(slot);
