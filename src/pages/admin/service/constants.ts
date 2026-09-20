@@ -1,0 +1,31 @@
+import { format, getDay, subDays } from 'date-fns';
+
+export const MIN_YEAR = 2025;
+
+export const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+export const TIME_SLOTS = ['9AM', '12NN', '3PM'] as const;
+export type ServiceTimeSlot = (typeof TIME_SLOTS)[number];
+
+export type FilterMode = 'sunday' | 'month' | 'annual';
+
+/** Returns the date string (YYYY-MM-DD) of the nearest previous Sunday (or today if Sunday) */
+export function getNearestPreviousSunday(date: Date = new Date()): string {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = getDay(d);
+  return format(subDays(d, day), 'yyyy-MM-dd');
+}
