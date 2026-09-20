@@ -23,20 +23,20 @@ export const ChatInputForm = memo(function ChatInputForm({
 }: ChatInputFormProps) {
   const [input, setInput] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [dismissedAtIndex, setDismissedAtIndex] = useState<number | null>(null);
 
   // Compute active mention query if '@' is present before cursor / end
   const mentionInfo = useMemo(() => {
-    if (isDismissed) return null;
     const lastAtIndex = input.lastIndexOf('@');
     if (lastAtIndex === -1) return null;
+    if (dismissedAtIndex === lastAtIndex) return null;
 
-    // Verify there are no newlines or multiple trailing spaces after '@'
+    // Verify query after '@' does not have newlines or excessive length
     const query = input.slice(lastAtIndex + 1);
     if (/[\n\r]/.test(query) || query.length > 25) return null;
 
     return { atIndex: lastAtIndex, query };
-  }, [input, isDismissed]);
+  }, [input, dismissedAtIndex]);
 
   const candidates = useMemo(() => {
     if (!mentionInfo) return [];
@@ -54,7 +54,8 @@ export const ChatInputForm = memo(function ChatInputForm({
       const nextInput = `${prefix}@${mentionName} `;
       setInput(nextInput);
       setSelectedIndex(0);
-      setIsDismissed(false);
+      // Dismiss the mention for this '@' position so popover closes immediately
+      setDismissedAtIndex(mentionInfo.atIndex);
     },
     [input, mentionInfo],
   );
@@ -81,7 +82,9 @@ export const ChatInputForm = memo(function ChatInputForm({
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        setIsDismissed(true);
+        if (mentionInfo) {
+          setDismissedAtIndex(mentionInfo.atIndex);
+        }
         return;
       }
     }
@@ -89,7 +92,11 @@ export const ChatInputForm = memo(function ChatInputForm({
 
   const handleChange = (val: string) => {
     setInput(val);
-    setIsDismissed(false);
+    const lastAtIndex = val.lastIndexOf('@');
+    // If user deleted the '@' or typed a new '@' at a different position, reset dismissedAtIndex
+    if (lastAtIndex === -1 || lastAtIndex !== dismissedAtIndex) {
+      setDismissedAtIndex(null);
+    }
     setSelectedIndex(0);
   };
 
@@ -98,7 +105,7 @@ export const ChatInputForm = memo(function ChatInputForm({
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
     setInput('');
-    setIsDismissed(false);
+    setDismissedAtIndex(null);
     setSelectedIndex(0);
     onSubmit(trimmed);
   };
@@ -110,6 +117,7 @@ export const ChatInputForm = memo(function ChatInputForm({
           candidates={candidates}
           selectedIndex={selectedIndex}
           onSelect={handleSelectCandidate}
+          onHighlight={setSelectedIndex}
         />
       )}
       <form onSubmit={handleSubmit} className="flex gap-2">
@@ -117,7 +125,7 @@ export const ChatInputForm = memo(function ChatInputForm({
           value={input}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask me anything..."
+          placeholder="Ask about volunteers, schedules, events... (type @ to mention a member)"
           className="flex-1"
           inputClassName="w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
         />

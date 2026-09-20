@@ -23,10 +23,14 @@ describe('ChatInputForm', () => {
     },
   };
 
-  it('renders input field and send button', () => {
+  it('renders input field with hints and send button', () => {
     render(<ChatInputForm isLoading={false} onSubmit={vi.fn()} onStop={vi.fn()} />);
 
-    expect(screen.getByPlaceholderText(/Ask me anything/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(
+        'Ask about volunteers, schedules, events... (type @ to mention a member)',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send/i })).toBeDisabled();
   });
 
@@ -34,7 +38,7 @@ describe('ChatInputForm', () => {
     const handleSubmit = vi.fn();
     render(<ChatInputForm isLoading={false} onSubmit={handleSubmit} onStop={vi.fn()} />);
 
-    const input = screen.getByPlaceholderText(/Ask me anything/i);
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Hello world' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -66,7 +70,7 @@ describe('ChatInputForm', () => {
       />,
     );
 
-    const input = screen.getByPlaceholderText(/Ask me anything/i);
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Is @joh' } });
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
@@ -74,9 +78,10 @@ describe('ChatInputForm', () => {
 
     fireEvent.mouseDown(screen.getByText('John Doe'));
     expect(input).toHaveValue('Is @John Doe ');
+    expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
   });
 
-  it('navigates candidates with keyboard and selects with Enter', () => {
+  it('navigates candidates with keyboard and selects with Enter, immediately closing popover', () => {
     render(
       <ChatInputForm
         isLoading={false}
@@ -86,16 +91,44 @@ describe('ChatInputForm', () => {
       />,
     );
 
-    const input = screen.getByPlaceholderText(/Ask me anything/i);
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: '@' } });
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
 
-    // Arrow down to second item
+    // Arrow down to second candidate
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(input).toHaveValue('@John Doe ');
+    expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
+  });
+
+  it('closes mention on Enter and submits the form when Enter is pressed a second time', () => {
+    const handleSubmit = vi.fn();
+    render(
+      <ChatInputForm
+        isLoading={false}
+        onSubmit={handleSubmit}
+        onStop={vi.fn()}
+        tokenMap={mockTokenMap}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText(/Ask/i);
+    fireEvent.change(input, { target: { value: '@joh' } });
+
+    expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
+
+    // First Enter selects candidate and closes popover
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(input).toHaveValue('@John Doe ');
+    expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
+    expect(handleSubmit).not.toHaveBeenCalled();
+
+    // Second Enter submits the form directly
+    fireEvent.submit(input.closest('form')!);
+    expect(handleSubmit).toHaveBeenCalledWith('@John Doe');
   });
 
   it('dismisses mention popover when Escape is pressed', () => {
@@ -108,7 +141,7 @@ describe('ChatInputForm', () => {
       />,
     );
 
-    const input = screen.getByPlaceholderText(/Ask me anything/i);
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: '@joh' } });
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();

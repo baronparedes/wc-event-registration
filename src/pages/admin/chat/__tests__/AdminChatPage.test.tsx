@@ -76,7 +76,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'How many members registered?' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -103,7 +103,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Hello' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -125,7 +125,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Hello' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -152,7 +152,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'What events are tomorrow?' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -178,7 +178,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Any events?' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -202,7 +202,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Hello' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -273,7 +273,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'New query' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
@@ -310,7 +310,7 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Ask me anything...');
+    const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Is John Doe scheduled for Sunday?' } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
