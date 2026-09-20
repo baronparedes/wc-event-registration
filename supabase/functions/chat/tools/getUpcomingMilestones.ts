@@ -1,7 +1,7 @@
 import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
-import { describeDateRange, isMonthDayInRange, resolveDateRange } from './timeframes.ts';
+import { describeDateRange, getPhNow, isMonthDayInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 type Milestone = 'birthday' | 'wedding_anniversary';
@@ -27,7 +27,7 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
       'Retrieve birthdays and wedding anniversaries as separate counts with user tokens within the specified date range. Defaults to the current month when no dates are provided. This tool NEVER returns PII like names or emails.',
     parameters: schema,
     execute: async ({ targetStartDate, targetEndDate }) => {
-      const now = new Date();
+      const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);
 
       console.log('[chat:tool:getUpcomingMilestones] Executing', {

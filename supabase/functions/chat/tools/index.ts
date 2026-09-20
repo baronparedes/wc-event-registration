@@ -1,6 +1,7 @@
 import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
 import { createGetEventsTool } from './getEvents.ts';
 import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
+import { createGetServiceDashboardStatsTool } from './getServiceDashboardStats.ts';
 import { createGetUnexcusedVolunteersTool } from './getUnexcusedVolunteers.ts';
 import { createGetUpcomingMilestonesTool } from './getUpcomingMilestones.ts';
 import { createGetUserCommitmentsTool } from './getUserCommitments.ts';
@@ -12,6 +13,7 @@ export * from './types.ts';
 export * from './getAdminRoutes.ts';
 export * from './getEvents.ts';
 export * from './getExcusedMembers.ts';
+export * from './getServiceDashboardStats.ts';
 export * from './getUpcomingMilestones.ts';
 export * from './getUserCommitments.ts';
 export * from './getUserDemographics.ts';
@@ -24,6 +26,7 @@ export function createChatTools(context: ToolContext) {
     getAdminRoutes: createGetAdminRoutesTool(context),
     getEvents: createGetEventsTool(context),
     getExcusedMembers: createGetExcusedMembersTool(context),
+    getServiceDashboardStats: createGetServiceDashboardStatsTool(context),
     getUpcomingMilestones: createGetUpcomingMilestonesTool(context),
     getUserCommitments: createGetUserCommitmentsTool(context),
     getUserDemographics: createGetUserDemographicsTool(context),

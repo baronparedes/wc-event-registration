@@ -2,6 +2,7 @@ import { tool } from 'npm:ai@latest';
 import { z } from 'npm:zod';
 
 import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
+import { getPhNow } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
 export function createGetUserDemographicsTool({ client, requestId }: ToolContext) {
@@ -40,7 +41,7 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
 
       const data = (rawData || []).filter((user) => matchesPrimaryRole(user.role, role));
 
-      const now = new Date();
+      const now = getPhNow();
       const ageDistribution = {
         '0-17': { count: 0, tokens: [] as string[] },
         '18-24': { count: 0, tokens: [] as string[] },
