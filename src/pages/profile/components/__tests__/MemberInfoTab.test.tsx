@@ -18,7 +18,6 @@ describe('MemberInfoTab', () => {
     render(<MemberInfoTab member={member} />);
 
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
-    expect(screen.getByText('MEM-001')).toBeInTheDocument();
     expect(screen.getByText('alex@example.com')).toBeInTheDocument();
     expect(screen.getByText('555-1234')).toBeInTheDocument();
     expect(screen.getByText('May 15, 1990')).toBeInTheDocument();

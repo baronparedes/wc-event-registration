@@ -59,7 +59,7 @@ export function ProfilePage() {
               <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
             )}
             <p className="text-muted text-sm">
-              {member.role} • {member.category}
+              {member.role} • {member.category} • {member.member_id}
             </p>
           </div>
 

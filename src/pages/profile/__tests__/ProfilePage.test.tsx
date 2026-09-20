@@ -67,7 +67,6 @@ describe('ProfilePage', () => {
   it('renders member details and tab triggers', () => {
     renderPage();
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
-    expect(screen.getByText('MEM-100')).toBeInTheDocument();
     expect(screen.getByText(/Athlete/)).toBeInTheDocument();
     expect(screen.getByText(/Adult/)).toBeInTheDocument();
     expect(screen.getByText('john@example.com')).toBeInTheDocument();

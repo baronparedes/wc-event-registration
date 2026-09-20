@@ -35,10 +35,6 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
       <SectionCard title="Personal Details">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <div className="min-w-0">
-              <dt className="text-muted">Member ID</dt>
-              <dd className="break-words font-medium text-text">{member.member_id}</dd>
-            </div>
             {member.email && (
               <div className="min-w-0">
                 <dt className="text-muted">Email</dt>
