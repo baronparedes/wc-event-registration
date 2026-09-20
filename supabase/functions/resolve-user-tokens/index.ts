@@ -9,6 +9,7 @@ const resolveTokensRequestSchema = z.object({
 type UserRow = {
   nickname: string | null;
   first_name: string | null;
+  last_name: string | null;
   full_name: string | null;
 };
 
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
   try {
     let query = client
       .from('user_tokens')
-      .select('token, user_id, users ( nickname, first_name, full_name )');
+      .select('token, user_id, users ( nickname, first_name, last_name, full_name )');
 
     if (tokens && tokens.length > 0) {
       query = query.in('token', tokens);
@@ -61,10 +62,24 @@ Deno.serve(async (req) => {
         acc[row.token] = {
           id: row.user_id,
           name: displayName,
+          fullName: userObj?.full_name ?? null,
+          firstName: userObj?.first_name ?? null,
+          lastName: userObj?.last_name ?? null,
+          nickname: userObj?.nickname ?? null,
         };
         return acc;
       },
-      {} as Record<string, { id: string; name: string }>,
+      {} as Record<
+        string,
+        {
+          id: string;
+          name: string;
+          fullName: string | null;
+          firstName: string | null;
+          lastName: string | null;
+          nickname: string | null;
+        }
+      >,
     );
 
     return successResponse(corsHeaders, { data: resolvedTokens }, 200);

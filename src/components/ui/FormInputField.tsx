@@ -17,6 +17,7 @@ type FormInputFieldBaseProps = {
   labelAdornment?: ReactNode;
   inputClassName?: string;
   className?: string;
+  onKeyDown?: import('react').KeyboardEventHandler<HTMLInputElement>;
 };
 
 type RegisteredInputProps = {
@@ -53,6 +54,7 @@ export function FormInputField(props: FormInputFieldProps) {
     labelAdornment,
     inputClassName,
     className,
+    onKeyDown,
   } = props;
 
   const controlledProps = registration
@@ -85,6 +87,7 @@ export function FormInputField(props: FormInputFieldProps) {
         placeholder={placeholder}
         readOnly={readOnly}
         type={type}
+        onKeyDown={onKeyDown}
       />
       {helperText && <p className="text-xs text-muted">{helperText}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}

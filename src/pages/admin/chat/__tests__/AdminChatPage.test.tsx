@@ -4,19 +4,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdminChatPage } from '../index';
 
-const { mockStreamRequest, mockUseChatStream, mockUseAdminAuthQuery, mockUseCurrentProfileQuery } =
-  vi.hoisted(() => ({
-    mockStreamRequest: vi.fn(),
-    mockUseChatStream: vi.fn(),
-    mockUseAdminAuthQuery: vi.fn(),
-    mockUseCurrentProfileQuery: vi.fn(),
-  }));
+const {
+  mockStreamRequest,
+  mockUseChatStream,
+  mockUseAdminAuthQuery,
+  mockUseCurrentProfileQuery,
+  mockUseUserTokenMapQuery,
+} = vi.hoisted(() => ({
+  mockStreamRequest: vi.fn(),
+  mockUseChatStream: vi.fn(),
+  mockUseAdminAuthQuery: vi.fn(),
+  mockUseCurrentProfileQuery: vi.fn(),
+  mockUseUserTokenMapQuery: vi.fn().mockReturnValue({ data: {} }),
+}));
 
 vi.mock('@/hooks/domain/chat', () => ({
   useChatStreamQuery: () => mockUseChatStream(),
   useChatStream: () => mockUseChatStream(),
-  useResolveUserTokensQuery: () => ({ data: {} }),
-  useUserTokenMapQuery: () => ({ data: {} }),
+  useResolveUserTokensQuery: () => mockUseUserTokenMapQuery(),
+  useUserTokenMapQuery: () => mockUseUserTokenMapQuery(),
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({
@@ -283,5 +289,45 @@ describe('AdminChatPage', () => {
     expect(callPayload.messages).toHaveLength(20);
     expect(callPayload.messages[callPayload.messages.length - 1]?.content).toBe('New query');
     expect(callPayload.messages[0]?.content).toBe('Message 6'); // 26 total (25 historical + 1 new), last 20 starts at index 6
+  });
+
+  it('tokenizes user names in the network request payload while displaying natural names in UI', async () => {
+    mockUseUserTokenMapQuery.mockReturnValue({
+      data: {
+        USR_000001: {
+          id: 'u-1',
+          name: 'John Doe',
+          fullName: 'John Doe',
+          firstName: 'John',
+          lastName: 'Doe',
+        },
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'Is John Doe scheduled for Sunday?' } });
+
+    const sendButton = screen.getByRole('button', { name: /Send/i });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(mockStreamRequest).toHaveBeenCalledTimes(1);
+    });
+
+    const callPayload = mockStreamRequest.mock.calls[0][0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    // Ensure raw name NEVER reached the request
+    expect(callPayload.messages[0]?.content).toBe('Is USR_000001 scheduled for Sunday?');
+    expect(callPayload.messages[0]?.content).not.toContain('John Doe');
+
+    // UI displays the untokenized name
+    expect(screen.getByText('Is John Doe scheduled for Sunday?')).toBeInTheDocument();
   });
 });
