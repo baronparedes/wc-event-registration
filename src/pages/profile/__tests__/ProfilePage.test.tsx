@@ -21,7 +21,7 @@ vi.mock('@/hooks/domain/members', async () => {
   return {
     ...actual,
     useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
-    useMemberEventHistoryQuery: (...args: unknown[]) => mockUseMemberEventHistoryQuery(...args),
+    useMemberEventHistoryQuery: (memberId?: string) => mockUseMemberEventHistoryQuery(memberId),
   };
 });
 
@@ -66,17 +66,18 @@ describe('ProfilePage', () => {
 
   it('renders member details and tab triggers', () => {
     renderPage();
-    expect(screen.getByRole('heading', { name: 'User Profile' })).toBeInTheDocument();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('MEM-100')).toBeInTheDocument();
-    expect(screen.getByText('Athlete')).toBeInTheDocument();
-    expect(screen.getByText('Adult')).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: /Welcome to CCF Hello Brochure Banner/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('8 Interactive Slides')).toBeInTheDocument();
+    expect(screen.getByText('Explore →')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
+    expect(screen.getByText(/Athlete/)).toBeInTheDocument();
+    expect(screen.getByText(/Adult/)).toBeInTheDocument();
     expect(screen.getByText('john@example.com')).toBeInTheDocument();
-    expect(screen.getByText('Membershiptype')).toBeInTheDocument(); // Title Cased as defined by toTitleCase helper
-    expect(screen.getByText('Gold')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'My Info' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'My Events' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'My Commitment' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Info' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Events' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Commitments' })).toBeInTheDocument();
   });
 
   it('renders event history items when present', () => {
@@ -87,13 +88,13 @@ describe('ProfilePage', () => {
       isError: false,
     });
     renderPage();
-    fireEvent.click(screen.getByRole('tab', { name: 'My Events' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Events' }));
     expect(screen.getByText('Annual Championship')).toBeInTheDocument();
   });
 
   it('displays empty state when user has no event history', () => {
     renderPage();
-    fireEvent.click(screen.getByRole('tab', { name: 'My Events' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Events' }));
     expect(screen.getByText('No events found.')).toBeInTheDocument();
   });
 
@@ -109,7 +110,7 @@ describe('ProfilePage', () => {
       isError: false,
     });
     renderPage();
-    fireEvent.click(screen.getByRole('tab', { name: 'My Events' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Events' }));
 
     expect(
       screen.queryByRole('heading', { level: 2, name: 'Shared Event' }),
