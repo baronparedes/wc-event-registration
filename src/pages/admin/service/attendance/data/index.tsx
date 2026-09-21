@@ -28,6 +28,8 @@ import {
   getNearestPreviousSunday,
 } from '@/pages/admin/service/constants';
 
+import { ExportServiceAttendanceButton } from './components';
+
 export function AdminServiceAttendanceDataPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -212,8 +214,17 @@ export function AdminServiceAttendanceDataPage() {
       <AdminPageShell.Header
         title="Service Attendance Data"
         description="View detailed service attendance records."
+        actions={
+          <ExportServiceAttendanceButton
+            records={filteredData}
+            startDate={serviceStartDate || fallbackDate}
+            endDate={serviceEndDate || fallbackDate}
+            disabled={isLoading}
+          />
+        }
       />
       <ServiceNavigationLinks />
+
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] sm:items-end">
           <FormInputField

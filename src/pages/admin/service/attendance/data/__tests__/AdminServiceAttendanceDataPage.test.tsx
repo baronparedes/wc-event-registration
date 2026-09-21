@@ -8,6 +8,7 @@ import type { ServiceAttendance } from '@/lib/domain/services';
 import { AdminServiceAttendanceDataPage } from '../index';
 
 const mockUseServiceAttendanceQuery = vi.fn();
+
 vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: (...args: unknown[]) => mockUseServiceAttendanceQuery(...args),
 }));
