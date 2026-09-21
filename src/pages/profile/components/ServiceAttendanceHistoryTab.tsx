@@ -191,9 +191,9 @@ export function ServiceAttendanceHistoryTab({
       }
     >
       <div className="mt-4">
-        {isInitialLoading && <p className="text-sm text-muted">Loading attendance history...</p>}
+        {isInitialLoading && <p className="text-base text-muted">Loading attendance history...</p>}
         {isError && attendance.length === 0 && (
-          <p className="text-sm text-danger">Failed to load attendance history.</p>
+          <p className="text-base text-danger">Failed to load attendance history.</p>
         )}
 
         {!isInitialLoading && (!isError || attendance.length > 0) && (

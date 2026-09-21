@@ -44,12 +44,12 @@ export function EventHistoryTab({ memberId }: EventHistoryTabProps) {
         title={`Event History (${eventGroups.length})`}
         subtitle="All events you have registered for, sorted most recent first."
       >
-        {historyQuery.isLoading && <p className="text-sm text-muted">Loading event history...</p>}
+        {historyQuery.isLoading && <p className="text-base text-muted">Loading event history...</p>}
         {historyQuery.isError && (
-          <p className="text-sm text-danger">Failed to load event history.</p>
+          <p className="text-base text-danger">Failed to load event history.</p>
         )}
         {!historyQuery.isLoading && !historyQuery.isError && eventGroups.length === 0 && (
-          <p className="text-sm text-muted">No events found.</p>
+          <p className="text-base text-muted">No events found.</p>
         )}
         {eventGroups.length > 0 && (
           <div className="space-y-4">

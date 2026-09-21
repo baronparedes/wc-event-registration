@@ -41,7 +41,7 @@ export function ServiceAttendanceDesktopMatrix({
             {MATRIX_TIME_SLOTS.map((slot) => (
               <ListTableHeaderCell key={slot} className="w-1/3 px-3 py-3 text-left font-semibold">
                 <span className="font-bold">{slot}</span>
-                <span className="ml-1 text-xs text-muted font-normal">
+                <span className="ml-1 text-sm text-muted font-normal">
                   ({slot === '9AM' ? '9:00 AM' : slot === '12NN' ? '12:00 NN' : '3:00 PM'})
                 </span>
               </ListTableHeaderCell>
@@ -60,13 +60,13 @@ export function ServiceAttendanceDesktopMatrix({
               >
                 <ListTableCell className="w-[160px] px-4 py-3.5 align-top">
                   <div className="flex flex-col">
-                    <span className="font-semibold text-sm text-text">
+                    <span className="font-semibold text-base text-text">
                       {SERVICE_SUNDAY_LABELS[key].label}
                     </span>
                     {sundayInfo ? (
-                      <span className="text-xs text-muted font-mono">{sundayInfo.dateStr}</span>
+                      <span className="text-sm text-muted font-mono">{sundayInfo.dateStr}</span>
                     ) : (
-                      <span className="text-xs text-muted/60">No 5th Sunday</span>
+                      <span className="text-sm text-muted/60">No 5th Sunday</span>
                     )}
                   </div>
                 </ListTableCell>

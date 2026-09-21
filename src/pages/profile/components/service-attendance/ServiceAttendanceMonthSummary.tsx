@@ -19,11 +19,11 @@ export function ServiceAttendanceMonthSummary({
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
       <div className="flex items-center gap-2">
         <CalendarDays className="h-5 w-5 text-primary" />
-        <span className="text-sm font-medium text-text">
+        <span className="text-base font-medium text-text">
           {`${attendanceCount} service${attendanceCount === 1 ? '' : 's'} attended in ${fullMonthName}`}
         </span>
         {isFetching && (
-          <span className="text-xs text-muted animate-pulse font-normal">(updating...)</span>
+          <span className="text-sm text-muted animate-pulse font-normal">(updating...)</span>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">

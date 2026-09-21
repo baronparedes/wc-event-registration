@@ -41,7 +41,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
           <ServiceAttendanceStatusBadge record={record} />
         </div>
         <div
-          className="text-xs font-medium text-text truncate"
+          className="text-sm font-medium text-text truncate"
           title={formatAssignedSeat(record.service_seats)}
         >
           <span className="text-muted mr-1">Assignment:</span>
@@ -71,7 +71,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
           <ServiceAttendanceStatusBadge record={record} />
         </div>
         <div
-          className="text-xs font-medium text-text truncate"
+          className="text-sm font-medium text-text truncate"
           title={formatAssignedSeat(record.service_seats)}
         >
           <span className="text-muted mr-1">Assignment:</span>
@@ -145,14 +145,14 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
 
   if (status === 'not_applicable') {
     return (
-      <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-border/40 bg-surface/50 p-2 text-center text-xs text-muted/40">
+      <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-border/40 bg-surface/50 p-2 text-center text-sm text-muted/40">
         —
       </div>
     );
   }
 
   return (
-    <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-surface p-2 text-center text-xs text-muted/60">
+    <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-surface p-2 text-center text-sm text-muted/60">
       Off Schedule
     </div>
   );
