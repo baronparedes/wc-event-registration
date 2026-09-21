@@ -52,6 +52,14 @@ export function buildServiceAttendanceCsvExport(params: BuildServiceAttendanceCs
 } {
   const { records, startDate, endDate } = params;
 
+  // Sort records by service_date ascending, then by member full_name ascending
+  // so the CSV mirrors the grouped-by-date-then-member view in the UI.
+  const sortedRecords = [...records].sort((a, b) => {
+    const dateCompare = (a.service_date ?? '').localeCompare(b.service_date ?? '');
+    if (dateCompare !== 0) return dateCompare;
+    return (a.user?.full_name ?? '').localeCompare(b.user?.full_name ?? '');
+  });
+
   const rows: string[][] = [
     [
       'Full Name',
@@ -67,7 +75,7 @@ export function buildServiceAttendanceCsvExport(params: BuildServiceAttendanceCs
       'Seat',
       'Area',
     ],
-    ...records.map((record) => {
+    ...sortedRecords.map((record) => {
       const role = (record.metadata?.role as string) || '';
       const tableNumber = record.service_seats?.table_number || '';
       const seatNumber = record.service_seats?.seat_number || '';

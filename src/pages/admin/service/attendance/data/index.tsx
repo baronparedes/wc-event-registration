@@ -139,6 +139,50 @@ export function AdminServiceAttendanceDataPage() {
     });
   }, [attendanceData, selectedRoles]);
 
+  // Two-level grouping: service_date → member → [records]
+  // Within each member group records are sorted by time_slot so check-ins appear in order.
+  const groupedByDate = useMemo(() => {
+    // First pass: bucket records into date → memberKey → records[]
+    type MemberGroup = { memberKey: string; records: typeof filteredData };
+    const dateMap = new Map<string, Map<string, MemberGroup>>();
+
+    for (const record of filteredData) {
+      const date = record.service_date ?? 'Unknown';
+      // Use rfid as the member key (unique per member in service domain)
+      const memberKey = record.rfid ?? record.id;
+
+      if (!dateMap.has(date)) dateMap.set(date, new Map());
+      const memberMap = dateMap.get(date)!;
+
+      if (!memberMap.has(memberKey)) {
+        memberMap.set(memberKey, { memberKey, records: [] });
+      }
+      memberMap.get(memberKey)!.records.push(record);
+    }
+
+    // Second pass: sort dates asc, members within each date by full_name asc,
+    // and individual check-ins within each member group by time_slot asc.
+    return Array.from(dateMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, memberMap]) => ({
+        date,
+        memberGroups: Array.from(memberMap.values())
+          .sort((a, b) =>
+            (a.records[0]?.user?.full_name ?? '').localeCompare(
+              b.records[0]?.user?.full_name ?? '',
+            ),
+          )
+          .map((mg) => ({
+            ...mg,
+            records: [...mg.records].sort((a, b) => {
+              const aTime = a.checked_in_at ? new Date(a.checked_in_at).getTime() : Infinity;
+              const bTime = b.checked_in_at ? new Date(b.checked_in_at).getTime() : Infinity;
+              return aTime - bTime;
+            }),
+          })),
+      }));
+  }, [filteredData]);
+
   // Infinite scroll sentinel
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -344,47 +388,132 @@ export function AdminServiceAttendanceDataPage() {
                     </ListTableCell>
                   </ListTableRow>
                 ) : (
-                  filteredData.map((record) => (
-                    <ListTableRow key={record.id}>
-                      <ListTableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            name={record.user?.full_name || record.user?.nickname || 'Volunteer'}
-                            avatarObjectKey={record.user?.avatar_object_key}
-                            size="sm"
-                            className="shrink-0"
-                          />
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-medium text-text">
-                              {record.user?.full_name || '—'}
-                            </span>
-                            {record.user?.nickname && (
-                              <span className="text-xs text-muted">{record.user.nickname}</span>
-                            )}
-                          </div>
-                        </div>
-                      </ListTableCell>
-                      <ListTableCell className="font-mono text-xs">{record.rfid}</ListTableCell>
-                      <ListTableCell>{record.service_date}</ListTableCell>
-                      <ListTableCell>{record.time_slot}</ListTableCell>
-                      <ListTableCell>{(record.metadata?.role as string) || '—'}</ListTableCell>
-                      <ListTableCell>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {record.is_walk_in && <Badge variant="secondary">Walk-in</Badge>}
-                          {record.is_override && <Badge variant="accent">Late/Tardy</Badge>}
-                          {!record.is_walk_in && !record.is_override && (
-                            <span className="text-xs text-muted">—</span>
-                          )}
-                        </div>
-                      </ListTableCell>
-                      <ListTableCell>
-                        {record.checked_in_at ? format(new Date(record.checked_in_at), 'p') : '—'}
-                      </ListTableCell>
-                      <ListTableCell>
-                        {record.service_seats ? `${record.service_seats.table_number || ''}` : '—'}
-                      </ListTableCell>
-                    </ListTableRow>
-                  ))
+                  groupedByDate.flatMap(({ date, memberGroups }) => {
+                    const totalRecords = memberGroups.reduce(
+                      (sum, mg) => sum + mg.records.length,
+                      0,
+                    );
+                    return [
+                      // Date group header row
+                      <ListTableRow key={`group-${date}`}>
+                        <ListTableCell
+                          colSpan={8}
+                          className="bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted"
+                        >
+                          {date}
+                          <span className="ml-2 font-normal normal-case tracking-normal">
+                            &mdash; {memberGroups.length}{' '}
+                            {memberGroups.length === 1 ? 'member' : 'members'}, {totalRecords}{' '}
+                            {totalRecords === 1 ? 'check-in' : 'check-ins'}
+                          </span>
+                        </ListTableCell>
+                      </ListTableRow>,
+                      // One row per member group — multi-check-ins stacked inside each cell
+                      ...memberGroups.map(({ memberKey, records }) => {
+                        const first = records[0]!;
+                        const isMulti = records.length > 1;
+                        return (
+                          <ListTableRow key={memberKey}>
+                            {/* Name — shown once, vertically centered */}
+                            <ListTableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar
+                                  name={
+                                    first.user?.full_name || first.user?.nickname || 'Volunteer'
+                                  }
+                                  avatarObjectKey={first.user?.avatar_object_key}
+                                  size="sm"
+                                  className="shrink-0"
+                                />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-medium text-text">
+                                    {first.user?.full_name || '—'}
+                                  </span>
+                                  {first.user?.nickname && (
+                                    <span className="text-xs text-muted">
+                                      {first.user.nickname}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </ListTableCell>
+
+                            {/* RFID — shown once */}
+                            <ListTableCell className="font-mono text-xs">
+                              {first.rfid ?? '—'}
+                            </ListTableCell>
+
+                            {/* Date — same for all records in group */}
+                            <ListTableCell>{first.service_date}</ListTableCell>
+
+                            {/* Time Slot — stacked */}
+                            <ListTableCell>
+                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
+                                {records.map((r) => (
+                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
+                                    {r.time_slot}
+                                  </div>
+                                ))}
+                              </div>
+                            </ListTableCell>
+
+                            {/* Role — stacked */}
+                            <ListTableCell>
+                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
+                                {records.map((r) => (
+                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
+                                    {(r.metadata?.role as string) || '—'}
+                                  </div>
+                                ))}
+                              </div>
+                            </ListTableCell>
+
+                            {/* Status — stacked */}
+                            <ListTableCell>
+                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
+                                {records.map((r) => (
+                                  <div
+                                    key={r.id}
+                                    className="flex flex-wrap items-center gap-1.5 py-1.5 first:pt-0 last:pb-0"
+                                  >
+                                    {r.is_walk_in && <Badge variant="secondary">Walk-in</Badge>}
+                                    {r.is_override && <Badge variant="accent">Late/Tardy</Badge>}
+                                    {!r.is_walk_in && !r.is_override && (
+                                      <span className="text-xs text-muted">—</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </ListTableCell>
+
+                            {/* Checked In — stacked */}
+                            <ListTableCell>
+                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
+                                {records.map((r) => (
+                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
+                                    {r.checked_in_at ? format(new Date(r.checked_in_at), 'p') : '—'}
+                                  </div>
+                                ))}
+                              </div>
+                            </ListTableCell>
+
+                            {/* Table — stacked */}
+                            <ListTableCell>
+                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
+                                {records.map((r) => (
+                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
+                                    {r.service_seats
+                                      ? `${r.service_seats.table_number || ''}`
+                                      : '—'}
+                                  </div>
+                                ))}
+                              </div>
+                            </ListTableCell>
+                          </ListTableRow>
+                        );
+                      }),
+                    ];
+                  })
                 )}
               </ListTableBody>
             </ListTable>
