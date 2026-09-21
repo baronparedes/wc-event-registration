@@ -50,6 +50,7 @@ export type ServiceAttendance = {
     member_id: string;
     full_name: string;
     nickname: string | null;
+    avatar_object_key?: string | null;
   } | null;
 };
 

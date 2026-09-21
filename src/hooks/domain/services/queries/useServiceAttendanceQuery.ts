@@ -34,7 +34,8 @@ export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters
           user:users!service_attendance_user_id_fkey(
             member_id,
             full_name,
-            nickname
+            nickname,
+            avatar_object_key
           )
         `,
         )

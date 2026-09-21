@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
+import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
@@ -69,34 +70,42 @@ export function AdminServiceAttendanceDataPage() {
     };
   }, [isRoleDropdownOpen]);
 
+  const handleToggleRole = (roleToToggle: string) => {
+    const isSelected = selectedRoles.includes(roleToToggle);
+    let nextRoles: string[];
+
+    if (isSelected) {
+      nextRoles = selectedRoles.filter((r) => r !== roleToToggle);
+    } else {
+      nextRoles = [...selectedRoles, roleToToggle];
+    }
+
+    updateSearchParam('role', nextRoles.join(','));
+  };
+
   const selectedRoleLabel = useMemo(() => {
     if (selectedRoles.length === 0) return 'All roles';
     if (selectedRoles.length === 1) return selectedRoles[0];
     return `${selectedRoles.length} roles selected`;
   }, [selectedRoles]);
 
-  const handleToggleRoleSelection = (toggledRole: string) => {
-    const newRoles = selectedRoles.includes(toggledRole)
-      ? selectedRoles.filter((r) => r !== toggledRole)
-      : [...selectedRoles, toggledRole];
-    updateSearchParam('role', newRoles.join(','));
-  };
+  const queryFilters = useMemo(() => {
+    const filters: { service_date?: string; time_slot?: string } = {};
+    if (serviceDate) filters.service_date = serviceDate;
+    if (timeSlot) filters.time_slot = timeSlot;
+    return filters;
+  }, [serviceDate, timeSlot]);
 
-  const { data: attendanceData, isLoading } = useServiceAttendanceQuery({
-    service_date: serviceDate || undefined,
-    time_slot: timeSlot || undefined,
-  });
+  const { data: attendanceData = [], isLoading } = useServiceAttendanceQuery(queryFilters);
 
   const filteredData = useMemo(() => {
-    if (!attendanceData) return [];
-
     return attendanceData.filter((record) => {
       if (selectedRoles.length > 0) {
         const recordRole = (record.metadata?.role as string) || '';
-        const matches = selectedRoles.some(
-          (targetRole) => recordRole === targetRole || recordRole.includes(targetRole),
+        const hasMatchingRole = selectedRoles.some(
+          (role) => recordRole.toLowerCase() === role.toLowerCase() || recordRole.includes(role),
         );
-        if (!matches) {
+        if (!hasMatchingRole) {
           return false;
         }
       }
@@ -165,7 +174,7 @@ export function AdminServiceAttendanceDataPage() {
             onToggleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
             onCloseDropdown={() => setIsRoleDropdownOpen(false)}
             onClearSelection={() => updateSearchParam('role', '')}
-            onToggleSelection={handleToggleRoleSelection}
+            onToggleSelection={handleToggleRole}
           />
           <FormSelectField
             label="Walk-in"
@@ -221,13 +230,21 @@ export function AdminServiceAttendanceDataPage() {
                   filteredData.map((record) => (
                     <ListTableRow key={record.id}>
                       <ListTableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-text">
-                            {record.user?.full_name || '—'}
-                          </span>
-                          {record.user?.nickname && (
-                            <span className="text-xs text-muted">{record.user.nickname}</span>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            name={record.user?.full_name || record.user?.nickname || 'Volunteer'}
+                            avatarObjectKey={record.user?.avatar_object_key}
+                            size="sm"
+                            className="shrink-0"
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium text-text">
+                              {record.user?.full_name || '—'}
+                            </span>
+                            {record.user?.nickname && (
+                              <span className="text-xs text-muted">{record.user.nickname}</span>
+                            )}
+                          </div>
                         </div>
                       </ListTableCell>
                       <ListTableCell className="font-mono text-xs">{record.rfid}</ListTableCell>
