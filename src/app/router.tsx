@@ -21,6 +21,7 @@ import {
 import type { AdminRole } from '@/lib/domain/auth';
 import { canAdminPerform } from '@/lib/domain/auth';
 
+import { RouteErrorBoundary } from '../components/RouteErrorBoundary';
 import { AppMobileShell, AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
 import { useIsMobileViewport, useOnlineStatus } from '../hooks/utils';
@@ -414,6 +415,7 @@ function renderAppRoute({
 export const appRouter = createBrowserRouter([
   {
     element: <ResponsiveShellLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         element: <OfflineNavigationGuard />,
@@ -428,6 +430,7 @@ export const appRouter = createBrowserRouter([
   },
   {
     element: <OfflineNavigationGuard />,
+    errorElement: <RouteErrorBoundary />,
     children: APP_ROUTE_DEFINITIONS.filter((route) => route.layout === 'standalone').map(
       (route) => ({
         path: route.path,
@@ -442,5 +445,6 @@ export const appRouter = createBrowserRouter([
         <NotFoundPage />
       </LazyRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
   },
 ]);
