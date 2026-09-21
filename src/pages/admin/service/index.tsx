@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { parseISO } from 'date-fns';
+import { endOfMonth, format, parseISO } from 'date-fns';
 import { SearchX, Table, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,6 +23,7 @@ export function AdminServicesPage() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
+  const todayStr = format(now, 'yyyy-MM-dd');
   const [maxSunday] = useState<string>(() => getNearestPreviousSunday());
 
   const [selectedSunday, setSelectedSunday] = useState<string>(() => maxSunday);
@@ -46,12 +47,19 @@ export function AdminServicesPage() {
   const dateFilterParams = useMemo(() => {
     const params = new URLSearchParams();
     if (filterMode === 'sunday' && selectedSunday) {
-      params.set('service_date', selectedSunday);
+      params.set('service_start_date', selectedSunday);
+      params.set('service_end_date', selectedSunday);
+    } else if (filterMode === 'month' && !isNaN(selectedYear) && !isNaN(selectedMonth)) {
+      const monthStart = new Date(selectedYear, selectedMonth - 1, 1);
+      params.set('service_start_date', format(monthStart, 'yyyy-MM-dd'));
+      params.set('service_end_date', format(endOfMonth(monthStart), 'yyyy-MM-dd'));
+    } else if (filterMode === 'annual' && !isNaN(selectedYear)) {
+      const annualEnd = selectedYear === currentYear ? todayStr : `${selectedYear}-12-31`;
+      params.set('service_start_date', `${selectedYear}-01-01`);
+      params.set('service_end_date', annualEnd);
     }
-    // For month and annual, drill down currently wouldn't map exactly to a single day,
-    // so we can omit date or handle start/end dates if useServiceAttendanceQuery supports them.
     return params;
-  }, [filterMode, selectedSunday]);
+  }, [filterMode, selectedSunday, selectedYear, selectedMonth, currentYear, todayStr]);
 
   return (
     <AdminPageShell wide>

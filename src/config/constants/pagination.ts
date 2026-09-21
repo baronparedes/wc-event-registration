@@ -2,6 +2,7 @@ export const PAGINATION_DEFAULTS = {
   adminEventsPageSize: 50,
   adminMembersPageSize: 50,
   adminRegistrationsPageSize: 25,
+  adminServiceAttendancePageSize: 500,
 } as const;
 
 export const PAGINATION_OPTIONS = {

@@ -22,12 +22,17 @@ import {
 } from '@/components/ui/ListTable';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
 import { ServiceNavigationLinks } from '@/pages/admin/service/components/ServiceNavigationLinks';
-import { SERVICE_ROLES, TIME_SLOTS } from '@/pages/admin/service/constants';
+import {
+  SERVICE_ROLES,
+  TIME_SLOTS,
+  getNearestPreviousSunday,
+} from '@/pages/admin/service/constants';
 
 export function AdminServiceAttendanceDataPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const serviceDate = searchParams.get('service_date') || '';
+  const serviceStartDate = searchParams.get('service_start_date') || '';
+  const serviceEndDate = searchParams.get('service_end_date') || '';
   const timeSlot = searchParams.get('time_slot') || '';
   const roleParam = searchParams.get('role') || '';
   const isWalkIn = searchParams.get('is_walk_in') || '';
@@ -90,42 +95,74 @@ export function AdminServiceAttendanceDataPage() {
     return `${selectedRoles.length} roles selected`;
   }, [selectedRoles]);
 
-  const queryFilters = useMemo(() => {
-    const filters: { service_date?: string; time_slot?: string } = {};
-    if (serviceDate) filters.service_date = serviceDate;
-    if (timeSlot) filters.time_slot = timeSlot;
-    return filters;
-  }, [serviceDate, timeSlot]);
+  const [fallbackDate] = useState(() => getNearestPreviousSunday());
 
-  const { data: attendanceData = [], isLoading } = useServiceAttendanceQuery(queryFilters);
+  const queryFilters = useMemo(() => {
+    const filters: {
+      start_date?: string;
+      end_date?: string;
+      time_slot?: string;
+      is_walk_in?: boolean;
+      is_override?: boolean;
+    } = {};
+    // When no dates are selected, default to the nearest previous Sunday
+    filters.start_date = serviceStartDate || fallbackDate;
+    filters.end_date = serviceEndDate || fallbackDate;
+    if (timeSlot) filters.time_slot = timeSlot;
+    if (isWalkIn === 'true') filters.is_walk_in = true;
+    else if (isWalkIn === 'false') filters.is_walk_in = false;
+    if (isLateTardy === 'true') filters.is_override = true;
+    else if (isLateTardy === 'false') filters.is_override = false;
+    return filters;
+  }, [serviceStartDate, serviceEndDate, timeSlot, fallbackDate, isWalkIn, isLateTardy]);
+
+  const attendanceQuery = useServiceAttendanceQuery(queryFilters);
+
+  const pages = attendanceQuery.data?.pages;
+  const attendanceData = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages]);
+  const totalCount = pages?.[0]?.totalCount ?? 0;
+  const hasNextPage = Boolean(attendanceQuery.hasNextPage);
+  const isFetchingNextPage = Boolean(attendanceQuery.isFetchingNextPage);
+  const fetchNextPage = attendanceQuery.fetchNextPage;
+  const isLoading = attendanceQuery.isLoading;
 
   const filteredData = useMemo(() => {
+    // Role is in JSONB metadata — filtered client-side
+    if (selectedRoles.length === 0) return attendanceData;
     return attendanceData.filter((record) => {
-      if (selectedRoles.length > 0) {
-        const recordRole = (record.metadata?.role as string) || '';
-        const hasMatchingRole = selectedRoles.some(
-          (role) => recordRole.toLowerCase() === role.toLowerCase() || recordRole.includes(role),
-        );
-        if (!hasMatchingRole) {
-          return false;
-        }
-      }
-      if (isWalkIn === 'true' && !record.is_walk_in) {
-        return false;
-      }
-      if (isWalkIn === 'false' && record.is_walk_in) {
-        return false;
-      }
-      if (isLateTardy === 'true' && !record.is_override) {
-        // assuming late_tardy means is_override in the dashboard calculation
-        return false;
-      }
-      if (isLateTardy === 'false' && record.is_override) {
-        return false;
-      }
-      return true;
+      const recordRole = (record.metadata?.role as string) || '';
+      return selectedRoles.some(
+        (role) => recordRole.toLowerCase() === role.toLowerCase() || recordRole.includes(role),
+      );
     });
-  }, [attendanceData, selectedRoles, isWalkIn, isLateTardy]);
+  }, [attendanceData, selectedRoles]);
+
+  // Infinite scroll sentinel
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    const currentElement = loadMoreRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
+
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const updateSearchParam = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -138,18 +175,37 @@ export function AdminServiceAttendanceDataPage() {
   };
 
   const hasActiveFilters = Boolean(
-    serviceDate || timeSlot || selectedRoles.length > 0 || isWalkIn || isLateTardy,
+    serviceStartDate ||
+    serviceEndDate ||
+    timeSlot ||
+    selectedRoles.length > 0 ||
+    isWalkIn ||
+    isLateTardy,
   );
 
   const handleClearFilters = () => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.delete('service_date');
+    newParams.delete('service_start_date');
+    newParams.delete('service_end_date');
     newParams.delete('time_slot');
     newParams.delete('role');
     newParams.delete('is_walk_in');
     newParams.delete('is_late_tardy');
     setSearchParams(newParams);
   };
+
+  function getCountBadgeLabel() {
+    if (filteredData.length === 0) return 'No records found';
+    // When role filter is active the displayed count can differ from server total
+    const hasRoleFilter = selectedRoles.length > 0;
+    if (hasRoleFilter) {
+      return `${filteredData.length} record${filteredData.length === 1 ? '' : 's'} found`;
+    }
+    if (hasNextPage) {
+      return `Showing ${filteredData.length} of ${totalCount} records`;
+    }
+    return `${totalCount} record${totalCount === 1 ? '' : 's'} found`;
+  }
 
   return (
     <AdminPageShell wide>
@@ -159,12 +215,30 @@ export function AdminServiceAttendanceDataPage() {
       />
       <ServiceNavigationLinks />
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] sm:items-end">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] sm:items-end">
           <FormInputField
             type="date"
-            label="Service Date"
-            value={serviceDate}
-            onChange={(e) => updateSearchParam('service_date', e.target.value)}
+            label="Start Date"
+            value={serviceStartDate || fallbackDate}
+            onChange={(e) => {
+              const next = e.target.value;
+              // When start date is cleared, also wipe end date
+              if (!next) {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.delete('service_start_date');
+                newParams.delete('service_end_date');
+                setSearchParams(newParams);
+              } else {
+                updateSearchParam('service_start_date', next);
+              }
+            }}
+          />
+          <FormInputField
+            type="date"
+            label="End Date"
+            value={serviceStartDate ? serviceEndDate : fallbackDate}
+            disabled={!serviceStartDate}
+            onChange={(e) => updateSearchParam('service_end_date', e.target.value)}
           />
           <FormSelectField
             label="Time Slot"
@@ -227,6 +301,11 @@ export function AdminServiceAttendanceDataPage() {
       </AdminPageShell.Filters>
 
       <AdminPageShell.Content className="space-y-6">
+        {!isLoading && (
+          <div className="flex justify-center sm:justify-end">
+            <Badge variant="secondary">{getCountBadgeLabel()}</Badge>
+          </div>
+        )}
         <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
@@ -299,6 +378,35 @@ export function AdminServiceAttendanceDataPage() {
               </ListTableBody>
             </ListTable>
           )}
+
+          {/* Infinite scroll footer */}
+          {!isLoading && filteredData.length > 0 && (
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p className="text-xs text-muted">{getCountBadgeLabel()}</p>
+              {hasNextPage && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="primaryOutline"
+                    size="sm"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : (
+                      'Load More'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          {/* IntersectionObserver sentinel for auto-loading */}
+          <div ref={loadMoreRef} className="h-1" />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

@@ -53,17 +53,18 @@ export function ServiceAttendanceHistoryTab({
   const startDateStr = useMemo(() => toISODate(firstDayOfMonth), [firstDayOfMonth]);
   const endDateStr = useMemo(() => toISODate(lastDayOfMonth), [lastDayOfMonth]);
 
-  const {
-    data: attendance = [],
-    isLoading: isAttendanceLoading,
-    isFetching: isAttendanceFetching,
-    isPlaceholderData: isAttendancePlaceholderData = false,
-    isError: isAttendanceError,
-  } = useServiceAttendanceQuery({
+  const attendanceQuery = useServiceAttendanceQuery({
     user_id: memberId,
     start_date: startDateStr,
     end_date: endDateStr,
   });
+  const attendance = useMemo(
+    () => attendanceQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [attendanceQuery.data],
+  );
+  const isAttendanceLoading = attendanceQuery.isLoading;
+  const isAttendanceFetching = attendanceQuery.isFetching;
+  const isAttendanceError = Boolean(attendanceQuery.isError);
 
   const {
     data: snapshots = [],
@@ -75,7 +76,7 @@ export function ServiceAttendanceHistoryTab({
   const isLoading = isAttendanceLoading || isSnapshotsLoading;
   const isFetching = isAttendanceFetching || isSnapshotsFetching;
   const isError = isAttendanceError || isSnapshotsError;
-  const isLoadingAttendance = isAttendanceLoading || isAttendancePlaceholderData;
+  const isLoadingAttendance = isAttendanceLoading;
 
   const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex, memberId);
 

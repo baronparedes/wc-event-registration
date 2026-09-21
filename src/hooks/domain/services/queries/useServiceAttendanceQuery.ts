@@ -1,25 +1,41 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
+import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { ServiceAttendance } from '@/lib/domain/services';
-import { supabase } from '@/lib/infrastructure';
+import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
 
 export interface FetchServiceAttendanceFilters {
-  service_date?: string;
-  time_slot?: string;
-  user_id?: string;
-  rfid?: string;
   start_date?: string;
   end_date?: string;
+  time_slot?: string;
+  is_walk_in?: boolean;
+  is_override?: boolean;
+  user_id?: string;
+  rfid?: string;
+}
+
+export interface ServiceAttendancePage {
+  items: ServiceAttendance[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  totalCount: number;
+  totalPages: number;
 }
 
 export const serviceAttendanceQueryKey = (filters: FetchServiceAttendanceFilters) =>
   ['service-attendance', filters] as const;
 
-export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters = {}) {
-  return useQuery({
-    queryKey: serviceAttendanceQueryKey(filters),
-    placeholderData: keepPreviousData,
-    queryFn: async (): Promise<ServiceAttendance[]> => {
+export function useServiceAttendanceQuery(
+  filters: FetchServiceAttendanceFilters = {},
+  pageSize: number = PAGINATION_DEFAULTS.adminServiceAttendancePageSize,
+) {
+  return useInfiniteQuery<ServiceAttendancePage, Error>({
+    queryKey: [...serviceAttendanceQueryKey(filters), pageSize] as const,
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: ServiceAttendancePage) => lastPage.nextCursor,
+    queryFn: async ({ pageParam }): Promise<ServiceAttendancePage> => {
+      const offset = decodeOffsetCursor(pageParam as string | null);
+
       let query = supabase
         .from('service_attendance')
         .select(
@@ -38,20 +54,24 @@ export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters
             avatar_object_key
           )
         `,
+          { count: 'exact' },
         )
-        .order('checked_in_at', { ascending: false });
+        .order('checked_in_at', { ascending: false })
+        .range(offset, offset + pageSize - 1);
 
-      if (filters.service_date) {
-        query = query.eq('service_date', filters.service_date);
-      }
-      if (filters.start_date) {
-        query = query.gte('service_date', filters.start_date);
-      }
-      if (filters.end_date) {
-        query = query.lte('service_date', filters.end_date);
+      if (filters.start_date || filters.end_date) {
+        const effectiveStart = filters.start_date ?? filters.end_date!;
+        const effectiveEnd = filters.end_date ?? filters.start_date!;
+        query = query.gte('service_date', effectiveStart).lte('service_date', effectiveEnd);
       }
       if (filters.time_slot) {
         query = query.eq('time_slot', filters.time_slot);
+      }
+      if (filters.is_walk_in !== undefined) {
+        query = query.eq('is_walk_in', filters.is_walk_in);
+      }
+      if (filters.is_override !== undefined) {
+        query = query.eq('is_override', filters.is_override);
       }
       if (filters.user_id) {
         query = query.eq('user_id', filters.user_id);
@@ -60,13 +80,25 @@ export function useServiceAttendanceQuery(filters: FetchServiceAttendanceFilters
         query = query.eq('rfid', filters.rfid);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) {
         throw new Error(`Failed to fetch service attendance: ${error.message}`);
       }
 
-      return (data as ServiceAttendance[]) ?? [];
+      const totalCount = count ?? 0;
+      const items = (data as ServiceAttendance[]) ?? [];
+      const hasMore = offset + items.length < totalCount;
+
+      return {
+        items,
+        hasMore,
+        nextCursor: hasMore ? String(offset + pageSize) : null,
+        totalCount,
+        totalPages: getTotalPages(totalCount, pageSize),
+      };
     },
+    staleTime: QUERY_STALE_TIME_MS.adminList,
+    refetchOnWindowFocus: false,
   });
 }

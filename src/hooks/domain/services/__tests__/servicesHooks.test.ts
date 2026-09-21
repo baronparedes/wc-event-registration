@@ -120,14 +120,19 @@ describe('Services Domain Hooks', () => {
     });
 
     it('useServiceAttendanceQuery fetches service attendance records', async () => {
+      const mockItems = [{ id: 'att-1', time_slot: '9AM' }];
       const mockResult = {
-        data: [{ id: 'att-1', time_slot: '9AM' }],
+        data: mockItems,
+        count: 1,
         error: null,
       };
       const mockBuilder = {
         select: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        range: vi.fn().mockReturnThis(),
         then: vi
           .fn()
           .mockImplementation((onFulfilled) => Promise.resolve(mockResult).then(onFulfilled)),
@@ -135,14 +140,19 @@ describe('Services Domain Hooks', () => {
       mockFrom.mockReturnValue(mockBuilder);
 
       const { result } = renderHookWithClient(() =>
-        useServiceAttendanceQuery({ service_date: '2025-03-09', time_slot: '9AM' }),
+        useServiceAttendanceQuery({
+          start_date: '2025-03-09',
+          end_date: '2025-03-09',
+          time_slot: '9AM',
+        }),
       );
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(result.current.data).toEqual([{ id: 'att-1', time_slot: '9AM' }]);
+      expect(result.current.data?.pages[0]?.items).toEqual(mockItems);
+      expect(result.current.data?.pages[0]?.totalCount).toBe(1);
       expect(mockFrom).toHaveBeenCalledWith('service_attendance');
     });
 
