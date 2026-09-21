@@ -31,7 +31,7 @@ export function ServiceAttendanceMobileCards({
           return (
             <div
               key={key}
-              className="rounded-xl border border-border/40 bg-surface/30 p-3 text-xs text-muted/50"
+              className="rounded-xl border border-border/40 bg-surface/30 p-3 text-sm text-muted/50"
             >
               {SERVICE_SUNDAY_LABELS[key].label} • N/A (No 5th Sunday this month)
             </div>
@@ -45,8 +45,8 @@ export function ServiceAttendanceMobileCards({
           >
             <div className="border-b border-border bg-surface/70 px-3.5 py-2.5">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm text-text">{sundayInfo.label}</span>
-                <span className="text-xs text-muted">{sundayInfo.dateStr}</span>
+                <span className="font-semibold text-base text-text">{sundayInfo.label}</span>
+                <span className="text-sm text-muted">{sundayInfo.dateStr}</span>
               </div>
             </div>
             <div className="space-y-2 p-3">

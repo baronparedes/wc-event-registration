@@ -69,11 +69,14 @@ export function SundayAvailabilityDisplay({ metadata }: SundayAvailabilityDispla
     <ListTable density="dense" className="min-w-full">
       <ListTableHead>
         <ListTableHeaderRow variant="default">
-          <ListTableHeaderCell className="px-2.5 py-3 sm:px-4 text-left font-semibold">
+          <ListTableHeaderCell className="px-2.5 py-3 sm:px-4 text-left font-semibold text-base">
             Week
           </ListTableHeaderCell>
           {TIME_SLOTS.map((time) => (
-            <ListTableHeaderCell key={time} className="px-2 py-3 sm:px-4 text-center font-semibold">
+            <ListTableHeaderCell
+              key={time}
+              className="px-2 py-3 sm:px-4 text-center font-semibold text-base"
+            >
               {time.replace('AM', ' AM').replace('NN', ' NN').replace('PM', ' PM')}
             </ListTableHeaderCell>
           ))}
@@ -84,14 +87,14 @@ export function SundayAvailabilityDisplay({ metadata }: SundayAvailabilityDispla
           const selectedCount = currentValues[key].size;
           return (
             <ListTableRow key={key} hover="muted">
-              <ListTableCell className="px-2.5 py-3 sm:px-4 font-medium text-text">
+              <ListTableCell className="px-2.5 py-3 sm:px-4 font-medium text-text text-base">
                 <div className="flex items-center gap-1.5">
                   <span className="hidden sm:inline">{SUNDAY_LABELS[key]}</span>
                   <span className="sm:hidden">{SUNDAY_SHORT_LABELS[key]}</span>
                   {selectedCount > 0 && (
                     <span
                       aria-label={`${selectedCount} slots selected`}
-                      className="inline-flex items-center justify-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary sm:hidden"
+                      className="inline-flex items-center justify-center rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary sm:hidden"
                     >
                       {selectedCount}
                     </span>

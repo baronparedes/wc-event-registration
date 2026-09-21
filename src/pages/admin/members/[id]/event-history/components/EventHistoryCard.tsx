@@ -35,7 +35,7 @@ export function EventSingleCard({ group, formatDateTime }: SingleProps) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <h3 className="text-base font-semibold text-text">{group.event_title}</h3>
-          <div className="space-y-1.5 text-sm text-muted">
+          <div className="space-y-1.5 text-base text-muted">
             {group.starts_at && (
               <span className="flex min-w-0 items-start gap-1.5">
                 <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -80,7 +80,7 @@ export function EventGroupCard({ group, formatDateTime, onView }: Props) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <h3 className="text-base font-semibold text-text">{group.event_title}</h3>
-          <div className="space-y-1.5 text-sm text-muted">
+          <div className="space-y-1.5 text-base text-muted">
             {group.starts_at && (
               <span className="flex min-w-0 items-start gap-1.5">
                 <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />

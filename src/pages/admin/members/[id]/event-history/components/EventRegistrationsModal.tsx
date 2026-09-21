@@ -22,16 +22,16 @@ export function RegistrationDetail({
   if (!isCheckedIn && !hasRegistrationAnswers && !hasSlots && !hasAnswers) return null;
 
   return (
-    <div className="border-t border-primary/20 bg-primary/5 px-2.5 py-2 text-xs sm:px-3 sm:py-2.5 sm:text-sm">
+    <div className="border-t border-primary/20 bg-primary/5 px-2.5 py-2 text-sm sm:px-3 sm:py-2.5 sm:text-base">
       <div className="flex flex-wrap items-center gap-1.5">
         {item.attendance_enabled && isCheckedIn && (
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-sm font-medium text-emerald-800">
             Checked In
           </span>
         )}
 
         {isCheckedIn && item.official_check_in_time && (
-          <span className="text-xs text-muted">
+          <span className="text-sm text-muted">
             at {formatDateTime(item.official_check_in_time)}
           </span>
         )}
@@ -39,11 +39,11 @@ export function RegistrationDetail({
 
       {hasRegistrationAnswers && (
         <div className="mt-1">
-          <p className="mb-0.5 text-xs font-medium text-primary">Registration data:</p>
+          <p className="mb-0.5 text-sm font-medium text-primary">Registration data:</p>
           <dl className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
             {item.registration_answers.map((ans) => (
               <div key={ans.event_field_id} className="min-w-0">
-                <dt className="text-xs text-muted">{ans.label}</dt>
+                <dt className="text-sm text-muted">{ans.label}</dt>
                 <dd className="break-words font-medium text-text">
                   {ans.answer_text ??
                     (ans.answer_number !== null ? String(ans.answer_number) : '—')}
@@ -56,12 +56,12 @@ export function RegistrationDetail({
 
       {hasSlots && (
         <div className="mt-1">
-          <p className="mb-0.5 text-xs font-medium text-secondary">Timeslots:</p>
+          <p className="mb-0.5 text-sm font-medium text-secondary">Timeslots:</p>
           <ul className="ml-2 space-y-0">
             {item.slot_records.map((sr, i) => (
               <li key={i} className="text-text">
                 {sr.slot}
-                <span className="ml-2 text-xs text-muted">{formatDateTime(sr.recorded_at)}</span>
+                <span className="ml-2 text-sm text-muted">{formatDateTime(sr.recorded_at)}</span>
               </li>
             ))}
           </ul>
@@ -70,11 +70,11 @@ export function RegistrationDetail({
 
       {hasAnswers && (
         <div className="mt-1">
-          <p className="mb-0.5 text-xs font-medium text-primary">Attendance data:</p>
+          <p className="mb-0.5 text-sm font-medium text-primary">Attendance data:</p>
           <dl className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
             {item.attendance_answers.map((ans) => (
               <div key={ans.attendance_field_id} className="min-w-0">
-                <dt className="text-xs text-muted">{ans.label}</dt>
+                <dt className="text-sm text-muted">{ans.label}</dt>
                 <dd className="break-words font-medium text-text">
                   {ans.answer_text ??
                     (ans.answer_number !== null ? String(ans.answer_number) : '—')}
@@ -107,7 +107,7 @@ export function EventRegistrationsModal({ group, isOpen, onClose, formatDateTime
       showCloseIcon
       showCloseButton
     >
-      <div className="mt-0.5 space-y-1.5 text-sm text-muted">
+      <div className="mt-0.5 space-y-1.5 text-base text-muted">
         {group.starts_at && (
           <span className="flex min-w-0 items-start gap-1.5">
             <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />

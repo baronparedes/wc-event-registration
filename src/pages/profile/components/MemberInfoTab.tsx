@@ -58,22 +58,22 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
   return (
     <div className="space-y-6">
       <SectionCard title="Personal Details">
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm md:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-base md:grid-cols-4">
           {member.email && (
             <div className="col-span-2 min-w-0 md:col-span-1">
-              <dt className="text-muted text-xs">Email</dt>
+              <dt className="text-muted text-sm">Email</dt>
               <dd className="break-all font-medium text-text">{member.email}</dd>
             </div>
           )}
           {member.phone && (
             <div className="min-w-0">
-              <dt className="text-muted text-xs">Phone</dt>
+              <dt className="text-muted text-sm">Phone</dt>
               <dd className="break-words font-medium text-text">{member.phone}</dd>
             </div>
           )}
           {member.date_of_birth && (
             <div className="min-w-0">
-              <dt className="text-muted text-xs">Date of Birth</dt>
+              <dt className="text-muted text-sm">Date of Birth</dt>
               <dd className="break-words font-medium text-text">
                 {formatDateOnly(member.date_of_birth)}
               </dd>
@@ -83,7 +83,7 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
             ({ label, value }) =>
               value && (
                 <div key={label} className="min-w-0">
-                  <dt className="text-muted text-xs">{label}</dt>
+                  <dt className="text-muted text-sm">{label}</dt>
                   <dd className="break-words font-medium text-text">{value}</dd>
                 </div>
               ),

@@ -17,7 +17,7 @@ export function NonSundayAttendanceList({ records }: NonSundayAttendanceListProp
 
   return (
     <div className="space-y-2 rounded-xl border border-border bg-surface p-4 shadow-xs">
-      <div className="flex items-center gap-2 font-semibold text-sm text-text">
+      <div className="flex items-center gap-2 font-semibold text-base text-text">
         <MapPin className="h-4 w-4 text-primary" />
         <span>Other Services Attended</span>
       </div>
@@ -25,7 +25,7 @@ export function NonSundayAttendanceList({ records }: NonSundayAttendanceListProp
         {records.map((record) => (
           <div
             key={record.id}
-            className="flex flex-col gap-1 rounded-lg border border-border bg-surface/50 p-2.5 text-xs"
+            className="flex flex-col gap-1 rounded-lg border border-border bg-surface/50 p-2.5 text-sm"
           >
             <div className="flex items-center justify-between">
               <span className="font-semibold text-text">

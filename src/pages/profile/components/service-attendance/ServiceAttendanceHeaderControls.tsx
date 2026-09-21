@@ -66,7 +66,7 @@ export function ServiceAttendanceHeaderControls({
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <span className="min-w-[110px] flex-1 px-3 text-center text-sm font-semibold text-text sm:flex-initial">
+        <span className="min-w-[110px] flex-1 px-3 text-center text-base font-semibold text-text sm:flex-initial">
           {monthOnlyName}
         </span>
         <Button
