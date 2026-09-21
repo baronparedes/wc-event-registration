@@ -311,7 +311,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     key: 'adminServices',
     path: ROUTE_PATHS.adminServices,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    allowedRoles: ['admin', 'super_admin', 'slod'],
   },
   {
     key: 'adminServiceAttendanceMigration',
@@ -323,7 +323,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     key: 'adminServiceAttendanceData',
     path: ROUTE_PATHS.adminServiceAttendanceData,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    allowedRoles: ['admin', 'super_admin', 'slod'],
   },
 ];
 export const ROUTE_PREFIXES = {

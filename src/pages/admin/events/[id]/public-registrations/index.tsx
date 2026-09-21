@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -124,6 +124,7 @@ export function AdminPublicRegistrationsPage() {
           variant="primaryOutline"
           onClick={() => navigate(toRoute('adminPublicRegistrationsBulkUpload', { id: eventId }))}
         >
+          <Upload className="mr-2 h-4 w-4" />
           Upload CSV
         </Button>
       )}

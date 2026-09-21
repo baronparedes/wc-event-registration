@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -67,6 +68,7 @@ export function AddMemberDialog() {
   return (
     <>
       <Button type="button" onClick={() => setIsOpen(true)} className="whitespace-nowrap">
+        <Plus className="h-5 w-5" />
         <span className="sm:hidden">Add</span>
         <span className="hidden sm:inline">Add Member</span>
       </Button>

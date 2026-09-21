@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { Upload } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -224,6 +225,7 @@ export function AdminAttendanceDataPage() {
           )}
           {canWriteOnline && canRunBulkOps && (
             <Button asChild variant="primaryOutline">
+              <Upload className="mr-2 h-4 w-4" />
               <Link to={toRoute('adminAttendanceDataBulkUpload', { id })}>Upload CSV</Link>
             </Button>
           )}

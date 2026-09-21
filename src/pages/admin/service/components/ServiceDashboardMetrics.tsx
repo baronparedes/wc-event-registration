@@ -1,4 +1,4 @@
-import { Clock, Handshake, Percent, UserCheck, Users } from 'lucide-react';
+import { Clock, Handshake, Percent, Pointer, UserCheck, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
@@ -73,7 +73,9 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
                 key={ts}
                 className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center"
               >
-                <span className="text-xs font-medium text-muted">{ts}</span>
+                <div className="flex w-full items-center justify-between">
+                  <span className="text-xs font-medium text-muted">{ts}</span>
+                </div>
                 <span className="font-heading text-2xl font-bold text-text">
                   {getSlot(ts).committed}
                 </span>
@@ -94,7 +96,9 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
               </div>
               <div className="min-w-0">
                 <h3 className="truncate font-heading font-semibold text-text">Present</h3>
-                <p className="truncate text-xs text-muted">Scheduled turn-up</p>
+                <p className="truncate text-xs text-muted">
+                  Scheduled turn-up • Click slot to view
+                </p>
               </div>
             </div>
             <Badge variant="secondary" className="shrink-0">
@@ -104,17 +108,31 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
           <div className="mt-4 grid grid-cols-3 gap-2">
             {TIME_SLOTS.map((ts) => {
               const slot = getSlot(ts);
+              const isClickable = slot.present > 0;
               return (
                 <button
                   key={ts}
                   type="button"
                   onClick={() => handleDrillDown(ts)}
-                  disabled={slot.present === 0}
-                  className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center hover:border-primary/40 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-background transition-colors cursor-pointer disabled:cursor-default"
-                  title={slot.present > 0 ? `View present attendees for ${ts}` : undefined}
+                  disabled={!isClickable}
+                  className={`group relative flex h-28 flex-col items-center justify-between rounded-xl border p-2.5 text-center transition-all ${
+                    isClickable
+                      ? 'cursor-pointer border-border/60 bg-background hover:border-primary/50 hover:bg-primary/5 hover:shadow-xs'
+                      : 'cursor-default border-border/40 bg-background/50 opacity-40'
+                  }`}
+                  title={
+                    isClickable ? `View present attendees for ${ts} (opens in new tab)` : undefined
+                  }
                 >
-                  <span className="text-xs font-medium text-muted">{ts}</span>
-                  <span className="font-heading text-2xl font-bold text-text">{slot.present}</span>
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-xs font-medium text-muted">{ts}</span>
+                    {isClickable && (
+                      <Pointer className="h-3.5 w-3.5 text-muted/50 transition-transform group-hover:scale-110 group-hover:text-primary" />
+                    )}
+                  </div>
+                  <span className="font-heading text-2xl font-bold text-text transition-colors group-hover:text-primary">
+                    {slot.present}
+                  </span>
                   <div className="flex h-5 w-full items-center justify-center">
                     {slot.walk_ins > 0 ? (
                       <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary">
@@ -189,7 +207,9 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
               </div>
               <div className="min-w-0">
                 <h3 className="truncate font-heading font-semibold text-text">Late Check-In</h3>
-                <p className="truncate text-xs text-muted">Override check-ins</p>
+                <p className="truncate text-xs text-muted">
+                  Override check-ins • Click slot to view
+                </p>
               </div>
             </div>
             <Badge variant="accent" className="shrink-0">
@@ -197,26 +217,41 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
             </Badge>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
-            {TIME_SLOTS.map((ts) => (
-              <button
-                key={ts}
-                type="button"
-                onClick={() => handleDrillDown(ts, { is_late_tardy: 'true' })}
-                disabled={getSlot(ts).late_tardy === 0}
-                className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center hover:border-primary/40 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-background transition-colors cursor-pointer disabled:cursor-default"
-                title={
-                  getSlot(ts).late_tardy > 0 ? `View late/tardy attendees for ${ts}` : undefined
-                }
-              >
-                <span className="text-xs font-medium text-muted">{ts}</span>
-                <span className="font-heading text-2xl font-bold text-text">
-                  {getSlot(ts).late_tardy}
-                </span>
-                <div className="flex h-5 w-full items-center justify-center">
-                  <span className="text-[10px] text-muted">—</span>
-                </div>
-              </button>
-            ))}
+            {TIME_SLOTS.map((ts) => {
+              const count = getSlot(ts).late_tardy;
+              const isClickable = count > 0;
+              return (
+                <button
+                  key={ts}
+                  type="button"
+                  onClick={() => handleDrillDown(ts, { is_late_tardy: 'true' })}
+                  disabled={!isClickable}
+                  className={`group relative flex h-28 flex-col items-center justify-between rounded-xl border p-2.5 text-center transition-all ${
+                    isClickable
+                      ? 'cursor-pointer border-border/60 bg-background hover:border-primary/50 hover:bg-primary/5 hover:shadow-xs'
+                      : 'cursor-default border-border/40 bg-background/50 opacity-40'
+                  }`}
+                  title={
+                    isClickable
+                      ? `View late/tardy attendees for ${ts} (opens in new tab)`
+                      : undefined
+                  }
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-xs font-medium text-muted">{ts}</span>
+                    {isClickable && (
+                      <Pointer className="h-3.5 w-3.5 text-muted/50 transition-transform group-hover:scale-110 group-hover:text-primary" />
+                    )}
+                  </div>
+                  <span className="font-heading text-2xl font-bold text-text transition-colors group-hover:text-primary">
+                    {count}
+                  </span>
+                  <div className="flex h-5 w-full items-center justify-center">
+                    <span className="text-[10px] text-muted">—</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -229,7 +264,9 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
               </div>
               <div className="min-w-0">
                 <h3 className="truncate font-heading font-semibold text-text">Total Walk-In</h3>
-                <p className="truncate text-xs text-muted">Uncommitted attendees</p>
+                <p className="truncate text-xs text-muted">
+                  Uncommitted attendees • Click slot to view
+                </p>
               </div>
             </div>
             <Badge variant="secondary" className="shrink-0">
@@ -237,24 +274,39 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
             </Badge>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
-            {TIME_SLOTS.map((ts) => (
-              <button
-                key={ts}
-                type="button"
-                onClick={() => handleDrillDown(ts, { is_walk_in: 'true' })}
-                disabled={getSlot(ts).walk_ins === 0}
-                className="flex h-28 flex-col items-center justify-between rounded-xl border border-border/50 bg-background p-2.5 text-center hover:border-primary/40 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-background transition-colors cursor-pointer disabled:cursor-default"
-                title={getSlot(ts).walk_ins > 0 ? `View walk-in attendees for ${ts}` : undefined}
-              >
-                <span className="text-xs font-medium text-muted">{ts}</span>
-                <span className="font-heading text-2xl font-bold text-text">
-                  {getSlot(ts).walk_ins}
-                </span>
-                <div className="flex h-5 w-full items-center justify-center">
-                  <span className="text-[10px] text-muted">—</span>
-                </div>
-              </button>
-            ))}
+            {TIME_SLOTS.map((ts) => {
+              const count = getSlot(ts).walk_ins;
+              const isClickable = count > 0;
+              return (
+                <button
+                  key={ts}
+                  type="button"
+                  onClick={() => handleDrillDown(ts, { is_walk_in: 'true' })}
+                  disabled={!isClickable}
+                  className={`group relative flex h-28 flex-col items-center justify-between rounded-xl border p-2.5 text-center transition-all ${
+                    isClickable
+                      ? 'cursor-pointer border-border/60 bg-background hover:border-primary/50 hover:bg-primary/5 hover:shadow-xs'
+                      : 'cursor-default border-border/40 bg-background/50 opacity-40'
+                  }`}
+                  title={
+                    isClickable ? `View walk-in attendees for ${ts} (opens in new tab)` : undefined
+                  }
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-xs font-medium text-muted">{ts}</span>
+                    {isClickable && (
+                      <Pointer className="h-3.5 w-3.5 text-muted/50 transition-transform group-hover:scale-110 group-hover:text-primary" />
+                    )}
+                  </div>
+                  <span className="font-heading text-2xl font-bold text-text transition-colors group-hover:text-primary">
+                    {count}
+                  </span>
+                  <div className="flex h-5 w-full items-center justify-center">
+                    <span className="text-[10px] text-muted">—</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

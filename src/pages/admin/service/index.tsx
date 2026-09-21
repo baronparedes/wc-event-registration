@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { parseISO } from 'date-fns';
-import { Download, SearchX } from 'lucide-react';
+import { SearchX, Table, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -60,10 +60,19 @@ export function AdminServicesPage() {
         description="Monitor service attendance and volunteer turn-up statistics."
         breadcrumbs={[{ label: 'Services' }]}
         actions={
-          <Button onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}>
-            <Download className="mr-2 h-4 w-4" />
-            Import Records
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="primaryOutline"
+              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload CSV
+            </Button>
+            <Button onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceData)}>
+              <Table className="mr-2 h-4 w-4" />
+              Attendance Data
+            </Button>
+          </div>
         }
       />
       <AdminBaseNavigation />
