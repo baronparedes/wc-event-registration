@@ -7,29 +7,22 @@ import type { ToolContext } from './types.ts';
 export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolContext) {
   const schema = z.object({
     eventId: z.string().describe('The UUID of the event to analyze'),
-    includeDynamicFields: z
-      .boolean()
-      .default(false)
-      .describe(
-        'Whether to fetch and aggregate custom dynamic field answers from registrations. Set to true only if the user explicitly asks about specific answers or fields.',
-      ),
   });
 
   return tool({
     description:
-      'Analyze the attendees of a specific event. Returns demographics (age, gender), registration status counts (confirmed/cancelled), check-in counts, and optionally summarizes custom dynamic field answers (e.g. meal preference, t-shirt size).',
+      'Analyze the attendees of a specific event. Returns demographics (age, gender, role, category) and registration status counts (confirmed/cancelled) and check-in counts for member registrations.',
     parameters: schema,
-    execute: async ({ eventId, includeDynamicFields }) => {
+    execute: async ({ eventId }) => {
       console.log('[chat:tool:analyzeEventAttendees] Executing', {
         eventId,
-        includeDynamicFields,
         requestId,
       });
 
       // 1. Fetch member registrations & user demographics
       const { data: memberRegs, error: memberErr } = await client
         .from('registrations')
-        .select('status, users(date_of_birth, metadata)')
+        .select('status, users(date_of_birth, role, category, metadata)')
         .eq('event_id', eventId);
 
       if (memberErr) {
@@ -81,6 +74,9 @@ export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolConte
         unspecified: 0,
       };
 
+      const roleBreakdown: Record<string, number> = {};
+      const categoryBreakdown: Record<string, number> = {};
+
       const statusCounts = {
         member: { submitted: 0, cancelled: 0, other: 0 },
         public: { submitted: 0, cancelled: 0, other: 0 },
@@ -126,6 +122,18 @@ export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolConte
         } else {
           ageDistribution['unknown']++;
         }
+
+        // Role
+        const role =
+          typeof user.role === 'string' && user.role.trim() ? user.role.trim() : 'unspecified';
+        roleBreakdown[role] = (roleBreakdown[role] ?? 0) + 1;
+
+        // Category
+        const category =
+          typeof user.category === 'string' && user.category.trim()
+            ? user.category.trim()
+            : 'unspecified';
+        categoryBreakdown[category] = (categoryBreakdown[category] ?? 0) + 1;
       }
 
       for (const reg of publicRegs || []) {
@@ -137,72 +145,6 @@ export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolConte
       const totalMemberRegistrations = (memberRegs || []).length;
       const totalPublicRegistrations = (publicRegs || []).length;
       const totalRegistrations = totalMemberRegistrations + totalPublicRegistrations;
-
-      // 4. Optionally fetch and aggregate dynamic fields
-      let dynamicFieldSummary: Record<string, Record<string, number>> | undefined = undefined;
-
-      if (includeDynamicFields) {
-        dynamicFieldSummary = {};
-
-        // Fetch fields to know their labels
-        const { data: fields } = await client
-          .from('event_fields')
-          .select('id, label, field_type')
-          .eq('event_id', eventId)
-          .eq('is_active', true);
-
-        if (fields && fields.length > 0) {
-          // Fetch member answers
-          // join with registrations to make sure we only count the right event,
-          // though event_field_id technically already implies the event.
-          const { data: memberAnswers } = await client
-            .from('registration_answers')
-            .select(
-              'event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, registrations!inner(event_id)',
-            )
-            .eq('registrations.event_id', eventId);
-
-          const { data: publicAnswers } = await client
-            .from('public_registration_answers')
-            .select(
-              'event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, public_registrations!inner(event_id)',
-            )
-            .eq('public_registrations.event_id', eventId);
-
-          const allAnswers = [...(memberAnswers || []), ...(publicAnswers || [])];
-
-          for (const field of fields) {
-            dynamicFieldSummary[field.label] = {};
-            const answersForField = allAnswers.filter((a) => a.event_field_id === field.id);
-
-            for (const ans of answersForField) {
-              // Extract the value as a string for aggregation counting
-              let valStr = 'unanswered';
-              if (ans.answer_text !== null) valStr = ans.answer_text;
-              else if (ans.answer_number !== null) valStr = String(ans.answer_number);
-              else if (ans.answer_boolean !== null) valStr = String(ans.answer_boolean);
-              else if (ans.answer_date !== null) valStr = String(ans.answer_date);
-              else if (ans.answer_json !== null) {
-                if (Array.isArray(ans.answer_json)) {
-                  // For multi-selects, we can either count each option or the combo
-                  // Let's count each individual option selected
-                  ans.answer_json.forEach((item: unknown) => {
-                    const strItem = String(item);
-                    dynamicFieldSummary![field.label][strItem] =
-                      (dynamicFieldSummary![field.label][strItem] || 0) + 1;
-                  });
-                  continue; // skip the general assignment below
-                } else {
-                  valStr = JSON.stringify(ans.answer_json);
-                }
-              }
-
-              dynamicFieldSummary[field.label][valStr] =
-                (dynamicFieldSummary[field.label][valStr] || 0) + 1;
-            }
-          }
-        }
-      }
 
       return {
         summary: {
@@ -220,8 +162,9 @@ export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolConte
         memberDemographics: {
           age: ageDistribution,
           gender: genderDistribution,
+          role: roleBreakdown,
+          category: categoryBreakdown,
         },
-        dynamicFields: dynamicFieldSummary,
       };
     },
   });
