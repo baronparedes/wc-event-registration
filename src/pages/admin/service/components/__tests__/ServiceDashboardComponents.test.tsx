@@ -97,7 +97,9 @@ describe('ServiceDashboardMetrics', () => {
   };
 
   it('renders primary metrics and exception cards with totals', () => {
-    render(<ServiceDashboardMetrics stats={sampleStats} />);
+    render(
+      <ServiceDashboardMetrics stats={sampleStats} dateFilterParams={new URLSearchParams()} />,
+    );
 
     expect(screen.getByText('Committed')).toBeInTheDocument();
     expect(screen.getByText('60 Total')).toBeInTheDocument();
@@ -108,7 +110,7 @@ describe('ServiceDashboardMetrics', () => {
     expect(screen.getByText('Turn-Up Rate')).toBeInTheDocument();
     expect(screen.getByText('80% Avg')).toBeInTheDocument();
 
-    expect(screen.getByText('Late / Tardy')).toBeInTheDocument();
+    expect(screen.getByText('Late Check-In')).toBeInTheDocument();
     expect(screen.getByText('6 Total')).toBeInTheDocument();
 
     expect(screen.getByText('Total Walk-In')).toBeInTheDocument();
@@ -145,7 +147,12 @@ describe('ServiceDashboardRoleBreakdown', () => {
       roles: ['Usher', 'Greeter'],
     };
 
-    render(<ServiceDashboardRoleBreakdown stats={sampleStats} />);
+    render(
+      <ServiceDashboardRoleBreakdown
+        stats={sampleStats}
+        dateFilterParams={new URLSearchParams()}
+      />,
+    );
 
     expect(screen.getByText('Attendance by Role')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
@@ -165,7 +172,9 @@ describe('ServiceDashboardRoleBreakdown', () => {
       roles: [],
     };
 
-    render(<ServiceDashboardRoleBreakdown stats={emptyStats} />);
+    render(
+      <ServiceDashboardRoleBreakdown stats={emptyStats} dateFilterParams={new URLSearchParams()} />,
+    );
 
     expect(screen.getByText('No volunteer roles recorded for this period.')).toBeInTheDocument();
   });

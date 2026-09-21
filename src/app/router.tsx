@@ -212,6 +212,11 @@ const AdminMemberEventHistoryPage = lazy(() =>
     default: module.AdminMemberEventHistoryPage,
   })),
 );
+const AdminServiceAttendanceDataPage = lazy(() =>
+  import('../pages/admin/service/attendance/data').then((module) => ({
+    default: module.AdminServiceAttendanceDataPage,
+  })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -291,6 +296,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   formSubmit: FormSubmissionPage,
   adminServices: AdminServicesPage,
   adminServiceAttendanceMigration: AdminServiceAttendanceMigrationPage,
+  adminServiceAttendanceData: AdminServiceAttendanceDataPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {

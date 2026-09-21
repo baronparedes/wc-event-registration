@@ -1,15 +1,30 @@
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Pointer } from 'lucide-react';
 
 import { Badge, SectionCard } from '@/components/ui';
+import { ROUTE_PATHS } from '@/config/constants';
 import type { DashboardStatsResponse } from '@/hooks/domain/services';
 
 import { type ServiceTimeSlot, TIME_SLOTS } from '../constants';
 
 interface ServiceDashboardRoleBreakdownProps {
   stats: DashboardStatsResponse;
+  dateFilterParams: URLSearchParams;
 }
 
-export function ServiceDashboardRoleBreakdown({ stats }: ServiceDashboardRoleBreakdownProps) {
+export function ServiceDashboardRoleBreakdown({
+  stats,
+  dateFilterParams,
+}: ServiceDashboardRoleBreakdownProps) {
+  const handleRoleDrillDown = (role: string, ts: ServiceTimeSlot) => {
+    const params = new URLSearchParams(dateFilterParams);
+    params.set('role', role);
+    params.set('time_slot', ts);
+
+    // We open in a new tab
+    const url = `${ROUTE_PATHS.adminServiceAttendanceData}?${params.toString()}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const getSlot = (ts: ServiceTimeSlot) =>
     stats.time_slots?.[ts] ?? {
       committed: 0,
@@ -24,7 +39,7 @@ export function ServiceDashboardRoleBreakdown({ stats }: ServiceDashboardRoleBre
   return (
     <SectionCard
       title="Attendance by Role"
-      subtitle="Volunteer counts per role across service time slots"
+      subtitle="Volunteer counts per role across service time slots • Click any count to view records"
       contentClassName="mt-4"
     >
       {roles.length === 0 ? (
@@ -59,15 +74,39 @@ export function ServiceDashboardRoleBreakdown({ stats }: ServiceDashboardRoleBre
                     {roleTotal}
                   </Badge>
                 </div>
-                <div className="mt-3 grid grid-cols-3 divide-x divide-border/60 rounded-lg border border-border/60 bg-surface py-2">
-                  {TIME_SLOTS.map((ts) => (
-                    <div key={ts} className="flex flex-col items-center px-1 text-center">
-                      <span className="text-[10px] font-medium text-muted">{ts}</span>
-                      <span className="font-heading text-base font-bold text-text">
-                        {getSlot(ts).roles?.[role] || 0}
-                      </span>
-                    </div>
-                  ))}
+                <div className="mt-3 grid grid-cols-3 divide-x divide-border/60 rounded-lg border border-border/60 bg-surface py-1">
+                  {TIME_SLOTS.map((ts) => {
+                    const count = getSlot(ts).roles?.[role] || 0;
+                    const isClickable = count > 0;
+                    return (
+                      <button
+                        key={ts}
+                        type="button"
+                        onClick={() => handleRoleDrillDown(role, ts)}
+                        disabled={!isClickable}
+                        className={`group flex flex-col items-center px-1 py-1.5 text-center transition-colors ${
+                          isClickable
+                            ? 'cursor-pointer hover:bg-primary/10'
+                            : 'cursor-default opacity-40'
+                        }`}
+                        title={
+                          isClickable
+                            ? `View ${role} attendance for ${ts} (opens in new tab)`
+                            : undefined
+                        }
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-medium text-muted">{ts}</span>
+                          {isClickable && (
+                            <Pointer className="h-2.5 w-2.5 text-muted/50 transition-transform group-hover:scale-110 group-hover:text-primary" />
+                          )}
+                        </div>
+                        <span className="font-heading text-base font-bold text-text transition-colors group-hover:text-primary">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );

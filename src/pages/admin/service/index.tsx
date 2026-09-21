@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
-import { parseISO } from 'date-fns';
-import { Download, SearchX } from 'lucide-react';
+import { endOfMonth, format, parseISO } from 'date-fns';
+import { SearchX, Table, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -23,6 +23,7 @@ export function AdminServicesPage() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
+  const todayStr = format(now, 'yyyy-MM-dd');
   const [maxSunday] = useState<string>(() => getNearestPreviousSunday());
 
   const [selectedSunday, setSelectedSunday] = useState<string>(() => maxSunday);
@@ -43,6 +44,23 @@ export function AdminServicesPage() {
 
   const { data: stats, isLoading, isError } = useServiceDashboardQuery(queryFilters);
 
+  const dateFilterParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filterMode === 'sunday' && selectedSunday) {
+      params.set('service_start_date', selectedSunday);
+      params.set('service_end_date', selectedSunday);
+    } else if (filterMode === 'month' && !isNaN(selectedYear) && !isNaN(selectedMonth)) {
+      const monthStart = new Date(selectedYear, selectedMonth - 1, 1);
+      params.set('service_start_date', format(monthStart, 'yyyy-MM-dd'));
+      params.set('service_end_date', format(endOfMonth(monthStart), 'yyyy-MM-dd'));
+    } else if (filterMode === 'annual' && !isNaN(selectedYear)) {
+      const annualEnd = selectedYear === currentYear ? todayStr : `${selectedYear}-12-31`;
+      params.set('service_start_date', `${selectedYear}-01-01`);
+      params.set('service_end_date', annualEnd);
+    }
+    return params;
+  }, [filterMode, selectedSunday, selectedYear, selectedMonth, currentYear, todayStr]);
+
   return (
     <AdminPageShell wide>
       <AdminPageShell.Header
@@ -50,10 +68,19 @@ export function AdminServicesPage() {
         description="Monitor service attendance and volunteer turn-up statistics."
         breadcrumbs={[{ label: 'Services' }]}
         actions={
-          <Button onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}>
-            <Download className="mr-2 h-4 w-4" />
-            Import Records
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="primaryOutline"
+              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload CSV
+            </Button>
+            <Button onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceData)}>
+              <Table className="mr-2 h-4 w-4" />
+              Attendance Data
+            </Button>
+          </div>
         }
       />
       <AdminBaseNavigation />
@@ -82,8 +109,8 @@ export function AdminServicesPage() {
           />
         ) : (
           <div className="space-y-6">
-            <ServiceDashboardMetrics stats={stats} />
-            <ServiceDashboardRoleBreakdown stats={stats} />
+            <ServiceDashboardMetrics stats={stats} dateFilterParams={dateFilterParams} />
+            <ServiceDashboardRoleBreakdown stats={stats} dateFilterParams={dateFilterParams} />
           </div>
         )}
       </AdminPageShell.Content>

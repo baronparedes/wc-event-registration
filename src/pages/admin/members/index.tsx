@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Edit, Loader2, User, Users } from 'lucide-react';
+import { Edit, Loader2, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -206,6 +206,7 @@ export function AdminMembersPage() {
                     variant="primaryOutline"
                     onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
                   >
+                    <Upload className="mr-2 h-4 w-4" />
                     Upload CSV
                   </Button>
                   <AddMemberDialog />

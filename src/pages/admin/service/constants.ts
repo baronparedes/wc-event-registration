@@ -20,6 +20,16 @@ export const MONTHS = [
 export const TIME_SLOTS = ['9AM', '12NN', '3PM'] as const;
 export type ServiceTimeSlot = (typeof TIME_SLOTS)[number];
 
+export const SERVICE_ROLES = [
+  'Backroom Support',
+  'IMT Support',
+  'OIC',
+  'Prayer Coach',
+  'Usher',
+  'VMT Support',
+] as const;
+export type ServiceRole = (typeof SERVICE_ROLES)[number];
+
 export type FilterMode = 'sunday' | 'month' | 'annual';
 
 /** Returns the date string (YYYY-MM-DD) of the nearest previous Sunday (or today if Sunday) */

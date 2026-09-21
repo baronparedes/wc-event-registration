@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -123,6 +123,7 @@ export function AdminRegistrationsPage() {
       )}
       {canWrite && (
         <Button asChild variant="primaryOutline">
+          <Upload className="mr-2 h-4 w-4" />
           <Link to={toRoute('adminRegistrationsBulkUpload', { id: eventId })}>Upload CSV</Link>
         </Button>
       )}
