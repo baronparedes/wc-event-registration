@@ -180,7 +180,7 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
 
       {/* Secondary Exceptions: Late/Tardy & Total Walk-Ins */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Late / Tardy */}
+        {/* Late Check-In */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
           <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -188,7 +188,7 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
                 <Clock className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="truncate font-heading font-semibold text-text">Late / Tardy</h3>
+                <h3 className="truncate font-heading font-semibold text-text">Late Check-In</h3>
                 <p className="truncate text-xs text-muted">Override check-ins</p>
               </div>
             </div>

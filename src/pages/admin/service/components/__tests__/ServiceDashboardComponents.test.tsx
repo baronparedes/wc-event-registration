@@ -110,7 +110,7 @@ describe('ServiceDashboardMetrics', () => {
     expect(screen.getByText('Turn-Up Rate')).toBeInTheDocument();
     expect(screen.getByText('80% Avg')).toBeInTheDocument();
 
-    expect(screen.getByText('Late / Tardy')).toBeInTheDocument();
+    expect(screen.getByText('Late Check-In')).toBeInTheDocument();
     expect(screen.getByText('6 Total')).toBeInTheDocument();
 
     expect(screen.getByText('Total Walk-In')).toBeInTheDocument();
