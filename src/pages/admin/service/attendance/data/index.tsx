@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RotateCcw } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -136,6 +137,20 @@ export function AdminServiceAttendanceDataPage() {
     setSearchParams(newParams);
   };
 
+  const hasActiveFilters = Boolean(
+    serviceDate || timeSlot || selectedRoles.length > 0 || isWalkIn || isLateTardy,
+  );
+
+  const handleClearFilters = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('service_date');
+    newParams.delete('time_slot');
+    newParams.delete('role');
+    newParams.delete('is_walk_in');
+    newParams.delete('is_late_tardy');
+    setSearchParams(newParams);
+  };
+
   return (
     <AdminPageShell wide>
       <AdminPageShell.Header
@@ -144,7 +159,7 @@ export function AdminServiceAttendanceDataPage() {
       />
       <ServiceNavigationLinks />
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] sm:items-end">
           <FormInputField
             type="date"
             label="Service Date"
@@ -196,6 +211,18 @@ export function AdminServiceAttendanceDataPage() {
             ]}
             onChange={(val) => updateSearchParam('is_late_tardy', val)}
           />
+          <div className="space-y-1.5">
+            <Button
+              type="button"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              aria-label="Clear filters"
+              title="Clear filters"
+              className="h-[46px] w-full min-w-[50px] rounded-md p-0 sm:w-[50px]"
+            >
+              <RotateCcw className="h-5 w-5 stroke-[2.25]" />
+            </Button>
+          </div>
         </div>
       </AdminPageShell.Filters>
 
