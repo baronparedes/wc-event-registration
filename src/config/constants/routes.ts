@@ -15,6 +15,7 @@ export const ROUTE_PATHS = {
   formSubmitPattern: '/forms/:slug/submit',
   eventRegisterPattern: '/events/:slug/register',
   eventPublicRegisterPattern: '/events/:slug/register-public',
+  eventCountdownPattern: '/events/:slug/countdown',
   adminHubCalendar: '/admin/hub-calendar',
   adminUserRoles: '/admin/users/roles',
   adminMembers: '/admin/members',
@@ -61,6 +62,7 @@ export type AppRouteKey =
   | 'termsOfService'
   | 'eventRegister'
   | 'eventPublicRegister'
+  | 'eventCountdown'
   | 'login'
   | 'profile'
   | 'adminUserRoles'
@@ -124,6 +126,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'formSubmit', path: ROUTE_PATHS.formSubmitPattern, layout: 'shell' },
   { key: 'eventRegister', path: ROUTE_PATHS.eventRegisterPattern, layout: 'shell' },
   { key: 'eventPublicRegister', path: ROUTE_PATHS.eventPublicRegisterPattern, layout: 'shell' },
+  { key: 'eventCountdown', path: ROUTE_PATHS.eventCountdownPattern, layout: 'standalone' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },
   { key: 'profile', path: ROUTE_PATHS.profile, layout: 'shell' },
   {
@@ -332,6 +335,7 @@ export const ROUTE_PREFIXES = {
 const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.eventRegisterPattern,
   ROUTE_PATHS.eventPublicRegisterPattern,
+  ROUTE_PATHS.eventCountdownPattern,
   ROUTE_PATHS.formSubmitPattern,
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
   ROUTE_PATHS.hello,
