@@ -85,6 +85,6 @@ describe('MobileMemberCard', () => {
     expect(screen.getByText('View')).toBeInTheDocument();
     expect(screen.queryByText('Edit')).not.toBeInTheDocument();
     expect(screen.queryByTestId('update-member-id-dialog')).not.toBeInTheDocument();
-    expect(screen.getByText('Deleted')).toBeInTheDocument();
+    expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
 });
