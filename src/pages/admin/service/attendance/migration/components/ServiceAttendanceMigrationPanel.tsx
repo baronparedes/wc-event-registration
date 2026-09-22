@@ -143,7 +143,9 @@ export function ServiceAttendanceMigrationPanel() {
   return (
     <div className="rounded-2xl border border-border bg-surface shadow-sm">
       <div className="flex flex-col border-b border-border p-6">
-        <h2 className="text-xl font-bold">Import Service Attendance from CSV</h2>
+        <h2 className="font-heading text-xl font-semibold text-text">
+          Import Service Attendance from CSV
+        </h2>
         <p className="mt-1 text-sm text-text-secondary">
           Select a layout, then upload the Excel-exported CSV to map tables and users.
         </p>

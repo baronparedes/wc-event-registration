@@ -119,7 +119,7 @@ describe('AdminServiceAttendanceDataPage', () => {
     expect(screen.getByText('RFID001')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getAllByText('Walk-in').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Late/Tardy').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Late Check-In').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows correct count badge when all records are loaded', () => {
