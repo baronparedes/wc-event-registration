@@ -38,7 +38,9 @@ vi.mock('@/hooks/domain/members', async () => {
     await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');
   return {
     ...actual,
-    useAdminMembersQuery: (...args: unknown[]) => mockUseAdminMembersQuery(...args),
+    useAdminMembersQuery: vi
+      .fn()
+      .mockImplementation((...args: unknown[]) => mockUseAdminMembersQuery(...args)),
   };
 });
 
