@@ -14,7 +14,7 @@ import {
   ServiceDashboardMetrics,
   ServiceDashboardRoleBreakdown,
 } from './components';
-import { type FilterMode, getNearestPreviousSunday } from './constants';
+import { type FilterMode, getLastSundayOfYear, getNearestPreviousSunday } from './constants';
 
 export function AdminServicesPage() {
   const navigate = useNavigate();
@@ -23,10 +23,9 @@ export function AdminServicesPage() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
-  const todayStr = format(now, 'yyyy-MM-dd');
-  const [maxSunday] = useState<string>(() => getNearestPreviousSunday());
+  const [maxSunday] = useState<string>(() => getLastSundayOfYear(currentYear));
 
-  const [selectedSunday, setSelectedSunday] = useState<string>(() => maxSunday);
+  const [selectedSunday, setSelectedSunday] = useState<string>(() => getNearestPreviousSunday());
   const [selectedYear, setSelectedYear] = useState<number>(() => currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(() => currentMonth);
 
@@ -54,12 +53,12 @@ export function AdminServicesPage() {
       params.set('service_start_date', format(monthStart, 'yyyy-MM-dd'));
       params.set('service_end_date', format(endOfMonth(monthStart), 'yyyy-MM-dd'));
     } else if (filterMode === 'annual' && !isNaN(selectedYear)) {
-      const annualEnd = selectedYear === currentYear ? todayStr : `${selectedYear}-12-31`;
+      const annualEnd = `${selectedYear}-12-31`;
       params.set('service_start_date', `${selectedYear}-01-01`);
       params.set('service_end_date', annualEnd);
     }
     return params;
-  }, [filterMode, selectedSunday, selectedYear, selectedMonth, currentYear, todayStr]);
+  }, [filterMode, selectedSunday, selectedYear, selectedMonth]);
 
   return (
     <AdminPageShell wide>

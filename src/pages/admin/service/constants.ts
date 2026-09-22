@@ -39,3 +39,11 @@ export function getNearestPreviousSunday(date: Date = new Date()): string {
   const day = getDay(d);
   return format(subDays(d, day), 'yyyy-MM-dd');
 }
+
+/** Returns the date string (YYYY-MM-DD) of the last Sunday of a given year */
+export function getLastSundayOfYear(year: number): string {
+  const d = new Date(year, 11, 31);
+  d.setHours(0, 0, 0, 0);
+  const day = getDay(d);
+  return format(subDays(d, day), 'yyyy-MM-dd');
+}
