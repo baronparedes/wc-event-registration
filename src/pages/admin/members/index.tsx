@@ -20,12 +20,17 @@ import {
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
+import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
 
-import { AddMemberDialog } from './components/AddMemberDialog';
-import { UpdateMemberIdDialog } from './components/UpdateMemberIdDialog';
+import {
+  AddMemberDialog,
+  MemberStatusBadge,
+  MobileMemberCard,
+  UpdateMemberIdDialog,
+} from './components';
 
 function getHeaderDescription(canWrite: boolean) {
   if (canWrite) {
@@ -33,22 +38,6 @@ function getHeaderDescription(canWrite: boolean) {
   }
 
   return 'View member profiles and details.';
-}
-
-function MemberStatus({ isActive }: { isActive: boolean }) {
-  let statusClassName = 'bg-red-100 text-red-700';
-  let statusLabel = 'Deleted';
-
-  if (isActive) {
-    statusClassName = 'bg-secondary/15 text-secondary';
-    statusLabel = 'Active';
-  }
-
-  return (
-    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClassName}`}>
-      {statusLabel}
-    </span>
-  );
 }
 
 function MemberActions({ member, canWrite }: { member: AdminMember; canWrite: boolean }) {
@@ -152,6 +141,7 @@ export function AdminMembersPage() {
   const isLoading = membersQuery.isLoading;
   const error = membersQuery.error;
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const isMobileViewport = useIsMobileViewport();
   const hasError = Boolean(error);
   const hasNoMembers = !hasError && members.length === 0;
   const hasMembers = !hasError && members.length > 0;
@@ -263,70 +253,78 @@ export function AdminMembersPage() {
         {hasMembers && (
           <>
             <div className="rounded-2xl border border-border bg-surface">
-              <ListTable>
-                <ListTableHead>
-                  <ListTableHeaderRow>
-                    <ListTableHeaderCell></ListTableHeaderCell>
-                    <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
-                    <ListTableHeaderCell>Full Name</ListTableHeaderCell>
-                    <ListTableHeaderCell>Status</ListTableHeaderCell>
-                    <ListTableHeaderCell>Email</ListTableHeaderCell>
-                    <ListTableHeaderCell>Phone</ListTableHeaderCell>
-                    <ListTableHeaderCell>Role</ListTableHeaderCell>
-                    <ListTableHeaderCell>Category</ListTableHeaderCell>
-                    <ListTableHeaderCell>Joined</ListTableHeaderCell>
-                    <ListTableHeaderCell>Actions</ListTableHeaderCell>
-                  </ListTableHeaderRow>
-                </ListTableHead>
-                <ListTableBody>
+              {isMobileViewport ? (
+                <div className="space-y-3 p-3">
                   {members.map((member) => (
-                    <ListTableRow
-                      key={member.id}
-                      className={getMemberRowClassName(member.is_active)}
-                      onClick={() => navigate(toRoute('adminMemberDetail', { id: member.id }))}
-                    >
-                      <ListTableCell>
-                        <Avatar
-                          size="sm"
-                          name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
-                          avatarObjectKey={member.avatar_object_key}
-                          className="mr-2"
-                        />
-                      </ListTableCell>
-                      <ListTableCell className="px-6">
-                        <p className="font-mono text-sm text-text">{member.member_id}</p>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <p className="font-medium text-text">{member.full_name}</p>
-                        {member.nickname && (
-                          <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
-                        )}
-                      </ListTableCell>
-                      <ListTableCell>
-                        <MemberStatus isActive={member.is_active} />
-                      </ListTableCell>
-                      <ListTableCell>
-                        <p className="text-sm text-text">{member.email || '—'}</p>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <p className="text-sm text-text">{member.phone || '—'}</p>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <p className="text-sm text-text">{member.role || '—'}</p>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <p className="text-sm text-text">{member.category || '—'}</p>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
-                      </ListTableCell>
-                      <ListTableCell onClick={(e) => e.stopPropagation()}>
-                        <MemberActions member={member} canWrite={canWrite} />
-                      </ListTableCell>
-                    </ListTableRow>
+                    <MobileMemberCard key={member.id} member={member} canWrite={canWrite} />
                   ))}
-                </ListTableBody>
-              </ListTable>
+                </div>
+              ) : (
+                <ListTable>
+                  <ListTableHead>
+                    <ListTableHeaderRow>
+                      <ListTableHeaderCell></ListTableHeaderCell>
+                      <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
+                      <ListTableHeaderCell>Full Name</ListTableHeaderCell>
+                      <ListTableHeaderCell>Status</ListTableHeaderCell>
+                      <ListTableHeaderCell>Email</ListTableHeaderCell>
+                      <ListTableHeaderCell>Phone</ListTableHeaderCell>
+                      <ListTableHeaderCell>Role</ListTableHeaderCell>
+                      <ListTableHeaderCell>Category</ListTableHeaderCell>
+                      <ListTableHeaderCell>Joined</ListTableHeaderCell>
+                      <ListTableHeaderCell>Actions</ListTableHeaderCell>
+                    </ListTableHeaderRow>
+                  </ListTableHead>
+                  <ListTableBody>
+                    {members.map((member) => (
+                      <ListTableRow
+                        key={member.id}
+                        className={getMemberRowClassName(member.is_active)}
+                        onClick={() => navigate(toRoute('adminMemberDetail', { id: member.id }))}
+                      >
+                        <ListTableCell>
+                          <Avatar
+                            size="sm"
+                            name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
+                            avatarObjectKey={member.avatar_object_key}
+                            className="mr-2"
+                          />
+                        </ListTableCell>
+                        <ListTableCell className="px-6">
+                          <p className="font-mono text-sm text-text">{member.member_id}</p>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="font-medium text-text">{member.full_name}</p>
+                          {member.nickname && (
+                            <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell>
+                          <MemberStatusBadge isActive={member.is_active} />
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="text-sm text-text">{member.email || '—'}</p>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="text-sm text-text">{member.phone || '—'}</p>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="text-sm text-text">{member.role || '—'}</p>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="text-sm text-text">{member.category || '—'}</p>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="text-sm text-text">{formatDateOnly(member.created_at)}</p>
+                        </ListTableCell>
+                        <ListTableCell onClick={(e) => e.stopPropagation()}>
+                          <MemberActions member={member} canWrite={canWrite} />
+                        </ListTableCell>
+                      </ListTableRow>
+                    ))}
+                  </ListTableBody>
+                </ListTable>
+              )}
 
               <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <p className="text-xs text-muted">

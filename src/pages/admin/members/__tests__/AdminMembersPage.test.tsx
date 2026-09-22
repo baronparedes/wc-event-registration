@@ -33,12 +33,26 @@ vi.mock('@/hooks/domain/auth', async () => {
   };
 });
 
+const { mockUseIsMobileViewport } = vi.hoisted(() => ({
+  mockUseIsMobileViewport: vi.fn(),
+}));
+
+vi.mock('@/hooks/utils', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/utils')>('@/hooks/utils');
+  return {
+    ...actual,
+    useIsMobileViewport: (...args: unknown[]) => mockUseIsMobileViewport(...args),
+  };
+});
+
 vi.mock('@/hooks/domain/members', async () => {
   const actual =
     await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');
   return {
     ...actual,
-    useAdminMembersQuery: (...args: unknown[]) => mockUseAdminMembersQuery(...args),
+    useAdminMembersQuery: vi
+      .fn()
+      .mockImplementation((...args: unknown[]) => mockUseAdminMembersQuery(...args)),
   };
 });
 

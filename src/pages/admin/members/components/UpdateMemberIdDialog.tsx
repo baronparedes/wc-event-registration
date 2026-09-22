@@ -12,12 +12,14 @@ interface UpdateMemberIdDialogProps {
   memberId: string;
   memberName: string;
   currentMemberId: string;
+  triggerClassName?: string;
 }
 
 export function UpdateMemberIdDialog({
   memberId,
   memberName,
   currentMemberId,
+  triggerClassName,
 }: UpdateMemberIdDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const updateMutation = useUpdateMemberIdMutation();
@@ -61,6 +63,7 @@ export function UpdateMemberIdDialog({
         onClick={handleOpen}
         title="Update Member ID"
         aria-label="Update Member ID"
+        className={triggerClassName}
       >
         <IdCardLanyard className="h-5 w-5" />
       </ActionButton>
