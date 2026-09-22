@@ -263,3 +263,7 @@ if [[ $FAILED_COUNT -eq 0 ]]; then
 else
   echo -e "${YELLOW}Deleted $DELETED_COUNT branch(es), $FAILED_COUNT failed.${NC}"
 fi
+
+echo ""
+echo -e "${CYAN}Pruning stale remote-tracking branches...${NC}"
+git fetch --prune || echo -e "${YELLOW}Warning: git fetch --prune failed (offline or remote unreachable). Skipping remote prune.${NC}"
