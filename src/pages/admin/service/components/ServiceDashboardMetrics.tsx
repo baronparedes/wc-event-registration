@@ -196,7 +196,7 @@ export function ServiceDashboardMetrics({ stats, dateFilterParams }: ServiceDash
         </div>
       </div>
 
-      {/* Secondary Exceptions: Late/Tardy & Total Walk-Ins */}
+      {/* Secondary Exceptions: Late Check-In & Total Walk-Ins */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Late Check-In */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">

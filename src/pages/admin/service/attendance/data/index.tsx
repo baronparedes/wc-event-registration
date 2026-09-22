@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { format } from 'date-fns';
-import { Loader2, RotateCcw } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { FormInputField } from '@/components/ui/FormInputField';
-import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
-import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
   ListTable,
   ListTableBody,
@@ -22,13 +16,15 @@ import {
 } from '@/components/ui/ListTable';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
 import { ServiceNavigationLinks } from '@/pages/admin/service/components/ServiceNavigationLinks';
-import {
-  SERVICE_ROLES,
-  TIME_SLOTS,
-  getNearestPreviousSunday,
-} from '@/pages/admin/service/constants';
+import { getNearestPreviousSunday } from '@/pages/admin/service/constants';
 
-import { ExportServiceAttendanceButton } from './components';
+import {
+  AttendanceDateGroupHeader,
+  AttendanceFilters,
+  AttendanceTableFooter,
+  AttendanceTableRow,
+  ExportServiceAttendanceButton,
+} from './components';
 
 export function AdminServiceAttendanceDataPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,14 +76,9 @@ export function AdminServiceAttendanceDataPage() {
 
   const handleToggleRole = (roleToToggle: string) => {
     const isSelected = selectedRoles.includes(roleToToggle);
-    let nextRoles: string[];
-
-    if (isSelected) {
-      nextRoles = selectedRoles.filter((r) => r !== roleToToggle);
-    } else {
-      nextRoles = [...selectedRoles, roleToToggle];
-    }
-
+    const nextRoles = isSelected
+      ? selectedRoles.filter((r) => r !== roleToToggle)
+      : [...selectedRoles, roleToToggle];
     updateSearchParam('role', nextRoles.join(','));
   };
 
@@ -220,6 +211,13 @@ export function AdminServiceAttendanceDataPage() {
     setSearchParams(newParams);
   };
 
+  const handleClearStartDate = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('service_start_date');
+    newParams.delete('service_end_date');
+    setSearchParams(newParams);
+  };
+
   const hasActiveFilters = Boolean(
     serviceStartDate ||
     serviceEndDate ||
@@ -269,91 +267,25 @@ export function AdminServiceAttendanceDataPage() {
       />
       <ServiceNavigationLinks />
 
-      <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] sm:items-end">
-          <FormInputField
-            type="date"
-            label="Start Date"
-            value={serviceStartDate || fallbackDate}
-            onChange={(e) => {
-              const next = e.target.value;
-              // When start date is cleared, also wipe end date
-              if (!next) {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.delete('service_start_date');
-                newParams.delete('service_end_date');
-                setSearchParams(newParams);
-              } else {
-                updateSearchParam('service_start_date', next);
-              }
-            }}
-          />
-          <FormInputField
-            type="date"
-            label="End Date"
-            value={serviceStartDate ? serviceEndDate : fallbackDate}
-            disabled={!serviceStartDate}
-            onChange={(e) => updateSearchParam('service_end_date', e.target.value)}
-          />
-          <FormSelectField
-            label="Time Slot"
-            value={timeSlot}
-            options={[
-              { label: 'All', value: '' },
-              ...TIME_SLOTS.map((ts) => ({ label: ts, value: ts })),
-            ]}
-            onChange={(val) => updateSearchParam('time_slot', val)}
-          />
-          <FormMultiSelectDropdownField
-            label="Role"
-            triggerAriaLabel="Role"
-            optionsAriaLabel="Role options"
-            selectedLabel={selectedRoleLabel}
-            options={SERVICE_ROLES.map((r) => ({ value: r, label: r }))}
-            selectedValues={selectedRoles}
-            isOpen={isRoleDropdownOpen}
-            containerRef={roleDropdownRef}
-            clearButtonLabel="All roles"
-            buttonClassName="rounded-md px-3.5 py-2.5 leading-6"
-            onToggleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
-            onCloseDropdown={() => setIsRoleDropdownOpen(false)}
-            onClearSelection={() => updateSearchParam('role', '')}
-            onToggleSelection={handleToggleRole}
-          />
-          <FormSelectField
-            label="Walk-in"
-            value={isWalkIn}
-            options={[
-              { label: 'All', value: '' },
-              { label: 'Yes', value: 'true' },
-              { label: 'No', value: 'false' },
-            ]}
-            onChange={(val) => updateSearchParam('is_walk_in', val)}
-          />
-          <FormSelectField
-            label="Late / Tardy"
-            value={isLateTardy}
-            options={[
-              { label: 'All', value: '' },
-              { label: 'Yes', value: 'true' },
-              { label: 'No', value: 'false' },
-            ]}
-            onChange={(val) => updateSearchParam('is_late_tardy', val)}
-          />
-          <div className="space-y-1.5">
-            <Button
-              type="button"
-              onClick={handleClearFilters}
-              disabled={!hasActiveFilters}
-              aria-label="Clear filters"
-              title="Clear filters"
-              className="h-[46px] w-full min-w-[50px] rounded-md p-0 sm:w-[50px]"
-            >
-              <RotateCcw className="h-5 w-5 stroke-[2.25]" />
-            </Button>
-          </div>
-        </div>
-      </AdminPageShell.Filters>
+      <AttendanceFilters
+        serviceStartDate={serviceStartDate}
+        serviceEndDate={serviceEndDate}
+        timeSlot={timeSlot}
+        isWalkIn={isWalkIn}
+        isLateTardy={isLateTardy}
+        selectedRoles={selectedRoles}
+        selectedRoleLabel={selectedRoleLabel}
+        isRoleDropdownOpen={isRoleDropdownOpen}
+        roleDropdownRef={roleDropdownRef}
+        hasActiveFilters={hasActiveFilters}
+        fallbackDate={fallbackDate}
+        onUpdateSearchParam={updateSearchParam}
+        onClearFilters={handleClearFilters}
+        onToggleRoleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
+        onCloseRoleDropdown={() => setIsRoleDropdownOpen(false)}
+        onToggleRole={handleToggleRole}
+        onClearStartDate={handleClearStartDate}
+      />
 
       <AdminPageShell.Content className="space-y-6">
         {!isLoading && (
@@ -372,9 +304,9 @@ export function AdminServiceAttendanceDataPage() {
                 <ListTableHeaderRow>
                   <ListTableHeaderCell>Name</ListTableHeaderCell>
                   <ListTableHeaderCell>RFID</ListTableHeaderCell>
+                  <ListTableHeaderCell>Role</ListTableHeaderCell>
                   <ListTableHeaderCell>Date</ListTableHeaderCell>
                   <ListTableHeaderCell>Time Slot</ListTableHeaderCell>
-                  <ListTableHeaderCell>Role</ListTableHeaderCell>
                   <ListTableHeaderCell>Status</ListTableHeaderCell>
                   <ListTableHeaderCell>Checked In</ListTableHeaderCell>
                   <ListTableHeaderCell>Table</ListTableHeaderCell>
@@ -394,124 +326,19 @@ export function AdminServiceAttendanceDataPage() {
                       0,
                     );
                     return [
-                      // Date group header row
-                      <ListTableRow key={`group-${date}`}>
-                        <ListTableCell
-                          colSpan={8}
-                          className="bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted"
-                        >
-                          {date}
-                          <span className="ml-2 font-normal normal-case tracking-normal">
-                            &mdash; {memberGroups.length}{' '}
-                            {memberGroups.length === 1 ? 'member' : 'members'}, {totalRecords}{' '}
-                            {totalRecords === 1 ? 'check-in' : 'check-ins'}
-                          </span>
-                        </ListTableCell>
-                      </ListTableRow>,
-                      // One row per member group — multi-check-ins stacked inside each cell
-                      ...memberGroups.map(({ memberKey, records }) => {
-                        const first = records[0]!;
-                        const isMulti = records.length > 1;
-                        return (
-                          <ListTableRow key={memberKey}>
-                            {/* Name — shown once, vertically centered */}
-                            <ListTableCell>
-                              <div className="flex items-center gap-3">
-                                <Avatar
-                                  name={
-                                    first.user?.full_name || first.user?.nickname || 'Volunteer'
-                                  }
-                                  avatarObjectKey={first.user?.avatar_object_key}
-                                  size="sm"
-                                  className="shrink-0"
-                                />
-                                <div className="flex flex-col min-w-0">
-                                  <span className="font-medium text-text">
-                                    {first.user?.full_name || '—'}
-                                  </span>
-                                  {first.user?.nickname && (
-                                    <span className="text-xs text-muted">
-                                      {first.user.nickname}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </ListTableCell>
-
-                            {/* RFID — shown once */}
-                            <ListTableCell className="font-mono text-xs">
-                              {first.rfid ?? '—'}
-                            </ListTableCell>
-
-                            {/* Date — same for all records in group */}
-                            <ListTableCell>{first.service_date}</ListTableCell>
-
-                            {/* Time Slot — stacked */}
-                            <ListTableCell>
-                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
-                                {records.map((r) => (
-                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
-                                    {r.time_slot}
-                                  </div>
-                                ))}
-                              </div>
-                            </ListTableCell>
-
-                            {/* Role — stacked */}
-                            <ListTableCell>
-                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
-                                {records.map((r) => (
-                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
-                                    {(r.metadata?.role as string) || '—'}
-                                  </div>
-                                ))}
-                              </div>
-                            </ListTableCell>
-
-                            {/* Status — stacked */}
-                            <ListTableCell>
-                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
-                                {records.map((r) => (
-                                  <div
-                                    key={r.id}
-                                    className="flex flex-wrap items-center gap-1.5 py-1.5 first:pt-0 last:pb-0"
-                                  >
-                                    {r.is_walk_in && <Badge variant="secondary">Walk-in</Badge>}
-                                    {r.is_override && <Badge variant="accent">Late/Tardy</Badge>}
-                                    {!r.is_walk_in && !r.is_override && (
-                                      <span className="text-xs text-muted">—</span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </ListTableCell>
-
-                            {/* Checked In — stacked */}
-                            <ListTableCell>
-                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
-                                {records.map((r) => (
-                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
-                                    {r.checked_in_at ? format(new Date(r.checked_in_at), 'p') : '—'}
-                                  </div>
-                                ))}
-                              </div>
-                            </ListTableCell>
-
-                            {/* Table — stacked */}
-                            <ListTableCell>
-                              <div className={isMulti ? 'divide-y divide-border/60' : undefined}>
-                                {records.map((r) => (
-                                  <div key={r.id} className="py-1.5 first:pt-0 last:pb-0">
-                                    {r.service_seats
-                                      ? `${r.service_seats.table_number || ''}`
-                                      : '—'}
-                                  </div>
-                                ))}
-                              </div>
-                            </ListTableCell>
-                          </ListTableRow>
-                        );
-                      }),
+                      <AttendanceDateGroupHeader
+                        key={`group-${date}`}
+                        date={date}
+                        memberCount={memberGroups.length}
+                        totalRecords={totalRecords}
+                      />,
+                      ...memberGroups.map(({ memberKey, records }) => (
+                        <AttendanceTableRow
+                          key={memberKey}
+                          memberKey={memberKey}
+                          records={records}
+                        />
+                      )),
                     ];
                   })
                 )}
@@ -519,34 +346,14 @@ export function AdminServiceAttendanceDataPage() {
             </ListTable>
           )}
 
-          {/* Infinite scroll footer */}
-          {!isLoading && filteredData.length > 0 && (
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-xs text-muted">{getCountBadgeLabel()}</p>
-              {hasNextPage && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="primaryOutline"
-                    size="sm"
-                    onClick={() => fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                  >
-                    {isFetchingNextPage ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading...
-                      </span>
-                    ) : (
-                      'Load More'
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-          {/* IntersectionObserver sentinel for auto-loading */}
-          <div ref={loadMoreRef} className="h-1" />
+          <AttendanceTableFooter
+            filteredDataLength={filteredData.length}
+            countBadgeLabel={getCountBadgeLabel()}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            loadMoreRef={loadMoreRef}
+            onLoadMore={() => fetchNextPage()}
+          />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>
