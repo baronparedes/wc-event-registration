@@ -64,13 +64,25 @@ export function MobileEventCard({
             </dd>
           </div>
           <div className="px-0 sm:px-2">
-            <dt className="text-xs text-muted">Reg. mode</dt>
+            <dt className="text-xs text-muted">Reg. Mode</dt>
             <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
               {event.registration_mode}
             </dd>
           </div>
+          <div className="px-0 sm:px-2">
+            <dt className="text-xs text-muted">Reg. Members</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
+              {event.member_registration_count}
+            </dd>
+          </div>
+          <div className="px-0 sm:px-2">
+            <dt className="text-xs text-muted">Reg. Non-Members</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
+              {event.public_registration_count}
+            </dd>
+          </div>
           <div className="col-span-2 pl-0 sm:col-span-1 sm:pl-2">
-            <dt className="text-xs text-muted">Policy</dt>
+            <dt className="text-xs text-muted">Duplicate Policy</dt>
             <dd className="mt-0.5 truncate text-sm font-medium text-text">
               <DuplicatePolicyLabel policy={event.duplicate_policy} />
             </dd>

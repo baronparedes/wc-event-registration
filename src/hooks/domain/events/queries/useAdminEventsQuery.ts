@@ -37,7 +37,9 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
     getNextPageParam: (lastPage: AdminEventsPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminEventsPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
-      let eventsQuery = supabase.from('events').select('*', { count: 'exact' });
+      let eventsQuery = supabase
+        .from('events')
+        .select('*, member_registration_count, public_registration_count', { count: 'exact' });
 
       if (searchTerm.length > 0) {
         const escapedSearchTerm = escapeOrFilterValue(searchTerm);
