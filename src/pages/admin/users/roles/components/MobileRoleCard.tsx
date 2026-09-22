@@ -1,6 +1,6 @@
 import { Edit2, LockKeyhole, ShieldCheck, Trash2 } from 'lucide-react';
 
-import { Badge, Avatar } from '@/components/ui';
+import { Avatar, Badge } from '@/components/ui';
 import type { AdminRole, AdminRoleAssignment } from '@/hooks/domain/auth';
 
 function getRoleBadgeVariant(role: AdminRole): 'secondary' | 'default' | 'outline' {
@@ -93,7 +93,7 @@ export function MobileRoleCard({ assignment, onEdit, onRevoke }: MobileRoleCardP
           <button
             type="button"
             onClick={() => onEdit(assignment)}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-bl-xl focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-bl-xl text-sm font-medium text-primary transition-colors hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
           >
             <Edit2 className="h-4 w-4" />
             Edit
@@ -101,7 +101,7 @@ export function MobileRoleCard({ assignment, onEdit, onRevoke }: MobileRoleCardP
           <button
             type="button"
             onClick={() => onRevoke(assignment)}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-destructive/5 rounded-br-xl focus:outline-none focus:ring-2 focus:ring-inset focus:ring-destructive/30"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-br-xl text-sm font-medium text-danger transition-colors hover:bg-danger/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-danger/30"
           >
             <Trash2 className="h-4 w-4" />
             Revoke
