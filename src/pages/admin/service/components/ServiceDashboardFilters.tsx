@@ -32,7 +32,7 @@ export function ServiceDashboardFilters({
 }: ServiceDashboardFiltersProps) {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
+
   const minDateStr = `${MIN_YEAR}-01-01`;
 
   // Boundary conditions
@@ -40,7 +40,7 @@ export function ServiceDashboardFilters({
   const canGoNextSunday = selectedSunday < maxSunday;
 
   const canGoPrevMonth = !(selectedYear <= MIN_YEAR && selectedMonth <= 1);
-  const canGoNextMonth = !(selectedYear >= currentYear && selectedMonth >= currentMonth);
+  const canGoNextMonth = !(selectedYear >= currentYear && selectedMonth >= 12);
 
   const canGoPrevYear = selectedYear > MIN_YEAR;
   const canGoNextYear = selectedYear < currentYear;
@@ -73,7 +73,7 @@ export function ServiceDashboardFilters({
   };
 
   const handleNextMonth = () => {
-    if (selectedYear >= currentYear && selectedMonth >= currentMonth) return;
+    if (selectedYear >= currentYear && selectedMonth >= 12) return;
     if (selectedMonth === 12) {
       onSelectedMonthChange(1);
       onSelectedYearChange(selectedYear + 1);
@@ -113,12 +113,11 @@ export function ServiceDashboardFilters({
 
   // Max month is current month for currentYear
   const monthOptions = useMemo(() => {
-    const maxMonthIndex = selectedYear === currentYear ? currentMonth : 12;
-    return MONTHS.slice(0, maxMonthIndex).map((m, i) => ({
+    return MONTHS.map((m, i) => ({
       value: (i + 1).toString(),
       label: m,
     }));
-  }, [selectedYear, currentYear, currentMonth]);
+  }, []);
 
   // Min year is 2025 up to currentYear
   const yearOptions = useMemo(() => {
@@ -224,9 +223,6 @@ export function ServiceDashboardFilters({
                   onChange={(val) => {
                     const nextYear = parseInt(val);
                     onSelectedYearChange(nextYear);
-                    if (nextYear === currentYear && selectedMonth > currentMonth) {
-                      onSelectedMonthChange(currentMonth);
-                    }
                   }}
                   options={yearOptions}
                   selectClassName="h-11"
