@@ -20,7 +20,9 @@ function RuleInput({ id, label, type, placeholder, helperText }: RuleInputProps)
         type={type}
         placeholder={placeholder}
         name={id}
-        className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className={`mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+          type === 'date' ? 'min-w-0 appearance-none' : ''
+        }`}
       />
       {helperText && <p className="mt-1 text-xs text-muted">{helperText}</p>}
     </div>

@@ -83,6 +83,8 @@ export function FormInputField(props: FormInputFieldProps) {
           {...controlledProps}
           aria-label={ariaLabel}
           className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
+            type === 'date' ? 'min-w-0 appearance-none' : ''
+          } ${
             error
               ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30 focus:shadow-lg focus:shadow-red-500/20'
               : 'border-border focus:border-primary focus:ring-primary/30 focus:shadow-lg focus:shadow-primary/20'
