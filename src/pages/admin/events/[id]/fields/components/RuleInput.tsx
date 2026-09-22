@@ -37,7 +37,7 @@ export function RuleInput({
         type={type}
         disabled={disabled}
         placeholder={placeholder}
-        className={inputClass}
+        className={`${inputClass} ${type === 'date' ? 'min-w-0 appearance-none' : ''}`}
       />
       {helperText && <p className="text-xs text-muted">{helperText}</p>}
     </div>

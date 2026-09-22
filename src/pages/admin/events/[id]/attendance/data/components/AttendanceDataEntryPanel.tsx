@@ -456,7 +456,9 @@ export function AttendanceDataEntryPanel({
                   type={htmlType}
                   {...register(field.id)}
                   required={isRequired}
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className={`w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                    htmlType === 'date' ? 'min-w-0 appearance-none' : ''
+                  }`}
                 />
               </div>
             );
