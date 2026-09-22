@@ -24,9 +24,11 @@ import {
   useAdminRolesQuery,
   useManageAdminRoleMutation,
 } from '@/hooks/domain/auth';
+import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
 
 import { AssignRoleDialog } from './components/AssignRoleDialog';
 import { EditRoleDialog } from './components/EditRoleDialog';
+import { MobileRoleCard } from './components/MobileRoleCard';
 
 function getRoleBadgeVariant(role: AdminRole): 'secondary' | 'default' | 'outline' {
   switch (role) {
@@ -48,6 +50,7 @@ function getRoleBadgeVariant(role: AdminRole): 'secondary' | 'default' | 'outlin
 export function AdminUserRolesPage() {
   const { data: assignments, isLoading, error } = useAdminRolesQuery();
   const roleMutation = useManageAdminRoleMutation();
+  const isMobileViewport = useIsMobileViewport();
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<AdminRoleAssignment | null>(null);
@@ -113,102 +116,119 @@ export function AdminUserRolesPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-surface overflow-hidden shadow-xs">
-            <ListTable>
-              <ListTableHead>
-                <ListTableHeaderRow>
-                  <ListTableHeaderCell>Name</ListTableHeaderCell>
-                  <ListTableHeaderCell>User Email & ID</ListTableHeaderCell>
-                  <ListTableHeaderCell>Assigned Role</ListTableHeaderCell>
-                  <ListTableHeaderCell>Assigned Date</ListTableHeaderCell>
-                  <ListTableHeaderCell className="text-right">Actions</ListTableHeaderCell>
-                </ListTableHeaderRow>
-              </ListTableHead>
-              <ListTableBody>
-                {assignments.map((assignment) => {
-                  const isSuperAdmin = assignment.role === 'super_admin';
-                  const formattedDate = new Date(assignment.created_at).toLocaleDateString(
-                    undefined,
-                    {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    },
-                  );
+            {isMobileViewport ? (
+              <div className="space-y-3 p-3 bg-background border-none shadow-none">
+                {assignments.map((assignment) => (
+                  <MobileRoleCard
+                    key={assignment.id}
+                    assignment={assignment}
+                    onEdit={setEditingAssignment}
+                    onRevoke={setRevokingAssignment}
+                  />
+                ))}
+              </div>
+            ) : (
+              <ListTable>
+                <ListTableHead>
+                  <ListTableHeaderRow>
+                    <ListTableHeaderCell>Name</ListTableHeaderCell>
+                    <ListTableHeaderCell>User Email & ID</ListTableHeaderCell>
+                    <ListTableHeaderCell>Assigned Role</ListTableHeaderCell>
+                    <ListTableHeaderCell>Assigned Date</ListTableHeaderCell>
+                    <ListTableHeaderCell className="text-right">Actions</ListTableHeaderCell>
+                  </ListTableHeaderRow>
+                </ListTableHead>
+                <ListTableBody>
+                  {assignments.map((assignment) => {
+                    const isSuperAdmin = assignment.role === 'super_admin';
+                    const formattedDate = new Date(assignment.created_at).toLocaleDateString(
+                      undefined,
+                      {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      },
+                    );
 
-                  return (
-                    <ListTableRow key={assignment.id}>
-                      <ListTableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            name={assignment.name}
-                            avatarObjectKey={assignment.avatar_object_key}
-                            size="sm"
-                            className="h-8 w-8 text-xs"
-                          />
-                          <span className="font-medium text-text">{assignment.name}</span>
-                        </div>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <div className="min-w-0">
-                          <p className="flex items-center gap-1.5 truncate font-medium text-text">
-                            {assignment.email}
-                            {assignment.has_member_profile && (
-                              <span title="Verified Member Profile">
-                                <ShieldCheck
-                                  className="h-4 w-4 text-primary shrink-0"
-                                  aria-label="Verified Member Profile"
-                                />
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-muted font-mono">{assignment.auth_user_id}</p>
-                        </div>
-                      </ListTableCell>
-                      <ListTableCell>
-                        <Badge variant={getRoleBadgeVariant(assignment.role)}>
-                          <span className="uppercase tracking-wider font-semibold">
-                            {assignment.role}
-                          </span>
-                        </Badge>
-                      </ListTableCell>
-                      <ListTableCell className="text-xs text-muted">{formattedDate}</ListTableCell>
-                      <ListTableCell className="text-right">
-                        {isSuperAdmin ? (
-                          <span
-                            className="inline-flex items-center justify-end text-muted"
-                            aria-label="Protected"
-                            title="Protected"
-                          >
-                            <LockKeyhole className="h-5 w-5" aria-hidden="true" />
-                            <span className="sr-only">Protected</span>
-                          </span>
-                        ) : (
-                          <div className="flex items-center justify-end gap-3">
-                            <ActionButton
-                              type="button"
-                              aria-label={`Edit role for ${assignment.email}`}
-                              title="Edit role"
-                              onClick={() => setEditingAssignment(assignment)}
-                            >
-                              <Edit2 className="h-5 w-5" aria-hidden="true" />
-                            </ActionButton>
-                            <ActionButton
-                              type="button"
-                              variant="destructive"
-                              aria-label={`Revoke role for ${assignment.email}`}
-                              title="Revoke role"
-                              onClick={() => setRevokingAssignment(assignment)}
-                            >
-                              <Trash2 className="h-5 w-5" aria-hidden="true" />
-                            </ActionButton>
+                    return (
+                      <ListTableRow key={assignment.id}>
+                        <ListTableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar
+                              name={assignment.name}
+                              avatarObjectKey={assignment.avatar_object_key}
+                              size="sm"
+                              className="h-8 w-8 text-xs"
+                            />
+                            <span className="font-medium text-text">{assignment.name}</span>
                           </div>
-                        )}
-                      </ListTableCell>
-                    </ListTableRow>
-                  );
-                })}
-              </ListTableBody>
-            </ListTable>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <div className="min-w-0">
+                            <p className="flex items-center gap-1.5 truncate font-medium text-text">
+                              {assignment.email}
+                              {assignment.has_member_profile && (
+                                <span title="Verified Member Profile">
+                                  <ShieldCheck
+                                    className="h-4 w-4 text-primary shrink-0"
+                                    aria-label="Verified Member Profile"
+                                  />
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted font-mono">
+                              {assignment.auth_user_id}
+                            </p>
+                          </div>
+                        </ListTableCell>
+                        <ListTableCell>
+                          <Badge variant={getRoleBadgeVariant(assignment.role)}>
+                            <span className="uppercase tracking-wider font-semibold">
+                              {assignment.role}
+                            </span>
+                          </Badge>
+                        </ListTableCell>
+                        <ListTableCell className="text-xs text-muted">
+                          {formattedDate}
+                        </ListTableCell>
+                        <ListTableCell className="text-right">
+                          {isSuperAdmin ? (
+                            <span
+                              className="inline-flex items-center justify-end text-muted"
+                              aria-label="Protected"
+                              title="Protected"
+                            >
+                              <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+                              <span className="sr-only">Protected</span>
+                            </span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-3">
+                              <ActionButton
+                                type="button"
+                                aria-label={`Edit role for ${assignment.email}`}
+                                title="Edit role"
+                                onClick={() => setEditingAssignment(assignment)}
+                              >
+                                <Edit2 className="h-5 w-5" aria-hidden="true" />
+                              </ActionButton>
+                              <ActionButton
+                                type="button"
+                                variant="destructive"
+                                aria-label={`Revoke role for ${assignment.email}`}
+                                title="Revoke role"
+                                onClick={() => setRevokingAssignment(assignment)}
+                              >
+                                <Trash2 className="h-5 w-5" aria-hidden="true" />
+                              </ActionButton>
+                            </div>
+                          )}
+                        </ListTableCell>
+                      </ListTableRow>
+                    );
+                  })}
+                </ListTableBody>
+              </ListTable>
+            )}
           </div>
         )}
       </AdminPageShell.Content>
