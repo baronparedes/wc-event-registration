@@ -42,6 +42,9 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
               {member.nickname && (
                 <p className="truncate text-xs text-muted">({member.nickname})</p>
               )}
+              <p className="truncate text-xs text-muted pt-2">
+                {member.role} • {member.category}
+              </p>
             </div>
           </div>
           <MemberStatusBadge isActive={member.is_active} />
@@ -53,65 +56,43 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
             <dd className="mt-0.5 truncate text-sm font-medium text-text">{member.email || '—'}</dd>
           </div>
           <div className="pr-0 sm:pr-2">
+            <dt className="text-xs text-muted">Contact Number</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium text-text">{member.phone || '—'}</dd>
+          </div>
+          <div className="pr-0 sm:pr-2">
             <dt className="text-xs text-muted">Member ID</dt>
             <dd className="mt-0.5 truncate font-mono text-sm font-medium text-text">
               {member.member_id}
             </dd>
           </div>
-          <div className="px-0 sm:px-2">
-            <dt className="text-xs text-muted">Role</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium text-text">{member.role || '—'}</dd>
-          </div>
         </dl>
       </div>
 
-      <div className="flex divide-x divide-border rounded-b-xl border-t border-border bg-surface">
+      <div
+        className={`flex divide-x divide-border border-t border-border bg-surface ${
+          canWrite ? 'rounded-b-xl' : 'rounded-b-lg'
+        }`}
+      >
         <ActionLink
           to={toRoute('adminMemberDetail', { id: member.id })}
           title={actionLabel}
           aria-label={actionLabel}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-2 text-sm font-medium no-underline shadow-sm hover:shadow-md ${
-            canEdit
-              ? 'rounded-bl-xl bg-primary text-white hover:bg-primary/90'
-              : 'rounded-b-xl text-primary hover:bg-primary/10'
+          className={`flex min-h-11 flex-1 items-center justify-center gap-2 text-sm font-medium text-primary no-underline bg-primary text-white ${
+            canEdit ? 'rounded-bl-xl' : canWrite ? 'rounded-b-xl' : 'rounded-b-lg'
           }`}
         >
           {canEdit ? <Edit className="h-4 w-4" /> : <User className="h-4 w-4" />}
           {actionLabel}
         </ActionLink>
         {canEdit && (
-          <div className="flex flex-1 items-center justify-center">
-            <UpdateMemberIdMobileAction
-              memberId={member.id}
-              memberName={member.full_name}
-              currentMemberId={member.member_id}
-            />
-          </div>
+          <UpdateMemberIdDialog
+            memberId={member.id}
+            memberName={member.full_name}
+            currentMemberId={member.member_id}
+            triggerClassName="flex min-h-11 w-12 items-center justify-center text-primary hover:bg-primary/10 rounded-br-xl focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+          />
         )}
       </div>
     </article>
-  );
-}
-
-// We need a custom wrapper for UpdateMemberIdDialog to match the "flex-1" mobile action look.
-// UpdateMemberIdDialog currently renders an ActionButton with an IdCardLanyard icon.
-// On mobile we want the whole right side to be clickable or at least look like a button.
-function UpdateMemberIdMobileAction({
-  memberId,
-  memberName,
-  currentMemberId,
-}: {
-  memberId: string;
-  memberName: string;
-  currentMemberId: string;
-}) {
-  return (
-    <div className="flex w-full items-center justify-center py-2.5">
-      <UpdateMemberIdDialog
-        memberId={memberId}
-        memberName={memberName}
-        currentMemberId={currentMemberId}
-      />
-    </div>
   );
 }
