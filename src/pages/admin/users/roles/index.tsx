@@ -80,7 +80,7 @@ export function AdminUserRolesPage() {
             variant="default"
             size="sm"
             onClick={() => setIsAssignDialogOpen(true)}
-            className="gap-1.5"
+            className="w-full sm:w-auto sm:inline-flex"
           >
             <UserPlus className="h-4 w-4" />
             <span>Assign Role to User</span>

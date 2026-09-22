@@ -198,21 +198,20 @@ export function AdminMembersPage() {
         description={getHeaderDescription(canWrite)}
         actions={
           <>
-            <div className="flex items-center gap-2">
-              {canWrite && (
-                <>
-                  <Button
-                    type="button"
-                    variant="primaryOutline"
-                    onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload CSV
-                  </Button>
-                  <AddMemberDialog />
-                </>
-              )}
-            </div>
+            {canWrite && (
+              <>
+                <Button
+                  className="w-full sm:w-auto sm:inline-flex"
+                  type="button"
+                  variant="primaryOutline"
+                  onClick={() => navigate(ROUTE_PATHS.adminMembersImport)}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload CSV
+                </Button>
+                <AddMemberDialog className="w-full sm:w-auto sm:inline-flex" />
+              </>
+            )}
           </>
         }
       />

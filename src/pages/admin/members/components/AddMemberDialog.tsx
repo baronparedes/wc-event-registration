@@ -23,7 +23,7 @@ const DEFAULT_VALUES: CreateMemberInput = {
   category: '',
 };
 
-export function AddMemberDialog() {
+export function AddMemberDialog({ className }: { className?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const createMemberMutation = useCreateMemberMutation();
   const formRef = useRef<HTMLFormElement>(null);
@@ -67,7 +67,11 @@ export function AddMemberDialog() {
 
   return (
     <>
-      <Button type="button" onClick={() => setIsOpen(true)} className="whitespace-nowrap">
+      <Button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className={`whitespace-nowrap ${className}`}
+      >
         <Plus className="h-5 w-5" />
         <span className="sm:hidden">Add</span>
         <span className="hidden sm:inline">Add Member</span>

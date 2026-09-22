@@ -67,19 +67,23 @@ export function AdminServicesPage() {
         description="Monitor service attendance and volunteer turn-up statistics."
         breadcrumbs={[{ label: 'Services' }]}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <>
             <Button
+              className="w-full sm:w-auto sm:inline-flex"
               variant="primaryOutline"
               onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
             >
               <Upload className="mr-2 h-4 w-4" />
               Upload CSV
             </Button>
-            <Button onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceData)}>
+            <Button
+              className="w-full sm:w-auto sm:inline-flex"
+              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceData)}
+            >
               <Table className="mr-2 h-4 w-4" />
               Attendance Data
             </Button>
-          </div>
+          </>
         }
       />
       <AdminBaseNavigation />
