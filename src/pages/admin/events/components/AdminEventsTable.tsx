@@ -45,6 +45,7 @@ export function AdminEventsTable({
             <ListTableHeaderCell>Duplicate Policy</ListTableHeaderCell>
             <ListTableHeaderCell>Reg. Mode</ListTableHeaderCell>
             <ListTableHeaderCell>Starts</ListTableHeaderCell>
+            <ListTableHeaderCell>Registrations</ListTableHeaderCell>
             <ListTableHeaderCell>Actions</ListTableHeaderCell>
           </ListTableHeaderRow>
         </ListTableHead>
@@ -73,6 +74,22 @@ export function AdminEventsTable({
               </ListTableCell>
               <ListTableCell>
                 <span className="text-sm text-text">{formatDateOnly(event.starts_at)}</span>
+              </ListTableCell>
+              <ListTableCell>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-muted">
+                    Members:{' '}
+                    <span className="font-medium text-text">
+                      {event.member_registration_count ?? 0}
+                    </span>
+                  </span>
+                  <span className="text-xs text-muted">
+                    Public:{' '}
+                    <span className="font-medium text-text">
+                      {event.public_registration_count ?? 0}
+                    </span>
+                  </span>
+                </div>
               </ListTableCell>
               <ListTableCell onClick={(eventClick) => eventClick.stopPropagation()}>
                 <div className="flex items-center gap-3">

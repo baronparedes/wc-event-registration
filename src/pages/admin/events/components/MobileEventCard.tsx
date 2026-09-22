@@ -76,6 +76,22 @@ export function MobileEventCard({
             </dd>
           </div>
         </dl>
+
+        <div className="flex items-center gap-4 rounded-lg bg-surface/50 p-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted">Members</span>
+            <span className="text-sm font-semibold text-text">
+              {event.member_registration_count ?? 0}
+            </span>
+          </div>
+          <div className="h-3.5 w-px bg-border"></div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted">Public</span>
+            <span className="text-sm font-semibold text-text">
+              {event.public_registration_count ?? 0}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div
