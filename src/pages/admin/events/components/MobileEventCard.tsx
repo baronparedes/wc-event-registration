@@ -64,34 +64,30 @@ export function MobileEventCard({
             </dd>
           </div>
           <div className="px-0 sm:px-2">
-            <dt className="text-xs text-muted">Reg. mode</dt>
+            <dt className="text-xs text-muted">Reg. Mode</dt>
             <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
               {event.registration_mode}
             </dd>
           </div>
+          <div className="px-0 sm:px-2">
+            <dt className="text-xs text-muted">Reg. Members</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
+              {event.member_registration_count}
+            </dd>
+          </div>
+          <div className="px-0 sm:px-2">
+            <dt className="text-xs text-muted">Reg. Non-Members</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
+              {event.public_registration_count}
+            </dd>
+          </div>
           <div className="col-span-2 pl-0 sm:col-span-1 sm:pl-2">
-            <dt className="text-xs text-muted">Policy</dt>
+            <dt className="text-xs text-muted">Duplicate Policy</dt>
             <dd className="mt-0.5 truncate text-sm font-medium text-text">
               <DuplicatePolicyLabel policy={event.duplicate_policy} />
             </dd>
           </div>
         </dl>
-
-        <div className="flex items-center gap-4 rounded-lg bg-surface/50 p-2.5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted">Members</span>
-            <span className="text-sm font-semibold text-text">
-              {event.member_registration_count ?? 0}
-            </span>
-          </div>
-          <div className="h-3.5 w-px bg-border"></div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted">Public</span>
-            <span className="text-sm font-semibold text-text">
-              {event.public_registration_count ?? 0}
-            </span>
-          </div>
-        </div>
       </div>
 
       <div

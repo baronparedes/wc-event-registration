@@ -52,9 +52,11 @@ describe('MobileEventCard', () => {
     expect(document.querySelector('svg.lucide-map-pin')).toBeInTheDocument();
     expect(screen.getByText('Published')).toBeInTheDocument();
     expect(screen.getByText('Starts')).toBeInTheDocument();
-    expect(screen.getByText('Reg. mode')).toBeInTheDocument();
+    expect(screen.getByText('Reg. Members')).toBeInTheDocument();
+    expect(screen.getByText('Reg. Non-Members')).toBeInTheDocument();
+    expect(screen.getByText('Reg. Mode')).toBeInTheDocument();
     expect(screen.getByText('open')).toBeInTheDocument();
-    expect(screen.getByText('Policy')).toBeInTheDocument();
+    expect(screen.getByText('Duplicate Policy')).toBeInTheDocument();
     expect(screen.getByText('Allow Update')).toBeInTheDocument();
   });
 

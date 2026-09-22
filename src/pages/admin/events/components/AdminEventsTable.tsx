@@ -79,13 +79,13 @@ export function AdminEventsTable({
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xs text-muted">
                     Members:{' '}
-                    <span className="font-medium text-text">
+                    <span className="font-medium text-text text-sm">
                       {event.member_registration_count ?? 0}
                     </span>
                   </span>
                   <span className="text-xs text-muted">
                     Public:{' '}
-                    <span className="font-medium text-text">
+                    <span className="font-medium text-text text-sm">
                       {event.public_registration_count ?? 0}
                     </span>
                   </span>
