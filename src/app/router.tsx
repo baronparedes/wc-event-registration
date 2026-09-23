@@ -43,6 +43,11 @@ const EventRegistrationPage = lazy(() =>
     default: module.EventRegistrationPage,
   })),
 );
+const EventCountdownPage = lazy(() =>
+  import('../pages/events/[slug]/countdown').then((module) => ({
+    default: module.EventCountdownPage,
+  })),
+);
 const PublicEventRegistrationPage = lazy(() =>
   import('../pages/events/[slug]/register-public').then((module) => ({
     default: module.PublicEventRegistrationPage,
@@ -261,6 +266,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   termsOfService: TermsOfServicePage,
   eventRegister: EventRegistrationPage,
   eventPublicRegister: PublicEventRegistrationPage,
+  eventCountdown: EventCountdownPage,
   login: LoginPage,
   profile: ProfilePage,
   adminUserRoles: AdminUserRolesPage,
