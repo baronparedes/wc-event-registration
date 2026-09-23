@@ -1,6 +1,0 @@
-<<<<<<< SEARCH
-import { FormInputField, FormSelectField } from '@/components/ui';
-=======
-import { FormInputField } from '@/components/ui/FormInputField';
-import { FormSelectField } from '@/components/ui/FormSelectField';
->>>>>>> REPLACE

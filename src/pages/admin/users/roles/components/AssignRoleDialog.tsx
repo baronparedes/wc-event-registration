@@ -24,6 +24,9 @@ import {
   useAuthUsersQuery,
   useManageAdminRoleMutation,
 } from '@/hooks/domain/auth';
+import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
+
+import { MobileAuthUserCard } from './MobileAuthUserCard';
 
 type AssignRoleDialogProps = {
   isOpen: boolean;
@@ -46,6 +49,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
 
   const { data: authUsers, isLoading: isSearching } = useAuthUsersQuery(searchTerm, isOpen);
   const roleMutation = useManageAdminRoleMutation();
+  const isMobileViewport = useIsMobileViewport();
 
   const FILTER_OPTIONS = [
     { value: 'all', label: 'All Profiles' },
@@ -138,6 +142,23 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
                 ? 'No matching auth users found.'
                 : 'Type to search auth users...'}
             </p>
+          ) : isMobileViewport ? (
+            <div className="space-y-3 p-3 bg-background border-none shadow-none">
+              {filteredAuthUsers.map((user) => {
+                const isAssigned = assignedAuthUserIds.has(user.id);
+                const isSelected = selectedUser?.id === user.id;
+
+                return (
+                  <MobileAuthUserCard
+                    key={user.id}
+                    user={user}
+                    isAssigned={isAssigned}
+                    isSelected={isSelected}
+                    onSelect={setSelectedUser}
+                  />
+                );
+              })}
+            </div>
           ) : (
             <ListTable density="dense">
               <ListTableHead>

@@ -53,7 +53,9 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 py-2.5">
           <div className="col-span-2">
             <dt className="text-xs text-muted">Email</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium text-text">{member.email || '—'}</dd>
+            <dd className="mt-0.5 break-all text-sm font-medium text-text">
+              {member.email || '—'}
+            </dd>
           </div>
           <div className="pr-0 sm:pr-2">
             <dt className="text-xs text-muted">Contact Number</dt>
