@@ -172,8 +172,7 @@ export function EventCountdownPage() {
 
         <div className="mt-12 flex justify-center">
           <Button
-            variant="outline"
-            onClick={() => navigate(toRoute('eventPublicRegister', { slug: event.slug }))}
+            onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}
           >
             Go to Registration Page
           </Button>
