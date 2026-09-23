@@ -597,32 +597,57 @@ describe('event-fields transforms', () => {
     });
   });
 
-  it('normalizes dynamic answer payloads into preview records', () => {
-    const fields = [
-      makePublicField({ id: 'f1', field_key: 'team_name', field_type: 'text' }),
-      makePublicField({ id: 'f2', field_key: 'accept_terms', field_type: 'checkbox' }),
-    ];
+  describe('normalizeDynamicFieldAnswersForPreview', () => {
+    it('normalizes dynamic answer payloads into preview records', () => {
+      const fields = [
+        makePublicField({ id: 'f1', field_key: 'team_name', field_type: 'text' }),
+        makePublicField({ id: 'f2', field_key: 'accept_terms', field_type: 'checkbox' }),
+      ];
 
-    const preview = normalizeDynamicFieldAnswersForPreview(fields, {
-      team_name: 'Falcons',
-      accept_terms: true,
-      unrelated: 'ignored',
+      const preview = normalizeDynamicFieldAnswersForPreview(fields, {
+        team_name: 'Falcons',
+        accept_terms: true,
+        unrelated: 'ignored',
+      });
+
+      expect(preview).toEqual([
+        {
+          event_field_id: 'f1',
+          field_key: 'team_name',
+          field_type: 'text',
+          value: 'Falcons',
+        },
+        {
+          event_field_id: 'f2',
+          field_key: 'accept_terms',
+          field_type: 'checkbox',
+          value: true,
+        },
+      ]);
     });
 
-    expect(preview).toEqual([
-      {
-        event_field_id: 'f1',
-        field_key: 'team_name',
-        field_type: 'text',
-        value: 'Falcons',
-      },
-      {
-        event_field_id: 'f2',
-        field_key: 'accept_terms',
-        field_type: 'checkbox',
-        value: true,
-      },
-    ]);
+    it('returns an empty array when fields is empty', () => {
+      const preview = normalizeDynamicFieldAnswersForPreview([], {
+        team_name: 'Falcons',
+      });
+
+      expect(preview).toEqual([]);
+    });
+
+    it('handles missing values in the payload by assigning undefined', () => {
+      const fields = [makePublicField({ id: 'f1', field_key: 'team_name', field_type: 'text' })];
+
+      const preview = normalizeDynamicFieldAnswersForPreview(fields, {});
+
+      expect(preview).toEqual([
+        {
+          event_field_id: 'f1',
+          field_key: 'team_name',
+          field_type: 'text',
+          value: undefined,
+        },
+      ]);
+    });
   });
 
   it('maps unique_key_component and visibility_rule in fieldToFormValues and toValidationRules', () => {
