@@ -146,6 +146,54 @@ describe('formatRegistrationShareText', () => {
     expect(output).toContain('Updated At:');
     expect(output).toContain('2026');
   });
+
+  it('handles null or undefined static fields gracefully', () => {
+    const output = formatRegistrationShareText({
+      rows: [
+        makeRegistrationSharePayloadRow({
+          full_name: 'Fiona',
+          email: null as unknown as string,
+          phone: undefined as unknown as string,
+        }),
+      ],
+      selectedFields: ['full_name', 'email', 'phone'],
+      includeHeader: false,
+    });
+
+    expect(output).toBe('1. Fiona');
+  });
+
+  it('handles invalid date strings by returning the raw value', () => {
+    const output = formatRegistrationShareText({
+      rows: [
+        makeRegistrationSharePayloadRow({
+          full_name: 'George',
+          submitted_at: 'not-a-valid-date',
+        }),
+      ],
+      selectedFields: ['full_name', 'submitted_at'],
+      includeHeader: false,
+    });
+
+    expect(output).toContain('1. George | Submitted At: not-a-valid-date');
+  });
+
+  it('handles missing answer values for selected answer fields', () => {
+    const output = formatRegistrationShareText({
+      rows: [
+        makeRegistrationSharePayloadRow({
+          full_name: 'Hannah',
+          answer_values: {},
+        }),
+      ],
+      selectedFields: ['full_name'],
+      selectedAnswerFieldIds: ['missing-field'],
+      answerFields: [{ field_id: 'missing-field', label: 'Missing' }],
+      includeHeader: false,
+    });
+
+    expect(output).toBe('1. Hannah');
+  });
 });
 
 describe('formatRegistrationShareFieldValue', () => {
