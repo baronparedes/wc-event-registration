@@ -50,7 +50,7 @@ export function MobileRoleCard({ assignment, onEdit, onRevoke }: MobileRoleCardP
                 {assignment.name}
               </h2>
               <div className="flex items-center gap-1.5 pt-1">
-                <p className="truncate text-sm font-medium text-text">{assignment.email}</p>
+                <p className="break-all text-sm font-medium text-text">{assignment.email}</p>
                 {assignment.has_member_profile && (
                   <span title="Verified Member Profile">
                     <ShieldCheck
