@@ -656,21 +656,65 @@ describe('event-fields transforms', () => {
     });
   });
 
-  it('creates dynamic defaults by field type', () => {
-    const defaults = createDynamicFieldDefaultValues([
-      makePublicField({ field_key: 'accept_terms', field_type: 'checkbox' }),
-      makePublicField({ field_key: 'is_active', field_type: 'boolean' }),
-      makePublicField({ field_key: 'positions', field_type: 'multi_select' }),
-      makePublicField({ field_key: 'meal_slots', field_type: 'multi_select_toggle' }),
-      makePublicField({ field_key: 'nickname', field_type: 'text' }),
-    ]);
+  describe('createDynamicFieldDefaultValues', () => {
+    it('returns an empty object when provided an empty array of fields', () => {
+      expect(createDynamicFieldDefaultValues([])).toEqual({});
+    });
 
-    expect(defaults).toEqual({
-      accept_terms: false,
-      is_active: false,
-      positions: [],
-      meal_slots: {},
-      nickname: '',
+    it('maps checkbox and boolean types to false', () => {
+      const defaults = createDynamicFieldDefaultValues([
+        makePublicField({ field_key: 'accept_terms', field_type: 'checkbox' }),
+        makePublicField({ field_key: 'is_active', field_type: 'boolean' }),
+      ]);
+      expect(defaults).toEqual({
+        accept_terms: false,
+        is_active: false,
+      });
+    });
+
+    it('maps multi_select type to an empty array', () => {
+      const defaults = createDynamicFieldDefaultValues([
+        makePublicField({ field_key: 'positions', field_type: 'multi_select' }),
+      ]);
+      expect(defaults).toEqual({
+        positions: [],
+      });
+    });
+
+    it('maps multi_select_toggle type to an empty object', () => {
+      const defaults = createDynamicFieldDefaultValues([
+        makePublicField({ field_key: 'meal_slots', field_type: 'multi_select_toggle' }),
+      ]);
+      expect(defaults).toEqual({
+        meal_slots: {},
+      });
+    });
+
+    it('maps all other field types to an empty string', () => {
+      const defaults = createDynamicFieldDefaultValues([
+        makePublicField({ field_key: 'f_text', field_type: 'text' }),
+        makePublicField({ field_key: 'f_textarea', field_type: 'textarea' }),
+        makePublicField({ field_key: 'f_number', field_type: 'number' }),
+        makePublicField({ field_key: 'f_email', field_type: 'email' }),
+        makePublicField({ field_key: 'f_phone', field_type: 'phone' }),
+        makePublicField({ field_key: 'f_select', field_type: 'select' }),
+        makePublicField({ field_key: 'f_radio', field_type: 'radio' }),
+        makePublicField({ field_key: 'f_date', field_type: 'date' }),
+        makePublicField({ field_key: 'f_datetime', field_type: 'datetime' }),
+        makePublicField({ field_key: 'f_color', field_type: 'color_picker' }),
+      ]);
+      expect(defaults).toEqual({
+        f_text: '',
+        f_textarea: '',
+        f_number: '',
+        f_email: '',
+        f_phone: '',
+        f_select: '',
+        f_radio: '',
+        f_date: '',
+        f_datetime: '',
+        f_color: '',
+      });
     });
   });
 });
