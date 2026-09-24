@@ -233,3 +233,41 @@ describe('formatRegistrationShareFieldValue', () => {
     expect(formatRegistrationShareFieldValue('submitted_at', ' Not a date ')).toBe('Not a date');
   });
 });
+
+describe('formatRegistrationShareFieldValue', () => {
+  it('returns empty string for null, undefined, or empty/whitespace values', () => {
+    expect(formatRegistrationShareFieldValue('full_name', null)).toBe('');
+    expect(formatRegistrationShareFieldValue('full_name', undefined)).toBe('');
+    expect(formatRegistrationShareFieldValue('full_name', '')).toBe('');
+    expect(formatRegistrationShareFieldValue('full_name', '   ')).toBe('');
+  });
+
+  it('returns trimmed string for generic fields', () => {
+    expect(formatRegistrationShareFieldValue('full_name', ' John Doe ')).toBe('John Doe');
+    expect(formatRegistrationShareFieldValue('email', ' test@example.com ')).toBe(
+      'test@example.com',
+    );
+  });
+
+  it('formats registration_status properly', () => {
+    expect(formatRegistrationShareFieldValue('registration_status', 'submitted')).toBe('Submitted');
+    expect(formatRegistrationShareFieldValue('registration_status', 'submitted_and_updated')).toBe(
+      'Submitted And Updated',
+    );
+  });
+
+  it('formats valid date strings for submitted_at and updated_at', () => {
+    // 2026-07-12T03:30:00.000Z is 11:30 AM in Asia/Manila (UTC+8)
+    const validDateStr = '2026-07-12T03:30:00.000Z';
+    expect(formatRegistrationShareFieldValue('submitted_at', validDateStr)).toMatch(
+      /Jul 12, 2026, 11:30\sAM/,
+    );
+    expect(formatRegistrationShareFieldValue('updated_at', validDateStr)).toMatch(
+      /Jul 12, 2026, 11:30\sAM/,
+    );
+  });
+
+  it('returns trimmed original string for invalid date formats', () => {
+    expect(formatRegistrationShareFieldValue('submitted_at', ' Not a date ')).toBe('Not a date');
+  });
+});
