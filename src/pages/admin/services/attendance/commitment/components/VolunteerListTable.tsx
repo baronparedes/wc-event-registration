@@ -366,7 +366,12 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
               <ListTableRow key={stat.user_id} className="group">
                 <ListTableCell className="sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors">
                   <div className="flex items-center gap-3">
-                    <Avatar name={stat.full_name} size="sm" className="h-8 w-8 text-xs shrink-0" />
+                    <Avatar
+                      name={stat.full_name}
+                      avatarObjectKey={stat.avatar_object_key}
+                      size="sm"
+                      className="h-8 w-8 text-xs shrink-0"
+                    />
                     <div className="min-w-0">
                       <div className="font-heading font-semibold text-text truncate">
                         {stat.full_name}

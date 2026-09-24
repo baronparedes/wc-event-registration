@@ -49,6 +49,7 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
             {
               user_id: '1',
               member_id: 'MEM-001',
+              avatar_object_key: null,
               full_name: 'John Doe',
               nickname: 'Johnny',
               email: 'john@example.com',

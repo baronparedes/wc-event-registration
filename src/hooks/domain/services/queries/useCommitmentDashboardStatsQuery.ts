@@ -15,6 +15,7 @@ export interface CommitmentDashboardFilters {
 export interface CommitmentDashboardStat {
   user_id: string;
   member_id: string;
+  avatar_object_key: string | null;
   full_name: string;
   nickname: string;
   email: string;
@@ -76,6 +77,7 @@ export function useCommitmentDashboardStatsQuery(
       const items: CommitmentDashboardStat[] = rawItems.map((item) => ({
         user_id: item.user_id as string,
         member_id: item.member_id as string,
+        avatar_object_key: (item.avatar_object_key as string) ?? null,
         full_name: item.full_name as string,
         nickname: item.nickname as string,
         email: item.email as string,

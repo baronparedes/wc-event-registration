@@ -30,6 +30,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
       {
         user_id: 'u-1',
         member_id: 'MEM-001',
+        avatar_object_key: 'avatars/jane.jpg',
         full_name: 'Jane Doe',
         nickname: 'JD',
         email: 'jane@example.com',
@@ -81,6 +82,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
       {
         user_id: 'u-1',
         member_id: 'MEM-001',
+        avatar_object_key: 'avatars/jane.jpg',
         full_name: 'Jane Doe',
         nickname: 'JD',
         email: 'jane@example.com',

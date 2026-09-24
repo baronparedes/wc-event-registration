@@ -10,6 +10,7 @@ describe('CommitmentSummaryCards', () => {
     {
       user_id: '1',
       member_id: 'MEM-001',
+      avatar_object_key: null,
       full_name: 'Alice',
       nickname: 'Ali',
       email: 'alice@example.com',
@@ -27,6 +28,7 @@ describe('CommitmentSummaryCards', () => {
     {
       user_id: '2',
       member_id: 'MEM-002',
+      avatar_object_key: null,
       full_name: 'Bob',
       nickname: 'Bobby',
       email: 'bob@example.com',

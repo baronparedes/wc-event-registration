@@ -6,7 +6,11 @@ import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { VolunteerListTable } from '../VolunteerListTable';
 
 vi.mock('@/components/ui/Avatar', () => ({
-  Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
+  Avatar: ({ name, avatarObjectKey }: { name: string; avatarObjectKey?: string | null }) => (
+    <div data-testid="avatar" data-avatar-key={avatarObjectKey ?? ''}>
+      {name}
+    </div>
+  ),
 }));
 
 describe('VolunteerListTable', () => {
@@ -14,6 +18,7 @@ describe('VolunteerListTable', () => {
     {
       user_id: '1',
       member_id: 'MEM-001',
+      avatar_object_key: 'avatars/alice.jpg',
       full_name: 'Alice Smith',
       nickname: 'Ali',
       email: 'alice@example.com',
@@ -31,6 +36,7 @@ describe('VolunteerListTable', () => {
     {
       user_id: '2',
       member_id: 'MEM-002',
+      avatar_object_key: null,
       full_name: 'Bob Jones',
       nickname: 'Bobby',
       email: 'bob@example.com',
@@ -48,6 +54,7 @@ describe('VolunteerListTable', () => {
     {
       user_id: '3',
       member_id: 'MEM-003',
+      avatar_object_key: null,
       full_name: 'Charlie Brown',
       nickname: 'Chuck',
       email: 'charlie@example.com',
@@ -304,6 +311,7 @@ describe('VolunteerListTable', () => {
       {
         user_id: '4',
         member_id: 'MEM-004',
+        avatar_object_key: null,
         full_name: 'Daniel Defoe',
         nickname: '',
         email: 'daniel@example.com',
@@ -324,6 +332,15 @@ describe('VolunteerListTable', () => {
 
     expect(screen.getAllByText('Daniel Defoe').length).toBeGreaterThan(0);
     expect(screen.getAllByText('-').length).toBeGreaterThan(0);
+  });
+
+  it('passes avatar_object_key to Avatar component', () => {
+    render(<VolunteerListTable {...defaultProps} />);
+
+    const avatars = screen.getAllByTestId('avatar');
+    // The first rendered row sorted by score is Bob (null), then Alice ('avatars/alice.jpg'), then Charlie (null)
+    const aliceAvatar = avatars.find((el) => el.textContent === 'Alice Smith');
+    expect(aliceAvatar).toHaveAttribute('data-avatar-key', 'avatars/alice.jpg');
   });
 
   it('triggers category filter change', () => {

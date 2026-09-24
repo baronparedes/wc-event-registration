@@ -76,6 +76,7 @@ or replace function public.get_commitment_dashboard_stats (
 ) returns table (
   user_id uuid,
   member_id text,
+  avatar_object_key text,
   full_name text,
   nickname text,
   email text,

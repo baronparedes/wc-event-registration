@@ -54,6 +54,7 @@ describe('TopVolunteersChart', () => {
     {
       user_id: '1',
       member_id: 'MEM-001',
+      avatar_object_key: null,
       full_name: 'Alice Smith',
       nickname: 'Ali',
       email: 'alice@example.com',
@@ -71,6 +72,7 @@ describe('TopVolunteersChart', () => {
     {
       user_id: '2',
       member_id: 'MEM-002',
+      avatar_object_key: null,
       full_name: 'Bob Jones',
       nickname: '',
       email: 'bob@example.com',
