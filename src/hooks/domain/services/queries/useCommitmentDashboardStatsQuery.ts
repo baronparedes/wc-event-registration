@@ -6,7 +6,7 @@ import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructur
 export interface CommitmentDashboardFilters {
   start_date: string;
   end_date: string;
-  excuse_event_id?: string;
+  excuse_event_id?: string | null;
   search_query?: string;
   role?: string;
   category?: string;
@@ -49,7 +49,7 @@ export function useCommitmentDashboardStatsQuery(
     queryKey: [...commitmentDashboardStatsQueryKey(filters), pageSize] as const,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: CommitmentDashboardStatsPage) => lastPage.nextCursor,
-    enabled: Boolean(filters.start_date && filters.end_date && filters.excuse_event_id),
+    enabled: Boolean(filters.start_date && filters.end_date),
     queryFn: async ({ pageParam }): Promise<CommitmentDashboardStatsPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
       const page = Math.floor(offset / pageSize) + 1;
@@ -57,7 +57,7 @@ export function useCommitmentDashboardStatsQuery(
       const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
         p_start_date: filters.start_date,
         p_end_date: filters.end_date,
-        p_excuse_event_id: filters.excuse_event_id!,
+        p_excuse_event_id: filters.excuse_event_id || null,
         p_search_query: filters.search_query || null,
         p_role: filters.role || null,
         p_category: filters.category || null,

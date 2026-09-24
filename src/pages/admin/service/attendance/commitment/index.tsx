@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { endOfQuarter, endOfYear, format, startOfQuarter, startOfYear } from 'date-fns';
 
 import { AdminPageShell } from '@/components/layout';
+import { TIMING } from '@/config/constants';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
 import { ServiceNavigationLinks } from '@/pages/admin/service/components';
 
@@ -14,19 +15,25 @@ import {
   VolunteerListTable,
 } from './components';
 
+const excuseEventId = import.meta.env.VITE_EXCUSE_REQUEST_EVENT_ID as string | undefined;
+
 export function AdminServiceAttendanceCommitmentPage() {
   const currentYear = new Date().getFullYear();
   const [timeframe, setTimeframe] = useState<DashboardTimeframe>('YTD');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
 
-  // Hardcode EXCUSE_REQUEST_EVENT_ID if not from env, for now we can rely on env or a fallback
-  // if this needs to be dynamic.
-  // Let's use the one configured in env or an empty UUID for safety (or user provided).
-  // Ideally, this should come from context or env.
-  const excuseEventId =
-    import.meta.env.VITE_EXCUSE_REQUEST_EVENT_ID || '00000000-0000-0000-0000-000000000000';
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, TIMING.searchDebounceMs);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [searchQuery]);
 
   const { startDate, endDate } = useMemo(() => {
     const startOfCurrentYear = startOfYear(new Date(currentYear, 0, 1));
@@ -62,12 +69,14 @@ export function AdminServiceAttendanceCommitmentPage() {
     }
   }, [timeframe, currentYear]);
 
+  const normalizedSearchQuery = useMemo(() => debouncedSearchQuery.trim(), [debouncedSearchQuery]);
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useCommitmentDashboardStatsQuery({
       start_date: startDate,
       end_date: endDate,
       excuse_event_id: excuseEventId,
-      search_query: searchQuery,
+      search_query: normalizedSearchQuery || undefined,
       role: roleFilter,
       category: categoryFilter,
     });

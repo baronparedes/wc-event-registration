@@ -3,7 +3,7 @@ begin;
 create or replace function public.get_commitment_dashboard_stats (
   p_start_date date,
   p_end_date date,
-  p_excuse_event_id uuid,
+  p_excuse_event_id uuid default null,
   p_search_query text default null,
   p_role text default null,
   p_category text default null,
@@ -80,13 +80,15 @@ begin
   excused_requests as (
     select distinct
       r.user_id,
-      coalesce(ra.answer_text, cast(ra.answer_date as text)) as request_date_str
+      coalesce(ra_date.answer_text, cast(ra_date.answer_date as text)) as request_date_str,
+      ra_serv.answer_text as services
     from public.registrations r
-    join public.registration_answers ra on ra.registration_id = r.id
-    join public.event_fields ef on ef.id = ra.event_field_id
-    where r.event_id = p_excuse_event_id
+    join public.registration_answers ra_date on ra_date.registration_id = r.id
+    join public.event_fields ef_date on ef_date.id = ra_date.event_field_id and ef_date.field_key = 'request_date'
+    left join public.registration_answers ra_serv on ra_serv.registration_id = r.id
+    left join public.event_fields ef_serv on ef_serv.id = ra_serv.event_field_id and ef_serv.field_key = 'services'
+    where (p_excuse_event_id is null or r.event_id = p_excuse_event_id)
       and r.status != 'cancelled'
-      and ef.field_key = 'request_date'
   ),
   user_stats as (
     select
@@ -101,6 +103,7 @@ begin
       (
         select count(*)
         from unnest(v_sundays) as s(sunday_date)
+        cross join (values ('9AM'), ('12NN'), ('3PM')) as ts(time_slot)
         cross join lateral (
           select extract(day from s.sunday_date)::integer / 7 + case when extract(day from s.sunday_date)::integer % 7 > 0 then 1 else 0 end as ordinal
         ) as ord
@@ -114,9 +117,9 @@ begin
           end as key
         ) as ckey
         where coalesce(
-          (select sub_ch.metadata->>ckey.key from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
-          fu.metadata->>ckey.key
-        ) = 'true'
+          (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
+          fu.metadata
+        )->>ckey.key ilike ('%' || ts.time_slot || '%')
       ) as total_committed,
       (
         select count(sa.id)
@@ -129,6 +132,7 @@ begin
       (
         select count(*)
         from unnest(v_sundays) as s(sunday_date)
+        cross join (values ('9AM'), ('12NN'), ('3PM')) as ts(time_slot)
         cross join lateral (
           select extract(day from s.sunday_date)::integer / 7 + case when extract(day from s.sunday_date)::integer % 7 > 0 then 1 else 0 end as ordinal
         ) as ord
@@ -142,25 +146,28 @@ begin
           end as key
         ) as ckey
         where coalesce(
-          (select sub_ch.metadata->>ckey.key from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
-          fu.metadata->>ckey.key
-        ) = 'true'
+          (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
+          fu.metadata
+        )->>ckey.key ilike ('%' || ts.time_slot || '%')
         and not exists (
           select 1
           from public.service_attendance sa
           where sa.user_id = fu.user_id
             and sa.service_date = s.sunday_date
+            and sa.time_slot = ts.time_slot
         )
         and not exists (
           select 1
           from excused_requests er
           where er.user_id = fu.user_id
             and er.request_date_str like (s.sunday_date::text || '%')
+            and (er.services is null or trim(er.services) = '' or er.services ilike ('%' || ts.time_slot || '%') or er.services ilike '%all%')
         )
       ) as total_absences,
       (
         select count(*)
         from unnest(v_sundays) as s(sunday_date)
+        cross join (values ('9AM'), ('12NN'), ('3PM')) as ts(time_slot)
         cross join lateral (
           select extract(day from s.sunday_date)::integer / 7 + case when extract(day from s.sunday_date)::integer % 7 > 0 then 1 else 0 end as ordinal
         ) as ord
@@ -174,20 +181,22 @@ begin
           end as key
         ) as ckey
         where coalesce(
-          (select sub_ch.metadata->>ckey.key from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
-          fu.metadata->>ckey.key
-        ) = 'true'
+          (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
+          fu.metadata
+        )->>ckey.key ilike ('%' || ts.time_slot || '%')
         and not exists (
           select 1
           from public.service_attendance sa
           where sa.user_id = fu.user_id
             and sa.service_date = s.sunday_date
+            and sa.time_slot = ts.time_slot
         )
         and exists (
           select 1
           from excused_requests er
           where er.user_id = fu.user_id
             and er.request_date_str like (s.sunday_date::text || '%')
+            and (er.services is null or trim(er.services) = '' or er.services ilike ('%' || ts.time_slot || '%') or er.services ilike '%all%')
         )
       ) as total_excused,
       (
@@ -212,20 +221,33 @@ begin
   ),
   scored_users as (
     select
-      *,
+      us.user_id,
+      us.member_id,
+      us.full_name,
+      us.nickname,
+      us.email,
+      us.user_role,
+      us.user_category,
+      us.start_date,
+      us.total_committed,
+      us.total_attended,
+      us.total_absences,
+      us.total_excused,
+      us.wi_9am_3pm,
+      us.wi_12nn,
       -- Score formula:
-      -- Committed with Checkin (+1) = total_attended (assuming attended counts are commitments fulfilled, or at least they attended)
+      -- Committed with Checkin (+1) = total_attended
       -- Committed No Checkin (-1) = total_absences
       -- Committed No Checkin w Excused (-0.5) = total_excused
       -- Uncommitted WalkedIn (+0.5 for 9AM/3PM only) = wi_9am_3pm
       -- Total: total_attended(1.0) - total_absences(1.0) - (total_excused * 0.5) + (wi_9am_3pm * 0.5)
       (
-        cast(total_attended as numeric)
-        - cast(total_absences as numeric)
-        - (cast(total_excused as numeric) * 0.5)
-        + (cast(wi_9am_3pm as numeric) * 0.5)
+        cast(us.total_attended as numeric)
+        - cast(us.total_absences as numeric)
+        - (cast(us.total_excused as numeric) * 0.5)
+        + (cast(us.wi_9am_3pm as numeric) * 0.5)
       ) as attendance_score
-    from user_stats
+    from user_stats us
   ),
   total_count_query as (
     select count(*) as tc from filtered_users
@@ -236,13 +258,13 @@ begin
     su.full_name,
     su.nickname,
     su.email,
-    su.user_role,
-    su.user_category,
+    su.user_role as role,
+    su.user_category as category,
     su.start_date,
-    su.total_committed,
-    su.total_attended,
-    su.total_absences,
-    su.total_excused,
+    su.total_committed as committed,
+    su.total_attended as attended,
+    su.total_absences as absences,
+    su.total_excused as excused,
     su.wi_9am_3pm,
     su.wi_12nn,
     su.attendance_score,
