@@ -150,6 +150,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: false,
       workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },

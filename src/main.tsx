@@ -8,6 +8,12 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
 import './index.css';
 
+// Vite official event listener for recovering from stale dynamic import chunks on new deployments
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 if (import.meta.env.PROD) {
   registerSW({ immediate: true });
   inject({
