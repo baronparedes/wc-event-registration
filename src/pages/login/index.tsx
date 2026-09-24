@@ -118,12 +118,13 @@ export function LoginPage() {
             <Button
               disabled={googleLoginMutation.isPending || yahooLoginMutation.isPending}
               fullWidth
-              size="lg"
-              variant="outline"
+              size="2xl"
+              className="text-text"
+              variant="primaryOutline"
               type="button"
               onClick={handleGoogleSignIn}
             >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+              <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -147,12 +148,13 @@ export function LoginPage() {
             <Button
               disabled={googleLoginMutation.isPending || yahooLoginMutation.isPending}
               fullWidth
-              size="lg"
-              variant="outline"
+              size="2xl"
+              className="text-text"
+              variant="primaryOutline"
               type="button"
               onClick={handleYahooSignIn}
             >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M22.776 5.419c-.067-.066-.195-.121-.351-.121h-2.909c-.218 0-.424.086-.549.255L14.712 11.7l-3.327-5.992c-.105-.181-.295-.288-.501-.288H7.994c-.183 0-.306.071-.359.16-.051.089-.033.228.053.374l5.337 9.088v6.622c0 .245.195.441.444.441h2.518c.247 0 .444-.196.444-.441v-6.69l6.302-9.155c.074-.107.106-.239.043-.397z"
                   fill="#400090"
