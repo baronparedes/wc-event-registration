@@ -6,7 +6,7 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useReorderEventFieldsMutation } from '@/hooks/domain/event-fields/mutations/useReorderEventFieldsMutation';
 import { adminEventFieldsQueryKey } from '@/hooks/domain/event-fields/queries/useAdminEventFieldsQuery';
 
-const { mockEventsBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
+const { mockEventsBuilder, mockUpsertBuilder, mockFrom } = vi.hoisted(() => {
   const eventsBuilder: Record<string, ReturnType<typeof vi.fn>> = {
     select: vi.fn(),
     eq: vi.fn(),
@@ -15,20 +15,18 @@ const { mockEventsBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
   eventsBuilder.select.mockReturnValue(eventsBuilder);
   eventsBuilder.eq.mockReturnValue(eventsBuilder);
 
-  const updateBuilder: Record<string, ReturnType<typeof vi.fn>> = {
-    update: vi.fn(),
-    eq: vi.fn(),
+  const upsertBuilder: Record<string, ReturnType<typeof vi.fn>> = {
+    upsert: vi.fn(),
   };
-  updateBuilder.update.mockReturnValue(updateBuilder);
-  updateBuilder.eq.mockResolvedValue({ error: null });
+  upsertBuilder.upsert.mockResolvedValue({ error: null });
 
   const from = vi.fn((table: string) => {
     if (table === 'events') return eventsBuilder;
-    if (table === 'event_fields') return updateBuilder;
+    if (table === 'event_fields') return upsertBuilder;
     throw new Error(`Unexpected table: ${table}`);
   });
 
-  return { mockEventsBuilder: eventsBuilder, mockUpdateBuilder: updateBuilder, mockFrom: from };
+  return { mockEventsBuilder: eventsBuilder, mockUpsertBuilder: upsertBuilder, mockFrom: from };
 });
 
 vi.mock('@/lib/infrastructure', async () => {
@@ -59,8 +57,13 @@ describe('useReorderEventFieldsMutation', () => {
       await result.current.mutateAsync({ event_id: eventId, orderedIds: fieldIds });
     });
 
-    expect(mockUpdateBuilder.update).toHaveBeenNthCalledWith(1, { display_order: 0 });
-    expect(mockUpdateBuilder.update).toHaveBeenNthCalledWith(2, { display_order: 1 });
+    expect(mockUpsertBuilder.upsert).toHaveBeenCalledWith(
+      [
+        { id: fieldIds[0], event_id: eventId, display_order: 0 },
+        { id: fieldIds[1], event_id: eventId, display_order: 1 },
+      ],
+      { onConflict: 'id', ignoreDuplicates: false },
+    );
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: adminEventFieldsQueryKey(eventId) });
     });
@@ -94,6 +97,6 @@ describe('useReorderEventFieldsMutation', () => {
       }),
     ).rejects.toThrow('lookup failed');
 
-    expect(mockUpdateBuilder.update).not.toHaveBeenCalled();
+    expect(mockUpsertBuilder.upsert).not.toHaveBeenCalled();
   });
 });
