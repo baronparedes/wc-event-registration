@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import DOMPurify from 'dompurify';
+import { Calendar, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
@@ -81,6 +82,11 @@ export function EventCountdownPage() {
             <Skeleton className="h-32 rounded-2xl" />
             <Skeleton className="h-32 rounded-2xl" />
           </div>
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
+          </div>
         </div>
       </div>
     );
@@ -141,7 +147,7 @@ export function EventCountdownPage() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background p-4 sm:p-8">
-      <div className="w-full max-w-5xl space-y-12">
+      <div className="w-full max-w-5xl space-y-10 py-8">
         <div className="space-y-6 text-center">
           <h1 className="text-balance text-4xl font-extrabold tracking-tight text-text sm:text-5xl md:text-7xl">
             {event.title}
@@ -154,15 +160,17 @@ export function EventCountdownPage() {
               />
             </p>
           )}
-          <div className="mx-auto max-w-md pt-4">
-            <div className="rounded-full border border-border bg-surface px-6 py-2 shadow-sm">
-              <p className="font-medium text-text">
+          <div className="mx-auto max-w-md pt-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-6 py-2 shadow-xs">
+              <Calendar className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+              <p className="font-medium text-text text-sm sm:text-base">
                 {event.starts_at ? formatDateTime(event.starts_at) : 'Date TBA'}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Countdown Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
           <CountdownCard label="Days" value={timeLeft.days} />
           <CountdownCard label="Hours" value={timeLeft.hours} />
@@ -170,8 +178,27 @@ export function EventCountdownPage() {
           <CountdownCard label="Seconds" value={timeLeft.seconds} />
         </div>
 
-        <div className="mt-12 flex justify-center">
-          <Button onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs transition-shadow hover:shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="flex w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <MapPin className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h1 className="font-semibold uppercase tracking-wider text-muted">Location</h1>
+              </div>
+            </div>
+            <div className="mt-4 border-t border-border/60 pt-3">
+              <h2 className="text-text break-words">{event.location || 'Venue to be announced'}</h2>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Button
+            size="3xl"
+            onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}
+          >
             Go to Registration Page
           </Button>
         </div>
@@ -182,7 +209,7 @@ export function EventCountdownPage() {
 
 function CountdownCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex flex-col items-center justify-center space-y-2 rounded-3xl border border-border bg-surface px-4 py-8 shadow-sm sm:px-6 sm:py-10">
+    <div className="flex flex-col items-center justify-center space-y-2 rounded-3xl border border-border bg-surface px-4 py-8 shadow-xs sm:px-6 sm:py-10">
       <span className="text-5xl font-black tabular-nums tracking-tighter text-primary sm:text-7xl md:text-8xl">
         {value.toString().padStart(2, '0')}
       </span>

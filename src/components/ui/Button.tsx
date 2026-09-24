@@ -16,7 +16,7 @@ export type ButtonVariant =
   | 'ghost'
   | 'link'
   | 'destructive';
-type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
+type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -51,6 +51,9 @@ const sizeClassName: Record<ButtonSize, string> = {
   sm: 'min-h-10 px-3.5 py-2 text-sm',
   md: 'min-h-11 px-4 py-2.5 text-sm',
   lg: 'min-h-12 px-5 py-3 text-base',
+  xl: 'min-h-14 px-6 py-4 text-xl',
+  '2xl': 'min-h-16 px-7 py-4.5 text-xl',
+  '3xl': 'min-h-18 px-8 py-5 text-2xl',
 };
 
 /** Shared button primitive for consistent variants, sizes, and disabled behavior. */
