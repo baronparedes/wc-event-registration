@@ -1,8 +1,8 @@
 import { Edit, User } from 'lucide-react';
 
 import {
-  ActionLink,
   MobileCard,
+  MobileCardActionLink,
   MobileCardActions,
   MobileCardBody,
   MobileCardContent,
@@ -43,15 +43,14 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
       </MobileCardBody>
 
       <MobileCardActions>
-        <ActionLink
+        <MobileCardActionLink
           to={toRoute('adminMemberDetail', { id: member.id })}
           title={actionLabel}
           aria-label={actionLabel}
-          className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm text-white no-underline shadow-sm transition-colors hover:bg-primary/90"
         >
           {canEdit ? <Edit className="h-4 w-4" /> : <User className="h-4 w-4" />}
           {actionLabel} Profile
-        </ActionLink>
+        </MobileCardActionLink>
         {canEdit && (
           <UpdateMemberIdDialog
             memberId={member.id}

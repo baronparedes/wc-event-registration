@@ -50,6 +50,9 @@ export {
   MobileCardContent,
   MobileCardContentItem,
   MobileCardActions,
+  MobileCardActionButton,
+  MobileCardActionLink,
+  MobileCardActionPill,
   type MobileCardProps,
   type MobileCardHeaderProps,
   type MobileCardBodyProps,
@@ -57,4 +60,8 @@ export {
   type MobileCardContentProps,
   type MobileCardContentItemProps,
   type MobileCardActionsProps,
+  type MobileCardActionVariant,
+  type MobileCardActionButtonProps,
+  type MobileCardActionLinkProps,
+  type MobileCardActionPillProps,
 } from './MobileCard';

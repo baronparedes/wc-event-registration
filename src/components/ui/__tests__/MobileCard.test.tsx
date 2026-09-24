@@ -1,8 +1,12 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import {
   MobileCard,
+  MobileCardActionButton,
+  MobileCardActionLink,
+  MobileCardActionPill,
   MobileCardActions,
   MobileCardBody,
   MobileCardContent,
@@ -125,5 +129,46 @@ describe('MobileCard Components', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Action Button' })).toBeInTheDocument();
+  });
+
+  describe('MobileCardAction Components', () => {
+    it('renders MobileCardActionButton with primary variant by default', () => {
+      render(<MobileCardActionButton>Click Me</MobileCardActionButton>);
+
+      const btn = screen.getByRole('button', { name: 'Click Me' });
+      expect(btn).toBeInTheDocument();
+      expect(btn).toHaveClass('bg-primary');
+      expect(btn).toHaveClass('text-white');
+    });
+
+    it('renders MobileCardActionButton with destructive variant', () => {
+      render(<MobileCardActionButton variant="destructive">Delete</MobileCardActionButton>);
+
+      const btn = screen.getByRole('button', { name: 'Delete' });
+      expect(btn).toBeInTheDocument();
+      expect(btn).toHaveClass('bg-red-50');
+      expect(btn).toHaveClass('text-red-600');
+    });
+
+    it('renders MobileCardActionLink inside router context', () => {
+      render(
+        <MemoryRouter>
+          <MobileCardActionLink to="/test-path">View Detail</MobileCardActionLink>
+        </MemoryRouter>,
+      );
+
+      const link = screen.getByRole('link', { name: 'View Detail' });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute('href', '/test-path');
+      expect(link).toHaveClass('bg-primary');
+    });
+
+    it('renders MobileCardActionPill', () => {
+      render(<MobileCardActionPill>Protected Role</MobileCardActionPill>);
+
+      const pill = screen.getByText('Protected Role');
+      expect(pill).toBeInTheDocument();
+      expect(pill).toHaveClass('text-muted');
+    });
   });
 });
