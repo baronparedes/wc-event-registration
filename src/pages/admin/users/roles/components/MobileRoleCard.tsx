@@ -1,6 +1,18 @@
 import { Edit2, LockKeyhole, ShieldCheck, Trash2 } from 'lucide-react';
 
-import { Avatar, Badge } from '@/components/ui';
+import {
+  Avatar,
+  Badge,
+  MobileCard,
+  MobileCardActionButton,
+  MobileCardActionPill,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardContent,
+  MobileCardContentItem,
+  MobileCardDivider,
+  MobileCardHeader,
+} from '@/components/ui';
 import type { AdminRole, AdminRoleAssignment } from '@/hooks/domain/auth';
 
 function getRoleBadgeVariant(role: AdminRole): 'secondary' | 'default' | 'outline' {
@@ -35,9 +47,9 @@ export function MobileRoleCard({ assignment, onEdit, onRevoke }: MobileRoleCardP
   });
 
   return (
-    <article className="relative rounded-xl border border-border/60 bg-background shadow-sm">
-      <div className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
+    <MobileCard>
+      <MobileCardBody>
+        <MobileCardHeader>
           <div className="flex min-w-0 items-center gap-3">
             <Avatar
               name={assignment.name}
@@ -65,49 +77,39 @@ export function MobileRoleCard({ assignment, onEdit, onRevoke }: MobileRoleCardP
               </small>
             </div>
           </div>
-        </div>
+        </MobileCardHeader>
 
-        <dl className="text-center grid grid-cols-2 pt-2.5 border-t border-border mt-3">
-          <div className="pr-0 sm:pr-2">
-            <dt className="text-xs text-muted mb-1.5">Assigned Role</dt>
-            <dd>
-              <Badge variant={getRoleBadgeVariant(assignment.role)}>
-                <span className="uppercase tracking-wider font-semibold">{assignment.role}</span>
-              </Badge>
-            </dd>
-          </div>
-          <div className="pr-0 sm:pr-2">
-            <dt className="text-xs text-muted mb-1.5">Assigned Date</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium text-text">{formattedDate}</dd>
-          </div>
-        </dl>
-      </div>
+        <MobileCardDivider />
 
-      {isSuperAdmin ? (
-        <div className="flex min-h-11 items-center justify-center gap-2 rounded-b-xl border-t border-border bg-surface text-sm font-medium text-muted">
-          <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-          Protected Role
-        </div>
-      ) : (
-        <div className="flex divide-x divide-border border-t border-border bg-surface rounded-b-xl">
-          <button
-            type="button"
-            onClick={() => onEdit(assignment)}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-bl-xl text-sm font-medium text-primary transition-colors hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
-          >
-            <Edit2 className="h-4 w-4" />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => onRevoke(assignment)}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-br-xl text-sm font-medium text-danger transition-colors hover:bg-danger/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-danger/30"
-          >
-            <Trash2 className="h-4 w-4" />
-            Revoke
-          </button>
-        </div>
-      )}
-    </article>
+        <MobileCardContent className="text-center">
+          <MobileCardContentItem label="Assigned Role">
+            <Badge variant={getRoleBadgeVariant(assignment.role)}>
+              <span className="uppercase tracking-wider font-semibold">{assignment.role}</span>
+            </Badge>
+          </MobileCardContentItem>
+          <MobileCardContentItem label="Assigned Date" value={formattedDate} />
+        </MobileCardContent>
+      </MobileCardBody>
+
+      <MobileCardActions>
+        {isSuperAdmin ? (
+          <MobileCardActionPill>
+            <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+            Protected Role
+          </MobileCardActionPill>
+        ) : (
+          <>
+            <MobileCardActionButton onClick={() => onEdit(assignment)}>
+              <Edit2 className="h-4 w-4" />
+              Edit
+            </MobileCardActionButton>
+            <MobileCardActionButton variant="accent" onClick={() => onRevoke(assignment)}>
+              <Trash2 className="h-4 w-4" />
+              Revoke
+            </MobileCardActionButton>
+          </>
+        )}
+      </MobileCardActions>
+    </MobileCard>
   );
 }

@@ -58,8 +58,8 @@ describe('MobileMemberCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('View')).toBeInTheDocument();
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+    expect(screen.getByText('View Profile')).toBeInTheDocument();
+    expect(screen.queryByText('Edit Profile')).not.toBeInTheDocument();
     expect(screen.queryByTestId('update-member-id-dialog')).not.toBeInTheDocument();
   });
 
@@ -70,8 +70,8 @@ describe('MobileMemberCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Edit')).toBeInTheDocument();
-    expect(screen.queryByText('View')).not.toBeInTheDocument();
+    expect(screen.getByText('Edit Profile')).toBeInTheDocument();
+    expect(screen.queryByText('View Profile')).not.toBeInTheDocument();
     expect(screen.getByTestId('update-member-id-dialog')).toBeInTheDocument();
   });
 
@@ -82,8 +82,8 @@ describe('MobileMemberCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('View')).toBeInTheDocument();
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+    expect(screen.getByText('View Profile')).toBeInTheDocument();
+    expect(screen.queryByText('Edit Profile')).not.toBeInTheDocument();
     expect(screen.queryByTestId('update-member-id-dialog')).not.toBeInTheDocument();
     expect(screen.getByText('Inactive')).toBeInTheDocument();
   });

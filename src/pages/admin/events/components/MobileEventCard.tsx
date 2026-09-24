@@ -12,9 +12,19 @@ import {
   Users,
 } from 'lucide-react';
 
-import { Button } from '@/components/ui';
-import { ActionLink } from '@/components/ui/ActionLink';
-import { DropdownMenu, DropdownMenuItem } from '@/components/ui/DropdownMenu';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuItem,
+  MobileCard,
+  MobileCardActionLink,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardContent,
+  MobileCardContentItem,
+  MobileCardDivider,
+  MobileCardHeader,
+} from '@/components/ui';
 import { toRoute } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
 import { formatDateOnly } from '@/lib/infrastructure';
@@ -38,11 +48,12 @@ export function MobileEventCard({
   onDuplicateClick,
 }: MobileEventCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const hasActions = canWrite || canRead || canAccessCheckIn;
 
   return (
-    <article className="relative rounded-xl border border-border/60 bg-background shadow-sm">
-      <div className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
+    <MobileCard>
+      <MobileCardBody>
+        <MobileCardHeader>
           <div className="min-w-0">
             <h2 className="line-clamp-2 text-base font-semibold leading-snug text-text">
               {event.title}
@@ -54,72 +65,57 @@ export function MobileEventCard({
             </p>
           </div>
           <EventStatusBadge status={event.status} />
-        </div>
+        </MobileCardHeader>
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 py-2.5 sm:grid-cols-3 sm:gap-0">
-          <div className="pr-0 sm:pr-2">
-            <dt className="text-xs text-muted">Starts</dt>
-            <dd className="mt-0.5 text-sm font-medium text-text">
-              {formatDateOnly(event.starts_at)}
-            </dd>
-          </div>
-          <div className="px-0 sm:px-2">
-            <dt className="text-xs text-muted">Reg. Mode</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
-              {event.registration_mode}
-            </dd>
-          </div>
-          <div className="px-0 sm:px-2">
-            <dt className="text-xs text-muted">Reg. Members</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
-              {event.member_registration_count}
-            </dd>
-          </div>
-          <div className="px-0 sm:px-2">
-            <dt className="text-xs text-muted">Reg. Non-Members</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium capitalize text-text">
-              {event.public_registration_count}
-            </dd>
-          </div>
-          <div className="col-span-2 pl-0 sm:col-span-1 sm:pl-2">
-            <dt className="text-xs text-muted">Duplicate Policy</dt>
-            <dd className="mt-0.5 truncate text-sm font-medium text-text">
-              <DuplicatePolicyLabel policy={event.duplicate_policy} />
-            </dd>
-          </div>
-        </dl>
-      </div>
+        <MobileCardDivider />
 
-      <div
-        className={`flex divide-x divide-border border-t border-border bg-surface ${
-          canWrite ? 'rounded-b-xl' : 'rounded-b-lg'
-        }`}
-      >
-        {canWrite && (
-          <ActionLink
-            to={toRoute('adminEventDetail', { id: event.id })}
-            title="Edit event"
-            aria-label={`Edit ${event.title}`}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-bl-xl text-sm font-medium text-primary no-underline hover:bg-primary/10"
-          >
-            <Edit className="h-4 w-4" />
-            Edit
-          </ActionLink>
-        )}
-        {canRead && (
-          <ActionLink
-            to={toRoute('adminAttendanceData', { id: event.id })}
-            title="View attendees"
-            aria-label={`View attendees for ${event.title}`}
-            className={`flex min-h-11 flex-1 items-center justify-center gap-2 bg-primary text-sm font-semibold text-white no-underline shadow-sm hover:bg-primary/90 hover:shadow-md ${
-              canWrite ? '' : 'rounded-bl-lg'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            Attendees
-          </ActionLink>
-        )}
-        {(canWrite || canRead || canAccessCheckIn) && (
+        <MobileCardContent>
+          <MobileCardContentItem label="Starts" value={formatDateOnly(event.starts_at)} />
+          <MobileCardContentItem
+            label="Reg. Mode"
+            value={event.registration_mode}
+            valueClassName="mt-0.5 truncate text-sm font-medium capitalize text-text"
+          />
+          <MobileCardContentItem
+            label="Reg. Members"
+            value={event.member_registration_count}
+            valueClassName="mt-0.5 truncate text-sm font-medium capitalize text-text"
+          />
+          <MobileCardContentItem
+            label="Reg. Non-Members"
+            value={event.public_registration_count}
+            valueClassName="mt-0.5 truncate text-sm font-medium capitalize text-text"
+          />
+          <MobileCardContentItem label="Duplicate Policy" colSpan={2}>
+            <DuplicatePolicyLabel policy={event.duplicate_policy} />
+          </MobileCardContentItem>
+        </MobileCardContent>
+      </MobileCardBody>
+
+      {hasActions && (
+        <MobileCardActions>
+          {canWrite && (
+            <MobileCardActionLink
+              to={toRoute('adminEventDetail', { id: event.id })}
+              title="Edit event"
+              aria-label={`Edit ${event.title}`}
+              variant="primaryOutline"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </MobileCardActionLink>
+          )}
+          {canRead && (
+            <MobileCardActionLink
+              to={toRoute('adminAttendanceData', { id: event.id })}
+              title="View attendees"
+              aria-label={`View attendees for ${event.title}`}
+              variant="default"
+            >
+              <Users className="h-4 w-4" />
+              Attendees
+            </MobileCardActionLink>
+          )}
           <DropdownMenu
             open={isMenuOpen}
             onOpenChange={setIsMenuOpen}
@@ -128,9 +124,7 @@ export function MobileEventCard({
                 type="button"
                 variant="ghost"
                 onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
-                className={`flex min-h-11 w-12 items-center justify-center text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30 ${
-                  canWrite ? 'rounded-br-xl' : 'rounded-br-lg'
-                }`}
+                className="flex min-h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
                 aria-label={`More actions for ${event.title}`}
                 title="More actions"
               >
@@ -184,8 +178,8 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
           </DropdownMenu>
-        )}
-      </div>
-    </article>
+        </MobileCardActions>
+      )}
+    </MobileCard>
   );
 }

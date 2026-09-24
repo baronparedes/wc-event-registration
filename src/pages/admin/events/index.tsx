@@ -171,9 +171,9 @@ export function AdminEventsPage() {
         )}
 
         {!error && events.length > 0 && (
-          <div className="rounded-2xl border border-border bg-surface">
+          <div className={isMobileViewport ? '' : 'rounded-2xl border border-border bg-surface'}>
             {isMobileViewport ? (
-              <div className="space-y-3 p-3">
+              <div className="space-y-3 pb-3">
                 {events.map((event) => (
                   <MobileEventCard
                     key={event.id}
