@@ -17,4 +17,5 @@ export const env = {
   ]),
   appVersion: import.meta.env.VITE_APP_VERSION as string | undefined,
   appCommitHash: import.meta.env.VITE_APP_COMMIT_HASH as string | undefined,
+  excuseEventId: requiredAny(['VITE_EXCUSE_REQUEST_EVENT_ID', 'NEXT_EXCUSE_REQUEST_EVENT_ID']),
 };

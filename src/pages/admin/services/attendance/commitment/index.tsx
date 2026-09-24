@@ -4,6 +4,7 @@ import { endOfQuarter, endOfYear, format, startOfQuarter, startOfYear } from 'da
 
 import { AdminPageShell } from '@/components/layout';
 import { TIMING } from '@/config/constants';
+import { env } from '@/config/env';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 
@@ -15,7 +16,7 @@ import {
   VolunteerListTable,
 } from './components';
 
-const excuseEventId = import.meta.env.VITE_EXCUSE_REQUEST_EVENT_ID as string | undefined;
+const excuseEventId = env.excuseEventId;
 
 export function AdminServiceAttendanceCommitmentPage() {
   const currentYear = new Date().getFullYear();
