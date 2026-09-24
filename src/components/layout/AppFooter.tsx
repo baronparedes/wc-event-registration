@@ -11,15 +11,20 @@ export function AppFooter() {
           <p>
             &copy; {new Date().getFullYear()} {LEGAL_CONFIG.organizationName}. All rights reserved.
           </p>
-          {(env.appVersion || env.appCommitHash) && (
-            <p className="text-muted/50">
-              {env.appVersion && `v${env.appVersion}`}
-              {env.appVersion && env.appCommitHash && ' '}
-              {env.appCommitHash && `(${env.appCommitHash})`}
-            </p>
-          )}
         </div>
         <div className="flex items-center gap-4 font-medium">
+          {(env.appVersion || env.appCommitHash) && (
+            <>
+              <span className="text-muted/50">
+                {env.appVersion && `v${env.appVersion}`}
+                {env.appVersion && env.appCommitHash && ' '}
+                {env.appCommitHash && `(${env.appCommitHash})`}
+              </span>
+              <span aria-hidden="true" className="text-border">
+                •
+              </span>
+            </>
+          )}
           <Link
             to={ROUTE_PATHS.privacy}
             className="text-muted transition hover:text-text hover:underline"
