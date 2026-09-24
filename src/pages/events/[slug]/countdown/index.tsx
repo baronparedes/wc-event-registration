@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import DOMPurify from 'dompurify';
 import { Calendar, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -9,13 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { usePublicEventQuery } from '@/hooks/domain/events';
-import { formatDateTime } from '@/lib/infrastructure';
-
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-  if ('target' in node && node.getAttribute('target') === '_blank') {
-    node.setAttribute('rel', 'noopener noreferrer');
-  }
-});
+import { DOMPurify, formatDateTime } from '@/lib/infrastructure';
 
 export function EventCountdownPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -161,6 +154,7 @@ export function EventCountdownPage() {
           {event.description && (
             <p className="mx-auto max-w-2xl text-balance text-lg text-muted md:text-xl">
               <span
+                // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
                 className="line-clamp-2"
               />

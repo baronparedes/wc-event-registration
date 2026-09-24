@@ -1,16 +1,10 @@
-import DOMPurify from 'dompurify';
 import { Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { AdminForm } from '@/lib/domain/forms';
-
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-  if ('target' in node && node.getAttribute('target') === '_blank') {
-    node.setAttribute('rel', 'noopener noreferrer');
-  }
-});
+import { DOMPurify } from '@/lib/infrastructure';
 
 type FormHeaderCardProps = {
   form: AdminForm | null | undefined;
@@ -92,6 +86,7 @@ export function FormHeaderCard({
             [&_th]:border [&_th]:border-border [&_th]:bg-accent/20 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-text
             [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2
           "
+          // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(form.description),
           }}

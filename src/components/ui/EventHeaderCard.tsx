@@ -6,12 +6,6 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import type { EventAvailability } from '@/lib/domain/events';
 import { DOMPurify, formatDateTime } from '@/lib/infrastructure';
 
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-  if ('target' in node && node.getAttribute('target') === '_blank') {
-    node.setAttribute('rel', 'noopener noreferrer');
-  }
-});
-
 type EventHeaderCardProps = {
   slug?: string;
   isLoading: boolean;
@@ -107,6 +101,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
               [&_tr:nth-child(even)]:bg-background/40
               [&_tr:hover]:bg-accent/10
             "
+          // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
         />
       )}
