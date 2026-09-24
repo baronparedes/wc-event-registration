@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
   });
 
   const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GOOGLE_GENERATIVE_AI_API_KEY');
-  const model = Deno.env.get('GOOGLE_AI_MODEL');
+  const model = Deno.env.get('GOOGLE_AI_MODEL') || 'gemini-3.5-flash-lite';
 
   if (!apiKey) {
     console.error('[chat] GOOGLE_API_KEY environment variable is not configured', {
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
     const tools = createChatTools({ client, requestId });
 
     const result = streamText({
-      model: google(model || 'gemini-3.5-flash-lite'),
+      model: google(model),
       system: getSystemPrompt(),
       messages,
       tools,
