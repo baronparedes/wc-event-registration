@@ -1,6 +1,7 @@
 import { Badge, MobileCardHeader } from '@/components/ui';
 import { Avatar } from '@/components/ui/Avatar';
 import type { AdminMember } from '@/lib/domain/members';
+import { formatDateTime } from '@/lib/infrastructure';
 
 export type MobileMemberHeaderProps = {
   member: AdminMember;
@@ -31,15 +32,22 @@ export function MobileMemberHeader({ member, className }: MobileMemberHeaderProp
             <p>
               {member.role} • {member.category}
             </p>
+            {member.last_activity && (
+              <span className="text-xs text-muted">
+                Last Active: {formatDateTime(member.last_activity)}
+              </span>
+            )}
           </div>
         </div>
       </div>
-      <Badge
-        variant={member.is_active ? 'default' : 'destructive'}
-        className={`px-3 py-1 rounded-full ${member.is_active ? 'bg-primary text-white' : ''}`}
-      >
-        {member.is_active ? 'Active' : 'Inactive'}
-      </Badge>
+      <div className="flex flex-col items-end gap-1">
+        <Badge
+          variant={member.is_active ? 'default' : 'destructive'}
+          className={`px-3 py-1 rounded-full ${member.is_active ? 'bg-primary text-white' : ''}`}
+        >
+          {member.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      </div>
     </MobileCardHeader>
   );
 }

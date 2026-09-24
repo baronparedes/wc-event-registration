@@ -264,9 +264,10 @@ export function AdminMembersPage() {
                   <ListTableHead>
                     <ListTableHeaderRow>
                       <ListTableHeaderCell></ListTableHeaderCell>
-                      <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                       <ListTableHeaderCell>Full Name</ListTableHeaderCell>
+                      <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                       <ListTableHeaderCell>Status</ListTableHeaderCell>
+                      <ListTableHeaderCell>Last Activity</ListTableHeaderCell>
                       <ListTableHeaderCell>Email</ListTableHeaderCell>
                       <ListTableHeaderCell>Phone</ListTableHeaderCell>
                       <ListTableHeaderCell>Role</ListTableHeaderCell>
@@ -287,11 +288,7 @@ export function AdminMembersPage() {
                             size="sm"
                             name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
                             avatarObjectKey={member.avatar_object_key}
-                            className="mr-2"
                           />
-                        </ListTableCell>
-                        <ListTableCell className="px-6">
-                          <p className="font-mono text-sm text-text">{member.member_id}</p>
                         </ListTableCell>
                         <ListTableCell>
                           <p className="font-medium text-text">{member.full_name}</p>
@@ -299,8 +296,16 @@ export function AdminMembersPage() {
                             <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
                           )}
                         </ListTableCell>
+                        <ListTableCell className="px-6">
+                          <p className="font-mono text-sm text-text">{member.member_id}</p>
+                        </ListTableCell>
                         <ListTableCell>
                           <MemberStatusBadge isActive={member.is_active} />
+                        </ListTableCell>
+                        <ListTableCell>
+                          <p className="text-sm text-text">
+                            {member.last_activity ? formatDateOnly(member.last_activity) : 'N/A'}
+                          </p>
                         </ListTableCell>
                         <ListTableCell>
                           <p className="text-sm text-text">{member.email || '—'}</p>

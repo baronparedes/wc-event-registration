@@ -295,4 +295,63 @@ describe('useAdminMembersQuery', () => {
 
     expect(mockQueryBuilder.or).toHaveBeenCalledWith(expect.stringContaining(expectedFilter));
   });
+
+  it('populates last_activity from user query columns', async () => {
+    const member1 = makeAdminMember({ id: 'user-1' });
+    const member2 = makeAdminMember({ id: 'user-2' });
+
+    mockQueryBuilder.range.mockResolvedValueOnce({
+      data: [
+        {
+          id: member1.id,
+          member_id: member1.member_id,
+          avatar_object_key: null,
+          is_active: true,
+          full_name: member1.full_name,
+          first_name: member1.first_name,
+          last_name: member1.last_name,
+          nickname: member1.nickname,
+          email: member1.email,
+          phone: member1.phone,
+          date_of_birth: member1.date_of_birth,
+          role: member1.role,
+          category: member1.category,
+          metadata: {},
+          created_at: member1.created_at,
+          updated_at: member1.updated_at,
+          last_activity: '2026-09-20T10:00:00Z',
+        },
+        {
+          id: member2.id,
+          member_id: member2.member_id,
+          avatar_object_key: null,
+          is_active: true,
+          full_name: member2.full_name,
+          first_name: member2.first_name,
+          last_name: member2.last_name,
+          nickname: member2.nickname,
+          email: member2.email,
+          phone: member2.phone,
+          date_of_birth: member2.date_of_birth,
+          role: member2.role,
+          category: member2.category,
+          metadata: {},
+          created_at: member2.created_at,
+          updated_at: member2.updated_at,
+          last_activity: null,
+        },
+      ],
+      error: null,
+      count: 2,
+    });
+
+    const { result } = renderHookWithClient(() => useAdminMembersQuery({ pageSize: 10 }));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.pages[0]?.items[0]?.last_activity).toBe('2026-09-20T10:00:00Z');
+    expect(result.current.data?.pages[0]?.items[1]?.last_activity).toBeUndefined();
+  });
 });
