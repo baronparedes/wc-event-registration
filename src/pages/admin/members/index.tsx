@@ -4,7 +4,7 @@ import { Edit, Loader2, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Button, EmptyState, FormInputField } from '@/components/ui';
+import { Badge, Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -23,7 +23,7 @@ import { useAdminMembersQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember } from '@/lib/domain/members';
-import { formatDateOnly } from '@/lib/infrastructure';
+import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 
 import {
   AddMemberDialog,
@@ -267,6 +267,7 @@ export function AdminMembersPage() {
                       <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                       <ListTableHeaderCell>Full Name</ListTableHeaderCell>
                       <ListTableHeaderCell>Status</ListTableHeaderCell>
+                      <ListTableHeaderCell>Last Activity</ListTableHeaderCell>
                       <ListTableHeaderCell>Email</ListTableHeaderCell>
                       <ListTableHeaderCell>Phone</ListTableHeaderCell>
                       <ListTableHeaderCell>Role</ListTableHeaderCell>
@@ -301,6 +302,13 @@ export function AdminMembersPage() {
                         </ListTableCell>
                         <ListTableCell>
                           <MemberStatusBadge isActive={member.is_active} />
+                        </ListTableCell>
+                        <ListTableCell>
+                          {member.last_activity ? (
+                            <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
+                          ) : (
+                            <span className="text-sm text-muted">—</span>
+                          )}
                         </ListTableCell>
                         <ListTableCell>
                           <p className="text-sm text-text">{member.email || '—'}</p>
