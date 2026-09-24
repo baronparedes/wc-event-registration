@@ -4,10 +4,6 @@ import { useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import {
-  useAttendanceCheckInRealtime,
-  useAttendanceSlotRecordRealtime,
-} from '@/hooks/domain/attendance/state';
 import { useLocalStorage } from '@/hooks/utils';
 import type {
   AttendanceAnswerSummary,
@@ -18,6 +14,9 @@ import type {
   AttendeeSearchResult,
 } from '@/lib/domain/attendance/types';
 import { createEdgeFunctionCaller } from '@/lib/infrastructure';
+
+import { useAttendanceCheckInRealtime } from '../state/useAttendanceCheckInRealtime';
+import { useAttendanceSlotRecordRealtime } from '../state/useAttendanceSlotRecordRealtime';
 
 type ListAttendeesInput = {
   event_id: string;

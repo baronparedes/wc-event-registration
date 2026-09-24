@@ -1,4 +1,4 @@
-// Barrel export for field renderers
+export { renderFieldByType } from './renderFieldByType';
 export {
   TextFieldRenderer,
   EmailFieldRenderer,
@@ -11,5 +11,7 @@ export {
   SelectFieldRenderer,
   RadioFieldRenderer,
   MultiSelectFieldRenderer,
+  MultiSelectToggleFieldRenderer,
 } from './SelectFieldRenderer';
 export { CheckboxFieldRenderer } from './CheckboxFieldRenderer';
+export { ColorPickerFieldRenderer } from './TextFieldRenderer';

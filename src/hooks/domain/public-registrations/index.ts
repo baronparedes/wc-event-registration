@@ -1,20 +1,17 @@
-/**
- * Public registrations hooks
- * Admin operations and public submission for managing public event registrations
- */
-
+// Queries
 export {
   fetchPublicAttendeeCheck,
-  fetchPublicRegistrationDetail,
-  useAdminPublicRegistrationsQuery,
-  usePublicRegistrationDetailQuery,
   usePublicAttendeeCheckQuery,
-  useSubmitPublicRegistrationMutation,
-} from './queries';
-
+} from './queries/usePublicAttendeeCheckQuery';
+export { useSubmitPublicRegistrationMutation } from './queries/useSubmitPublicRegistrationMutation';
+export { useAdminPublicRegistrationsQuery } from './queries/useAdminPublicRegistrationsQuery';
 export {
-  useBulkUpsertPublicRegistrationsMutation,
-  useCancelPublicRegistrationMutation,
-  useDownloadPublicRegistrationsTemplateMutation,
-  useReactivatePublicRegistrationMutation,
-} from './mutations';
+  fetchPublicRegistrationDetail,
+  usePublicRegistrationDetailQuery,
+} from './queries/usePublicRegistrationDetailQuery';
+
+// Mutations
+export { useCancelPublicRegistrationMutation } from './mutations/useCancelPublicRegistrationMutation';
+export { useReactivatePublicRegistrationMutation } from './mutations/useReactivatePublicRegistrationMutation';
+export { useDownloadPublicRegistrationsTemplateMutation } from './mutations/useDownloadPublicRegistrationsTemplateMutation';
+export { useBulkUpsertPublicRegistrationsMutation } from './mutations/useBulkUpsertPublicRegistrationsMutation';

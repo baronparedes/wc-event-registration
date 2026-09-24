@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { RegistrantAttendanceRow } from '@/lib';
+import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
 
 import { AttendanceDataEntryPanel } from '../AttendanceDataEntryPanel';

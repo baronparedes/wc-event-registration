@@ -38,15 +38,6 @@ vi.mock('@/hooks/domain/events', async () => {
   return {
     ...actual,
     useAdminEventsQuery: (...args: unknown[]) => mockUseAdminEventsQuery(...args),
-  };
-});
-
-vi.mock('@/hooks/domain/events/mutations', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/domain/events/mutations')>(
-    '@/hooks/domain/events/mutations',
-  );
-  return {
-    ...actual,
     useDuplicateEventMutation: (...args: unknown[]) => mockUseDuplicateEventMutation(...args),
   };
 });

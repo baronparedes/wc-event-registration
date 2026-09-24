@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import {
   useAttendanceSettingsQuery,
   useAttendeesLocalCacheQuery,
-} from '@/hooks/domain/attendance/queries';
-import { useOfflineCheckInEventSettings } from '@/hooks/domain/attendance/state';
+  useOfflineCheckInEventSettings,
+} from '@/hooks/domain/attendance';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useOnlineStatus } from '@/hooks/utils';

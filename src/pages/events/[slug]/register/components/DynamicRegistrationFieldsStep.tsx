@@ -4,11 +4,8 @@ import { type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { WizardStep } from '@/components/ui/WizardStep';
-import {
-  type DynamicFieldResponseValues,
-  type PublicEventField,
-  isFieldVisible,
-} from '@/lib/domain';
+import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import { isFieldVisible } from '@/lib/domain/field-visibility';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
 import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer';

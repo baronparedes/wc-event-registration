@@ -19,9 +19,8 @@ import {
   type EventFieldType,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
-  filterVisibleFieldValues,
-  isFieldVisible,
-} from '@/lib/domain';
+} from '@/lib/domain/event-fields';
+import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
 import { logger, parseErrorToJsonOrString } from '@/lib/infrastructure';
 
 export type WizardStep = 1 | 2 | 3;

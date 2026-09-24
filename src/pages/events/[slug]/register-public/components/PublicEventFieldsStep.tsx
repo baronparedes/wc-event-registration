@@ -9,11 +9,10 @@ import { WizardStep } from '@/components/ui/WizardStep';
 import {
   type DynamicFieldResponseValues,
   type PublicEventField,
-  filterVisibleFieldValues,
-  isFieldVisible,
-} from '@/lib/domain';
-import { buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
-import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
+  buildDynamicFieldResponseSchema,
+} from '@/lib/domain/event-fields';
+import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
+import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers';
 
 function normalizeHydratedValueForField(
   value: unknown,

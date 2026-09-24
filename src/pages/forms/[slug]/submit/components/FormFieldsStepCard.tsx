@@ -6,7 +6,7 @@ import { WizardStep } from '@/components/ui/WizardStep';
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 import { isFieldVisible } from '@/lib/domain/field-visibility';
 import type { FormField } from '@/lib/domain/forms';
-import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers/index.tsx';
+import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers';
 
 import { toPublicField } from './field-helpers';
 

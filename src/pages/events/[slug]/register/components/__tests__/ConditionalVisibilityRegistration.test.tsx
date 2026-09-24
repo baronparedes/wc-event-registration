@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it } from 'vitest';
 
-import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain';
 import type { PublicEventField } from '@/lib/domain/event-fields';
+import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
 
 import { DynamicFieldsStepCard } from '../DynamicRegistrationFieldsStep';
 
