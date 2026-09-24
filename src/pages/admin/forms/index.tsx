@@ -166,9 +166,9 @@ export function AdminFormsPage() {
         )}
 
         {!error && forms.length > 0 && (
-          <div className="rounded-2xl border border-border bg-surface">
+          <div className={isMobileViewport ? '' : 'rounded-2xl border border-border bg-surface'}>
             {isMobileViewport ? (
-              <div className="space-y-3 p-3">
+              <div className="space-y-3 pb-3">
                 {forms.map((form) => (
                   <MobileFormCard
                     key={form.id}

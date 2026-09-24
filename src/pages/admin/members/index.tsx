@@ -252,9 +252,9 @@ export function AdminMembersPage() {
         {hasNoMembers && <EmptyMembersState hasSearch={normalizedSearchTerm.length > 0} />}
         {hasMembers && (
           <>
-            <div className={!isMobileViewport ? 'rounded-2xl border border-border bg-surface' : ''}>
+            <div className={isMobileViewport ? '' : 'rounded-2xl border border-border bg-surface'}>
               {isMobileViewport ? (
-                <div className="space-y-3">
+                <div className="space-y-3 pb-3">
                   {members.map((member) => (
                     <MobileMemberCard key={member.id} member={member} canWrite={canWrite} />
                   ))}

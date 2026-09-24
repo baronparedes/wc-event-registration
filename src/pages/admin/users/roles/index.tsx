@@ -115,9 +115,9 @@ export function AdminUserRolesPage() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-surface overflow-hidden shadow-xs">
+          <div className={isMobileViewport ? '' : 'rounded-2xl border border-border bg-surface'}>
             {isMobileViewport ? (
-              <div className="space-y-3 p-3 bg-background border-none shadow-none">
+              <div className="space-y-3 pb-3">
                 {assignments.map((assignment) => (
                   <MobileRoleCard
                     key={assignment.id}
