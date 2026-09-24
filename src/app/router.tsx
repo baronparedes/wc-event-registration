@@ -96,12 +96,12 @@ const AdminChatPage = lazy(() =>
   import('@/pages/admin/chat').then((module) => ({ default: module.AdminChatPage })),
 );
 const AdminServicesPage = lazy(() =>
-  import('../pages/admin/service').then((module) => ({
+  import('../pages/admin/services').then((module) => ({
     default: module.AdminServicesPage,
   })),
 );
 const AdminServiceAttendanceMigrationPage = lazy(() =>
-  import('../pages/admin/service/attendance/migration').then((module) => ({
+  import('../pages/admin/services/attendance/migration').then((module) => ({
     default: module.AdminServiceAttendanceMigrationPage,
   })),
 );
@@ -218,12 +218,12 @@ const AdminMemberEventHistoryPage = lazy(() =>
   })),
 );
 const AdminServiceAttendanceDataPage = lazy(() =>
-  import('../pages/admin/service/attendance/data').then((module) => ({
+  import('../pages/admin/services/attendance/data').then((module) => ({
     default: module.AdminServiceAttendanceDataPage,
   })),
 );
 const AdminServiceAttendanceCommitmentPage = lazy(() =>
-  import('../pages/admin/service/attendance/commitment').then((module) => ({
+  import('../pages/admin/services/attendance/commitment').then((module) => ({
     default: module.AdminServiceAttendanceCommitmentPage,
   })),
 );

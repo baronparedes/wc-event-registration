@@ -5,7 +5,7 @@ import { endOfQuarter, endOfYear, format, startOfQuarter, startOfYear } from 'da
 import { AdminPageShell } from '@/components/layout';
 import { TIMING } from '@/config/constants';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
-import { ServiceNavigationLinks } from '@/pages/admin/service/components';
+import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 
 import {
   CommitmentDashboardFilters,

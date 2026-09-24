@@ -123,7 +123,7 @@ E. SERVICE ATTENDANCE DASHBOARD & TURN-UP METRICS:
 - When asked "Where can I find...", "How do I update...", or how to complete a workflow, call getAdminRoutes for the canonical URL.
 - Provide clear, numbered UI steps, mention button/tab labels, and provide clickable markdown links to starting pages:
   - Hub Calendar: [Hub Calendar](/admin/hub-calendar) (Sunday schedules/rosters).
-  - Services: [Services Dashboard](/admin/service) (service turn-up rates and slot statistics).
+  - Services: [Services Dashboard](/admin/services) (service turn-up rates and slot statistics).
   - Members: [Members](/admin/members) (volunteer/member records and updates).
   - Events: [Events](/admin/events) (event setup & attendee records).
   - Forms: [Forms](/admin/forms) (form management & submissions).

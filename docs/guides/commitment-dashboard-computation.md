@@ -1,6 +1,6 @@
 # Volunteer Commitment Dashboard Computation Guide
 
-This document details the architectural design, database calculations, scoring formula, excuse resolution, and frontend features powering the **Volunteer Commitment Dashboard** (`/admin/service/attendance/commitment`).
+This document details the architectural design, database calculations, scoring formula, excuse resolution, and frontend features powering the **Volunteer Commitment Dashboard** (`/admin/services/attendance/commitment`).
 
 ---
 
@@ -12,7 +12,7 @@ The Volunteer Commitment Dashboard provides administrators with quantitative met
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│             Frontend (/admin/service/attendance/commitment)            │
+│             Frontend (/admin/services/attendance/commitment)           │
 │               AdminServiceAttendanceCommitmentPage.tsx                 │
 │  - Timeframe Filter: Q1 | Q2 | Q3 | Q4 | YTD                           │
 │  - Search Query (debounced 300ms via TIMING.searchDebounceMs)          │

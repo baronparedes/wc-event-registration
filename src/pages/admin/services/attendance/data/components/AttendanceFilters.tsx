@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
-import { SERVICE_ROLES, TIME_SLOTS } from '@/pages/admin/service/constants';
+import { SERVICE_ROLES, TIME_SLOTS } from '@/pages/admin/services/constants';
 
 export interface AttendanceFiltersProps {
   serviceStartDate: string;

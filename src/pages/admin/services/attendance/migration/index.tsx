@@ -1,5 +1,5 @@
 import { AdminPageShell } from '@/components/layout';
-import { ServiceNavigationLinks } from '@/pages/admin/service/components/ServiceNavigationLinks';
+import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
 
 import { ServiceAttendanceMigrationPanel } from './components/ServiceAttendanceMigrationPanel';
 

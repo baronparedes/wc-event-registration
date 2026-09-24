@@ -51,7 +51,7 @@ export const ROUTE_PATHS = {
   hello: '/hello',
   adminChat: '/admin/chat',
   adminServices: '/admin/services',
-  adminServiceAttendanceMigration: '/admin/service/attendance/migration',
+  adminServiceAttendanceMigration: '/admin/services/attendance/migration',
   adminServiceAttendanceData: '/admin/services/attendance/data',
   adminServiceAttendanceCommitment: '/admin/services/attendance/commitment',
 } as const;

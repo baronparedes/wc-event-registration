@@ -1,6 +1,6 @@
 # Service Attendance Dashboard Computation Guide
 
-This document details the architectural design, database calculations, and frontend filter rules powering the **Services Dashboard** (`/admin/service`). Use this guide to understand how volunteer commitments, attendance, turn-up rates, late overrides, walk-ins, and role breakdowns are calculated across Sunday, Month, and Annual views.
+This document details the architectural design, database calculations, and frontend filter rules powering the **Services Dashboard** (`/admin/services`). Use this guide to understand how volunteer commitments, attendance, turn-up rates, late overrides, walk-ins, and role breakdowns are calculated across Sunday, Month, and Annual views.
 
 ---
 
@@ -12,7 +12,7 @@ The Services Dashboard provides real-time and historical visibility into Sunday 
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Frontend (/admin/service)                  │
+│              Frontend (/admin/services)                 │
 │               AdminServicesPage.tsx                     │
 │  - Filter Pills: Sunday | Month | Annual                │
 │  - Boundary Clamping (Min Year 2025, Max Prev Sunday)   │
