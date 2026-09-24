@@ -15,8 +15,8 @@ import {
   ListTableRow,
 } from '@/components/ui/ListTable';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
-import { ServiceNavigationLinks } from '@/pages/admin/service/components/ServiceNavigationLinks';
-import { getNearestPreviousSunday } from '@/pages/admin/service/constants';
+import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
+import { getNearestPreviousSunday } from '@/pages/admin/services/constants';
 
 import {
   AttendanceDateGroupHeader,
@@ -264,6 +264,7 @@ export function AdminServiceAttendanceDataPage() {
             disabled={isLoading}
           />
         }
+        breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Data' }]}
       />
       <ServiceNavigationLinks />
 

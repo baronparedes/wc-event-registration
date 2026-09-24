@@ -107,7 +107,7 @@ describe('AdminServiceAttendanceDataPage', () => {
   it('renders table columns, volunteer names, and avatars', () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/admin/service/attendance/data']}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
           <AdminServiceAttendanceDataPage />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -125,7 +125,7 @@ describe('AdminServiceAttendanceDataPage', () => {
   it('shows correct count badge when all records are loaded', () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/admin/service/attendance/data']}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
           <AdminServiceAttendanceDataPage />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -141,7 +141,7 @@ describe('AdminServiceAttendanceDataPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/admin/service/attendance/data']}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
           <AdminServiceAttendanceDataPage />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -159,7 +159,7 @@ describe('AdminServiceAttendanceDataPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/admin/service/attendance/data']}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
           <AdminServiceAttendanceDataPage />
         </MemoryRouter>
       </QueryClientProvider>,

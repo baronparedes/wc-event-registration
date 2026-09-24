@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { endOfMonth, format, parseISO } from 'date-fns';
-import { SearchX, Table, Upload } from 'lucide-react';
+import { ChartArea, SearchX, Table, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -75,6 +75,13 @@ export function AdminServicesPage() {
             >
               <Upload className="mr-2 h-4 w-4" />
               Upload CSV
+            </Button>
+            <Button
+              className="w-full sm:w-auto sm:inline-flex"
+              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceCommitment)}
+            >
+              <ChartArea className="mr-2 h-4 w-4" />
+              Commitment Dashboard
             </Button>
             <Button
               className="w-full sm:w-auto sm:inline-flex"

@@ -51,8 +51,9 @@ export const ROUTE_PATHS = {
   hello: '/hello',
   adminChat: '/admin/chat',
   adminServices: '/admin/services',
-  adminServiceAttendanceMigration: '/admin/service/attendance/migration',
+  adminServiceAttendanceMigration: '/admin/services/attendance/migration',
   adminServiceAttendanceData: '/admin/services/attendance/data',
+  adminServiceAttendanceCommitment: '/admin/services/attendance/commitment',
 } as const;
 export type AppRouteKey =
   | 'home'
@@ -100,7 +101,8 @@ export type AppRouteKey =
   | 'adminChat'
   | 'adminServices'
   | 'adminServiceAttendanceMigration'
-  | 'adminServiceAttendanceData';
+  | 'adminServiceAttendanceData'
+  | 'adminServiceAttendanceCommitment';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -325,6 +327,12 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminServiceAttendanceData',
     path: ROUTE_PATHS.adminServiceAttendanceData,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+  },
+  {
+    key: 'adminServiceAttendanceCommitment',
+    path: ROUTE_PATHS.adminServiceAttendanceCommitment,
     layout: 'shell',
     allowedRoles: ['admin', 'super_admin', 'slod'],
   },
