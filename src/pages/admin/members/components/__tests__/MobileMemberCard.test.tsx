@@ -46,8 +46,7 @@ describe('MobileMemberCard', () => {
     expect(screen.getByText('(Johnny)')).toBeInTheDocument();
     expect(screen.getByText('john@example.com')).toBeInTheDocument();
     expect(screen.getByText('WC-001')).toBeInTheDocument();
-    expect(screen.getByText('Role: Leader')).toBeInTheDocument();
-    expect(screen.getByText('Group: Regular')).toBeInTheDocument();
+    expect(screen.getByText('Leader • Regular')).toBeInTheDocument();
     expect(screen.getByText('+1234567890')).toBeInTheDocument();
     expect(screen.getByText('Active')).toBeInTheDocument();
   });

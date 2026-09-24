@@ -15,7 +15,7 @@ export function usePublicEventListingQuery() {
     staleTime: QUERY_STALE_TIME_MS.short,
     queryFn: async (): Promise<PublicEventListingItem[]> => {
       const nowMs = Date.now();
-      const threeMonthsAgo = new Date();
+      const threeMonthsAgo = new Date(nowMs);
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       const threeMonthsAgoMs = threeMonthsAgo.getTime();
 

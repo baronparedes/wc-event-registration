@@ -4,3 +4,4 @@ export * from './MemberOverviewCard';
 export * from './UpdateMemberIdDialog';
 export * from './MemberStatusBadge';
 export * from './MobileMemberCard';
+export * from './MobileMemberHeader';

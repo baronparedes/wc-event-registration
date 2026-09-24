@@ -42,3 +42,19 @@ export {
   type TabsTriggerProps,
   type TabsContentProps,
 } from './Tabs';
+export {
+  MobileCard,
+  MobileCardHeader,
+  MobileCardBody,
+  MobileCardDivider,
+  MobileCardContent,
+  MobileCardContentItem,
+  MobileCardActions,
+  type MobileCardProps,
+  type MobileCardHeaderProps,
+  type MobileCardBodyProps,
+  type MobileCardDividerProps,
+  type MobileCardContentProps,
+  type MobileCardContentItemProps,
+  type MobileCardActionsProps,
+} from './MobileCard';
