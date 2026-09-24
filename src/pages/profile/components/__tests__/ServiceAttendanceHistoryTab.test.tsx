@@ -47,14 +47,19 @@ vi.mock('@/hooks/domain/services', () => ({
   useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
 }));
 
-vi.mock('@/hooks/domain/members/queries', () => ({
-  useGetMemberExcusedSchedule: (
-    year: number,
-    monthIndex: number,
-    userId?: string,
-    options?: { enabled?: boolean },
-  ) => mockUseGetMemberExcusedSchedule(year, monthIndex, userId, options),
-}));
+vi.mock('@/hooks/domain/members', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');
+  return {
+    ...actual,
+    useGetMemberExcusedSchedule: (
+      year: number,
+      monthIndex: number,
+      userId?: string,
+      options?: { enabled?: boolean },
+    ) => mockUseGetMemberExcusedSchedule(year, monthIndex, userId, options),
+  };
+});
 
 const sampleAttendance: ServiceAttendance[] = [
   {

@@ -8,15 +8,15 @@ import { Dialog } from '@/components/ui/Dialog';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import { useUpsertAttendanceAnswersMutation } from '@/hooks/domain/attendance';
-import {
-  type AttendanceAnswer,
-  type AttendanceAnswerEntry,
-  type AttendanceAnswerSummary,
-  type AttendeeKind,
-  type RegistrantAttendanceRow,
-  isFieldVisible,
-} from '@/lib/domain';
+import type {
+  AttendanceAnswer,
+  AttendanceAnswerEntry,
+  AttendanceAnswerSummary,
+  AttendeeKind,
+  RegistrantAttendanceRow,
+} from '@/lib/domain/attendance';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
+import { isFieldVisible } from '@/lib/domain/field-visibility';
 
 type AttendanceDataEntryPanelProps = {
   isOpen: boolean;

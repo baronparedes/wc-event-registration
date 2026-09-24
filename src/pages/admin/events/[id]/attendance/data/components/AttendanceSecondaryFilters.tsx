@@ -1,5 +1,5 @@
 import { FormMultiSelectDropdownField, FormSelectField } from '@/components/ui';
-import type { AttendeeViewConfig } from '@/lib';
+import type { AttendeeViewConfig } from '@/lib/domain/attendance-views';
 
 type AttendanceSecondaryFiltersProps = {
   viewConfig: Pick<AttendeeViewConfig, 'role' | 'category' | 'checkInStatus'>;

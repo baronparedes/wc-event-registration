@@ -11,8 +11,8 @@ import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { TIMING, TOAST_MESSAGES, toRoute } from '@/config/constants';
-import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields/queries';
-import { usePublicEventQuery } from '@/hooks/domain/events/queries';
+import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields';
+import { usePublicEventQuery } from '@/hooks/domain/events';
 import {
   fetchPublicAttendeeCheck,
   fetchPublicRegistrationDetail,

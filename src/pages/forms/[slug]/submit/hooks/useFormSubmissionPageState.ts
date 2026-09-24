@@ -17,9 +17,8 @@ import {
   type DynamicFieldResponseValues,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
-  filterVisibleFieldValues,
-  isFieldVisible,
-} from '@/lib/domain';
+} from '@/lib/domain/event-fields';
+import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
 import { logger } from '@/lib/infrastructure';
 
 import { type GuestInfoValues, toPublicField } from '../components';

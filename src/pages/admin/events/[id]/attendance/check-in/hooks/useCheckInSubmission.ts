@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { toast } from 'sonner';
 
-import type { useQueuedCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
+import type { useQueuedCheckInAttendeeMutation } from '@/hooks/domain/attendance';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import {
   isAutoWindowModeEnabled,

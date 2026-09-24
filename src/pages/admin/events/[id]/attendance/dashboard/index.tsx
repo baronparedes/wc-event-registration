@@ -5,11 +5,8 @@ import { useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { SectionCard } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
+import { useAttendanceSettingsQuery, useAttendeesLocalCacheQuery } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
-import {
-  useAttendanceSettingsQuery,
-  useAttendeesLocalCacheQuery,
-} from '@/hooks/domain/attendance/queries';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';

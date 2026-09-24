@@ -6,9 +6,7 @@ import { searchAttendeesWithRfidFallback } from '@/lib/domain/attendance';
 import { isDirectMemberIdMatch } from '../utils';
 
 type CachedAttendees = NonNullable<
-  ReturnType<
-    typeof import('@/hooks/domain/attendance/queries').useAttendeesLocalCacheQuery
-  >['attendees']
+  ReturnType<typeof import('@/hooks/domain/attendance').useAttendeesLocalCacheQuery>['attendees']
 >;
 
 interface UseCheckInLookupOptions {

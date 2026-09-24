@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 
-import { useQueuedCheckInAttendeeMutation } from '@/hooks/domain/attendance/mutations';
-import type { useAttendeesLocalCacheQuery } from '@/hooks/domain/attendance/queries';
-import type { useOfflineCheckInEventSettings } from '@/hooks/domain/attendance/state';
+import {
+  type useAttendeesLocalCacheQuery,
+  type useOfflineCheckInEventSettings,
+  useQueuedCheckInAttendeeMutation,
+} from '@/hooks/domain/attendance';
 import type { useAdminAuthQuery } from '@/hooks/domain/auth';
 import type { useAdminEventQuery } from '@/hooks/domain/events';
 import { useScanBuffer, useWizardStepScroll } from '@/hooks/utils';

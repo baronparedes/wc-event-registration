@@ -9,14 +9,14 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui';
+import type { AttendeeSearchResult } from '@/lib/domain/attendance';
+import { formatCompactSlotLabelsFromSlotRecords } from '@/lib/domain/attendance';
 import {
-  type AttendeeSearchResult,
   type DynamicFieldRef,
-  formatCompactSlotLabelsFromSlotRecords,
-  formatDateTime,
   getVisibleFieldValue,
   toDynamicFieldToken,
-} from '@/lib';
+} from '@/lib/domain/attendance-views';
+import { formatDateTime } from '@/lib/infrastructure';
 
 export function AllCheckInsTable({
   rows,

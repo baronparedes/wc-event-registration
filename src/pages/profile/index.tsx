@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
-import { formatDateTime } from '@/lib';
+import { formatDateTime } from '@/lib/infrastructure';
 import { WelcomeHelloBanner } from '@/pages/home/components';
 
 import { EventHistoryTab } from './components/EventHistoryTab';

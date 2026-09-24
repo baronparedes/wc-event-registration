@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui';
-import { useGetMemberExcusedSchedule } from '@/hooks/domain/members/queries';
+import { useGetMemberExcusedSchedule } from '@/hooks/domain/members';
 import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import {
   MATRIX_TIME_SLOTS,

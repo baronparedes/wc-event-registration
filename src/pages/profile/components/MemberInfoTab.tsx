@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components/ui/SectionCard';
-import { type AdminMember, formatDateOnly } from '@/lib';
+import type { AdminMember } from '@/lib/domain/members';
+import { formatDateOnly } from '@/lib/infrastructure';
 
 import { SundayAvailabilityDisplay } from './SundayAvailabilityDisplay';
 

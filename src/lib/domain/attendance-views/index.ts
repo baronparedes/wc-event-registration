@@ -18,13 +18,31 @@ export {
   deleteAttendanceSavedViewSchema,
 } from './schemas';
 
+export { buildAttendeeView } from './transforms/build-attendee-view';
+export { collectDynamicFieldOptions, getVisibleFieldValue } from './transforms/field-access';
 export {
-  toDynamicFieldToken,
-  fromDynamicFieldToken,
-  collectDynamicFieldOptions,
-  getVisibleFieldValue,
-  attendeeToRegistrant,
-  buildAttendeeView,
-} from './transforms';
+  buildGroupKeys,
+  buildGroupLabel,
+  compareBySortMode,
+  sortGroups,
+} from './transforms/grouping';
+export { attendeeToRegistrant } from './transforms/mappers';
+export {
+  addUtcDays,
+  answerValue,
+  matchesRelativeDateLiteral,
+  normalizeValue,
+  parseChronologicalLabel,
+  parseDateValue,
+  parseMultiSelectToggleFilterValue,
+  parseMultiSelectToggleKeys,
+  parseMultiSelectToggleMap,
+  parseMultiSelectToggleTrueKeys,
+  parseMultiSelectValues,
+  parseRelativeDateLiteral,
+  parseTimeLabelToMinutes,
+  startOfUtcDay,
+} from './transforms/parsing';
+export { fromDynamicFieldToken, toDynamicFieldToken } from './transforms/tokens';
 
 export { buildAttendanceViewCsvExport, buildDashboardCheckInsCsvExport } from './export';

@@ -9,13 +9,13 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui';
+import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 import {
-  type AttendeeSearchResult,
   type DynamicFieldRef,
-  formatDateTime,
   getVisibleFieldValue,
   toDynamicFieldToken,
-} from '@/lib';
+} from '@/lib/domain/attendance-views';
+import { formatDateTime } from '@/lib/infrastructure';
 
 export type SlotCheckInRow = {
   full_name: string;
