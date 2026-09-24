@@ -55,7 +55,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
             <button
               aria-controls={contentId}
               aria-expanded={isExpanded}
-              className="flex-1 text-left focus:outline-none"
+              className="flex-1 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onClick={toggleExpanded}
               type="button"
             >
@@ -86,7 +86,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
           aria-controls={contentId}
           aria-expanded={isExpanded}
           aria-label={actionLabel}
-          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none print:hidden"
+          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 print:hidden"
           onClick={toggleExpanded}
           title={actionLabel}
           type="button"
@@ -109,7 +109,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
             aria-controls={contentId}
             aria-expanded={isExpanded}
             aria-label={actionLabel}
-            className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none"
+            className="absolute right-6 top-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             onClick={toggleExpanded}
             title={actionLabel}
             type="button"
