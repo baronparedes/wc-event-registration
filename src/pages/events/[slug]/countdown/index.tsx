@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
-import { usePublicEventQuery } from '@/hooks/domain/events/queries';
+import { usePublicEventQuery } from '@/hooks/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
 export function EventCountdownPage() {
