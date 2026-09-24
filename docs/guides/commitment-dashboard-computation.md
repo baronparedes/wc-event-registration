@@ -99,12 +99,14 @@ or replace function public.get_commitment_dashboard_stats (
  1. generate_series (p_start_date -> p_end_date)
     └── Filter extract(dow from d) = 0 into v_sundays date[]
  2. filtered_users CTE
+    ├── Extracts u_start_date: metadata->>'timestamp' parsed to date, falling back to created_at::date
     └── Filters active users by search text (name, nickname, member_id), role, category
  3. excused_requests CTE
     └── Joins registrations & registration_answers for event_fields:
         - request_date
         - services (e.g., '9AM', '12NN', '3PM', 'All Services')
  4. user_stats CTE
+    ├── Filters all subqueries to ignore calculations prior to volunteer's start_date (date >= fu.u_start_date)
     ├── Sunday ordinal mapping (1st -> first_sunday ... 5th -> fifth_sunday)
     ├── Commitment resolution (user_commitment_history vs metadata)
     ├── Cross-evaluation over ('9AM', '12NN', '3PM') time slots
@@ -197,8 +199,15 @@ Jan Sundays         Feb Sundays        Mar Sundays
 
 #### Cumulative Dashboard Calculation:
 
-- **`committed`**: Sum of active slots on each Sunday according to the snapshot active on that specific Sunday ($\text{Jan (2)} + \text{Feb (3)} + \text{Mar (1)} = 6$).
-- **`absences` & `excused`**: Each Sunday's attendance is compared exclusively against the commitment active on that specific Sunday. Future Sundays that have not occurred yet (`sunday_date > current_date` in Manila time) are excluded to prevent premature penalties.
+### D. Start Date Resolution & Pre-Start-Date Filtering
+
+Each volunteer has a computed `start_date` determined from their onboarding metadata:
+
+1. If `users.metadata->>'timestamp'` contains a valid date string (`YYYY-MM-DD`), that date is extracted as the volunteer's `start_date`.
+2. Otherwise, `users.created_at::date` is used as a fallback.
+
+**Pre-Start-Date Filtering Rule**:
+All metrics (`total_committed`, `total_attended`, `total_absences`, `total_excused`, `wi_9am_3pm`, and `wi_12nn`) explicitly enforce `sunday_date >= fu.u_start_date` (or `service_date >= fu.u_start_date`). Any Sundays, scheduled slots, check-ins, or absences occurring **prior to** the volunteer's start date are completely ignored in calculations.
 
 ---
 

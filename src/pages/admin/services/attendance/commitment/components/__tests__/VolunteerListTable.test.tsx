@@ -116,4 +116,22 @@ describe('VolunteerListTable', () => {
     expect(rows[2]).toHaveTextContent('Alice Smith');
     expect(rows[3]).toHaveTextContent('Bob Jones');
   });
+
+  it('renders empty state when no volunteers are found', () => {
+    render(<VolunteerListTable {...defaultProps} stats={[]} totalVolunteers={0} />);
+
+    expect(screen.getByText('No volunteers found')).toBeInTheDocument();
+    expect(
+      screen.getByText('No volunteers matched your search criteria or filters.'),
+    ).toBeInTheDocument();
+  });
+
+  it('triggers search input change callback', () => {
+    render(<VolunteerListTable {...defaultProps} />);
+
+    const searchInput = screen.getByLabelText('Search name or nickname');
+    fireEvent.change(searchInput, { target: { value: 'Alice' } });
+
+    expect(defaultProps.onSearchChange).toHaveBeenCalledWith('Alice');
+  });
 });

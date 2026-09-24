@@ -1,7 +1,21 @@
 import { forwardRef, useMemo, useState } from 'react';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Users } from 'lucide-react';
 
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FormInputField } from '@/components/ui/FormInputField';
+import { FormSelectField } from '@/components/ui/FormSelectField';
+import {
+  ListTable,
+  ListTableBody,
+  ListTableCell,
+  ListTableHead,
+  ListTableHeaderCell,
+  ListTableHeaderRow,
+  ListTableRow,
+} from '@/components/ui/ListTable';
+import { SectionCard } from '@/components/ui/SectionCard';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 
 export type VolunteerSortField =
@@ -122,225 +136,270 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
       return <ArrowUpDown className="h-3.5 w-3.5 opacity-30 group-hover:opacity-100" />;
     };
 
-    return (
-      <div className="rounded-xl border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between border-b border-border p-4 sm:px-6 sm:py-5">
-          <div className="flex items-center space-x-2 text-base font-semibold text-foreground">
-            <Users className="h-5 w-5" />
-            <span>Volunteer List</span>
-          </div>
-          <div className="text-sm font-medium text-muted-foreground">
-            {totalVolunteers} volunteers
-          </div>
-        </div>
+    const categoryOptions = useMemo(
+      () => [
+        { value: 'All Categories', label: 'All Categories' },
+        ...categories.map((c) => ({ value: c, label: c })),
+      ],
+      [categories],
+    );
 
+    const roleOptions = useMemo(
+      () => [
+        { value: 'All Roles', label: 'All Roles' },
+        ...roles.map((r) => ({ value: r, label: r })),
+      ],
+      [roles],
+    );
+
+    return (
+      <SectionCard
+        wrapperClassName="rounded-2xl border border-border bg-surface p-0 shadow-sm overflow-hidden"
+        title={
+          <div className="flex items-center gap-2.5 px-6 pt-5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Users className="h-4 w-4" />
+            </div>
+            <span className="font-heading text-lg font-semibold text-text">Volunteer List</span>
+          </div>
+        }
+        headerAction={
+          <div className="px-6 pt-5">
+            <Badge variant="outline">{totalVolunteers} volunteers</Badge>
+          </div>
+        }
+      >
         <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:px-6">
-          <input
-            className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          <FormInputField
+            ariaLabel="Search name or nickname"
             placeholder="Search name or nickname..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            className="flex-1"
           />
-          <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
-            <select
-              className="w-full sm:w-[200px] flex h-9 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <FormSelectField
+              ariaLabel="Filter by Category"
               value={categoryFilter}
-              onChange={(e) => onCategoryFilterChange(e.target.value)}
-            >
-              <option value="All Categories">All Categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <select
-              className="w-full sm:w-[200px] flex h-9 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              onChange={onCategoryFilterChange}
+              options={categoryOptions}
+              selectClassName="w-full sm:w-[180px]"
+            />
+            <FormSelectField
+              ariaLabel="Filter by Role"
               value={roleFilter}
-              onChange={(e) => onRoleFilterChange(e.target.value)}
-            >
-              <option value="All Roles">All Roles</option>
-              {roles.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+              onChange={onRoleFilterChange}
+              options={roleOptions}
+              selectClassName="w-full sm:w-[180px]"
+            />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('full_name')}
-                    className="group inline-flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+        <ListTable>
+          <ListTableHead>
+            <ListTableHeaderRow>
+              <ListTableHeaderCell>
+                <button
+                  type="button"
+                  onClick={() => handleSort('full_name')}
+                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Volunteer</span>
+                  {renderSortIcon('full_name')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell>
+                <button
+                  type="button"
+                  onClick={() => handleSort('role')}
+                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Role</span>
+                  {renderSortIcon('role')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell>
+                <button
+                  type="button"
+                  onClick={() => handleSort('category')}
+                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Category</span>
+                  {renderSortIcon('category')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell>
+                <button
+                  type="button"
+                  onClick={() => handleSort('start_date')}
+                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Start Date</span>
+                  {renderSortIcon('start_date')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('attendance_score')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Attendance</span>
+                  {renderSortIcon('attendance_score')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('committed')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Committed</span>
+                  {renderSortIcon('committed')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('attended')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Attended</span>
+                  {renderSortIcon('attended')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('absences')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Absences</span>
+                  {renderSortIcon('absences')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('excused')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>Excused</span>
+                  {renderSortIcon('excused')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('wi_9am_3pm')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>WI 9AM/3PM</span>
+                  {renderSortIcon('wi_9am_3pm')}
+                </button>
+              </ListTableHeaderCell>
+              <ListTableHeaderCell className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('wi_12nn')}
+                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                >
+                  <span>WI 12NN</span>
+                  {renderSortIcon('wi_12nn')}
+                </button>
+              </ListTableHeaderCell>
+            </ListTableHeaderRow>
+          </ListTableHead>
+          <ListTableBody>
+            {sortedStats.map((stat) => (
+              <ListTableRow key={stat.user_id}>
+                <ListTableCell className="whitespace-nowrap">
+                  <div className="font-heading font-semibold text-text">{stat.full_name}</div>
+                  <div className="text-xs text-muted">{stat.nickname || '-'}</div>
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap">
+                  {stat.role ? (
+                    <Badge variant="outline" className="text-xs">
+                      {stat.role}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-text">
+                  {stat.category || '-'}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-muted">
+                  {stat.start_date || '-'}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center">
+                  <Badge
+                    variant={stat.attendance_score < 0 ? 'destructive' : 'default'}
+                    className="font-bold"
                   >
-                    <span>Volunteer</span>
-                    {renderSortIcon('full_name')}
-                  </button>
-                </th>
-                <th className="px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('role')}
-                    className="group inline-flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Role</span>
-                    {renderSortIcon('role')}
-                  </button>
-                </th>
-                <th className="px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('category')}
-                    className="group inline-flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Category</span>
-                    {renderSortIcon('category')}
-                  </button>
-                </th>
-                <th className="px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('start_date')}
-                    className="group inline-flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Start Date</span>
-                    {renderSortIcon('start_date')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('committed')}
-                    className="group inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Committed</span>
-                    {renderSortIcon('committed')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('attended')}
-                    className="group inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Attended</span>
-                    {renderSortIcon('attended')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('absences')}
-                    className="group inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Absences</span>
-                    {renderSortIcon('absences')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('excused')}
-                    className="group inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>Excused</span>
-                    {renderSortIcon('excused')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('wi_9am_3pm')}
-                    className="group inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>WI 9AM/3PM</span>
-                    {renderSortIcon('wi_9am_3pm')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('wi_12nn')}
-                    className="group inline-flex items-center justify-center gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-                  >
-                    <span>WI 12NN</span>
-                    {renderSortIcon('wi_12nn')}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-right">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('attendance_score')}
-                    className="group inline-flex items-center justify-end gap-1 font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors focus:outline-none ml-auto"
-                  >
-                    <span>Attendance</span>
-                    {renderSortIcon('attendance_score')}
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border bg-white">
-              {sortedStats.map((stat) => (
-                <tr key={stat.user_id} className="hover:bg-muted/50">
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="font-semibold text-foreground">{stat.full_name}</div>
-                    <div className="text-xs text-muted-foreground">{stat.nickname}</div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-primary">{stat.role || '-'}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-foreground">
-                    {stat.category || '-'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
-                    {stat.start_date || '-'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center text-muted-foreground">
-                    {stat.committed}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center font-medium text-emerald-600">
-                    {stat.attended}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center font-medium text-rose-600">
-                    {stat.absences}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center text-muted-foreground">
-                    {stat.excused}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center text-muted-foreground">
-                    {stat.wi_9am_3pm}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center text-muted-foreground">
-                    {stat.wi_12nn}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right font-bold text-emerald-600">
                     {stat.attendance_score}
-                  </td>
-                </tr>
-              ))}
+                  </Badge>
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center text-text font-medium">
+                  {stat.committed}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center">
+                  <Badge variant="secondary">{stat.attended}</Badge>
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center">
+                  {stat.absences > 0 ? (
+                    <Badge variant="destructive">{stat.absences}</Badge>
+                  ) : (
+                    <span className="text-muted">0</span>
+                  )}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center">
+                  {stat.excused > 0 ? (
+                    <Badge variant="accent">{stat.excused}</Badge>
+                  ) : (
+                    <span className="text-muted">0</span>
+                  )}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center">
+                  {stat.wi_9am_3pm > 0 ? (
+                    <Badge variant="outline">+{stat.wi_9am_3pm}</Badge>
+                  ) : (
+                    <span className="text-muted">0</span>
+                  )}
+                </ListTableCell>
+                <ListTableCell className="whitespace-nowrap text-center">
+                  {stat.wi_12nn > 0 ? (
+                    <Badge variant="outline">+{stat.wi_12nn}</Badge>
+                  ) : (
+                    <span className="text-muted">0</span>
+                  )}
+                </ListTableCell>
+              </ListTableRow>
+            ))}
 
-              {sortedStats.length === 0 && !isLoading && (
-                <tr>
-                  <td colSpan={11} className="px-6 py-8 text-center text-muted-foreground">
-                    No volunteers found matching your filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            {sortedStats.length === 0 && !isLoading && (
+              <ListTableRow hover="none">
+                <ListTableCell colSpan={11} className="py-12">
+                  <EmptyState
+                    icon={<Users className="h-8 w-8 text-muted" />}
+                    title="No volunteers found"
+                    description="No volunteers matched your search criteria or filters."
+                  />
+                </ListTableCell>
+              </ListTableRow>
+            )}
+          </ListTableBody>
+        </ListTable>
 
         <div ref={ref} className="h-4 w-full" />
         {isLoading && (
-          <div className="flex justify-center p-4">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="flex justify-center p-6 border-t border-border">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         )}
-      </div>
+      </SectionCard>
     );
   },
 );
+
+VolunteerListTable.displayName = 'VolunteerListTable';

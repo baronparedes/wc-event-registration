@@ -69,7 +69,12 @@ begin
       u.role as user_role,
       u.category as user_category,
       u.metadata,
-      u.created_at::date as u_start_date
+      case
+        when (u.metadata->>'timestamp') ~ '^\d{4}-\d{2}-\d{2}' then
+          substring(u.metadata->>'timestamp' from '^\d{4}-\d{2}-\d{2}')::date
+        else
+          u.created_at::date
+      end as u_start_date
     from public.users u
     where u.is_active = true
       and (p_search_query is null or u.full_name ilike '%' || p_search_query || '%' or u.nickname ilike '%' || p_search_query || '%' or u.member_id ilike '%' || p_search_query || '%')
@@ -116,7 +121,8 @@ begin
             else 'fifth_sunday'
           end as key
         ) as ckey
-        where coalesce(
+        where s.sunday_date >= fu.u_start_date
+          and coalesce(
           (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
           fu.metadata
         )->>ckey.key ilike ('%' || ts.time_slot || '%')
@@ -127,6 +133,7 @@ begin
         where sa.user_id = fu.user_id
           and sa.service_date >= p_start_date
           and sa.service_date <= p_end_date
+          and sa.service_date >= fu.u_start_date
           and sa.is_walk_in = false
       ) as total_attended,
       (
@@ -146,6 +153,7 @@ begin
           end as key
         ) as ckey
         where s.sunday_date <= (now() at time zone 'Asia/Manila')::date
+        and s.sunday_date >= fu.u_start_date
         and coalesce(
           (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
           fu.metadata
@@ -182,6 +190,7 @@ begin
           end as key
         ) as ckey
         where s.sunday_date <= (now() at time zone 'Asia/Manila')::date
+        and s.sunday_date >= fu.u_start_date
         and coalesce(
           (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
           fu.metadata
@@ -207,6 +216,7 @@ begin
         where sa.user_id = fu.user_id
           and sa.service_date >= p_start_date
           and sa.service_date <= p_end_date
+          and sa.service_date >= fu.u_start_date
           and sa.is_walk_in = true
           and sa.time_slot in ('9AM', '3PM')
       ) as wi_9am_3pm,
@@ -216,6 +226,7 @@ begin
         where sa.user_id = fu.user_id
           and sa.service_date >= p_start_date
           and sa.service_date <= p_end_date
+          and sa.service_date >= fu.u_start_date
           and sa.is_walk_in = true
           and sa.time_slot = '12NN'
       ) as wi_12nn

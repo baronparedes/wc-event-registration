@@ -1,3 +1,5 @@
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+
 export type DashboardTimeframe = 'YTD' | 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 export interface CommitmentDashboardFiltersProps {
@@ -21,25 +23,19 @@ export function CommitmentDashboardFilters({
 
   return (
     <div className="space-y-4">
-      <div className="flex border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => onTimeframeChange(tab.value)}
-            className={`px-4 py-3 text-sm font-semibold transition-colors ${
-              timeframe === tab.value
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={timeframe} onValueChange={(val) => onTimeframeChange(val as DashboardTimeframe)}>
+        <TabsList>
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
-      <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
+      <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
         {timeframe === 'YTD'
-          ? 'YTD includes Q1, Q2, Q3, Q4.'
+          ? 'YTD includes Q1, Q2, Q3, and Q4 aggregate attendance metrics.'
           : `${timeframe} includes data for the selected quarter in ${year}.`}
       </div>
     </div>
