@@ -1,7 +1,17 @@
 import react from '@vitejs/plugin-react';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 import { URL, fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
+process.env.VITE_APP_VERSION = packageJson.version;
+try {
+  process.env.VITE_APP_COMMIT_HASH = execSync('git rev-parse --short HEAD').toString().trim();
+} catch (e) {
+  process.env.VITE_APP_COMMIT_HASH = '';
+}
 
 function getNodeModulePackageName(id: string) {
   const modulePath = id.split('node_modules/')[1];

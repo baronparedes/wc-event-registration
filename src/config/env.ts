@@ -15,4 +15,6 @@ export const env = {
     'VITE_SUPABASE_PUBLISHABLE_KEY',
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   ]),
+  appVersion: import.meta.env.VITE_APP_VERSION as string | undefined,
+  appCommitHash: import.meta.env.VITE_APP_COMMIT_HASH as string | undefined,
 };
