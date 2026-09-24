@@ -9,6 +9,10 @@ import { AdminServiceAttendanceCommitmentPage } from '../index';
 
 vi.mock('@/hooks/domain/services', () => ({
   useCommitmentDashboardStatsQuery: vi.fn(),
+  useExportCommitmentDashboardStatsCSVMutation: vi.fn(() => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  })),
 }));
 
 vi.mock('../components/TopVolunteersChart', () => ({
@@ -215,5 +219,13 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
     render(<AdminServiceAttendanceCommitmentPage />, { wrapper });
 
     expect(screen.getByText('0 with activity')).toBeInTheDocument();
+  });
+
+  it('renders Export as CSV button in header actions', () => {
+    render(<AdminServiceAttendanceCommitmentPage />, { wrapper });
+
+    expect(
+      screen.getByRole('button', { name: 'Export commitment dashboard as CSV' }),
+    ).toBeInTheDocument();
   });
 });

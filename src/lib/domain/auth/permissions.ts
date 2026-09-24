@@ -44,6 +44,7 @@ export const ROLE_PERMISSION_GRANTS: Record<AdminRole, readonly AdminPermissionK
     'canExportAdminReports',
     'canViewMemberHistory',
     'canReadDashboard',
+    'canManageServices',
   ],
   imt: ['canReadAdminMemberData', 'canReadDashboard'],
   kiosk: ['canAccessAttendanceCheckIn'],

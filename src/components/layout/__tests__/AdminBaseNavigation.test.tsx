@@ -107,4 +107,34 @@ describe('AdminBaseNavigation', () => {
     expect(screen.queryByRole('link', { name: 'User Roles' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Services' })).not.toBeInTheDocument();
   });
+
+  it('renders Members and Services tabs for slod role', () => {
+    vi.mocked(useAdminAuthQuery).mockReturnValue({
+      data: {
+        adminRole: 'slod',
+        isAuthenticated: true,
+        session: null,
+      },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useAdminAuthQuery>);
+
+    render(
+      <MemoryRouter initialEntries={[ROUTE_PATHS.adminEvents]}>
+        <AdminBaseNavigation />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Forms' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminMembers,
+    );
+    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminServices,
+    );
+    expect(screen.queryByRole('link', { name: 'User Roles' })).not.toBeInTheDocument();
+  });
 });

@@ -12,6 +12,7 @@ import {
   CommitmentDashboardFilters,
   CommitmentSummaryCards,
   type DashboardTimeframe,
+  ExportCommitmentDashboardButton,
   TopVolunteersChart,
   VolunteerListTable,
 } from './components';
@@ -82,6 +83,19 @@ export function AdminServiceAttendanceCommitmentPage() {
       category: categoryFilter,
     });
 
+  const exportFilters = useMemo(
+    () => ({
+      start_date: startDate,
+      end_date: endDate,
+      excuse_event_id: excuseEventId,
+      search_query: normalizedSearchQuery || undefined,
+      role: selectedRoles.length > 0 ? selectedRoles.join(',') : undefined,
+      category: categoryFilter,
+      timeframe,
+    }),
+    [startDate, endDate, normalizedSearchQuery, selectedRoles, categoryFilter, timeframe],
+  );
+
   const observerRef = useRef<IntersectionObserver | null>(null);
   const scrollRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -131,6 +145,7 @@ export function AdminServiceAttendanceCommitmentPage() {
       <AdminPageShell.Header
         title="Commitment Dashboard"
         description="Monitor volunteer commitment and attendance metrics."
+        actions={<ExportCommitmentDashboardButton filters={exportFilters} disabled={isLoading} />}
         breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Commitment' }]}
       />
       <ServiceNavigationLinks />

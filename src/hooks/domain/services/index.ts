@@ -16,3 +16,4 @@ export * from './mutations/useBulkUpsertServiceAttendanceMutation';
 export * from './queries/useUserCommitmentHistoryQuery';
 export * from './queries/useServiceDashboardQuery';
 export * from './queries/useCommitmentDashboardStatsQuery';
+export * from './mutations/useExportCommitmentDashboardStatsCSVMutation';

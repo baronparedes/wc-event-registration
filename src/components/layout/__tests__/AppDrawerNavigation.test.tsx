@@ -315,6 +315,10 @@ describe('AppDrawerNavigation', () => {
       'href',
       ROUTE_PATHS.adminMembers,
     );
+    expect(screen.getByRole('link', { name: 'Manage Services' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminServices,
+    );
     expect(screen.queryByRole('link', { name: 'Manage Event' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: 'Manage Registration Fields' }),

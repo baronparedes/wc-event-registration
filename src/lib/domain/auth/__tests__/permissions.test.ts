@@ -48,7 +48,7 @@ describe('admin permission policies', () => {
         canViewMemberHistory: true,
         canManageAdminRoles: false,
         canReadDashboard: true,
-        canManageServices: false,
+        canManageServices: true,
       },
     });
 
@@ -66,7 +66,7 @@ describe('admin permission policies', () => {
     expect(canAdminPerform('imt', 'canReadAdminMemberData')).toBe(true);
     expect(canAdminPerform('slod', 'canManageAttendanceSavedViews')).toBe(true);
     expect(canAdminPerform('slod', 'canExportAdminReports')).toBe(true);
-    expect(canAdminPerform('slod', 'canManageServices')).toBe(false);
+    expect(canAdminPerform('slod', 'canManageServices')).toBe(true);
     expect(canAdminPerform('imt', 'canManageServices')).toBe(false);
     expect(canAdminPerform('kiosk', 'canAccessAttendanceCheckIn')).toBe(true);
     expect(canAdminPerform('kiosk', 'canManageServices')).toBe(false);

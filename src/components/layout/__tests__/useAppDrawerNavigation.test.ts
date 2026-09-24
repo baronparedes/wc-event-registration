@@ -184,6 +184,34 @@ describe('useAppDrawerNavigation', () => {
     expect(result.current.attendanceNavItems.map((i) => i.label)).toEqual(['Check-In']);
   });
 
+  it('builds read and service navigation for slod role', () => {
+    mockUseAdminEventQuery.mockReturnValue({ data: null });
+    mockUseAdminFormQuery.mockReturnValue({ data: null });
+    mockUseAdminMemberQuery.mockReturnValue({ data: null });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null });
+
+    const { result } = renderHook(
+      () =>
+        useAppDrawerNavigation({
+          isAuthenticated: true,
+          hasSession: true,
+          adminRole: 'slod',
+        }),
+      {
+        wrapper: createWrapper(ROUTE_PATHS.adminServices),
+      },
+    );
+
+    expect(result.current.adminNavItems.map((i) => i.label)).toEqual([
+      'Hub Calendar',
+      'Manage Events',
+      'Manage Forms',
+      'Manage Members',
+      'Manage Services',
+      'AI Assistant',
+    ]);
+  });
+
   it('builds form workspace navigation for admin on a form route', () => {
     mockUseAdminFormQuery.mockReturnValue({
       data: { title: 'Registration Form' },

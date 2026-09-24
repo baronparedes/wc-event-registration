@@ -61,3 +61,22 @@ export type UserCommitmentSnapshot = {
   metadata: Record<string, string | null>;
   created_at: string;
 };
+
+export type CommitmentDashboardStat = {
+  user_id: string;
+  member_id: string;
+  avatar_object_key: string | null;
+  full_name: string;
+  nickname: string;
+  email: string;
+  role: string;
+  category: string;
+  start_date: string;
+  committed: number;
+  attended: number;
+  absences: number;
+  excused: number;
+  wi_9am_3pm: number;
+  wi_12nn: number;
+  attendance_score: number;
+};
