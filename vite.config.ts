@@ -82,61 +82,13 @@ function getVendorChunkName(id: string) {
     return 'form-vendor';
   }
 
-  if (id.includes('node_modules/d3-') || id.includes('node_modules/victory-vendor/')) {
-    return 'd3-vendor';
-  }
-
   if (
-    id.includes('node_modules/recharts/es6/state') ||
-    id.includes('node_modules/recharts/lib/state')
+    id.includes('node_modules/recharts/') ||
+    id.includes('node_modules/d3-') ||
+    id.includes('node_modules/victory-vendor/') ||
+    id.includes('node_modules/react-smooth/')
   ) {
-    return 'recharts-state-vendor';
-  }
-
-  if (
-    id.includes('node_modules/recharts/es6/chart') ||
-    id.includes('node_modules/recharts/lib/chart')
-  ) {
-    return 'recharts-chart-vendor';
-  }
-
-  if (
-    id.includes('node_modules/recharts/es6/cartesian/Bar') ||
-    id.includes('node_modules/recharts/lib/cartesian/Bar') ||
-    id.includes('node_modules/recharts/es6/cartesian/Area') ||
-    id.includes('node_modules/recharts/lib/cartesian/Area') ||
-    id.includes('node_modules/recharts/es6/cartesian/Line') ||
-    id.includes('node_modules/recharts/lib/cartesian/Line') ||
-    id.includes('node_modules/recharts/es6/cartesian/Scatter') ||
-    id.includes('node_modules/recharts/lib/cartesian/Scatter') ||
-    id.includes('node_modules/recharts/es6/cartesian/Funnel') ||
-    id.includes('node_modules/recharts/lib/cartesian/Funnel') ||
-    id.includes('node_modules/recharts/es6/cartesian/Brush') ||
-    id.includes('node_modules/recharts/lib/cartesian/Brush')
-  ) {
-    return 'recharts-cartesian-series-vendor';
-  }
-
-  if (
-    id.includes('node_modules/recharts/es6/cartesian') ||
-    id.includes('node_modules/recharts/lib/cartesian')
-  ) {
-    return 'recharts-cartesian-axis-vendor';
-  }
-
-  if (
-    id.includes('node_modules/recharts/es6/component') ||
-    id.includes('node_modules/recharts/lib/component') ||
-    id.includes('node_modules/recharts/es6/container') ||
-    id.includes('node_modules/recharts/lib/container') ||
-    id.includes('node_modules/recharts/es6/context') ||
-    id.includes('node_modules/recharts/lib/context')
-  ) {
-    return 'recharts-components-vendor';
-  }
-
-  if (id.includes('node_modules/recharts/') || id.includes('node_modules/react-smooth/')) {
-    return 'recharts-vendor';
+    return 'chart-vendor';
   }
 
   return 'vendor';
@@ -160,7 +112,7 @@ export default defineConfig({
   ],
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   build: {
-    chunkSizeWarningLimit: 200,
+    chunkSizeWarningLimit: 500,
     rolldownOptions: {
       output: {
         codeSplitting: true,
