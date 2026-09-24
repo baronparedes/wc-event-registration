@@ -4,7 +4,7 @@ import { Edit, Loader2, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Badge, Button, EmptyState, FormInputField } from '@/components/ui';
+import { Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -23,7 +23,7 @@ import { useAdminMembersQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember } from '@/lib/domain/members';
-import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
+import { formatDateOnly } from '@/lib/infrastructure';
 
 import {
   AddMemberDialog,
@@ -264,8 +264,8 @@ export function AdminMembersPage() {
                   <ListTableHead>
                     <ListTableHeaderRow>
                       <ListTableHeaderCell></ListTableHeaderCell>
-                      <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                       <ListTableHeaderCell>Full Name</ListTableHeaderCell>
+                      <ListTableHeaderCell className="px-6">Member ID</ListTableHeaderCell>
                       <ListTableHeaderCell>Status</ListTableHeaderCell>
                       <ListTableHeaderCell>Last Activity</ListTableHeaderCell>
                       <ListTableHeaderCell>Email</ListTableHeaderCell>
@@ -288,11 +288,7 @@ export function AdminMembersPage() {
                             size="sm"
                             name={`${member.nickname || ''} ${member.last_name || ''}`.trim()}
                             avatarObjectKey={member.avatar_object_key}
-                            className="mr-2"
                           />
-                        </ListTableCell>
-                        <ListTableCell className="px-6">
-                          <p className="font-mono text-sm text-text">{member.member_id}</p>
                         </ListTableCell>
                         <ListTableCell>
                           <p className="font-medium text-text">{member.full_name}</p>
@@ -300,15 +296,16 @@ export function AdminMembersPage() {
                             <p className="mt-0.5 text-xs text-muted">({member.nickname})</p>
                           )}
                         </ListTableCell>
+                        <ListTableCell className="px-6">
+                          <p className="font-mono text-sm text-text">{member.member_id}</p>
+                        </ListTableCell>
                         <ListTableCell>
                           <MemberStatusBadge isActive={member.is_active} />
                         </ListTableCell>
                         <ListTableCell>
-                          {member.last_activity ? (
-                            <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
-                          ) : (
-                            <span className="text-sm text-muted">—</span>
-                          )}
+                          <p className="text-sm text-text">
+                            {member.last_activity ? formatDateOnly(member.last_activity) : 'N/A'}
+                          </p>
                         </ListTableCell>
                         <ListTableCell>
                           <p className="text-sm text-text">{member.email || '—'}</p>

@@ -32,6 +32,11 @@ export function MobileMemberHeader({ member, className }: MobileMemberHeaderProp
             <p>
               {member.role} • {member.category}
             </p>
+            {member.last_activity && (
+              <span className="text-xs text-muted">
+                Last Active: {formatDateTime(member.last_activity)}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -42,9 +47,6 @@ export function MobileMemberHeader({ member, className }: MobileMemberHeaderProp
         >
           {member.is_active ? 'Active' : 'Inactive'}
         </Badge>
-        {member.last_activity && (
-          <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
-        )}
       </div>
     </MobileCardHeader>
   );
