@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
@@ -50,6 +50,7 @@ export function useCommitmentDashboardStatsQuery(
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: CommitmentDashboardStatsPage) => lastPage.nextCursor,
     enabled: Boolean(filters.start_date && filters.end_date),
+    placeholderData: keepPreviousData,
     queryFn: async ({ pageParam }): Promise<CommitmentDashboardStatsPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
       const page = Math.floor(offset / pageSize) + 1;

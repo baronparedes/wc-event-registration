@@ -22,7 +22,7 @@ export function AdminServiceAttendanceCommitmentPage() {
   const [timeframe, setTimeframe] = useState<DashboardTimeframe>('YTD');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All Roles');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export function AdminServiceAttendanceCommitmentPage() {
       end_date: endDate,
       excuse_event_id: excuseEventId,
       search_query: normalizedSearchQuery || undefined,
-      role: roleFilter,
+      role: selectedRoles.length > 0 ? selectedRoles.join(',') : undefined,
       category: categoryFilter,
     });
 
@@ -151,8 +151,8 @@ export function AdminServiceAttendanceCommitmentPage() {
           totalVolunteers={totalVolunteers}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          roleFilter={roleFilter}
-          onRoleFilterChange={setRoleFilter}
+          selectedRoles={selectedRoles}
+          onSelectedRolesChange={setSelectedRoles}
           categoryFilter={categoryFilter}
           onCategoryFilterChange={setCategoryFilter}
           roles={roles}

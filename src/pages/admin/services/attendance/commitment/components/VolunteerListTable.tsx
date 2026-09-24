@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Users } from 'lucide-react';
 
@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FormInputField } from '@/components/ui/FormInputField';
+import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
   ListTable,
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/ListTable';
 import { SectionCard } from '@/components/ui/SectionCard';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
+import { SERVICE_ROLES } from '@/pages/admin/services/constants';
 
 export type VolunteerSortField =
   | 'full_name'
@@ -39,8 +41,8 @@ interface VolunteerListTableProps {
   totalVolunteers: number;
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  roleFilter: string;
-  onRoleFilterChange: (value: string) => void;
+  selectedRoles: string[];
+  onSelectedRolesChange: (roles: string[]) => void;
   categoryFilter: string;
   onCategoryFilterChange: (value: string) => void;
   roles: string[];
@@ -55,8 +57,8 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
       totalVolunteers,
       searchQuery,
       onSearchChange,
-      roleFilter,
-      onRoleFilterChange,
+      selectedRoles,
+      onSelectedRolesChange,
       categoryFilter,
       onCategoryFilterChange,
       roles,
@@ -67,6 +69,48 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
   ) => {
     const [sortBy, setSortBy] = useState<VolunteerSortField>('attendance_score');
     const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+    const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+    const roleDropdownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      if (!isRoleDropdownOpen) return;
+
+      function handleDocumentMouseDown(event: MouseEvent) {
+        const target = event.target;
+        if (!(target instanceof Node)) return;
+        if (!roleDropdownRef.current?.contains(target)) {
+          setIsRoleDropdownOpen(false);
+        }
+      }
+
+      function handleDocumentKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+          setIsRoleDropdownOpen(false);
+        }
+      }
+
+      document.addEventListener('mousedown', handleDocumentMouseDown);
+      document.addEventListener('keydown', handleDocumentKeyDown);
+
+      return () => {
+        document.removeEventListener('mousedown', handleDocumentMouseDown);
+        document.removeEventListener('keydown', handleDocumentKeyDown);
+      };
+    }, [isRoleDropdownOpen]);
+
+    const handleToggleRole = (roleToToggle: string) => {
+      const isSelected = selectedRoles.includes(roleToToggle);
+      const nextRoles = isSelected
+        ? selectedRoles.filter((r) => r !== roleToToggle)
+        : [...selectedRoles, roleToToggle];
+      onSelectedRolesChange(nextRoles);
+    };
+
+    const selectedRoleLabel = useMemo(() => {
+      if (selectedRoles.length === 0) return 'All Roles';
+      if (selectedRoles.length === 1) return selectedRoles[0];
+      return `${selectedRoles.length} roles selected`;
+    }, [selectedRoles]);
 
     const handleSort = (field: VolunteerSortField) => {
       if (sortBy === field) {
@@ -145,13 +189,10 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
       [categories],
     );
 
-    const roleOptions = useMemo(
-      () => [
-        { value: 'All Roles', label: 'All Roles' },
-        ...roles.map((r) => ({ value: r, label: r })),
-      ],
-      [roles],
-    );
+    const allRoleOptions = useMemo(() => {
+      const combined = Array.from(new Set([...SERVICE_ROLES, ...roles]));
+      return combined.map((r) => ({ value: r, label: r }));
+    }, [roles]);
 
     return (
       <SectionCard
@@ -166,7 +207,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
         }
         headerAction={
           <div className="px-6 pt-5">
-            <Badge variant="outline">{totalVolunteers} volunteers</Badge>
+            <Badge variant="default">{totalVolunteers} volunteers</Badge>
           </div>
         }
       >
@@ -186,12 +227,21 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
               options={categoryOptions}
               selectClassName="w-full sm:w-[180px]"
             />
-            <FormSelectField
-              ariaLabel="Filter by Role"
-              value={roleFilter}
-              onChange={onRoleFilterChange}
-              options={roleOptions}
-              selectClassName="w-full sm:w-[180px]"
+            <FormMultiSelectDropdownField
+              triggerAriaLabel="Filter by Role"
+              optionsAriaLabel="Role options"
+              selectedLabel={selectedRoleLabel}
+              options={allRoleOptions}
+              selectedValues={selectedRoles}
+              isOpen={isRoleDropdownOpen}
+              containerRef={roleDropdownRef}
+              clearButtonLabel="All Roles"
+              buttonClassName="rounded-xl px-3 py-2 text-sm leading-6"
+              className="w-full sm:w-[180px]"
+              onToggleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
+              onCloseDropdown={() => setIsRoleDropdownOpen(false)}
+              onClearSelection={() => onSelectedRolesChange([])}
+              onToggleSelection={handleToggleRole}
             />
           </div>
         </div>

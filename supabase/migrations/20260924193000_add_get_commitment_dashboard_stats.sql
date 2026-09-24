@@ -78,8 +78,17 @@ begin
     from public.users u
     where u.is_active = true
       and (p_search_query is null or u.full_name ilike '%' || p_search_query || '%' or u.nickname ilike '%' || p_search_query || '%' or u.member_id ilike '%' || p_search_query || '%')
-      and (p_role is null or p_role = 'All Roles' or u.role ilike '%' || p_role || '%')
-      and (p_category is null or p_category = 'All Categories' or u.category ilike '%' || p_category || '%')
+      and (
+        p_role is null
+        or p_role = ''
+        or p_role = 'All Roles'
+        or exists (
+          select 1
+          from unnest(string_to_array(p_role, ',')) as r(role_item)
+          where u.role ilike '%' || trim(r.role_item) || '%'
+        )
+      )
+      and (p_category is null or p_category = '' or p_category = 'All Categories' or u.category ilike '%' || p_category || '%')
   ),
   -- Excused users query logic
   excused_requests as (
