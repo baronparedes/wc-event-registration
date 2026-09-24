@@ -156,6 +156,61 @@ describe('Services Domain Hooks', () => {
       expect(mockFrom).toHaveBeenCalledWith('service_attendance');
     });
 
+    it('useServiceAttendanceQuery retains previous data while loading when filters change', async () => {
+      const initialItems = [{ id: 'att-1', time_slot: '9AM' }];
+      let resolveSecondQuery: (val: unknown) => void;
+      const secondQueryPromise = new Promise((resolve) => {
+        resolveSecondQuery = resolve;
+      });
+
+      let callCount = 0;
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        range: vi.fn().mockReturnThis(),
+        then: vi.fn().mockImplementation((onFulfilled) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve({ data: initialItems, count: 1, error: null }).then(onFulfilled);
+          }
+          return secondQueryPromise.then(onFulfilled);
+        }),
+      };
+      mockFrom.mockReturnValue(mockBuilder);
+
+      const { result, rerender } = renderHookWithClient(
+        ({ startDate }) =>
+          useServiceAttendanceQuery({
+            start_date: startDate,
+            end_date: startDate,
+          }),
+        { initialProps: { startDate: '2026-09-01' } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+      expect(result.current.data?.pages[0]?.items).toEqual(initialItems);
+
+      // Change filters to next month
+      rerender({ startDate: '2026-10-01' });
+
+      // Previous data is kept as placeholder data during fetch
+      expect(result.current.data?.pages[0]?.items).toEqual(initialItems);
+      expect(result.current.isFetching).toBe(true);
+
+      // Resolve second query
+      resolveSecondQuery!({ data: [{ id: 'att-2', time_slot: '12NN' }], count: 1, error: null });
+
+      await waitFor(() => {
+        expect(result.current.isFetching).toBe(false);
+      });
+      expect(result.current.data?.pages[0]?.items).toEqual([{ id: 'att-2', time_slot: '12NN' }]);
+    });
+
     it('useLookupUsersByRfidsQuery fetches users by RFIDs', async () => {
       const mockUsers = [
         { id: 'user-1', member_id: 'RFID-1', full_name: 'Alice Smith' },

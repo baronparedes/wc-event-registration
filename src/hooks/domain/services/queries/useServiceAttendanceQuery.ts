@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { ServiceAttendance } from '@/lib/domain/services';
@@ -33,6 +33,7 @@ export function useServiceAttendanceQuery(
     queryKey: [...serviceAttendanceQueryKey(filters), pageSize] as const,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: ServiceAttendancePage) => lastPage.nextCursor,
+    placeholderData: keepPreviousData,
     queryFn: async ({ pageParam }): Promise<ServiceAttendancePage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
 

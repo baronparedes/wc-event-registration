@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { RenderHookOptions } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 
 export function createTestQueryClient() {
@@ -23,11 +24,14 @@ export function createTestWrapper(queryClient: QueryClient) {
   };
 }
 
-export function renderHookWithClient<Result>(callback: () => Result) {
+export function renderHookWithClient<Result, Props = undefined>(
+  render: (initialProps: Props) => Result,
+  options?: Omit<RenderHookOptions<Props>, 'wrapper'>,
+) {
   const queryClient = createTestQueryClient();
   const wrapper = createTestWrapper(queryClient);
 
-  const hook = renderHook(callback, { wrapper });
+  const hook = renderHook(render, { ...options, wrapper });
   return {
     ...hook,
     queryClient,
