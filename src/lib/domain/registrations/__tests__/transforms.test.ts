@@ -233,4 +233,3 @@ describe('formatRegistrationShareFieldValue', () => {
     expect(formatRegistrationShareFieldValue('submitted_at', ' Not a date ')).toBe('Not a date');
   });
 });
-
