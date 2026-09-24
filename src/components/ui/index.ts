@@ -1,4 +1,4 @@
-export { Button } from './Button';
+export { Button, type ButtonVariant } from './Button';
 export { CheckboxField } from './CheckboxField';
 export { FormInputField } from './FormInputField';
 export { FormMultiSelectDropdownField } from './FormMultiSelectDropdownField';
@@ -8,6 +8,8 @@ export { SectionCard } from './SectionCard';
 export { CollapsibleSectionCard } from './CollapsibleSectionCard';
 export { ConfirmDialog } from './ConfirmDialog';
 export { Dialog } from './Dialog';
+export { DropdownMenu, DropdownMenuItem } from './DropdownMenu';
+
 export {
   ListTable,
   ListTableHead,

@@ -1,6 +1,8 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { Link, type LinkProps } from 'react-router-dom';
+
+import { Button, type ButtonProps, type ButtonVariant } from './Button';
 
 export type MobileCardProps = {
   children: ReactNode;
@@ -121,70 +123,48 @@ export type MobileCardActionsProps = {
 };
 
 export function MobileCardActions({ children, className }: MobileCardActionsProps) {
-  return <div className={`flex gap-3 p-4 pt-0 ${className ?? ''}`.trim()}>{children}</div>;
+  return <div className={`flex gap-2 px-2 py-4 pt-0 ${className ?? ''}`.trim()}>{children}</div>;
 }
 
-export type MobileCardActionVariant = 'primary' | 'destructive' | 'secondary' | 'muted';
+export type MobileCardActionVariant = ButtonVariant;
 
-const mobileActionBaseClassName =
-  'flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-medium transition-colors no-underline focus:outline-none focus:ring-2 focus:ring-inset';
-
-const mobileActionVariantClasses: Record<MobileCardActionVariant, string> = {
-  primary: 'bg-primary text-white shadow-sm hover:bg-primary/90 focus:ring-primary/30',
-  destructive:
-    'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500/30',
-  secondary:
-    'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 focus:ring-primary/30',
-  muted: 'border border-border bg-surface text-muted cursor-default focus:ring-0',
-};
-
-export type MobileCardActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: MobileCardActionVariant;
-  children: ReactNode;
-  className?: string;
-};
+export type MobileCardActionButtonProps = ButtonProps;
 
 export function MobileCardActionButton({
-  variant = 'primary',
   className,
-  children,
-  type = 'button',
+  size = 'lg',
   ...props
 }: MobileCardActionButtonProps) {
   return (
-    <button
-      type={type}
-      className={`${mobileActionBaseClassName} ${mobileActionVariantClasses[variant]} ${
-        className ?? ''
-      }`.trim()}
+    <Button
+      size={size}
+      className={`min-h-12 flex-1 text-sm ${className ?? ''}`.trim()}
       {...props}
-    >
-      {children}
-    </button>
+    />
   );
 }
 
 export type MobileCardActionLinkProps = LinkProps & {
-  variant?: MobileCardActionVariant;
-  children: ReactNode;
+  variant?: ButtonVariant;
   className?: string;
+  children: ReactNode;
 };
 
 export function MobileCardActionLink({
-  variant = 'primary',
+  variant = 'default',
   className,
   children,
   ...props
 }: MobileCardActionLinkProps) {
   return (
-    <Link
-      className={`${mobileActionBaseClassName} ${mobileActionVariantClasses[variant]} ${
-        className ?? ''
-      }`.trim()}
-      {...props}
+    <Button
+      asChild
+      variant={variant}
+      size="lg"
+      className={`min-h-12 flex-1 text-sm no-underline ${className ?? ''}`.trim()}
     >
-      {children}
-    </Link>
+      <Link {...props}>{children}</Link>
+    </Button>
   );
 }
 
@@ -196,7 +176,7 @@ export type MobileCardActionPillProps = {
 export function MobileCardActionPill({ children, className }: MobileCardActionPillProps) {
   return (
     <div
-      className={`${mobileActionBaseClassName} ${mobileActionVariantClasses.muted} ${
+      className={`flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-surface text-sm font-medium text-muted cursor-default focus:ring-0 ${
         className ?? ''
       }`.trim()}
     >

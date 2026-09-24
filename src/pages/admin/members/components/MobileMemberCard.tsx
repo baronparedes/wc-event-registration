@@ -56,7 +56,7 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
             memberId={member.id}
             memberName={member.full_name}
             currentMemberId={member.member_id}
-            triggerClassName="flex min-h-12 w-[100px] flex-col items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white text-[10px] font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+            triggerClassName="flex min-h-12 w-[100px] flex-col items-center justify-center gap-1 rounded-md border border-slate-200 bg-white text-[10px] font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
           />
         )}
       </MobileCardActions>

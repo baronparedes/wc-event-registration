@@ -7,7 +7,7 @@ import {
   isValidElement,
 } from 'react';
 
-type ButtonVariant =
+export type ButtonVariant =
   | 'default'
   | 'secondary'
   | 'accent'

@@ -132,7 +132,7 @@ describe('MobileCard Components', () => {
   });
 
   describe('MobileCardAction Components', () => {
-    it('renders MobileCardActionButton with primary variant by default', () => {
+    it('renders MobileCardActionButton with default variant', () => {
       render(<MobileCardActionButton>Click Me</MobileCardActionButton>);
 
       const btn = screen.getByRole('button', { name: 'Click Me' });
@@ -146,11 +146,11 @@ describe('MobileCard Components', () => {
 
       const btn = screen.getByRole('button', { name: 'Delete' });
       expect(btn).toBeInTheDocument();
-      expect(btn).toHaveClass('bg-red-50');
-      expect(btn).toHaveClass('text-red-600');
+      expect(btn).toHaveClass('bg-red-600');
+      expect(btn).toHaveClass('text-white');
     });
 
-    it('renders MobileCardActionLink inside router context', () => {
+    it('renders MobileCardActionLink with default variant', () => {
       render(
         <MemoryRouter>
           <MobileCardActionLink to="/test-path">View Detail</MobileCardActionLink>
@@ -161,6 +161,37 @@ describe('MobileCard Components', () => {
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute('href', '/test-path');
       expect(link).toHaveClass('bg-primary');
+    });
+
+    it('renders MobileCardActionLink with secondary variant', () => {
+      render(
+        <MemoryRouter>
+          <MobileCardActionLink to="/test-secondary" variant="secondary">
+            Edit Detail
+          </MobileCardActionLink>
+        </MemoryRouter>,
+      );
+
+      const link = screen.getByRole('link', { name: 'Edit Detail' });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute('href', '/test-secondary');
+      expect(link).toHaveClass('bg-secondary');
+      expect(link).toHaveClass('text-white');
+    });
+
+    it('renders MobileCardActionLink with outline variant', () => {
+      render(
+        <MemoryRouter>
+          <MobileCardActionLink to="/test-outline" variant="outline">
+            Outline Action
+          </MobileCardActionLink>
+        </MemoryRouter>,
+      );
+
+      const link = screen.getByRole('link', { name: 'Outline Action' });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute('href', '/test-outline');
+      expect(link).toHaveClass('border-border');
     });
 
     it('renders MobileCardActionPill', () => {

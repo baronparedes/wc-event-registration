@@ -99,11 +99,11 @@ export function MobileRoleCard({ assignment, onEdit, onRevoke }: MobileRoleCardP
           </MobileCardActionPill>
         ) : (
           <>
-            <MobileCardActionButton variant="primary" onClick={() => onEdit(assignment)}>
+            <MobileCardActionButton onClick={() => onEdit(assignment)}>
               <Edit2 className="h-4 w-4" />
               Edit
             </MobileCardActionButton>
-            <MobileCardActionButton variant="destructive" onClick={() => onRevoke(assignment)}>
+            <MobileCardActionButton variant="accent" onClick={() => onRevoke(assignment)}>
               <Trash2 className="h-4 w-4" />
               Revoke
             </MobileCardActionButton>
