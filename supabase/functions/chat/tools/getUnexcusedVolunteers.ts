@@ -139,7 +139,8 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
 
       const formattedStart = formatDate(range.start);
       const formattedEnd = formatDate(range.end);
-      const targetSundays = getSundaysInRange(range);
+      const todayStr = formatDate(getPhNow());
+      const targetSundays = getSundaysInRange(range).filter((s) => s.date <= todayStr);
       const targetSundayDates = targetSundays.map(({ date }) => date);
 
       if (targetSundayDates.length === 0) {
@@ -152,7 +153,7 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
           role_breakdown: {},
           sunday_breakdown: [],
           volunteers: [],
-          note: 'No Sundays found within the specified date range. Volunteer commitments only apply to Sundays.',
+          note: 'No past or current Sundays found within the specified date range. Absences cannot be evaluated for future Sundays that have not occurred yet.',
         };
       }
 

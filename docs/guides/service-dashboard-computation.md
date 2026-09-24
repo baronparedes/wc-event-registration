@@ -8,46 +8,57 @@ This document details the architectural design, database calculations, and front
 
 The Services Dashboard provides real-time and historical visibility into Sunday service attendance across 3 standard time slots: **9AM**, **12NN**, and **3PM**.
 
+### Architecture & Navigation
+
+The Services domain is organized into 4 interconnected pages via `ServiceNavigationLinks`:
+
+1. **Services** (`/admin/services`): Overview dashboard with Sunday, Month, and Annual attendance & turn-up rates.
+2. **Commitment Dashboard** (`/admin/services/attendance/commitment`): Volunteer fidelity, absences, excused requests, and attendance scores.
+3. **Attendance Data** (`/admin/services/attendance/data`): Detailed tabular attendance logs with search, role filters, and CSV export.
+4. **Attendance Migration** (`/admin/services/attendance/migration`): CSV upload tool for bulk attendance ingestion and seat mapping.
+
 ### Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│              Frontend (/admin/services)                 │
-│               AdminServicesPage.tsx                     │
-│  - Filter Pills: Sunday | Month | Annual                │
-│  - Boundary Clamping (Min Year 2025, Max Prev Sunday)   │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│     Domain Hook (useServiceDashboardQuery.ts)           │
-│  - Query Key: ['service-dashboard-stats', filters]      │
-│  - Slot Normalization ('9:00 AM' -> '9AM')              │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│     Supabase RPC (get_service_dashboard_stats)          │
-│  - Security Definer with search_path = public           │
-│  - Generates series of Sundays in selected timeframe    │
-│  - Evaluates point-in-time commitments & check-ins      │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-          ┌─────────────────┴─────────────────┐
-          ▼                                   ▼
-┌──────────────────────┐            ┌──────────────────────┐
-│  service_attendance  │            │     public.users     │
-│  - service_date      │            │  - is_active = true  │
-│  - time_slot         │            │  - metadata          │
-│  - is_walk_in        │            │  - role              │
-│  - is_override       │            └──────────┬───────────┘
-└──────────────────────┘                       │
-                                               ▼
-                                    ┌──────────────────────┐
-                                    │user_commitment_history│
-                                    │  - effective_date    │
-                                    │  - metadata snapshot │
-                                    └──────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                      Frontend (/admin/services)                        │
+│                        AdminServicesPage.tsx                           │
+│  - Filter Pills: Sunday | Month | Annual                               │
+│  - Boundary Clamping (Min Year 2025, Max Prev Sunday)                  │
+│  - Action Buttons: Commitment Dashboard | Attendance Data | Migration  │
+│  - SubNav Tabs: Services | Commitment Dashboard | Attendance Data | ...│
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│     Domain Hook (useServiceDashboardQuery.ts)                          │
+│  - Query Key: ['service-dashboard-stats', filters]                     │
+│  - Slot Normalization ('9:00 AM' -> '9AM')                             │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│     Supabase RPC (public.get_service_dashboard_stats)                  │
+│  - SECURITY DEFINER with search_path = public                          │
+│  - Generates series of Sundays in selected timeframe                   │
+│  - Evaluates point-in-time commitments & check-ins per Sunday          │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                  ┌─────────────────┴─────────────────┐
+                  ▼                                   ▼
+        ┌──────────────────────┐            ┌──────────────────────┐
+        │  service_attendance  │            │     public.users     │
+        │  - service_date      │            │  - is_active = true  │
+        │  - time_slot         │            │  - metadata          │
+        │  - is_walk_in        │            │  - role              │
+        │  - is_override       │            └──────────┬───────────┘
+        └──────────────────────┘                       │
+                                                       ▼
+                                            ┌──────────────────────┐
+                                            │user_commitment_history│
+                                            │  - effective_date    │
+                                            │  - metadata snapshot │
+                                            └──────────────────────┘
 ```
 
 ---

@@ -9,6 +9,7 @@ export function AdminServiceAttendanceMigrationPage() {
       <AdminPageShell.Header
         title="Service Attendance Migration"
         description="Upload attendance CSV to migrate records and map tables to service layout seats."
+        breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Migration' }]}
       />
       <ServiceNavigationLinks />
       <AdminPageShell.Content className="mt-6">

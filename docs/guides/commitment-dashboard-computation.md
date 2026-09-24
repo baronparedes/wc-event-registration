@@ -72,7 +72,7 @@ or replace function public.get_commitment_dashboard_stats (
   p_role text default null,
   p_category text default null,
   p_page integer default 1,
-  p_page_size integer default 50
+  p_page_size integer default 500
 ) returns table (
   user_id uuid,
   member_id text,
@@ -198,7 +198,7 @@ Jan Sundays         Feb Sundays        Mar Sundays
 #### Cumulative Dashboard Calculation:
 
 - **`committed`**: Sum of active slots on each Sunday according to the snapshot active on that specific Sunday ($\text{Jan (2)} + \text{Feb (3)} + \text{Mar (1)} = 6$).
-- **`absences` & `excused`**: Each Sunday's attendance is compared exclusively against the commitment active on that specific Sunday.
+- **`absences` & `excused`**: Each Sunday's attendance is compared exclusively against the commitment active on that specific Sunday. Future Sundays that have not occurred yet (`sunday_date > current_date` in Manila time) are excluded to prevent premature penalties.
 
 ---
 
@@ -206,14 +206,14 @@ Jan Sundays         Feb Sundays        Mar Sundays
 
 ### Metric Definitions
 
-| Metric              | Column Name  | Calculation Logic                                                                                    | Description                                        |
-| :------------------ | :----------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------------------- |
-| **Committed**       | `committed`  | Count of `(sunday_date, time_slot)` where volunteer is committed.                                    | Total service slots scheduled in timeframe.        |
-| **Attended**        | `attended`   | Count of `service_attendance` check-ins where `is_walk_in = false`.                                  | Committed service slots checked in.                |
-| **Absences**        | `absences`   | Committed slots with no check-in and **no** excused request.                                         | Missed committed commitments.                      |
-| **Excused**         | `excused`    | Committed slots with no check-in and an active **excused request**.                                  | Scheduled commitments excused in advance.          |
-| **Walk-in 9AM/3PM** | `wi_9am_3pm` | Count of `service_attendance` check-ins where `is_walk_in = true` and `time_slot in ('9AM', '3PM')`. | Additional uncommitted support in peak services.   |
-| **Walk-in 12NN**    | `wi_12nn`    | Count of `service_attendance` check-ins where `is_walk_in = true` and `time_slot = '12NN'`.          | Additional uncommitted support in mid-day service. |
+| Metric              | Column Name  | Calculation Logic                                                                                                           | Description                                        |
+| :------------------ | :----------- | :-------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------- |
+| **Committed**       | `committed`  | Count of `(sunday_date, time_slot)` where volunteer is committed.                                                           | Total service slots scheduled in timeframe.        |
+| **Attended**        | `attended`   | Count of `service_attendance` check-ins where `is_walk_in = false`.                                                         | Committed service slots checked in.                |
+| **Absences**        | `absences`   | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and **no** excused request.        | Missed committed commitments.                      |
+| **Excused**         | `excused`    | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and an active **excused request**. | Scheduled commitments excused in advance.          |
+| **Walk-in 9AM/3PM** | `wi_9am_3pm` | Count of `service_attendance` check-ins where `is_walk_in = true` and `time_slot in ('9AM', '3PM')`.                        | Additional uncommitted support in peak services.   |
+| **Walk-in 12NN**    | `wi_12nn`    | Count of `service_attendance` check-ins where `is_walk_in = true` and `time_slot = '12NN'`.                                 | Additional uncommitted support in mid-day service. |
 
 ### Attendance Scoring Formula
 

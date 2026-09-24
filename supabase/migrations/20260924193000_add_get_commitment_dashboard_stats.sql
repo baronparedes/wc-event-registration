@@ -8,7 +8,7 @@ create or replace function public.get_commitment_dashboard_stats (
   p_role text default null,
   p_category text default null,
   p_page integer default 1,
-  p_page_size integer default 50
+  p_page_size integer default 500
 ) returns table (
   user_id uuid,
   member_id text,
@@ -45,8 +45,8 @@ begin
   if p_page < 1 then
     p_page := 1;
   end if;
-  if p_page_size < 1 or p_page_size > 100 then
-    p_page_size := 50;
+  if p_page_size < 1 or p_page_size > 500 then
+    p_page_size := 500;
   end if;
 
   v_offset := (p_page - 1) * p_page_size;
@@ -145,7 +145,8 @@ begin
             else 'fifth_sunday'
           end as key
         ) as ckey
-        where coalesce(
+        where s.sunday_date <= (now() at time zone 'Asia/Manila')::date
+        and coalesce(
           (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
           fu.metadata
         )->>ckey.key ilike ('%' || ts.time_slot || '%')
@@ -180,7 +181,8 @@ begin
             else 'fifth_sunday'
           end as key
         ) as ckey
-        where coalesce(
+        where s.sunday_date <= (now() at time zone 'Asia/Manila')::date
+        and coalesce(
           (select sub_ch.metadata from public.user_commitment_history sub_ch where sub_ch.user_id = fu.user_id and sub_ch.effective_date <= s.sunday_date order by sub_ch.effective_date desc limit 1),
           fu.metadata
         )->>ckey.key ilike ('%' || ts.time_slot || '%')

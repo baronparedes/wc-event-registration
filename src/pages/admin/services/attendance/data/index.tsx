@@ -264,6 +264,7 @@ export function AdminServiceAttendanceDataPage() {
             disabled={isLoading}
           />
         }
+        breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Data' }]}
       />
       <ServiceNavigationLinks />
 
