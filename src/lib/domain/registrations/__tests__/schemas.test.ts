@@ -1,29 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
-import type { AdminEventField } from '@/lib/domain/event-fields';
+import type { AdminEventField, EventFieldType } from '@/lib/domain/event-fields';
 
 import { buildBulkRegistrationCsvRowSchema, buildBulkRegistrationCsvRowsSchema } from '../schemas';
 
+function makeField(
+  fieldKey: string,
+  fieldType: EventFieldType,
+  overrides: Partial<AdminEventField> = {},
+): AdminEventField {
+  return {
+    id: `${fieldKey}-id`,
+    event_id: 'event-1',
+    field_key: fieldKey,
+    label: fieldKey,
+    field_type: fieldType,
+    applicability: 'members',
+    is_required: false,
+    is_active: true,
+    placeholder: null,
+    help_text: null,
+    options: [],
+    validation_rules: {},
+    display_order: 0,
+    created_at: '2026-08-14T00:00:00.000Z',
+    updated_at: '2026-08-14T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('BulkRegistrationCsvSchema', () => {
-  const mockFields: AdminEventField[] = [
-    {
-      id: 'field-1',
-      event_id: 'event-1',
-      field_key: 'custom_text',
-      label: 'Custom Text',
-      field_type: 'text',
-      applicability: 'both',
-      is_required: true,
-      is_active: true,
-      placeholder: null,
-      help_text: null,
-      options: [],
-      validation_rules: {},
-      display_order: 1,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-  ];
+  const mockFields: AdminEventField[] = [makeField('custom_text', 'text', { is_required: true })];
 
   describe('buildBulkRegistrationCsvRowSchema', () => {
     it('validates a correct row with all required fields', () => {
@@ -58,6 +65,23 @@ describe('BulkRegistrationCsvSchema', () => {
       }
     });
 
+    it('rejects empty or whitespace-only member_id', () => {
+      const schema = buildBulkRegistrationCsvRowSchema(mockFields);
+
+      const invalidData = {
+        member_id: '   ',
+        answers: {
+          custom_text: 'Some value',
+        },
+      };
+
+      const result = schema.safeParse(invalidData);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('member_id is required');
+      }
+    });
+
     it('makes registration_id optional', () => {
       const schema = buildBulkRegistrationCsvRowSchema(mockFields);
 
@@ -86,6 +110,32 @@ describe('BulkRegistrationCsvSchema', () => {
   });
 
   describe('buildBulkRegistrationCsvRowsSchema', () => {
+    it('validates a valid array of CSV rows', () => {
+      const fields = [makeField('age', 'number'), makeField('notes', 'text')];
+
+      const schema = buildBulkRegistrationCsvRowsSchema(fields);
+
+      const validData = [
+        {
+          member_id: 'M-1',
+          answers: {
+            age: 30,
+            notes: 'test note',
+          },
+        },
+        {
+          member_id: 'M-2',
+          registration_id: 'reg-1',
+          answers: {
+            age: 40,
+          },
+        },
+      ];
+
+      const result = schema.safeParse(validData);
+      expect(result.success).toBe(true);
+    });
+
     it('requires at least one row', () => {
       const schema = buildBulkRegistrationCsvRowsSchema(mockFields);
 
@@ -96,6 +146,57 @@ describe('BulkRegistrationCsvSchema', () => {
           'At least one CSV row is required for bulk upload.',
         );
       }
+    });
+
+    it('rejects rows where member_id is missing or empty', () => {
+      const fields = [makeField('age', 'number')];
+
+      const schema = buildBulkRegistrationCsvRowsSchema(fields);
+
+      const missingIdResult = schema.safeParse([{ answers: { age: 30 } }]);
+      expect(missingIdResult.success).toBe(false);
+
+      const emptyIdResult = schema.safeParse([{ member_id: '  ', answers: { age: 30 } }]);
+      expect(emptyIdResult.success).toBe(false);
+      if (!emptyIdResult.success) {
+        expect(emptyIdResult.error.issues[0].message).toBe('member_id is required');
+      }
+    });
+
+    it('rejects when answers do not match the dynamic field schema', () => {
+      const fields = [makeField('age', 'number')];
+
+      const schema = buildBulkRegistrationCsvRowsSchema(fields);
+
+      const reallyInvalidAnswerTypeResult = schema.safeParse([
+        {
+          member_id: 'M-1',
+          answers: {
+            age: { invalid: true },
+          },
+        },
+      ]);
+
+      expect(reallyInvalidAnswerTypeResult.success).toBe(false);
+    });
+
+    it('allows optional fields by ignoring missing answers or mapping them correctly', () => {
+      const fields = [
+        makeField('age', 'number', { is_required: true }),
+        makeField('notes', 'text', { is_required: true }),
+      ];
+
+      const schema = buildBulkRegistrationCsvRowsSchema(fields);
+
+      const partialData = [
+        {
+          member_id: 'M-1',
+          answers: {},
+        },
+      ];
+
+      const result = schema.safeParse(partialData);
+      expect(result.success).toBe(true);
     });
 
     it('validates multiple rows correctly', () => {
