@@ -91,17 +91,13 @@ export function useReorderFormFieldsMutation(formId: string) {
 
   return useMutation({
     mutationFn: async (orderedIds: string[]) => {
-      // Update display_order for each field based on its new position
-      const updates = orderedIds.map((id, index) =>
-        supabase
-          .from('form_fields')
-          .update({ display_order: index * 10 })
-          .eq('id', id)
-          .eq('form_id', formId),
-      );
-      const results = await Promise.all(updates);
-      const failed = results.find((r) => r.error);
-      if (failed?.error) throw failed.error;
+      // Update display_order for each field based on its new position in a single RPC call
+      const { error } = await supabase.rpc('reorder_form_fields', {
+        p_form_id: formId,
+        p_field_ids: orderedIds,
+      });
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formFieldsQueryKey(formId, true) });

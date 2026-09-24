@@ -13,13 +13,14 @@ import { adminFormQueryKey } from '@/hooks/domain/forms/queries/useAdminFormQuer
 import { ADMIN_FORMS_QUERY_KEY } from '@/hooks/domain/forms/queries/useAdminFormsQuery';
 import { formFieldsQueryKey } from '@/hooks/domain/forms/queries/useFormFieldsQuery';
 
-const { mockFrom, mockInvoke, mockSingle } = vi.hoisted(() => {
+const { mockFrom, mockInvoke, mockSingle, mockRpc } = vi.hoisted(() => {
   const single = vi.fn();
 
   return {
     mockSingle: single,
     mockInvoke: vi.fn(),
     mockFrom: vi.fn(),
+    mockRpc: vi.fn(),
   };
 });
 
@@ -30,6 +31,7 @@ vi.mock('@/lib/infrastructure', async () => {
     ...actual,
     supabase: {
       from: mockFrom,
+      rpc: mockRpc,
       functions: {
         invoke: mockInvoke,
       },
@@ -377,10 +379,7 @@ describe('useFormMutations', () => {
 
   describe('useReorderFormFieldsMutation', () => {
     it('reorders fields and updates display_order for each item', async () => {
-      const eqForm = vi.fn().mockResolvedValue({ error: null });
-      const eqId = vi.fn().mockReturnValue({ eq: eqForm });
-      const update = vi.fn().mockReturnValue({ eq: eqId });
-      mockFrom.mockReturnValue({ update });
+      mockRpc.mockResolvedValueOnce({ error: null });
 
       const { result, queryClient } = renderHookWithClient(() =>
         useReorderFormFieldsMutation('form-123'),
@@ -391,27 +390,17 @@ describe('useFormMutations', () => {
         await result.current.mutateAsync(['field-a', 'field-b', 'field-c']);
       });
 
-      expect(update).toHaveBeenCalledWith({ display_order: 0 });
-      expect(update).toHaveBeenCalledWith({ display_order: 10 });
-      expect(update).toHaveBeenCalledWith({ display_order: 20 });
+      expect(mockRpc).toHaveBeenCalledWith('reorder_form_fields', {
+        p_form_id: 'form-123',
+        p_field_ids: ['field-a', 'field-b', 'field-c'],
+      });
       expect(invalidateQueriesSpy).toHaveBeenCalledWith({
         queryKey: formFieldsQueryKey('form-123', true),
       });
     });
 
     it('throws error when one of the updates fails', async () => {
-      const eqFormSuccess = vi.fn().mockResolvedValue({ error: null });
-      const eqFormError = vi.fn().mockResolvedValue({ error: new Error('Reorder failed') });
-
-      let callCount = 0;
-      const update = vi.fn().mockImplementation(() => {
-        callCount++;
-        if (callCount === 2) {
-          return { eq: vi.fn().mockReturnValue({ eq: eqFormError }) };
-        }
-        return { eq: vi.fn().mockReturnValue({ eq: eqFormSuccess }) };
-      });
-      mockFrom.mockReturnValue({ update });
+      mockRpc.mockResolvedValueOnce({ error: new Error('Reorder failed') });
 
       const { result } = renderHookWithClient(() => useReorderFormFieldsMutation('form-123'));
 
