@@ -6,6 +6,12 @@ import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { AdminForm } from '@/lib/domain/forms';
 
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if ('target' in node && node.getAttribute('target') === '_blank') {
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
+
 type FormHeaderCardProps = {
   form: AdminForm | null | undefined;
   isLoading: boolean;

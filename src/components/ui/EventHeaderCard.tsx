@@ -1,11 +1,16 @@
-import DOMPurify from 'dompurify';
 import { Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { EventAvailability } from '@/lib/domain/events';
-import { formatDateTime } from '@/lib/infrastructure';
+import { DOMPurify, formatDateTime } from '@/lib/infrastructure';
+
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if ('target' in node && node.getAttribute('target') === '_blank') {
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
 
 type EventHeaderCardProps = {
   slug?: string;
