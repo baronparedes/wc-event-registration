@@ -5,6 +5,10 @@ import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 
 import { VolunteerListTable } from '../VolunteerListTable';
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
+}));
+
 describe('VolunteerListTable', () => {
   const mockStats: CommitmentDashboardStat[] = [
     {

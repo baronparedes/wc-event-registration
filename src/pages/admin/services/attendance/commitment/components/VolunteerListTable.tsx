@@ -2,6 +2,7 @@ import { forwardRef, useMemo, useState } from 'react';
 
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Users } from 'lucide-react';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FormInputField } from '@/components/ui/FormInputField';
@@ -198,7 +199,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
         <ListTable>
           <ListTableHead>
             <ListTableHeaderRow>
-              <ListTableHeaderCell>
+              <ListTableHeaderCell className="sticky left-0 z-20 bg-white shadow-[1px_0_0_0_var(--color-border)]">
                 <button
                   type="button"
                   onClick={() => handleSort('full_name')}
@@ -312,10 +313,17 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           </ListTableHead>
           <ListTableBody>
             {sortedStats.map((stat) => (
-              <ListTableRow key={stat.user_id}>
-                <ListTableCell className="whitespace-nowrap">
-                  <div className="font-heading font-semibold text-text">{stat.full_name}</div>
-                  <div className="text-xs text-muted">{stat.nickname || '-'}</div>
+              <ListTableRow key={stat.user_id} className="group">
+                <ListTableCell className="sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Avatar name={stat.full_name} size="sm" className="h-8 w-8 text-xs shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-heading font-semibold text-text truncate">
+                        {stat.full_name}
+                      </div>
+                      <div className="text-xs text-muted truncate">{stat.nickname || '-'}</div>
+                    </div>
+                  </div>
                 </ListTableCell>
                 <ListTableCell className="whitespace-nowrap">
                   {stat.role ? (
