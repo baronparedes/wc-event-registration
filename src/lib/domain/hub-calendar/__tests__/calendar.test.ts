@@ -20,9 +20,19 @@ describe('hub-calendar calendar utils', () => {
     expect(toMonthDayKey(12, 25)).toBe('12-25');
   });
 
-  it('formats full ISO date keys with padding', () => {
-    expect(toIsoDateKey(2026, 9, 5)).toBe('2026-09-05');
-    expect(toIsoDateKey(2026, 12, 25)).toBe('2026-12-25');
+  describe('toIsoDateKey', () => {
+    it('formats full ISO date keys with padding for single digit month and day', () => {
+      expect(toIsoDateKey(2026, 9, 5)).toBe('2026-09-05');
+    });
+
+    it('formats full ISO date keys without padding for double digit month and day', () => {
+      expect(toIsoDateKey(2026, 12, 25)).toBe('2026-12-25');
+    });
+
+    it('handles zero or negative year correctly', () => {
+      expect(toIsoDateKey(0, 1, 1)).toBe('0-01-01');
+      expect(toIsoDateKey(-2026, 5, 10)).toBe('-2026-05-10');
+    });
   });
 
   describe('parseServiceSlots', () => {

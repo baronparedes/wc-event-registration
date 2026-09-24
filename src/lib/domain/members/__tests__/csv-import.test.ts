@@ -175,6 +175,59 @@ describe('buildMemberCsvPreparedRows', () => {
     });
   });
 
+  it('normalizes M/D/YY and M/D/YYYY date formats', () => {
+    const result = buildMemberCsvPreparedRows([
+      {
+        RFID: '1',
+        Firstname: 'A',
+        Surname: 'B',
+        Nickname: 'C',
+        Role: 'R',
+        Category: 'C',
+        DateOfBirth: '1/2/90',
+      },
+      {
+        RFID: '2',
+        Firstname: 'D',
+        Surname: 'E',
+        Nickname: 'F',
+        Role: 'R',
+        Category: 'C',
+        DateOfBirth: '12/31/1995',
+      },
+      {
+        RFID: '3',
+        Firstname: 'G',
+        Surname: 'H',
+        Nickname: 'I',
+        Role: 'R',
+        Category: 'C',
+        DateOfBirth: '3/15/26',
+      },
+    ]);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].date_of_birth).toBe('1990-01-02');
+    expect(result.rows[1].date_of_birth).toBe('1995-12-31');
+    expect(result.rows[2].date_of_birth).toBe('1926-03-15');
+  });
+
+  it('ignores metadata with completely empty values', () => {
+    const result = buildMemberCsvPreparedRows([
+      {
+        RFID: '1',
+        Firstname: 'A',
+        Surname: 'B',
+        Nickname: 'C',
+        Role: 'R',
+        Category: 'C',
+        'Custom Field': '   ',
+      },
+    ]);
+
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].metadata).toEqual({});
+  });
+
   it('returns row-level required field and format errors', () => {
     const result = buildMemberCsvPreparedRows([
       {
@@ -483,5 +536,98 @@ describe('buildMemberCsvImportPreview', () => {
 
     expect(previewConflict.rows[1].operation).toBe('error');
     expect(previewConflict.rows[1].errors.join(' ')).toContain('already targets this same member');
+  });
+
+  it('matches triplet regardless of case and whitespace', () => {
+    const existing = [
+      makeExistingMember({
+        id: 'member-1',
+        first_name: 'John  ',
+        last_name: 'DOE',
+        nickname: ' jd',
+      }),
+    ];
+
+    const preview = buildMemberCsvImportPreview(
+      [
+        makePreparedRow({
+          member_id: 'NEW-RFID',
+          first_name: '  jOhn',
+          last_name: 'doe  ',
+          nickname: 'Jd',
+        }),
+      ],
+      existing,
+    );
+
+    expect(preview.rows[0].operation).toBe('update_member_id');
+    expect(preview.rows[0].target_user_id).toBe('member-1');
+  });
+
+  it('successfully updates when both RFID and Triplet match the same member', () => {
+    const existing = [
+      makeExistingMember({
+        id: 'member-1',
+        member_id: 'RFID-1',
+        first_name: 'John',
+        last_name: 'Doe',
+        nickname: 'JD',
+      }),
+    ];
+
+    const preview = buildMemberCsvImportPreview(
+      [
+        makePreparedRow({
+          member_id: 'RFID-1',
+          first_name: 'John',
+          last_name: 'Doe',
+          nickname: 'JD',
+        }),
+      ],
+      existing,
+    );
+
+    expect(preview.rows[0].operation).toBe('update');
+    expect(preview.rows[0].target_user_id).toBe('member-1');
+    expect(preview.rows[0].errors).toEqual([]);
+  });
+
+  it('returns error when two rows target the same user through different matching strategies', () => {
+    const existing = [
+      makeExistingMember({
+        id: 'member-1',
+        member_id: 'RFID-1',
+        first_name: 'John',
+        last_name: 'Doe',
+        nickname: 'JD',
+      }),
+    ];
+
+    const preview = buildMemberCsvImportPreview(
+      [
+        makePreparedRow({
+          row_number: 2,
+          member_id: 'RFID-1',
+          first_name: 'Other',
+          last_name: 'Person',
+          nickname: 'OP',
+        }), // Matches by RFID
+        makePreparedRow({
+          row_number: 3,
+          member_id: 'NEW-RFID',
+          first_name: 'John',
+          last_name: 'Doe',
+          nickname: 'JD',
+        }), // Matches by Triplet
+      ],
+      existing,
+    );
+
+    // Both end up targeting 'member-1'
+    expect(preview.rows[0].operation).toBe('update');
+    expect(preview.rows[0].target_user_id).toBe('member-1');
+
+    expect(preview.rows[1].operation).toBe('error');
+    expect(preview.rows[1].errors.join(' ')).toContain('already targets this same member');
   });
 });
