@@ -222,6 +222,11 @@ const AdminServiceAttendanceDataPage = lazy(() =>
     default: module.AdminServiceAttendanceDataPage,
   })),
 );
+const AdminServiceAttendanceCommitmentPage = lazy(() =>
+  import('../pages/admin/service/attendance/commitment').then((module) => ({
+    default: module.AdminServiceAttendanceCommitmentPage,
+  })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -303,6 +308,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServices: AdminServicesPage,
   adminServiceAttendanceMigration: AdminServiceAttendanceMigrationPage,
   adminServiceAttendanceData: AdminServiceAttendanceDataPage,
+  adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {
