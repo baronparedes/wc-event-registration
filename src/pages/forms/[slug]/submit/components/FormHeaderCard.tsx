@@ -86,8 +86,8 @@ export function FormHeaderCard({
             [&_th]:border [&_th]:border-border [&_th]:bg-accent/20 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-text
             [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2
           "
-          // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
           dangerouslySetInnerHTML={{
+            // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
             __html: DOMPurify.sanitize(form.description),
           }}
         />
