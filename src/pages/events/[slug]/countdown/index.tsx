@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar, Home, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { usePublicEventQuery } from '@/hooks/domain/events';
-import { DOMPurify, formatDateTime } from '@/lib/infrastructure';
+import { formatDateTime } from '@/lib/infrastructure';
 
 export function EventCountdownPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -128,9 +129,19 @@ export function EventCountdownPage() {
           <div className="my-12 rounded-3xl border border-primary/20 bg-primary/5 p-12">
             <h2 className="text-3xl font-bold text-primary">The Event has Started</h2>
             <p className="mt-4 text-muted">Head over to the registration page to join us.</p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
+                variant="primaryOutline"
+                className="w-full sm:w-auto"
+                onClick={() => navigate(ROUTE_PATHS.home)}
+              >
+                <Home className="h-4 w-4 mr-2" aria-hidden="true" />
+                Go Home
+              </Button>
+              <Button
+                size="lg"
+                className="w-full sm:w-auto"
                 onClick={() =>
                   navigate(toRoute('eventPublicRegister', { slug: event.slug }), { replace: true })
                 }
@@ -152,13 +163,9 @@ export function EventCountdownPage() {
             {event.title}
           </h1>
           {event.description && (
-            <p className="mx-auto max-w-2xl text-balance text-lg text-muted md:text-xl">
-              <span
-                // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
-                className="line-clamp-2"
-              />
-            </p>
+            <div className="mx-auto max-w-2xl">
+              <MarkdownRenderer content={event.description} />
+            </div>
           )}
           <div className="mx-auto max-w-md pt-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-6 py-2 shadow-xs">
@@ -194,9 +201,19 @@ export function EventCountdownPage() {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             size="3xl"
+            variant="primaryOutline"
+            className="w-full sm:w-auto"
+            onClick={() => navigate(ROUTE_PATHS.home)}
+          >
+            <Home className="h-5 w-5 mr-2" aria-hidden="true" />
+            Go Home
+          </Button>
+          <Button
+            size="3xl"
+            className="w-full sm:w-auto"
             onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}
           >
             Go to Registration Page

@@ -17,8 +17,17 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-      <a href={to}>{children}</a>
+    Link: ({
+      children,
+      to,
+      ...props
+    }: {
+      children?: React.ReactNode;
+      to: string;
+    } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+      <a href={to} {...props}>
+        {children}
+      </a>
     ),
   };
 });
@@ -229,12 +238,38 @@ describe('EventCard', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('does not navigate on unhandled key press when open', () => {
-    render(<EventCard event={baseEvent} />);
+  it('renders countdown button for open and upcoming events and links to countdown page', () => {
+    const { rerender } = render(<EventCard event={baseEvent} />);
 
-    const card = screen.getAllByRole('link')[0];
-    fireEvent.keyDown(card, { key: 'Escape' });
+    const countdownLink = screen.getByRole('link', {
+      name: 'View countdown for Summer Gathering',
+    });
+    expect(countdownLink).toHaveAttribute('href', '/events/summer-2026/countdown');
 
-    expect(mockNavigate).not.toHaveBeenCalled();
+    rerender(
+      <EventCard
+        event={{
+          ...baseEvent,
+          listingStatus: 'upcoming',
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'View countdown for Summer Gathering' }),
+    ).toBeInTheDocument();
+
+    rerender(
+      <EventCard
+        event={{
+          ...baseEvent,
+          listingStatus: 'past',
+        }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('link', { name: 'View countdown for Summer Gathering' }),
+    ).not.toBeInTheDocument();
   });
 });

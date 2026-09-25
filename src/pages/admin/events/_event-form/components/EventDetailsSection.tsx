@@ -1,7 +1,7 @@
-import type { FieldErrors, UseFormRegister } from 'react-hook-form';
+import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form';
 
 import { FormInputField } from '@/components/ui/FormInputField';
-import { FormTextareaField } from '@/components/ui/FormTextareaField';
+import { FormMarkdownField } from '@/components/ui/FormMarkdownField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { SlugField } from '@/components/ui/SlugField';
 import type { CreateEventInput } from '@/lib/domain/events';
@@ -11,12 +11,13 @@ type EventDetailsSectionProps = {
   slugValue: string;
   errors: FieldErrors<CreateEventInput>;
   register: UseFormRegister<CreateEventInput>;
+  control: Control<CreateEventInput>;
   onSlugChange: (value: string) => void;
   disabled?: boolean;
 };
 
 export function EventDetailsSection(props: EventDetailsSectionProps) {
-  const { isEditMode, slugValue, errors, register, onSlugChange, disabled } = props;
+  const { isEditMode, slugValue, errors, register, control, onSlugChange, disabled } = props;
 
   return (
     <SectionCard title="Event Details">
@@ -39,13 +40,11 @@ export function EventDetailsSection(props: EventDetailsSectionProps) {
           value={slugValue}
         />
 
-        <FormTextareaField
-          disabled={disabled}
-          id="event-description"
+        <FormMarkdownField
+          control={control}
+          name="description"
           label="Description"
           placeholder="Describe the event for participants..."
-          registration={register('description')}
-          rows={4}
         />
 
         <FormInputField

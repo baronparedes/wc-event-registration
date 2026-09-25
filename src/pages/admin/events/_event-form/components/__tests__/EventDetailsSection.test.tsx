@@ -11,7 +11,7 @@ function Harness(props: {
   errors?: FieldErrors<CreateEventInput>;
   disabled?: boolean;
 }) {
-  const { register } = useForm<CreateEventInput>();
+  const { register, control } = useForm<CreateEventInput>();
 
   return (
     <EventDetailsSection
@@ -19,6 +19,7 @@ function Harness(props: {
       slugValue="sample-event"
       errors={props.errors ?? {}}
       register={register}
+      control={control}
       onSlugChange={vi.fn()}
       disabled={props.disabled}
     />

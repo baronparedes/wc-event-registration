@@ -2,7 +2,7 @@ import { FileText, Share } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { Badge, Button } from '@/components/ui';
+import { Badge, Button, MarkdownRenderer } from '@/components/ui';
 import { toRoute } from '@/config/constants';
 import type { AdminForm } from '@/lib/domain/forms';
 
@@ -78,36 +78,42 @@ export function FormCard({ form }: FormCardProps) {
       role={isOpen ? 'link' : undefined}
       tabIndex={isOpen ? 0 : undefined}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-heading text-base font-semibold text-text flex items-start gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-heading text-base font-semibold text-text flex items-start gap-2 min-w-0">
           <FileText className="h-5 w-5 shrink-0 text-muted mt-0.5" aria-hidden="true" />
-          <span>{form.title}</span>
+          <span className="break-words">{form.title}</span>
         </h3>
-        <div className="flex items-start gap-2 shrink-0">
+        <div className="shrink-0">
           <Badge variant="default">Open</Badge>
-          {isOpen && (
-            <div>
-              <Button
-                aria-label={`Share ${form.title}`}
-                onClick={handleShareClick}
-                size="sm"
-                variant="primaryOutline"
-              >
-                <Share className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="space-y-1">
-        {form.description && <p className="line-clamp-2 text-sm text-muted">{form.description}</p>}
-      </div>
+      {form.description && (
+        <MarkdownRenderer
+          content={form.description}
+          className="text-sm prose-p:text-muted prose-p:leading-relaxed"
+        />
+      )}
 
       {isOpen && (
-        <Button asChild className="mt-auto inline-flex items-center justify-center" size="md">
-          <Link to={submitPath}>Fill out</Link>
-        </Button>
+        <div className="mt-auto flex items-center gap-2 pt-1">
+          <Button
+            asChild
+            className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold tracking-wide text-white shadow-xs"
+            size="md"
+          >
+            <Link to={submitPath}>Fill out</Link>
+          </Button>
+          <Button
+            aria-label={`Share ${form.title}`}
+            onClick={handleShareClick}
+            size="md"
+            variant="primaryOutline"
+            className="min-h-[44px] min-w-[44px] p-0 flex items-center justify-center shrink-0"
+          >
+            <Share className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
       )}
     </div>
   );

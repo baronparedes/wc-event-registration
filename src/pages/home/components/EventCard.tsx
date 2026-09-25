@@ -1,8 +1,8 @@
-import { Calendar, Share, Users } from 'lucide-react';
+import { Calendar, Clock, Share, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { Badge, Button } from '@/components/ui';
+import { Badge, Button, MarkdownRenderer } from '@/components/ui';
 import { toRoute } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
 import { formatDateOnly } from '@/lib/infrastructure';
@@ -18,6 +18,7 @@ type EventCardProps = {
 export function EventCard({ event }: EventCardProps) {
   const navigate = useNavigate();
   const registrationPath = toRoute('eventRegister', { slug: event.slug });
+  const countdownPath = toRoute('eventCountdown', { slug: event.slug });
   const shareUrl = new URL(registrationPath, window.location.origin).toString();
   const isOpen = event.listingStatus === 'open';
 
@@ -79,12 +80,12 @@ export function EventCard({ event }: EventCardProps) {
       role={isOpen ? 'link' : undefined}
       tabIndex={isOpen ? 0 : undefined}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-heading text-base font-semibold text-text flex items-start gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-heading text-base font-semibold text-text flex items-start gap-2 min-w-0">
           <Calendar className="h-5 w-5 shrink-0 text-muted mt-0.5" aria-hidden="true" />
-          <span>{event.title}</span>
+          <span className="break-words">{event.title}</span>
         </h3>
-        <div className="flex items-start gap-2 shrink-0">
+        <div className="shrink-0">
           <Badge
             variant={
               event.listingStatus === 'open'
@@ -100,22 +101,15 @@ export function EventCard({ event }: EventCardProps) {
                 ? 'Upcoming'
                 : 'Past'}
           </Badge>
-          {isOpen && (
-            <div>
-              <Button
-                aria-label={`Share ${event.title}`}
-                onClick={handleShareClick}
-                size="sm"
-                variant="primaryOutline"
-              >
-                <Share className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
-      {event.description && <p className="line-clamp-2 text-sm text-muted">{event.description}</p>}
+      {event.description && (
+        <MarkdownRenderer
+          content={event.description}
+          className="text-sm prose-p:text-muted prose-p:leading-relaxed"
+        />
+      )}
 
       {event.allow_public_registrations && (
         <div>
@@ -148,14 +142,65 @@ export function EventCard({ event }: EventCardProps) {
         </dd>
       </dl>
 
-      {isOpen && (
-        <Button
-          asChild
-          className="mt-auto inline-flex min-h-[44px] items-center justify-center font-semibold tracking-wide text-white shadow-xs"
-          size="md"
-        >
-          <Link to={registrationPath}>Register Now</Link>
-        </Button>
+      {(isOpen || event.listingStatus === 'upcoming') && (
+        <div className="mt-auto flex items-center gap-2 pt-1">
+          {isOpen ? (
+            <Button
+              asChild
+              className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold tracking-wide text-white shadow-xs"
+              size="md"
+            >
+              <Link to={registrationPath}>Register Now</Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold tracking-wide shadow-xs"
+              size="md"
+              variant="primaryOutline"
+            >
+              <Link
+                to={countdownPath}
+                aria-label={`View countdown for ${event.title}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Clock className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                View Countdown
+              </Link>
+            </Button>
+          )}
+
+          {isOpen && (
+            <Button
+              asChild
+              aria-label={`View countdown for ${event.title}`}
+              size="md"
+              variant="primaryOutline"
+              className="min-h-[44px] min-w-[44px] p-0 flex items-center justify-center shrink-0"
+            >
+              <Link
+                to={countdownPath}
+                aria-label={`View countdown for ${event.title}`}
+                title="View countdown"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Clock className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          )}
+
+          {isOpen && (
+            <Button
+              aria-label={`Share ${event.title}`}
+              onClick={handleShareClick}
+              size="md"
+              variant="primaryOutline"
+              className="min-h-[44px] min-w-[44px] p-0 flex items-center justify-center shrink-0"
+            >
+              <Share className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
