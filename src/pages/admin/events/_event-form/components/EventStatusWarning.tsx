@@ -1,3 +1,5 @@
+import { AlertBanner } from '@/components/ui';
+
 type EventStatusWarningProps = {
   status: 'draft' | 'published' | 'archived';
 };
@@ -12,21 +14,19 @@ export function EventStatusWarning({ status }: EventStatusWarningProps) {
 
   if (status === 'archived') {
     return (
-      <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-        <p className="text-sm font-medium text-amber-900">
-          ⚠️ This event is archived and cannot be edited. Publish it again to make changes.
-        </p>
-      </div>
+      <AlertBanner
+        variant="warning"
+        description="This event is archived and cannot be edited. Publish it again to make changes."
+      />
     );
   }
 
   if (status === 'published') {
     return (
-      <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
-        <p className="text-sm font-medium text-blue-900">
-          ℹ️ This event is published. Changes will be visible to registrants.
-        </p>
-      </div>
+      <AlertBanner
+        variant="info"
+        description="This event is published. Changes will be visible to registrants."
+      />
     );
   }
 

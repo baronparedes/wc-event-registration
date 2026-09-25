@@ -77,3 +77,11 @@ export {
   type DuplicateEntityDialogProps,
   type DuplicateEntityFormValues,
 } from './DuplicateEntityDialog';
+export { AlertBanner, type AlertBannerProps, type AlertBannerVariant } from './AlertBanner';
+export {
+  LifecycleStatusBadge,
+  RegistrationStatusBadge,
+  MemberStatusBadge,
+  type LifecycleStatus,
+  type RegistrationStatus,
+} from './StatusBadge';

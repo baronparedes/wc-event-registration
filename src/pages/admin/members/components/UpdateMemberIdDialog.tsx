@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { IdCardLanyard } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { AlertBanner } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -78,13 +79,18 @@ export function UpdateMemberIdDialog({
         </Dialog.Header>
 
         <Dialog.Body className="space-y-4">
-          <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
-            <p className="font-semibold">Member: {memberName}</p>
-            <p className="font-semibold">Current Member ID: {currentMemberId}</p>
-            <p className="mt-1 text-xs text-amber-700">
-              This ID is used for lookup and registration linking. Update with caution.
-            </p>
-          </div>
+          <AlertBanner
+            variant="warning"
+            description={
+              <div>
+                <p className="font-semibold text-amber-900">Member: {memberName}</p>
+                <p className="font-semibold text-amber-900">Current Member ID: {currentMemberId}</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  This ID is used for lookup and registration linking. Update with caution.
+                </p>
+              </div>
+            }
+          />
 
           <div className="space-y-1.5">
             <label htmlFor="new-member-id" className="block text-sm font-semibold text-text">

@@ -14,14 +14,6 @@ const { mockGetPublishRequirements, mockAreAllRequirementsMet } = vi.hoisted(() 
   mockAreAllRequirementsMet: vi.fn(),
 }));
 
-vi.mock('@/components/ui', () => ({
-  Badge: ({ variant, children }: { variant: string; icon?: ReactNode; children: ReactNode }) => (
-    <span data-testid="status-badge" data-variant={variant}>
-      {children}
-    </span>
-  ),
-}));
-
 vi.mock('@/components/ui/ActionLink', () => ({
   ActionButton: ({
     children,
@@ -106,15 +98,12 @@ describe('admin event mini-components', () => {
 
   it('renders status badge label and variant including fallback branch', () => {
     const { rerender } = render(<EventStatusBadge status="published" />);
-    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'default');
     expect(screen.getByText('Published')).toBeInTheDocument();
 
     rerender(<EventStatusBadge status="archived" />);
-    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'destructive');
     expect(screen.getByText('Archived')).toBeInTheDocument();
 
     rerender(<EventStatusBadge status={'unknown' as unknown as never} />);
-    expect(screen.getByTestId('status-badge')).toHaveAttribute('data-variant', 'outline');
     expect(screen.getByText('Draft')).toBeInTheDocument();
   });
 

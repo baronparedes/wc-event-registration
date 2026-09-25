@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink, SectionCard } from '@/components/ui';
+import { ActionLink, RegistrationStatusBadge, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -67,35 +67,6 @@ function formatAnswer(answer: unknown, fieldType: string): string {
   }
 
   return String(answer);
-}
-
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'submitted':
-      return (
-        <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-          {UI_MESSAGES.registrationStatus.submitted}
-        </span>
-      );
-    case 'updated':
-      return (
-        <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-          {UI_MESSAGES.registrationStatus.updated}
-        </span>
-      );
-    case 'cancelled':
-      return (
-        <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
-          {UI_MESSAGES.registrationStatus.cancelled}
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
-          {status}
-        </span>
-      );
-  }
 }
 
 export function AdminRegistrationDetailPage() {
@@ -279,8 +250,11 @@ export function AdminRegistrationDetailPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <p className="text-sm font-medium text-muted">Status</p>
-                    <p className="mt-1">{getStatusBadge(registration.status)}</p>
+                    <p className="mt-1">
+                      <RegistrationStatusBadge status={registration.status} />
+                    </p>
                   </div>
+
                   <div>
                     <p className="text-sm font-medium text-muted">Submitted</p>
                     <p className="mt-1 text-base text-text">

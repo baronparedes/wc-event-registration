@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, Button, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, AlertBanner, Button, FormInputField } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
 import { useDebounceSearch } from '@/hooks/utils';
@@ -146,11 +146,10 @@ export function AdminFormSubmissionsPage() {
       )}
 
       {form && form.status === 'draft' && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-sm font-medium text-amber-800">
-            This form is in draft mode. Submissions are not yet open to the public.
-          </p>
-        </div>
+        <AlertBanner
+          variant="warning"
+          description="This form is in draft mode. Submissions are not yet open to the public."
+        />
       )}
 
       <AdminPageShell.Filters>
