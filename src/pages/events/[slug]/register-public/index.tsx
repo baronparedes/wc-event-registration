@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -15,9 +14,8 @@ import { TIMING, TOAST_MESSAGES, toRoute } from '@/config/constants';
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { usePublicEventQuery } from '@/hooks/domain/events';
 import {
-  type PublicRegistrationDetail,
-  fetchPublicAttendeeCheck,
-  publicRegistrationDetailQueryOptions,
+  usePublicAttendeeCheckQuery,
+  usePublicRegistrationDetailQuery,
   useSubmitPublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
@@ -42,8 +40,6 @@ interface RouteParams extends Record<string, string | undefined> {
 export function PublicEventRegistrationPage() {
   const { slug } = useParams<RouteParams>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState<Step>('attendee-info');
 
   const stepOneRef = useRef<HTMLDivElement | null>(null);
   const stepTwoRef = useRef<HTMLDivElement | null>(null);
@@ -57,8 +53,7 @@ export function PublicEventRegistrationPage() {
   }, [slug, navigate]);
 
   const [attendeeInfo, setAttendeeInfo] = useState<PublicAttendeeInfoInput | null>(null);
-  const [attendeeEmailErrorMessage, setAttendeeEmailErrorMessage] = useState<string | null>(null);
-  const [isCheckingAttendee, setIsCheckingAttendee] = useState(false);
+  const [stepOverride, setStepOverride] = useState<Step | null>(null);
   const [fieldResponses, setFieldResponses] = useState<DynamicFieldResponseValues>({});
   const [confirmationData, setConfirmationData] = useState<{
     registrationId: string;
@@ -72,8 +67,94 @@ export function PublicEventRegistrationPage() {
       ? eventQuery.data.event.id
       : undefined;
 
+  const duplicatePolicy = eventQuery.data?.event?.duplicate_policy;
+  const allowsExistingRegistrationUpdate =
+    eventQuery.data?.status === 'available' &&
+    (duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update');
+
   const fieldsQuery = usePublicEventFieldsQuery(availableEventId, 'guests');
   const submitMutation = useSubmitPublicRegistrationMutation();
+
+  const attendeeCheckQuery = usePublicAttendeeCheckQuery(attendeeInfo?.email, slug, {
+    enabled: Boolean(attendeeInfo?.email && slug),
+  });
+
+  const existingRegistration = attendeeCheckQuery.data;
+  const isDuplicateBlocked = Boolean(existingRegistration && !allowsExistingRegistrationUpdate);
+
+  const registrationDetailQuery = usePublicRegistrationDetailQuery(
+    existingRegistration && allowsExistingRegistrationUpdate ? existingRegistration.id : null,
+    {
+      enabled: Boolean(existingRegistration && allowsExistingRegistrationUpdate),
+    },
+  );
+
+  const isCheckingAttendee =
+    attendeeCheckQuery.isFetching ||
+    (Boolean(existingRegistration && allowsExistingRegistrationUpdate) &&
+      registrationDetailQuery.isFetching);
+
+  const effectiveAttendeeInfo = useMemo(() => {
+    if (registrationDetailQuery.data) {
+      const reg = registrationDetailQuery.data.registration;
+      return {
+        first_name: reg.first_name,
+        last_name: reg.last_name,
+        nickname: reg.nickname,
+        email: reg.email,
+        phone: reg.phone,
+      };
+    }
+    return attendeeInfo;
+  }, [registrationDetailQuery.data, attendeeInfo]);
+
+  const effectiveFieldResponses = useMemo(() => {
+    if (registrationDetailQuery.data) {
+      return registrationDetailQuery.data.fieldResponses.reduce(
+        (acc: DynamicFieldResponseValues, response) => {
+          if (response.field_name) {
+            acc[response.field_name] = response.answer;
+          }
+          return acc;
+        },
+        {},
+      );
+    }
+    return fieldResponses;
+  }, [registrationDetailQuery.data, fieldResponses]);
+
+  const attendeeEmailErrorMessage = isDuplicateBlocked
+    ? 'This email is already registered for this event.'
+    : attendeeCheckQuery.error instanceof Error
+      ? attendeeCheckQuery.error.message
+      : null;
+
+  const currentStep: Step = useMemo(() => {
+    if (stepOverride) return stepOverride;
+    if (confirmationData) return 'confirmation';
+    if (
+      attendeeInfo &&
+      !isDuplicateBlocked &&
+      !attendeeCheckQuery.isError &&
+      !isCheckingAttendee &&
+      (!existingRegistration ||
+        !allowsExistingRegistrationUpdate ||
+        registrationDetailQuery.isSuccess)
+    ) {
+      return 'event-fields';
+    }
+    return 'attendee-info';
+  }, [
+    stepOverride,
+    confirmationData,
+    attendeeInfo,
+    isDuplicateBlocked,
+    attendeeCheckQuery.isError,
+    isCheckingAttendee,
+    existingRegistration,
+    allowsExistingRegistrationUpdate,
+    registrationDetailQuery.isSuccess,
+  ]);
 
   useEffect(() => {
     if (
@@ -101,78 +182,15 @@ export function PublicEventRegistrationPage() {
   useWizardStepScroll(getStepNumber(), [stepOneRef, stepTwoRef, stepThreeRef]);
 
   const handleAttendeeInfoSubmit = useCallback(
-    async (data: PublicAttendeeInfoInput) => {
+    (data: PublicAttendeeInfoInput) => {
       if (!slug) {
         return;
       }
 
-      setAttendeeEmailErrorMessage(null);
-      setIsCheckingAttendee(true);
-
-      const eventStatus = eventQuery.data?.status;
-      const duplicatePolicy = eventQuery.data?.event?.duplicate_policy;
-      const allowsExistingRegistrationUpdate =
-        eventStatus === 'available' &&
-        (duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update');
-
-      let existingRegistration: Awaited<ReturnType<typeof fetchPublicAttendeeCheck>>;
-      try {
-        existingRegistration = await fetchPublicAttendeeCheck(data.email, slug);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to check attendee';
-        toast.error(parseErrorToJsonOrString(message));
-        setIsCheckingAttendee(false);
-        return;
-      }
-
-      if (existingRegistration && !allowsExistingRegistrationUpdate) {
-        setAttendeeEmailErrorMessage('This email is already registered for this event.');
-        setIsCheckingAttendee(false);
-        return;
-      }
-
-      if (existingRegistration && allowsExistingRegistrationUpdate) {
-        let detail: PublicRegistrationDetail;
-        try {
-          detail = await queryClient.fetchQuery(
-            publicRegistrationDetailQueryOptions(existingRegistration.id),
-          );
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Failed to check attendee';
-          toast.error(parseErrorToJsonOrString(message));
-          setIsCheckingAttendee(false);
-          return;
-        }
-
-        const hydratedFieldResponses = detail.fieldResponses.reduce(
-          (acc: DynamicFieldResponseValues, response) => {
-            if (response.field_name) {
-              acc[response.field_name] = response.answer;
-            }
-            return acc;
-          },
-          {} as DynamicFieldResponseValues,
-        );
-
-        setAttendeeInfo({
-          first_name: detail.registration.first_name,
-          last_name: detail.registration.last_name,
-          nickname: detail.registration.nickname,
-          email: detail.registration.email,
-          phone: detail.registration.phone,
-        });
-        setFieldResponses(hydratedFieldResponses);
-        setCurrentStep('event-fields');
-        setIsCheckingAttendee(false);
-        return;
-      }
-
+      setStepOverride(null);
       setAttendeeInfo(data);
-      setFieldResponses({});
-      setCurrentStep('event-fields');
-      setIsCheckingAttendee(false);
     },
-    [slug, eventQuery.data, queryClient],
+    [slug],
   );
 
   const handleFieldsSubmit = useCallback(
@@ -238,14 +256,13 @@ export function PublicEventRegistrationPage() {
           registrationId: result.registration_id,
           email: attendeeInfo.email,
         });
-        setCurrentStep('confirmation');
       }
     },
     [attendeeInfo, eventQuery.data, slug, fieldsQuery.data, submitMutation],
   );
 
   const handleBackToAttendeeInfo = useCallback(() => {
-    setCurrentStep('attendee-info');
+    setStepOverride('attendee-info');
   }, []);
 
   if (!slug) {
@@ -355,7 +372,7 @@ export function PublicEventRegistrationPage() {
             onSubmit={handleAttendeeInfoSubmit}
             isSubmitting={isCheckingAttendee}
             emailErrorMessage={attendeeEmailErrorMessage || undefined}
-            defaultValues={attendeeInfo || undefined}
+            defaultValues={effectiveAttendeeInfo || undefined}
             inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
             onInactivityTimeout={handleInactivityReset}
           />
@@ -392,7 +409,7 @@ export function PublicEventRegistrationPage() {
               onSubmit={handleFieldsSubmit}
               onBack={handleBackToAttendeeInfo}
               isSubmitting={submitMutation.isPending}
-              defaultValues={fieldResponses}
+              defaultValues={effectiveFieldResponses}
               inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
               onInactivityTimeout={handleInactivityReset}
             />

@@ -1,13 +1,8 @@
 // Queries
-export {
-  fetchPublicAttendeeCheck,
-  usePublicAttendeeCheckQuery,
-} from './queries/usePublicAttendeeCheckQuery';
+export { usePublicAttendeeCheckQuery } from './queries/usePublicAttendeeCheckQuery';
 export { useSubmitPublicRegistrationMutation } from './queries/useSubmitPublicRegistrationMutation';
 export { useAdminPublicRegistrationsQuery } from './queries/useAdminPublicRegistrationsQuery';
 export {
-  PUBLIC_REGISTRATION_DETAIL_QUERY_KEY,
-  publicRegistrationDetailQueryOptions,
   type PublicRegistrationDetail,
   type PublicRegistrationFieldResponse,
   usePublicRegistrationDetailQuery,

@@ -28,7 +28,7 @@ export type PublicRegistrationDetail = {
   fieldResponses: PublicRegistrationFieldResponse[];
 };
 
-export const PUBLIC_REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
+const PUBLIC_REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
   ['public-registration-detail', registrationId] as const;
 
 /**
@@ -157,18 +157,19 @@ async function fetchPublicRegistrationDetail(
   };
 }
 
-export const publicRegistrationDetailQueryOptions = (registrationId: string) => ({
-  queryKey: PUBLIC_REGISTRATION_DETAIL_QUERY_KEY(registrationId),
-  queryFn: async () => fetchPublicRegistrationDetail(registrationId),
-  staleTime: QUERY_STALE_TIME_MS.detail,
-});
-
 export function usePublicRegistrationDetailQuery(
   registrationId?: string | null,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
-    ...publicRegistrationDetailQueryOptions(registrationId ?? ''),
+    queryKey: PUBLIC_REGISTRATION_DETAIL_QUERY_KEY(registrationId ?? ''),
+    queryFn: async () => {
+      if (!registrationId) {
+        throw new Error('Registration ID is required');
+      }
+      return fetchPublicRegistrationDetail(registrationId);
+    },
     enabled: Boolean(registrationId) && (options?.enabled ?? true),
+    staleTime: QUERY_STALE_TIME_MS.detail,
   });
 }
