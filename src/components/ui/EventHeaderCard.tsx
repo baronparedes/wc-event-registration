@@ -2,9 +2,10 @@ import { Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { EventAvailability } from '@/lib/domain/events';
-import { DOMPurify, formatDateTime } from '@/lib/infrastructure';
+import { formatDateTime } from '@/lib/infrastructure';
 
 type EventHeaderCardProps = {
   slug?: string;
@@ -85,25 +86,9 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       )}
 
       {event?.description && (
-        <div
-          className="
-              mt-3 text-sm text-muted leading-relaxed
-              [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-text [&_h1]:mb-3
-              [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-text [&_h2]:mb-2
-              [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-text [&_h3]:mb-2
-              [&_p]:mb-3
-              [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3
-              [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3
-              [&_a]:text-primary [&_a]:underline
-              [&_table]:w-full [&_table]:border-collapse [&_table]:mt-2 [&_table]:mb-3
-              [&_th]:border [&_th]:border-border [&_th]:bg-accent/20 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-text
-              [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-text
-              [&_tr:nth-child(even)]:bg-background/40
-              [&_tr:hover]:bg-accent/10
-            "
-          // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
-        />
+        <div className="mt-3">
+          <MarkdownRenderer content={event.description} />
+        </div>
       )}
 
       {event && (

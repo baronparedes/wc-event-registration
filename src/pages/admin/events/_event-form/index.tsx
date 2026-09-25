@@ -328,6 +328,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             isEditMode={isEditMode}
             onSlugChange={onSlugChange}
             register={register}
+            control={control}
             slugValue={slugValue}
             disabled={isArchivedEvent}
           />

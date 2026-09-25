@@ -26,7 +26,7 @@ describe('FormHeaderCard', () => {
     expect(screen.getByText('Volunteer Survey 2026')).toBeInTheDocument();
     expect(screen.getByText('Open to Guests')).toBeInTheDocument();
     expect(screen.getByText('Open')).toBeInTheDocument();
-    expect(screen.getByText('Please fill out our annual volunteer survey.')).toBeInTheDocument();
+    expect(screen.getByText(/Please fill out our annual volunteer survey/)).toBeInTheDocument();
   });
 
   it('renders loading state when isLoading is true', () => {

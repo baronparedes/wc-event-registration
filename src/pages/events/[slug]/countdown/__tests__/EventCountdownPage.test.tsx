@@ -73,7 +73,7 @@ describe('EventCountdownPage', () => {
           id: 'evt-1',
           slug: 'tech-summit-2026',
           title: 'Tech Summit 2026',
-          description: '<p>Annual developer conference.</p>',
+          description: 'Annual developer conference.',
           location: 'Grand Ballroom, Level 3',
           starts_at: futureDate,
           ends_at: endDate,
@@ -95,7 +95,7 @@ describe('EventCountdownPage', () => {
     render(<EventCountdownPage />);
 
     expect(screen.getByText('Tech Summit 2026')).toBeInTheDocument();
-    expect(screen.getByText('Annual developer conference.')).toBeInTheDocument();
+    expect(screen.getByText(/Annual developer conference/)).toBeInTheDocument();
 
     // Countdown labels
     expect(screen.getByText('Days')).toBeInTheDocument();

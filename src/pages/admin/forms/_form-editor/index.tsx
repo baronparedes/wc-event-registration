@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { AdminPageShell } from '@/components/layout';
 import { Button, CheckboxField, FormInputField, FormSelectField, SlugField } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FormMarkdownField } from '@/components/ui/FormMarkdownField';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useSaveFormMutation } from '@/hooks/domain/forms';
 import { useSlugGeneration } from '@/hooks/utils';
@@ -225,15 +226,12 @@ export function FormEditorPage() {
               error={errors.slug?.message}
             />
 
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Description</label>
-              <textarea
-                {...register('description')}
-                rows={3}
-                placeholder="Optional description or instructions for respondents..."
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-              />
-            </div>
+            <FormMarkdownField
+              control={control}
+              name="description"
+              label="Description"
+              placeholder="Optional description or instructions for respondents..."
+            />
           </div>
 
           <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
