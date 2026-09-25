@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -142,7 +143,14 @@ export function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              {googleLoginMutation.isPending ? 'Redirecting...' : 'Sign in with Google'}
+              {googleLoginMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Redirecting...
+                </>
+              ) : (
+                'Sign in with Google'
+              )}
             </Button>
 
             <Button
@@ -160,7 +168,14 @@ export function LoginPage() {
                   fill="#400090"
                 />
               </svg>
-              {yahooLoginMutation.isPending ? 'Redirecting...' : 'Sign in with Yahoo'}
+              {yahooLoginMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Redirecting...
+                </>
+              ) : (
+                'Sign in with Yahoo'
+              )}
             </Button>
           </div>
         </section>
@@ -204,7 +219,14 @@ export function LoginPage() {
               />
 
               <Button disabled={loginMutation.isPending} fullWidth size="md" type="submit">
-                {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
+                {loginMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
             </form>
           </section>
