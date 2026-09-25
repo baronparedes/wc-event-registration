@@ -198,6 +198,7 @@ export function AdminChatPage() {
   return (
     <AdminPageShell>
       <AdminPageShell.Header
+        breadcrumbs={[{ label: 'Hello!' }]}
         title="AI Assistant"
         badge={
           <Badge

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink, RegistrationStatusBadge, SectionCard } from '@/components/ui';
+import { ActionLink, AlertBanner, RegistrationStatusBadge, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -74,7 +74,6 @@ export function AdminRegistrationDetailPage() {
     id: string;
     registration_id: string;
   }>();
-  const navigate = useNavigate();
   const { showError } = useErrorWithFadeout();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
@@ -87,7 +86,14 @@ export function AdminRegistrationDetailPage() {
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
 
   if (!eventId || !registrationId) {
-    return <div>Invalid registration ID</div>;
+    return (
+      <AdminPageShell>
+        <AdminPageShell.Header title="Registration" />
+        <AdminPageShell.Content>
+          <AlertBanner variant="error" description="Invalid registration ID" />
+        </AdminPageShell.Content>
+      </AdminPageShell>
+    );
   }
 
   const isLoading = detailQuery.isLoading;
@@ -95,44 +101,74 @@ export function AdminRegistrationDetailPage() {
 
   if (error) {
     return (
-      <section className="space-y-4">
-        <Button variant="primaryOutline" onClick={() => navigate(-1)}>
-          ← Back
-        </Button>
-        <SectionCard title="Error">
-          <p className="text-sm text-red-600">
-            Error loading registration:{' '}
-            {error instanceof Error ? error.message : UI_MESSAGES.errors.unknownError}
-          </p>
-        </SectionCard>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header
+          title="Registration"
+          breadcrumbs={[
+            { label: 'Events', to: ROUTE_PATHS.adminEvents },
+            {
+              label: eventQuery.data?.title ?? 'Event',
+              to: toRoute('adminEventDetail', { id: eventId }),
+            },
+            { label: 'Registrations', to: toRoute('adminRegistrations', { id: eventId }) },
+            { label: 'Detail' },
+          ]}
+        />
+        <AdminPageShell.Content>
+          <AlertBanner
+            variant="error"
+            description={`Error loading registration: ${error instanceof Error ? error.message : UI_MESSAGES.errors.unknownError}`}
+          />
+        </AdminPageShell.Content>
+      </AdminPageShell>
     );
   }
 
   if (isLoading) {
     return (
-      <section className="space-y-4">
-        <Button variant="primaryOutline" onClick={() => navigate(-1)}>
-          ← Back
-        </Button>
-        <SectionCard title="Loading">
-          <p className="text-sm text-muted">{UI_MESSAGES.loading.registrationDetails}</p>
-        </SectionCard>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header
+          title="Registration"
+          breadcrumbs={[
+            { label: 'Events', to: ROUTE_PATHS.adminEvents },
+            {
+              label: eventQuery.data?.title ?? 'Event',
+              to: toRoute('adminEventDetail', { id: eventId }),
+            },
+            { label: 'Registrations', to: toRoute('adminRegistrations', { id: eventId }) },
+            { label: 'Detail' },
+          ]}
+        />
+        <AdminPageShell.Content
+          isLoading={true}
+          loadingMessage={UI_MESSAGES.loading.registrationDetails}
+        >
+          {null}
+        </AdminPageShell.Content>
+      </AdminPageShell>
     );
   }
 
   const data = detailQuery.data;
   if (!data) {
     return (
-      <section className="space-y-4">
-        <Button variant="primaryOutline" onClick={() => navigate(-1)}>
-          ← Back
-        </Button>
-        <SectionCard title="Not Found">
-          <p className="text-sm text-muted">{UI_MESSAGES.errors.registrationNotFound}</p>
-        </SectionCard>
-      </section>
+      <AdminPageShell>
+        <AdminPageShell.Header
+          title="Registration"
+          breadcrumbs={[
+            { label: 'Events', to: ROUTE_PATHS.adminEvents },
+            {
+              label: eventQuery.data?.title ?? 'Event',
+              to: toRoute('adminEventDetail', { id: eventId }),
+            },
+            { label: 'Registrations', to: toRoute('adminRegistrations', { id: eventId }) },
+            { label: 'Detail' },
+          ]}
+        />
+        <AdminPageShell.Content>
+          <AlertBanner variant="error" description={UI_MESSAGES.errors.registrationNotFound} />
+        </AdminPageShell.Content>
+      </AdminPageShell>
     );
   }
 

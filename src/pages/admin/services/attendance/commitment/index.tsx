@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { endOfQuarter, endOfYear, format, startOfQuarter, startOfYear } from 'date-fns';
 
 import { AdminPageShell } from '@/components/layout';
+import { ROUTE_PATHS } from '@/config/constants';
 import { env } from '@/config/env';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
@@ -120,7 +121,10 @@ export function AdminServiceAttendanceCommitmentPage() {
         title="Commitment Dashboard"
         description="Monitor volunteer commitment and attendance metrics."
         actions={<ExportCommitmentDashboardButton filters={exportFilters} disabled={isLoading} />}
-        breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Commitment' }]}
+        breadcrumbs={[
+          { label: 'Services', to: ROUTE_PATHS.adminServices },
+          { label: 'Commitment' },
+        ]}
       />
       <ServiceNavigationLinks />
 

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink, RegistrationStatusBadge, SectionCard } from '@/components/ui';
+import { ActionLink, AlertBanner, RegistrationStatusBadge, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -82,7 +82,7 @@ export function AdminPublicRegistrationDetailPage() {
       <AdminPageShell>
         <AdminPageShell.Header title="Public Registration" />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Invalid public registration ID</p>
+          <AlertBanner variant="error" description="Invalid public registration ID" />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -100,10 +100,10 @@ export function AdminPublicRegistrationDetailPage() {
           }
         />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">
-            Error loading public registration:{' '}
-            {detailQuery.error instanceof Error ? detailQuery.error.message : 'Unknown error'}
-          </p>
+          <AlertBanner
+            variant="error"
+            description={`Error loading public registration: ${detailQuery.error instanceof Error ? detailQuery.error.message : 'Unknown error'}`}
+          />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -136,7 +136,7 @@ export function AdminPublicRegistrationDetailPage() {
           }
         />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Public registration not found.</p>
+          <AlertBanner variant="error" description="Public registration not found." />
         </AdminPageShell.Content>
       </AdminPageShell>
     );

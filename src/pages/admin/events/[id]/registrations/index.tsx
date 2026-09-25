@@ -4,7 +4,7 @@ import { Upload } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, Button, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, AlertBanner, Button, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -109,23 +109,14 @@ export function AdminRegistrationsPage() {
       />
 
       {event && event.status !== 'draft' && (
-        <div
-          className={`rounded-lg p-3 ${
+        <AlertBanner
+          variant={event.status === 'archived' ? 'warning' : 'info'}
+          description={
             event.status === 'archived'
-              ? 'border border-yellow-200 bg-yellow-50'
-              : 'border border-blue-200 bg-blue-50'
-          }`}
-        >
-          <p
-            className={`text-sm font-medium ${
-              event.status === 'archived' ? 'text-yellow-800' : 'text-blue-800'
-            }`}
-          >
-            {event.status === 'archived'
               ? 'This event is archived. Registrations cannot be cancelled.'
-              : 'This event is published. All registrations are visible.'}
-          </p>
-        </div>
+              : 'This event is published. All registrations are visible.'
+          }
+        />
       )}
 
       <AdminPageShell.Filters>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui/Button';
+import { AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -72,26 +72,30 @@ export function AdminEventFieldsPage() {
       />
 
       {!isDraft && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-medium text-blue-800">
-            {isPublished ? 'Published event' : 'Archived event'}
-          </p>
-          <p className="mt-1 text-xs text-blue-700">
-            {isPublished
+        <AlertBanner
+          variant="info"
+          title={isPublished ? 'Published event' : 'Archived event'}
+          description={
+            isPublished
               ? 'You can edit labels, registrant type, placeholder/help text, and option capacity. To change field types, options, or other validation rules, archive this event and create a new one.'
-              : 'Field edits are disabled on archived events.'}
-          </p>
-        </div>
+              : 'Field edits are disabled on archived events.'
+          }
+        />
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading fields...">
         {!event ? (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Event not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminEvents}>
-              Back to events
-            </Link>
-          </div>
+          <AlertBanner
+            variant="error"
+            description={
+              <>
+                Event not found.{' '}
+                <Link className="underline" to={ROUTE_PATHS.adminEvents}>
+                  Back to events
+                </Link>
+              </>
+            }
+          />
         ) : (
           <>
             <EventFieldsList

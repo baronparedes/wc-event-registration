@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui/Button';
+import { AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormFieldsQuery } from '@/hooks/domain/forms';
 import type { FormField } from '@/lib/domain/forms';
@@ -66,26 +66,30 @@ export function AdminFormFieldsPage() {
       />
 
       {!isDraft && form && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-medium text-blue-800">
-            {isPublished ? 'Published form' : 'Archived form'}
-          </p>
-          <p className="mt-1 text-xs text-blue-700">
-            {isPublished
+        <AlertBanner
+          variant="info"
+          title={isPublished ? 'Published form' : 'Archived form'}
+          description={
+            isPublished
               ? 'You can edit labels, audience, and display text. To change field types or options, archive this form and create a new one.'
-              : 'Field edits are disabled on archived forms.'}
-          </p>
-        </div>
+              : 'Field edits are disabled on archived forms.'
+          }
+        />
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading fields...">
         {!form ? (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Form not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminForms}>
-              Back to forms
-            </Link>
-          </div>
+          <AlertBanner
+            variant="error"
+            description={
+              <>
+                Form not found.{' '}
+                <Link className="underline" to={ROUTE_PATHS.adminForms}>
+                  Back to forms
+                </Link>
+              </>
+            }
+          />
         ) : (
           <>
             <FormFieldsList

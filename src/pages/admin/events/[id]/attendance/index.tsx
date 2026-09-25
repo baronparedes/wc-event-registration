@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, SectionCard } from '@/components/ui';
+import { AlertBanner, Button, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -96,12 +96,11 @@ export function AdminEventAttendancePage() {
       />
 
       {isArchived && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">Archived event</p>
-          <p className="mt-1 text-xs text-amber-700">
-            Attendance settings are read-only for archived events.
-          </p>
-        </div>
+        <AlertBanner
+          variant="warning"
+          title="Archived event"
+          description="Attendance settings are read-only for archived events."
+        />
       )}
 
       <AdminPageShell.Content>

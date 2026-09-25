@@ -4,7 +4,13 @@ import { Edit, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, Button, EmptyState, FormInputField } from '@/components/ui';
+import {
+  AdminInfiniteScrollFooter,
+  AlertBanner,
+  Button,
+  EmptyState,
+  FormInputField,
+} from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -195,9 +201,7 @@ export function AdminMembersPage() {
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage={UI_MESSAGES.loading.members}>
         {hasError && (
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <p className="text-sm text-red-600">{UI_MESSAGES.errors.membersLoadFailed}</p>
-          </div>
+          <AlertBanner variant="error" description={UI_MESSAGES.errors.membersLoadFailed} />
         )}
         {hasNoMembers && <EmptyMembersState hasSearch={normalizedSearchTerm.length > 0} />}
         {hasMembers && (

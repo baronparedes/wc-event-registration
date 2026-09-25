@@ -14,6 +14,7 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
+import { ROUTE_PATHS } from '@/config/constants';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
 import { useInfiniteScrollTrigger } from '@/hooks/utils';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
@@ -245,7 +246,7 @@ export function AdminServiceAttendanceDataPage() {
             disabled={isLoading}
           />
         }
-        breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Data' }]}
+        breadcrumbs={[{ label: 'Services', to: ROUTE_PATHS.adminServices }, { label: 'Data' }]}
       />
       <ServiceNavigationLinks />
 

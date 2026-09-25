@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
+  AlertBanner,
   Badge,
   Button,
   ConfirmDialog,
@@ -95,9 +96,10 @@ export function AdminUserRolesPage() {
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading assigned roles...">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            Failed to load assigned user roles: {error.message}
-          </div>
+          <AlertBanner
+            variant="error"
+            description={`Failed to load assigned user roles: ${error.message}`}
+          />
         ) : !assignments || assignments.length === 0 ? (
           <div className="rounded-2xl border border-border bg-surface p-8 text-center space-y-3">
             <Shield className="mx-auto h-10 w-10 text-muted" aria-hidden="true" />

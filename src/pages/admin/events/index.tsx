@@ -5,7 +5,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, Button, EmptyState, FormInputField } from '@/components/ui';
+import {
+  AdminInfiniteScrollFooter,
+  AlertBanner,
+  Button,
+  EmptyState,
+  FormInputField,
+} from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery, useDuplicateEventMutation } from '@/hooks/domain/events';
@@ -106,11 +112,7 @@ export function AdminEventsPage() {
       </AdminPageShell.Filters>
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage={UI_MESSAGES.loading.events}>
-        {error && (
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <p className="text-sm text-red-600">{UI_MESSAGES.errors.eventsLoadFailed}</p>
-          </div>
-        )}
+        {error && <AlertBanner variant="error" description={UI_MESSAGES.errors.eventsLoadFailed} />}
 
         {!error && events.length === 0 && (
           <div className="rounded-2xl border border-border bg-surface px-6 py-12">

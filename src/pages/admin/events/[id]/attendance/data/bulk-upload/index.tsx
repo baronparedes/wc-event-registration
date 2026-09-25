@@ -2,8 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
-import { Button } from '@/components/ui/Button';
+import { ActionLink, AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
@@ -95,27 +94,31 @@ export function AdminAttendanceDataBulkUploadPage() {
       />
 
       {!isLoading && !attendanceEnabled && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">Attendance tracking is disabled</p>
-          <p className="mt-1 text-xs text-amber-700">
-            Enable attendance tracking in{' '}
-            {id ? (
-              <ActionLink to={toRoute('adminEventAttendance', { id })}>
-                Attendance Settings
-              </ActionLink>
-            ) : (
-              'Attendance Settings'
-            )}{' '}
-            to collect attendance data.
-          </p>
-        </div>
+        <AlertBanner
+          variant="warning"
+          title="Attendance tracking is disabled"
+          description={
+            <>
+              Enable attendance tracking in{' '}
+              {id ? (
+                <ActionLink to={toRoute('adminEventAttendance', { id })}>
+                  Attendance Settings
+                </ActionLink>
+              ) : (
+                'Attendance Settings'
+              )}{' '}
+              to collect attendance data.
+            </>
+          }
+        />
       )}
 
       {!isLoading && attendanceEnabled && fields.length === 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-medium text-blue-800">No attendance fields configured</p>
-          <p className="mt-1 text-xs text-blue-700">
-            {id ? (
+        <AlertBanner
+          variant="info"
+          title="No attendance fields configured"
+          description={
+            id ? (
               <>
                 <ActionLink to={toRoute('adminAttendanceFields', { id })}>
                   Configure attendance fields
@@ -124,19 +127,24 @@ export function AdminAttendanceDataBulkUploadPage() {
               </>
             ) : (
               'Configure attendance fields first to start collecting data.'
-            )}
-          </p>
-        </div>
+            )
+          }
+        />
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading bulk upload...">
         {!event ? (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Event not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminEvents}>
-              Back to events
-            </Link>
-          </div>
+          <AlertBanner
+            variant="error"
+            description={
+              <>
+                Event not found.{' '}
+                <Link className="underline" to={ROUTE_PATHS.adminEvents}>
+                  Back to events
+                </Link>
+              </>
+            }
+          />
         ) : canRunBulkOps ? (
           <BulkUploadPanel
             eventId={id ?? ''}
