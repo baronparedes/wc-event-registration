@@ -29,11 +29,18 @@ export function useReorderEventFieldsMutation() {
         );
       }
 
-      await Promise.all(
-        input.orderedIds.map((id, index) =>
-          supabase.from('event_fields').update({ display_order: index }).eq('id', id),
-        ),
-      );
+      const upsertRows = input.orderedIds.map((id, index) => ({
+        id,
+        event_id: input.event_id,
+        display_order: index,
+      }));
+
+      const { error } = await supabase.from('event_fields').upsert(upsertRows, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      });
+
+      if (error) throw error;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) });
