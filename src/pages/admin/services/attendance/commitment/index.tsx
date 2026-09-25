@@ -187,6 +187,7 @@ export function AdminServiceAttendanceCommitmentPage() {
           timeframe={timeframe}
           startDate={startDate}
           endDate={endDate}
+          excuseEventId={excuseEventId}
         />
       </AdminPageShell.Content>
     </AdminPageShell>

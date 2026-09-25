@@ -6,15 +6,17 @@ export interface VolunteerAttendanceLogFilters {
   user_id: string;
   start_date: string;
   end_date: string;
+  excuse_event_id?: string | null;
 }
 
 export interface VolunteerAttendanceLogRecord {
-  id: string;
+  id: string | null;
   service_date: string;
   time_slot: string;
   is_walk_in: boolean;
   is_override: boolean;
   is_manual_entry: boolean;
+  status: 'present' | 'absent' | 'excused';
 }
 
 export const volunteerAttendanceLogQueryKey = (filters: VolunteerAttendanceLogFilters) =>
@@ -29,6 +31,7 @@ export function useVolunteerAttendanceLogQuery(filters: VolunteerAttendanceLogFi
         p_user_id: filters.user_id,
         p_start_date: filters.start_date,
         p_end_date: filters.end_date,
+        p_excuse_event_id: filters.excuse_event_id || null,
       });
 
       if (error) {

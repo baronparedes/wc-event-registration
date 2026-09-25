@@ -4,14 +4,15 @@ import { Clock, Handshake, TrendingUp, UserCheck, UserX, Users } from 'lucide-re
 
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 
-type StatCardVariant = 'primary' | 'secondary' | 'danger' | 'accent';
+export type StatCardVariant = 'primary' | 'secondary' | 'danger' | 'accent';
 
-interface CommitmentSummaryCardProps {
+export interface CommitmentSummaryCardProps {
   title: string;
   value: number | string;
-  subtitle: string;
-  icon: ReactNode;
+  subtitle?: string;
+  icon?: ReactNode;
   variant?: StatCardVariant;
+  className?: string;
 }
 
 const variantIconStyles: Record<StatCardVariant, string> = {
@@ -27,22 +28,27 @@ export function CommitmentSummaryCard({
   subtitle,
   icon,
   variant = 'primary',
+  className = '',
 }: CommitmentSummaryCardProps) {
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-4 shadow-xs">
+    <div
+      className={`flex flex-col justify-between rounded-2xl border border-border bg-surface p-4 shadow-xs ${className}`.trim()}
+    >
       <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
         <span className="font-heading text-xs font-bold uppercase tracking-wider text-muted">
           {title}
         </span>
-        <div
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${variantIconStyles[variant]}`}
-        >
-          {icon}
-        </div>
+        {icon && (
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${variantIconStyles[variant]}`}
+          >
+            {icon}
+          </div>
+        )}
       </div>
       <div className="mt-3">
         <div className="font-heading text-2xl sm:text-3xl font-bold text-text">{value}</div>
-        <p className="mt-1 text-xs text-muted">{subtitle}</p>
+        {subtitle && <p className="mt-1 text-xs text-muted">{subtitle}</p>}
       </div>
     </div>
   );
@@ -78,42 +84,42 @@ export function CommitmentSummaryCards({ stats, totalVolunteers }: CommitmentSum
       title: 'Volunteers',
       value: totalVolunteers,
       subtitle: `${totals.activeVolunteers} with activity`,
-      icon: <Users className="h-3.5 w-3.5" />,
+      icon: <Users className="h-4 w-4" />,
       variant: 'primary',
     },
     {
       title: 'Attended',
       value: totals.attended,
       subtitle: 'committed slots',
-      icon: <UserCheck className="h-3.5 w-3.5" />,
+      icon: <UserCheck className="h-4 w-4" />,
       variant: 'secondary',
     },
     {
       title: 'Absences',
       value: totals.absences,
       subtitle: 'missed commitments',
-      icon: <UserX className="h-3.5 w-3.5" />,
+      icon: <UserX className="h-4 w-4" />,
       variant: 'danger',
     },
     {
       title: 'Excused',
       value: totals.excused,
       subtitle: 'slots scored at -0.5',
-      icon: <Clock className="h-3.5 w-3.5" />,
+      icon: <Clock className="h-4 w-4" />,
       variant: 'accent',
     },
     {
       title: 'Walk-ins',
       value: totals.walkIns,
       subtitle: '9AM/3PM & 12NN',
-      icon: <Handshake className="h-3.5 w-3.5" />,
+      icon: <Handshake className="h-4 w-4" />,
       variant: 'secondary',
     },
     {
       title: 'Avg Attendance',
       value: avgAttendance,
       subtitle: 'per active volunteer',
-      icon: <TrendingUp className="h-3.5 w-3.5" />,
+      icon: <TrendingUp className="h-4 w-4" />,
       variant: 'primary',
     },
   ];

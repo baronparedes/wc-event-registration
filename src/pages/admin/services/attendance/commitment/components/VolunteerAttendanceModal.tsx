@@ -1,12 +1,20 @@
 import { useMemo, useState } from 'react';
 
 import { parseISO } from 'date-fns';
-import { Calendar, Loader2 } from 'lucide-react';
+import {
+  CalendarCheck,
+  Clock,
+  Handshake,
+  Loader2,
+  TrendingUp,
+  UserCheck,
+  UserX,
+} from 'lucide-react';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { Dialog } from '@/components/ui/Dialog';
-import { EmptyState } from '@/components/ui/EmptyState';
 import {
   ListTable,
   ListTableBody,
@@ -16,10 +24,12 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { useVolunteerAttendanceLogQuery } from '@/hooks/domain/services';
 
 import type { DashboardTimeframe } from './CommitmentDashboardFilters';
+import { CommitmentSummaryCard } from './CommitmentSummaryCards';
 
 export interface VolunteerAttendanceModalProps {
   isOpen: boolean;
@@ -28,9 +38,10 @@ export interface VolunteerAttendanceModalProps {
   timeframe: DashboardTimeframe;
   startDate: string;
   endDate: string;
+  excuseEventId?: string | null;
 }
 
-type ViewMode = 'MATRIX' | 'DETAILED';
+type ViewMode = 'DETAILED' | 'MATRIX';
 
 export function VolunteerAttendanceModal({
   isOpen,
@@ -39,6 +50,7 @@ export function VolunteerAttendanceModal({
   timeframe,
   startDate,
   endDate,
+  excuseEventId,
 }: VolunteerAttendanceModalProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('DETAILED');
 
@@ -46,6 +58,7 @@ export function VolunteerAttendanceModal({
     user_id: volunteer?.user_id ?? '',
     start_date: startDate,
     end_date: endDate,
+    excuse_event_id: excuseEventId,
   });
 
   const processedLogs = useMemo(() => {
@@ -53,7 +66,7 @@ export function VolunteerAttendanceModal({
 
     return logs.map((log) => {
       const date = parseISO(log.service_date);
-      // Week calculation
+      const dayOfWeek = date.getDay();
       const dayOfMonth = date.getDate();
       const weekNumber = Math.ceil(dayOfMonth / 7);
 
@@ -65,10 +78,68 @@ export function VolunteerAttendanceModal({
 
       return {
         ...log,
-        weekLabel: `${weekStr} Sunday`,
+        weekLabel: dayOfWeek === 0 ? `${weekStr} Sunday` : `${weekStr} Day`,
       };
     });
   }, [logs]);
+
+  const loginLogs = useMemo(
+    () => processedLogs.filter((log) => log.status === 'present'),
+    [processedLogs],
+  );
+
+  const absentLogs = useMemo(
+    () => processedLogs.filter((log) => log.status === 'absent'),
+    [processedLogs],
+  );
+
+  const excusedLogs = useMemo(
+    () => processedLogs.filter((log) => log.status === 'excused'),
+    [processedLogs],
+  );
+
+  const sections = useMemo(
+    () => [
+      {
+        key: 'logins',
+        title: 'LOGINS',
+        dotColor: 'bg-primary',
+        titleColor: 'text-primary',
+        logs: loginLogs,
+        emptyMessage: 'No attendance records found for this period.',
+        renderSlot: (log: (typeof processedLogs)[number]) => (
+          <div className="flex items-center gap-1.5">
+            <Badge>{log.time_slot}</Badge>
+            {log.is_walk_in && <Badge variant="secondary">Walk-in</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: 'absences',
+        title: 'ABSENCES',
+        dotColor: 'bg-rose-500',
+        titleColor: 'text-rose-600',
+        logs: absentLogs,
+        emptyMessage: 'No absences recorded for this period.',
+        renderSlot: (log: (typeof processedLogs)[number]) => (
+          <Badge variant="destructive">{log.time_slot}</Badge>
+        ),
+      },
+      {
+        key: 'excused',
+        title: 'EXCUSED',
+        dotColor: 'bg-amber-500',
+        titleColor: 'text-amber-600',
+        logs: excusedLogs,
+        emptyMessage: 'No excused records found for this period.',
+        renderSlot: (log: (typeof processedLogs)[number]) => (
+          <Badge variant="accent">{log.time_slot}</Badge>
+        ),
+        hideWhenEmpty: true,
+      },
+    ],
+    [loginLogs, absentLogs, excusedLogs, processedLogs],
+  );
 
   if (!volunteer) return null;
 
@@ -81,30 +152,34 @@ export function VolunteerAttendanceModal({
   };
 
   const titleContent = (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <h2 className="text-xl font-bold font-heading text-text">
-          {volunteer.full_name}{' '}
+    <div className="flex items-center gap-3">
+      <Avatar
+        name={volunteer.full_name}
+        avatarObjectKey={volunteer.avatar_object_key}
+        size="md"
+        className="h-11 w-11 text-sm shrink-0"
+      />
+      <div className="flex flex-col gap-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold font-heading text-text truncate">
+            {volunteer.full_name}
+          </span>
           {volunteer.nickname && (
             <span className="font-normal text-muted">({volunteer.nickname})</span>
           )}
-        </h2>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-        {volunteer.role && (
-          <Badge
-            variant="secondary"
-            className="font-normal text-xs bg-blue-100 text-blue-800 hover:bg-blue-100/80 rounded-full"
-          >
-            {volunteer.role}
-          </Badge>
-        )}
-        {/* Placeholder for Gender as it's not strictly in the stat type right now, using • separator */}
-        <span>Men</span>
-        <span>&middot;</span>
-        <span>Since {volunteer.start_date || 'Unknown'}</span>
-        <span>&middot;</span>
-        <span className="font-semibold text-primary">{timeframeLabels[timeframe]}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          {volunteer.role && <Badge className="text-xs">{volunteer.role}</Badge>}
+          {volunteer.category && (
+            <>
+              <span>{volunteer.category}</span>
+              <span>&middot;</span>
+            </>
+          )}
+          <span>Since {volunteer.start_date || 'Unknown'}</span>
+          <span>&middot;</span>
+          <span className="font-semibold text-primary">{timeframeLabels[timeframe]}</span>
+        </div>
       </div>
     </div>
   );
@@ -114,127 +189,136 @@ export function VolunteerAttendanceModal({
       isOpen={isOpen}
       onClose={onClose}
       title={titleContent}
-      maxWidthClass="max-w-6xl"
+      maxWidthClass="max-w-5xl"
       showCloseIcon
     >
-      <div className="mt-6 flex flex-col gap-6">
-        <div className="flex gap-4 flex-wrap">
-          {/* Custom simpler cards matching the specific request screenshot */}
-          <StatCard label="COMMITTED" value={volunteer.committed} />
-          <StatCard label="ATTENDED" value={volunteer.attended} />
-          <StatCard label="ABSENT" value={volunteer.absences} />
-          <StatCard label="EXCUSED" value={volunteer.excused} />
-          <StatCard label="WI 9AM/3PM" value={volunteer.wi_9am_3pm} />
-          <StatCard label="WI 12NN" value={volunteer.wi_12nn} />
-          <StatCard label="ATTENDANCE" value={volunteer.attendance_score} />
+      <div className="mt-4 flex flex-col gap-4">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6">
+          <CommitmentSummaryCard
+            title="Committed"
+            value={volunteer.committed}
+            icon={<CalendarCheck className="h-4 w-4" />}
+            variant="primary"
+          />
+          <CommitmentSummaryCard
+            title="Attended"
+            value={volunteer.attended}
+            icon={<UserCheck className="h-4 w-4" />}
+            variant="secondary"
+          />
+          <CommitmentSummaryCard
+            title="Absences"
+            value={volunteer.absences}
+            icon={<UserX className="h-4 w-4" />}
+            variant="danger"
+          />
+          <CommitmentSummaryCard
+            title="Excused"
+            value={volunteer.excused}
+            icon={<Clock className="h-4 w-4" />}
+            variant="accent"
+          />
+          <CommitmentSummaryCard
+            title="Walk-Ins"
+            value={volunteer.wi_9am_3pm + volunteer.wi_12nn}
+            icon={<Handshake className="h-4 w-4" />}
+            variant="secondary"
+          />
+          <CommitmentSummaryCard
+            title="Attendance"
+            value={volunteer.attendance_score}
+            icon={<TrendingUp className="h-4 w-4" />}
+            variant={volunteer.attendance_score < 0 ? 'danger' : 'primary'}
+          />
         </div>
 
-        <div className="flex items-center gap-2 border-b border-border pb-4">
-          <Button
-            variant={viewMode === 'MATRIX' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('MATRIX')}
-          >
-            MATRIX VIEW
-          </Button>
-          <Button
-            variant={viewMode === 'DETAILED' ? 'primaryOutline' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('DETAILED')}
-          >
-            DETAILED VIEW
-          </Button>
-        </div>
+        <Tabs value={viewMode} onValueChange={(val) => setViewMode(val as ViewMode)}>
+          <TabsList className="w-auto">
+            <TabsTrigger value="DETAILED">Detailed</TabsTrigger>
+            <TabsTrigger value="MATRIX">Matrix</TabsTrigger>
+          </TabsList>
 
-        <div>
-          {viewMode === 'DETAILED' && (
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 pb-3">
-                <div className="h-2 w-2 rounded-full bg-primary" />
-                <span className="font-bold text-primary tracking-wider text-xs font-heading">
-                  LOGINS &mdash; {processedLogs.length} RECORDS
-                </span>
-              </div>
-
-              <div className="border border-border rounded-lg overflow-hidden">
-                <ListTable>
-                  <ListTableHead>
-                    <ListTableHeaderRow>
-                      <ListTableHeaderCell>DATE</ListTableHeaderCell>
-                      <ListTableHeaderCell>WEEK</ListTableHeaderCell>
-                      <ListTableHeaderCell>TIME SLOT</ListTableHeaderCell>
-                    </ListTableHeaderRow>
-                  </ListTableHead>
-                  <ListTableBody>
-                    {isLoading ? (
-                      <ListTableRow hover="none">
-                        <ListTableCell colSpan={3} className="py-12 text-center">
-                          <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        </ListTableCell>
-                      </ListTableRow>
-                    ) : processedLogs.length === 0 ? (
-                      <ListTableRow hover="none">
-                        <ListTableCell colSpan={3} className="py-12">
-                          <EmptyState
-                            icon={<Calendar className="h-8 w-8" />}
-                            title="No logs found"
-                            description="No attendance records found for this period."
-                          />
-                        </ListTableCell>
-                      </ListTableRow>
-                    ) : (
-                      processedLogs.map((log) => (
-                        <ListTableRow key={log.id}>
-                          <ListTableCell className="font-medium text-text">
-                            {log.service_date}
-                          </ListTableCell>
-                          <ListTableCell className="text-text">{log.weekLabel}</ListTableCell>
-                          <ListTableCell>
-                            <Badge
-                              variant="outline"
-                              className="bg-emerald-50 text-emerald-700 border-emerald-200"
+          <TabsContent value="DETAILED" className="mt-4">
+            <div className="flex flex-col gap-4">
+              {sections
+                .filter((section) => !section.hideWhenEmpty || section.logs.length > 0)
+                .map((section) => (
+                  <CollapsibleSectionCard
+                    key={section.key}
+                    title={
+                      <div className="flex items-center gap-1.5">
+                        <div className={`h-1.5 w-1.5 rounded-full ${section.dotColor}`} />
+                        <span
+                          className={`font-bold tracking-wider text-xs font-heading ${section.titleColor}`}
+                        >
+                          {section.title} &mdash; {section.logs.length} RECORDS
+                        </span>
+                      </div>
+                    }
+                    defaultExpanded={true}
+                    wrapperClassName="overflow-hidden rounded-lg border border-border bg-white shadow-xs"
+                    headerWrapperClassName="px-3 py-2 border-b border-border bg-slate-50/50"
+                    titleClassName="w-full"
+                  >
+                    <ListTable density="dense" className="table-fixed text-sm">
+                      <ListTableHead>
+                        <ListTableHeaderRow>
+                          <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[30%]">
+                            Date
+                          </ListTableHeaderCell>
+                          <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[35%]">
+                            Week
+                          </ListTableHeaderCell>
+                          <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[35%]">
+                            Time Slot
+                          </ListTableHeaderCell>
+                        </ListTableHeaderRow>
+                      </ListTableHead>
+                      <ListTableBody>
+                        {isLoading ? (
+                          <ListTableRow hover="none">
+                            <ListTableCell colSpan={3} className="!py-4 text-center">
+                              <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />
+                            </ListTableCell>
+                          </ListTableRow>
+                        ) : section.logs.length === 0 ? (
+                          <ListTableRow hover="none">
+                            <ListTableCell
+                              colSpan={3}
+                              className="!py-2.5 !px-3 text-center text-sm text-muted"
                             >
-                              {log.time_slot}
-                            </Badge>
-                          </ListTableCell>
-                        </ListTableRow>
-                      ))
-                    )}
-                  </ListTableBody>
-                </ListTable>
-              </div>
+                              {section.emptyMessage}
+                            </ListTableCell>
+                          </ListTableRow>
+                        ) : (
+                          section.logs.map((log) => (
+                            <ListTableRow
+                              key={log.id ?? `${section.key}-${log.service_date}-${log.time_slot}`}
+                            >
+                              <ListTableCell className="!py-1.5 !px-3 font-medium text-text">
+                                {log.service_date}
+                              </ListTableCell>
+                              <ListTableCell className="!py-1.5 !px-3 text-text">
+                                {log.weekLabel}
+                              </ListTableCell>
+                              <ListTableCell className="!py-1.5 !px-3">
+                                {section.renderSlot(log)}
+                              </ListTableCell>
+                            </ListTableRow>
+                          ))
+                        )}
+                      </ListTableBody>
+                    </ListTable>
+                  </CollapsibleSectionCard>
+                ))}
             </div>
-          )}
+          </TabsContent>
 
-          {viewMode === 'MATRIX' && (
-            <div className="py-12">
-              <EmptyState
-                icon={<Calendar className="h-8 w-8" />}
-                title="Matrix View"
-                description="Matrix view is coming soon."
-              />
-            </div>
-          )}
-        </div>
+          <TabsContent value="MATRIX" className="mt-4">
+            <div className="py-8 text-center text-sm text-muted">Matrix view is coming soon.</div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Dialog>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  const isZero = value === 0;
-  const isScore = label === 'ATTENDANCE' || label === 'COMMITTED' || label === 'ATTENDED';
-
-  // Basic styling approximation to match the screenshot
-  const valueColor = isZero ? 'text-orange-500' : 'text-emerald-600';
-  const displayColor = isScore && value > 0 ? 'text-emerald-600' : valueColor;
-
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white px-6 py-3 shadow-xs">
-      <span className={`text-3xl font-black font-heading ${displayColor}`}>{value}</span>
-      <span className="mt-1 text-[10px] font-bold tracking-wider text-muted uppercase">
-        {label}
-      </span>
-    </div>
   );
 }
