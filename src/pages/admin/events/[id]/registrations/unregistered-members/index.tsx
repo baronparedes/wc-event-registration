@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 
-import { Loader2, UserMinus } from 'lucide-react';
+import { UserMinus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
 import {
+  AdminInfiniteScrollFooter,
+  Button,
+  EmptyState,
   ListTable,
   ListTableBody,
   ListTableCell,
@@ -15,7 +16,7 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
-} from '@/components/ui/ListTable';
+} from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
@@ -243,34 +244,15 @@ export function AdminUnregisteredMembersPage() {
               </ListTableBody>
             </ListTable>
 
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-xs text-muted">
-                {hasNextPage
-                  ? `Showing ${members.length} of ${totalCount} unregistered members`
-                  : `Showing all ${totalCount} unregistered member${totalCount === 1 ? '' : 's'}`}
-              </p>
-              {hasNextPage && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="primaryOutline"
-                    size="sm"
-                    onClick={() => fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                  >
-                    {isFetchingNextPage ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading...
-                      </span>
-                    ) : (
-                      'Load More'
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div ref={sentinelRef} className="h-1" />
+            <AdminInfiniteScrollFooter
+              currentCount={members.length}
+              totalCount={totalCount}
+              entityName="unregistered member"
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onFetchNextPage={() => fetchNextPage()}
+              sentinelRef={sentinelRef}
+            />
           </div>
         )}
       </AdminPageShell.Content>

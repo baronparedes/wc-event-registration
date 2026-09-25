@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 
-import { Loader2, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { FormInputField } from '@/components/ui';
-import { Button } from '@/components/ui/Button';
+import { AdminInfiniteScrollFooter, Button, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -159,34 +158,15 @@ export function AdminPublicRegistrationsPage() {
             canWrite={canWrite}
           />
 
-          <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p className="text-xs text-muted">
-              {hasNextPage
-                ? `Showing ${registrations.length} of ${totalCount} public registrations`
-                : `Showing all ${totalCount} public registration${totalCount === 1 ? '' : 's'}`}
-            </p>
-            {hasNextPage && (
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="primaryOutline"
-                  size="sm"
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                >
-                  {isFetchingNextPage ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading...
-                    </span>
-                  ) : (
-                    'Load More'
-                  )}
-                </Button>
-              </div>
-            )}
-          </div>
-          <div ref={sentinelRef} className="h-1" />
+          <AdminInfiniteScrollFooter
+            currentCount={registrations.length}
+            totalCount={totalCount}
+            entityName="public registration"
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onFetchNextPage={() => fetchNextPage()}
+            sentinelRef={sentinelRef}
+          />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

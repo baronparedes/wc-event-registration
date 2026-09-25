@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 
-import { Loader2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Button, EmptyState, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, Button, EmptyState, FormInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery, useDuplicateEventMutation } from '@/hooks/domain/events';
@@ -167,34 +167,15 @@ export function AdminEventsPage() {
               onDuplicate={handleDuplicateEvent}
             />
 
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-xs text-muted">
-                {hasNextPage
-                  ? `Showing ${events.length} of ${totalCount} events`
-                  : `Showing all ${totalCount} event${totalCount === 1 ? '' : 's'}`}
-              </p>
-              {hasNextPage && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="primaryOutline"
-                    size="sm"
-                    onClick={() => fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                  >
-                    {isFetchingNextPage ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading...
-                      </span>
-                    ) : (
-                      'Load More'
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div ref={sentinelRef} className="h-1" />
+            <AdminInfiniteScrollFooter
+              currentCount={events.length}
+              totalCount={totalCount}
+              entityName="event"
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onFetchNextPage={() => fetchNextPage()}
+              sentinelRef={sentinelRef}
+            />
           </div>
         )}
       </AdminPageShell.Content>

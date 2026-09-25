@@ -24,3 +24,20 @@ export function getTotalPages(totalCount: number, pageSize: number): number {
   if (totalCount <= 0) return 1;
   return Math.ceil(totalCount / pageSize);
 }
+
+export function formatPaginationSummary(
+  hasNextPage: boolean,
+  currentCount: number,
+  totalCount: number,
+  entityName = 'item',
+  pluralEntityName?: string,
+): string {
+  const plural = pluralEntityName ?? `${entityName}s`;
+  const name = totalCount === 1 ? entityName : plural;
+
+  if (hasNextPage || currentCount < totalCount) {
+    return `Showing ${currentCount} of ${totalCount} ${plural}`;
+  }
+
+  return `Showing all ${totalCount} ${name}`;
+}

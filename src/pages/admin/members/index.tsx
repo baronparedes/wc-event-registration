@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 
-import { Edit, Loader2, Upload, User, Users } from 'lucide-react';
+import { Edit, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Button, EmptyState, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, Button, EmptyState, FormInputField } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -83,20 +83,6 @@ function EmptyMembersState({ hasSearch }: { hasSearch: boolean }) {
       <EmptyState icon={<Users className="h-6 w-6" />} title={title} description={description} />
     </div>
   );
-}
-
-function getPaginationSummary(hasNextPage: boolean, memberCount: number, totalCount: number) {
-  if (hasNextPage) {
-    return `Showing ${memberCount} of ${totalCount} members`;
-  }
-
-  let memberLabel = 'members';
-
-  if (totalCount === 1) {
-    memberLabel = 'member';
-  }
-
-  return `Showing all ${totalCount} ${memberLabel}`;
 }
 
 function getMemberRowClassName(isActive: boolean) {
@@ -295,31 +281,15 @@ export function AdminMembersPage() {
                 </ListTable>
               )}
 
-              <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p className="text-xs text-muted">
-                  {getPaginationSummary(hasNextPage, members.length, totalCount)}
-                </p>
-                {hasNextPage && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="primaryOutline"
-                      size="sm"
-                      onClick={() => fetchNextPage()}
-                      disabled={isFetchingNextPage}
-                    >
-                      {isFetchingNextPage && (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading...
-                        </span>
-                      )}
-                      {!isFetchingNextPage && 'Load More'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-              <div ref={sentinelRef} className="h-1" />
+              <AdminInfiniteScrollFooter
+                currentCount={members.length}
+                totalCount={totalCount}
+                entityName="member"
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                onFetchNextPage={() => fetchNextPage()}
+                sentinelRef={sentinelRef}
+              />
             </div>
           </>
         )}

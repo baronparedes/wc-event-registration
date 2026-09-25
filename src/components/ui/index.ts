@@ -67,3 +67,13 @@ export {
   type MobileCardActionLinkProps,
   type MobileCardActionPillProps,
 } from './MobileCard';
+export {
+  AdminInfiniteScrollFooter,
+  type AdminInfiniteScrollFooterProps,
+} from './AdminInfiniteScrollFooter';
+
+export {
+  DuplicateEntityDialog,
+  type DuplicateEntityDialogProps,
+  type DuplicateEntityFormValues,
+} from './DuplicateEntityDialog';

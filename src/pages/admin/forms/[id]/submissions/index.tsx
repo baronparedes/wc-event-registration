@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, Button, FormInputField } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
 import { useDebounceSearch } from '@/hooks/utils';
@@ -230,13 +230,12 @@ export function AdminFormSubmissionsPage() {
               onSelectSubmission={setSelectedSubmission}
             />
 
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-xs text-muted">
-                {hasFilterActive
-                  ? `Showing ${filteredCount} of ${totalCount} submission${totalCount === 1 ? '' : 's'}`
-                  : `Showing all ${totalCount} submission${totalCount === 1 ? '' : 's'}`}
-              </p>
-            </div>
+            <AdminInfiniteScrollFooter
+              currentCount={filteredCount}
+              totalCount={totalCount}
+              entityName="submission"
+              className="border-t border-border px-4 py-3 sm:px-6"
+            />
           </div>
         )}
 

@@ -22,9 +22,11 @@ export {
 } from './dateFormat';
 export {
   decodeOffsetCursor,
+  formatPaginationSummary,
   getCurrentPageFromCursor,
   getPageCursor,
   getTotalPages,
 } from './pagination';
+
 export { parseErrorToJsonOrString } from './errorUtils';
 export { DOMPurify } from './dompurify';
