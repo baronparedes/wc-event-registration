@@ -4,8 +4,6 @@ import { SectionCard } from '@/components/ui';
 import { useGetMemberExcusedSchedule } from '@/hooks/domain/members';
 import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import {
-  MATRIX_TIME_SLOTS,
-  SERVICE_SUNDAY_KEYS,
   computeMatrixGrid,
   getMonthSundays,
   getNonSundayAttendances,
@@ -139,9 +137,10 @@ export function ServiceAttendanceHistoryTab({
 
   const missedCount = useMemo(() => {
     let count = 0;
-    for (const key of SERVICE_SUNDAY_KEYS) {
-      for (const slot of MATRIX_TIME_SLOTS) {
-        if (matrixGrid[key]?.[slot]?.status === 'missed_committed') {
+    for (const key in matrixGrid) {
+      const row = matrixGrid[key as keyof typeof matrixGrid];
+      for (const slot in row) {
+        if (row[slot as keyof typeof row]?.status === 'missed_committed') {
           count++;
         }
       }
