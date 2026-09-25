@@ -6,6 +6,7 @@ import { AdminPageShell } from '@/components/layout';
 import { TIMING } from '@/config/constants';
 import { env } from '@/config/env';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
+import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 
 import {
@@ -14,6 +15,7 @@ import {
   type DashboardTimeframe,
   ExportCommitmentDashboardButton,
   TopVolunteersChart,
+  VolunteerAttendanceModal,
   VolunteerListTable,
 } from './components';
 
@@ -26,6 +28,7 @@ export function AdminServiceAttendanceCommitmentPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
+  const [selectedVolunteer, setSelectedVolunteer] = useState<CommitmentDashboardStat | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -174,6 +177,17 @@ export function AdminServiceAttendanceCommitmentPage() {
           roles={roles}
           categories={categories}
           isLoading={isLoading || isFetchingNextPage}
+          onRowClick={setSelectedVolunteer}
+        />
+
+        <VolunteerAttendanceModal
+          isOpen={!!selectedVolunteer}
+          onClose={() => setSelectedVolunteer(null)}
+          volunteer={selectedVolunteer}
+          timeframe={timeframe}
+          startDate={startDate}
+          endDate={endDate}
+          excuseEventId={excuseEventId}
         />
       </AdminPageShell.Content>
     </AdminPageShell>

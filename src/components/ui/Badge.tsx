@@ -43,7 +43,8 @@ const variantClassName: Record<BadgeVariant, string> = {
  * - destructive    → red alert      (error, archived, missed)
  */
 export function Badge({ variant = 'default', icon, children, className }: BadgeProps) {
-  const baseClasses = 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium';
+  const baseClasses =
+    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap';
   const variantClasses = variantClassName[variant];
 
   return (

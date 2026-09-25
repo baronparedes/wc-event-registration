@@ -13,6 +13,7 @@ vi.mock('@/hooks/domain/services', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   })),
+  useVolunteerAttendanceLogQuery: vi.fn(() => ({ data: [], isLoading: false })),
 }));
 
 vi.mock('../components/TopVolunteersChart', () => ({

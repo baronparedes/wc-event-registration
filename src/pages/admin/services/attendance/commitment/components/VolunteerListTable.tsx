@@ -48,6 +48,7 @@ interface VolunteerListTableProps {
   roles: string[];
   categories: string[];
   isLoading: boolean;
+  onRowClick?: (stat: CommitmentDashboardStat) => void;
 }
 
 export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableProps>(
@@ -64,6 +65,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
       roles,
       categories,
       isLoading,
+      onRowClick,
     },
     ref,
   ) => {
@@ -363,8 +365,14 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           </ListTableHead>
           <ListTableBody>
             {sortedStats.map((stat) => (
-              <ListTableRow key={stat.user_id} className="group">
-                <ListTableCell className="sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors">
+              <ListTableRow
+                key={stat.user_id}
+                className={`group ${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
+                onClick={() => onRowClick?.(stat)}
+              >
+                <ListTableCell
+                  className={`sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors ${onRowClick ? 'group-hover:bg-slate-200' : ''}`}
+                >
                   <div className="flex items-center gap-3">
                     <Avatar
                       name={stat.full_name}
