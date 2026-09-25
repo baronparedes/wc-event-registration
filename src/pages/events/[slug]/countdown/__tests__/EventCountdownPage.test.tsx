@@ -107,13 +107,19 @@ describe('EventCountdownPage', () => {
     expect(screen.getByText('Location')).toBeInTheDocument();
     expect(screen.getByText('Grand Ballroom, Level 3')).toBeInTheDocument();
 
+    // Home buttons
+    const homeButtons = screen.getAllByRole('button', { name: /Go Home/i });
+    expect(homeButtons.length).toBe(1);
+    fireEvent.click(homeButtons[0]);
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+
     // Registration button
     const regButton = screen.getByRole('button', { name: /Go to Registration Page/i });
     fireEvent.click(regButton);
     expect(mockNavigate).toHaveBeenCalledWith('/events/tech-summit-2026/register');
   });
 
-  it('renders "The Event has Started" view when event starts_at is reached', () => {
+  it('renders "The Event has Started" view with Go Home button when event starts_at is reached', () => {
     const pastStart = new Date(Date.now() - 1000 * 30).toISOString(); // 30 seconds ago (same calendar day)
 
     mockUsePublicEventQuery.mockReturnValue({
@@ -151,6 +157,11 @@ describe('EventCountdownPage', () => {
     });
 
     expect(screen.getByText('The Event has Started')).toBeInTheDocument();
+
+    const homeButton = screen.getByRole('button', { name: /Go Home/i });
+    fireEvent.click(homeButton);
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+
     const goRegButton = screen.getByRole('button', { name: /Go to Registration/i });
     fireEvent.click(goRegButton);
     expect(mockNavigate).toHaveBeenCalledWith('/events/started-event/register-public', {

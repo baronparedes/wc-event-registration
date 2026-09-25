@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar, Home, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
@@ -129,9 +129,19 @@ export function EventCountdownPage() {
           <div className="my-12 rounded-3xl border border-primary/20 bg-primary/5 p-12">
             <h2 className="text-3xl font-bold text-primary">The Event has Started</h2>
             <p className="mt-4 text-muted">Head over to the registration page to join us.</p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
+                variant="primaryOutline"
+                className="w-full sm:w-auto"
+                onClick={() => navigate(ROUTE_PATHS.home)}
+              >
+                <Home className="h-4 w-4 mr-2" aria-hidden="true" />
+                Go Home
+              </Button>
+              <Button
+                size="lg"
+                className="w-full sm:w-auto"
                 onClick={() =>
                   navigate(toRoute('eventPublicRegister', { slug: event.slug }), { replace: true })
                 }
@@ -153,7 +163,7 @@ export function EventCountdownPage() {
             {event.title}
           </h1>
           {event.description && (
-            <div className="mx-auto max-w-2xl text-balance text-lg text-muted md:text-xl line-clamp-2">
+            <div className="mx-auto max-w-2xl">
               <MarkdownRenderer content={event.description} />
             </div>
           )}
@@ -191,9 +201,19 @@ export function EventCountdownPage() {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             size="3xl"
+            variant="primaryOutline"
+            className="w-full sm:w-auto"
+            onClick={() => navigate(ROUTE_PATHS.home)}
+          >
+            <Home className="h-5 w-5 mr-2" aria-hidden="true" />
+            Go Home
+          </Button>
+          <Button
+            size="3xl"
+            className="w-full sm:w-auto"
             onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}
           >
             Go to Registration Page
