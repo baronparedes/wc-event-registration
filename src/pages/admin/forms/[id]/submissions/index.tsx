@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, FormInputField } from '@/components/ui';
-import { ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
+import { AdminInfiniteScrollFooter, AlertBanner, Button, SearchInputField } from '@/components/ui';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
+import { useDebounceSearch } from '@/hooks/utils';
 import type { FormSubmission } from '@/lib/domain/forms';
 import { FormNavigationLinks } from '@/pages/admin/forms/components';
 
@@ -25,19 +26,8 @@ export function AdminFormSubmissionsPage() {
   } = useFormSubmissionsQuery(targetFormId);
 
   const [selectedSubmission, setSelectedSubmission] = useState<FormSubmission | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm, debouncedSearchTerm, clearSearch } = useDebounceSearch();
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
   const normalizedSearchTerm = useMemo(
     () => debouncedSearchTerm.trim().toLowerCase(),
@@ -156,20 +146,19 @@ export function AdminFormSubmissionsPage() {
       )}
 
       {form && form.status === 'draft' && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-sm font-medium text-amber-800">
-            This form is in draft mode. Submissions are not yet open to the public.
-          </p>
-        </div>
+        <AlertBanner
+          variant="warning"
+          description="This form is in draft mode. Submissions are not yet open to the public."
+        />
       )}
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_auto_auto] sm:items-end">
-          <FormInputField
+          <SearchInputField
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onClear={clearSearch}
             placeholder="Search by respondent, member ID, or email"
-            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
 
           {/* Source Tabs */}
@@ -213,7 +202,7 @@ export function AdminFormSubmissionsPage() {
             type="button"
             variant="primaryOutline"
             onClick={() => {
-              setSearchTerm('');
+              clearSearch();
               setSourceFilter('all');
             }}
             disabled={!hasFilterActive}
@@ -240,13 +229,12 @@ export function AdminFormSubmissionsPage() {
               onSelectSubmission={setSelectedSubmission}
             />
 
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-xs text-muted">
-                {hasFilterActive
-                  ? `Showing ${filteredCount} of ${totalCount} submission${totalCount === 1 ? '' : 's'}`
-                  : `Showing all ${totalCount} submission${totalCount === 1 ? '' : 's'}`}
-              </p>
-            </div>
+            <AdminInfiniteScrollFooter
+              currentCount={filteredCount}
+              totalCount={totalCount}
+              entityName="submission"
+              className="border-t border-border px-4 py-3 sm:px-6"
+            />
           </div>
         )}
 

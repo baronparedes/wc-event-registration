@@ -1,3 +1,4 @@
+import { SearchInputField } from '@/components/ui';
 import { Col, Grid } from '@/components/ui/Grid';
 import {
   REGISTRATION_SHARE_FIELDS,
@@ -66,12 +67,10 @@ export function RegistrationFieldSelector({
               <span className="text-xs text-muted">{selectedAnswerFieldIds.length} selected</span>
             </div>
 
-            <input
-              type="search"
+            <SearchInputField
               value={dynamicFieldSearch}
               onChange={(event) => onDynamicFieldSearchChange(event.target.value)}
               placeholder="Search dynamic fields"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
             />
 
             <div className="max-h-64 overflow-y-auto pr-1">

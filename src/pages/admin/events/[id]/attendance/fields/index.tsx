@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink } from '@/components/ui/ActionLink';
-import { Button } from '@/components/ui/Button';
+import { ActionLink, AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAttendanceSettingsQuery } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
@@ -77,30 +76,38 @@ export function AdminAttendanceFieldsPage() {
       />
 
       {!isLoading && !attendanceEnabled && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">Attendance tracking is disabled</p>
-          <p className="mt-1 text-xs text-amber-700">
-            Enable attendance tracking in{' '}
-            {id ? (
-              <ActionLink to={toRoute('adminEventAttendance', { id })}>
-                Attendance Settings
-              </ActionLink>
-            ) : (
-              'Attendance Settings'
-            )}{' '}
-            to configure fields.
-          </p>
-        </div>
+        <AlertBanner
+          variant="warning"
+          title="Attendance tracking is disabled"
+          description={
+            <>
+              Enable attendance tracking in{' '}
+              {id ? (
+                <ActionLink to={toRoute('adminEventAttendance', { id })}>
+                  Attendance Settings
+                </ActionLink>
+              ) : (
+                'Attendance Settings'
+              )}{' '}
+              to configure fields.
+            </>
+          }
+        />
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading fields...">
         {!event ? (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Event not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminEvents}>
-              Back to events
-            </Link>
-          </div>
+          <AlertBanner
+            variant="error"
+            description={
+              <>
+                Event not found.{' '}
+                <Link className="underline" to={ROUTE_PATHS.adminEvents}>
+                  Back to events
+                </Link>
+              </>
+            }
+          />
         ) : (
           <>
             <AttendanceFieldsList fields={fields ?? []} eventId={id ?? ''} onEdit={openEdit} />

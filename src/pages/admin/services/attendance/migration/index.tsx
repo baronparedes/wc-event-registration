@@ -1,4 +1,5 @@
 import { AdminPageShell } from '@/components/layout';
+import { ROUTE_PATHS } from '@/config/constants';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
 
 import { ServiceAttendanceMigrationPanel } from './components/ServiceAttendanceMigrationPanel';
@@ -9,7 +10,7 @@ export function AdminServiceAttendanceMigrationPage() {
       <AdminPageShell.Header
         title="Service Attendance Migration"
         description="Upload attendance CSV to migrate records and map tables to service layout seats."
-        breadcrumbs={[{ label: 'Services', to: '/admin/services' }, { label: 'Migration' }]}
+        breadcrumbs={[{ label: 'Services', to: ROUTE_PATHS.adminServices }, { label: 'Migration' }]}
       />
       <ServiceNavigationLinks />
       <AdminPageShell.Content className="mt-6">

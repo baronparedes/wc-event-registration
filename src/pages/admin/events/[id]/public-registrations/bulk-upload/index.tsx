@@ -2,8 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui';
-import { ActionLink } from '@/components/ui/ActionLink';
+import { ActionLink, AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -87,12 +86,11 @@ export function AdminPublicRegistrationsBulkUploadPage() {
       />
 
       {!isLoading && fields.length === 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-medium text-blue-800">
-            No public registration fields configured
-          </p>
-          <p className="mt-1 text-xs text-blue-700">
-            {id ? (
+        <AlertBanner
+          variant="info"
+          title="No public registration fields configured"
+          description={
+            id ? (
               <>
                 <ActionLink to={toRoute('adminEventFields', { id })}>
                   Configure registration fields
@@ -102,19 +100,24 @@ export function AdminPublicRegistrationsBulkUploadPage() {
               </>
             ) : (
               'Configure registration fields first, or upload a CSV with only first_name, last_name, and email to import public registrations without answers.'
-            )}
-          </p>
-        </div>
+            )
+          }
+        />
       )}
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage="Loading bulk upload...">
         {!event ? (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Event not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminEvents}>
-              Back to events
-            </Link>
-          </div>
+          <AlertBanner
+            variant="error"
+            description={
+              <>
+                Event not found.{' '}
+                <Link className="underline" to={ROUTE_PATHS.adminEvents}>
+                  Back to events
+                </Link>
+              </>
+            }
+          />
         ) : (
           <BulkUploadPanel
             eventId={id ?? ''}

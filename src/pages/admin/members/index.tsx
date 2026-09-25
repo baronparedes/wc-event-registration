@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { Edit, Loader2, Upload, User, Users } from 'lucide-react';
+import { Edit, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Button, EmptyState, FormInputField } from '@/components/ui';
+import {
+  AdminInfiniteScrollFooter,
+  AlertBanner,
+  Button,
+  EmptyState,
+  SearchInputField,
+} from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -17,10 +23,10 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
-import { useIsMobileViewport } from '@/hooks/utils';
+import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
@@ -85,20 +91,6 @@ function EmptyMembersState({ hasSearch }: { hasSearch: boolean }) {
   );
 }
 
-function getPaginationSummary(hasNextPage: boolean, memberCount: number, totalCount: number) {
-  if (hasNextPage) {
-    return `Showing ${memberCount} of ${totalCount} members`;
-  }
-
-  let memberLabel = 'members';
-
-  if (totalCount === 1) {
-    memberLabel = 'member';
-  }
-
-  return `Showing all ${totalCount} ${memberLabel}`;
-}
-
 function getMemberRowClassName(isActive: boolean) {
   if (isActive) {
     return 'cursor-pointer';
@@ -110,20 +102,8 @@ function getMemberRowClassName(isActive: boolean) {
 export function AdminMembersPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
   const [statusFilter, setStatusFilter] = useState<'active' | 'deleted' | 'all'>('active');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
   const membersQuery = useAdminMembersQuery({
     pageSize: PAGINATION_DEFAULTS.adminMembersPageSize,
@@ -146,35 +126,11 @@ export function AdminMembersPage() {
   const hasNoMembers = !hasError && members.length === 0;
   const hasMembers = !hasError && members.length > 0;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm);
-  }
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   function handleStatusFilterChange(nextStatusFilter: 'active' | 'deleted' | 'all') {
     setStatusFilter(nextStatusFilter);
@@ -210,14 +166,12 @@ export function AdminMembersPage() {
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted">
-            <FormInputField
-              value={searchTerm}
-              onChange={(event) => handleSearchTermChange(event.target.value)}
-              placeholder="Search by first name, last name, nickname, email, or member ID"
-              inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            />
-          </label>
+          <SearchInputField
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
+            placeholder="Search by first name, last name, nickname, email, or member ID"
+          />
           <div className="flex w-full flex-col gap-1 text-sm text-muted">
             <FormSelectField
               ariaLabel="Status"
@@ -228,14 +182,13 @@ export function AdminMembersPage() {
                 { value: 'deleted', label: 'Deleted' },
                 { value: 'all', label: 'All' },
               ]}
-              selectClassName="rounded-xl py-2"
             />
           </div>
           <Button
             type="button"
             variant="primaryOutline"
             className="w-full sm:w-auto"
-            onClick={() => handleSearchTermChange('')}
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
           >
             Clear
@@ -245,9 +198,7 @@ export function AdminMembersPage() {
 
       <AdminPageShell.Content isLoading={isLoading} loadingMessage={UI_MESSAGES.loading.members}>
         {hasError && (
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <p className="text-sm text-red-600">{UI_MESSAGES.errors.membersLoadFailed}</p>
-          </div>
+          <AlertBanner variant="error" description={UI_MESSAGES.errors.membersLoadFailed} />
         )}
         {hasNoMembers && <EmptyMembersState hasSearch={normalizedSearchTerm.length > 0} />}
         {hasMembers && (
@@ -331,31 +282,15 @@ export function AdminMembersPage() {
                 </ListTable>
               )}
 
-              <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p className="text-xs text-muted">
-                  {getPaginationSummary(hasNextPage, members.length, totalCount)}
-                </p>
-                {hasNextPage && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="primaryOutline"
-                      size="sm"
-                      onClick={() => fetchNextPage()}
-                      disabled={isFetchingNextPage}
-                    >
-                      {isFetchingNextPage && (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading...
-                        </span>
-                      )}
-                      {!isFetchingNextPage && 'Load More'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-              <div ref={loadMoreRef} className="h-1" />
+              <AdminInfiniteScrollFooter
+                currentCount={members.length}
+                totalCount={totalCount}
+                entityName="member"
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                onFetchNextPage={() => fetchNextPage()}
+                sentinelRef={sentinelRef}
+              />
             </div>
           </>
         )}

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { EmptyState } from '@/components/ui';
+import { EmptyState, RegistrationStatusBadge } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -29,35 +29,6 @@ interface RegistrationsListProps {
   isEventArchived?: boolean;
   searchTerm?: string;
   canWrite?: boolean;
-}
-
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'submitted':
-      return (
-        <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-          {UI_MESSAGES.registrationStatus.submitted}
-        </span>
-      );
-    case 'updated':
-      return (
-        <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-          {UI_MESSAGES.registrationStatus.updated}
-        </span>
-      );
-    case 'cancelled':
-      return (
-        <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
-          {UI_MESSAGES.registrationStatus.cancelled}
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
-          {status}
-        </span>
-      );
-  }
 }
 
 function formatDate(dateString: string): string {
@@ -171,7 +142,9 @@ export function RegistrationsList({
               <ListTableCell className="text-gray-600">{registration.email}</ListTableCell>
               <ListTableCell className="text-gray-600">{registration.role}</ListTableCell>
               <ListTableCell className="text-gray-600">{registration.category}</ListTableCell>
-              <ListTableCell>{getStatusBadge(registration.status)}</ListTableCell>
+              <ListTableCell>
+                <RegistrationStatusBadge status={registration.status} />
+              </ListTableCell>
               <ListTableCell className="text-gray-600">
                 {formatDate(registration.submitted_at)}
               </ListTableCell>

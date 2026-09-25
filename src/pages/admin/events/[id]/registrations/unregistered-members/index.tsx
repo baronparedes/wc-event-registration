@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 
-import { Loader2, UserMinus } from 'lucide-react';
+import { UserMinus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
 import {
+  AdminInfiniteScrollFooter,
+  Button,
+  EmptyState,
   ListTable,
   ListTableBody,
   ListTableCell,
@@ -15,14 +16,16 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
-} from '@/components/ui/ListTable';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
+  SearchInputField,
+} from '@/components/ui';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useAttendanceUnregisteredMembersQuery,
   useExportUnregisteredMembersCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 function downloadCsv(text: string, filename: string) {
@@ -42,19 +45,7 @@ function downloadCsv(text: string, filename: string) {
 export function AdminUnregisteredMembersPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const eventQuery = useAdminEventQuery(eventId);
   const settingsQuery = useAttendanceSettingsQuery(eventId);
@@ -71,31 +62,11 @@ export function AdminUnregisteredMembersPage() {
   const isFetchingNextPage = Boolean(unregisteredMembersQuery.isFetchingNextPage);
   const fetchNextPage = unregisteredMembersQuery.fetchNextPage;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   if (!eventId) {
     return (
@@ -130,10 +101,6 @@ export function AdminUnregisteredMembersPage() {
       }
       toast.error(message);
     }
-  }
-
-  function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm);
   }
 
   return (
@@ -181,24 +148,21 @@ export function AdminUnregisteredMembersPage() {
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted">
-            Search members
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(event) => handleSearchTermChange(event.target.value)}
-              placeholder="Search by member ID, name, or email"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            />
-          </label>
-          <button
+          <SearchInputField
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
+            placeholder="Search by member ID, name, or email"
+          />
+          <Button
             type="button"
-            onClick={() => handleSearchTermChange('')}
+            variant="primaryOutline"
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
-            className="min-h-10 w-full rounded-md border border-border px-3 py-2 text-sm font-medium text-text transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="w-full sm:w-auto"
           >
             Clear
-          </button>
+          </Button>
         </div>
       </AdminPageShell.Filters>
 
@@ -277,34 +241,15 @@ export function AdminUnregisteredMembersPage() {
               </ListTableBody>
             </ListTable>
 
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-xs text-muted">
-                {hasNextPage
-                  ? `Showing ${members.length} of ${totalCount} unregistered members`
-                  : `Showing all ${totalCount} unregistered member${totalCount === 1 ? '' : 's'}`}
-              </p>
-              {hasNextPage && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="primaryOutline"
-                    size="sm"
-                    onClick={() => fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                  >
-                    {isFetchingNextPage ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading...
-                      </span>
-                    ) : (
-                      'Load More'
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div ref={loadMoreRef} className="h-1" />
+            <AdminInfiniteScrollFooter
+              currentCount={members.length}
+              totalCount={totalCount}
+              entityName="unregistered member"
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onFetchNextPage={() => fetchNextPage()}
+              sentinelRef={sentinelRef}
+            />
           </div>
         )}
       </AdminPageShell.Content>

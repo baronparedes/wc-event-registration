@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
+import { AlertBanner } from '@/components/ui/AlertBanner';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -206,9 +207,7 @@ export function AdminMembersImportPage() {
         loadingMessage="Loading member snapshot..."
       >
         {membersSnapshotQuery.isError ? (
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-danger">
-            Failed to load members for preview.
-          </div>
+          <AlertBanner variant="error" description="Failed to load members for preview." />
         ) : (
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-surface p-4">
@@ -234,14 +233,17 @@ export function AdminMembersImportPage() {
             </div>
 
             {errors.length > 0 && (
-              <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2">
-                <p className="text-sm font-medium text-danger">Import validation failed</p>
-                <ul className="mt-1 max-h-48 list-disc overflow-y-auto pl-5 text-xs text-danger">
-                  {errors.map((error) => (
-                    <li key={error}>{error}</li>
-                  ))}
-                </ul>
-              </div>
+              <AlertBanner
+                variant="error"
+                title="Import validation failed"
+                description={
+                  <ul className="mt-1 max-h-48 list-disc overflow-y-auto pl-5 text-xs">
+                    {errors.map((error) => (
+                      <li key={error}>{error}</li>
+                    ))}
+                  </ul>
+                }
+              />
             )}
 
             {preview && (

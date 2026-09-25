@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
+import { AlertBanner } from '@/components/ui/AlertBanner';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -154,7 +155,7 @@ export function AdminMemberDetailPage() {
       <AdminPageShell>
         <AdminPageShell.Header title={canWrite ? 'Edit Member' : 'View Member'} />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Member ID is missing.</p>
+          <AlertBanner variant="error" description="Member ID is missing." />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -175,7 +176,7 @@ export function AdminMemberDetailPage() {
       <AdminPageShell>
         <AdminPageShell.Header title={canWrite ? 'Edit Member' : 'View Member'} />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">{UI_MESSAGES.errors.memberNotFound}</p>
+          <AlertBanner variant="error" description={UI_MESSAGES.errors.memberNotFound} />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -202,9 +203,12 @@ export function AdminMemberDetailPage() {
 
       <AdminPageShell.Content>
         {isDeletedMember && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            This member is soft deleted and excluded from registration member lookup.
-          </div>
+          <AlertBanner
+            variant="error"
+            title="Member Deactivated"
+            description="This member is soft deleted and excluded from registration member lookup."
+            className="mb-4"
+          />
         )}
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <SectionCard

@@ -12,7 +12,7 @@ import {
   buildDynamicFieldResponseSchema,
 } from '@/lib/domain/event-fields';
 import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
-import { renderFieldByType } from '@/pages/events/[slug]/register/components/field-renderers';
+import { DynamicFieldRenderer } from '@/pages/events/[slug]/register/components/field-renderers';
 
 function normalizeHydratedValueForField(
   value: unknown,
@@ -229,7 +229,7 @@ export function PublicEventFieldsStep({
                 {field.is_required && <span className="text-danger">*</span>}
               </label>
               {field.help_text && <p className="mb-2 text-xs text-muted">{field.help_text}</p>}
-              {renderFieldByType(field.field_type, field, dynamicForm)}
+              <DynamicFieldRenderer field={field} dynamicForm={dynamicForm} />
               {dynamicForm.formState.errors[field.field_key] && (
                 <p className="mt-1 text-xs text-danger">
                   {dynamicForm.formState.errors[field.field_key]?.message as string}

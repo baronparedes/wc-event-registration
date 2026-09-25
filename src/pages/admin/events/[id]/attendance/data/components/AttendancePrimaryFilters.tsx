@@ -1,6 +1,6 @@
-import { RotateCcw, Search } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
-import { FormInputField } from '@/components/ui/FormInputField';
+import { SearchInputField } from '@/components/ui';
 import type { AttendeeViewConfig, DynamicFieldOption } from '@/lib/domain/attendance-views';
 
 import { AttendanceColumnsButton } from './AttendanceColumnsButton';
@@ -30,14 +30,12 @@ export function AttendancePrimaryFilters({
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
       <div className="lg:col-span-4">
         <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1 relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-            <FormInputField
+          <div className="min-w-0 flex-1">
+            <SearchInputField
               value={viewConfig.nameOrMemberQuery}
               onChange={(event) => onNameOrMemberQueryChange(event.target.value)}
               ariaLabel="Name or Member ID"
               placeholder="Search by attendee name, email, or RFID..."
-              inputClassName="rounded-xl px-3 py-2 leading-normal pl-11"
             />
           </div>
           <AttendanceColumnsButton

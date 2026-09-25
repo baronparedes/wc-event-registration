@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { AlertBanner } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -64,9 +65,10 @@ function PublishEventModal({ eventData, isPending, onConfirm, onClose }: Publish
             </ul>
           </div>
           {!allFilled && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              ⚠️ Event is missing required fields. Please edit and complete before publishing.
-            </div>
+            <AlertBanner
+              variant="warning"
+              description="Event is missing required fields. Please edit and complete before publishing."
+            />
           )}
         </div>
       }

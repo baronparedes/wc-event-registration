@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink, SectionCard } from '@/components/ui';
+import { ActionLink, AlertBanner, RegistrationStatusBadge, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -61,35 +61,6 @@ function formatAnswer(answer: unknown, fieldType: string): string {
   return String(answer);
 }
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'submitted':
-      return (
-        <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-          {UI_MESSAGES.registrationStatus.submitted}
-        </span>
-      );
-    case 'updated':
-      return (
-        <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-          {UI_MESSAGES.registrationStatus.updated}
-        </span>
-      );
-    case 'cancelled':
-      return (
-        <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-700">
-          {UI_MESSAGES.registrationStatus.cancelled}
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
-          {status}
-        </span>
-      );
-  }
-}
-
 export function AdminPublicRegistrationDetailPage() {
   const { id: eventId, registration_id: registrationId } = useParams<{
     id: string;
@@ -111,7 +82,7 @@ export function AdminPublicRegistrationDetailPage() {
       <AdminPageShell>
         <AdminPageShell.Header title="Public Registration" />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Invalid public registration ID</p>
+          <AlertBanner variant="error" description="Invalid public registration ID" />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -129,10 +100,10 @@ export function AdminPublicRegistrationDetailPage() {
           }
         />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">
-            Error loading public registration:{' '}
-            {detailQuery.error instanceof Error ? detailQuery.error.message : 'Unknown error'}
-          </p>
+          <AlertBanner
+            variant="error"
+            description={`Error loading public registration: ${detailQuery.error instanceof Error ? detailQuery.error.message : 'Unknown error'}`}
+          />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -165,7 +136,7 @@ export function AdminPublicRegistrationDetailPage() {
           }
         />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Public registration not found.</p>
+          <AlertBanner variant="error" description="Public registration not found." />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -269,8 +240,11 @@ export function AdminPublicRegistrationDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-sm font-medium text-muted">Status</p>
-                  <p className="mt-1">{getStatusBadge(registration.status)}</p>
+                  <p className="mt-1">
+                    <RegistrationStatusBadge status={registration.status} />
+                  </p>
                 </div>
+
                 <div>
                   <p className="text-sm font-medium text-muted">Submitted</p>
                   <p className="mt-1 text-base text-text">

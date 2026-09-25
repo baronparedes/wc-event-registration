@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, SectionCard } from '@/components/ui';
+import { AlertBanner, Button, SectionCard } from '@/components/ui';
 import {
   useAdminMembersMilestonesQuery,
   useAdminMembersSchedulesQuery,
@@ -73,23 +73,22 @@ export function AdminHubCalendarPage() {
   const renderContent = () => {
     if (error) {
       return (
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <p className="text-sm text-red-600">
-            Failed to load calendar schedules and milestones. Please refresh.
-          </p>
-        </div>
+        <AlertBanner
+          variant="error"
+          description="Failed to load calendar schedules and milestones. Please refresh."
+        />
       );
     }
 
     return (
       <div className="flex flex-col gap-4">
         <SectionCard>
-          {/* Calendar Controls & Header */}
-          <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
+          {/* Calendar Controls & Navigation */}
+          <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <h2 className="font-heading text-xl font-semibold text-text">Hub Calendar</h2>
-              <p className="mt-1 text-sm text-muted">
-                View upcoming Sunday services and member milestones.
+              <h2 className="font-heading text-lg font-semibold text-text">Monthly View</h2>
+              <p className="mt-0.5 text-xs text-muted">
+                Navigate months to view commitments and milestones.
               </p>
             </div>
 
@@ -185,6 +184,7 @@ export function AdminHubCalendarPage() {
   return (
     <AdminPageShell wide>
       <AdminPageShell.Header
+        breadcrumbs={[{ label: 'Hub Calendar' }]}
         title="Hub Calendar"
         description="Overview of upcoming committed schedules and member milestones."
       />

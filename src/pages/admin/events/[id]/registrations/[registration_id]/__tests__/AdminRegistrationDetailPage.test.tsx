@@ -220,7 +220,6 @@ describe('AdminRegistrationDetailPage', () => {
         <AdminRegistrationDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(screen.getByText('Loading registration details...')).toBeInTheDocument();
 
     mockUseRegistrationDetailQuery.mockReturnValueOnce({
@@ -233,7 +232,7 @@ describe('AdminRegistrationDetailPage', () => {
         <AdminRegistrationDetailPage />
       </MemoryRouter>,
     );
-    expect(screen.getByText('Not Found')).toBeInTheDocument();
+    expect(screen.getByText('Registration not found')).toBeInTheDocument();
   });
 
   it('renders query errors with Error and unknown values', () => {

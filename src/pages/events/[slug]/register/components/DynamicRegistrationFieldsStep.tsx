@@ -8,96 +8,7 @@ import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/
 import { isFieldVisible } from '@/lib/domain/field-visibility';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
-import { CheckboxFieldRenderer } from './field-renderers/CheckboxFieldRenderer';
-import { DateFieldRenderer, DatetimeFieldRenderer } from './field-renderers/DateFieldRenderer';
-import {
-  MultiSelectFieldRenderer,
-  MultiSelectToggleFieldRenderer,
-  RadioFieldRenderer,
-  SelectFieldRenderer,
-} from './field-renderers/SelectFieldRenderer';
-import {
-  ColorPickerFieldRenderer,
-  EmailFieldRenderer,
-  NumberFieldRenderer,
-  PhoneFieldRenderer,
-  TextFieldRenderer,
-  TextareaFieldRenderer,
-} from './field-renderers/TextFieldRenderer';
-
-function DynamicFieldInput(props: {
-  field: PublicEventField;
-  dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
-  memberRole?: string;
-  remainingSlotsByOption?: Record<string, number>;
-  remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
-}) {
-  const { field, dynamicForm, memberRole, remainingSlotsByOption, remainingSlotsByRoleByOption } =
-    props;
-
-  switch (field.field_type) {
-    case 'textarea':
-      return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'number':
-      return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'email':
-      return <EmailFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'phone':
-      return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'date':
-      return <DateFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'datetime':
-      return <DatetimeFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'select':
-      return (
-        <SelectFieldRenderer
-          field={field}
-          dynamicForm={dynamicForm}
-          memberRole={memberRole}
-          remainingSlotsByOption={remainingSlotsByOption}
-          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
-        />
-      );
-    case 'radio':
-      return (
-        <RadioFieldRenderer
-          field={field}
-          dynamicForm={dynamicForm}
-          memberRole={memberRole}
-          remainingSlotsByOption={remainingSlotsByOption}
-          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
-        />
-      );
-    case 'multi_select':
-      return (
-        <MultiSelectFieldRenderer
-          field={field}
-          dynamicForm={dynamicForm}
-          memberRole={memberRole}
-          remainingSlotsByOption={remainingSlotsByOption}
-          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
-        />
-      );
-    case 'multi_select_toggle':
-      return (
-        <MultiSelectToggleFieldRenderer
-          field={field}
-          dynamicForm={dynamicForm}
-          memberRole={memberRole}
-          remainingSlotsByOption={remainingSlotsByOption}
-          remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
-        />
-      );
-    case 'checkbox':
-    case 'boolean':
-      return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'color_picker':
-      return <ColorPickerFieldRenderer field={field} dynamicForm={dynamicForm} />;
-    case 'text':
-    default:
-      return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />;
-  }
-}
+import { DynamicFieldRenderer } from './field-renderers';
 
 type DynamicFieldsStepCardProps = {
   matchedMember: MemberLookupProfile | null;
@@ -312,7 +223,7 @@ export function DynamicFieldsStepCard(props: DynamicFieldsStepCardProps) {
                   {field.help_text && (
                     <p className="registration-field-help text-xs text-muted">{field.help_text}</p>
                   )}
-                  <DynamicFieldInput
+                  <DynamicFieldRenderer
                     field={field}
                     dynamicForm={dynamicForm}
                     memberRole={matchedMember.role}

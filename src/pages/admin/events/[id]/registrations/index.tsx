@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 
-import { Loader2, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { FormInputField } from '@/components/ui';
-import { Button } from '@/components/ui/Button';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
+import { AdminInfiniteScrollFooter, AlertBanner, Button, SearchInputField } from '@/components/ui';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
+import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { CopyNamesButton, ExportButton, RegistrationsList, ViewNamesButton } from './components';
@@ -17,21 +17,9 @@ import { CopyNamesButton, ExportButton, RegistrationsList, ViewNamesButton } fro
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const { data: authState } = useAdminAuthQuery();
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const eventQuery = useAdminEventQuery(eventId ?? '');
   const registrationsQuery = useAdminRegistrationsQuery(eventId ?? '', {
@@ -46,31 +34,11 @@ export function AdminRegistrationsPage() {
   const isFetchingNextPage = Boolean(registrationsQuery.isFetchingNextPage);
   const fetchNextPage = registrationsQuery.fetchNextPage;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   if (!eventId) {
     return (
@@ -105,10 +73,6 @@ export function AdminRegistrationsPage() {
 
   const event = eventQuery.data;
   const isEventArchived = event?.status === 'archived';
-
-  function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm);
-  }
 
   const navActions = (
     <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
@@ -145,37 +109,28 @@ export function AdminRegistrationsPage() {
       />
 
       {event && event.status !== 'draft' && (
-        <div
-          className={`rounded-lg p-3 ${
+        <AlertBanner
+          variant={event.status === 'archived' ? 'warning' : 'info'}
+          description={
             event.status === 'archived'
-              ? 'border border-yellow-200 bg-yellow-50'
-              : 'border border-blue-200 bg-blue-50'
-          }`}
-        >
-          <p
-            className={`text-sm font-medium ${
-              event.status === 'archived' ? 'text-yellow-800' : 'text-blue-800'
-            }`}
-          >
-            {event.status === 'archived'
               ? 'This event is archived. Registrations cannot be cancelled.'
-              : 'This event is published. All registrations are visible.'}
-          </p>
-        </div>
+              : 'This event is published. All registrations are visible.'
+          }
+        />
       )}
 
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
-          <FormInputField
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <SearchInputField
             value={searchTerm}
-            onChange={(event) => handleSearchTermChange(event.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
             placeholder="Search by name, member ID, or email"
-            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
           <Button
             type="button"
             variant="primaryOutline"
-            onClick={() => handleSearchTermChange('')}
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
           >
             Clear
@@ -216,34 +171,15 @@ export function AdminRegistrationsPage() {
             canWrite={canWrite}
           />
 
-          <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p className="text-xs text-muted">
-              {hasNextPage
-                ? `Showing ${registrations.length} of ${totalCount} registrations`
-                : `Showing all ${totalCount} registration${totalCount === 1 ? '' : 's'}`}
-            </p>
-            {hasNextPage && (
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="primaryOutline"
-                  size="sm"
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                >
-                  {isFetchingNextPage ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading...
-                    </span>
-                  ) : (
-                    'Load More'
-                  )}
-                </Button>
-              </div>
-            )}
-          </div>
-          <div ref={loadMoreRef} className="h-1" />
+          <AdminInfiniteScrollFooter
+            currentCount={registrations.length}
+            totalCount={totalCount}
+            entityName="registration"
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onFetchNextPage={() => fetchNextPage()}
+            sentinelRef={sentinelRef}
+          />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

@@ -67,3 +67,22 @@ export {
   type MobileCardActionLinkProps,
   type MobileCardActionPillProps,
 } from './MobileCard';
+export {
+  AdminInfiniteScrollFooter,
+  type AdminInfiniteScrollFooterProps,
+} from './AdminInfiniteScrollFooter';
+
+export {
+  DuplicateEntityDialog,
+  type DuplicateEntityDialogProps,
+  type DuplicateEntityFormValues,
+} from './DuplicateEntityDialog';
+export { AlertBanner, type AlertBannerProps, type AlertBannerVariant } from './AlertBanner';
+export {
+  LifecycleStatusBadge,
+  RegistrationStatusBadge,
+  MemberStatusBadge,
+  type LifecycleStatus,
+  type RegistrationStatus,
+} from './StatusBadge';
+export { SearchInputField, type SearchInputFieldProps } from './SearchInputField';

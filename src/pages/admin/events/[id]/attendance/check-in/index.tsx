@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, EventHeaderCard } from '@/components/ui';
+import { AlertBanner, Button, EventHeaderCard } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
@@ -25,7 +25,7 @@ export function AdminAttendanceCheckInPage() {
       <AdminPageShell>
         <AdminPageShell.Header title="Check-In" />
         <AdminPageShell.Content>
-          <p className="text-sm text-red-600">Invalid event ID.</p>
+          <AlertBanner variant="error" description="Invalid event ID." />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -44,14 +44,22 @@ export function AdminAttendanceCheckInPage() {
   if (!state.event) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Header title="Check-In" />
+        <AdminPageShell.Header
+          title="Check-In"
+          breadcrumbs={[{ label: 'Events', to: ROUTE_PATHS.adminEvents }, { label: 'Check-In' }]}
+        />
         <AdminPageShell.Content>
-          <div className="rounded-2xl border border-border bg-surface p-6 text-sm text-red-600">
-            Event not found.{' '}
-            <Link className="underline" to={ROUTE_PATHS.adminEvents}>
-              Back to events
-            </Link>
-          </div>
+          <AlertBanner
+            variant="error"
+            description={
+              <>
+                Event not found.{' '}
+                <Link className="underline" to={ROUTE_PATHS.adminEvents}>
+                  Back to events
+                </Link>
+              </>
+            }
+          />
         </AdminPageShell.Content>
       </AdminPageShell>
     );
@@ -59,7 +67,14 @@ export function AdminAttendanceCheckInPage() {
 
   return (
     <AdminPageShell>
-      <AdminPageShell.Header title="Event Check-In" />
+      <AdminPageShell.Header
+        breadcrumbs={[
+          { label: 'Events', to: ROUTE_PATHS.adminEvents },
+          { label: state.event.title, to: toRoute('adminEventDetail', { id: eventId }) },
+          { label: 'Check-In' },
+        ]}
+        title="Event Check-In"
+      />
 
       <EventHeaderCard
         defaultExpanded={false}
@@ -76,10 +91,11 @@ export function AdminAttendanceCheckInPage() {
       />
 
       {!state.attendanceEnabled && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">Attendance tracking is disabled</p>
-          <p className="mt-1 text-xs text-amber-700">
-            {state.canWrite ? (
+        <AlertBanner
+          variant="warning"
+          title="Attendance tracking is disabled"
+          description={
+            state.canWrite ? (
               <>
                 Enable attendance tracking in{' '}
                 <ActionLink to={toRoute('adminEventAttendance', { id: eventId })}>
@@ -89,23 +105,21 @@ export function AdminAttendanceCheckInPage() {
               </>
             ) : (
               'Attendance settings must be enabled by an admin before kiosk check-in can be used.'
-            )}
-          </p>
-        </div>
+            )
+          }
+        />
       )}
 
       {state.isCheckInBlockedByWindow && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">
-            Check-in is read-only outside the event date-time window.
-          </p>
-          <p className="mt-1 text-xs text-amber-700">
-            Allowed window:{' '}
-            {state.event
+        <AlertBanner
+          variant="warning"
+          title="Check-in is read-only outside the event date-time window."
+          description={`Allowed window: ${
+            state.event
               ? `${formatDateTime(state.event.starts_at)} to ${formatDateTime(state.event.ends_at)}`
-              : 'Unavailable'}
-          </p>
-        </div>
+              : 'Unavailable'
+          }`}
+        />
       )}
 
       {state.showCheckInWizard && state.isUsingCachedEventOrSettings && (

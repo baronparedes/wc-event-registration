@@ -17,6 +17,7 @@ type FormInputFieldBaseProps = {
   labelAdornment?: ReactNode;
   inputClassName?: string;
   className?: string;
+  inputRef?: import('react').Ref<HTMLInputElement>;
   onKeyDown?: import('react').KeyboardEventHandler<HTMLInputElement>;
   onScroll?: import('react').UIEventHandler<HTMLInputElement>;
   backdrop?: ReactNode;
@@ -56,6 +57,7 @@ export function FormInputField(props: FormInputFieldProps) {
     labelAdornment,
     inputClassName,
     className,
+    inputRef,
     onKeyDown,
     onScroll,
     backdrop,
@@ -81,6 +83,7 @@ export function FormInputField(props: FormInputFieldProps) {
         {backdrop}
         <input
           {...controlledProps}
+          ref={inputRef ?? (registration ? registration.ref : undefined)}
           aria-label={ariaLabel}
           className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
             type === 'date' ? 'min-w-0 appearance-none' : ''
