@@ -52,7 +52,10 @@ export function useServiceAttendanceQuery(
             member_id,
             full_name,
             nickname,
-            avatar_object_key
+            avatar_object_key,
+            role,
+            category,
+            is_active
           )
         `,
           { count: 'exact' },
