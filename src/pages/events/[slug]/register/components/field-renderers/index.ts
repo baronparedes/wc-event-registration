@@ -1,3 +1,4 @@
+export { DynamicFieldRenderer, type DynamicFieldRendererProps } from './DynamicFieldRenderer';
 export { renderFieldByType } from './renderFieldByType';
 export {
   TextFieldRenderer,
