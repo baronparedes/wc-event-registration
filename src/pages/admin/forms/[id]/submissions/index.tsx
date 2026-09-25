@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Button, FormInputField } from '@/components/ui';
-import { ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
+import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
+import { useDebounceSearch } from '@/hooks/utils';
 import type { FormSubmission } from '@/lib/domain/forms';
 import { FormNavigationLinks } from '@/pages/admin/forms/components';
 
@@ -25,19 +26,8 @@ export function AdminFormSubmissionsPage() {
   } = useFormSubmissionsQuery(targetFormId);
 
   const [selectedSubmission, setSelectedSubmission] = useState<FormSubmission | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm, debouncedSearchTerm, clearSearch } = useDebounceSearch();
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
   const normalizedSearchTerm = useMemo(
     () => debouncedSearchTerm.trim().toLowerCase(),
@@ -213,7 +203,7 @@ export function AdminFormSubmissionsPage() {
             type="button"
             variant="primaryOutline"
             onClick={() => {
-              setSearchTerm('');
+              clearSearch();
               setSourceFilter('all');
             }}
             disabled={!hasFilterActive}

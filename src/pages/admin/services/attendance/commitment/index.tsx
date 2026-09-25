@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { endOfQuarter, endOfYear, format, startOfQuarter, startOfYear } from 'date-fns';
 
 import { AdminPageShell } from '@/components/layout';
-import { TIMING } from '@/config/constants';
 import { env } from '@/config/env';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
+import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 
 import {
@@ -24,21 +24,14 @@ const excuseEventId = env.excuseEventId;
 export function AdminServiceAttendanceCommitmentPage() {
   const currentYear = new Date().getFullYear();
   const [timeframe, setTimeframe] = useState<DashboardTimeframe>('YTD');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const {
+    searchTerm: searchQuery,
+    setSearchTerm: setSearchQuery,
+    normalizedSearchTerm: normalizedSearchQuery,
+  } = useDebounceSearch();
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [selectedVolunteer, setSelectedVolunteer] = useState<CommitmentDashboardStat | null>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchQuery]);
 
   const { startDate, endDate } = useMemo(() => {
     const startOfCurrentYear = startOfYear(new Date(currentYear, 0, 1));
@@ -74,8 +67,6 @@ export function AdminServiceAttendanceCommitmentPage() {
     }
   }, [timeframe, currentYear]);
 
-  const normalizedSearchQuery = useMemo(() => debouncedSearchQuery.trim(), [debouncedSearchQuery]);
-
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useCommitmentDashboardStatsQuery({
       start_date: startDate,
@@ -99,31 +90,11 @@ export function AdminServiceAttendanceCommitmentPage() {
     [startDate, endDate, normalizedSearchQuery, selectedRoles, categoryFilter, timeframe],
   );
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const scrollRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (isFetchingNextPage) return;
-      if (observerRef.current) observerRef.current.disconnect();
-
-      if (node) {
-        observerRef.current = new IntersectionObserver((entries) => {
-          if (entries[0]?.isIntersecting && hasNextPage) {
-            fetchNextPage();
-          }
-        });
-        observerRef.current.observe(node);
-      }
-    },
-    [isFetchingNextPage, hasNextPage, fetchNextPage],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   const stats = useMemo(() => {
     if (!data) return [];
@@ -165,7 +136,7 @@ export function AdminServiceAttendanceCommitmentPage() {
         <TopVolunteersChart stats={stats} />
 
         <VolunteerListTable
-          ref={scrollRef}
+          ref={sentinelRef}
           stats={stats}
           totalVolunteers={totalVolunteers}
           searchQuery={searchQuery}

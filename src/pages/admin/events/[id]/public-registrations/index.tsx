@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Loader2, Upload } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -6,10 +6,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { FormInputField } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations';
+import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -19,21 +20,8 @@ export function AdminPublicRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const { data: authState } = useAdminAuthQuery();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
   const eventQuery = useAdminEventQuery(eventId ?? '');
   const publicRegistrationsQuery = useAdminPublicRegistrationsQuery(eventId ?? '', {
@@ -48,31 +36,11 @@ export function AdminPublicRegistrationsPage() {
   const isFetchingNextPage = Boolean(publicRegistrationsQuery.isFetchingNextPage);
   const fetchNextPage = publicRegistrationsQuery.fetchNextPage;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   if (!eventId) {
     return (
@@ -90,10 +58,6 @@ export function AdminPublicRegistrationsPage() {
   const error = eventQuery.error || publicRegistrationsQuery.error;
   const isEventArchived = event?.status === 'archived';
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-
-  function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm);
-  }
 
   if (error) {
     return (
@@ -169,14 +133,14 @@ export function AdminPublicRegistrationsPage() {
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
           <FormInputField
             value={searchTerm}
-            onChange={(event) => handleSearchTermChange(event.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search by name or email"
             inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
           <Button
             type="button"
             variant="primaryOutline"
-            onClick={() => handleSearchTermChange('')}
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
           >
             Clear
@@ -222,7 +186,7 @@ export function AdminPublicRegistrationsPage() {
               </div>
             )}
           </div>
-          <div ref={loadMoreRef} className="h-1" />
+          <div ref={sentinelRef} className="h-1" />
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>

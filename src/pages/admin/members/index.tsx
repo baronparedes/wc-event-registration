@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Edit, Loader2, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -17,10 +17,10 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
-import { useIsMobileViewport } from '@/hooks/utils';
+import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
@@ -110,20 +110,8 @@ function getMemberRowClassName(isActive: boolean) {
 export function AdminMembersPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
   const [statusFilter, setStatusFilter] = useState<'active' | 'deleted' | 'all'>('active');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
   const membersQuery = useAdminMembersQuery({
     pageSize: PAGINATION_DEFAULTS.adminMembersPageSize,
@@ -146,35 +134,11 @@ export function AdminMembersPage() {
   const hasNoMembers = !hasError && members.length === 0;
   const hasMembers = !hasError && members.length > 0;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm);
-  }
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   function handleStatusFilterChange(nextStatusFilter: 'active' | 'deleted' | 'all') {
     setStatusFilter(nextStatusFilter);
@@ -213,7 +177,7 @@ export function AdminMembersPage() {
           <label className="flex w-full flex-col gap-1 text-sm text-muted">
             <FormInputField
               value={searchTerm}
-              onChange={(event) => handleSearchTermChange(event.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by first name, last name, nickname, email, or member ID"
               inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
             />
@@ -235,7 +199,7 @@ export function AdminMembersPage() {
             type="button"
             variant="primaryOutline"
             className="w-full sm:w-auto"
-            onClick={() => handleSearchTermChange('')}
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
           >
             Clear
@@ -355,7 +319,7 @@ export function AdminMembersPage() {
                   </div>
                 )}
               </div>
-              <div ref={loadMoreRef} className="h-1" />
+              <div ref={sentinelRef} className="h-1" />
             </div>
           </>
         )}

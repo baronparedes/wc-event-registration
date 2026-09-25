@@ -15,6 +15,7 @@ import {
   ListTableRow,
 } from '@/components/ui/ListTable';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
+import { useInfiniteScrollTrigger } from '@/hooks/utils';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
 import { getNearestPreviousSunday } from '@/pages/admin/services/constants';
 
@@ -175,31 +176,11 @@ export function AdminServiceAttendanceDataPage() {
   }, [filteredData]);
 
   // Infinite scroll sentinel
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   const updateSearchParam = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -352,7 +333,7 @@ export function AdminServiceAttendanceDataPage() {
             countBadgeLabel={getCountBadgeLabel()}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
-            loadMoreRef={loadMoreRef}
+            loadMoreRef={sentinelRef}
             onLoadMore={() => fetchNextPage()}
           />
         </div>

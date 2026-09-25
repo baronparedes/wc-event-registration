@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Loader2, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -6,10 +6,10 @@ import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, FormInputField } from '@/components/ui';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, UI_MESSAGES, toRoute } from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminFormsQuery, useDuplicateFormMutation } from '@/hooks/domain/forms';
-import { useIsMobileViewport } from '@/hooks/utils';
+import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminForm } from '@/lib/domain/forms';
 
@@ -18,19 +18,7 @@ import { AdminFormsTable, DuplicateFormDialog, MobileFormCard } from './componen
 export function AdminFormsPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const formsQuery = useAdminFormsQuery({
     pageSize: PAGINATION_DEFAULTS.adminEventsPageSize,
@@ -50,7 +38,11 @@ export function AdminFormsPage() {
   const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
   const isMobileViewport = useIsMobileViewport();
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   const [duplicateForm, setDuplicateForm] = useState<AdminForm | null>(null);
   const duplicateMutation = useDuplicateFormMutation();
@@ -69,30 +61,6 @@ export function AdminFormsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to duplicate form');
     }
   };
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <AdminPageShell>
@@ -128,7 +96,7 @@ export function AdminFormsPage() {
           <Button
             type="button"
             variant="primaryOutline"
-            onClick={() => setSearchTerm('')}
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
           >
             Clear
@@ -221,7 +189,7 @@ export function AdminFormsPage() {
                 </Button>
               )}
             </div>
-            <div ref={loadMoreRef} className="h-1" />
+            <div ref={sentinelRef} className="h-1" />
           </div>
         )}
       </AdminPageShell.Content>

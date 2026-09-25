@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Loader2, UserMinus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -16,13 +16,14 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
-import { PAGINATION_DEFAULTS, ROUTE_PATHS, TIMING, toRoute } from '@/config/constants';
+import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
   useAttendanceSettingsQuery,
   useAttendanceUnregisteredMembersQuery,
   useExportUnregisteredMembersCSVMutation,
 } from '@/hooks/domain/attendance';
 import { useAdminEventQuery } from '@/hooks/domain/events';
+import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 function downloadCsv(text: string, filename: string) {
@@ -42,19 +43,7 @@ function downloadCsv(text: string, filename: string) {
 export function AdminUnregisteredMembersPage() {
   const { id: eventId } = useParams<{ id: string }>();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const normalizedSearchTerm = useMemo(() => debouncedSearchTerm.trim(), [debouncedSearchTerm]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, TIMING.searchDebounceMs);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [searchTerm]);
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const eventQuery = useAdminEventQuery(eventId);
   const settingsQuery = useAttendanceSettingsQuery(eventId);
@@ -71,31 +60,11 @@ export function AdminUnregisteredMembersPage() {
   const isFetchingNextPage = Boolean(unregisteredMembersQuery.isFetchingNextPage);
   const fetchNextPage = unregisteredMembersQuery.fetchNextPage;
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    const currentElement = loadMoreRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { sentinelRef } = useInfiniteScrollTrigger({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   if (!eventId) {
     return (
@@ -130,10 +99,6 @@ export function AdminUnregisteredMembersPage() {
       }
       toast.error(message);
     }
-  }
-
-  function handleSearchTermChange(nextSearchTerm: string) {
-    setSearchTerm(nextSearchTerm);
   }
 
   return (
@@ -186,19 +151,20 @@ export function AdminUnregisteredMembersPage() {
             <input
               type="search"
               value={searchTerm}
-              onChange={(event) => handleSearchTermChange(event.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by member ID, name, or email"
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
             />
           </label>
-          <button
+          <Button
             type="button"
-            onClick={() => handleSearchTermChange('')}
+            variant="primaryOutline"
+            onClick={clearSearch}
             disabled={normalizedSearchTerm.length === 0}
-            className="min-h-10 w-full rounded-md border border-border px-3 py-2 text-sm font-medium text-text transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="w-full sm:w-auto"
           >
             Clear
-          </button>
+          </Button>
         </div>
       </AdminPageShell.Filters>
 
@@ -304,7 +270,7 @@ export function AdminUnregisteredMembersPage() {
                 </div>
               )}
             </div>
-            <div ref={loadMoreRef} className="h-1" />
+            <div ref={sentinelRef} className="h-1" />
           </div>
         )}
       </AdminPageShell.Content>
