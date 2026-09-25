@@ -5,7 +5,6 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Users } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { FormInputField } from '@/components/ui/FormInputField';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
@@ -17,6 +16,7 @@ import {
   ListTableHeaderRow,
   ListTableRow,
 } from '@/components/ui/ListTable';
+import { SearchInputField } from '@/components/ui/SearchInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { SERVICE_ROLES } from '@/pages/admin/services/constants';
@@ -214,7 +214,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
         }
       >
         <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:px-6">
-          <FormInputField
+          <SearchInputField
             ariaLabel="Search name or nickname"
             placeholder="Search name or nickname..."
             value={searchQuery}

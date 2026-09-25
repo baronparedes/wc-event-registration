@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { IdCardLanyard } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { AlertBanner } from '@/components/ui';
+import { AlertBanner, FormInputField } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -92,22 +92,16 @@ export function UpdateMemberIdDialog({
             }
           />
 
-          <div className="space-y-1.5">
-            <label htmlFor="new-member-id" className="block text-sm font-semibold text-text">
-              New Member ID
-            </label>
-            <input
-              ref={inputRef}
-              id="new-member-id"
-              placeholder="Scan or type new member ID"
-              disabled={isUpdating}
-              autoComplete="off"
-              type="text"
-              value={newMemberId}
-              onChange={(e) => setNewMemberId(e.currentTarget.value)}
-              className="w-full rounded-md border border-border bg-background px-3.5 py-2.5 text-sm leading-6 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600"
-            />
-          </div>
+          <FormInputField
+            inputRef={inputRef}
+            id="new-member-id"
+            label="New Member ID"
+            placeholder="Scan or type new member ID"
+            disabled={isUpdating}
+            autoComplete="off"
+            value={newMemberId}
+            onChange={(e) => setNewMemberId(e.target.value)}
+          />
         </Dialog.Body>
 
         <Dialog.Footer>

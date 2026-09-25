@@ -4,7 +4,7 @@ import { Upload } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, AlertBanner, Button, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, AlertBanner, Button, SearchInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -120,12 +120,12 @@ export function AdminPublicRegistrationsPage() {
       )}
 
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
-          <FormInputField
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <SearchInputField
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
             placeholder="Search by name or email"
-            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
           <Button
             type="button"

@@ -85,3 +85,4 @@ export {
   type LifecycleStatus,
   type RegistrationStatus,
 } from './StatusBadge';
+export { SearchInputField, type SearchInputFieldProps } from './SearchInputField';

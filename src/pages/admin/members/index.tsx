@@ -9,7 +9,7 @@ import {
   AlertBanner,
   Button,
   EmptyState,
-  FormInputField,
+  SearchInputField,
 } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
@@ -166,14 +166,12 @@ export function AdminMembersPage() {
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted">
-            <FormInputField
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search by first name, last name, nickname, email, or member ID"
-              inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            />
-          </label>
+          <SearchInputField
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
+            placeholder="Search by first name, last name, nickname, email, or member ID"
+          />
           <div className="flex w-full flex-col gap-1 text-sm text-muted">
             <FormSelectField
               ariaLabel="Status"
@@ -184,7 +182,6 @@ export function AdminMembersPage() {
                 { value: 'deleted', label: 'Deleted' },
                 { value: 'all', label: 'All' },
               ]}
-              selectClassName="rounded-xl py-2"
             />
           </div>
           <Button

@@ -1,13 +1,12 @@
 import { useState } from 'react';
 
-import { Search, ShieldCheck, UserPlus } from 'lucide-react';
+import { ShieldCheck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
   Badge,
   Button,
   Dialog,
-  FormInputField,
   FormSelectField,
   ListTable,
   ListTableBody,
@@ -16,6 +15,7 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
+  SearchInputField,
 } from '@/components/ui';
 import { Avatar } from '@/components/ui/Avatar';
 import {
@@ -103,20 +103,14 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
       <Dialog.Body className="flex h-[75vh] flex-col space-y-4">
         {/* Search and Filter Inputs */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="auth-user-search" className="block text-sm font-semibold text-text">
-              Search Auth Users
-            </label>
-            <div className="relative">
-              <FormInputField
-                id="auth-user-search"
-                placeholder="Search by email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                inputClassName="pl-9"
-              />
-              <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted" aria-hidden="true" />
-            </div>
+          <div>
+            <SearchInputField
+              id="auth-user-search"
+              label="Search Auth Users"
+              placeholder="Search by email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <div>
             <FormSelectField

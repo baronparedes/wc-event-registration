@@ -10,7 +10,7 @@ import {
   AlertBanner,
   Button,
   EmptyState,
-  FormInputField,
+  SearchInputField,
 } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
@@ -93,12 +93,12 @@ export function AdminEventsPage() {
       <AdminBaseNavigation />
 
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
-          <FormInputField
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <SearchInputField
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
             placeholder="Search by event title or slug"
-            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
           <Button
             type="button"

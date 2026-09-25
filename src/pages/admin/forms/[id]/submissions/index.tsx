@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, AlertBanner, Button, FormInputField } from '@/components/ui';
+import { AdminInfiniteScrollFooter, AlertBanner, Button, SearchInputField } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
 import { useDebounceSearch } from '@/hooks/utils';
@@ -154,11 +154,11 @@ export function AdminFormSubmissionsPage() {
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_auto_auto] sm:items-end">
-          <FormInputField
+          <SearchInputField
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onClear={clearSearch}
             placeholder="Search by respondent, member ID, or email"
-            inputClassName="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
 
           {/* Source Tabs */}

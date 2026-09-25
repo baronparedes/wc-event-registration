@@ -16,6 +16,7 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
+  SearchInputField,
 } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
 import {
@@ -147,16 +148,12 @@ export function AdminUnregisteredMembersPage() {
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <label className="flex w-full flex-col gap-1 text-sm text-muted">
-            Search members
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search by member ID, name, or email"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25"
-            />
-          </label>
+          <SearchInputField
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onClear={clearSearch}
+            placeholder="Search by member ID, name, or email"
+          />
           <Button
             type="button"
             variant="primaryOutline"

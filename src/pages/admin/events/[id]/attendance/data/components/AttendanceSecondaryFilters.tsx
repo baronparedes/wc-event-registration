@@ -56,7 +56,6 @@ export function AttendanceSecondaryFilters({
             { value: 'all', label: 'All categories' },
             ...categoryOptions.map((category) => ({ value: category, label: category })),
           ]}
-          selectClassName="h-10 rounded-xl px-3 py-2 leading-normal"
         />
       </div>
 
@@ -70,7 +69,6 @@ export function AttendanceSecondaryFilters({
             { value: 'checked_in', label: 'Checked in' },
             { value: 'not_checked_in', label: 'Not checked in' },
           ]}
-          selectClassName="h-10 rounded-xl px-3 py-2 leading-normal"
         />
       </div>
     </>
