@@ -3,10 +3,7 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
-import {
-  fetchPublicAttendeeCheck,
-  usePublicAttendeeCheckQuery,
-} from '@/hooks/domain/public-registrations/queries/usePublicAttendeeCheckQuery';
+import { usePublicAttendeeCheckQuery } from '@/hooks/domain/public-registrations/queries/usePublicAttendeeCheckQuery';
 
 const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
   const caller = vi.fn();
@@ -25,7 +22,7 @@ vi.mock('@/lib/infrastructure', async () => {
   };
 });
 
-describe('fetchPublicAttendeeCheck', () => {
+describe('usePublicAttendeeCheckQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -37,57 +34,83 @@ describe('fetchPublicAttendeeCheck', () => {
       status: 'submitted',
       responses: {},
     };
+    const email = faker.internet.email();
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({
       success: true,
       existing_registration: existing,
     });
 
-    const result = await fetchPublicAttendeeCheck(
-      faker.internet.email(),
-      faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-    );
+    const { result } = renderHookWithClient(() => usePublicAttendeeCheckQuery(email, eventSlug));
 
-    expect(result).toEqual(existing);
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(existing);
+  });
+
+  it('returns null when edge function succeeds without existing registration', async () => {
+    const email = faker.internet.email();
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
+
+    mockCaller.mockResolvedValueOnce({
+      success: true,
+    });
+
+    const { result } = renderHookWithClient(() => usePublicAttendeeCheckQuery(email, eventSlug));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toBeNull();
   });
 
   it('returns null when attendee is not found', async () => {
+    const email = faker.internet.email();
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
+
     mockCaller.mockResolvedValueOnce({ success: false, reason: 'not_found' });
 
-    const result = await fetchPublicAttendeeCheck(
-      faker.internet.email(),
-      faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-    );
+    const { result } = renderHookWithClient(() => usePublicAttendeeCheckQuery(email, eventSlug));
 
-    expect(result).toBeNull();
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toBeNull();
   });
 
   it('throws edge function reason for non-not-found failures', async () => {
+    const email = faker.internet.email();
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
+
     mockCaller.mockResolvedValueOnce({ success: false, reason: 'forbidden' });
 
-    await expect(
-      fetchPublicAttendeeCheck(
-        faker.internet.email(),
-        faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-      ),
-    ).rejects.toThrow('forbidden');
+    const { result } = renderHookWithClient(() => usePublicAttendeeCheckQuery(email, eventSlug));
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error?.message).toBe('forbidden');
   });
 
   it('throws default error when failure reason is missing', async () => {
+    const email = faker.internet.email();
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
+
     mockCaller.mockResolvedValueOnce({ success: false });
 
-    await expect(
-      fetchPublicAttendeeCheck(
-        faker.internet.email(),
-        faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-      ),
-    ).rejects.toThrow('Failed to check attendee');
-  });
-});
+    const { result } = renderHookWithClient(() => usePublicAttendeeCheckQuery(email, eventSlug));
 
-describe('usePublicAttendeeCheckQuery', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error?.message).toBe('Failed to check attendee');
   });
 
   it('returns null when refetched with missing email/event slug', async () => {
@@ -109,26 +132,21 @@ describe('usePublicAttendeeCheckQuery', () => {
       status: 'submitted',
       responses: {},
     };
+    const email = faker.internet.email();
+    const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({
       success: true,
       existing_registration: existing,
     });
 
-    const { result } = renderHookWithClient(() =>
-      usePublicAttendeeCheckQuery(
-        faker.internet.email(),
-        faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
-      ),
-    );
-
-    await act(async () => {
-      const refetchResult = await result.current.refetch();
-      expect(refetchResult.data).toEqual(existing);
-    });
+    const { result } = renderHookWithClient(() => usePublicAttendeeCheckQuery(email, eventSlug));
 
     await waitFor(() => {
-      expect(mockCaller).toHaveBeenCalledTimes(1);
+      expect(result.current.isSuccess).toBe(true);
     });
+
+    expect(result.current.data).toEqual(existing);
+    expect(mockCaller).toHaveBeenCalledTimes(1);
   });
 });

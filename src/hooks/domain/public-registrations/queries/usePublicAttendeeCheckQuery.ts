@@ -9,13 +9,13 @@ interface PublicAttendeeCheckRequest {
   event_slug: string;
 }
 
-export async function fetchPublicAttendeeCheck(email: string, eventSlug: string) {
-  const caller = createEdgeFunctionCaller<
-    PublicAttendeeCheckRequest,
-    PublicRegistrationCheckResult
-  >('public-attendee-lookup');
+const callPublicAttendeeLookup = createEdgeFunctionCaller<
+  PublicAttendeeCheckRequest,
+  PublicRegistrationCheckResult
+>('public-attendee-lookup');
 
-  const response = await caller({ email, event_slug: eventSlug });
+async function fetchPublicAttendeeCheck(email: string, eventSlug: string) {
+  const response = await callPublicAttendeeLookup({ email, event_slug: eventSlug });
 
   if (!response.success) {
     if ('reason' in response && response.reason === 'not_found') {
@@ -26,16 +26,25 @@ export async function fetchPublicAttendeeCheck(email: string, eventSlug: string)
     throw new Error(reason);
   }
 
-  return response.existing_registration;
+  return response.existing_registration ?? null;
 }
+
+const PUBLIC_ATTENDEE_CHECK_QUERY_KEY = (
+  email: string | null | undefined,
+  eventSlug: string | null | undefined,
+) => ['publicAttendeeCheck', email ?? '', eventSlug ?? ''] as const;
 
 /**
  * Check if an email already has a registration for the given event.
  * Used to detect existing registrations before submission.
  */
-export function usePublicAttendeeCheckQuery(email: string | null, eventSlug: string | null) {
+export function usePublicAttendeeCheckQuery(
+  email: string | null | undefined,
+  eventSlug: string | null | undefined,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: ['publicAttendeeCheck', email, eventSlug],
+    queryKey: PUBLIC_ATTENDEE_CHECK_QUERY_KEY(email, eventSlug),
     queryFn: async () => {
       if (!email || !eventSlug) {
         return null;
@@ -43,7 +52,7 @@ export function usePublicAttendeeCheckQuery(email: string | null, eventSlug: str
 
       return fetchPublicAttendeeCheck(email, eventSlug);
     },
-    enabled: Boolean(email && eventSlug),
+    enabled: Boolean(email && eventSlug) && (options?.enabled ?? true),
     staleTime: QUERY_STALE_TIME_MS.immediate,
   });
 }

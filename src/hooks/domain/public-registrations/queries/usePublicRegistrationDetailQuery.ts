@@ -28,19 +28,19 @@ export type PublicRegistrationDetail = {
   fieldResponses: PublicRegistrationFieldResponse[];
 };
 
-export const PUBLIC_REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
+const PUBLIC_REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
   ['public-registration-detail', registrationId] as const;
 
 /**
  * Fetches one public registration record and its event-field responses for admin detail views.
  */
-export async function fetchPublicRegistrationDetail(
+async function fetchPublicRegistrationDetail(
   registrationId: string,
 ): Promise<PublicRegistrationDetail> {
   const { data: registration, error: registrationError } = await supabase
     .from('public_registrations')
     .select(
-      'id, event_id, first_name, last_name, nickname, email, phone, status, submitted_at, updated_at',
+      'id, event_id, first_name, last_name, nickname, email, phone, status, submitted_at, updated_at, public_registration_answers(id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order))',
     )
     .eq('id', registrationId)
     .single();
@@ -49,16 +49,7 @@ export async function fetchPublicRegistrationDetail(
     throw new Error('Public registration not found');
   }
 
-  const { data: answers, error: answerError } = await supabase
-    .from('public_registration_answers')
-    .select(
-      'id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order)',
-    )
-    .eq('public_registration_id', registrationId);
-
-  if (answerError) {
-    throw answerError;
-  }
+  const answers = registration.public_registration_answers || [];
 
   type AnswerWithFields = (typeof answers)[number] & {
     event_fields: {
@@ -166,10 +157,19 @@ export async function fetchPublicRegistrationDetail(
   };
 }
 
-export function usePublicRegistrationDetailQuery(registrationId: string) {
+export function usePublicRegistrationDetailQuery(
+  registrationId?: string | null,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: PUBLIC_REGISTRATION_DETAIL_QUERY_KEY(registrationId),
-    queryFn: async () => fetchPublicRegistrationDetail(registrationId),
+    queryKey: PUBLIC_REGISTRATION_DETAIL_QUERY_KEY(registrationId ?? ''),
+    queryFn: async () => {
+      if (!registrationId) {
+        throw new Error('Registration ID is required');
+      }
+      return fetchPublicRegistrationDetail(registrationId);
+    },
+    enabled: Boolean(registrationId) && (options?.enabled ?? true),
     staleTime: QUERY_STALE_TIME_MS.detail,
   });
 }
