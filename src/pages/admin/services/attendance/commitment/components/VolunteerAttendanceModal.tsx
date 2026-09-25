@@ -141,6 +141,88 @@ export function VolunteerAttendanceModal({
     [loginLogs, absentLogs, excusedLogs, processedLogs],
   );
 
+  const matrixRows = useMemo(() => {
+    if (!processedLogs || processedLogs.length === 0) return [];
+
+    const groupedByDate = new Map<string, typeof processedLogs>();
+
+    for (const log of processedLogs) {
+      const existing = groupedByDate.get(log.service_date);
+      if (existing) {
+        existing.push(log);
+      } else {
+        groupedByDate.set(log.service_date, [log]);
+      }
+    }
+
+    const slotOrder: Record<string, number> = { '9AM': 1, '12NN': 2, '3PM': 3 };
+
+    return Array.from(groupedByDate.entries()).map(([serviceDate, dateLogs]) => {
+      const weekLabel = dateLogs[0]?.weekLabel ?? '';
+
+      // Committed: present & not walk-in, absent, or excused
+      const committedSlots = dateLogs
+        .filter(
+          (l) =>
+            (!l.is_walk_in && l.status === 'present') ||
+            l.status === 'absent' ||
+            l.status === 'excused',
+        )
+        .map((l) => l.time_slot)
+        .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
+
+      // Logins
+      const loginSlots = dateLogs
+        .filter((l) => l.status === 'present')
+        .map((l) => ({ timeSlot: l.time_slot, isWalkIn: l.is_walk_in }))
+        .sort((a, b) => (slotOrder[a.timeSlot] ?? 99) - (slotOrder[b.timeSlot] ?? 99));
+
+      // Absents
+      const absentSlots = dateLogs
+        .filter((l) => l.status === 'absent')
+        .map((l) => l.time_slot)
+        .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
+
+      // Walk-ins
+      const walkInSlots = dateLogs
+        .filter((l) => l.status === 'present' && l.is_walk_in)
+        .map((l) => l.time_slot)
+        .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
+
+      // Excused
+      const excusedSlots = dateLogs
+        .filter((l) => l.status === 'excused')
+        .map((l) => l.time_slot)
+        .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
+
+      // Score calculation
+      const attendedCommitted = dateLogs.filter(
+        (l) => l.status === 'present' && !l.is_walk_in,
+      ).length;
+      const absences = absentSlots.length;
+      const excused = excusedSlots.length;
+      const wi9or3 = dateLogs.filter(
+        (l) =>
+          l.status === 'present' &&
+          l.is_walk_in &&
+          (l.time_slot === '9AM' || l.time_slot === '3PM'),
+      ).length;
+
+      const score = attendedCommitted * 1 - absences * 1 - excused * 0.5 + wi9or3 * 0.5;
+
+      return {
+        serviceDate,
+        weekLabel,
+        committedSlots,
+        loginSlots,
+        absentSlots,
+        walkInSlots,
+        excusedSlots,
+        score,
+      };
+    });
+  }, [processedLogs]);
+
   if (!volunteer) return null;
 
   const timeframeLabels: Record<DashboardTimeframe, string> = {
@@ -189,7 +271,7 @@ export function VolunteerAttendanceModal({
       isOpen={isOpen}
       onClose={onClose}
       title={titleContent}
-      maxWidthClass="max-w-5xl"
+      maxWidthClass="max-w-7xl"
       showCloseIcon
     >
       <div className="mt-4 flex flex-col gap-4">
@@ -315,7 +397,111 @@ export function VolunteerAttendanceModal({
           </TabsContent>
 
           <TabsContent value="MATRIX" className="mt-4">
-            <div className="py-8 text-center text-sm text-muted">Matrix view is coming soon.</div>
+            <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-xs">
+              <ListTable density="dense" className="table-fixed text-sm min-w-[1120px]">
+                <ListTableHead>
+                  <ListTableHeaderRow>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[110px] whitespace-nowrap">
+                      Date
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[115px] whitespace-nowrap">
+                      Week
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[110px] text-center whitespace-nowrap">
+                      Attendance
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[155px] text-center whitespace-nowrap">
+                      Committed
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[155px] text-center whitespace-nowrap">
+                      Login Slots
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[155px] text-center whitespace-nowrap">
+                      Absents
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[155px] text-center whitespace-nowrap">
+                      Walk-In
+                    </ListTableHeaderCell>
+                    <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[155px] text-center whitespace-nowrap">
+                      Excused
+                    </ListTableHeaderCell>
+                  </ListTableHeaderRow>
+                </ListTableHead>
+                <ListTableBody>
+                  {isLoading ? (
+                    <ListTableRow hover="none">
+                      <ListTableCell colSpan={8} className="!py-4 text-center">
+                        <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />
+                      </ListTableCell>
+                    </ListTableRow>
+                  ) : matrixRows.length === 0 ? (
+                    <ListTableRow hover="none">
+                      <ListTableCell
+                        colSpan={8}
+                        className="!py-4 !px-3 text-center text-sm text-muted"
+                      >
+                        No attendance records found for this period.
+                      </ListTableCell>
+                    </ListTableRow>
+                  ) : (
+                    matrixRows.map((row) => (
+                      <ListTableRow key={row.serviceDate}>
+                        <ListTableCell className="!py-1.5 !px-3 font-medium text-text whitespace-nowrap">
+                          {row.serviceDate}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-text whitespace-nowrap">
+                          {row.weekLabel}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
+                          {row.score > 0 ? (
+                            <Badge variant="default">+{row.score}</Badge>
+                          ) : row.score < 0 ? (
+                            <Badge variant="destructive">{row.score}</Badge>
+                          ) : (
+                            <Badge variant="outline">0</Badge>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
+                          {row.committedSlots.length > 0 ? (
+                            <Badge>{row.committedSlots.join(', ')}</Badge>
+                          ) : (
+                            <span className="text-muted">&mdash;</span>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
+                          {row.loginSlots.length > 0 ? (
+                            <Badge>{row.loginSlots.map((s) => s.timeSlot).join(', ')}</Badge>
+                          ) : (
+                            <span className="text-muted">&mdash;</span>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
+                          {row.absentSlots.length > 0 ? (
+                            <Badge variant="destructive">{row.absentSlots.join(', ')}</Badge>
+                          ) : (
+                            <span className="text-muted">&mdash;</span>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
+                          {row.walkInSlots.length > 0 ? (
+                            <Badge variant="secondary">{row.walkInSlots.join(', ')}</Badge>
+                          ) : (
+                            <span className="text-muted">&mdash;</span>
+                          )}
+                        </ListTableCell>
+                        <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
+                          {row.excusedSlots.length > 0 ? (
+                            <Badge variant="accent">{row.excusedSlots.join(', ')}</Badge>
+                          ) : (
+                            <span className="text-muted">&mdash;</span>
+                          )}
+                        </ListTableCell>
+                      </ListTableRow>
+                    ))
+                  )}
+                </ListTableBody>
+              </ListTable>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

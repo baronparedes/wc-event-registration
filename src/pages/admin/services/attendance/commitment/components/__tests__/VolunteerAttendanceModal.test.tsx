@@ -167,7 +167,93 @@ describe('VolunteerAttendanceModal', () => {
     expect(collapseButtons[0]).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('switches between detailed view and matrix view tabs', () => {
+  it('switches between detailed view and matrix view tabs and displays matrix rows correctly', () => {
+    (useVolunteerAttendanceLogQuery as Mock).mockReturnValue({
+      data: [
+        {
+          id: 'log-1',
+          service_date: '2026-01-04',
+          time_slot: '9AM',
+          is_walk_in: false,
+          is_override: false,
+          is_manual_entry: false,
+          status: 'present',
+        },
+        {
+          id: 'log-2',
+          service_date: '2026-01-04',
+          time_slot: '3PM',
+          is_walk_in: true,
+          is_override: false,
+          is_manual_entry: false,
+          status: 'present',
+        },
+        {
+          id: null,
+          service_date: '2026-01-11',
+          time_slot: '12NN',
+          is_walk_in: false,
+          is_override: false,
+          is_manual_entry: false,
+          status: 'absent',
+        },
+        {
+          id: null,
+          service_date: '2026-01-18',
+          time_slot: '3PM',
+          is_walk_in: false,
+          is_override: false,
+          is_manual_entry: false,
+          status: 'excused',
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(
+      <VolunteerAttendanceModal
+        isOpen={true}
+        onClose={vi.fn()}
+        volunteer={mockVolunteer}
+        timeframe="YTD"
+        startDate="2026-01-01"
+        endDate="2026-12-31"
+      />,
+    );
+
+    expect(screen.getByText(/LOGINS — 2 RECORDS/)).toBeInTheDocument();
+
+    const matrixTab = screen.getByRole('tab', { name: /Matrix/i });
+    fireEvent.click(matrixTab);
+
+    // Matrix headers
+    expect(screen.getByRole('columnheader', { name: 'Date' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Week' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Attendance' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Committed' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Login Slots' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Absents' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Walk-In' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Excused' })).toBeInTheDocument();
+
+    // Matrix rows content
+    expect(screen.getAllByText('2026-01-04').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('1st Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2026-01-11').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2nd Sunday').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2026-01-18').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('3rd Sunday').length).toBeGreaterThan(0);
+
+    // Check combined badge text
+    expect(screen.getByText('9AM, 3PM')).toBeInTheDocument();
+
+    // Scores (+1.5 for 1 present committed + 0.5 for 3PM walk-in; -1 for absent; -0.5 for excused)
+    expect(screen.getByText('+1.5')).toBeInTheDocument();
+    expect(screen.getByText('-1')).toBeInTheDocument();
+    expect(screen.getByText('-0.5')).toBeInTheDocument();
+  });
+
+  it('renders matrix empty state when there are no logs', () => {
     (useVolunteerAttendanceLogQuery as Mock).mockReturnValue({
       data: [],
       isLoading: false,
@@ -184,12 +270,9 @@ describe('VolunteerAttendanceModal', () => {
       />,
     );
 
-    expect(screen.getByText(/LOGINS — 0 RECORDS/)).toBeInTheDocument();
-
     const matrixTab = screen.getByRole('tab', { name: /Matrix/i });
     fireEvent.click(matrixTab);
 
-    expect(screen.getByText('Matrix view is coming soon.')).toBeInTheDocument();
-    expect(screen.queryByText(/LOGINS — 0 RECORDS/)).not.toBeInTheDocument();
+    expect(screen.getByText('No attendance records found for this period.')).toBeInTheDocument();
   });
 });
