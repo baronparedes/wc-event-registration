@@ -139,7 +139,7 @@ export function VolunteerAttendanceModal({
         hideWhenEmpty: true,
       },
     ],
-    [loginLogs, absentLogs, excusedLogs, processedLogs],
+    [loginLogs, absentLogs, excusedLogs],
   );
 
   const matrixRows = useMemo(() => {
@@ -244,9 +244,9 @@ export function VolunteerAttendanceModal({
       />
       <div className="flex flex-col gap-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold font-heading text-text truncate">
+          <Dialog.Title className="text-xl font-bold font-heading text-text truncate">
             {volunteer.full_name}
-          </span>
+          </Dialog.Title>
           {volunteer.nickname && (
             <span className="font-normal text-muted">({volunteer.nickname})</span>
           )}
@@ -268,14 +268,9 @@ export function VolunteerAttendanceModal({
   );
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      title={titleContent}
-      maxWidthClass="max-w-7xl"
-      showCloseIcon
-    >
-      <div className="mt-4 flex flex-col gap-4">
+    <Dialog isOpen={isOpen} onClose={onClose} size="7xl">
+      <Dialog.Header showCloseButton>{titleContent}</Dialog.Header>
+      <Dialog.Body className="mt-4 flex flex-col gap-4">
         <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6">
           <CommitmentSummaryCard
             title="Committed"
@@ -523,7 +518,7 @@ export function VolunteerAttendanceModal({
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </Dialog.Body>
     </Dialog>
   );
 }

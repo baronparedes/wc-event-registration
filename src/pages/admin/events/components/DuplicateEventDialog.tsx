@@ -80,44 +80,45 @@ export function DuplicateEventDialog({
   };
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Duplicate Event"
-      description={
-        event
-          ? `You are about to duplicate "${event.title}". Please provide a new name and slug.`
-          : ''
-      }
-      showCloseIcon
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormInputField
-          id="duplicate-title"
-          label="New Event Name"
-          placeholder="e.g. Sunday Service - Jan 1"
-          registration={register('title')}
-          error={errors.title?.message}
-          disabled={isPending}
-          required
-        />
-        <FormInputField
-          id="duplicate-slug"
-          label="New Event Slug"
-          placeholder="e.g. sunday-service-jan-1"
-          registration={register('slug')}
-          error={errors.slug?.message}
-          disabled={isPending}
-          required
-        />
-        <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
+    <Dialog isOpen={isOpen} onClose={onClose} size="lg">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>Duplicate Event</Dialog.Title>
+        {event && (
+          <Dialog.Description>
+            You are about to duplicate &quot;{event.title}&quot;. Please provide a new name and
+            slug.
+          </Dialog.Description>
+        )}
+      </Dialog.Header>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Dialog.Body className="space-y-4">
+          <FormInputField
+            id="duplicate-title"
+            label="New Event Name"
+            placeholder="e.g. Sunday Service - Jan 1"
+            registration={register('title')}
+            error={errors.title?.message}
+            disabled={isPending}
+            required
+          />
+          <FormInputField
+            id="duplicate-slug"
+            label="New Event Slug"
+            placeholder="e.g. sunday-service-jan-1"
+            registration={register('slug')}
+            error={errors.slug?.message}
+            disabled={isPending}
+            required
+          />
+        </Dialog.Body>
+        <Dialog.Footer>
           <Button type="button" variant="primaryOutline" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
           <Button type="submit" variant="default" disabled={isPending}>
             {isPending ? 'Duplicating...' : 'Duplicate Event'}
           </Button>
-        </div>
+        </Dialog.Footer>
       </form>
     </Dialog>
   );

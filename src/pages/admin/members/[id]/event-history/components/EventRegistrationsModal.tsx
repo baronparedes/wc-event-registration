@@ -1,5 +1,6 @@
 import { CalendarDays, MapPin } from 'lucide-react';
 
+import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import type { MemberEventHistoryItem } from '@/lib/domain/members';
 
@@ -99,33 +100,31 @@ export function EventRegistrationsModal({ group, isOpen, onClose, formatDateTime
   if (!group) return null;
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidthClass="max-w-2xl"
-      title={group.event_title}
-      showCloseIcon
-      showCloseButton
-    >
-      <div className="mt-0.5 space-y-1.5 text-base text-muted">
-        {group.starts_at && (
-          <span className="flex min-w-0 items-start gap-1.5">
-            <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span className="break-words">
-              {formatDateTime(group.starts_at)}
-              {group.ends_at && <> - {formatDateTime(group.ends_at)}</>}
-            </span>
-          </span>
-        )}
-        {group.location && (
-          <span className="flex min-w-0 items-start gap-1.5">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span className="break-words">{group.location}</span>
-          </span>
-        )}
-      </div>
+    <Dialog isOpen={isOpen} onClose={onClose} size="2xl">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>{group.event_title}</Dialog.Title>
+        <Dialog.Description>
+          <div className="mt-0.5 space-y-1.5 text-base text-muted">
+            {group.starts_at && (
+              <span className="flex min-w-0 items-start gap-1.5">
+                <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span className="break-words">
+                  {formatDateTime(group.starts_at)}
+                  {group.ends_at && <> - {formatDateTime(group.ends_at)}</>}
+                </span>
+              </span>
+            )}
+            {group.location && (
+              <span className="flex min-w-0 items-start gap-1.5">
+                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span className="break-words">{group.location}</span>
+              </span>
+            )}
+          </div>
+        </Dialog.Description>
+      </Dialog.Header>
 
-      <div className="mt-2.5 space-y-1.5">
+      <Dialog.Body scrollable className="mt-4 space-y-1.5">
         {[...group.registrations]
           .sort((a, b) => {
             if (!a.submitted_at && !b.submitted_at) return 0;
@@ -140,7 +139,13 @@ export function EventRegistrationsModal({ group, isOpen, onClose, formatDateTime
               formatDateTime={formatDateTime}
             />
           ))}
-      </div>
+      </Dialog.Body>
+
+      <Dialog.Footer>
+        <Button type="button" variant="primaryOutline" size="sm" onClick={onClose}>
+          Close
+        </Button>
+      </Dialog.Footer>
     </Dialog>
   );
 }

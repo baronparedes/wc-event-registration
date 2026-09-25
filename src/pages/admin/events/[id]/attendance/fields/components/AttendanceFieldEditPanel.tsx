@@ -3,7 +3,7 @@ import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button, CheckboxField, FormInputField, SectionCard } from '@/components/ui';
+import { Button, CheckboxField, Dialog, FormInputField, SectionCard } from '@/components/ui';
 import { VALIDATION_PATTERNS } from '@/config/constants';
 import {
   useAttendanceFieldsQuery,
@@ -244,45 +244,19 @@ export function AttendanceFieldEditPanel({
   })();
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="my-8 w-full max-w-2xl rounded-2xl border border-border bg-surface shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="font-heading text-lg font-semibold text-text">
-            {isEditing ? 'Edit Attendance Field' : 'Add Attendance Field'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close panel"
-            className="rounded p-1 text-muted hover:bg-muted/10 hover:text-text"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-            </svg>
-          </button>
-        </div>
+    <Dialog isOpen onClose={onClose} size="2xl">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>{isEditing ? 'Edit Attendance Field' : 'Add Attendance Field'}</Dialog.Title>
+      </Dialog.Header>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            handleSubmit(onSubmit as any)(e).catch(console.error);
-          }}
-          className="space-y-5 p-6"
-        >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          handleSubmit(onSubmit as any)(e).catch(console.error);
+        }}
+      >
+        <Dialog.Body scrollable className="space-y-5">
           {/* Field Type */}
           {!isEditing ? (
             <SectionCard title="Field Type">
@@ -524,35 +498,35 @@ export function AttendanceFieldEditPanel({
             dependsOnFieldKey={dependsOnFieldKey}
             register={register}
           />
+        </Dialog.Body>
 
-          {/* Footer */}
-          <div className="border-t border-border pt-4">
-            {!canSave && disabledHint && (
-              <p
-                className="mb-2 text-right text-xs text-amber-700"
-                role="status"
-                aria-live="polite"
-              >
-                {disabledHint}
-              </p>
-            )}
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                type="button"
-                variant="primaryOutline"
-                size="md"
-                onClick={onClose}
-                disabled={isPending}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" variant="default" size="md" disabled={!canSave}>
-                {isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Field'}
-              </Button>
-            </div>
+        {/* Footer */}
+        <Dialog.Footer className="flex-col items-stretch sm:flex-row sm:items-center sm:justify-end">
+          {!canSave && disabledHint && (
+            <p
+              className="text-right text-xs text-amber-700 sm:mr-auto"
+              role="status"
+              aria-live="polite"
+            >
+              {disabledHint}
+            </p>
+          )}
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="primaryOutline"
+              size="md"
+              onClick={onClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="default" size="md" disabled={!canSave}>
+              {isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Field'}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+        </Dialog.Footer>
+      </form>
+    </Dialog>
   );
 }

@@ -6,8 +6,8 @@ import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
 import { FormInputField } from '@/components/ui/FormInputField';
-import { SectionCard } from '@/components/ui/SectionCard';
 import { useCreateMemberMutation } from '@/hooks/domain/members';
 import { type CreateMemberInput, createMemberSchema } from '@/lib/domain/members';
 
@@ -77,112 +77,103 @@ export function AddMemberDialog({ className }: { className?: string }) {
         <span className="hidden sm:inline">Add Member</span>
       </Button>
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 lg:px-8"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsOpen(false);
-            }
-          }}
-        >
-          <SectionCard
-            wrapperClassName="w-full max-w-5xl max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-sm lg:p-8"
-            title="Add New Member"
-            subtitle="Create a new member profile"
-          >
-            <form ref={formRef} className="space-y-8" onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid gap-4 md:grid-cols-2 lg:gap-5 xl:grid-cols-3">
-                <FormInputField
-                  id="member-id"
-                  label="Member ID"
-                  registration={register('member_id')}
-                  error={errors.member_id?.message}
-                  required
-                />
-                <FormInputField
-                  id="first-name"
-                  label="First Name"
-                  registration={register('first_name')}
-                  error={errors.first_name?.message}
-                  required
-                />
-                <FormInputField
-                  id="last-name"
-                  label="Last Name"
-                  registration={register('last_name')}
-                  error={errors.last_name?.message}
-                  required
-                />
-                <FormInputField
-                  id="derived-full-name"
-                  label="Full Name"
-                  value={derivedFullName}
-                  onChange={() => undefined}
-                  readOnly
-                  disabled
-                  helperText="Auto-generated from First Name + Last Name"
-                />
-                <FormInputField
-                  id="nickname"
-                  label="Nickname"
-                  registration={register('nickname')}
-                  error={errors.nickname?.message}
-                  required
-                />
-                <FormInputField
-                  id="date-of-birth"
-                  label="Date of Birth"
-                  registration={register('date_of_birth')}
-                  error={errors.date_of_birth?.message}
-                  type="date"
-                />
-                <FormInputField
-                  id="email"
-                  label="Email"
-                  registration={register('email')}
-                  error={errors.email?.message}
-                  type="email"
-                />
-                <FormInputField
-                  id="phone"
-                  label="Phone"
-                  registration={register('phone')}
-                  error={errors.phone?.message}
-                />
-                <FormInputField
-                  id="role"
-                  label="Role"
-                  registration={register('role')}
-                  error={errors.role?.message}
-                  required
-                />
-                <FormInputField
-                  id="category"
-                  label="Category"
-                  registration={register('category')}
-                  error={errors.category?.message}
-                  required
-                />
-              </div>
+      <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} size="5xl">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Add New Member</Dialog.Title>
+          <Dialog.Description>Create a new member profile</Dialog.Description>
+        </Dialog.Header>
+        <form ref={formRef} onSubmit={handleSubmit(onSubmit)}>
+          <Dialog.Body scrollable className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:gap-5 xl:grid-cols-3">
+              <FormInputField
+                id="member-id"
+                label="Member ID"
+                registration={register('member_id')}
+                error={errors.member_id?.message}
+                required
+              />
+              <FormInputField
+                id="first-name"
+                label="First Name"
+                registration={register('first_name')}
+                error={errors.first_name?.message}
+                required
+              />
+              <FormInputField
+                id="last-name"
+                label="Last Name"
+                registration={register('last_name')}
+                error={errors.last_name?.message}
+                required
+              />
+              <FormInputField
+                id="derived-full-name"
+                label="Full Name"
+                value={derivedFullName}
+                onChange={() => undefined}
+                readOnly
+                disabled
+                helperText="Auto-generated from First Name + Last Name"
+              />
+              <FormInputField
+                id="nickname"
+                label="Nickname"
+                registration={register('nickname')}
+                error={errors.nickname?.message}
+                required
+              />
+              <FormInputField
+                id="date-of-birth"
+                label="Date of Birth"
+                registration={register('date_of_birth')}
+                error={errors.date_of_birth?.message}
+                type="date"
+              />
+              <FormInputField
+                id="email"
+                label="Email"
+                registration={register('email')}
+                error={errors.email?.message}
+                type="email"
+              />
+              <FormInputField
+                id="phone"
+                label="Phone"
+                registration={register('phone')}
+                error={errors.phone?.message}
+              />
+              <FormInputField
+                id="role"
+                label="Role"
+                registration={register('role')}
+                error={errors.role?.message}
+                required
+              />
+              <FormInputField
+                id="category"
+                label="Category"
+                registration={register('category')}
+                error={errors.category?.message}
+                required
+              />
+            </div>
+          </Dialog.Body>
 
-              <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
-                <Button
-                  type="button"
-                  variant="primaryOutline"
-                  onClick={() => setIsOpen(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading || !isDirty}>
-                  {isLoading ? 'Creating...' : 'Create Member'}
-                </Button>
-              </div>
-            </form>
-          </SectionCard>
-        </div>
-      )}
+          <Dialog.Footer>
+            <Button
+              type="button"
+              variant="primaryOutline"
+              onClick={() => setIsOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading || !isDirty}>
+              {isLoading ? 'Creating...' : 'Create Member'}
+            </Button>
+          </Dialog.Footer>
+        </form>
+      </Dialog>
     </>
   );
 }

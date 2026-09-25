@@ -103,30 +103,28 @@ export function SubmissionDetailDialog({
   };
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidthClass="max-w-2xl"
-      showCloseIcon
-      title="Submission Details"
-      description={
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-              isMember ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-            }`}
-          >
-            {submission.source}
-          </span>
-          <span>
-            {respondentName} • Submitted on {formatDate(submission.submitted_at)}
-          </span>
-        </div>
-      }
-    >
+    <Dialog isOpen={isOpen} onClose={onClose} size="2xl">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>Submission Details</Dialog.Title>
+        <Dialog.Description>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                isMember ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+              }`}
+            >
+              {submission.source}
+            </span>
+            <span>
+              {respondentName} • Submitted on {formatDate(submission.submitted_at)}
+            </span>
+          </div>
+        </Dialog.Description>
+      </Dialog.Header>
+
       <div className="flex max-h-[75vh] flex-col">
         {/* Content Body */}
-        <div className="flex-1 space-y-6 overflow-y-auto pr-1">
+        <Dialog.Body scrollable className="flex-1 space-y-6">
           {/* Respondent Metadata */}
           <div className="rounded-xl border border-border bg-background/50 p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -213,10 +211,10 @@ export function SubmissionDetailDialog({
               </div>
             )}
           </div>
-        </div>
+        </Dialog.Body>
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+        <Dialog.Footer className="justify-between">
           <Button
             type="button"
             variant="primaryOutline"
@@ -236,7 +234,7 @@ export function SubmissionDetailDialog({
           <Button type="button" variant="primaryOutline" size="sm" onClick={onClose}>
             Close
           </Button>
-        </div>
+        </Dialog.Footer>
       </div>
     </Dialog>
   );

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Dialog } from '@/components/ui/Dialog';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
   ListTable,
@@ -363,11 +364,9 @@ export function BulkUploadPanel({
   return (
     <>
       {displayMode === 'overlay' ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl overflow-y-auto rounded-2xl bg-surface shadow-xl">
-            {content}
-          </div>
-        </div>
+        <Dialog isOpen onClose={onClose} size="3xl">
+          <Dialog.Body className="mt-0">{content}</Dialog.Body>
+        </Dialog>
       ) : (
         <div className="rounded-2xl border border-border bg-surface shadow-sm">{content}</div>
       )}

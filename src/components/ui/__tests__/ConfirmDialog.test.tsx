@@ -29,13 +29,29 @@ describe('ConfirmDialog', () => {
     expect(screen.queryByText('Confirm Action')).not.toBeInTheDocument();
   });
 
+  it('renders title, description and role=alertdialog', () => {
+    renderDialog();
+
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.getByText('Confirm Action')).toBeInTheDocument();
+    expect(screen.getByText('Body text')).toBeInTheDocument();
+  });
+
   it('calls onCancel when clicking backdrop but not content', () => {
     const props = renderDialog();
 
-    fireEvent.click(screen.getByText('Confirm Action').closest('div') as HTMLDivElement);
+    fireEvent.click(screen.getByRole('alertdialog'));
     expect(props.onCancel).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText('Confirm Action').closest('[class*="fixed"]') as Element);
+    const backdrop = screen.getByRole('alertdialog').parentElement as HTMLElement;
+    fireEvent.click(backdrop);
+    expect(props.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onCancel when pressing Escape key', () => {
+    const props = renderDialog();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(props.onCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -59,6 +75,6 @@ describe('ConfirmDialog', () => {
   it('applies custom max width class when provided', () => {
     renderDialog({ maxWidthClass: 'max-w-2xl' });
 
-    expect(screen.getByText('Confirm Action').closest('div')).toHaveClass('max-w-2xl');
+    expect(screen.getByRole('alertdialog')).toHaveClass('max-w-2xl');
   });
 });

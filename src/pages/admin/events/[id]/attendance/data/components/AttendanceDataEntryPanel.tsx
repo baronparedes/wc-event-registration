@@ -307,16 +307,14 @@ export function AttendanceDataEntryPanel({
   }
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidthClass="max-w-lg"
-      title={`Attendance Data: ${registrant.full_name}`}
-      description={attendeeMeta.join(' · ')}
-      showCloseIcon
-    >
-      <div className="overflow-visible">
-        <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
+    <Dialog isOpen={isOpen} onClose={onClose} size="lg">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>{`Attendance Data: ${registrant.full_name}`}</Dialog.Title>
+        <Dialog.Description>{attendeeMeta.join(' · ')}</Dialog.Description>
+      </Dialog.Header>
+
+      <form onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
+        <Dialog.Body className="space-y-4">
           {visibleFields.map((field) => {
             const inputId = `field-${field.id}`;
             const isRequired = field.is_required;
@@ -467,22 +465,22 @@ export function AttendanceDataEntryPanel({
           {fields.length === 0 && (
             <p className="text-sm text-muted">No attendance fields configured for this event.</p>
           )}
+        </Dialog.Body>
 
-          <div className="flex justify-end gap-3 border-t border-border mt-4 pt-4">
-            <Button
-              type="button"
-              variant="primaryOutline"
-              onClick={onClose}
-              disabled={upsertMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={upsertMutation.isPending || fields.length === 0}>
-              {upsertMutation.isPending ? 'Saving…' : 'Save Data'}
-            </Button>
-          </div>
-        </form>
-      </div>
+        <Dialog.Footer>
+          <Button
+            type="button"
+            variant="primaryOutline"
+            onClick={onClose}
+            disabled={upsertMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={upsertMutation.isPending || fields.length === 0}>
+            {upsertMutation.isPending ? 'Saving…' : 'Save Data'}
+          </Button>
+        </Dialog.Footer>
+      </form>
     </Dialog>
   );
 }

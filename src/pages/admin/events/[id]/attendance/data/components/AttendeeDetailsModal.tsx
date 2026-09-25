@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { Dialog } from '@/components/ui/Dialog';
 import type { RegistrantAttendanceRow } from '@/lib/domain/attendance';
@@ -97,26 +98,21 @@ export function AttendeeDetailsModal({
     );
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidthClass="max-w-2xl lg:max-w-4xl"
-      title={registrant.full_name}
-      description={
-        <>
+    <Dialog isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-2xl lg:max-w-4xl">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>{registrant.full_name}</Dialog.Title>
+        <Dialog.Description>
           <div className="mt-2 space-y-1 text-sm text-muted">
             <p>Member ID: {registrant.member_id ?? 'Guest'}</p>
             {registrant.email && <p>Email: {registrant.email}</p>}
             {registrant.role && <p>Role: {registrant.role}</p>}
             {registrant.category && <p>Category: {registrant.category}</p>}
           </div>
-        </>
-      }
-      showCloseIcon
-      showCloseButton
-    >
-      <div className="flex flex-col max-h-[80vh] lg:max-h-full lg:h-full">
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        </Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Body scrollable className="flex flex-col max-h-[80vh] lg:max-h-full lg:h-full">
+        <div className="flex-1 py-1">
           <div
             className={`mb-4 inline-flex rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm ${
               isCheckedIn
@@ -191,7 +187,13 @@ export function AttendeeDetailsModal({
             </div>
           )}
         </div>
-      </div>
+      </Dialog.Body>
+
+      <Dialog.Footer>
+        <Button type="button" variant="primaryOutline" size="sm" onClick={onClose}>
+          Close
+        </Button>
+      </Dialog.Footer>
     </Dialog>
   );
 }

@@ -55,15 +55,13 @@ export function EditRoleDialog({ isOpen, onClose, assignment }: EditRoleDialogPr
   }
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Edit Assigned Role"
-      description={`Change application role for ${assignment.email}`}
-      maxWidthClass="max-w-md"
-      showCloseIcon
-    >
-      <div className="space-y-4">
+    <Dialog isOpen={isOpen} onClose={handleClose} size="md">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>Edit Assigned Role</Dialog.Title>
+        <Dialog.Description>Change application role for {assignment.email}</Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Body className="space-y-4">
         <div className="text-xs space-y-1 rounded-lg border border-border bg-muted/20 p-3">
           <p>
             <span className="text-muted">User Email:</span>{' '}
@@ -81,22 +79,22 @@ export function EditRoleDialog({ isOpen, onClose, assignment }: EditRoleDialogPr
           onChange={(val) => setSelectedRole(val as AssignableAdminRole)}
           options={ROLE_OPTIONS}
         />
+      </Dialog.Body>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-3">
-          <Button type="button" variant="primaryOutline" size="sm" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            disabled={roleMutation.isPending || role === assignment.role}
-            onClick={handleUpdate}
-          >
-            {roleMutation.isPending ? 'Updating...' : 'Save Changes'}
-          </Button>
-        </div>
-      </div>
+      <Dialog.Footer>
+        <Button type="button" variant="primaryOutline" size="sm" onClick={handleClose}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          disabled={roleMutation.isPending || role === assignment.role}
+          onClick={handleUpdate}
+        >
+          {roleMutation.isPending ? 'Updating...' : 'Save Changes'}
+        </Button>
+      </Dialog.Footer>
     </Dialog>
   );
 }
