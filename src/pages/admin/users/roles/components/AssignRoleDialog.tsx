@@ -94,15 +94,13 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
   }
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Assign Role"
-      description="Search users by email and assign them a role."
-      maxWidthClass="max-w-3xl"
-      showCloseIcon
-    >
-      <div className="flex h-[75vh] flex-col space-y-4">
+    <Dialog isOpen={isOpen} onClose={handleClose} size="3xl">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>Assign Role</Dialog.Title>
+        <Dialog.Description>Search users by email and assign them a role.</Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Body className="flex h-[75vh] flex-col space-y-4">
         {/* Search and Filter Inputs */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -252,7 +250,7 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
         )}
 
         {/* Dialog Actions */}
-        <div className="mt-auto flex justify-end gap-2 border-t border-border pt-3">
+        <Dialog.Footer className="mt-auto">
           <Button type="button" variant="primaryOutline" size="sm" onClick={handleClose}>
             Cancel
           </Button>
@@ -267,8 +265,8 @@ export function AssignRoleDialog({ isOpen, onClose, assignedAuthUserIds }: Assig
             <UserPlus className="h-4 w-4" />
             <span>{roleMutation.isPending ? 'Assigning...' : 'Assign Role'}</span>
           </Button>
-        </div>
-      </div>
+        </Dialog.Footer>
+      </Dialog.Body>
     </Dialog>
   );
 }

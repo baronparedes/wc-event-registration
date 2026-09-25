@@ -132,28 +132,27 @@ export function EditableMemberAvatar({
         </button>
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}
-      <Dialog
-        isOpen={isChooserOpen}
-        onClose={() => setIsChooserOpen(false)}
-        title="Member photo"
-        description="Choose an existing image or take a new photo."
-        maxWidthClass="max-w-sm"
-        showCloseIcon
-      >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button
-            type="button"
-            variant="primaryOutline"
-            onClick={() => uploadInputRef.current?.click()}
-          >
-            <ImageUp aria-hidden="true" className="h-4 w-4" />
-            Upload photo
-          </Button>
-          <Button type="button" variant="primaryOutline" onClick={handleTakePhoto}>
-            <Camera aria-hidden="true" className="h-4 w-4" />
-            Take photo
-          </Button>
-        </div>
+      <Dialog isOpen={isChooserOpen} onClose={() => setIsChooserOpen(false)} size="sm">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Member photo</Dialog.Title>
+          <Dialog.Description>Choose an existing image or take a new photo.</Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Body>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="primaryOutline"
+              onClick={() => uploadInputRef.current?.click()}
+            >
+              <ImageUp aria-hidden="true" className="h-4 w-4" />
+              Upload photo
+            </Button>
+            <Button type="button" variant="primaryOutline" onClick={handleTakePhoto}>
+              <Camera aria-hidden="true" className="h-4 w-4" />
+              Take photo
+            </Button>
+          </div>
+        </Dialog.Body>
       </Dialog>
       <input
         ref={uploadInputRef}
@@ -163,15 +162,14 @@ export function EditableMemberAvatar({
         className="sr-only"
         onChange={(event) => void handleFileChange(event.target.files?.[0])}
       />
-      <Dialog
-        isOpen={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        title="Take member photo"
-        description="Position the member in the frame, then capture the photo."
-        maxWidthClass="max-w-lg"
-        showCloseIcon
-      >
-        <div className="space-y-4">
+      <Dialog isOpen={isCameraOpen} onClose={() => setIsCameraOpen(false)} size="lg">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Take member photo</Dialog.Title>
+          <Dialog.Description>
+            Position the member in the frame, then capture the photo.
+          </Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Body className="space-y-4">
           <div className="aspect-square overflow-hidden rounded-lg bg-black">
             <Webcam
               ref={webcamRef}
@@ -184,16 +182,16 @@ export function EditableMemberAvatar({
               className="h-full w-full object-cover"
             />
           </div>
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="primaryOutline" onClick={() => setIsCameraOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" disabled={isSaving} onClick={() => void handleCapturePhoto()}>
-              <Camera aria-hidden="true" className="h-4 w-4" />
-              Capture photo
-            </Button>
-          </div>
-        </div>
+        </Dialog.Body>
+        <Dialog.Footer bordered={false} className="mt-4">
+          <Button type="button" variant="primaryOutline" onClick={() => setIsCameraOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={isSaving} onClick={() => void handleCapturePhoto()}>
+            <Camera aria-hidden="true" className="h-4 w-4" />
+            Capture photo
+          </Button>
+        </Dialog.Footer>
       </Dialog>
     </div>
   );

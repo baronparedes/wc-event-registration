@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 
 import { Button } from './Button';
+import { Dialog, type DialogSize } from './Dialog';
 
-type ConfirmDialogProps = {
+export type ConfirmDialogProps = {
   isOpen: boolean;
   title: string;
   description: ReactNode;
+  size?: DialogSize;
   maxWidthClass?: string;
   confirmLabel: string;
   confirmLoadingLabel: string;
@@ -21,7 +23,8 @@ export function ConfirmDialog({
   isOpen,
   title,
   description,
-  maxWidthClass = 'max-w-md',
+  size = 'md',
+  maxWidthClass,
   confirmLabel,
   confirmLoadingLabel,
   cancelLabel = 'Cancel',
@@ -31,42 +34,43 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  if (!isOpen) return null;
-
   const confirmDisabled = isPending || disabled;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
-      onClick={onCancel}
+    <Dialog
+      isOpen={isOpen}
+      onClose={onCancel}
+      size={size}
+      maxWidthClass={maxWidthClass}
+      role="alertdialog"
+      closeOnEscape={!isPending}
+      closeOnBackdropClick={!isPending}
     >
-      <div
-        className={`mx-4 w-full ${maxWidthClass} rounded-2xl border border-border bg-surface p-6 shadow-lg`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="font-heading text-lg font-semibold text-text">{title}</h2>
-        <div className="mt-2 text-sm text-muted">{description}</div>
-        <div className="mt-5 flex justify-end gap-3">
-          <Button
-            disabled={isPending}
-            onClick={onCancel}
-            size="md"
-            type="button"
-            variant="primaryOutline"
-          >
-            {cancelLabel}
-          </Button>
-          <Button
-            disabled={confirmDisabled}
-            onClick={onConfirm}
-            size="md"
-            type="button"
-            variant={confirmVariant}
-          >
-            {isPending ? confirmLoadingLabel : confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </div>
+      <Dialog.Header>
+        <Dialog.Title>{title}</Dialog.Title>
+        <Dialog.Description className="mt-2 text-sm text-muted">{description}</Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Footer bordered={false} className="mt-5">
+        <Button
+          disabled={isPending}
+          onClick={onCancel}
+          size="md"
+          type="button"
+          variant="primaryOutline"
+        >
+          {cancelLabel}
+        </Button>
+        <Button
+          disabled={confirmDisabled}
+          onClick={onConfirm}
+          size="md"
+          type="button"
+          variant={confirmVariant}
+        >
+          {isPending ? confirmLoadingLabel : confirmLabel}
+        </Button>
+      </Dialog.Footer>
+    </Dialog>
   );
 }

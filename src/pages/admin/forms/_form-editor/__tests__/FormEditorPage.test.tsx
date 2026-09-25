@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -275,8 +275,9 @@ describe('FormEditorPage', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Archive Form' }),
     ).toBeInTheDocument();
-    const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
-    fireEvent.click(cancelButtons[0]);
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancel' }),
+    );
     await waitFor(() => {
       expect(
         screen.queryByRole('heading', { level: 2, name: 'Archive Form' }),
@@ -304,8 +305,9 @@ describe('FormEditorPage', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Move Form to Draft' }),
     ).toBeInTheDocument();
-    const restoreCancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
-    fireEvent.click(restoreCancelButtons[0]);
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancel' }),
+    );
     await waitFor(() => {
       expect(
         screen.queryByRole('heading', { level: 2, name: 'Move Form to Draft' }),

@@ -46,22 +46,27 @@ export function AttendanceColumnsButton({
         )}
       </Button>
 
-      <Dialog
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        maxWidthClass="max-w-2xl"
-        title="Displayed Fields"
-        description="Choose which registration, attendance, and member fields appear as table columns."
-        showCloseIcon
-        showCloseButton
-      >
-        <AttendanceViewFieldSelector
-          selectedFields={selectedFields}
-          registrationFieldOptions={registrationFieldOptions}
-          attendanceFieldOptions={attendanceFieldOptions}
-          memberFieldOptions={memberFieldOptions}
-          onToggleField={onToggleField}
-        />
+      <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} size="2xl">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Displayed Fields</Dialog.Title>
+          <Dialog.Description>
+            Choose which registration, attendance, and member fields appear as table columns.
+          </Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Body>
+          <AttendanceViewFieldSelector
+            selectedFields={selectedFields}
+            registrationFieldOptions={registrationFieldOptions}
+            attendanceFieldOptions={attendanceFieldOptions}
+            memberFieldOptions={memberFieldOptions}
+            onToggleField={onToggleField}
+          />
+        </Dialog.Body>
+        <Dialog.Footer>
+          <Button type="button" variant="primaryOutline" size="sm" onClick={() => setIsOpen(false)}>
+            Close
+          </Button>
+        </Dialog.Footer>
       </Dialog>
     </>
   );

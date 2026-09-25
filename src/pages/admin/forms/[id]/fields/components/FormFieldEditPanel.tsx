@@ -5,6 +5,7 @@ import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Dialog } from '@/components/ui/Dialog';
 import { useDeleteFormFieldMutation, useSaveFormFieldMutation } from '@/hooks/domain/forms';
 import {
   fieldTypeHasDateValidation,
@@ -27,7 +28,6 @@ import { FormFieldDetailsSection } from './FormFieldDetailsSection';
 import { FormFieldDisplayTextSection } from './FormFieldDisplayTextSection';
 import { FormFieldOptionsSection } from './FormFieldOptionsSection';
 import { FormFieldPanelFooter } from './FormFieldPanelFooter';
-import { FormFieldPanelHeader } from './FormFieldPanelHeader';
 import { FormFieldTypeSection } from './FormFieldTypeSection';
 import { FormFieldValidationSection } from './FormFieldValidationSection';
 
@@ -176,30 +176,26 @@ export function FormFieldEditPanel({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-        onClick={onClose}
-      >
-        <div
-          className="my-8 w-full max-w-2xl rounded-2xl border border-border bg-surface shadow-xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <FormFieldPanelHeader isEditing={isEditing} onClose={onClose} />
+      <Dialog isOpen onClose={onClose} size="2xl">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>{isEditing ? 'Edit Form Field' : 'Add Form Field'}</Dialog.Title>
+        </Dialog.Header>
 
-          {!isDraft && (
-            <div className="border-b border-blue-200 bg-blue-50 px-6 py-3">
-              <p className="text-sm font-medium text-blue-800">
-                {formStatus === 'published' ? 'Published form' : 'Archived form'}
-              </p>
-              <p className="mt-0.5 text-xs text-blue-700">
-                {formStatus === 'published'
-                  ? 'You can edit labels, audience, and display text on published forms.'
-                  : 'Field edits are disabled on archived forms.'}
-              </p>
-            </div>
-          )}
+        {!isDraft && (
+          <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+            <p className="text-sm font-medium text-blue-800">
+              {formStatus === 'published' ? 'Published form' : 'Archived form'}
+            </p>
+            <p className="mt-0.5 text-xs text-blue-700">
+              {formStatus === 'published'
+                ? 'You can edit labels, audience, and display text on published forms.'
+                : 'Field edits are disabled on archived forms.'}
+            </p>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Dialog.Body scrollable className="space-y-5">
             {/* Hidden input for field_type validation */}
             <input type="hidden" {...register('field_type')} />
 
@@ -246,32 +242,32 @@ export function FormFieldEditPanel({
                 showDateValidation={showDateValidation}
               />
             )}
+          </Dialog.Body>
 
-            <div className="flex items-center justify-between">
-              {isEditing && isDraft ? (
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                  disabled={isPending}
-                  className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
-                >
-                  Delete Field
-                </button>
-              ) : (
-                <span />
-              )}
+          <Dialog.Footer className="justify-between">
+            {isEditing && isDraft ? (
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                disabled={isPending}
+                className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+              >
+                Delete Field
+              </button>
+            ) : (
+              <span />
+            )}
 
-              <FormFieldPanelFooter
-                isEditing={isEditing}
-                canSave={canSave && isDraft}
-                isPending={isPending}
-                disabledHint={!isDraft ? 'This form is not in draft mode.' : disabledHint}
-                onClose={onClose}
-              />
-            </div>
-          </form>
-        </div>
-      </div>
+            <FormFieldPanelFooter
+              isEditing={isEditing}
+              canSave={canSave && isDraft}
+              isPending={isPending}
+              disabledHint={!isDraft ? 'This form is not in draft mode.' : disabledHint}
+              onClose={onClose}
+            />
+          </Dialog.Footer>
+        </form>
+      </Dialog>
 
       {isEditing && field && (
         <ConfirmDialog

@@ -176,15 +176,14 @@ export function SavedViewsModal({
 
   return (
     <>
-      <Dialog
-        isOpen={isOpen}
-        onClose={() => onOpenChange(false)}
-        maxWidthClass="max-w-3xl"
-        title="Saved Views"
-        description="Load a saved view or save the current configuration."
-        showCloseIcon
-      >
-        <div className="flex max-h-[85vh] min-h-0 flex-col gap-4">
+      <Dialog isOpen={isOpen} onClose={() => onOpenChange(false)} size="3xl">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Saved Views</Dialog.Title>
+          <Dialog.Description>
+            Load a saved view or save the current configuration.
+          </Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Body className="flex max-h-[85vh] min-h-0 flex-col gap-4">
           {savedViews.length === 0 ? (
             <div className="rounded-md border border-border bg-surface p-4 text-center text-sm text-muted">
               <p>No saved views yet.</p>
@@ -288,19 +287,18 @@ export function SavedViewsModal({
               </Button>
             )}
           </div>
-        </div>
+        </Dialog.Body>
       </Dialog>
 
       {/* Save View Dialog */}
-      <Dialog
-        isOpen={showSaveDialog}
-        onClose={() => setShowSaveDialog(false)}
-        maxWidthClass="max-w-sm"
-        title="Save Current View"
-        description="Give your view a name to save the current filters, grouping, and displayed fields."
-        showCloseIcon
-      >
-        <div className="space-y-4">
+      <Dialog isOpen={showSaveDialog} onClose={() => setShowSaveDialog(false)} size="sm">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Save Current View</Dialog.Title>
+          <Dialog.Description>
+            Give your view a name to save the current filters, grouping, and displayed fields.
+          </Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Body className="space-y-4">
           <FormInputField
             id="view-name"
             label="View Name"
@@ -308,27 +306,26 @@ export function SavedViewsModal({
             value={newViewName}
             onChange={(e) => setNewViewName(e.target.value)}
           />
-
-          <div className="flex gap-2">
-            <Button
-              variant="primaryOutline"
-              onClick={() => {
-                setShowSaveDialog(false);
-                setNewViewName('');
-              }}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveNewView}
-              disabled={!newViewName.trim() || upsertMutation.isPending}
-              className="flex-1"
-            >
-              {upsertMutation.isPending ? 'Saving...' : 'Save View'}
-            </Button>
-          </div>
-        </div>
+        </Dialog.Body>
+        <Dialog.Footer bordered={false} className="mt-4">
+          <Button
+            variant="primaryOutline"
+            onClick={() => {
+              setShowSaveDialog(false);
+              setNewViewName('');
+            }}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveNewView}
+            disabled={!newViewName.trim() || upsertMutation.isPending}
+            className="flex-1"
+          >
+            {upsertMutation.isPending ? 'Saving...' : 'Save View'}
+          </Button>
+        </Dialog.Footer>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}

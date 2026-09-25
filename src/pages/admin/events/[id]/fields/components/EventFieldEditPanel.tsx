@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { Dialog } from '@/components/ui/Dialog';
 import {
   useAdminEventFieldsQuery,
   useCreateEventFieldMutation,
@@ -32,7 +33,6 @@ import { FieldDetailsSection } from './FieldDetailsSection';
 import { FieldTypeSection } from './FieldTypeSection';
 import { OptionsSection } from './OptionsSection';
 import { PanelFooter } from './PanelFooter';
-import { PanelHeader } from './PanelHeader';
 import { StatusBanners } from './StatusBanners';
 import { ValidationRulesSection } from './ValidationRulesSection';
 import { VisibilityRuleSection } from './VisibilityRuleSection';
@@ -209,18 +209,14 @@ export function EventFieldEditPanel({
   })();
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="my-8 w-full max-w-2xl rounded-2xl border border-border bg-surface shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <PanelHeader isEditing={isEditing} onClose={onClose} />
-        <StatusBanners eventStatus={eventStatus} />
+    <Dialog isOpen onClose={onClose} size="2xl">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>{isEditing ? 'Edit Field' : 'Add New Field'}</Dialog.Title>
+      </Dialog.Header>
+      <StatusBanners eventStatus={eventStatus} />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6">
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Dialog.Body scrollable className="space-y-5">
           {/* Hidden input for field_type validation */}
           <input type="hidden" {...register('field_type')} />
 
@@ -287,7 +283,9 @@ export function EventFieldEditPanel({
             dependsOnFieldKey={dependsOnFieldKey}
             register={register}
           />
+        </Dialog.Body>
 
+        <Dialog.Footer className="flex-col items-stretch sm:flex-row sm:items-center sm:justify-end">
           <PanelFooter
             isFullyLocked={isFullyLocked}
             isEditing={isEditing}
@@ -296,8 +294,8 @@ export function EventFieldEditPanel({
             disabledHint={disabledHint}
             onClose={onClose}
           />
-        </form>
-      </div>
-    </div>
+        </Dialog.Footer>
+      </form>
+    </Dialog>
   );
 }
