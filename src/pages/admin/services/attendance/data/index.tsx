@@ -17,18 +17,22 @@ import {
 import { ROUTE_PATHS } from '@/config/constants';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
 import { useInfiniteScrollTrigger } from '@/hooks/utils';
+import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
 import { getNearestPreviousSunday } from '@/pages/admin/services/constants';
 
 import {
   AttendanceDateGroupHeader,
+  AttendanceDateMobileGroupHeader,
   AttendanceFilters,
+  AttendanceMobileCard,
   AttendanceTableFooter,
   AttendanceTableRow,
   ExportServiceAttendanceButton,
 } from './components';
 
 export function AdminServiceAttendanceDataPage() {
+  const isMobileViewport = useIsMobileViewport();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const serviceStartDate = searchParams.get('service_start_date') || '';
@@ -276,10 +280,49 @@ export function AdminServiceAttendanceDataPage() {
             <Badge variant="secondary">{getCountBadgeLabel()}</Badge>
           </div>
         )}
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
+        <div
+          className={
+            isMobileViewport
+              ? ''
+              : 'overflow-hidden rounded-2xl border border-border bg-surface shadow-xs'
+          }
+        >
           {isLoading ? (
-            <div className="flex h-64 items-center justify-center">
+            <div
+              className={`flex h-64 items-center justify-center ${isMobileViewport ? 'rounded-2xl border border-border bg-surface shadow-xs' : ''}`}
+            >
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : isMobileViewport ? (
+            <div className="space-y-4">
+              {filteredData.length === 0 ? (
+                <div className="rounded-2xl border border-border bg-surface shadow-xs py-12 text-center text-sm text-muted">
+                  No attendance records found matching filters.
+                </div>
+              ) : (
+                groupedByDate.map(({ date, memberGroups }) => {
+                  const totalRecords = memberGroups.reduce((sum, mg) => sum + mg.records.length, 0);
+
+                  return (
+                    <div key={`group-${date}`} className="mb-6 last:mb-0">
+                      <AttendanceDateMobileGroupHeader
+                        date={date}
+                        memberCount={memberGroups.length}
+                        totalRecords={totalRecords}
+                      />
+                      <div className="space-y-4">
+                        {memberGroups.map(({ memberKey, records }) => (
+                          <AttendanceMobileCard
+                            key={memberKey}
+                            memberKey={memberKey}
+                            records={records}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           ) : (
             <ListTable>
