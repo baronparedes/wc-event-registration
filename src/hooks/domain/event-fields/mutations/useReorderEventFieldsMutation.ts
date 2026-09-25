@@ -6,7 +6,7 @@ import { supabase } from '@/lib/infrastructure';
 import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 
 /**
- * Reorders event fields by updating display_order for each field.
+ * Reorders event fields by updating display_order for each field via RPC.
  * Only permitted on draft events.
  * orderedIds must contain the full list of field IDs in the desired order.
  */
@@ -15,29 +15,9 @@ export function useReorderEventFieldsMutation() {
 
   return useMutation({
     mutationFn: async (input: ReorderEventFieldsInput): Promise<void> => {
-      const { data: event, error: eventError } = await supabase
-        .from('events')
-        .select('status')
-        .eq('id', input.event_id)
-        .single();
-
-      if (eventError) throw eventError;
-
-      if (event.status !== 'draft') {
-        throw new Error(
-          'Cannot reorder fields on a published or archived event. Archive this event and create a new one to change the registration form.',
-        );
-      }
-
-      const upsertRows = input.orderedIds.map((id, index) => ({
-        id,
-        event_id: input.event_id,
-        display_order: index,
-      }));
-
-      const { error } = await supabase.from('event_fields').upsert(upsertRows, {
-        onConflict: 'id',
-        ignoreDuplicates: false,
+      const { error } = await supabase.rpc('reorder_event_fields', {
+        p_event_id: input.event_id,
+        p_ordered_ids: input.orderedIds,
       });
 
       if (error) throw error;
