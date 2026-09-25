@@ -4,26 +4,18 @@ import { QUERY_KEYS } from '@/config/constants';
 import type { ReorderAttendanceFieldsInput } from '@/lib/domain/attendance-fields';
 import { supabase } from '@/lib/infrastructure';
 
-/** Reorders attendance fields by updating display_order for each field via PostgREST. */
+/** Reorders attendance fields by updating display_order for each field via RPC. */
 export function useReorderAttendanceFieldsMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: ReorderAttendanceFieldsInput): Promise<void> => {
-      const results = await Promise.all(
-        input.orderedIds.map((id, index) =>
-          supabase
-            .from('attendance_fields')
-            .update({ display_order: index })
-            .eq('id', id)
-            .eq('event_id', input.event_id),
-        ),
-      );
+      const { error } = await supabase.rpc('reorder_attendance_fields', {
+        p_event_id: input.event_id,
+        p_ordered_ids: input.orderedIds,
+      });
 
-      // Check for errors in any of the results
-      for (const result of results) {
-        if (result.error) throw result.error;
-      }
+      if (error) throw error;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
