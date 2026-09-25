@@ -1,10 +1,10 @@
-import DOMPurify from 'dompurify';
 import { Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { AdminForm } from '@/lib/domain/forms';
+import { DOMPurify } from '@/lib/infrastructure';
 
 type FormHeaderCardProps = {
   form: AdminForm | null | undefined;
@@ -87,6 +87,7 @@ export function FormHeaderCard({
             [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2
           "
           dangerouslySetInnerHTML={{
+            // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
             __html: DOMPurify.sanitize(form.description),
           }}
         />

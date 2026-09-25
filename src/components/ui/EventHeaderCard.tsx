@@ -1,11 +1,10 @@
-import DOMPurify from 'dompurify';
 import { Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { EventAvailability } from '@/lib/domain/events';
-import { formatDateTime } from '@/lib/infrastructure';
+import { DOMPurify, formatDateTime } from '@/lib/infrastructure';
 
 type EventHeaderCardProps = {
   slug?: string;
@@ -102,6 +101,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
               [&_tr:nth-child(even)]:bg-background/40
               [&_tr:hover]:bg-accent/10
             "
+          // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
         />
       )}

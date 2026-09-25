@@ -26,3 +26,4 @@ export {
   getTotalPages,
 } from './pagination';
 export { parseErrorToJsonOrString } from './errorUtils';
+export { DOMPurify } from './dompurify';
