@@ -34,7 +34,7 @@ export const PUBLIC_REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
 /**
  * Fetches one public registration record and its event-field responses for admin detail views.
  */
-export async function fetchPublicRegistrationDetail(
+async function fetchPublicRegistrationDetail(
   registrationId: string,
 ): Promise<PublicRegistrationDetail> {
   const { data: registration, error: registrationError } = await supabase
@@ -157,10 +157,18 @@ export async function fetchPublicRegistrationDetail(
   };
 }
 
-export function usePublicRegistrationDetailQuery(registrationId: string) {
+export const publicRegistrationDetailQueryOptions = (registrationId: string) => ({
+  queryKey: PUBLIC_REGISTRATION_DETAIL_QUERY_KEY(registrationId),
+  queryFn: async () => fetchPublicRegistrationDetail(registrationId),
+  staleTime: QUERY_STALE_TIME_MS.detail,
+});
+
+export function usePublicRegistrationDetailQuery(
+  registrationId?: string | null,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: PUBLIC_REGISTRATION_DETAIL_QUERY_KEY(registrationId),
-    queryFn: async () => fetchPublicRegistrationDetail(registrationId),
-    staleTime: QUERY_STALE_TIME_MS.detail,
+    ...publicRegistrationDetailQueryOptions(registrationId ?? ''),
+    enabled: Boolean(registrationId) && (options?.enabled ?? true),
   });
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -14,8 +15,9 @@ import { TIMING, TOAST_MESSAGES, toRoute } from '@/config/constants';
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { usePublicEventQuery } from '@/hooks/domain/events';
 import {
+  type PublicRegistrationDetail,
   fetchPublicAttendeeCheck,
-  fetchPublicRegistrationDetail,
+  publicRegistrationDetailQueryOptions,
   useSubmitPublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
@@ -40,6 +42,7 @@ interface RouteParams extends Record<string, string | undefined> {
 export function PublicEventRegistrationPage() {
   const { slug } = useParams<RouteParams>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState<Step>('attendee-info');
 
   const stepOneRef = useRef<HTMLDivElement | null>(null);
@@ -129,9 +132,11 @@ export function PublicEventRegistrationPage() {
       }
 
       if (existingRegistration && allowsExistingRegistrationUpdate) {
-        let detail: Awaited<ReturnType<typeof fetchPublicRegistrationDetail>>;
+        let detail: PublicRegistrationDetail;
         try {
-          detail = await fetchPublicRegistrationDetail(existingRegistration.id);
+          detail = await queryClient.fetchQuery(
+            publicRegistrationDetailQueryOptions(existingRegistration.id),
+          );
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to check attendee';
           toast.error(parseErrorToJsonOrString(message));
@@ -167,7 +172,7 @@ export function PublicEventRegistrationPage() {
       setCurrentStep('event-fields');
       setIsCheckingAttendee(false);
     },
-    [slug, eventQuery.data],
+    [slug, eventQuery.data, queryClient],
   );
 
   const handleFieldsSubmit = useCallback(

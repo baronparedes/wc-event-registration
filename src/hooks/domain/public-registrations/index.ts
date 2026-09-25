@@ -6,7 +6,10 @@ export {
 export { useSubmitPublicRegistrationMutation } from './queries/useSubmitPublicRegistrationMutation';
 export { useAdminPublicRegistrationsQuery } from './queries/useAdminPublicRegistrationsQuery';
 export {
-  fetchPublicRegistrationDetail,
+  PUBLIC_REGISTRATION_DETAIL_QUERY_KEY,
+  publicRegistrationDetailQueryOptions,
+  type PublicRegistrationDetail,
+  type PublicRegistrationFieldResponse,
   usePublicRegistrationDetailQuery,
 } from './queries/usePublicRegistrationDetailQuery';
 
