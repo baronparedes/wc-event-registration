@@ -294,7 +294,7 @@ export function AdminServiceAttendanceDataPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : isMobileViewport ? (
-            <div className="space-y-4">
+            <div className="space-y-4 pb-4">
               {filteredData.length === 0 ? (
                 <div className="rounded-2xl border border-border bg-surface shadow-xs py-12 text-center text-sm text-muted">
                   No attendance records found matching filters.

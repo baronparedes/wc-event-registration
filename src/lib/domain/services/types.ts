@@ -51,6 +51,9 @@ export type ServiceAttendance = {
     full_name: string;
     nickname: string | null;
     avatar_object_key?: string | null;
+    role?: string | null;
+    category?: string | null;
+    is_active?: boolean;
   } | null;
 };
 
