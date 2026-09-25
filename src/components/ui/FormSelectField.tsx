@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FocusEvent, ReactNode } from 'react';
 
 import { ChevronDown } from 'lucide-react';
@@ -61,17 +61,22 @@ export function FormSelectField(props: FormSelectFieldProps) {
     includesPlaceholder: Boolean(placeholder),
   });
 
-  const selectedOption = options.find((o) => !o.isGroupHeader && o.value === value);
+  const selectedOption = useMemo(
+    () => options.find((o) => !o.isGroupHeader && o.value === value),
+    [options, value],
+  );
   const displayLabel = selectedOption?.label ?? placeholder;
   const isPlaceholderShown = !selectedOption;
+
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const filteredOptions =
-    searchable && normalizedSearchQuery
-      ? options.filter(
-          (option) =>
-            option.isGroupHeader || option.label.toLowerCase().includes(normalizedSearchQuery),
-        )
-      : options;
+
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !normalizedSearchQuery) return options;
+    return options.filter(
+      (option) =>
+        option.isGroupHeader || option.label.toLowerCase().includes(normalizedSearchQuery),
+    );
+  }, [options, searchable, normalizedSearchQuery]);
 
   useEffect(() => {
     if (!isOpen) return;
