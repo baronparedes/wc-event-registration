@@ -17,7 +17,8 @@ create or replace function public.get_volunteer_attendance_log (
   is_walk_in boolean,
   is_override boolean,
   is_manual_entry boolean,
-  status text
+  status text,
+  checked_in_at timestamptz
 ) language plpgsql security definer
 set
   search_path = public as $$
@@ -85,7 +86,8 @@ begin
       sa.is_walk_in,
       sa.is_override,
       sa.is_manual_entry,
-      'present'::text as status
+      'present'::text as status,
+      sa.checked_in_at
     from public.service_attendance sa
     where sa.user_id = p_user_id
       and sa.service_date >= p_start_date
@@ -107,7 +109,8 @@ begin
             and (er.services is null or trim(er.services) = '' or er.services ilike ('%' || ts.time_slot || '%') or er.services ilike '%all%')
         ) then 'excused'::text
         else 'absent'::text
-      end as status
+      end as status,
+      null::timestamptz as checked_in_at
     from unnest(v_sundays) as s(sunday_date)
     cross join (values ('9AM'), ('12NN'), ('3PM')) as ts(time_slot)
     cross join lateral (

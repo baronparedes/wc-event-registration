@@ -17,6 +17,7 @@ export interface VolunteerAttendanceLogRecord {
   is_override: boolean;
   is_manual_entry: boolean;
   status: 'present' | 'absent' | 'excused';
+  checked_in_at?: string | null;
 }
 
 export const volunteerAttendanceLogQueryKey = (filters: VolunteerAttendanceLogFilters) =>

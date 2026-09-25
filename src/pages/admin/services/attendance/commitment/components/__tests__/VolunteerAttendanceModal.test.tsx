@@ -48,6 +48,7 @@ describe('VolunteerAttendanceModal', () => {
           is_override: false,
           is_manual_entry: false,
           status: 'present',
+          checked_in_at: '2026-01-04T00:45:00.000Z',
         },
         {
           id: null,
@@ -57,6 +58,7 @@ describe('VolunteerAttendanceModal', () => {
           is_override: false,
           is_manual_entry: false,
           status: 'absent',
+          checked_in_at: null,
         },
         {
           id: null,
@@ -66,6 +68,7 @@ describe('VolunteerAttendanceModal', () => {
           is_override: false,
           is_manual_entry: false,
           status: 'excused',
+          checked_in_at: null,
         },
       ],
       isLoading: false,
@@ -93,10 +96,14 @@ describe('VolunteerAttendanceModal', () => {
     expect(screen.getByText(/ABSENCES — 1 RECORDS/)).toBeInTheDocument();
     expect(screen.getByText(/EXCUSED — 1 RECORDS/)).toBeInTheDocument();
 
+    // Check table headers for logins
+    expect(screen.getByRole('columnheader', { name: 'Login Time' })).toBeInTheDocument();
+
     // Check log records
     expect(screen.getByText('2026-01-04')).toBeInTheDocument();
     expect(screen.getByText('1st Sunday')).toBeInTheDocument();
     expect(screen.getByText('9AM')).toBeInTheDocument();
+    expect(screen.getByText('8:45 AM')).toBeInTheDocument();
 
     expect(screen.getByText('2026-01-11')).toBeInTheDocument();
     expect(screen.getByText('2nd Sunday')).toBeInTheDocument();

@@ -27,6 +27,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { useVolunteerAttendanceLogQuery } from '@/hooks/domain/services';
+import { formatTimeOnly } from '@/lib/infrastructure';
 
 import type { DashboardTimeframe } from './CommitmentDashboardFilters';
 import { CommitmentSummaryCard } from './CommitmentSummaryCards';
@@ -345,28 +346,48 @@ export function VolunteerAttendanceModal({
                     <ListTable density="dense" className="table-fixed text-sm">
                       <ListTableHead>
                         <ListTableHeaderRow>
-                          <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[30%]">
+                          <ListTableHeaderCell
+                            className={`!py-1.5 !px-3 text-xs ${
+                              section.key === 'logins' ? 'w-[25%]' : 'w-[30%]'
+                            }`}
+                          >
                             Date
                           </ListTableHeaderCell>
-                          <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[35%]">
+                          <ListTableHeaderCell
+                            className={`!py-1.5 !px-3 text-xs ${
+                              section.key === 'logins' ? 'w-[25%]' : 'w-[35%]'
+                            }`}
+                          >
                             Week
                           </ListTableHeaderCell>
-                          <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[35%]">
+                          <ListTableHeaderCell
+                            className={`!py-1.5 !px-3 text-xs ${
+                              section.key === 'logins' ? 'w-[25%]' : 'w-[35%]'
+                            }`}
+                          >
                             Time Slot
                           </ListTableHeaderCell>
+                          {section.key === 'logins' && (
+                            <ListTableHeaderCell className="!py-1.5 !px-3 text-xs w-[25%]">
+                              Login Time
+                            </ListTableHeaderCell>
+                          )}
                         </ListTableHeaderRow>
                       </ListTableHead>
                       <ListTableBody>
                         {isLoading ? (
                           <ListTableRow hover="none">
-                            <ListTableCell colSpan={3} className="!py-4 text-center">
+                            <ListTableCell
+                              colSpan={section.key === 'logins' ? 4 : 3}
+                              className="!py-4 text-center"
+                            >
                               <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />
                             </ListTableCell>
                           </ListTableRow>
                         ) : section.logs.length === 0 ? (
                           <ListTableRow hover="none">
                             <ListTableCell
-                              colSpan={3}
+                              colSpan={section.key === 'logins' ? 4 : 3}
                               className="!py-2.5 !px-3 text-center text-sm text-muted"
                             >
                               {section.emptyMessage}
@@ -386,6 +407,11 @@ export function VolunteerAttendanceModal({
                               <ListTableCell className="!py-1.5 !px-3">
                                 {section.renderSlot(log)}
                               </ListTableCell>
+                              {section.key === 'logins' && (
+                                <ListTableCell className="!py-1.5 !px-3 text-text">
+                                  {log.checked_in_at ? formatTimeOnly(log.checked_in_at) : '-'}
+                                </ListTableCell>
+                              )}
                             </ListTableRow>
                           ))
                         )}

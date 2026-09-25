@@ -45,6 +45,26 @@ export function formatDateTime(isoString: string | null, fallback = 'TBD'): stri
 }
 
 /**
+ * Format an ISO datetime string to a localized time-only string in Asia/Manila timezone (UTC+8).
+ * Used for displaying service attendance check-in times.
+ *
+ * @param isoString - ISO datetime string or null
+ * @param fallback - String to return if isoString is null/invalid (default: '—')
+ * @returns Formatted time string (e.g., "8:45 AM")
+ */
+export function formatTimeOnly(isoString: string | null, fallback = '—'): string {
+  if (!isoString) return fallback;
+  const parsed = new Date(isoString);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Manila',
+  });
+}
+
+/**
  * Convert a datetime-local input value (assumed to be in UTC+8 Philippines time)
  * to an ISO string with UTC+8 offset (+08:00).
  * Used when saving form inputs from the UI to the database.

@@ -17,6 +17,7 @@ export {
   formatDateOnly,
   formatDayMonth,
   formatDateTime,
+  formatTimeOnly,
   localDateTimeToUTC8ISO,
 } from './dateFormat';
 export {

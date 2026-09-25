@@ -4,6 +4,7 @@ import {
   formatDateOnly,
   formatDateTime,
   formatDayMonth,
+  formatTimeOnly,
   localDateTimeToUTC8ISO,
 } from '../dateFormat';
 
@@ -26,6 +27,14 @@ describe('dateFormat', () => {
 
     dateOnlySpy.mockRestore();
     dateTimeSpy.mockRestore();
+  });
+
+  it('formats time-only in Asia/Manila (UTC+8) and returns fallbacks', () => {
+    expect(formatTimeOnly('2026-01-04T00:45:00.000Z')).toBe('8:45 AM');
+    expect(formatTimeOnly('2026-01-04T04:00:00.000Z')).toBe('12:00 PM');
+    expect(formatTimeOnly('2026-01-04T07:15:00.000Z')).toBe('3:15 PM');
+    expect(formatTimeOnly(null)).toBe('—');
+    expect(formatTimeOnly('not-a-date')).toBe('—');
   });
 
   it('converts datetime-local values to UTC+8 ISO and rejects empty inputs', () => {
