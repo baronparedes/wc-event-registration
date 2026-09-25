@@ -40,7 +40,7 @@ export async function fetchPublicRegistrationDetail(
   const { data: registration, error: registrationError } = await supabase
     .from('public_registrations')
     .select(
-      'id, event_id, first_name, last_name, nickname, email, phone, status, submitted_at, updated_at',
+      'id, event_id, first_name, last_name, nickname, email, phone, status, submitted_at, updated_at, public_registration_answers(id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order))',
     )
     .eq('id', registrationId)
     .single();
@@ -49,16 +49,7 @@ export async function fetchPublicRegistrationDetail(
     throw new Error('Public registration not found');
   }
 
-  const { data: answers, error: answerError } = await supabase
-    .from('public_registration_answers')
-    .select(
-      'id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order)',
-    )
-    .eq('public_registration_id', registrationId);
-
-  if (answerError) {
-    throw answerError;
-  }
+  const answers = registration.public_registration_answers || [];
 
   type AnswerWithFields = (typeof answers)[number] & {
     event_fields: {
