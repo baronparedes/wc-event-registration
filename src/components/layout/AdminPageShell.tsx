@@ -136,7 +136,7 @@ type AdminPageSubNavProps = {
 function AdminPageSubNav({ children }: AdminPageSubNavProps) {
   return (
     <div className="border-b border-border print:hidden">
-      <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="overflow-y-hidden overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <nav className="-mb-px flex gap-6">{children}</nav>
       </div>
     </div>

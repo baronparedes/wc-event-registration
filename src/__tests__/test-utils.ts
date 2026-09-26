@@ -39,7 +39,7 @@ export function createTestAnonClient() {
  * Generate a unique test member ID
  */
 export function generateTestMemberId(): string {
-  let randomSuffix = '';
+  let randomSuffix: string;
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
     const array = new Uint32Array(1);
     crypto.getRandomValues(array);
