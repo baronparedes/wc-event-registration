@@ -28,7 +28,7 @@ describe('ChatInputForm', () => {
 
     expect(
       screen.getByPlaceholderText(
-        'Ask about volunteers, schedules, events... (type @ to mention a member)',
+        'Ask about volunteers, schedules, events... (Shift+Enter for new line, @ to mention)',
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send/i })).toBeDisabled();
@@ -170,5 +170,22 @@ describe('ChatInputForm', () => {
     const mentionSpan = container.querySelector('span.text-primary.underline');
     expect(mentionSpan).toBeInTheDocument();
     expect(mentionSpan).toHaveTextContent('@John Doe');
+  });
+
+  it('submits on Enter keypress without Shift, and does not submit on Shift+Enter', () => {
+    const handleSubmit = vi.fn();
+    render(<ChatInputForm isLoading={false} onSubmit={handleSubmit} onStop={vi.fn()} />);
+
+    const textarea = screen.getByPlaceholderText(/Ask/i);
+    fireEvent.change(textarea, { target: { value: 'Line one' } });
+
+    // Shift+Enter should NOT submit
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
+    expect(handleSubmit).not.toHaveBeenCalled();
+
+    // Plain Enter SHOULD submit
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+    expect(handleSubmit).toHaveBeenCalledWith('Line one');
+    expect(textarea).toHaveValue('');
   });
 });

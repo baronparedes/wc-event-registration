@@ -4,6 +4,7 @@ import {
   type UIEvent,
   memo,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -11,7 +12,7 @@ import {
 
 import { Send, Square } from 'lucide-react';
 
-import { Button, FormInputField } from '@/components/ui';
+import { Button, FormTextareaField } from '@/components/ui';
 import type { ResolvedToken } from '@/hooks/domain/chat/queries/useResolveUserTokensQuery';
 import { findMentionCandidates, splitTextByMentions } from '@/lib/domain/chat';
 
@@ -35,6 +36,35 @@ export const ChatInputForm = memo(function ChatInputForm({
   const [dismissedAtIndex, setDismissedAtIndex] = useState<number | null>(null);
 
   const backdropRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Auto-resize textarea height to fit content, up to max height
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    if (!input.trim()) {
+      textarea.style.height = '44px';
+      textarea.style.overflowY = 'hidden';
+      return;
+    }
+
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    const minHeight = 44;
+    const maxHeight = 160;
+
+    if (scrollHeight <= minHeight) {
+      textarea.style.height = `${minHeight}px`;
+      textarea.style.overflowY = 'hidden';
+    } else if (scrollHeight >= maxHeight) {
+      textarea.style.height = `${maxHeight}px`;
+      textarea.style.overflowY = 'auto';
+    } else {
+      textarea.style.height = `${scrollHeight}px`;
+      textarea.style.overflowY = 'hidden';
+    }
+  }, [input]);
 
   // Compute active mention query if '@' is present before cursor / end
   const mentionInfo = useMemo(() => {
@@ -63,8 +93,9 @@ export const ChatInputForm = memo(function ChatInputForm({
     return splitTextByMentions(input, tokenMap);
   }, [hasMention, input, tokenMap]);
 
-  const handleScroll = (e: UIEvent<HTMLInputElement>) => {
+  const handleScroll = (e: UIEvent<HTMLTextAreaElement>) => {
     if (backdropRef.current) {
+      backdropRef.current.scrollTop = e.currentTarget.scrollTop;
       backdropRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
   };
@@ -80,11 +111,22 @@ export const ChatInputForm = memo(function ChatInputForm({
       setSelectedIndex(0);
       // Dismiss the mention for this '@' position so popover closes immediately
       setDismissedAtIndex(mentionInfo.atIndex);
+      textareaRef.current?.focus();
     },
     [input, mentionInfo],
   );
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleSubmit = (e?: FormEvent) => {
+    e?.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || isLoading) return;
+    setInput('');
+    setDismissedAtIndex(null);
+    setSelectedIndex(0);
+    onSubmit(trimmed);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (showMentionPopover && candidates.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -112,6 +154,12 @@ export const ChatInputForm = memo(function ChatInputForm({
         return;
       }
     }
+
+    // Submit on Enter without Shift, while allowing Shift+Enter for newlines
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   const handleChange = (val: string) => {
@@ -124,21 +172,11 @@ export const ChatInputForm = memo(function ChatInputForm({
     setSelectedIndex(0);
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-    setInput('');
-    setDismissedAtIndex(null);
-    setSelectedIndex(0);
-    onSubmit(trimmed);
-  };
-
   const backdrop = hasMention ? (
     <div
       aria-hidden="true"
       ref={backdropRef}
-      className="pointer-events-none absolute inset-0 flex items-center overflow-hidden px-4 py-2 text-sm whitespace-pre font-normal text-text select-none"
+      className="pointer-events-none absolute inset-0 overflow-hidden px-4 py-2.5 text-sm leading-5 whitespace-pre-wrap break-words font-normal text-text select-none"
     >
       {segments.map((seg, i) =>
         seg.isMention ? (
@@ -165,32 +203,38 @@ export const ChatInputForm = memo(function ChatInputForm({
           onHighlight={setSelectedIndex}
         />
       )}
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <FormInputField
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
+        <FormTextareaField
+          textareaRef={textareaRef}
           value={input}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
           backdrop={backdrop}
-          placeholder="Ask about volunteers, schedules, events... (type @ to mention a member)"
-          className="flex-1"
-          inputClassName={`w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25 ${
-            hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
-          }`}
+          placeholder="Ask about volunteers, schedules, events... (Shift+Enter for new line, @ to mention)"
+          rows={1}
+          className="flex-1 min-w-0"
+          textareaClassName={`w-full resize-none rounded-xl border border-border bg-surface px-4 py-2.5 text-sm leading-5 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25 h-[44px] min-h-[44px] max-h-[160px] ${hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
+            }`}
         />
         {isLoading ? (
           <Button
             type="button"
             variant="outline"
             onClick={onStop}
-            className="shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200"
+            className="mb-2 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200"
             aria-label="Stop generating"
           >
             <Square className="h-4 w-4 sm:mr-2 fill-current" />
             <span className="hidden sm:inline">Stop</span>
           </Button>
         ) : (
-          <Button type="submit" variant="default" disabled={!input.trim()} className="shrink-0">
+          <Button
+            type="submit"
+            variant="default"
+            disabled={!input.trim()}
+            className="mb-2 shrink-0"
+          >
             <Send className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Send</span>
           </Button>
