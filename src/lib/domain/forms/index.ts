@@ -1,5 +1,6 @@
 export * from './types';
 export * from './schemas';
+export * from './metadata';
 
 export type {
   DuplicateFormInput,

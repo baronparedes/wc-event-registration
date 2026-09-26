@@ -267,7 +267,7 @@ export function PublicEventRegistrationPage() {
 
   if (!slug) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <EmptyState
           icon={<AlertCircle />}
           title="Invalid Request"
@@ -279,7 +279,7 @@ export function PublicEventRegistrationPage() {
 
   if (eventQuery.isLoading) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <SectionCard title="Loading...">
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-3/4 rounded bg-muted" />
@@ -293,7 +293,7 @@ export function PublicEventRegistrationPage() {
 
   if (eventQuery.isError) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <EmptyState
           icon={<AlertCircle />}
           title="Registration Unavailable"
@@ -305,7 +305,7 @@ export function PublicEventRegistrationPage() {
 
   if (!eventQuery.data) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <EmptyState
           icon={<Calendar />}
           title="Event Not Found"
@@ -320,7 +320,7 @@ export function PublicEventRegistrationPage() {
     !eventQuery.data.event?.allow_public_registrations
   ) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <EmptyState
           icon={<AlertCircle />}
           title="Public Registration Unavailable"
@@ -349,7 +349,7 @@ export function PublicEventRegistrationPage() {
       : null;
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="mx-auto max-w-5xl space-y-6">
       <EventHeaderCard
         defaultExpanded={false}
         slug={slug}
@@ -360,75 +360,77 @@ export function PublicEventRegistrationPage() {
         eventWindowText={eventWindowText}
       />
 
-      <StepIndicator
-        currentStep={getStepNumber()}
-        totalSteps={3}
-        labels={['Info', 'Details', 'Confirm']}
-      />
+      <div className="space-y-6">
+        <StepIndicator
+          currentStep={getStepNumber()}
+          totalSteps={3}
+          labels={['Info', 'Details', 'Confirm']}
+          categoryLabel="Registration steps"
+        />
 
-      {currentStep === 'attendee-info' && (
-        <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
-          <PublicAttendeeInfoStep
-            onSubmit={handleAttendeeInfoSubmit}
-            isSubmitting={isCheckingAttendee}
-            emailErrorMessage={attendeeEmailErrorMessage || undefined}
-            defaultValues={effectiveAttendeeInfo || undefined}
-            inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
-            onInactivityTimeout={handleInactivityReset}
-          />
-          <div className="flex items-center justify-start">
+        {currentStep === 'attendee-info' && (
+          <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
+            <PublicAttendeeInfoStep
+              onSubmit={handleAttendeeInfoSubmit}
+              isSubmitting={isCheckingAttendee}
+              emailErrorMessage={attendeeEmailErrorMessage || undefined}
+              defaultValues={effectiveAttendeeInfo || undefined}
+              inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+              onInactivityTimeout={handleInactivityReset}
+            />
             {canReturnToMemberRegistration && (
               <Button
                 type="button"
                 onClick={() => slug && navigate(`/events/${slug}/register`)}
                 variant="accent"
+                size="lg"
                 className="w-full"
               >
                 ← Back to member registration
               </Button>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {currentStep === 'event-fields' && (
-        <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
-          {fieldsQuery.isLoading && (
-            <SectionCard title="Step 2: Event Details">
-              <div className="animate-pulse space-y-4">
-                <div className="h-8 w-3/4 rounded bg-muted" />
-                <div className="h-4 w-full rounded bg-muted" />
-                <div className="h-4 w-full rounded bg-muted" />
-              </div>
-            </SectionCard>
-          )}
+        {currentStep === 'event-fields' && (
+          <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
+            {fieldsQuery.isLoading && (
+              <SectionCard title="Step 2: Event Details">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-8 w-3/4 rounded bg-muted" />
+                  <div className="h-4 w-full rounded bg-muted" />
+                  <div className="h-4 w-full rounded bg-muted" />
+                </div>
+              </SectionCard>
+            )}
 
-          {!fieldsQuery.isLoading && !fieldsQuery.isError && fieldsQuery.data?.validFields && (
-            <PublicEventFieldsStep
-              fields={fieldsQuery.data.validFields}
-              onSubmit={handleFieldsSubmit}
-              onBack={handleBackToAttendeeInfo}
-              isSubmitting={submitMutation.isPending}
-              defaultValues={effectiveFieldResponses}
-              inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+            {!fieldsQuery.isLoading && !fieldsQuery.isError && fieldsQuery.data?.validFields && (
+              <PublicEventFieldsStep
+                fields={fieldsQuery.data.validFields}
+                onSubmit={handleFieldsSubmit}
+                onBack={handleBackToAttendeeInfo}
+                isSubmitting={submitMutation.isPending}
+                defaultValues={effectiveFieldResponses}
+                inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+                onInactivityTimeout={handleInactivityReset}
+              />
+            )}
+          </div>
+        )}
+
+        {currentStep === 'confirmation' && confirmationData && (
+          <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
+            <PublicRegistrationConfirmationStep
+              registrationId={confirmationData.registrationId}
+              email={confirmationData.email}
+              eventSlug={slug}
+              canUpdate={canUpdatePublicRegistration}
+              inactivityTimeoutMs={TIMING.publicRegistrationConfirmationTimeoutMs}
               onInactivityTimeout={handleInactivityReset}
             />
-          )}
-        </div>
-      )}
-
-      {currentStep === 'confirmation' && confirmationData && (
-        <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
-          <PublicRegistrationConfirmationStep
-            registrationId={confirmationData.registrationId}
-            email={confirmationData.email}
-            eventSlug={slug}
-            canUpdate={canUpdatePublicRegistration}
-            inactivityTimeoutMs={TIMING.publicRegistrationConfirmationTimeoutMs}
-            onInactivityTimeout={handleInactivityReset}
-          />
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

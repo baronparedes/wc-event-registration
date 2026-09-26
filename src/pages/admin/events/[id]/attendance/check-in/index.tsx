@@ -67,105 +67,97 @@ export function AdminAttendanceCheckInPage() {
 
   return (
     <AdminPageShell>
-      <AdminPageShell.Header
-        breadcrumbs={[
-          { label: 'Events', to: ROUTE_PATHS.adminEvents },
-          { label: state.event.title, to: toRoute('adminEventDetail', { id: eventId }) },
-          { label: 'Check-In' },
-        ]}
-        title="Event Check-In"
-      />
-
-      <EventHeaderCard
-        defaultExpanded={false}
-        isLoading={false}
-        isError={false}
-        isGateReady={false}
-        eventWindowText={null}
-        availability={{
-          status: 'available',
-          event: state.event,
-          registration_count: state.registeredCount,
-          reason: 'available',
-        }}
-      />
-
-      {!state.attendanceEnabled && (
-        <AlertBanner
-          variant="warning"
-          title="Attendance tracking is disabled"
-          description={
-            state.canWrite ? (
-              <>
-                Enable attendance tracking in{' '}
-                <ActionLink to={toRoute('adminEventAttendance', { id: eventId })}>
-                  Attendance Settings
-                </ActionLink>{' '}
-                to use check-in.
-              </>
-            ) : (
-              'Attendance settings must be enabled by an admin before kiosk check-in can be used.'
-            )
-          }
+      <div className="mx-auto w-full max-w-5xl space-y-6">
+        <EventHeaderCard
+          defaultExpanded={false}
+          isLoading={false}
+          isError={false}
+          isGateReady={false}
+          eventWindowText={null}
+          availability={{
+            status: 'available',
+            event: state.event,
+            registration_count: state.registeredCount,
+            reason: 'available',
+          }}
         />
-      )}
 
-      {state.isCheckInBlockedByWindow && (
-        <AlertBanner
-          variant="warning"
-          title="Check-in is read-only outside the event date-time window."
-          description={`Allowed window: ${
-            state.event
-              ? `${formatDateTime(state.event.starts_at)} to ${formatDateTime(state.event.ends_at)}`
-              : 'Unavailable'
-          }`}
-        />
-      )}
+        {!state.attendanceEnabled && (
+          <AlertBanner
+            variant="warning"
+            title="Attendance tracking is disabled"
+            description={
+              state.canWrite ? (
+                <>
+                  Enable attendance tracking in{' '}
+                  <ActionLink to={toRoute('adminEventAttendance', { id: eventId })}>
+                    Attendance Settings
+                  </ActionLink>{' '}
+                  to use check-in.
+                </>
+              ) : (
+                'Attendance settings must be enabled by an admin before kiosk check-in can be used.'
+              )
+            }
+          />
+        )}
 
-      {state.showCheckInWizard && state.isUsingCachedEventOrSettings && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">Offline — using last synced data</p>
-          <p className="mt-1 text-xs text-amber-700">
-            Event and attendance settings are from the last time this device was online. Check-ins
-            will queue and sync once connection returns.
-          </p>
-        </div>
-      )}
+        {state.isCheckInBlockedByWindow && (
+          <AlertBanner
+            variant="warning"
+            title="Check-in is read-only outside the event date-time window."
+            description={`Allowed window: ${
+              state.event
+                ? `${formatDateTime(state.event.starts_at)} to ${formatDateTime(state.event.ends_at)}`
+                : 'Unavailable'
+            }`}
+          />
+        )}
 
-      {state.showCheckInWizard && state.attendanceEnabled && (
-        <AttendeeCacheStatusBar
-          message={state.cacheStatusMessage}
-          isError={state.isCacheError}
-          isRefreshing={state.cacheFetching}
-          disabled={!state.isOnline}
-          onRefresh={state.handleRefreshCache}
-        />
-      )}
+        {state.showCheckInWizard && state.isUsingCachedEventOrSettings && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-medium text-amber-800">Offline — using last synced data</p>
+            <p className="mt-1 text-xs text-amber-700">
+              Event and attendance settings are from the last time this device was online. Check-ins
+              will queue and sync once connection returns.
+            </p>
+          </div>
+        )}
 
-      {state.showCheckInWizard && state.showQueueStatusBanner && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-medium text-blue-800">
-            {state.pendingCheckInCount > 0
-              ? `${state.pendingCheckInCount} check-in${state.pendingCheckInCount === 1 ? '' : 's'} queued for background sync.`
-              : 'A queued check-in needs attention.'}
-          </p>
-          {state.lastQueueError && (
-            <p className="mt-1 text-xs text-blue-700">Last sync issue: {state.lastQueueError}</p>
-          )}
-        </div>
-      )}
+        {state.showCheckInWizard && state.attendanceEnabled && (
+          <AttendeeCacheStatusBar
+            message={state.cacheStatusMessage}
+            isError={state.isCacheError}
+            isRefreshing={state.cacheFetching}
+            disabled={!state.isOnline}
+            onRefresh={state.handleRefreshCache}
+          />
+        )}
 
-      {state.showCheckInWizard && (
-        <StepIndicator
-          currentStep={state.activeStep}
-          totalSteps={3}
-          labels={['Lookup', 'Select', 'Confirm']}
-        />
-      )}
+        {state.showCheckInWizard && state.showQueueStatusBanner && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+            <p className="text-sm font-medium text-blue-800">
+              {state.pendingCheckInCount > 0
+                ? `${state.pendingCheckInCount} check-in${state.pendingCheckInCount === 1 ? '' : 's'} queued for background sync.`
+                : 'A queued check-in needs attention.'}
+            </p>
+            {state.lastQueueError && (
+              <p className="mt-1 text-xs text-blue-700">Last sync issue: {state.lastQueueError}</p>
+            )}
+          </div>
+        )}
 
-      <AdminPageShell.Content>
+        {state.showCheckInWizard && (
+          <StepIndicator
+            currentStep={state.activeStep}
+            totalSteps={3}
+            labels={['Lookup', 'Select', 'Confirm']}
+            categoryLabel="Check-in steps"
+          />
+        )}
+
         {state.showCheckInWizard && state.activeStep === 1 && (
-          <div ref={searchStepRef} className="space-y-2 scroll-mt-24">
+          <div ref={searchStepRef} className="space-y-4 scroll-mt-24">
             <AttendeeSearchStep
               searchToken={state.searchToken}
               submittedSearchToken={state.submittedSearchToken}
@@ -189,7 +181,7 @@ export function AdminAttendanceCheckInPage() {
         )}
 
         {state.showCheckInWizard && state.activeStep === 2 && (
-          <div ref={selectStepRef} className="space-y-2 scroll-mt-24">
+          <div ref={selectStepRef} className="space-y-4 scroll-mt-24">
             <AttendeeSelectStep
               results={state.results}
               selectedResultId={state.selectedResultId}
@@ -221,7 +213,7 @@ export function AdminAttendanceCheckInPage() {
         )}
 
         {state.showCheckInWizard && state.activeStep === 3 && (
-          <div ref={confirmStepRef} className="space-y-2 scroll-mt-24">
+          <div ref={confirmStepRef} className="space-y-4 scroll-mt-24">
             <AttendeeConfirmStep
               attendee={state.confirmedAttendee}
               checkInResult={state.checkInResult}
@@ -246,6 +238,7 @@ export function AdminAttendanceCheckInPage() {
               {state.results.length > 1 && (
                 <Button
                   type="button"
+                  size="lg"
                   variant="primaryOutline"
                   onClick={state.handleBackToMatches}
                   className="w-full"
@@ -260,6 +253,7 @@ export function AdminAttendanceCheckInPage() {
               ) && (
                 <Button
                   type="button"
+                  size="lg"
                   variant="accent"
                   onClick={state.handleBackToLookup}
                   className="w-full"
@@ -270,7 +264,7 @@ export function AdminAttendanceCheckInPage() {
             </div>
           </div>
         )}
-      </AdminPageShell.Content>
+      </div>
     </AdminPageShell>
   );
 }

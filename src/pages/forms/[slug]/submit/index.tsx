@@ -1,8 +1,11 @@
+import { useRef } from 'react';
+
 import { AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button, EmptyState, SectionCard, StepIndicator } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
+import { useWizardStepScroll } from '@/hooks/utils';
 import { MemberLookupStepCard, ProfileStepCard } from '@/pages/events/[slug]/register/components';
 
 import {
@@ -15,6 +18,9 @@ import { useFormSubmissionPageState } from './hooks/useFormSubmissionPageState';
 
 export function FormSubmissionPage() {
   const navigate = useNavigate();
+  const stepOneRef = useRef<HTMLDivElement | null>(null);
+  const stepTwoRef = useRef<HTMLDivElement | null>(null);
+  const stepThreeRef = useRef<HTMLDivElement | null>(null);
 
   const {
     formQuery,
@@ -54,9 +60,11 @@ export function FormSubmissionPage() {
     goHome,
   } = useFormSubmissionPageState();
 
+  useWizardStepScroll(activeWizardStep, [stepOneRef, stepTwoRef, stepThreeRef]);
+
   if (formQuery.isLoading) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <SectionCard title="Loading Form...">
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-3/4 rounded bg-muted" />
@@ -70,7 +78,7 @@ export function FormSubmissionPage() {
 
   if (formQuery.isError || !form || !isPublished) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <EmptyState
           icon={<AlertCircle className="h-6 w-6" />}
           title="Form Unavailable"
@@ -92,7 +100,7 @@ export function FormSubmissionPage() {
 
   if (isSubmissionConfirmed && submissionResult) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <FormHeaderCard
           form={form}
           isLoading={formQuery.isLoading}
@@ -110,7 +118,7 @@ export function FormSubmissionPage() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="mx-auto max-w-5xl space-y-6">
       <FormHeaderCard
         form={form}
         isLoading={formQuery.isLoading}
@@ -124,12 +132,14 @@ export function FormSubmissionPage() {
             currentStep={activeWizardStep}
             totalSteps={3}
             labels={['Identify', 'Confirm', 'Questions']}
+            categoryLabel="Form steps"
           />
         ) : (
           <StepIndicator
             currentStep={activeWizardStep}
             totalSteps={2}
             labels={['Your Info', 'Questions']}
+            categoryLabel="Form steps"
           />
         )}
 
@@ -137,7 +147,7 @@ export function FormSubmissionPage() {
         {respondentType === 'member' && (
           <>
             {activeWizardStep === 1 && (
-              <div>
+              <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
                 {isVerifyingSignedInMember ? (
                   <SectionCard title="Verifying Profile">
                     <div className="flex items-center space-x-3 py-4">
@@ -166,7 +176,7 @@ export function FormSubmissionPage() {
             )}
 
             {activeWizardStep === 2 && (
-              <div className="space-y-4">
+              <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
                 <ProfileStepCard
                   matchedMember={memberLookup.matchedMember}
                   isUpdateMode={memberLookup.isUpdateMode}
@@ -192,7 +202,7 @@ export function FormSubmissionPage() {
             )}
 
             {activeWizardStep === 3 && (
-              <div className="space-y-4">
+              <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
                 {fieldsLoading ? (
                   <SectionCard title="Loading Questions...">
                     <div className="animate-pulse space-y-3">
@@ -226,16 +236,18 @@ export function FormSubmissionPage() {
         {respondentType === 'guest' && (
           <>
             {activeWizardStep === 1 && (
-              <GuestInfoStepCard
-                onSubmit={handleGuestInfoSubmit}
-                defaultValues={guestInfo ?? undefined}
-                allowSwitchToMember={audience === 'members_and_public'}
-                onSwitchToMember={switchToMemberMode}
-              />
+              <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
+                <GuestInfoStepCard
+                  onSubmit={handleGuestInfoSubmit}
+                  defaultValues={guestInfo ?? undefined}
+                  allowSwitchToMember={audience === 'members_and_public'}
+                  onSwitchToMember={switchToMemberMode}
+                />
+              </div>
             )}
 
             {activeWizardStep === 2 && (
-              <div className="space-y-4">
+              <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
                 {fieldsLoading ? (
                   <SectionCard title="Loading Questions...">
                     <div className="animate-pulse space-y-3">

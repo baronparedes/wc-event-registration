@@ -7,13 +7,20 @@ export interface StepIndicatorProps {
   totalSteps: number;
   /** Optional labels for each step */
   labels?: string[];
+  /** Optional category label shown at the top of the indicator (defaults to 'Registration steps') */
+  categoryLabel?: string;
 }
 
 /**
  * Visual step indicator with numbered badges, connecting lines, and color coding.
  * Reused by both member and public registration wizards.
  */
-export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicatorProps) {
+export function StepIndicator({
+  currentStep,
+  totalSteps,
+  labels,
+  categoryLabel,
+}: StepIndicatorProps) {
   const steps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   const getBadgeClassName = (stepNumber: number): string => {
@@ -43,7 +50,7 @@ export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicator
   return (
     <div className="rounded-xl border border-border bg-surface px-4 py-3 shadow-xs">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        {labels ? 'Registration steps' : `Step ${currentStep} of ${totalSteps}`}
+        {categoryLabel ?? (labels ? 'Registration steps' : `Step ${currentStep} of ${totalSteps}`)}
       </p>
       <div className="mt-2 flex items-center gap-2 text-sm">
         {elements.map((element, i) => {

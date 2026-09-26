@@ -59,7 +59,7 @@ export function FormHeaderCard({
           </span>
         )
       }
-      wrapperClassName="rounded-2xl border border-border bg-surface p-4 shadow-sm"
+      wrapperClassName="rounded-2xl border border-border bg-surface p-3 shadow-sm"
     >
       {isLoading && (
         <div className="mt-4 space-y-3" aria-hidden="true">

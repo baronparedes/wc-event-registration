@@ -9,12 +9,14 @@ const {
   mockNavigate,
   mockUseParams,
   mockUseAdminFormQuery,
+  mockUseFormFieldsQuery,
   mockSaveFormMutateAsync,
   mockUseAdminAuthQuery,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockUseParams: vi.fn(),
   mockUseAdminFormQuery: vi.fn(),
+  mockUseFormFieldsQuery: vi.fn(),
   mockSaveFormMutateAsync: vi.fn(),
   mockUseAdminAuthQuery: vi.fn(),
 }));
@@ -31,6 +33,8 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('@/hooks/domain/forms', () => ({
   useAdminFormQuery: (id?: string) => mockUseAdminFormQuery(id),
+  useFormFieldsQuery: (id?: string, includeInactive?: boolean) =>
+    mockUseFormFieldsQuery(id, includeInactive),
   useSaveFormMutation: () => ({
     mutateAsync: mockSaveFormMutateAsync,
     isPending: false,
@@ -55,6 +59,18 @@ describe('FormEditorPage', () => {
     mockUseParams.mockReturnValue({});
     mockUseAdminFormQuery.mockReturnValue({
       data: null,
+      isLoading: false,
+    });
+    mockUseFormFieldsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'field-1',
+          field_key: 'custom_1',
+          label: 'Custom Field',
+          field_type: 'text',
+          is_active: true,
+        },
+      ],
       isLoading: false,
     });
     mockUseAdminAuthQuery.mockReturnValue({
@@ -165,6 +181,46 @@ describe('FormEditorPage', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
   });
 
+  it('renders publish requirements checker for draft forms and handles requirements validation', async () => {
+    mockUseParams.mockReturnValue({ id: 'form-123' });
+    mockUseAdminFormQuery.mockReturnValue({
+      data: {
+        id: 'form-123',
+        title: 'Draft Form',
+        slug: 'draft-form',
+        status: 'draft',
+        duplicate_policy: 'block',
+        audience: 'members',
+        metadata: {},
+      },
+      isLoading: false,
+    });
+    mockUseFormFieldsQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.getByText(/Publish Requirements \(2\/3\)/i)).toBeInTheDocument();
+    expect(screen.queryByText('✓ Form is ready to publish')).not.toBeInTheDocument();
+
+    // Click Publish Form button to open modal
+    const publishButton = screen.getByRole('button', { name: 'Publish Form' });
+    fireEvent.click(publishButton);
+
+    const modalHeading = await screen.findByRole('heading', {
+      level: 2,
+      name: 'Publish Form',
+    });
+    expect(modalHeading).toBeInTheDocument();
+    expect(screen.getByText(/Form is missing required fields/i)).toBeInTheDocument();
+
+    const allPublishButtons = screen.getAllByRole('button', { name: 'Publish Form' });
+    const confirmButton = allPublishButtons[allPublishButtons.length - 1];
+    expect(confirmButton).toBeDisabled();
+  });
+
   it('allows moving form to draft, publishing, and archiving', async () => {
     mockUseParams.mockReturnValue({ id: 'form-123' });
     mockUseAdminFormQuery.mockReturnValue({
@@ -184,9 +240,20 @@ describe('FormEditorPage', () => {
 
     renderPage();
 
+    expect(screen.getByText(/Publish Requirements \(3\/3\)/i)).toBeInTheDocument();
+    expect(screen.getByText('✓ Form is ready to publish')).toBeInTheDocument();
+
     // 1. Publish the form
     const publishButton = screen.getByRole('button', { name: 'Publish Form' });
     fireEvent.click(publishButton);
+
+    const confirmModal = await screen.findByRole('heading', {
+      level: 2,
+      name: 'Publish Form',
+    });
+    expect(confirmModal).toBeInTheDocument();
+    const allPublishButtons = screen.getAllByRole('button', { name: 'Publish Form' });
+    fireEvent.click(allPublishButtons[allPublishButtons.length - 1]);
 
     await waitFor(() => {
       expect(mockSaveFormMutateAsync).toHaveBeenCalledWith(
@@ -367,6 +434,14 @@ describe('FormEditorPage', () => {
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'Publish Form' }));
+
+    const confirmModal = await screen.findByRole('heading', {
+      level: 2,
+      name: 'Publish Form',
+    });
+    expect(confirmModal).toBeInTheDocument();
+    const allPublishButtons = screen.getAllByRole('button', { name: 'Publish Form' });
+    fireEvent.click(allPublishButtons[allPublishButtons.length - 1]);
 
     await waitFor(() => {
       expect(mockSaveFormMutateAsync).toHaveBeenCalled();
