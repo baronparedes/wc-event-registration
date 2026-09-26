@@ -1,7 +1,7 @@
 import { RotateCcw } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui/Button';
+import { Button, SearchInputField } from '@/components/ui';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
@@ -13,6 +13,7 @@ export interface AttendanceFiltersProps {
   timeSlot: string;
   isWalkIn: string;
   isLateTardy: string;
+  searchTerm: string;
   selectedRoles: string[];
   selectedRoleLabel: string;
   isRoleDropdownOpen: boolean;
@@ -20,6 +21,8 @@ export interface AttendanceFiltersProps {
   hasActiveFilters: boolean;
   fallbackDate: string;
   onUpdateSearchParam: (key: string, value: string) => void;
+  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onClearSearch: () => void;
   onClearFilters: () => void;
   onToggleRoleDropdown: () => void;
   onCloseRoleDropdown: () => void;
@@ -33,6 +36,7 @@ export function AttendanceFilters({
   timeSlot,
   isWalkIn,
   isLateTardy,
+  searchTerm,
   selectedRoles,
   selectedRoleLabel,
   isRoleDropdownOpen,
@@ -40,6 +44,8 @@ export function AttendanceFilters({
   hasActiveFilters,
   fallbackDate,
   onUpdateSearchParam,
+  onSearchChange,
+  onClearSearch,
   onClearFilters,
   onToggleRoleDropdown,
   onCloseRoleDropdown,
@@ -48,6 +54,14 @@ export function AttendanceFilters({
 }: AttendanceFiltersProps) {
   return (
     <AdminPageShell.Filters>
+      <div className="mb-3">
+        <SearchInputField
+          value={searchTerm}
+          onChange={onSearchChange}
+          onClear={onClearSearch}
+          placeholder="Search by name or nickname"
+        />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] sm:items-end">
         <FormInputField
           type="date"
