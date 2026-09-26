@@ -27,6 +27,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { useVolunteerAttendanceLogQuery } from '@/hooks/domain/services';
+import { calculateAttendanceScore } from '@/lib/domain/services/service-commitment-scoring';
 import { formatTimeOnly } from '@/lib/infrastructure';
 
 import type { DashboardTimeframe } from './CommitmentDashboardFilters';
@@ -202,14 +203,29 @@ export function VolunteerAttendanceModal({
       ).length;
       const absences = absentSlots.length;
       const excused = excusedSlots.length;
-      const wi9or3 = dateLogs.filter(
-        (l) =>
-          l.status === 'present' &&
-          l.is_walk_in &&
-          (l.time_slot === '9AM' || l.time_slot === '3PM'),
-      ).length;
 
-      const score = attendedCommitted * 1 - absences * 1 - excused * 0.5 + wi9or3 * 0.5;
+      const isFifthSunday = parseISO(serviceDate).getDate() >= 29;
+
+      const wi5th = isFifthSunday
+        ? dateLogs.filter((l) => l.status === 'present' && l.is_walk_in).length
+        : 0;
+
+      const wi9or3 = !isFifthSunday
+        ? dateLogs.filter(
+            (l) =>
+              l.status === 'present' &&
+              l.is_walk_in &&
+              (l.time_slot === '9AM' || l.time_slot === '3PM'),
+          ).length
+        : 0;
+
+      const score = calculateAttendanceScore({
+        attended: attendedCommitted,
+        absences,
+        excused,
+        wi9or3,
+        wi5th,
+      });
 
       return {
         serviceDate,
@@ -304,7 +320,7 @@ export function VolunteerAttendanceModal({
           />
           <CommitmentSummaryCard
             title="Walk-Ins"
-            value={volunteer.wi_9am_3pm + volunteer.wi_12nn}
+            value={volunteer.wi_9am_3pm + volunteer.wi_12nn + (volunteer.wi_5th_sunday ?? 0)}
             icon={<Handshake className="h-4 w-4" />}
             variant="secondary"
           />

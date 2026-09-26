@@ -31,6 +31,7 @@ describe('VolunteerListTable', () => {
       excused: 0,
       wi_9am_3pm: 1,
       wi_12nn: 0,
+      wi_5th_sunday: 0,
       attendance_score: 6.5,
     },
     {
@@ -49,6 +50,7 @@ describe('VolunteerListTable', () => {
       excused: 0,
       wi_9am_3pm: 0,
       wi_12nn: 0,
+      wi_5th_sunday: 2,
       attendance_score: 8,
     },
     {
@@ -67,6 +69,7 @@ describe('VolunteerListTable', () => {
       excused: 1,
       wi_9am_3pm: 0,
       wi_12nn: 0,
+      wi_5th_sunday: 0,
       attendance_score: -1.5,
     },
   ];
@@ -199,6 +202,12 @@ describe('VolunteerListTable', () => {
     rows = screen.getAllByRole('row');
     expect(rows[1]).toBeDefined();
 
+    // WI 5th Sun (Bob: 2 -> Alice: 0, Charlie: 0)
+    const wi5thHeaderBtn = screen.getByRole('button', { name: /^wi 5th sun$/i });
+    fireEvent.click(wi5thHeaderBtn);
+    rows = screen.getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('Bob Jones');
+
     // Attendance score (switched to attendance_score -> defaults to desc: Bob: 8 -> Alice: 6.5 -> Charlie: -1.5)
     const attendanceHeaderBtn = screen.getByRole('button', { name: /^attendance$/i });
     fireEvent.click(attendanceHeaderBtn);
@@ -324,6 +333,7 @@ describe('VolunteerListTable', () => {
         excused: 0,
         wi_9am_3pm: 0,
         wi_12nn: 0,
+        wi_5th_sunday: 0,
         attendance_score: 0,
       },
     ];

@@ -41,6 +41,7 @@ export function buildCommitmentDashboardCsvExport(
       'Excused',
       'WI 9AM/3PM',
       'WI 12NN',
+      'WI 5th Sun',
     ],
     ...sortedStats.map((stat) => [
       stat.full_name || '',
@@ -57,6 +58,7 @@ export function buildCommitmentDashboardCsvExport(
       String(stat.excused ?? 0),
       String(stat.wi_9am_3pm ?? 0),
       String(stat.wi_12nn ?? 0),
+      String(stat.wi_5th_sunday ?? 0),
     ]),
   ];
 

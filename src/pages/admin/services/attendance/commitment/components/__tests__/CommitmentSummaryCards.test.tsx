@@ -23,6 +23,7 @@ describe('CommitmentSummaryCards', () => {
       excused: 1,
       wi_9am_3pm: 2,
       wi_12nn: 1,
+      wi_5th_sunday: 0,
       attendance_score: 6.5,
     },
     {
@@ -41,6 +42,7 @@ describe('CommitmentSummaryCards', () => {
       excused: 0,
       wi_9am_3pm: 0,
       wi_12nn: 0,
+      wi_5th_sunday: 0,
       attendance_score: 0,
     },
   ];

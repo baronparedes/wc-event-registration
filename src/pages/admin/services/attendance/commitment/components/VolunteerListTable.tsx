@@ -19,7 +19,10 @@ import {
 import { SearchInputField } from '@/components/ui/SearchInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
+import { useIsMobileViewport } from '@/hooks/utils';
 import { SERVICE_ROLES } from '@/pages/admin/services/constants';
+
+import { MobileVolunteerCard } from './MobileVolunteerCard';
 
 export type VolunteerSortField =
   | 'full_name'
@@ -32,6 +35,7 @@ export type VolunteerSortField =
   | 'excused'
   | 'wi_9am_3pm'
   | 'wi_12nn'
+  | 'wi_5th_sunday'
   | 'attendance_score';
 
 export type SortOrder = 'asc' | 'desc';
@@ -73,6 +77,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
     const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
     const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
     const roleDropdownRef = useRef<HTMLDivElement | null>(null);
+    const isMobileViewport = useIsMobileViewport();
 
     useEffect(() => {
       if (!isRoleDropdownOpen) return;
@@ -157,6 +162,9 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
             break;
           case 'wi_12nn':
             comparison = a.wi_12nn - b.wi_12nn;
+            break;
+          case 'wi_5th_sunday':
+            comparison = a.wi_5th_sunday - b.wi_5th_sunday;
             break;
           case 'attendance_score':
           default:
@@ -248,219 +256,253 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           </div>
         </div>
 
-        <ListTable>
-          <ListTableHead>
-            <ListTableHeaderRow>
-              <ListTableHeaderCell className="sticky left-0 z-20 bg-white shadow-[1px_0_0_0_var(--color-border)]">
-                <button
-                  type="button"
-                  onClick={() => handleSort('full_name')}
-                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Volunteer</span>
-                  {renderSortIcon('full_name')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell>
-                <button
-                  type="button"
-                  onClick={() => handleSort('role')}
-                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Role</span>
-                  {renderSortIcon('role')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell>
-                <button
-                  type="button"
-                  onClick={() => handleSort('category')}
-                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Category</span>
-                  {renderSortIcon('category')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell>
-                <button
-                  type="button"
-                  onClick={() => handleSort('start_date')}
-                  className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Start Date</span>
-                  {renderSortIcon('start_date')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('attendance_score')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Attendance</span>
-                  {renderSortIcon('attendance_score')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('committed')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Committed</span>
-                  {renderSortIcon('committed')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('attended')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Attended</span>
-                  {renderSortIcon('attended')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('absences')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Absences</span>
-                  {renderSortIcon('absences')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('excused')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>Excused</span>
-                  {renderSortIcon('excused')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('wi_9am_3pm')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>WI 9AM/3PM</span>
-                  {renderSortIcon('wi_9am_3pm')}
-                </button>
-              </ListTableHeaderCell>
-              <ListTableHeaderCell className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleSort('wi_12nn')}
-                  className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                >
-                  <span>WI 12NN</span>
-                  {renderSortIcon('wi_12nn')}
-                </button>
-              </ListTableHeaderCell>
-            </ListTableHeaderRow>
-          </ListTableHead>
-          <ListTableBody>
+        {isMobileViewport ? (
+          <div className="space-y-3 p-4 bg-surface-hover">
             {sortedStats.map((stat) => (
-              <ListTableRow
-                key={stat.user_id}
-                className={`group ${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
-                onClick={() => onRowClick?.(stat)}
-              >
-                <ListTableCell
-                  className={`sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors ${onRowClick ? 'group-hover:bg-slate-200' : ''}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar
-                      name={stat.full_name}
-                      avatarObjectKey={stat.avatar_object_key}
-                      size="sm"
-                      className="h-8 w-8 text-xs shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <div className="font-heading font-semibold text-text truncate">
-                        {stat.full_name}
-                      </div>
-                      <div className="text-xs text-muted truncate">{stat.nickname || '-'}</div>
-                    </div>
-                  </div>
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap">
-                  {stat.role ? (
-                    <Badge variant="outline" className="text-xs">
-                      {stat.role}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-text">
-                  {stat.category || '-'}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-muted">
-                  {stat.start_date || '-'}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center">
-                  <Badge
-                    variant={stat.attendance_score < 0 ? 'destructive' : 'default'}
-                    className="font-bold"
-                  >
-                    {stat.attendance_score}
-                  </Badge>
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center text-text font-medium">
-                  {stat.committed}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center">
-                  <Badge variant="secondary">{stat.attended}</Badge>
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center">
-                  {stat.absences > 0 ? (
-                    <Badge variant="destructive">{stat.absences}</Badge>
-                  ) : (
-                    <span className="text-muted">0</span>
-                  )}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center">
-                  {stat.excused > 0 ? (
-                    <Badge variant="accent">{stat.excused}</Badge>
-                  ) : (
-                    <span className="text-muted">0</span>
-                  )}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center">
-                  {stat.wi_9am_3pm > 0 ? (
-                    <Badge variant="outline">+{stat.wi_9am_3pm}</Badge>
-                  ) : (
-                    <span className="text-muted">0</span>
-                  )}
-                </ListTableCell>
-                <ListTableCell className="whitespace-nowrap text-center">
-                  {stat.wi_12nn > 0 ? (
-                    <Badge variant="outline">+{stat.wi_12nn}</Badge>
-                  ) : (
-                    <span className="text-muted">0</span>
-                  )}
-                </ListTableCell>
-              </ListTableRow>
+              <MobileVolunteerCard key={stat.user_id} stat={stat} onClick={onRowClick} />
             ))}
-
             {sortedStats.length === 0 && !isLoading && (
-              <ListTableRow hover="none">
-                <ListTableCell colSpan={11} className="py-12">
-                  <EmptyState
-                    icon={<Users className="h-8 w-8 text-muted" />}
-                    title="No volunteers found"
-                    description="No volunteers matched your search criteria or filters."
-                  />
-                </ListTableCell>
-              </ListTableRow>
+              <div className="py-12 bg-surface border border-border rounded-xl">
+                <EmptyState
+                  icon={<Users className="h-8 w-8 text-muted" />}
+                  title="No volunteers found"
+                  description="No volunteers matched your search criteria or filters."
+                />
+              </div>
             )}
-          </ListTableBody>
-        </ListTable>
+          </div>
+        ) : (
+          <ListTable>
+            <ListTableHead>
+              <ListTableHeaderRow>
+                <ListTableHeaderCell className="sticky left-0 z-20 bg-white shadow-[1px_0_0_0_var(--color-border)]">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('full_name')}
+                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Volunteer</span>
+                    {renderSortIcon('full_name')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('role')}
+                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Role</span>
+                    {renderSortIcon('role')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('category')}
+                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Category</span>
+                    {renderSortIcon('category')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('start_date')}
+                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Start Date</span>
+                    {renderSortIcon('start_date')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('attendance_score')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Attendance</span>
+                    {renderSortIcon('attendance_score')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('committed')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Committed</span>
+                    {renderSortIcon('committed')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('attended')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Attended</span>
+                    {renderSortIcon('attended')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('absences')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Absences</span>
+                    {renderSortIcon('absences')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('excused')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>Excused</span>
+                    {renderSortIcon('excused')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('wi_9am_3pm')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>WI 9AM/3PM</span>
+                    {renderSortIcon('wi_9am_3pm')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('wi_12nn')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>WI 12NN</span>
+                    {renderSortIcon('wi_12nn')}
+                  </button>
+                </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('wi_5th_sunday')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>WI 5th Sun</span>
+                    {renderSortIcon('wi_5th_sunday')}
+                  </button>
+                </ListTableHeaderCell>
+              </ListTableHeaderRow>
+            </ListTableHead>
+            <ListTableBody>
+              {sortedStats.map((stat) => (
+                <ListTableRow
+                  key={stat.user_id}
+                  className={`group ${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
+                  onClick={() => onRowClick?.(stat)}
+                >
+                  <ListTableCell
+                    className={`sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors ${onRowClick ? 'group-hover:bg-slate-200' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={stat.full_name}
+                        avatarObjectKey={stat.avatar_object_key}
+                        size="sm"
+                        className="h-8 w-8 text-xs shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="font-heading font-semibold text-text truncate">
+                          {stat.full_name}
+                        </div>
+                        <div className="text-xs text-muted truncate">{stat.nickname || '-'}</div>
+                      </div>
+                    </div>
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap">
+                    {stat.role ? (
+                      <Badge variant="outline" className="text-xs">
+                        {stat.role}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-text">
+                    {stat.category || '-'}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-muted">
+                    {stat.start_date || '-'}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    <Badge
+                      variant={stat.attendance_score < 0 ? 'destructive' : 'default'}
+                      className="font-bold"
+                    >
+                      {stat.attendance_score}
+                    </Badge>
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center text-text font-medium">
+                    {stat.committed}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    <Badge variant="secondary">{stat.attended}</Badge>
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    {stat.absences > 0 ? (
+                      <Badge variant="destructive">{stat.absences}</Badge>
+                    ) : (
+                      <span className="text-muted">0</span>
+                    )}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    {stat.excused > 0 ? (
+                      <Badge variant="accent">{stat.excused}</Badge>
+                    ) : (
+                      <span className="text-muted">0</span>
+                    )}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    {stat.wi_9am_3pm > 0 ? (
+                      <Badge variant="outline">+{stat.wi_9am_3pm}</Badge>
+                    ) : (
+                      <span className="text-muted">0</span>
+                    )}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    {stat.wi_12nn > 0 ? (
+                      <Badge variant="outline">+{stat.wi_12nn}</Badge>
+                    ) : (
+                      <span className="text-muted">0</span>
+                    )}
+                  </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    {stat.wi_5th_sunday > 0 ? (
+                      <Badge variant="outline">+{stat.wi_5th_sunday}</Badge>
+                    ) : (
+                      <span className="text-muted">0</span>
+                    )}
+                  </ListTableCell>
+                </ListTableRow>
+              ))}
+
+              {sortedStats.length === 0 && !isLoading && (
+                <ListTableRow hover="none">
+                  <ListTableCell colSpan={12} className="py-12">
+                    <EmptyState
+                      icon={<Users className="h-8 w-8 text-muted" />}
+                      title="No volunteers found"
+                      description="No volunteers matched your search criteria or filters."
+                    />
+                  </ListTableCell>
+                </ListTableRow>
+              )}
+            </ListTableBody>
+          </ListTable>
+        )}
 
         <div ref={ref} className="h-4 w-full" />
         {isLoading && (

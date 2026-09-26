@@ -66,7 +66,7 @@ export function CommitmentSummaryCards({ stats, totalVolunteers }: CommitmentSum
         acc.attended += stat.attended;
         acc.absences += stat.absences;
         acc.excused += stat.excused;
-        acc.walkIns += stat.wi_9am_3pm + stat.wi_12nn;
+        acc.walkIns += stat.wi_9am_3pm + stat.wi_12nn + (stat.wi_5th_sunday ?? 0);
         if (stat.committed > 0 || stat.attended > 0) {
           acc.activeVolunteers += 1;
         }

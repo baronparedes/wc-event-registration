@@ -67,6 +67,7 @@ describe('TopVolunteersChart', () => {
       excused: 0,
       wi_9am_3pm: 0,
       wi_12nn: 0,
+      wi_5th_sunday: 0,
       attendance_score: 6,
     },
     {
@@ -85,6 +86,7 @@ describe('TopVolunteersChart', () => {
       excused: 0,
       wi_9am_3pm: 0,
       wi_12nn: 0,
+      wi_5th_sunday: 0,
       attendance_score: 10,
     },
   ];

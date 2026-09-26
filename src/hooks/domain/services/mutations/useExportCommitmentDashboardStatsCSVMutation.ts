@@ -43,6 +43,7 @@ function mapRawItemToCommitmentDashboardStat(
     excused: Number(item.excused),
     wi_9am_3pm: Number(item.wi_9am_3pm),
     wi_12nn: Number(item.wi_12nn),
+    wi_5th_sunday: Number(item.wi_5th_sunday ?? 0),
     attendance_score: Number(item.attendance_score),
   };
 }
