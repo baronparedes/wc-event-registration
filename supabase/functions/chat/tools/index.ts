@@ -1,5 +1,6 @@
 import { createAnalyzeEventAttendeesTool } from './analyzeEventAttendees.ts';
 import { createCreateEventTool } from './createEvent.ts';
+import { createCreateFormTool } from './createForm.ts';
 import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
 import { createGetCommitmentSummaryStatsTool } from './getCommitmentSummaryStats.ts';
 import { createGetEventsTool } from './getEvents.ts';
@@ -18,6 +19,7 @@ export * from './types.ts';
 export * from './getAdminRoutes.ts';
 export * from './analyzeEventAttendees.ts';
 export * from './createEvent.ts';
+export * from './createForm.ts';
 export * from './getEvents.ts';
 export * from './getExcusedMembers.ts';
 export * from './getServiceDashboardStats.ts';
@@ -36,6 +38,7 @@ export function createChatTools(context: ToolContext) {
     getAdminRoutes: createGetAdminRoutesTool(context),
     getEvents: createGetEventsTool(context),
     createEvent: createCreateEventTool(context),
+    createForm: createCreateFormTool(context),
     getExcusedMembers: createGetExcusedMembersTool(context),
     getServiceDashboardStats: createGetServiceDashboardStatsTool(context),
     getUpcomingMilestones: createGetUpcomingMilestonesTool(context),

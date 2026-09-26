@@ -250,13 +250,16 @@ sequenceDiagram
 
 ### Key Principles of AI Event Creation:
 
-1. **Conversational Confirmation (No Assumptions)**:
-   - If key scheduling or access parameters are omitted or ambiguous, the AI assistant proactively asks clarifying questions before calling the `createEvent` tool.
-2. **Strict Draft Default**:
+1. **Strict Two-Phase Confirmation (No Assumptions)**:
+   - **Phase 1**: When an admin mentions an event request, the AI synthesizes the proposed configuration (title, dates in PST UTC+8, audience, and custom dynamic fields), asks any necessary clarifying questions, and explicitly asks for confirmation: _"Would you like me to proceed with creating this event as a draft?"_. **The AI does NOT execute the tool in Phase 1.**
+   - **Phase 2**: Only when the administrator gives explicit confirmation (e.g., "yes", "proceed", "create it") does the AI invoke `createEvent`.
+2. **Duplicate Pre-Creation Awareness**:
+   - `createEvent` checks if an active event with the exact title already exists (`status != 'archived'`). If found, it alerts the admin and returns the existing event's admin URL instead of creating a duplicate row (unless `force: true` is passed).
+3. **Strict Draft Default**:
    - Every event created via AI defaults to `status: 'draft'`, allowing the administrator to inspect, refine, and safely publish through the UI.
-3. **Dynamic Fields Specification**:
-   - Custom registration fields (including labels, types, options, required flags, and applicability) can be declared and inserted atomically alongside the event.
-4. **Mandatory Edit Link**:
+4. **Dynamic Fields Specification**:
+   - Custom registration fields (including labels, types, options, required flags, and applicability) are declared and inserted atomically alongside the event.
+5. **Mandatory Edit Link**:
    - The assistant always provides a direct Markdown link (`/admin/events/:id`) upon creation so administrators can seamlessly proceed to detailed configuration.
 
 ---

@@ -161,11 +161,17 @@ export function createCreateEventTool({ client, requestId, userId }: ToolContext
       .array(eventFieldSchema)
       .optional()
       .describe('Optional dynamic registration questions/fields to create for this event.'),
+    force: z
+      .boolean()
+      .default(false)
+      .describe(
+        'Force creation even if an active event with the same title already exists in the database.',
+      ),
   });
 
   return tool({
     description:
-      'Create a new Welcome Center event in the database as a draft, with optional dynamic registration questions/fields. Returns the newly created event ID and administrative link.',
+      'Create a new Welcome Center event in the database as a draft, with optional dynamic registration questions/fields. IMPORTANT: You MUST first present the proposed event details to the administrator in chat and receive their explicit confirmation before calling this tool. Returns the newly created event ID and administrative link.',
     parameters: schema,
     inputSchema: schema,
     execute: async ({
@@ -183,6 +189,7 @@ export function createCreateEventTool({ client, requestId, userId }: ToolContext
       allowNameLookup = false,
       sendEmailAfterCompletion = false,
       fields,
+      force = false,
     }) => {
       console.log('[chat:tool:createEvent] Executing', {
         title,
@@ -191,9 +198,42 @@ export function createCreateEventTool({ client, requestId, userId }: ToolContext
         endsAt,
         publicRegistrationAccess,
         fieldsCount: fields?.length ?? 0,
+        force,
         requestId,
         userId,
       });
+
+      // 1. Check if an active event with matching title already exists to prevent duplicate creations
+      if (!force) {
+        const { data: existingEvent } = await client
+          .from('events')
+          .select('id, title, slug, status, created_at')
+          .ilike('title', title.trim())
+          .neq('status', 'archived')
+          .maybeSingle();
+
+        if (existingEvent) {
+          console.warn('[chat:tool:createEvent] Event with matching title already exists:', {
+            existingId: existingEvent.id,
+            title: existingEvent.title,
+            status: existingEvent.status,
+            requestId,
+          });
+
+          return {
+            success: true,
+            already_exists: true,
+            event_id: existingEvent.id,
+            title: existingEvent.title,
+            slug: existingEvent.slug,
+            status: existingEvent.status,
+            admin_url: `/admin/events/${existingEvent.id}`,
+            public_url: `/events/${existingEvent.slug}/register`,
+            fields_created_count: 0,
+            message: `An event titled "${existingEvent.title}" already exists in the database (${existingEvent.status}). Admin edit link: /admin/events/${existingEvent.id}`,
+          };
+        }
+      }
 
       let createdByAdminId: string | null = null;
       if (userId) {
@@ -298,6 +338,7 @@ export function createCreateEventTool({ client, requestId, userId }: ToolContext
 
       return {
         success: true,
+        already_exists: false,
         event_id: eventId,
         title: title.trim(),
         slug: finalSlug,
