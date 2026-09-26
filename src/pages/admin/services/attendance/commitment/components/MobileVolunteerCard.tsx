@@ -68,12 +68,12 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
 
           <MobileCardDivider />
 
-          <MobileCardContent>
+          <MobileCardContent className="text-center">
             <MobileCardContentItem label="Start Date" value={stat.start_date || '-'} />
             <MobileCardContentItem label="Committed" value={stat.committed} />
             <MobileCardContentItem
               label="Attended"
-              value={<Badge variant="secondary">{stat.attended}</Badge>}
+              value={<Badge variant="secondary">+{stat.attended}</Badge>}
             />
             <MobileCardContentItem
               label="Absences"
@@ -89,7 +89,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
               label="Excused"
               value={
                 stat.excused > 0 ? (
-                  <Badge variant="accent">{stat.excused}</Badge>
+                  <Badge variant="accent">-{stat.excused * 0.5}</Badge>
                 ) : (
                   <span className="text-muted">0</span>
                 )
@@ -99,7 +99,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
               label="WI 9AM/3PM"
               value={
                 stat.wi_9am_3pm > 0 ? (
-                  <Badge variant="outline">+{stat.wi_9am_3pm}</Badge>
+                  <Badge variant="secondary">+{stat.wi_9am_3pm * 0.5}</Badge>
                 ) : (
                   <span className="text-muted">0</span>
                 )
@@ -109,7 +109,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
               label="WI 12NN"
               value={
                 stat.wi_12nn > 0 ? (
-                  <Badge variant="outline">+{stat.wi_12nn}</Badge>
+                  <span>{stat.wi_12nn}</span>
                 ) : (
                   <span className="text-muted">0</span>
                 )
@@ -119,7 +119,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
               label="WI 5th Sun"
               value={
                 stat.wi_5th_sunday > 0 ? (
-                  <Badge variant="outline">+{stat.wi_5th_sunday}</Badge>
+                  <Badge variant="secondary">+{stat.wi_5th_sunday}</Badge>
                 ) : (
                   <span className="text-muted">0</span>
                 )
