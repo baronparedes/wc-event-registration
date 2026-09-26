@@ -68,7 +68,7 @@ export function EventRegistrationPage() {
 
   if (eventQuery.isLoading) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <SectionCard title="Loading...">
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-3/4 rounded bg-muted" />
@@ -85,7 +85,7 @@ export function EventRegistrationPage() {
     eventQuery.data?.reason === 'not_found_or_unpublished'
   ) {
     return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-5xl space-y-6">
         <EmptyState
           icon={<AlertCircle />}
           title="Registration Unavailable"
@@ -106,7 +106,7 @@ export function EventRegistrationPage() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="mx-auto max-w-5xl space-y-6">
       <EventHeaderCard
         slug={slug}
         isLoading={eventQuery.isLoading}
@@ -134,10 +134,11 @@ export function EventRegistrationPage() {
             currentStep={activeWizardStep}
             totalSteps={3}
             labels={['Scan', 'Confirm', 'Complete']}
+            categoryLabel="Registration steps"
           />
 
           {activeWizardStep === 1 && (
-            <div ref={stepOneRef} className="scroll-mt-24">
+            <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
               {isVerifyingSignedInMember ? (
                 <SectionCard title="Verifying Registration Details">
                   <div className="flex items-center space-x-3 py-4">
