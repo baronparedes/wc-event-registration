@@ -23,8 +23,9 @@ export function CopyButton({ content }: CopyButtonProps) {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
-      className="inline-flex items-center justify-center p-1.5 text-muted hover:text-text hover:bg-muted/10 rounded-md transition-colors"
+      className="inline-flex items-center justify-center p-1.5 text-muted hover:text-text hover:bg-muted/10 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       title="Copy response"
       aria-label="Copy response"
     >
