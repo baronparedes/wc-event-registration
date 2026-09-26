@@ -214,8 +214,9 @@ export const ChatInputForm = memo(function ChatInputForm({
           placeholder="Ask about volunteers, schedules, events... (Shift+Enter for new line, @ to mention)"
           rows={1}
           className="flex-1 min-w-0"
-          textareaClassName={`w-full resize-none rounded-xl border border-border bg-surface px-4 py-2.5 text-sm leading-5 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25 h-[44px] min-h-[44px] max-h-[160px] ${hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
-            }`}
+          textareaClassName={`w-full resize-none rounded-xl border border-border bg-surface px-4 py-2.5 text-sm leading-5 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25 h-[44px] min-h-[44px] max-h-[160px] ${
+            hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
+          }`}
         />
         {isLoading ? (
           <Button
