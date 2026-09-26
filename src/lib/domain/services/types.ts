@@ -81,5 +81,6 @@ export type CommitmentDashboardStat = {
   excused: number;
   wi_9am_3pm: number;
   wi_12nn: number;
+  wi_5th_sunday: number;
   attendance_score: number;
 };

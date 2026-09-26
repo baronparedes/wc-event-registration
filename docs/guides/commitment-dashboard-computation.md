@@ -58,9 +58,76 @@ The Volunteer Commitment Dashboard provides administrators with quantitative met
 
 ---
 
-## 2. Database RPC (`get_commitment_dashboard_stats`)
+## 2. Business Rules & Scoring Philosophy (Plain Language Summary)
 
-The RPC is declared in `supabase/migrations/20260924193000_add_get_commitment_dashboard_stats.sql` with the following signature:
+The **Attendance Score** measures a volunteer's reliability, schedule fidelity, and extra support given to Sunday church services. It rewards volunteers who fulfill their scheduled commitments, encourages coverage for high-demand services, discourages unannounced absences, and provides an open serving opportunity on 5th Sundays.
+
+### Core Scoring Principles
+
+1. **Honoring Scheduled Commitments (+1.0 Point per Slot)**
+   - When a volunteer is scheduled to serve (e.g., 1st Sunday at 9:00 AM) and checks in, they earn **+1.0 point**.
+   - Fulfilling regular commitments is the baseline for healthy volunteer engagement.
+
+2. **Unannounced / Missed Absence (-1.0 Point per Slot)**
+   - If a volunteer misses a committed service slot without filing an advance excuse, **-1.0 point** is deducted.
+   - _Rationale_: No-shows leave ministry teams short-handed on Sundays and disrupt operations.
+
+3. **Filing an Excuse in Advance (-0.5 Point per Slot)**
+   - When a volunteer submits an **Excuse Request** before the service date, the penalty is halved to **-0.5 points** (instead of -1.0).
+   - _Rationale_: While the team still has a vacancy, advance notice allows ministry leaders to arrange substitutes or rebalance teams.
+
+4. **Walk-In Support on Standard Sundays (1st–4th Sundays)**
+   - **9:00 AM or 3:00 PM Services (+0.5 Bonus Point)**: Peak attendance times often need extra volunteer hands. Uncommitted volunteers stepping in earn **+0.5 points**.
+   - **12:00 NN Service (0.0 Points / Neutral)**: The mid-day service generally maintains full scheduled coverage. Walk-ins do not increase or decrease the score.
+
+5. **5th Sunday "All-Hands" Walk-Ins (+1.0 Point for Any Service Slot)**
+   - On months with a 5th Sunday (calendar days 29–31), any walk-in check-in is rewarded with a full **+1.0 point** across all service slots (9:00 AM, 12:00 NN, 3:00 PM).
+   - _Rationale_: 5th Sundays have no fixed annual schedule commitments, encouraging churchwide open volunteer participation.
+
+6. **Fairness Rule: Onboarding Start Date Filtering**
+   - All calculations strictly start from the volunteer's registered start date (`users.metadata->>'timestamp'` or `users.created_at`).
+   - Any Sundays, scheduled slots, or absences occurring **before** a volunteer joined the organization are completely excluded so new volunteers are never penalized for past dates.
+
+---
+
+### The Attendance Score Formula
+
+$$\text{Attendance Score} = \text{attended} - \Big((1.0 \times \text{unexcused}) + (0.5 \times \text{excused})\Big) + (0.5 \times \text{wi\_9am\_3pm}) + (1.0 \times \text{wi\_5th\_sunday})$$
+
+---
+
+### Quick Reference Points Matrix
+
+| Volunteer Scenario / Action                       | Score Impact | Business Rationale                                                 |
+| :------------------------------------------------ | :----------: | :----------------------------------------------------------------- |
+| **Attended Scheduled Commitment**                 |  **`+1.0`**  | Fulfilling regular Sunday ministry schedule                        |
+| **Missed Commitment without Excuse**              |  **`-1.0`**  | Unannounced absence leaving ministry team short-handed             |
+| **Missed Commitment with Approved Excuse**        |  **`-0.5`**  | Advance notice mitigating Sunday scheduling gaps                   |
+| **Walk-In (9:00 AM or 3:00 PM on 1st–4th Sun)**   |  **`+0.5`**  | Volunteering extra support during peak services                    |
+| **Walk-In (12:00 NN on 1st–4th Sun)**             |  **`0.0`**   | Neutral extra support during standard rostered service             |
+| **Walk-In Any Service on 5th Sunday (Day 29–31)** |  **`+1.0`**  | Rewarding 5th Sunday open volunteer participation across all slots |
+
+---
+
+### Real-World Calculation Examples
+
+- **Scenario A — Perfect Regular Service**:
+  - Committed to 4 Sunday services in a month. Attends all 4.
+  - **Score**: $4 \times (+1.0) = \mathbf{+4.0}$
+
+- **Scenario B — Responsible Absence + Extra Walk-In**:
+  - Committed to 4 services. Attends 3, files an excuse for 1 missed service, and walks in to assist at 9:00 AM on another Sunday.
+  - **Score**: $(3 \times 1.0) - (1 \times 0.5) + (1 \times 0.5) = \mathbf{+3.0}$
+
+- **Scenario C — Unannounced Absence Recovered with 5th Sunday**:
+  - Committed to 4 services. Attends 3, misses 1 without an excuse ($-1.0$), but walks in on the 5th Sunday ($+1.0$).
+  - **Score**: $(3 \times 1.0) - (1 \times 1.0) + (1 \times 1.0) = \mathbf{+3.0}$
+
+---
+
+## 3. Database RPC (`get_commitment_dashboard_stats`)
+
+The RPC is declared in `supabase/migrations/20260926123500_add_calculate_attendance_score_function.sql` with the following signature:
 
 ```sql
 create
@@ -121,7 +188,7 @@ or replace function public.get_commitment_dashboard_stats (
 
 ---
 
-## 3. Sunday Ordinal & Commitment Snapshot Resolution
+## 4. Sunday Ordinal & Commitment Snapshot Resolution
 
 ### A. Monthly Sunday Ordinal Calculation
 
@@ -212,32 +279,43 @@ All metrics (`total_committed`, `total_attended`, `total_absences`, `total_excus
 
 ---
 
-## 4. Metrics & Scoring Formula
+## 5. Metrics & Technical Scoring Formula
 
 ### Metric Definitions
 
-| Metric              | Column Name  | Calculation Logic                                                                                                           | Description                                        |
-| :------------------ | :----------- | :-------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------- |
-| **Committed**       | `committed`  | Count of `(sunday_date, time_slot)` where volunteer is committed.                                                           | Total service slots scheduled in timeframe.        |
-| **Attended**        | `attended`   | Count of `service_attendance` check-ins where `is_walk_in = false`.                                                         | Committed service slots checked in.                |
-| **Absences**        | `absences`   | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and **no** excused request.        | Missed committed commitments.                      |
-| **Excused**         | `excused`    | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and an active **excused request**. | Scheduled commitments excused in advance.          |
-| **Walk-in 9AM/3PM** | `wi_9am_3pm` | Count of `service_attendance` check-ins where `is_walk_in = true` and `time_slot in ('9AM', '3PM')`.                        | Additional uncommitted support in peak services.   |
-| **Walk-in 12NN**    | `wi_12nn`    | Count of `service_attendance` check-ins where `is_walk_in = true` and `time_slot = '12NN'`.                                 | Additional uncommitted support in mid-day service. |
+| Metric              | Column Name     | Calculation Logic                                                                                                           | Description                                        |
+| :------------------ | :-------------- | :-------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------- |
+| **Committed**       | `committed`     | Count of `(sunday_date, time_slot)` where volunteer is committed.                                                           | Total service slots scheduled in timeframe.        |
+| **Attended**        | `attended`      | Count of `service_attendance` check-ins where `is_walk_in = false`.                                                         | Committed service slots checked in.                |
+| **Absences**        | `absences`      | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and **no** excused request.        | Missed committed commitments.                      |
+| **Excused**         | `excused`       | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and an active **excused request**. | Scheduled commitments excused in advance.          |
+| **Walk-in 9AM/3PM** | `wi_9am_3pm`    | Count of `service_attendance` check-ins on 1st–4th Sundays where `is_walk_in = true` and `time_slot in ('9AM', '3PM')`.     | Additional uncommitted support in peak services.   |
+| **Walk-in 12NN**    | `wi_12nn`       | Count of `service_attendance` check-ins on 1st–4th Sundays where `is_walk_in = true` and `time_slot = '12NN'`.              | Additional uncommitted support in mid-day service. |
+| **Walk-in 5th Sun** | `wi_5th_sunday` | Count of `service_attendance` check-ins on 5th Sunday (day $\ge 29$) where `is_walk_in = true` (all slots).                 | 5th Sunday open walk-in service support.           |
 
 ### Attendance Scoring Formula
 
-$$\text{Attendance Score} = \text{attended} - \text{absences} - (0.5 \times \text{excused}) + (0.5 \times \text{wi\_9am\_3pm})$$
+$$\text{Attendance Score} = \text{attended} - \Big((1.0 \times \text{unexcused}) + (0.5 \times \text{excused})\Big) + (0.5 \times \text{wi\_9am\_3pm}) + (1.0 \times \text{wi\_5th\_sunday})$$
 
-- **$+1.0$** per committed slot attended
-- **$-1.0$** per unexcused absence
-- **$-0.5$** per excused absence
-- **$+0.5$** per 9AM or 3PM walk-in check-in
-- **$0.0$** for 12NN walk-ins (neutral / no score penalty or bonus)
+> **Note on Column Mapping**:
+> In the database schema and query results, the column `absences` represents **Unexcused Absences** (committed slots on past/present Sundays with no check-in and **no** excuse filed).
+> Thus, $\text{unexcused} \equiv \text{absences}$.
+
+- **$+1.0$** per committed slot attended (`attended`)
+- **$-1.0$** per unexcused absence (`unexcused` / `absences`)
+- **$-0.5$** per excused absence (`excused`)
+- **$+0.5$** per 9AM or 3PM walk-in check-in on 1st–4th Sundays (`wi_9am_3pm`)
+- **$0.0$** for 12NN walk-ins on 1st–4th Sundays (`wi_12nn` — neutral / no score change)
+- **$+1.0$** for ANY walk-in slot on 5th Sunday (`wi_5th_sunday`)
+
+The scoring formula is centralized in:
+
+- **Database (PostgreSQL Function)**: `public.calculate_attendance_score(p_attended, p_absences, p_excused, p_wi_9am_3pm, p_wi_5th_sunday)` used by `get_commitment_dashboard_stats`.
+- **Frontend (TypeScript Helper)**: `calculateAttendanceScore({ attended, absences, excused, wi9or3, wi5th })` in `src/lib/domain/services/service-commitment-scoring.ts` used by modal breakdowns.
 
 ---
 
-## 5. Excused Absence Resolution
+## 6. Excused Absence Resolution
 
 Excuses are submitted via event registrations (typically `VITE_EXCUSE_REQUEST_EVENT_ID`). The query extracts:
 
@@ -261,7 +339,7 @@ and exists (
 
 ---
 
-## 6. Frontend Features & UX Design
+## 7. Frontend Features & UX Design
 
 - **Search Debouncing**: The name / member ID search filter is debounced at 300ms (`TIMING.searchDebounceMs`) in `AdminServiceAttendanceCommitmentPage.tsx` to minimize redundant network queries while keeping input typing fluid.
 - **Client-Side Sorting**: Table sorting in `VolunteerListTable.tsx` is executed on the client side with `useMemo`, allowing instant toggling of ascending/descending sorts across all 11 columns with fallback secondary sorting by volunteer name.

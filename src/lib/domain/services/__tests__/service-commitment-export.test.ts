@@ -21,6 +21,7 @@ describe('service-commitment-export', () => {
       excused: 1,
       wi_9am_3pm: 2,
       wi_12nn: 1,
+      wi_5th_sunday: 0,
       attendance_score: 9,
     },
     {
@@ -39,6 +40,7 @@ describe('service-commitment-export', () => {
       excused: 0,
       wi_9am_3pm: 0,
       wi_12nn: 0,
+      wi_5th_sunday: 0,
       attendance_score: 12,
     },
   ];
@@ -52,7 +54,7 @@ describe('service-commitment-export', () => {
 
     const lines = csvText.split('\n');
     expect(lines[0]).toBe(
-      'Full Name,Nickname,Member ID,Email,Role,Category,Start Date,Attendance Score,Committed,Attended,Absences,Excused,WI 9AM/3PM,WI 12NN',
+      'Full Name,Nickname,Member ID,Email,Role,Category,Start Date,Attendance Score,Committed,Attended,Absences,Excused,WI 9AM/3PM,WI 12NN,WI 5th Sun',
     );
     // John has score 12, should be first
     expect(lines[1]).toContain('"Smith, John"');
@@ -98,7 +100,7 @@ describe('service-commitment-export', () => {
     const lines = csvText.split('\n');
     expect(lines).toHaveLength(1);
     expect(lines[0]).toBe(
-      'Full Name,Nickname,Member ID,Email,Role,Category,Start Date,Attendance Score,Committed,Attended,Absences,Excused,WI 9AM/3PM,WI 12NN',
+      'Full Name,Nickname,Member ID,Email,Role,Category,Start Date,Attendance Score,Committed,Attended,Absences,Excused,WI 9AM/3PM,WI 12NN,WI 5th Sun',
     );
     expect(filename).toMatch(/^service-commitment-2026-01-01-\d{8}-\d{6}\.csv$/);
   });

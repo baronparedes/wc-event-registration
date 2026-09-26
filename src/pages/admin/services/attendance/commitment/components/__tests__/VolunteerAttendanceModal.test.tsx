@@ -33,6 +33,7 @@ const mockVolunteer = {
   excused: 0,
   wi_9am_3pm: 0,
   wi_12nn: 0,
+  wi_5th_sunday: 0,
   attendance_score: 84,
 };
 
@@ -281,5 +282,38 @@ describe('VolunteerAttendanceModal', () => {
     fireEvent.click(matrixTab);
 
     expect(screen.getByText('No attendance records found for this period.')).toBeInTheDocument();
+  });
+
+  it('scores 5th Sunday walk-in as +1.0 point regardless of slot', () => {
+    (useVolunteerAttendanceLogQuery as Mock).mockReturnValue({
+      data: [
+        {
+          id: 'log-5th',
+          service_date: '2026-03-29', // 5th Sunday (day 29)
+          time_slot: '12NN',
+          status: 'present',
+          is_walk_in: true,
+          checked_in_at: '2026-03-29T12:05:00Z',
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(
+      <VolunteerAttendanceModal
+        isOpen={true}
+        onClose={vi.fn()}
+        volunteer={mockVolunteer}
+        timeframe="YTD"
+        startDate="2026-01-01"
+        endDate="2026-12-31"
+      />,
+    );
+
+    const matrixTab = screen.getByRole('tab', { name: /Matrix/i });
+    fireEvent.click(matrixTab);
+
+    // 5th Sunday 12NN walk-in should score +1 instead of 0
+    expect(screen.getByText('+1')).toBeInTheDocument();
   });
 });

@@ -35,6 +35,7 @@ export type VolunteerSortField =
   | 'excused'
   | 'wi_9am_3pm'
   | 'wi_12nn'
+  | 'wi_5th_sunday'
   | 'attendance_score';
 
 export type SortOrder = 'asc' | 'desc';
@@ -161,6 +162,9 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
             break;
           case 'wi_12nn':
             comparison = a.wi_12nn - b.wi_12nn;
+            break;
+          case 'wi_5th_sunday':
+            comparison = a.wi_5th_sunday - b.wi_5th_sunday;
             break;
           case 'attendance_score':
           default:
@@ -381,6 +385,16 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                     {renderSortIcon('wi_12nn')}
                   </button>
                 </ListTableHeaderCell>
+                <ListTableHeaderCell className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('wi_5th_sunday')}
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                  >
+                    <span>WI 5th Sun</span>
+                    {renderSortIcon('wi_5th_sunday')}
+                  </button>
+                </ListTableHeaderCell>
               </ListTableHeaderRow>
             </ListTableHead>
             <ListTableBody>
@@ -465,12 +479,19 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                       <span className="text-muted">0</span>
                     )}
                   </ListTableCell>
+                  <ListTableCell className="whitespace-nowrap text-center">
+                    {stat.wi_5th_sunday > 0 ? (
+                      <Badge variant="outline">+{stat.wi_5th_sunday}</Badge>
+                    ) : (
+                      <span className="text-muted">0</span>
+                    )}
+                  </ListTableCell>
                 </ListTableRow>
               ))}
 
               {sortedStats.length === 0 && !isLoading && (
                 <ListTableRow hover="none">
-                  <ListTableCell colSpan={11} className="py-12">
+                  <ListTableCell colSpan={12} className="py-12">
                     <EmptyState
                       icon={<Users className="h-8 w-8 text-muted" />}
                       title="No volunteers found"

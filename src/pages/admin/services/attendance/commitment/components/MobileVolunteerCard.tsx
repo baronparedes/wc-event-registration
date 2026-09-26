@@ -115,6 +115,16 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
                 )
               }
             />
+            <MobileCardContentItem
+              label="WI 5th Sun"
+              value={
+                stat.wi_5th_sunday > 0 ? (
+                  <Badge variant="outline">+{stat.wi_5th_sunday}</Badge>
+                ) : (
+                  <span className="text-muted">0</span>
+                )
+              }
+            />
           </MobileCardContent>
         </MobileCardBody>
       </MobileCard>

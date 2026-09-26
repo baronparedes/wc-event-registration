@@ -43,6 +43,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
         excused: 1,
         wi_9am_3pm: 2,
         wi_12nn: 1,
+        wi_5th_sunday: 0,
         attendance_score: 9.5,
         total_count: 1,
       },
@@ -95,6 +96,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
         excused: 1,
         wi_9am_3pm: 2,
         wi_12nn: 1,
+        wi_5th_sunday: 0,
         attendance_score: 9.5,
       },
     ]);
@@ -136,6 +138,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
         excused: 1,
         wi_9am_3pm: 2,
         wi_12nn: 1,
+        wi_5th_sunday: 0,
         attendance_score: 9.5,
         total_count: 5,
       },
