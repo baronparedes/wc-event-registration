@@ -143,6 +143,28 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
     );
   }
 
+  if (status === 'service_exception') {
+    return (
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-border/80 bg-surface p-2.5 text-left shadow-xs">
+        <div>
+          <Badge
+            variant="outline"
+            icon={<Info className="h-3 w-3 shrink-0 text-muted" />}
+            className="border-border bg-surface-alt px-2 py-0.5 text-[11px] text-text"
+          >
+            Service Exception
+          </Badge>
+        </div>
+        <p
+          className="text-[11px] text-muted font-medium line-clamp-2"
+          title={cell.exceptionReason || undefined}
+        >
+          {cell.exceptionReason ? cell.exceptionReason : 'Service Exception'}
+        </p>
+      </div>
+    );
+  }
+
   if (status === 'not_applicable') {
     return (
       <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-border/40 bg-surface/50 p-2 text-center text-sm text-muted/40">

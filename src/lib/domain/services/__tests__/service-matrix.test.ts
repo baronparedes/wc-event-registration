@@ -239,6 +239,46 @@ describe('service-matrix domain logic', () => {
       expect(grid.first_sunday['9AM'].status).toBe('excused');
       expect(grid.first_sunday['9AM'].excusedReason).toBe('medical');
     });
+
+    it('classifies committed slots as service_exception when date is in exceptionDates', () => {
+      const exceptionDates = [
+        { exception_date: '2026-09-13', reason: 'Church-wide Anniversary Gathering' },
+      ];
+      const grid = computeMatrixGrid(
+        sundays,
+        attendances, // no check-in for second_sunday 12NN
+        currentMetadata, // second_sunday 12NN is committed
+        [],
+        [],
+        '2026-09-20',
+        false,
+        false,
+        exceptionDates,
+      );
+      const cell = grid.second_sunday['12NN'];
+      expect(cell.status).toBe('service_exception');
+      expect(cell.isCommitted).toBe(true);
+      expect(cell.exceptionReason).toBe('Church-wide Anniversary Gathering');
+    });
+
+    it('prioritizes actual attendance over service_exception if a check-in exists', () => {
+      const exceptionDates = [{ exception_date: '2026-09-06', reason: 'Special Holiday' }];
+      const grid = computeMatrixGrid(
+        sundays,
+        attendances, // first_sunday 9AM was attended (att-1)
+        currentMetadata,
+        [],
+        [],
+        '2026-09-20',
+        false,
+        false,
+        exceptionDates,
+      );
+      const cell = grid.first_sunday['9AM'];
+      expect(cell.status).toBe('attended_committed');
+      expect(cell.attendance?.id).toBe('att-1');
+      expect(cell.exceptionReason).toBe('Special Holiday');
+    });
   });
 
   describe('getNonSundayAttendances', () => {

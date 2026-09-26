@@ -48,6 +48,7 @@ export type MatrixSlotStatus =
   | 'off_schedule'
   | 'not_applicable'
   | 'excused'
+  | 'service_exception'
   | 'loading';
 
 export interface MatrixCellData {
@@ -58,6 +59,7 @@ export interface MatrixCellData {
   attendance?: ServiceAttendance;
   status: MatrixSlotStatus;
   excusedReason?: string;
+  exceptionReason?: string;
 }
 
 export function toISODate(date: Date): string {
@@ -165,6 +167,7 @@ export function computeMatrixGrid(
   todayStr: string = toISODate(new Date()),
   isLoadingAttendance: boolean = false,
   isLoadingExcused: boolean = false,
+  exceptionDates: { exception_date: string; reason: string }[] = [],
 ): Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>> {
   const grid = {} as Record<ServiceSundayKey, Record<MatrixTimeSlot, MatrixCellData>>;
   const sundayByKey = new Map<ServiceSundayKey, MonthSunday>();
@@ -189,6 +192,10 @@ export function computeMatrixGrid(
     } else {
       sundayCommittedSlots = currentCommittedSlots[key];
     }
+
+    const exceptionRecord = sunday
+      ? exceptionDates.find((e) => e.exception_date === sunday.dateStr)
+      : undefined;
 
     for (const timeSlot of MATRIX_TIME_SLOTS) {
       const isCommitted = sundayCommittedSlots.has(timeSlot);
@@ -218,6 +225,8 @@ export function computeMatrixGrid(
         status = isCommitted ? 'attended_committed' : 'attended_unscheduled';
       } else if (isLoadingAttendance) {
         status = isCommitted ? 'loading' : 'off_schedule';
+      } else if (exceptionRecord) {
+        status = isCommitted ? 'service_exception' : 'off_schedule';
       } else if (isCommitted) {
         if (excusedRecord) {
           status = 'excused';
@@ -238,6 +247,7 @@ export function computeMatrixGrid(
         attendance,
         status,
         excusedReason: excusedRecord?.reason,
+        exceptionReason: exceptionRecord?.reason,
       };
     }
   }

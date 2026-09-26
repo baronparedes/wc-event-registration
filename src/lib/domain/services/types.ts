@@ -84,3 +84,10 @@ export type CommitmentDashboardStat = {
   wi_5th_sunday: number;
   attendance_score: number;
 };
+
+export type ServiceExceptionDate = {
+  id: string;
+  exception_date: string;
+  reason: string;
+  created_at: string;
+};
