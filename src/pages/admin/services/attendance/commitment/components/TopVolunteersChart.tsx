@@ -63,8 +63,7 @@ export function TopVolunteersChart({ stats }: TopVolunteersChartProps) {
                     <div className="rounded-xl border border-border bg-surface p-3 shadow-md">
                       <p className="font-heading font-semibold text-text">{data.fullName}</p>
                       <p className="mt-0.5 text-xs text-muted">
-                        Attendance Score:{' '}
-                        <span className="font-bold text-primary">{data.score}</span>
+                        Attendance: <span className="font-bold text-primary">{data.score}</span>
                       </p>
                     </div>
                   );

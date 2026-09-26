@@ -85,7 +85,7 @@ The **Attendance Score** measures a volunteer's reliability, schedule fidelity, 
    - _Rationale_: 5th Sundays have no fixed annual schedule commitments, encouraging churchwide open volunteer participation.
 
 6. **Fairness Rule: Onboarding Start Date Filtering**
-   - All calculations strictly start from the volunteer's registered start date (`users.metadata->>'timestamp'` or `users.created_at`).
+   - All calculations strictly start from the volunteer's registered start date (`users.metadata->>'start_date'`, defaulting to `2025-01-01` if missing or empty).
    - Any Sundays, scheduled slots, or absences occurring **before** a volunteer joined the organization are completely excluded so new volunteers are never penalized for past dates.
 
 ---
@@ -167,7 +167,7 @@ or replace function public.get_commitment_dashboard_stats (
  1. generate_series (p_start_date -> p_end_date)
     └── Filter extract(dow from d) = 0 into v_sundays date[]
  2. filtered_users CTE
-    ├── Extracts u_start_date: metadata->>'timestamp' parsed to date, falling back to created_at::date
+    ├── Extracts u_start_date: metadata->>'start_date' parsed to date, defaulting to '2025-01-01'::date
     └── Filters active users by search text (name, nickname, member_id), role, category
  3. excused_requests CTE
     └── Joins registrations & registration_answers for event_fields:
@@ -269,13 +269,13 @@ Jan Sundays         Feb Sundays        Mar Sundays
 
 ### D. Start Date Resolution & Pre-Start-Date Filtering
 
-Each volunteer has a computed `start_date` determined from their onboarding metadata:
+Each volunteer has a computed `start_date` determined from their metadata:
 
-1. If `users.metadata->>'timestamp'` contains a valid date string (`YYYY-MM-DD`), that date is extracted as the volunteer's `start_date`.
-2. Otherwise, `users.created_at::date` is used as a fallback.
+1. If `users.metadata->>'start_date'` contains a valid date string (`YYYY-MM-DD`), that date is extracted as the volunteer's `start_date`.
+2. If `start_date` is missing, empty, or invalid, it defaults directly to `2025-01-01`.
 
-**Pre-Start-Date Filtering Rule**:
-All metrics (`total_committed`, `total_attended`, `total_absences`, `total_excused`, `wi_9am_3pm`, and `wi_12nn`) explicitly enforce `sunday_date >= fu.u_start_date` (or `service_date >= fu.u_start_date`). Any Sundays, scheduled slots, check-ins, or absences occurring **prior to** the volunteer's start date are completely ignored in calculations.
+**Pre-Start-Date & Future-Date Filtering Rules**:
+All evaluated commitment and attendance metrics (`total_committed`, `total_attended`, `total_absences`, `total_excused`, `wi_9am_3pm`, `wi_12nn`, and `wi_5th_sunday`) consistently enforce `sunday_date >= fu.u_start_date` (ignoring pre-start dates) and evaluate past/present dates (`sunday_date <= current_date`), ensuring upcoming future Sundays are never factored into historical performance metrics.
 
 ---
 
@@ -285,7 +285,7 @@ All metrics (`total_committed`, `total_attended`, `total_absences`, `total_excus
 
 | Metric              | Column Name     | Calculation Logic                                                                                                           | Description                                        |
 | :------------------ | :-------------- | :-------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------- |
-| **Committed**       | `committed`     | Count of `(sunday_date, time_slot)` where volunteer is committed.                                                           | Total service slots scheduled in timeframe.        |
+| **Committed**       | `committed`     | Count of `(sunday_date, time_slot)` where volunteer is committed on past/present Sundays (`sunday_date <= current_date`).   | Total scheduled service slots to date in period.   |
 | **Attended**        | `attended`      | Count of `service_attendance` check-ins where `is_walk_in = false`.                                                         | Committed service slots checked in.                |
 | **Absences**        | `absences`      | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and **no** excused request.        | Missed committed commitments.                      |
 | **Excused**         | `excused`       | Committed slots on past/present Sundays (`sunday_date <= current_date`) with no check-in and an active **excused request**. | Scheduled commitments excused in advance.          |

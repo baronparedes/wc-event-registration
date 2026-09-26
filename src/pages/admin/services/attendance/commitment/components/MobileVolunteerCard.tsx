@@ -61,7 +61,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
                 variant={stat.attendance_score < 0 ? 'destructive' : 'default'}
                 className="font-bold whitespace-nowrap"
               >
-                Score: {stat.attendance_score}
+                {stat.attendance_score}
               </Badge>
             </div>
           </MobileCardHeader>
@@ -79,7 +79,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
               label="Absences"
               value={
                 stat.absences > 0 ? (
-                  <Badge variant="destructive">{stat.absences}</Badge>
+                  <Badge variant="destructive">-{stat.absences}</Badge>
                 ) : (
                   <span className="text-muted">0</span>
                 )
