@@ -389,6 +389,73 @@ describe('buildMemberCsvPreparedRows', () => {
     expect(result.rows[3].date_of_birth).toBe('1980-02-03');
   });
 
+  it('canonicalizes start_date aliases and normalizes various date formats', () => {
+    const result = buildMemberCsvPreparedRows([
+      {
+        member_id: 'S-1',
+        first_name: 'Sara',
+        last_name: 'Tan',
+        nickname: 'Sara',
+        role: 'Role',
+        category: 'Cat',
+        'Start Date': '2024-05-15',
+      },
+      {
+        member_id: 'S-2',
+        first_name: 'Sam',
+        last_name: 'Tan',
+        nickname: 'Sam',
+        role: 'Role',
+        category: 'Cat',
+        startdate: '1/20/2023',
+      },
+      {
+        member_id: 'S-3',
+        first_name: 'Seth',
+        last_name: 'Tan',
+        nickname: 'Seth',
+        role: 'Role',
+        category: 'Cat',
+        'Date Joined': '2025-01-01T08:00:00.000Z',
+      },
+      {
+        member_id: 'S-4',
+        first_name: 'Sue',
+        last_name: 'Tan',
+        nickname: 'Sue',
+        role: 'Role',
+        category: 'Cat',
+        joined_date: '11/05/24',
+      },
+      {
+        member_id: 'S-5',
+        first_name: 'Sid',
+        last_name: 'Tan',
+        nickname: 'Sid',
+        role: 'Role',
+        category: 'Cat',
+        start_date: 'invalid-date-string',
+      },
+      {
+        member_id: 'S-6',
+        first_name: 'Sky',
+        last_name: 'Tan',
+        nickname: 'Sky',
+        role: 'Role',
+        category: 'Cat',
+        start_date: '   ',
+      },
+    ]);
+
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].metadata.start_date).toBe('2024-05-15');
+    expect(result.rows[1].metadata.start_date).toBe('2023-01-20');
+    expect(result.rows[2].metadata.start_date).toBe('2025-01-01');
+    expect(result.rows[3].metadata.start_date).toBe('2024-11-05');
+    expect(result.rows[4].metadata.start_date).toBeUndefined();
+    expect(result.rows[5].metadata.start_date).toBeUndefined();
+  });
+
   it('skips metadata columns with empty string values', () => {
     const result = buildMemberCsvPreparedRows([
       {

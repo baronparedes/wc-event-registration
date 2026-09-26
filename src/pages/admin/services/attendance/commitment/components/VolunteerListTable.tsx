@@ -288,26 +288,6 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                 <ListTableHeaderCell>
                   <button
                     type="button"
-                    onClick={() => handleSort('role')}
-                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                  >
-                    <span>Role</span>
-                    {renderSortIcon('role')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell>
-                  <button
-                    type="button"
-                    onClick={() => handleSort('category')}
-                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
-                  >
-                    <span>Category</span>
-                    {renderSortIcon('category')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell>
-                  <button
-                    type="button"
                     onClick={() => handleSort('start_date')}
                     className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
                   >
@@ -418,21 +398,12 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                         <div className="font-heading font-semibold text-text truncate">
                           {stat.full_name}
                         </div>
-                        <div className="text-xs text-muted truncate">{stat.nickname || '-'}</div>
+                        <div className="text-xs text-muted truncate">{stat.nickname || ''}</div>
+                        <small>
+                          {stat.role} • {stat.category}
+                        </small>
                       </div>
                     </div>
-                  </ListTableCell>
-                  <ListTableCell className="whitespace-nowrap">
-                    {stat.role ? (
-                      <Badge variant="outline" className="text-xs">
-                        {stat.role}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted">-</span>
-                    )}
-                  </ListTableCell>
-                  <ListTableCell className="whitespace-nowrap text-text">
-                    {stat.category || '-'}
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-muted">
                     {stat.start_date || '-'}
@@ -449,39 +420,39 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                     {stat.committed}
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-center">
-                    <Badge variant="secondary">{stat.attended}</Badge>
+                    <Badge variant="secondary">+{stat.attended}</Badge>
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-center">
                     {stat.absences > 0 ? (
-                      <Badge variant="destructive">{stat.absences}</Badge>
+                      <Badge variant="destructive">-{stat.absences}</Badge>
                     ) : (
                       <span className="text-muted">0</span>
                     )}
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-center">
                     {stat.excused > 0 ? (
-                      <Badge variant="accent">{stat.excused}</Badge>
+                      <Badge variant="accent">-{stat.excused * 0.5}</Badge>
                     ) : (
                       <span className="text-muted">0</span>
                     )}
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-center">
                     {stat.wi_9am_3pm > 0 ? (
-                      <Badge variant="outline">+{stat.wi_9am_3pm}</Badge>
+                      <Badge variant="secondary">+{stat.wi_9am_3pm * 0.5}</Badge>
                     ) : (
                       <span className="text-muted">0</span>
                     )}
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-center">
                     {stat.wi_12nn > 0 ? (
-                      <Badge variant="outline">+{stat.wi_12nn}</Badge>
+                      <span>{stat.wi_12nn}</span>
                     ) : (
                       <span className="text-muted">0</span>
                     )}
                   </ListTableCell>
                   <ListTableCell className="whitespace-nowrap text-center">
                     {stat.wi_5th_sunday > 0 ? (
-                      <Badge variant="outline">+{stat.wi_5th_sunday}</Badge>
+                      <Badge variant="secondary">+{stat.wi_5th_sunday}</Badge>
                     ) : (
                       <span className="text-muted">0</span>
                     )}

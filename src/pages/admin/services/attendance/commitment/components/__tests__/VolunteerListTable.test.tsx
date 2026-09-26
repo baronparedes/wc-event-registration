@@ -118,32 +118,6 @@ describe('VolunteerListTable', () => {
     expect(descRows[3]).toHaveTextContent('Alice Smith');
   });
 
-  it('sorts by role column', () => {
-    render(<VolunteerListTable {...defaultProps} />);
-
-    const roleHeaderBtn = screen.getByRole('button', { name: /^role$/i });
-    fireEvent.click(roleHeaderBtn);
-
-    const rows = screen.getAllByRole('row');
-    // Ascending by role: Greeter (Bob) -> Media (Charlie) -> Usher (Alice)
-    expect(rows[1]).toHaveTextContent('Bob Jones');
-    expect(rows[2]).toHaveTextContent('Charlie Brown');
-    expect(rows[3]).toHaveTextContent('Alice Smith');
-  });
-
-  it('sorts by category column', () => {
-    render(<VolunteerListTable {...defaultProps} />);
-
-    const categoryHeaderBtn = screen.getByRole('button', { name: /^category$/i });
-    fireEvent.click(categoryHeaderBtn);
-
-    const rows = screen.getAllByRole('row');
-    // Ascending by category: Men (Bob) -> Women (Alice) -> Youth (Charlie)
-    expect(rows[1]).toHaveTextContent('Bob Jones');
-    expect(rows[2]).toHaveTextContent('Alice Smith');
-    expect(rows[3]).toHaveTextContent('Charlie Brown');
-  });
-
   it('sorts by start date column', () => {
     render(<VolunteerListTable {...defaultProps} />);
 
@@ -287,28 +261,10 @@ describe('VolunteerListTable', () => {
   it('sorts text columns in ascending and toggles to descending', () => {
     render(<VolunteerListTable {...defaultProps} />);
 
-    // Sort role
-    const roleBtn = screen.getByRole('button', { name: /^role$/i });
-    fireEvent.click(roleBtn); // asc: Greeter (Bob) -> Media (Charlie) -> Usher (Alice)
-    let rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Bob Jones');
-    fireEvent.click(roleBtn); // desc: Usher (Alice) -> Media (Charlie) -> Greeter (Bob)
-    rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Alice Smith');
-
-    // Sort category
-    const categoryBtn = screen.getByRole('button', { name: /^category$/i });
-    fireEvent.click(categoryBtn); // asc: Men (Bob) -> Women (Alice) -> Youth (Charlie)
-    rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Bob Jones');
-    fireEvent.click(categoryBtn); // desc: Youth (Charlie) -> Women (Alice) -> Men (Bob)
-    rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Charlie Brown');
-
     // Sort start date
     const startDateBtn = screen.getByRole('button', { name: /^start date$/i });
     fireEvent.click(startDateBtn); // asc: 2024-01-01 (Alice) -> 2024-02-01 (Bob) -> 2024-03-01 (Charlie)
-    rows = screen.getAllByRole('row');
+    let rows = screen.getAllByRole('row');
     expect(rows[1]).toHaveTextContent('Alice Smith');
     fireEvent.click(startDateBtn); // desc: 2024-03-01 (Charlie) -> 2024-02-01 (Bob) -> 2024-01-01 (Alice)
     rows = screen.getAllByRole('row');

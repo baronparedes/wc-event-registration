@@ -98,6 +98,13 @@ function canonicalizeMetadataHeaderKey(value: string): string {
   switch (value) {
     case 'isoic':
       return 'is_oic';
+    case 'startdate':
+    case 'start_date':
+    case 'date_joined':
+    case 'datejoined':
+    case 'joined_date':
+    case 'joineddate':
+      return 'start_date';
     case '1st_sunday':
     case '1stsunday':
       return 'first_sunday';
@@ -120,6 +127,39 @@ function canonicalizeMetadataHeaderKey(value: string): string {
 
 function normalizeText(value: string | null | undefined): string {
   return (value ?? '').trim();
+}
+
+// Converts YYYY-MM-DD, M/D/YY, M/D/YYYY, or ISO timestamps to YYYY-MM-DD; returns null if empty or unrecognized.
+export function normalizeStartDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const mdyMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(trimmed);
+  if (mdyMatch) {
+    const month = parseInt(mdyMatch[1], 10);
+    const day = parseInt(mdyMatch[2], 10);
+    let year = parseInt(mdyMatch[3], 10);
+    if (mdyMatch[3].length === 2) {
+      year = year <= 50 ? 2000 + year : 1900 + year;
+    }
+    return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  const timestamp = Date.parse(trimmed);
+  if (!Number.isNaN(timestamp)) {
+    const d = new Date(timestamp);
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  return null;
 }
 
 // Converts M/D/YY or M/D/YYYY to YYYY-MM-DD; returns input unchanged if already ISO or unrecognized.
@@ -342,6 +382,14 @@ export function buildMemberCsvPreparedRows(
 
       const metadataKey = canonicalizeMetadataHeaderKey(normalizeMetadataHeaderKey(header));
       if (!metadataKey || CORE_FIELDS.has(metadataKey)) {
+        continue;
+      }
+
+      if (metadataKey === 'start_date') {
+        const normalizedDate = normalizeStartDate(rawValue);
+        if (normalizedDate !== null) {
+          prepared.metadata.start_date = normalizedDate;
+        }
         continue;
       }
 
