@@ -53,7 +53,7 @@ function PreBlock({ children }: { children: React.ReactNode }) {
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-border bg-surface/90 backdrop-blur-sm px-2 py-1 text-xs text-muted hover:text-text hover:bg-muted/20 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 shadow-sm"
+        className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-border bg-surface/90 backdrop-blur-sm px-2 py-1 text-xs text-muted hover:text-text hover:bg-muted/20 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-sm"
         title="Copy to clipboard"
         aria-label="Copy to clipboard"
       >
