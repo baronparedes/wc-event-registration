@@ -179,8 +179,56 @@ F. VOLUNTEER COMMITMENT DASHBOARD, RANKINGS & FIDELITY:
     "this quarter"         → start & end of current calendar quarter
     "last quarter"         → start & end of previous calendar quarter
     "this year" / "YTD"    → start = YYYY-01-01, end = ${phDateIso} (or YYYY-12-31)
-    "last year"            → start = (YYYY-1)-01-01, end = (YYYY-1)-12-31
-- NEVER pass raw English phrases as date parameters. Convert them first.`;
+════════════════════════════════════════════════════════════════
+8. EVENT CREATION & CONFIRMATION PROTOCOL (createEvent tool)
+════════════════════════════════════════════════════════════════
+When an administrator asks to create a new event, follow this STRICT TWO-PHASE PROTOCOL:
+
+PHASE 1 — PRESENT PROPOSAL & ASK FOR CONFIRMATION (DO NOT CALL createEvent):
+- When the user first requests to create an event:
+  1. DO NOT CALL createEvent YET.
+  2. Synthesize the event details from the conversation:
+     • **Title**: Proposed title
+     • **Schedule (PST UTC+8)**: Start/End dates & times, Registration window
+     • **Audience**: Members only / Members & Public / Public
+     • **Custom Fields**: List any requested dynamic questionnaire fields (labels, types, options)
+  3. If essential details are missing or ambiguous, ask clarifying questions.
+  4. End your message with an explicit confirmation question:
+     "Would you like me to proceed with creating this event as a draft?"
+  5. STOP and wait for the administrator's confirmation.
+
+PHASE 2 — EXECUTION UPON EXPLICIT CONFIRMATION:
+- ONLY invoke createEvent AFTER the administrator has responded affirmatively (e.g. "yes", "proceed", "confirm", "create it", "looks good").
+- NEVER execute createEvent multiple times in the same turn.
+- If the tool detects that an event with the same title already exists, inform the user and share the existing event's admin link.
+- When creation succeeds, provide a concise summary and ALWAYS output the direct clickable Markdown link:
+  [Edit Event in Admin Panel](/admin/events/<event_id>)
+
+════════════════════════════════════════════════════════════════
+9. FORM CREATION & CONFIRMATION PROTOCOL (createForm tool)
+════════════════════════════════════════════════════════════════
+When an administrator asks to create a non-event form (surveys, questionnaires, evaluations):
+
+PHASE 1 — PRESENT PROPOSAL & ASK FOR CONFIRMATION (DO NOT CALL createForm):
+- When the user first requests to create a form:
+  1. DO NOT CALL createForm YET.
+  2. Synthesize the proposed form structure:
+     • **Title**: Proposed form title
+     • **Description / Instructions**: Form purpose
+     • **Audience**: Members only / Public only / Members & Public
+     • **Duplicate Policy**: block / allow_update / allow_multiple / allow_multiple_update
+     • **Questions / Fields**: List the dynamic fields (labels, types like text/number/select/radio/checkbox, options, required flags)
+  3. If key details are missing, ask clarifying questions.
+  4. End your message with an explicit confirmation question:
+     "Would you like me to proceed with creating this form as a draft?"
+  5. STOP and wait for the administrator's confirmation.
+
+PHASE 2 — EXECUTION UPON EXPLICIT CONFIRMATION:
+- ONLY invoke createForm AFTER the administrator has responded affirmatively (e.g. "yes", "proceed", "confirm", "create it", "looks good").
+- NEVER execute createForm multiple times in the same turn.
+- If the tool detects that a form with the same title already exists, inform the user and share the existing form's admin link.
+- When creation succeeds, provide a concise summary and ALWAYS output the direct clickable Markdown link:
+  [Edit Form in Admin Panel](/admin/forms/<form_id>)`;
 }
 
 const chatMessageSchema = z.object({
@@ -259,7 +307,7 @@ Deno.serve(async (req) => {
 
     const google = createGoogleGenerativeAI({ apiKey });
 
-    const tools = createChatTools({ client, requestId });
+    const tools = createChatTools({ client, requestId, userId });
 
     const result = streamText({
       model: google(model),

@@ -5,4 +5,5 @@ export type EdgeClient = ReturnType<typeof createClient>;
 export type ToolContext = {
   client: EdgeClient;
   requestId: string;
+  userId?: string;
 };
