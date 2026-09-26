@@ -10,11 +10,12 @@ import { Button, CheckboxField, FormInputField, FormSelectField, SlugField } fro
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormMarkdownField } from '@/components/ui/FormMarkdownField';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
-import { useAdminFormQuery, useSaveFormMutation } from '@/hooks/domain/forms';
+import { useAdminFormQuery, useFormFieldsQuery, useSaveFormMutation } from '@/hooks/domain/forms';
 import { useSlugGeneration } from '@/hooks/utils';
 import { type AdminFormInput, adminFormInputSchema } from '@/lib/domain/forms';
 
-import { FormNavigationLinks } from '../components';
+import { FormNavigationLinks, PublishFormActionButton } from '../components';
+import { PublishFormRequirementsChecker } from './components';
 
 export function FormEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export function FormEditorPage() {
   const isEditing = Boolean(id);
 
   const { data: existingForm, isLoading } = useAdminFormQuery(id);
+  const { data: formFields } = useFormFieldsQuery(id, true);
   const saveFormMutation = useSaveFormMutation();
 
   const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
@@ -123,14 +125,13 @@ export function FormEditorPage() {
                 Move to Draft
               </Button>
             ) : (
-              <Button
-                type="button"
-                variant="default"
-                disabled={saveFormMutation.isPending}
-                onClick={() => handleUpdateStatus('published')}
-              >
-                Publish Form
-              </Button>
+              <PublishFormActionButton
+                form={existingForm}
+                fieldsCount={formFields?.length ?? 0}
+                isPending={saveFormMutation.isPending}
+                onPublish={() => handleUpdateStatus('published')}
+                triggerStyle="button"
+              />
             )}
           </>
         )}
@@ -192,6 +193,10 @@ export function FormEditorPage() {
         )}
       </div>
     ) : undefined;
+
+  const watchedStatus = useWatch({ control, name: 'status' });
+  const watchedTitle = useWatch({ control, name: 'title' });
+  const watchedSlug = useWatch({ control, name: 'slug' });
 
   return (
     <AdminPageShell>
@@ -271,6 +276,16 @@ export function FormEditorPage() {
               />
             </div>
           </div>
+
+          {isEditing && (existingForm?.status === 'draft' || watchedStatus === 'draft') && (
+            <PublishFormRequirementsChecker
+              formValues={{
+                title: watchedTitle,
+                slug: watchedSlug,
+                fieldsCount: formFields?.length ?? 0,
+              }}
+            />
+          )}
 
           <div className="flex justify-end gap-3">
             <Button
