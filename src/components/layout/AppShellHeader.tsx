@@ -15,7 +15,7 @@ type AppShellHeaderProps = {
 export function AppShellHeader({ isMinimizedShell, userBadge, onOpenDrawer }: AppShellHeaderProps) {
   if (isMinimizedShell) {
     return (
-      <div className="sticky top-0 z-30 px-3 pt-1.5 print:hidden">
+      <div className="sticky top-0 z-40 px-3 pt-1.5 print:hidden">
         <div className="mx-auto flex w-fit justify-center">
           <button
             type="button"
@@ -39,7 +39,7 @@ export function AppShellHeader({ isMinimizedShell, userBadge, onOpenDrawer }: Ap
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-surface print:hidden">
+    <header className="sticky top-0 z-40 border-b border-border bg-surface print:hidden">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-2 py-1">
         <div className="flex items-center gap-3">
           <img src={brandLogo} alt="Welcome Hub" className="h-20 object-cover object-center" />

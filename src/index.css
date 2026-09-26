@@ -131,3 +131,117 @@ textarea {
   transform: translateX(-100%);
   animation: skeleton-shimmer 1.2s ease-in-out infinite;
 }
+
+/* EasyMDE Custom Toolbar */
+.editor-toolbar {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-height: 42px;
+  box-sizing: border-box !important;
+}
+
+.editor-toolbar button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: unset !important;
+  height: 28px !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  margin: 0 1px !important;
+  border-radius: 4px;
+  color: #475569;
+  box-sizing: border-box !important;
+}
+
+.editor-toolbar button:hover,
+.editor-toolbar button.active {
+  color: #0f172a;
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.editor-toolbar button svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
+}
+
+.editor-toolbar i.separator {
+  display: inline-block;
+  width: 0;
+  border-left: 1px solid #d9d9d9;
+  border-right: 1px solid transparent;
+  color: transparent;
+  height: 18px;
+  margin: 0 4px;
+  vertical-align: middle;
+}
+
+.editor-toolbar .btn-close {
+  color: #64748b;
+}
+
+.editor-toolbar .btn-close:hover {
+  background-color: #fee2e2 !important;
+  color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+}
+
+/* EasyMDE Fullscreen & Side-by-Side with Navigation Visible */
+.editor-toolbar.fullscreen {
+  position: fixed !important;
+  top: 5.5rem !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 46px !important;
+  z-index: 35 !important;
+  background-color: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+.editor-toolbar.fullscreen::before,
+.editor-toolbar.fullscreen::after {
+  display: none !important;
+}
+
+.EasyMDEContainer .CodeMirror-fullscreen {
+  position: fixed !important;
+  top: calc(5.5rem + 46px) !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: auto !important;
+  z-index: 35 !important;
+  background-color: #ffffff !important;
+}
+
+.editor-preview-side {
+  position: fixed !important;
+  top: calc(5.5rem + 46px) !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 50% !important;
+  height: auto !important;
+  z-index: 35 !important;
+  background-color: #f8fafc !important;
+  border-left: 1px solid #e2e8f0 !important;
+  padding: 16px 20px !important;
+}
+
+.editor-preview-full {
+  position: fixed !important;
+  top: calc(5.5rem + 46px) !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: auto !important;
+  z-index: 35 !important;
+  background-color: #f8fafc !important;
+  padding: 16px 20px !important;
+}
