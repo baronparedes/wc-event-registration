@@ -23,35 +23,33 @@ export function useRegistrationDetailQuery(registrationId: string) {
   return useQuery({
     queryKey: REGISTRATION_DETAIL_QUERY_KEY(registrationId),
     queryFn: async (): Promise<AdminRegistrationDetail> => {
-      // Fetch registration
-      const { data: registration, error: regError } = await supabase
+      // Fetch registration with user and answers in a single query
+      const { data, error } = await supabase
         .from('registrations')
-        .select('id, event_id, user_id, status, submitted_at, updated_at')
+        .select(
+          `
+          id, event_id, user_id, status, submitted_at, updated_at,
+          users!inner(id, member_id, full_name, email, phone, nickname, role, category),
+          registration_answers(
+            id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json,
+            event_fields(id, field_key, label, field_type, display_order)
+          )
+        `
+        )
         .eq('id', registrationId)
         .single();
 
-      if (regError) throw new Error('Registration not found');
-      if (!registration) throw new Error('Registration not found');
+      if (error || !data) {
+        throw new Error('Registration not found');
+      }
 
-      // Fetch user details
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('id, member_id, full_name, email, phone, nickname, role, category')
-        .eq('id', registration.user_id)
-        .single();
-
-      if (userError) throw new Error('Member not found');
+      // `users` is many-to-one so it's typically a single object.
+      // @ts-expect-error - Complex joined query types are hard to infer correctly
+      const user = Array.isArray(data.users) ? data.users[0] : data.users;
       if (!user) throw new Error('Member not found');
 
-      // Fetch field responses with field metadata
-      const { data: answers, error: answerError } = await supabase
-        .from('registration_answers')
-        .select(
-          'id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order)',
-        )
-        .eq('registration_id', registrationId);
-
-      if (answerError) throw answerError;
+      // @ts-expect-error - Complex joined query types are hard to infer correctly
+      const answers = data.registration_answers || [];
 
       // Type for answer with joined field metadata
       type AnswerWithFields = (typeof answers)[number] & {
@@ -121,12 +119,13 @@ export function useRegistrationDetailQuery(registrationId: string) {
 
       return {
         registration: {
-          id: registration.id,
-          event_id: registration.event_id,
-          user_id: registration.user_id,
-          status: registration.status,
-          submitted_at: registration.submitted_at,
-          updated_at: registration.updated_at,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
+          // @ts-expect-error - Complex joined query types are hard to infer correctly
+          status: data.status,
+          submitted_at: data.submitted_at,
+          updated_at: data.updated_at,
         },
         member: {
           user_id: user.id,

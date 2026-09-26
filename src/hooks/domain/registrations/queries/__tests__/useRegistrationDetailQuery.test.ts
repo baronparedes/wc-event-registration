@@ -79,9 +79,21 @@ describe('useRegistrationDetailQuery', () => {
     mockFrom.mockClear();
   });
 
+  afterEach(() => {
+    mockRegistrationsBuilder.single.mockClear();
+    mockUsersBuilder.single.mockClear();
+    mockAnswersBuilder.eq.mockClear();
+    mockFrom.mockClear();
+  });
+
   it('returns registration detail with transformed field responses', async () => {
     const submittedAt = faker.date.recent().toISOString();
     const updatedAt = faker.date.recent().toISOString();
+
+    const userEmail = faker.internet.email();
+    const userName = faker.person.fullName();
+    const userNickname = faker.person.firstName();
+    const teamName = faker.company.name();
 
     mockRegistrationsBuilder.single.mockResolvedValueOnce({
       data: {
@@ -91,47 +103,35 @@ describe('useRegistrationDetailQuery', () => {
         status: 'submitted',
         submitted_at: submittedAt,
         updated_at: updatedAt,
-      },
-      error: null,
-    });
-
-    const userEmail = faker.internet.email();
-    const userName = faker.person.fullName();
-    const userNickname = faker.person.firstName();
-    mockUsersBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: testUserId,
-        member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
-        full_name: userName,
-        email: userEmail,
-        phone: null,
-        nickname: userNickname,
-        role: 'player',
-        category: 'adult',
-      },
-      error: null,
-    });
-
-    const teamName = faker.company.name();
-    mockAnswersBuilder.eq.mockResolvedValueOnce({
-      data: [
-        {
-          id: testAnswerId,
-          event_field_id: testFieldId,
-          answer_text: teamName,
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: {
-            id: testFieldId,
-            field_key: 'team_name',
-            label: 'Team Name',
-            field_type: 'text',
-            display_order: 0,
-          },
+        users: {
+          id: testUserId,
+          member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
+          full_name: userName,
+          email: userEmail,
+          phone: null,
+          nickname: userNickname,
+          role: 'player',
+          category: 'adult',
         },
-      ],
+        registration_answers: [
+          {
+            id: testAnswerId,
+            event_field_id: testFieldId,
+            answer_text: teamName,
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: {
+              id: testFieldId,
+              field_key: 'team_name',
+              label: 'Team Name',
+              field_type: 'text',
+              display_order: 0,
+            },
+          },
+        ],
+      },
       error: null,
     });
 
@@ -190,7 +190,7 @@ describe('useRegistrationDetailQuery', () => {
     expect(result.current.error).toBeInstanceOf(Error);
   });
 
-  it('returns query error state when member lookup fails', async () => {
+  it('returns query error state when member lookup fails (missing users)', async () => {
     mockRegistrationsBuilder.single.mockResolvedValueOnce({
       data: {
         id: 'reg-1',
@@ -199,52 +199,9 @@ describe('useRegistrationDetailQuery', () => {
         status: 'submitted',
         submitted_at: '2026-06-26T10:00:00.000Z',
         updated_at: null,
+        users: null,
       },
       error: null,
-    });
-
-    mockUsersBuilder.single.mockResolvedValueOnce({
-      data: null,
-      error: new Error('missing user'),
-    });
-
-    const { result } = renderHookWithClient(() => useRegistrationDetailQuery('reg-1'));
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-  });
-
-  it('returns query error state when answer lookup fails', async () => {
-    mockRegistrationsBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'reg-1',
-        event_id: 'evt-1',
-        user_id: 'user-1',
-        status: 'submitted',
-        submitted_at: '2026-06-26T10:00:00.000Z',
-        updated_at: null,
-      },
-      error: null,
-    });
-
-    mockUsersBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'user-1',
-        member_id: 'WC-001',
-        full_name: 'Jane Doe',
-        email: 'jane@example.com',
-        phone: null,
-        nickname: null,
-        role: '',
-        category: '',
-      },
-      error: null,
-    });
-
-    mockAnswersBuilder.eq.mockResolvedValueOnce({
-      data: null,
-      error: new Error('answer failure'),
     });
 
     const { result } = renderHookWithClient(() => useRegistrationDetailQuery('reg-1'));
@@ -263,107 +220,99 @@ describe('useRegistrationDetailQuery', () => {
         status: 'updated',
         submitted_at: '2026-06-26T10:00:00.000Z',
         updated_at: '2026-06-26T10:05:00.000Z',
+        users: {
+          id: 'user-2',
+          member_id: 'WC-002',
+          full_name: 'John Doe',
+          email: 'john@example.com',
+          phone: '123',
+          nickname: null,
+          role: 7,
+          category: false,
+        },
+        registration_answers: [
+          {
+            id: 'a1',
+            event_field_id: 'f-order-2',
+            answer_text: '9',
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: {
+              id: 'f-order-2',
+              field_key: 'score',
+              label: 'Score',
+              field_type: 'number',
+              display_order: 2,
+            },
+          },
+          {
+            id: 'a2',
+            event_field_id: 'f-order-1',
+            answer_text: '["A","B"]',
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: {
+              id: 'f-order-1',
+              field_key: 'choices',
+              label: 'Choices',
+              field_type: 'multi_select',
+              display_order: 1,
+            },
+          },
+          {
+            id: 'a3',
+            event_field_id: 'f-order-3',
+            answer_text: 'not-json',
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: {
+              id: 'f-order-3',
+              field_key: 'raw',
+              label: 'Raw',
+              field_type: 'select',
+              display_order: 3,
+            },
+          },
+          {
+            id: 'a4',
+            event_field_id: 'f-order-4',
+            answer_text: 'true',
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: {
+              id: 'f-order-4',
+              field_key: 'agree',
+              label: 'Agree',
+              field_type: 'boolean',
+              display_order: 4,
+            },
+          },
+          {
+            id: 'a5',
+            event_field_id: 'f-order-5',
+            answer_text: '2026-06-28',
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: {
+              id: 'f-order-5',
+              field_key: 'start',
+              label: 'Start',
+              field_type: 'date',
+              display_order: 5,
+            },
+          },
+        ],
       },
-      error: null,
-    });
-
-    mockUsersBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'user-2',
-        member_id: 'WC-002',
-        full_name: 'John Doe',
-        email: 'john@example.com',
-        phone: '123',
-        nickname: null,
-        role: 7,
-        category: false,
-      },
-      error: null,
-    });
-
-    mockAnswersBuilder.eq.mockResolvedValueOnce({
-      data: [
-        {
-          id: 'a1',
-          event_field_id: 'f-order-2',
-          answer_text: '9',
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: {
-            id: 'f-order-2',
-            field_key: 'score',
-            label: 'Score',
-            field_type: 'number',
-            display_order: 2,
-          },
-        },
-        {
-          id: 'a2',
-          event_field_id: 'f-order-1',
-          answer_text: '["A","B"]',
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: {
-            id: 'f-order-1',
-            field_key: 'choices',
-            label: 'Choices',
-            field_type: 'multi_select',
-            display_order: 1,
-          },
-        },
-        {
-          id: 'a3',
-          event_field_id: 'f-order-3',
-          answer_text: 'not-json',
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: {
-            id: 'f-order-3',
-            field_key: 'raw',
-            label: 'Raw',
-            field_type: 'select',
-            display_order: 3,
-          },
-        },
-        {
-          id: 'a4',
-          event_field_id: 'f-order-4',
-          answer_text: 'true',
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: {
-            id: 'f-order-4',
-            field_key: 'agree',
-            label: 'Agree',
-            field_type: 'boolean',
-            display_order: 4,
-          },
-        },
-        {
-          id: 'a5',
-          event_field_id: 'f-order-5',
-          answer_text: '2026-06-28',
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: {
-            id: 'f-order-5',
-            field_key: 'start',
-            label: 'Start',
-            field_type: 'date',
-            display_order: 5,
-          },
-        },
-      ],
       error: null,
     });
 
@@ -398,36 +347,28 @@ describe('useRegistrationDetailQuery', () => {
         status: 'submitted',
         submitted_at: '2026-06-26T10:00:00.000Z',
         updated_at: null,
-      },
-      error: null,
-    });
-
-    mockUsersBuilder.single.mockResolvedValueOnce({
-      data: {
-        id: 'user-3',
-        member_id: 'WC-003',
-        full_name: 'Sam Doe',
-        email: 'sam@example.com',
-        phone: null,
-        nickname: null,
-        metadata: {},
-      },
-      error: null,
-    });
-
-    mockAnswersBuilder.eq.mockResolvedValueOnce({
-      data: [
-        {
-          id: 'a1',
-          event_field_id: 'unknown-1',
-          answer_text: null,
-          answer_number: null,
-          answer_boolean: null,
-          answer_date: null,
-          answer_json: null,
-          event_fields: null,
+        users: {
+          id: 'user-3',
+          member_id: 'WC-003',
+          full_name: 'Sam Doe',
+          email: 'sam@example.com',
+          phone: null,
+          nickname: null,
+          metadata: {},
         },
-      ],
+        registration_answers: [
+          {
+            id: 'a1',
+            event_field_id: 'unknown-1',
+            answer_text: null,
+            answer_number: null,
+            answer_boolean: null,
+            answer_date: null,
+            answer_json: null,
+            event_fields: null,
+          },
+        ],
+      },
       error: null,
     });
 
