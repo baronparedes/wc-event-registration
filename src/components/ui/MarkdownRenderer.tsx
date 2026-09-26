@@ -29,7 +29,28 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         ),
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ href, children, ...props }) => {
+            const isExternal = href?.startsWith('http') || href?.startsWith('//');
+            if (isExternal) {
+              return (
+                <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                  {children}
+                </a>
+              );
+            }
+            return (
+              <a href={href} {...props}>
+                {children}
+              </a>
+            );
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }
