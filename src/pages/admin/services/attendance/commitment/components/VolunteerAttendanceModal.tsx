@@ -268,9 +268,15 @@ export function VolunteerAttendanceModal({
   );
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="7xl">
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      size="7xl"
+      containerClassName="overflow-x-hidden"
+      className="max-md:max-w-[calc(100vw-2rem)] min-w-0"
+    >
       <Dialog.Header showCloseButton>{titleContent}</Dialog.Header>
-      <Dialog.Body className="mt-4 flex flex-col gap-4">
+      <Dialog.Body className="mt-4 flex flex-col gap-4 min-w-0 max-w-full">
         <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6">
           <CommitmentSummaryCard
             title="Committed"
@@ -410,8 +416,8 @@ export function VolunteerAttendanceModal({
             </div>
           </TabsContent>
 
-          <TabsContent value="MATRIX" className="mt-4">
-            <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-xs">
+          <TabsContent value="MATRIX" className="mt-4 min-w-0 max-w-full">
+            <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-xs min-w-0 max-w-full">
               <ListTable density="dense" className="table-fixed text-sm min-w-[1120px]">
                 <ListTableHead>
                   <ListTableHeaderRow>
