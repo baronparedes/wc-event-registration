@@ -5,6 +5,8 @@ import type { ToolContext } from './types.ts';
 
 const routeSchema = z.enum([
   'hub_calendar',
+  'services_dashboard',
+  'commitment_dashboard',
   'events',
   'event_new',
   'event_detail',
@@ -39,6 +41,8 @@ export function createGetAdminRoutesTool({ requestId }: ToolContext) {
 
       const paths: Record<typeof route, string> = {
         hub_calendar: '/admin/hub-calendar',
+        services_dashboard: '/admin/services',
+        commitment_dashboard: '/admin/services/attendance/commitment',
         events: '/admin/events',
         event_new: '/admin/events/new',
         event_detail: `/admin/events/${id ?? ''}`,

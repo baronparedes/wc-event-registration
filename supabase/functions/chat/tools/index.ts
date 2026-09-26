@@ -1,8 +1,11 @@
 import { createAnalyzeEventAttendeesTool } from './analyzeEventAttendees.ts';
 import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
+import { createGetCommitmentSummaryStatsTool } from './getCommitmentSummaryStats.ts';
 import { createGetEventsTool } from './getEvents.ts';
 import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
+import { createGetInactiveVolunteersTool } from './getInactiveVolunteers.ts';
 import { createGetServiceDashboardStatsTool } from './getServiceDashboardStats.ts';
+import { createGetTopVolunteersByCommitmentTool } from './getTopVolunteersByCommitment.ts';
 import { createGetUnexcusedVolunteersTool } from './getUnexcusedVolunteers.ts';
 import { createGetUpcomingMilestonesTool } from './getUpcomingMilestones.ts';
 import { createGetUserCommitmentsTool } from './getUserCommitments.ts';
@@ -21,6 +24,9 @@ export * from './getUserCommitments.ts';
 export * from './getUserDemographics.ts';
 export * from './getUserServiceActivity.ts';
 export * from './getUnexcusedVolunteers.ts';
+export * from './getTopVolunteersByCommitment.ts';
+export * from './getInactiveVolunteers.ts';
+export * from './getCommitmentSummaryStats.ts';
 export * from './roles.ts';
 
 export function createChatTools(context: ToolContext) {
@@ -35,5 +41,8 @@ export function createChatTools(context: ToolContext) {
     getUserServiceActivity: createGetUserServiceActivityTool(context),
     getUnexcusedVolunteers: createGetUnexcusedVolunteersTool(context),
     analyzeEventAttendees: createAnalyzeEventAttendeesTool(context),
+    getTopVolunteersByCommitment: createGetTopVolunteersByCommitmentTool(context),
+    getInactiveVolunteers: createGetInactiveVolunteersTool(context),
+    getCommitmentSummaryStats: createGetCommitmentSummaryStatsTool(context),
   };
 }
