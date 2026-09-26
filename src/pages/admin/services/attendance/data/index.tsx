@@ -186,9 +186,14 @@ export function AdminServiceAttendanceDataPage() {
           .map((mg) => ({
             ...mg,
             records: [...mg.records].sort((a, b) => {
-              const aTime = a.checked_in_at ? new Date(a.checked_in_at).getTime() : Infinity;
-              const bTime = b.checked_in_at ? new Date(b.checked_in_at).getTime() : Infinity;
-              return aTime - bTime;
+              // ⚡ Bolt: Performance Improvement
+              // Replaced `new Date(time).getTime()` with string comparison for ISO-8601 strings.
+              // This avoids expensive object allocations inside the O(N log N) sort loop.
+              // '9999-99-99' acts as a fallback ensuring null times sort to the end.
+              // Impact: Reduces CPU time and memory overhead during client-side sorting of large attendance lists.
+              const aTime = a.checked_in_at || '9999-99-99';
+              const bTime = b.checked_in_at || '9999-99-99';
+              return aTime < bTime ? -1 : aTime > bTime ? 1 : 0;
             }),
           })),
       }));
