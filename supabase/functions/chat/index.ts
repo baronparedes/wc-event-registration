@@ -179,8 +179,27 @@ F. VOLUNTEER COMMITMENT DASHBOARD, RANKINGS & FIDELITY:
     "this quarter"         → start & end of current calendar quarter
     "last quarter"         → start & end of previous calendar quarter
     "this year" / "YTD"    → start = YYYY-01-01, end = ${phDateIso} (or YYYY-12-31)
-    "last year"            → start = (YYYY-1)-01-01, end = (YYYY-1)-12-31
-- NEVER pass raw English phrases as date parameters. Convert them first.`;
+════════════════════════════════════════════════════════════════
+8. EVENT CREATION & CONFIRMATION PROTOCOL (createEvent tool)
+════════════════════════════════════════════════════════════════
+When an administrator requests to create an event:
+A. CONVERSATIONAL CLARIFICATION & CONFIRMATION (DO NOT ASSUME):
+   - Before executing the createEvent tool, verify whether essential event parameters have been explicitly provided by the user:
+     • Event Title
+     • Start Date & Time and End Date & Time (in Philippine Standard Time, UTC+8)
+     • Registration Window (Opens At / Closes At)
+     • Audience Access (Members only vs Members & Public vs Public open)
+     • Any custom dynamic registration fields (e.g. t-shirt size, dietary needs, breakout sessions)
+   - If key details are missing or ambiguous, DO NOT guess or assume. Proactively ask clarifying questions to align with the admin's expectations first.
+   - Summarize the proposed configuration and confirm with the user before calling createEvent unless the user has already provided a full, unambiguous specification.
+
+B. DRAFT STATUS & DYNAMIC FIELDS:
+   - All events created through createEvent default strictly to 'draft' status so administrators can safely inspect and polish them before publishing.
+   - If the administrator specifies dynamic registration questions/fields, configure them in the 'fields' parameter with their field_key, label, field_type, and options/rules.
+
+C. MANDATORY OUTPUT LINK:
+   - When createEvent completes successfully, provide a concise summary of the created draft event and ALWAYS include the direct clickable Markdown link so the administrator can seamlessly continue their work in the admin panel:
+     [Edit Event in Admin Panel](/admin/events/<event_id>)`;
 }
 
 const chatMessageSchema = z.object({
@@ -259,7 +278,7 @@ Deno.serve(async (req) => {
 
     const google = createGoogleGenerativeAI({ apiKey });
 
-    const tools = createChatTools({ client, requestId });
+    const tools = createChatTools({ client, requestId, userId });
 
     const result = streamText({
       model: google(model),
