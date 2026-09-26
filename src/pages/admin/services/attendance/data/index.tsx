@@ -16,8 +16,7 @@ import {
 } from '@/components/ui/ListTable';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useServiceAttendanceQuery } from '@/hooks/domain/services';
-import { useInfiniteScrollTrigger } from '@/hooks/utils';
-import { useIsMobileViewport } from '@/hooks/utils/useIsMobileViewport';
+import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components/ServiceNavigationLinks';
 import { getNearestPreviousSunday } from '@/pages/admin/services/constants';
 
@@ -34,6 +33,7 @@ import {
 export function AdminServiceAttendanceDataPage() {
   const isMobileViewport = useIsMobileViewport();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const serviceStartDate = searchParams.get('service_start_date') || '';
   const serviceEndDate = searchParams.get('service_end_date') || '';
@@ -126,15 +126,29 @@ export function AdminServiceAttendanceDataPage() {
   const isLoading = attendanceQuery.isLoading;
 
   const filteredData = useMemo(() => {
+    let result = attendanceData;
+
+    // Filter by search term
+    if (normalizedSearchTerm) {
+      result = result.filter((record) => {
+        const fullName = record.user?.full_name?.toLowerCase() || '';
+        const nickname = record.user?.nickname?.toLowerCase() || '';
+        return fullName.includes(normalizedSearchTerm) || nickname.includes(normalizedSearchTerm);
+      });
+    }
+
     // Role is in JSONB metadata — filtered client-side
-    if (selectedRoles.length === 0) return attendanceData;
-    return attendanceData.filter((record) => {
-      const recordRole = (record.metadata?.role as string) || '';
-      return selectedRoles.some(
-        (role) => recordRole.toLowerCase() === role.toLowerCase() || recordRole.includes(role),
-      );
-    });
-  }, [attendanceData, selectedRoles]);
+    if (selectedRoles.length > 0) {
+      result = result.filter((record) => {
+        const recordRole = (record.metadata?.role as string) || '';
+        return selectedRoles.some(
+          (role) => recordRole.toLowerCase() === role.toLowerCase() || recordRole.includes(role),
+        );
+      });
+    }
+
+    return result;
+  }, [attendanceData, selectedRoles, normalizedSearchTerm]);
 
   // Two-level grouping: service_date → member → [records]
   // Within each member group records are sorted by time_slot so check-ins appear in order.
@@ -210,10 +224,12 @@ export function AdminServiceAttendanceDataPage() {
     timeSlot ||
     selectedRoles.length > 0 ||
     isWalkIn ||
-    isLateTardy,
+    isLateTardy ||
+    normalizedSearchTerm,
   );
 
   const handleClearFilters = () => {
+    clearSearch();
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('service_start_date');
     newParams.delete('service_end_date');
@@ -260,6 +276,7 @@ export function AdminServiceAttendanceDataPage() {
         timeSlot={timeSlot}
         isWalkIn={isWalkIn}
         isLateTardy={isLateTardy}
+        searchTerm={searchTerm}
         selectedRoles={selectedRoles}
         selectedRoleLabel={selectedRoleLabel}
         isRoleDropdownOpen={isRoleDropdownOpen}
@@ -267,6 +284,8 @@ export function AdminServiceAttendanceDataPage() {
         hasActiveFilters={hasActiveFilters}
         fallbackDate={fallbackDate}
         onUpdateSearchParam={updateSearchParam}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        onClearSearch={clearSearch}
         onClearFilters={handleClearFilters}
         onToggleRoleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
         onCloseRoleDropdown={() => setIsRoleDropdownOpen(false)}
