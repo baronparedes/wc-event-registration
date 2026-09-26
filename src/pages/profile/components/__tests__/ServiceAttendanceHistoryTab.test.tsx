@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ExcusedMemberRecord } from '@/hooks/domain/members';
-import type { ServiceAttendance } from '@/lib/domain/services';
+import type { ServiceAttendance, ServiceExceptionDate } from '@/lib/domain/services';
 
 import { ServiceAttendanceHistoryTab } from '../ServiceAttendanceHistoryTab';
 
@@ -25,13 +25,23 @@ interface MockExcusedQueryResult {
   isPlaceholderData?: boolean;
 }
 
+interface MockServiceExceptionDatesQueryResult {
+  data?: ServiceExceptionDate[];
+  isLoading?: boolean;
+  isFetching?: boolean;
+}
+
 const {
   mockUseServiceAttendanceQuery,
   mockUseUserCommitmentHistoryQuery,
+  mockUseServiceExceptionDatesQuery,
   mockUseGetMemberExcusedSchedule,
 } = vi.hoisted(() => ({
   mockUseServiceAttendanceQuery: vi.fn(),
   mockUseUserCommitmentHistoryQuery: vi.fn(),
+  mockUseServiceExceptionDatesQuery: vi.fn<() => MockServiceExceptionDatesQueryResult>(() => ({
+    data: [],
+  })),
   mockUseGetMemberExcusedSchedule: vi.fn<
     (
       year?: number,
@@ -45,6 +55,7 @@ const {
 vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: (...args: unknown[]) => mockUseServiceAttendanceQuery(...args),
   useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
+  useServiceExceptionDatesQuery: () => mockUseServiceExceptionDatesQuery(),
 }));
 
 vi.mock('@/hooks/domain/members', async () => {
@@ -420,6 +431,36 @@ describe('ServiceAttendanceHistoryTab', () => {
     // Displays excused badge immediately, not loading skeleton or missed
     expect(screen.getAllByText('Excused').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('service-matrix-cell-loading')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
+  });
+
+  it('displays service exception badge and reason when date is an exception date', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue(makeAttendanceQueryResult([]));
+    mockUseGetMemberExcusedSchedule.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    mockUseServiceExceptionDatesQuery.mockReturnValue({
+      data: [
+        {
+          id: 'ex-1',
+          exception_date: '2026-09-06',
+          reason: 'Anniversary Service',
+          created_at: '2026-09-01T00:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isFetching: false,
+    });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+    );
+
+    expect(screen.getAllByText('Service Exception').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Anniversary Service').length).toBeGreaterThan(0);
     expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
   });
 });

@@ -2,7 +2,11 @@ import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui';
 import { useGetMemberExcusedSchedule } from '@/hooks/domain/members';
-import { useServiceAttendanceQuery, useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
+import {
+  useServiceAttendanceQuery,
+  useServiceExceptionDatesQuery,
+  useUserCommitmentHistoryQuery,
+} from '@/hooks/domain/services';
 import {
   MATRIX_TIME_SLOTS,
   SERVICE_SUNDAY_KEYS,
@@ -73,6 +77,8 @@ export function ServiceAttendanceHistoryTab({
     isError: isSnapshotsError,
   } = useUserCommitmentHistoryQuery(memberId);
 
+  const { data: exceptionDates = [] } = useServiceExceptionDatesQuery();
+
   const isLoading = isAttendanceLoading || isSnapshotsLoading;
   const isFetching = isAttendanceFetching || isSnapshotsFetching;
   const isError = isAttendanceError || isSnapshotsError;
@@ -119,6 +125,7 @@ export function ServiceAttendanceHistoryTab({
         todayStr,
         isLoadingAttendance,
         isExcusedLoading,
+        exceptionDates,
       ),
     [
       sundays,
@@ -129,6 +136,7 @@ export function ServiceAttendanceHistoryTab({
       todayStr,
       isLoadingAttendance,
       isExcusedLoading,
+      exceptionDates,
     ],
   );
 

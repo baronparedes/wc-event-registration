@@ -155,6 +155,17 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
     expect(screen.getByText('Excused')).toBeInTheDocument();
     expect(screen.getByText('Vacation leave')).toBeInTheDocument();
 
+    const exceptionCell: MatrixCellData = {
+      status: 'service_exception',
+      isCommitted: true,
+      sundayKey: 'fourth_sunday',
+      timeSlot: '12NN',
+      exceptionReason: 'Special Church Gathering',
+    };
+    rerender(<ServiceMatrixCell cell={exceptionCell} />);
+    expect(screen.getByText('Service Exception')).toBeInTheDocument();
+    expect(screen.getByText('Special Church Gathering')).toBeInTheDocument();
+
     const naCell: MatrixCellData = {
       status: 'not_applicable',
       isCommitted: false,
@@ -254,6 +265,8 @@ describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {
     expect(screen.getByText('Attended (Committed)')).toBeInTheDocument();
     expect(screen.getByText('Attended (Unscheduled)')).toBeInTheDocument();
     expect(screen.getByText('No Check-In (Committed)')).toBeInTheDocument();
+    expect(screen.getByText('Excused')).toBeInTheDocument();
+    expect(screen.getByText('Service Exception')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Committed')).toBeInTheDocument();
   });
 });
