@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
-import type { AdminMember } from '@/lib/domain/members';
-import { supabase } from '@/lib/infrastructure';
+import { type AdminMember, fetchActiveMembers } from '@/lib/domain/members';
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -15,16 +14,7 @@ export function useAdminMembersMilestonesQuery() {
   return useQuery({
     queryKey: ['admin-members-milestones'] as const,
     queryFn: async (): Promise<AdminMember[]> => {
-      const { data: members, error } = await supabase
-        .from('users')
-        .select(
-          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
-        )
-        .eq('is_active', true)
-        .order('full_name', { ascending: true })
-        .order('member_id', { ascending: true });
-
-      if (error) throw error;
+      const members = await fetchActiveMembers();
 
       return (members ?? []).map((member) => {
         const metadata = (member.metadata as Record<string, unknown> | null | undefined) ?? {};

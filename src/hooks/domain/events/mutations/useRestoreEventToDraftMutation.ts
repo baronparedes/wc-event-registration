@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import { supabase } from '@/lib/infrastructure';
+import { updateEventStatus } from '@/lib/domain/events';
 
 import { adminEventQueryKey } from '../queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
@@ -12,9 +12,7 @@ export function useRestoreEventToDraftMutation() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await supabase.from('events').update({ status: 'draft' }).eq('id', id);
-
-      if (error) throw error;
+      await updateEventStatus(id, 'draft');
     },
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });

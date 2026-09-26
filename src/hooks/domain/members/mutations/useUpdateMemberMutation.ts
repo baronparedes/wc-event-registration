@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { UpdateMemberInput } from '@/lib/domain/members';
-import { supabase } from '@/lib/infrastructure';
+import { type UpdateMemberInput, fetchMemberMetadata, updateMember } from '@/lib/domain/members';
 
 import { ADMIN_MEMBER_QUERY_KEY } from '../queries/useAdminMemberQuery';
 import { ADMIN_MEMBERS_QUERY_KEY } from '../queries/useAdminMembersQuery';
@@ -48,13 +47,8 @@ export function useUpdateMemberMutation() {
 
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string } & UpdateMemberInput): Promise<void> => {
-      const { data: existingMember, error: readError } = await supabase
-        .from('users')
-        .select('metadata')
-        .eq('id', id)
-        .maybeSingle();
+      const existingMember = await fetchMemberMetadata(id);
 
-      if (readError) throw readError;
       if (!existingMember) throw new Error('Member not found');
 
       const nextValues = {
@@ -70,9 +64,7 @@ export function useUpdateMemberMutation() {
         metadata: buildMetadata((existingMember as UserRecord).metadata, input),
       };
 
-      const { error: updateError } = await supabase.from('users').update(nextValues).eq('id', id);
-
-      if (updateError) throw updateError;
+      await updateMember(id, nextValues);
     },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });

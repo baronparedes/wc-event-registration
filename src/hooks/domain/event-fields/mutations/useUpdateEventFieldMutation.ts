@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { fetchEventFieldEventStatus, updateEventField } from '@/lib/domain/event-fields';
 import type { AdminEventField, UpdateEventFieldInput } from '@/lib/domain/event-fields';
-import { supabase } from '@/lib/infrastructure';
 
 import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 
@@ -16,21 +16,15 @@ export function useUpdateEventFieldMutation() {
 
   return useMutation({
     mutationFn: async (input: UpdateEventFieldInput): Promise<AdminEventField> => {
-      const { data: event, error: eventError } = await supabase
-        .from('events')
-        .select('status')
-        .eq('id', input.event_id)
-        .single();
+      const status = await fetchEventFieldEventStatus(input.event_id);
 
-      if (eventError) throw eventError;
-
-      if (event.status === 'archived') {
+      if (status === 'archived') {
         throw new Error('Cannot edit fields on archived events.');
       }
 
       const { id, ...updates } = input;
 
-      if (event.status === 'published') {
+      if (status === 'published') {
         const allowedPublishedKeys = new Set([
           'event_id',
           'label',
@@ -61,15 +55,7 @@ export function useUpdateEventFieldMutation() {
         }
       }
 
-      const { data, error } = await supabase
-        .from('event_fields')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as AdminEventField;
+      return updateEventField(id, updates);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) });

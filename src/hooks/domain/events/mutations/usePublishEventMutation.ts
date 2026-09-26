@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import { publishEventSchema } from '@/lib/domain/events';
-import { supabase } from '@/lib/infrastructure';
+import { fetchEventForPublish, publishEventSchema, updateEventStatus } from '@/lib/domain/events';
 
 import { adminEventQueryKey } from '../queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
@@ -19,13 +18,7 @@ export function usePublishEventMutation() {
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       // Fetch the full event to validate
-      const { data: event, error: fetchError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) throw fetchError;
+      const event = await fetchEventForPublish(id);
       if (!event) throw new Error('Event not found');
 
       // Validate against publish schema
@@ -60,9 +53,7 @@ export function usePublishEventMutation() {
       }
 
       // Publish if validation passes
-      const { error } = await supabase.from('events').update({ status: 'published' }).eq('id', id);
-
-      if (error) throw error;
+      await updateEventStatus(id, 'published');
     },
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });

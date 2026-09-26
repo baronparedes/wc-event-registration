@@ -1,26 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import type { AdminRegistrationWithMember, RegistrationStatus } from '@/lib/domain/registrations';
-import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
-
-function escapeOrFilterValue(value: string): string {
-  return value.replace(/[,%_]/g, (char) => `\\${char}`);
-}
-
-type RegistrationAnswerCount = {
-  count: number | null;
-};
-
-type RegistrationListRow = {
-  id: string;
-  event_id: string;
-  user_id: string;
-  status: RegistrationStatus;
-  submitted_at: string;
-  updated_at: string | null;
-  registration_answers?: RegistrationAnswerCount[] | null;
-};
+import {
+  type AdminRegistrationWithMember,
+  type RegistrationAnswerCount,
+  fetchEventRegistrationsPage,
+  fetchRegistrationMembersByIds,
+  searchRegistrationUserIds,
+} from '@/lib/domain/registrations';
+import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -68,27 +56,10 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
     enabled: Boolean(eventId),
     queryFn: async ({ pageParam }): Promise<AdminRegistrationsPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
-      let registrationsQuery = supabase
-        .from('registrations')
-        .select(
-          'id, event_id, user_id, status, submitted_at, updated_at, registration_answers(count)',
-          { count: 'exact' },
-        )
-        .eq('event_id', eventId)
-        .order('submitted_at', { ascending: false })
-        .order('id', { ascending: false })
-        .range(offset, offset + pageSize - 1);
+      let matchingUserIds: string[] | undefined;
 
       if (searchTerm.length > 0) {
-        const escapedSearchTerm = escapeOrFilterValue(searchTerm);
-        const { data: matchingUsers, error: userSearchError } = await supabase
-          .from('users')
-          .select('id')
-          .or(
-            `full_name.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%`,
-          );
-        if (userSearchError) throw userSearchError;
-        const matchingUserIds = matchingUsers?.map((u) => u.id) ?? [];
+        matchingUserIds = await searchRegistrationUserIds(searchTerm);
         if (matchingUserIds.length === 0) {
           return {
             items: [],
@@ -98,14 +69,15 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
             totalPages: getTotalPages(0, pageSize),
           };
         }
-        registrationsQuery = registrationsQuery.in('user_id', matchingUserIds);
       }
 
-      const { data: registrations, error: registrationError, count } = await registrationsQuery;
-
-      if (registrationError) throw registrationError;
+      const { rows: typedRegistrations, count } = await fetchEventRegistrationsPage({
+        eventId,
+        offset,
+        pageSize,
+        userIds: matchingUserIds,
+      });
       const totalCount = count ?? 0;
-      const typedRegistrations = (registrations ?? []) as RegistrationListRow[];
 
       if (typedRegistrations.length === 0) {
         return {
@@ -119,15 +91,10 @@ export function useAdminRegistrationsQuery(eventId: string, params?: AdminRegist
 
       // Fetch user details for all registrations
       const userIds = [...new Set(typedRegistrations.map((r) => r.user_id))];
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('id, member_id, full_name, email, phone, role, category')
-        .in('id', userIds);
-
-      if (userError) throw userError;
+      const users = await fetchRegistrationMembersByIds(userIds);
 
       // Build user map for quick lookup
-      const userMap = new Map(users?.map((u) => [u.id, u]) ?? []);
+      const userMap = new Map(users.map((u) => [u.id, u]));
 
       // Combine data
       const items = typedRegistrations.map((r) => {

@@ -2,8 +2,11 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import { type AttendanceSettings, normalizeAttendanceTimeslots } from '@/lib/domain/attendance';
-import { supabase } from '@/lib/infrastructure';
+import {
+  type AttendanceSettings,
+  fetchAttendanceSettings,
+  normalizeAttendanceTimeslots,
+} from '@/lib/domain/attendance';
 
 function buildDefaultSettings(eventId: string): AttendanceSettings {
   return {
@@ -25,15 +28,7 @@ export function useAttendanceSettingsQuery(eventId: string | undefined, enabled 
         throw new Error('Event ID is required to load attendance settings.');
       }
 
-      const { data, error } = await supabase
-        .from('attendance_settings')
-        .select(
-          'event_id, attendance_enabled, timeslot_enabled, enforce_check_in_event_window, timeslots, updated_at',
-        )
-        .eq('event_id', eventId)
-        .maybeSingle();
-
-      if (error) throw error;
+      const data = await fetchAttendanceSettings(eventId);
 
       if (!data) {
         return buildDefaultSettings(eventId);

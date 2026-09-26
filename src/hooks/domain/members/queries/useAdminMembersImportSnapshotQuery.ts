@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
-import { supabase } from '@/lib/infrastructure';
+import { fetchMembersImportSnapshot } from '@/lib/domain/members';
 
 export interface AdminMembersImportSnapshotMember {
   id: string;
@@ -20,16 +20,9 @@ export function useAdminMembersImportSnapshotQuery() {
   return useQuery({
     queryKey: ADMIN_MEMBERS_IMPORT_SNAPSHOT_QUERY_KEY(),
     queryFn: async (): Promise<AdminMembersImportSnapshotMember[]> => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, member_id, first_name, last_name, nickname, is_active')
-        .order('created_at', { ascending: true });
+      const data = await fetchMembersImportSnapshot();
 
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []).map((member) => ({
+      return data.map((member) => ({
         id: member.id,
         member_id: member.member_id ?? '',
         first_name: member.first_name ?? '',

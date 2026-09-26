@@ -25,3 +25,15 @@ export {
   type BulkRegistrationCsvRowInput,
   type BuildBulkRegistrationRowsResult,
 } from './csv-parser';
+export {
+  searchRegistrationUserIds,
+  fetchEventRegistrationsPage,
+  fetchRegistrationMembersByIds,
+  fetchRegistrationDetail,
+  type RegistrationAnswerCount,
+  type RegistrationListRow,
+  type RegistrationMemberRow,
+  type RegistrationDetailJoinedUser,
+  type RegistrationDetailJoinedAnswer,
+  type RegistrationDetailRow,
+} from './api';

@@ -21,3 +21,16 @@ export {
 } from './schemas';
 
 export { getPublishRequirements, areAllRequirementsMet, type PublishRequirement } from './metadata';
+
+export type { DuplicateEventInput, EventInsertPayload, EventUpdateSnapshotRow } from './api';
+export {
+  fetchAdminEventsPage,
+  fetchAdminEventById,
+  fetchEventForPublish,
+  updateEventStatus,
+  fetchAdminIdByAuthUserId,
+  createEvent,
+  fetchEventUpdateSnapshot,
+  updateEvent,
+  duplicateEvent,
+} from './api';

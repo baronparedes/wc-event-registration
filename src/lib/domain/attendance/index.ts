@@ -70,3 +70,26 @@ export {
   formatCompactSlotLabelsFromSlotRecords,
   formatCompactCheckedInSlotLabels,
 } from './slot-labels';
+
+export type {
+  AttendanceAnswerTable,
+  AttendanceAnswerTargetColumn,
+  AttendanceAnswerUpsertRow,
+  AttendanceSlotRecordRow,
+  AttendanceCheckInRow,
+  AttendanceRegistrationUserRow,
+  AttendanceUserProfileRow,
+  AttendancePublicRegistrationProfileRow,
+} from './api';
+export {
+  deleteAttendanceAnswers,
+  upsertAttendanceAnswers,
+  fetchAttendanceSlotRecords,
+  fetchAttendanceCheckInsByIds,
+  fetchAttendanceRegistrationUsers,
+  fetchAttendanceUserProfiles,
+  fetchAttendancePublicRegistrationProfiles,
+  fetchAttendanceSavedView,
+  fetchAttendanceSavedViews,
+  fetchAttendanceSettings,
+} from './api';

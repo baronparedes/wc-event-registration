@@ -27,7 +27,8 @@
 
 ## Data
 
-- Reads: React Query + Supabase
+- Reads: React Query hooks → `lib/domain/<feature>/api.ts` (Supabase)
+- DB access only in `lib/domain/<feature>/api.ts`; hooks import no `supabase` except auth/storage
 - Writes: Edge Functions only
 - Validate route params before render
 - Invalidate affected queries after mutations

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { fetchAdminEventById } from '@/lib/domain/events';
 import type { AdminEvent } from '@/lib/domain/events';
-import { supabase } from '@/lib/infrastructure';
 
 export const adminEventQueryKey = (id: string) => ['admin-event', id] as const;
 
@@ -11,10 +11,7 @@ export function useAdminEventQuery(id: string | undefined) {
     queryKey: id ? adminEventQueryKey(id) : ['admin-event', ''],
     queryFn: async (): Promise<AdminEvent | null> => {
       if (!id) return null;
-      const { data, error } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
-
-      if (error) throw error;
-      return data as AdminEvent | null;
+      return fetchAdminEventById(id);
     },
     enabled: !!id,
   });

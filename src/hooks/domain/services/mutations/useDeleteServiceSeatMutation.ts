@@ -1,17 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { supabase } from '@/lib/infrastructure';
+import { deleteServiceSeat } from '@/lib/domain/services';
 
 export function useDeleteServiceSeatMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await supabase.from('service_seats').delete().eq('id', id);
-
-      if (error) {
-        throw new Error(`Failed to delete service seat: ${error.message}`);
-      }
+      await deleteServiceSeat(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-seats'] });

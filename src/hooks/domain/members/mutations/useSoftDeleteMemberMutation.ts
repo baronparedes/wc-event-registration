@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { supabase } from '@/lib/infrastructure';
+import { setMemberActiveStatus } from '@/lib/domain/members';
 
 import { ADMIN_MEMBER_QUERY_KEY } from '../queries/useAdminMemberQuery';
 import { ADMIN_MEMBERS_QUERY_KEY } from '../queries/useAdminMembersQuery';
@@ -11,15 +11,8 @@ export function useSoftDeleteMemberMutation() {
 
   return useMutation({
     mutationFn: async ({ id }: { id: string }): Promise<void> => {
-      const { data: updatedMember, error } = await supabase
-        .from('users')
-        .update({ is_active: false })
-        .eq('id', id)
-        .eq('is_active', true)
-        .select('id')
-        .maybeSingle();
+      const updatedMember = await setMemberActiveStatus(id, false);
 
-      if (error) throw error;
       if (!updatedMember) throw new Error('Member not found');
     },
     onSuccess: (_data, { id }) => {

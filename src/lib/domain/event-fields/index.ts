@@ -54,3 +54,12 @@ export {
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
 } from './metadata';
+
+export {
+  fetchAdminEventFields,
+  fetchEventFieldEventStatus,
+  createEventField,
+  updateEventField,
+  deleteEventField,
+  reorderEventFields,
+} from './api';

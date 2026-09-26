@@ -1,7 +1,8 @@
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
+import { fetchCommitmentDashboardStatsPage } from '@/lib/domain/services';
+import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 export interface CommitmentDashboardFilters {
   start_date: string;
@@ -57,22 +58,7 @@ export function useCommitmentDashboardStatsQuery(
       const offset = decodeOffsetCursor(pageParam as string | null);
       const page = Math.floor(offset / pageSize) + 1;
 
-      const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
-        p_start_date: filters.start_date,
-        p_end_date: filters.end_date,
-        p_excuse_event_id: filters.excuse_event_id || null,
-        p_search_query: filters.search_query || null,
-        p_role: filters.role || null,
-        p_category: filters.category || null,
-        p_page: page,
-        p_page_size: pageSize,
-      });
-
-      if (error) {
-        throw new Error(`Failed to fetch commitment dashboard stats: ${error.message}`);
-      }
-
-      const rawItems = (data ?? []) as Record<string, unknown>[];
+      const rawItems = await fetchCommitmentDashboardStatsPage(filters, page, pageSize);
       const totalCount = rawItems.length > 0 ? Number(rawItems[0].total_count) : 0;
 
       const items: CommitmentDashboardStat[] = rawItems.map((item) => ({

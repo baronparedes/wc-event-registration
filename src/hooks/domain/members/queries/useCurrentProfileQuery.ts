@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
-import type { AdminMember } from '@/lib/domain/members';
+import {
+  type AdminMember,
+  fetchMemberByEmail,
+  fetchMemberLatestServiceAttendance,
+} from '@/lib/domain/members';
 import { supabase } from '@/lib/infrastructure';
 
 function readMetadataString(value: unknown): string {
@@ -24,25 +28,12 @@ export function useCurrentProfileQuery() {
       const userEmail = session?.user?.email;
       if (!userEmail) return null;
 
-      const { data: member, error } = await supabase
-        .from('users')
-        .select(
-          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
-        )
-        .ilike('email', userEmail)
-        .maybeSingle();
+      const member = await fetchMemberByEmail(userEmail);
 
-      if (error) throw error;
       if (!member) return null;
 
       // Fetch the single most recent service attendance record to calculate last_activity
-      const { data: latestAttendance } = await supabase
-        .from('service_attendance')
-        .select('checked_in_at')
-        .eq('user_id', member.id)
-        .order('checked_in_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const latestAttendance = await fetchMemberLatestServiceAttendance(member.id);
 
       const last_activity = latestAttendance?.checked_in_at;
 

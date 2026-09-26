@@ -2,8 +2,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import type { UpsertAttendanceAnswersInput } from '@/lib/domain/attendance';
-import { supabase } from '@/lib/infrastructure';
+import {
+  type AttendanceAnswerUpsertRow,
+  type UpsertAttendanceAnswersInput,
+  deleteAttendanceAnswers,
+  upsertAttendanceAnswers,
+} from '@/lib/domain/attendance';
 
 /** Upserts attendance field answers for a single registrant via PostgREST. */
 export function useUpsertAttendanceAnswersMutation() {
@@ -44,17 +48,11 @@ export function useUpsertAttendanceAnswersMutation() {
         .map((a) => a.attendance_field_id);
 
       if (blankFieldIds.length > 0) {
-        const { error: deleteError } = await supabase
-          .from(targetTable)
-          .delete()
-          .eq(targetColumn, targetId)
-          .in('attendance_field_id', blankFieldIds);
-
-        if (deleteError) throw deleteError;
+        await deleteAttendanceAnswers(targetTable, targetColumn, targetId, blankFieldIds);
       }
 
       if (answersWithValues.length > 0) {
-        const upsertRows = answersWithValues.map((a) => {
+        const upsertRows = answersWithValues.map((a): AttendanceAnswerUpsertRow => {
           const baseRow = {
             id: crypto.randomUUID(),
             attendance_field_id: a.attendance_field_id,
@@ -79,12 +77,7 @@ export function useUpsertAttendanceAnswersMutation() {
           };
         });
 
-        const { error } = await supabase.from(targetTable).upsert(upsertRows, {
-          onConflict,
-          ignoreDuplicates: false,
-        });
-
-        if (error) throw error;
+        await upsertAttendanceAnswers(targetTable, upsertRows, onConflict);
       }
 
       return answersWithValues.length;

@@ -1,8 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { UpdateEventInput } from '@/lib/domain/events';
-import { mapPublicRegistrationAccessToEventFlags } from '@/lib/domain/events';
-import { localDateTimeToUTC8ISO, supabase } from '@/lib/infrastructure';
+import {
+  fetchEventUpdateSnapshot,
+  mapPublicRegistrationAccessToEventFlags,
+  updateEvent,
+} from '@/lib/domain/events';
+import { localDateTimeToUTC8ISO } from '@/lib/infrastructure';
 
 import { adminEventQueryKey } from '../queries/useAdminEventQuery';
 import { ADMIN_EVENTS_QUERY_KEY } from '../queries/useAdminEventsQuery';
@@ -21,13 +25,7 @@ export function useUpdateEventMutation() {
         input.public_registration_access,
       );
 
-      const { data: previousEvent } = await supabase
-        .from('events')
-        .select(
-          'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode, allow_public_registrations, require_id_lookup, metadata',
-        )
-        .eq('id', id)
-        .maybeSingle();
+      const previousEvent = await fetchEventUpdateSnapshot(id);
 
       const nextValues: Record<string, unknown> = {
         title: input.title,
@@ -65,9 +63,7 @@ export function useUpdateEventMutation() {
         };
       }
 
-      const { error } = await supabase.from('events').update(nextValues).eq('id', id);
-
-      if (error) throw error;
+      await updateEvent(id, nextValues);
     },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });
