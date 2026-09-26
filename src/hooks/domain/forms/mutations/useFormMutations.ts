@@ -1,7 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { AdminFormInput, FormFieldInput } from '@/lib/domain/forms';
-import { supabase } from '@/lib/infrastructure';
+import {
+  createForm,
+  createFormField,
+  deleteFormField,
+  reorderFormFields,
+  submitFormSubmission,
+  updateForm,
+  updateFormField,
+} from '@/lib/domain/forms';
+import type {
+  AdminFormInput,
+  FormFieldInput,
+  SubmitFormSubmissionPayload,
+} from '@/lib/domain/forms';
 
 import { adminFormQueryKey } from '../queries/useAdminFormQuery';
 import { ADMIN_FORMS_QUERY_KEY } from '../queries/useAdminFormsQuery';
@@ -13,20 +25,9 @@ export function useSaveFormMutation() {
   return useMutation({
     mutationFn: async ({ id, data }: { id?: string; data: AdminFormInput }) => {
       if (id) {
-        const { data: form, error } = await supabase
-          .from('forms')
-          .update(data)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return form;
+        return updateForm(id, data);
       } else {
-        const { data: form, error } = await supabase.from('forms').insert(data).select().single();
-
-        if (error) throw error;
-        return form;
+        return createForm(data);
       }
     },
     onSuccess: (form) => {
@@ -44,24 +45,9 @@ export function useSaveFormFieldMutation(formId: string) {
   return useMutation({
     mutationFn: async ({ id, data }: { id?: string; data: FormFieldInput }) => {
       if (id) {
-        const { data: field, error } = await supabase
-          .from('form_fields')
-          .update(data)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return field;
+        return updateFormField(id, data);
       } else {
-        const { data: field, error } = await supabase
-          .from('form_fields')
-          .insert({ ...data, form_id: formId })
-          .select()
-          .single();
-
-        if (error) throw error;
-        return field;
+        return createFormField(formId, data);
       }
     },
     onSuccess: () => {
@@ -76,8 +62,7 @@ export function useDeleteFormFieldMutation(formId: string) {
 
   return useMutation({
     mutationFn: async (fieldId: string) => {
-      const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
-      if (error) throw error;
+      await deleteFormField(fieldId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formFieldsQueryKey(formId, true) });
@@ -92,12 +77,7 @@ export function useReorderFormFieldsMutation(formId: string) {
   return useMutation({
     mutationFn: async (orderedIds: string[]) => {
       // Update display_order for each field based on its new position in a single RPC call
-      const { error } = await supabase.rpc('reorder_form_fields', {
-        p_form_id: formId,
-        p_field_ids: orderedIds,
-      });
-
-      if (error) throw error;
+      await reorderFormFields(formId, orderedIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formFieldsQueryKey(formId, true) });
@@ -110,28 +90,8 @@ export function useSubmitFormMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: {
-      form_slug: string;
-      member_id?: string;
-      public_registrant_info?: {
-        first_name?: string;
-        last_name?: string;
-        email?: string;
-        phone?: string;
-      };
-      responses: Record<string, unknown>;
-      idempotency_key: string;
-    }) => {
-      const { data, error } = await supabase.functions.invoke('submit-form-submission', {
-        body: payload,
-      });
-
-      if (error) throw error;
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to submit form response');
-      }
-
-      return data;
+    mutationFn: async (payload: SubmitFormSubmissionPayload) => {
+      return submitFormSubmission(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['form-submissions'] });

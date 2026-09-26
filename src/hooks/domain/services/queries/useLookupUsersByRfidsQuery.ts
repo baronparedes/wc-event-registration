@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { supabase } from '@/lib/infrastructure';
+import { fetchServiceUsersByRfids } from '@/lib/domain/services';
 
 export type LookupUserByRfidResult = {
   id: string;
@@ -21,16 +21,9 @@ export function useLookupUsersByRfidsQuery(rfids: string[]) {
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, member_id, full_name')
-        .in('member_id', normalizedRfids);
+      const data = await fetchServiceUsersByRfids(normalizedRfids);
 
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []).map((u) => ({
+      return data.map((u) => ({
         id: u.id,
         member_id: u.member_id,
         full_name: u.full_name,

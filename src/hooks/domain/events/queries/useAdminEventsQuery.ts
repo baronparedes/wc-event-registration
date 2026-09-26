@@ -1,14 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
+import { fetchAdminEventsPage } from '@/lib/domain/events';
 import type { AdminEvent } from '@/lib/domain/events';
-import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
+import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 export const ADMIN_EVENTS_QUERY_KEY = ['admin-events'] as const;
-
-function escapeOrFilterValue(value: string): string {
-  return value.replace(/[,%_]/g, (char) => `\\${char}`);
-}
 
 export const adminEventsInfiniteQueryKey = (pageSize: number, searchTerm: string) =>
   [...ADMIN_EVENTS_QUERY_KEY, pageSize, searchTerm] as const;
@@ -37,25 +34,7 @@ export function useAdminEventsQuery(params?: AdminEventsPageParams) {
     getNextPageParam: (lastPage: AdminEventsPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminEventsPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
-      let eventsQuery = supabase
-        .from('events')
-        .select('*, member_registration_count, public_registration_count', { count: 'exact' });
-
-      if (searchTerm.length > 0) {
-        const escapedSearchTerm = escapeOrFilterValue(searchTerm);
-        eventsQuery = eventsQuery.or(
-          `title.ilike.%${escapedSearchTerm}%,slug.ilike.%${escapedSearchTerm}%`,
-        );
-      }
-
-      const { data, error, count } = await eventsQuery
-        .order('starts_at', { ascending: false, nullsFirst: false })
-        .order('id', { ascending: false })
-        .range(offset, offset + pageSize - 1);
-
-      if (error) throw error;
-
-      const items = (data ?? []) as AdminEvent[];
+      const { rows: items, count } = await fetchAdminEventsPage({ offset, pageSize, searchTerm });
       const totalCount = count ?? 0;
       const hasMore = offset + items.length < totalCount;
 

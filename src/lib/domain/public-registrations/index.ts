@@ -38,3 +38,10 @@ export {
   type BulkPublicRegistrationCsvRowInput,
   type BuildBulkPublicRegistrationRowsResult,
 } from './csv-parser';
+
+export {
+  fetchEventPublicRegistrationsPage,
+  fetchPublicRegistrationDetailRow,
+  type PublicRegistrationDetailJoinedAnswer,
+  type PublicRegistrationDetailRow,
+} from './api';

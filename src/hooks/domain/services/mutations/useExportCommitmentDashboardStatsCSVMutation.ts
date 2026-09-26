@@ -3,8 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import {
   type CommitmentDashboardStat,
   buildCommitmentDashboardCsvExport,
+  fetchAllCommitmentDashboardStatsForExport,
 } from '@/lib/domain/services';
-import { supabase } from '@/lib/infrastructure';
 
 export interface ExportCommitmentDashboardStatsCSVParams {
   start_date: string;
@@ -55,65 +55,9 @@ export function useExportCommitmentDashboardStatsCSVMutation() {
     ExportCommitmentDashboardStatsCSVParams
   >({
     mutationFn: async (filters) => {
-      // 1. Fetch initial page to get total count
-      const { data: firstPageData, error: firstPageError } = await supabase.rpc(
-        'get_commitment_dashboard_stats',
-        {
-          p_start_date: filters.start_date,
-          p_end_date: filters.end_date,
-          p_excuse_event_id: filters.excuse_event_id || null,
-          p_search_query: filters.search_query || null,
-          p_role: filters.role || null,
-          p_category: filters.category || null,
-          p_page: 1,
-          p_page_size: EXPORT_PAGE_SIZE,
-        },
-      );
-
-      if (firstPageError) {
-        throw new Error(
-          `Failed to fetch commitment dashboard stats for export: ${firstPageError.message}`,
-        );
-      }
-
-      const rawFirstPageItems = (firstPageData ?? []) as Record<string, unknown>[];
-      const totalCount =
-        rawFirstPageItems.length > 0 ? Number(rawFirstPageItems[0].total_count) : 0;
-
-      const allStats: CommitmentDashboardStat[] = rawFirstPageItems.map(
-        mapRawItemToCommitmentDashboardStat,
-      );
-
-      // 2. If there are more pages, fetch remaining pages in parallel
-      const totalPages = Math.ceil(totalCount / EXPORT_PAGE_SIZE);
-      if (totalPages > 1) {
-        const remainingPagePromises = [];
-        for (let page = 2; page <= totalPages; page++) {
-          remainingPagePromises.push(
-            supabase.rpc('get_commitment_dashboard_stats', {
-              p_start_date: filters.start_date,
-              p_end_date: filters.end_date,
-              p_excuse_event_id: filters.excuse_event_id || null,
-              p_search_query: filters.search_query || null,
-              p_role: filters.role || null,
-              p_category: filters.category || null,
-              p_page: page,
-              p_page_size: EXPORT_PAGE_SIZE,
-            }),
-          );
-        }
-
-        const remainingResults = await Promise.all(remainingPagePromises);
-        for (const res of remainingResults) {
-          if (res.error) {
-            throw new Error(
-              `Failed to fetch commitment dashboard stats page for export: ${res.error.message}`,
-            );
-          }
-          const rawItems = (res.data ?? []) as Record<string, unknown>[];
-          allStats.push(...rawItems.map(mapRawItemToCommitmentDashboardStat));
-        }
-      }
+      // 1-2. Fetch first page for total count, then remaining pages in parallel
+      const rawItems = await fetchAllCommitmentDashboardStatsForExport(filters, EXPORT_PAGE_SIZE);
+      const allStats: CommitmentDashboardStat[] = rawItems.map(mapRawItemToCommitmentDashboardStat);
 
       // 3. Build CSV string & filename
       const { csvText, filename } = buildCommitmentDashboardCsvExport({

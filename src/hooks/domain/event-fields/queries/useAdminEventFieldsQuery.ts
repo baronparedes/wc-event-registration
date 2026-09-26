@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { fetchAdminEventFields } from '@/lib/domain/event-fields';
 import type { AdminEventField } from '@/lib/domain/event-fields';
-import { supabase } from '@/lib/infrastructure';
 
 export const adminEventFieldsQueryKey = (eventId: string) =>
   ['admin-event-fields', eventId] as const;
@@ -15,16 +15,7 @@ export function useAdminEventFieldsQuery(eventId: string | undefined) {
     queryKey: eventId ? adminEventFieldsQueryKey(eventId) : ['admin-event-fields', ''],
     queryFn: async (): Promise<AdminEventField[]> => {
       if (!eventId) return [];
-      const { data, error } = await supabase
-        .from('event_fields')
-        .select(
-          'id, event_id, field_key, label, field_type, applicability, is_required, is_active, placeholder, help_text, options, validation_rules, display_order, created_at, updated_at',
-        )
-        .eq('event_id', eventId)
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-      return (data ?? []) as AdminEventField[];
+      return fetchAdminEventFields(eventId);
     },
     enabled: Boolean(eventId),
   });

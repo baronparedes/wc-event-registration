@@ -18,12 +18,13 @@ This file contains the core principles, architecture rules, and domain logic con
 ## 3. Architecture & Code Organization
 
 - **Domain Hooks**: Domain hooks must reside in `src/hooks/domain/`.
-  - They must execute Supabase database operations _directly_ inside the individual hook files.
-  - Do NOT use intermediate data abstraction files or repository patterns.
+  - Supabase database operations (`.from`, `.rpc`, `.functions.invoke`) must live in `src/lib/domain/<feature>/api.ts` as explicitly named, strongly typed functions re-exported from the feature barrel; hooks call these functions.
+  - Hook files must not import `supabase`, except for `supabase.auth` and `supabase.storage` operations.
+  - Do NOT create data abstraction files inside `src/hooks/`.
   - Each hook must be defined in its own file.
 - **Pagination**: Admin paginated data views (Events, Members, Member Registrations, Public Registrations) must use the `useInfiniteScrollTrigger` custom hook (`src/hooks/utils/useInfiniteScrollTrigger.ts`). It utilizes `IntersectionObserver` for infinite scroll pagination via React Query's `useInfiniteQuery`.
 - **Legal/Org Config**: Application legal and organization configuration details (app name, organization name, privacy contact email) are defined centrally in `src/config/constants/legal.ts`.
-- **Tech Debt**: The React codebase technical debt audit and multi-phase refactoring roadmap are documented in `docs/tech-debt-analysis.md`. Refer to this document before embarking on large refactors.
+- **Tech Debt**: The React codebase technical debt audit and multi-phase refactoring roadmap are documented in `docs/analysis/tech-debt-analysis.md`. Refer to this document before embarking on large refactors.
 
 ## 4. Authentication, Roles & Security
 

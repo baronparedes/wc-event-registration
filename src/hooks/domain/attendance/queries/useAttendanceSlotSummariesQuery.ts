@@ -2,22 +2,15 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
-import type { AttendanceSlotAttendee, AttendanceSlotSummary } from '@/lib/domain/attendance';
-import { supabase } from '@/lib/infrastructure';
-
-type SlotRecordRow = {
-  check_in_id: string;
-  slot: string;
-  recorded_at: string;
-};
-
-type CheckInRow = {
-  id: string;
-  attendee_kind: 'registered' | 'public';
-  registration_id: string | null;
-  public_registration_id: string | null;
-  first_checked_in_at: string | null;
-};
+import {
+  type AttendanceSlotAttendee,
+  type AttendanceSlotSummary,
+  fetchAttendanceCheckInsByIds,
+  fetchAttendancePublicRegistrationProfiles,
+  fetchAttendanceRegistrationUsers,
+  fetchAttendanceSlotRecords,
+  fetchAttendanceUserProfiles,
+} from '@/lib/domain/attendance';
 
 /**
  * Loads slot-level attendance summaries for timeslot-enabled events.
@@ -28,25 +21,13 @@ export function useAttendanceSlotSummariesQuery(eventId: string | undefined, ena
     queryFn: async (): Promise<AttendanceSlotSummary[]> => {
       if (!eventId) return [];
 
-      const { data: slotRecords, error: slotRecordsError } = await supabase
-        .from('attendance_slot_records')
-        .select('check_in_id, slot, recorded_at')
-        .eq('event_id', eventId)
-        .order('recorded_at', { ascending: true });
+      const slotRecords = await fetchAttendanceSlotRecords(eventId);
 
-      if (slotRecordsError) throw slotRecordsError;
       if (!slotRecords || slotRecords.length === 0) return [];
 
       const checkInIds = [...new Set(slotRecords.map((record) => record.check_in_id))];
 
-      const { data: checkIns, error: checkInsError } = await supabase
-        .from('attendance_check_ins')
-        .select('id, attendee_kind, registration_id, public_registration_id, first_checked_in_at')
-        .in('id', checkInIds);
-
-      if (checkInsError) throw checkInsError;
-
-      const checkInRows = (checkIns ?? []) as CheckInRow[];
+      const checkInRows = await fetchAttendanceCheckInsByIds(checkInIds);
       const checkInById = new Map(checkInRows.map((row) => [row.id, row]));
 
       const registrationIds = checkInRows
@@ -56,31 +37,18 @@ export function useAttendanceSlotSummariesQuery(eventId: string | undefined, ena
         .map((row) => row.public_registration_id)
         .filter((id): id is string => Boolean(id));
 
-      const registrations = registrationIds.length
-        ? await supabase.from('registrations').select('id, user_id').in('id', registrationIds)
-        : { data: [], error: null };
-
-      if (registrations.error) throw registrations.error;
-
-      const registrationRows = registrations.data ?? [];
+      const registrationRows = registrationIds.length
+        ? await fetchAttendanceRegistrationUsers(registrationIds)
+        : [];
       const userIds = registrationRows
         .map((row) => row.user_id)
         .filter((id): id is string => Boolean(id));
 
-      const users = userIds.length
-        ? await supabase.from('users').select('id, member_id, full_name, email').in('id', userIds)
-        : { data: [], error: null };
-
-      if (users.error) throw users.error;
+      const users = userIds.length ? await fetchAttendanceUserProfiles(userIds) : [];
 
       const publicRegistrations = publicRegistrationIds.length
-        ? await supabase
-            .from('public_registrations')
-            .select('id, first_name, last_name, email')
-            .in('id', publicRegistrationIds)
-        : { data: [], error: null };
-
-      if (publicRegistrations.error) throw publicRegistrations.error;
+        ? await fetchAttendancePublicRegistrationProfiles(publicRegistrationIds)
+        : [];
 
       const registrationById = new Map(
         registrationRows
@@ -89,7 +57,7 @@ export function useAttendanceSlotSummariesQuery(eventId: string | undefined, ena
       );
 
       const userById = new Map(
-        (users.data ?? []).map((user) => [
+        users.map((user) => [
           user.id as string,
           {
             full_name: (user.full_name as string) ?? 'Unknown attendee',
@@ -100,7 +68,7 @@ export function useAttendanceSlotSummariesQuery(eventId: string | undefined, ena
       );
 
       const publicRegistrationById = new Map(
-        (publicRegistrations.data ?? []).map((registration) => {
+        publicRegistrations.map((registration) => {
           const firstName = String(registration.first_name ?? '').trim();
           const lastName = String(registration.last_name ?? '').trim();
           const fullName = `${firstName} ${lastName}`.trim() || 'Guest attendee';
@@ -118,7 +86,7 @@ export function useAttendanceSlotSummariesQuery(eventId: string | undefined, ena
 
       const attendeesBySlot = new Map<string, AttendanceSlotAttendee[]>();
 
-      for (const record of slotRecords as SlotRecordRow[]) {
+      for (const record of slotRecords) {
         const checkIn = checkInById.get(record.check_in_id);
         if (!checkIn) continue;
 

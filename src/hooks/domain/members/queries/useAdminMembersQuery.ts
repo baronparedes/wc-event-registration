@@ -1,15 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import type { AdminMember } from '@/lib/domain/members';
-import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
+import { type AdminMember, fetchAdminMembersPage } from '@/lib/domain/members';
+import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
-}
-
-function escapeOrFilterValue(value: string): string {
-  return value.replace(/[,%_]/g, (char) => `\\${char}`);
 }
 
 export const ADMIN_MEMBERS_QUERY_KEY = () => ['admin-members'] as const;
@@ -51,38 +47,13 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
     getNextPageParam: (lastPage: AdminMembersPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminMembersPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
-      let query = supabase
-        .from('users')
-        .select(
-          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, last_activity',
-          { count: 'exact' },
-        );
-
-      if (statusFilter === 'active') {
-        query = query.eq('is_active', true);
-      } else if (statusFilter === 'deleted') {
-        query = query.eq('is_active', false);
-      }
-
-      query = query
-        .order('full_name', { ascending: true })
-        .order('member_id', { ascending: true })
-        .range(offset, offset + pageSize - 1);
-
-      if (searchTokens.length > 0) {
-        const escapedSearchTerm = escapeOrFilterValue(searchTerm);
-        const escapedTokenPattern = `%${searchTokens
-          .map((token) => escapeOrFilterValue(token))
-          .join('%')}%`;
-
-        query = query.or(
-          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.${escapedTokenPattern},email.ilike.${escapedTokenPattern}`,
-        );
-      }
-
-      const { data: members, error: membersError, count } = await query;
-
-      if (membersError) throw membersError;
+      const { rows: members, count } = await fetchAdminMembersPage({
+        offset,
+        pageSize,
+        searchTerm,
+        searchTokens,
+        statusFilter,
+      });
       const totalCount = count ?? 0;
       if (!members?.length) {
         return {

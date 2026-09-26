@@ -1,8 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
-import type { AdminMember } from '@/lib/domain/members';
-import { supabase } from '@/lib/infrastructure';
+import {
+  type AdminMember,
+  fetchAdminMemberById,
+  fetchMemberLatestServiceAttendance,
+} from '@/lib/domain/members';
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -30,30 +33,12 @@ export function useAdminMemberQuery(
         throw new Error('Member ID is required');
       }
 
-      let query = supabase
-        .from('users')
-        .select(
-          'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at',
-        )
-        .eq('id', memberId);
+      const member = await fetchAdminMemberById(memberId, includeInactive);
 
-      if (!includeInactive) {
-        query = query.eq('is_active', true);
-      }
-
-      const { data: member, error } = await query.maybeSingle();
-
-      if (error) throw error;
       if (!member) throw new Error('Member not found');
 
       // Fetch the single most recent service attendance record to calculate last_activity
-      const { data: latestAttendance } = await supabase
-        .from('service_attendance')
-        .select('checked_in_at')
-        .eq('user_id', member.id)
-        .order('checked_in_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const latestAttendance = await fetchMemberLatestServiceAttendance(member.id);
 
       const last_activity = latestAttendance?.checked_in_at;
 

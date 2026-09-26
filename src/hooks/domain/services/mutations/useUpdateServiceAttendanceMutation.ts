@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { ServiceAttendance, UpdateServiceAttendanceInput } from '@/lib/domain/services';
-import { supabase } from '@/lib/infrastructure';
+import {
+  type ServiceAttendance,
+  type UpdateServiceAttendanceInput,
+  updateServiceAttendance,
+} from '@/lib/domain/services';
 
 export function useUpdateServiceAttendanceMutation() {
   const queryClient = useQueryClient();
@@ -14,18 +17,7 @@ export function useUpdateServiceAttendanceMutation() {
       id: string;
       input: UpdateServiceAttendanceInput;
     }): Promise<ServiceAttendance> => {
-      const { data, error } = await supabase
-        .from('service_attendance')
-        .update(input)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to update service attendance: ${error.message}`);
-      }
-
-      return data as ServiceAttendance;
+      return updateServiceAttendance(id, input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-attendance'] });

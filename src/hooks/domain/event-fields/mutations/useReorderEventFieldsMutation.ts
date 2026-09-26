@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { reorderEventFields } from '@/lib/domain/event-fields';
 import type { ReorderEventFieldsInput } from '@/lib/domain/event-fields';
-import { supabase } from '@/lib/infrastructure';
 
 import { adminEventFieldsQueryKey } from '../queries/useAdminEventFieldsQuery';
 
@@ -15,12 +15,7 @@ export function useReorderEventFieldsMutation() {
 
   return useMutation({
     mutationFn: async (input: ReorderEventFieldsInput): Promise<void> => {
-      const { error } = await supabase.rpc('reorder_event_fields', {
-        p_event_id: input.event_id,
-        p_ordered_ids: input.orderedIds,
-      });
-
-      if (error) throw error;
+      await reorderEventFields(input);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: adminEventFieldsQueryKey(variables.event_id) });

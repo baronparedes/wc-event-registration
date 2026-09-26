@@ -61,10 +61,10 @@ There are approximately 87 instances of `useEffect` hooks across the application
 
 ### 6. Domain Hook Layer Abstraction
 
-Memory notes indicate domain hooks should execute Supabase database operations directly inside individual hook files rather than using intermediate data abstraction files. Current files appear to be adhering to this partially, but the import structure (`import { createEdgeFunctionCaller } from '@/lib/infrastructure';`) suggests reliance on infrastructure wrappers rather than pure domain implementations.
+**Resolved:** Supabase database operations (`.from`, `.rpc`, `.functions.invoke`) now live in `src/lib/domain/<feature>/api.ts` (repository pattern), re-exported from each feature barrel. Domain hooks call these API functions and import `supabase` only for `supabase.auth` and `supabase.storage`. Existing `createEdgeFunctionCaller` usages remain as-is.
 
-- **Optimization Suggestions:**
-  - Audit `src/hooks/domain/` to ensure full compliance with the architecture rules for database queries.
+- **Remaining:**
+  - `useAttendanceCheckInRealtime` and `useAttendanceSlotRecordRealtime` still call `supabase.channel` directly; no shared realtime abstraction exists yet.
 
 ### 7. Database N+1 Queries (Supabase Edge Functions)
 

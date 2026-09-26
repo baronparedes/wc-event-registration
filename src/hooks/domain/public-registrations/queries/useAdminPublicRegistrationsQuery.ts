@@ -1,12 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
-import { decodeOffsetCursor, getTotalPages, supabase } from '@/lib/infrastructure';
-
-function escapeOrFilterValue(value: string): string {
-  return value.replace(/[,%_]/g, (char) => `\\${char}`);
-}
+import {
+  type PublicRegistrationSummary,
+  fetchEventPublicRegistrationsPage,
+} from '@/lib/domain/public-registrations';
+import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 export const ADMIN_PUBLIC_REGISTRATIONS_QUERY_KEY = (eventId: string) =>
   ['admin-public-registrations', eventId] as const;
@@ -48,30 +47,12 @@ export function useAdminPublicRegistrationsQuery(
     enabled: Boolean(eventId),
     queryFn: async ({ pageParam }): Promise<AdminPublicRegistrationsPage> => {
       const offset = decodeOffsetCursor(pageParam as string | null);
-      let query = supabase
-        .from('public_registrations')
-        .select('id, first_name, last_name, nickname, email, phone, status, submitted_at', {
-          count: 'exact',
-        })
-        .eq('event_id', eventId)
-        .order('submitted_at', { ascending: false })
-        .order('id', { ascending: false })
-        .range(offset, offset + pageSize - 1);
-
-      if (searchTerm.length > 0) {
-        const escapedSearchTerm = escapeOrFilterValue(searchTerm);
-        query = query.or(
-          `first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%`,
-        );
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      const items = data ?? [];
+      const { rows: items, count } = await fetchEventPublicRegistrationsPage({
+        eventId,
+        offset,
+        pageSize,
+        searchTerm,
+      });
       const totalCount = count ?? 0;
       const hasMore = offset + items.length < totalCount;
 

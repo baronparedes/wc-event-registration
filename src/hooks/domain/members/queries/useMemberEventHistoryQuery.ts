@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import type { MemberEventHistoryItem } from '@/lib/domain/members';
-import { supabase } from '@/lib/infrastructure';
+import { type MemberEventHistoryItem, fetchMemberEventHistory } from '@/lib/domain/members';
 
 export const MEMBER_EVENT_HISTORY_QUERY_KEY = (userId: string) =>
   ['member-event-history', userId] as const;
@@ -45,11 +44,7 @@ export function useMemberEventHistoryQuery(userId: string | undefined) {
     queryFn: async (): Promise<MemberEventHistoryItem[]> => {
       if (!userId) throw new Error('User ID is required');
 
-      const { data, error } = await supabase.rpc('get_member_event_history', {
-        p_user_id: userId,
-      });
-
-      if (error) throw error;
+      const data = await fetchMemberEventHistory(userId);
 
       return z.array(historyItemSchema).parse(data ?? []);
     },

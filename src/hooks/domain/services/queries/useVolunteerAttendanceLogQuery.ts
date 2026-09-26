@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { supabase } from '@/lib/infrastructure';
+import { fetchVolunteerAttendanceLog } from '@/lib/domain/services';
 
 export interface VolunteerAttendanceLogFilters {
   user_id: string;
@@ -28,18 +28,9 @@ export function useVolunteerAttendanceLogQuery(filters: VolunteerAttendanceLogFi
     queryKey: volunteerAttendanceLogQueryKey(filters),
     enabled: Boolean(filters.user_id && filters.start_date && filters.end_date),
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_volunteer_attendance_log', {
-        p_user_id: filters.user_id,
-        p_start_date: filters.start_date,
-        p_end_date: filters.end_date,
-        p_excuse_event_id: filters.excuse_event_id || null,
-      });
+      const data = await fetchVolunteerAttendanceLog(filters);
 
-      if (error) {
-        throw new Error(`Failed to fetch volunteer attendance log: ${error.message}`);
-      }
-
-      return (data || []) as VolunteerAttendanceLogRecord[];
+      return data as VolunteerAttendanceLogRecord[];
     },
   });
 }

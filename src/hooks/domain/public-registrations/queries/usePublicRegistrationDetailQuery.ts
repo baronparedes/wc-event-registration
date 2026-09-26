@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
 import type { EventFieldType } from '@/lib/domain/event-fields';
-import { supabase } from '@/lib/infrastructure';
+import { fetchPublicRegistrationDetailRow } from '@/lib/domain/public-registrations';
 
 export type PublicRegistrationFieldResponse = {
   field_id: string;
@@ -37,31 +37,11 @@ const PUBLIC_REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
 async function fetchPublicRegistrationDetail(
   registrationId: string,
 ): Promise<PublicRegistrationDetail> {
-  const { data: registration, error: registrationError } = await supabase
-    .from('public_registrations')
-    .select(
-      'id, event_id, first_name, last_name, nickname, email, phone, status, submitted_at, updated_at, public_registration_answers(id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields(id, field_key, label, field_type, display_order))',
-    )
-    .eq('id', registrationId)
-    .single();
-
-  if (registrationError || !registration) {
-    throw new Error('Public registration not found');
-  }
+  const registration = await fetchPublicRegistrationDetailRow(registrationId);
 
   const answers = registration.public_registration_answers || [];
 
-  type AnswerWithFields = (typeof answers)[number] & {
-    event_fields: {
-      id: string;
-      field_key: string;
-      label: string;
-      field_type: string;
-      display_order: number;
-    } | null;
-  };
-
-  const fieldResponses: PublicRegistrationFieldResponse[] = ((answers as AnswerWithFields[]) ?? [])
+  const fieldResponses: PublicRegistrationFieldResponse[] = answers
     .sort((a, b) => {
       const aOrder = a.event_fields?.display_order ?? 0;
       const bOrder = b.event_fields?.display_order ?? 0;

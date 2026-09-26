@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
+import { fetchAdminFormById, fetchAdminFormBySlug } from '@/lib/domain/forms';
 import type { AdminForm } from '@/lib/domain/forms';
-import { supabase } from '@/lib/infrastructure';
 
 export function adminFormQueryKey(formId: string) {
   return ['admin-form', formId] as const;
@@ -19,14 +19,7 @@ export function useAdminFormQuery(formId?: string) {
         trimmed,
       );
 
-      const query = isUuid
-        ? supabase.from('forms').select('*').eq('id', trimmed)
-        : supabase.from('forms').select('*').eq('slug', trimmed);
-
-      const { data, error } = await query.maybeSingle();
-
-      if (error) throw error;
-      return data as AdminForm | null;
+      return isUuid ? fetchAdminFormById(trimmed) : fetchAdminFormBySlug(trimmed);
     },
     staleTime: QUERY_STALE_TIME_MS.detail,
   });

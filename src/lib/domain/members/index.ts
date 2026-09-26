@@ -27,3 +27,24 @@ export {
   buildMemberCsvImportPreview,
 } from './csv-import';
 export { MEMBER_EXTRA_METADATA_KEYS } from './constants';
+export type {
+  MemberUserRow,
+  MemberUserListRow,
+  MemberLatestServiceAttendanceRow,
+  MemberImportSnapshotRow,
+  MemberMetadataRow,
+  MemberUpdatePayload,
+  MemberStatusFilter,
+} from './api';
+export {
+  fetchAdminMembersPage,
+  fetchAdminMemberById,
+  fetchMemberByEmail,
+  fetchMemberLatestServiceAttendance,
+  fetchActiveMembers,
+  fetchMembersImportSnapshot,
+  fetchMemberEventHistory,
+  fetchMemberMetadata,
+  updateMember,
+  setMemberActiveStatus,
+} from './api';

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { supabase } from '@/lib/infrastructure';
+import { fetchServiceUsersByNameFilter } from '@/lib/domain/services';
 
 export type LookupUserByNameResult = {
   id: string;
@@ -56,16 +56,9 @@ export function useLookupUsersByNamesQuery(names: string[]) {
 
       const orFilter = Array.from(new Set(filters)).join(',');
 
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, member_id, full_name, first_name, last_name, nickname')
-        .or(orFilter);
+      const data = await fetchServiceUsersByNameFilter(orFilter);
 
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []).map((u) => ({
+      return data.map((u) => ({
         id: u.id,
         member_id: u.member_id,
         full_name: u.full_name,

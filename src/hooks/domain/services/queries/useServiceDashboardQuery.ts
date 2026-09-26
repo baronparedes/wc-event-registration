@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { supabase } from '@/lib/infrastructure';
+import { fetchServiceDashboardStats } from '@/lib/domain/services';
 
 export interface DashboardStatsFilters {
   year?: number | null;
@@ -53,11 +53,7 @@ export function useServiceDashboardQuery(filters: DashboardStatsFilters) {
         }
       }
 
-      const { data, error } = await supabase.rpc('get_service_dashboard_stats', args);
-
-      if (error) {
-        throw new Error(`Failed to fetch service dashboard stats: ${error.message}`);
-      }
+      const data = await fetchServiceDashboardStats(args);
 
       const response = (data ?? {}) as {
         time_slots?: Record<string, TimeSlotStats>;
