@@ -5,11 +5,51 @@ import type { EventFieldType } from '@/lib/domain/event-fields';
 import type {
   AdminRegistrationDetail,
   RegistrationFieldResponse,
+  RegistrationStatus,
 } from '@/lib/domain/registrations';
 import { supabase } from '@/lib/infrastructure';
 
 function readMetadataString(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+interface RegistrationDetailJoinedUser {
+  id: string;
+  member_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  nickname: string | null;
+  role?: unknown;
+  category?: unknown;
+}
+
+interface RegistrationDetailJoinedAnswer {
+  id: string;
+  event_field_id: string;
+  answer_text: string | null;
+  answer_number: number | null;
+  answer_boolean: boolean | null;
+  answer_date: string | null;
+  answer_json: unknown;
+  event_fields: {
+    id: string;
+    field_key: string;
+    label: string;
+    field_type: string;
+    display_order: number;
+  } | null;
+}
+
+interface RegistrationDetailQueryResult {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: RegistrationStatus;
+  submitted_at: string;
+  updated_at: string | null;
+  users: RegistrationDetailJoinedUser | RegistrationDetailJoinedUser[] | null;
+  registration_answers: RegistrationDetailJoinedAnswer[] | null;
 }
 
 export const REGISTRATION_DETAIL_QUERY_KEY = (registrationId: string) =>
@@ -34,7 +74,7 @@ export function useRegistrationDetailQuery(registrationId: string) {
             id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json,
             event_fields(id, field_key, label, field_type, display_order)
           )
-        `
+        `,
         )
         .eq('id', registrationId)
         .single();
@@ -43,27 +83,19 @@ export function useRegistrationDetailQuery(registrationId: string) {
         throw new Error('Registration not found');
       }
 
+      const registrationData = data as unknown as RegistrationDetailQueryResult;
+
       // `users` is many-to-one so it's typically a single object.
-      // @ts-expect-error - Complex joined query types are hard to infer correctly
-      const user = Array.isArray(data.users) ? data.users[0] : data.users;
+      const user = Array.isArray(registrationData.users)
+        ? registrationData.users[0]
+        : registrationData.users;
       if (!user) throw new Error('Member not found');
 
-      // @ts-expect-error - Complex joined query types are hard to infer correctly
-      const answers = data.registration_answers || [];
-
-      // Type for answer with joined field metadata
-      type AnswerWithFields = (typeof answers)[number] & {
-        event_fields: {
-          id: string;
-          field_key: string;
-          label: string;
-          field_type: string;
-          display_order: number;
-        } | null;
-      };
+      const answers = registrationData.registration_answers || [];
 
       // Transform answers into readable format
-      const fieldResponses: RegistrationFieldResponse[] = ((answers as AnswerWithFields[]) ?? [])
+      const fieldResponses: RegistrationFieldResponse[] = answers
+        .slice()
         .sort((a, b) => {
           const aOrder = a.event_fields?.display_order ?? 0;
           const bOrder = b.event_fields?.display_order ?? 0;
@@ -96,10 +128,10 @@ export function useRegistrationDetailQuery(registrationId: string) {
           } else if (fieldType === 'number') {
             // Try to parse as number
             const num = Number(rawAnswer);
-            answerValue = isNaN(num) ? rawAnswer : num;
+            answerValue = Number.isNaN(num) ? rawAnswer : num;
           } else if (fieldType === 'boolean') {
             // Parse as boolean
-            answerValue = rawAnswer === 'true' || rawAnswer === '1' || rawAnswer === true;
+            answerValue = rawAnswer === 'true' || rawAnswer === '1';
           } else if (fieldType === 'date' || fieldType === 'datetime') {
             // Already a string, keep as-is
             answerValue = rawAnswer;
@@ -119,13 +151,12 @@ export function useRegistrationDetailQuery(registrationId: string) {
 
       return {
         registration: {
-          id: data.id,
-          event_id: data.event_id,
-          user_id: data.user_id,
-          // @ts-expect-error - Complex joined query types are hard to infer correctly
-          status: data.status,
-          submitted_at: data.submitted_at,
-          updated_at: data.updated_at,
+          id: registrationData.id,
+          event_id: registrationData.event_id,
+          user_id: registrationData.user_id,
+          status: registrationData.status,
+          submitted_at: registrationData.submitted_at,
+          updated_at: registrationData.updated_at,
         },
         member: {
           user_id: user.id,
