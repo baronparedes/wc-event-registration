@@ -187,7 +187,7 @@ export function createCreateFormTool({ client, requestId, userId }: ToolContext)
         .maybeSingle();
 
       if (existingSlug) {
-        const randomSuffix = Math.random().toString(36).substring(2, 6);
+        const randomSuffix = crypto.randomUUID().split('-')[0].substring(0, 4);
         finalSlug = `${finalSlug}-${randomSuffix}`;
       }
 

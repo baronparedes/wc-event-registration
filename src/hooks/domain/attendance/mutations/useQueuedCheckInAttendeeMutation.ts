@@ -59,6 +59,12 @@ function generateQueueItemId(): string {
     return crypto.randomUUID();
   }
 
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const array = new Uint32Array(2);
+    crypto.getRandomValues(array);
+    return `queued-check-in-${Date.now()}-${array[0].toString(36)}-${array[1].toString(36)}`;
+  }
+
   return `queued-check-in-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 

@@ -39,7 +39,15 @@ export function createTestAnonClient() {
  * Generate a unique test member ID
  */
 export function generateTestMemberId(): string {
-  return `test-member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  let randomSuffix = '';
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    randomSuffix = array[0].toString(36);
+  } else {
+    randomSuffix = Math.random().toString(36).substring(2, 11);
+  }
+  return `test-member-${Date.now()}-${randomSuffix}`;
 }
 
 /**
