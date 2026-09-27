@@ -89,3 +89,4 @@ export { SearchInputField, type SearchInputFieldProps } from './SearchInputField
 export { FormMarkdownField } from './FormMarkdownField';
 export { MarkdownRenderer } from './MarkdownRenderer';
 export { NotificationBell } from './NotificationBell';
+export { NotificationDrawer, type NotificationDrawerProps } from './NotificationDrawer';

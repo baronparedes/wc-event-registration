@@ -91,7 +91,7 @@ describe('NotificationBell', () => {
 
     render(<NotificationBell />);
 
-    const bellBtn = screen.getByRole('button', { name: /Notifications/i });
+    const bellBtn = screen.getByRole('button', { name: /Notifications \(/i });
     fireEvent.click(bellBtn);
 
     expect(screen.getByText('Sunday Service Alert')).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe('NotificationBell', () => {
 
     render(<NotificationBell />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Notifications/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
     const markAllBtn = screen.getByRole('button', { name: /Mark all as read/i });
     fireEvent.click(markAllBtn);
@@ -143,7 +143,7 @@ describe('NotificationBell', () => {
 
     render(<NotificationBell />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Notifications/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
     expect(screen.getByText('No notifications')).toBeInTheDocument();
     expect(screen.getByText("You're all caught up!")).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe('NotificationBell', () => {
 
     const { rerender } = render(<NotificationBell />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Notifications/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
     const enableBtn = screen.getByRole('button', { name: 'Enable' });
     fireEvent.click(enableBtn);
@@ -184,7 +184,7 @@ describe('NotificationBell', () => {
 
     render(<NotificationBell />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Notifications/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
     const enableBtn = screen.getByRole('button', { name: 'Enable' });
     fireEvent.click(enableBtn);
@@ -203,37 +203,103 @@ describe('NotificationBell', () => {
 
     render(<NotificationBell />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Notifications/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
     const turnOffBtn = screen.getByRole('button', { name: 'Turn off' });
     fireEvent.click(turnOffBtn);
     expect(mockPush.unsubscribeAsync).toHaveBeenCalled();
   });
 
-  it('closes dropdown when clicking outside or pressing Escape', () => {
+  it('closes drawer when clicking overlay, close button, or pressing Escape', () => {
     vi.mocked(useNotificationsQuery).mockReturnValue({
       data: [],
     } as never);
 
-    render(
-      <div>
-        <div data-testid="outside">Outside area</div>
-        <NotificationBell />
-      </div>,
-    );
+    render(<NotificationBell />);
 
-    const bellBtn = screen.getByRole('button', { name: /Notifications/i });
+    const bellBtn = screen.getByRole('button', { name: /Notifications \(/i });
     fireEvent.click(bellBtn);
     expect(screen.getByText('Notifications')).toBeInTheDocument();
 
-    // Click outside
-    fireEvent.mouseDown(screen.getByTestId('outside'));
-    expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+    // Click close overlay
+    const overlay = screen.getByRole('button', { name: /Close notifications drawer overlay/i });
+    fireEvent.click(overlay);
+    expect(
+      screen.queryByRole('button', { name: /Close notifications drawer overlay/i }),
+    ).not.toBeInTheDocument();
+
+    // Reopen and test close button
+    fireEvent.click(bellBtn);
+    const closeBtn = screen.getByRole('button', { name: /Close notifications drawer$/i });
+    fireEvent.click(closeBtn);
+    expect(
+      screen.queryByRole('button', { name: /Close notifications drawer overlay/i }),
+    ).not.toBeInTheDocument();
 
     // Reopen and test Escape key
     fireEvent.click(bellBtn);
     expect(screen.getByText('Notifications')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Close notifications drawer overlay/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('filters notifications by All and Unread tabs', () => {
+    vi.mocked(useNotificationsQuery).mockReturnValue({
+      data: [
+        {
+          id: 'recipient-1',
+          notification_id: 'notif-1',
+          user_id: 'user-1',
+          is_read: false,
+          read_at: null,
+          created_at: '2026-09-27T08:00:00Z',
+          notification: {
+            id: 'notif-1',
+            title: 'Unread Notification',
+            message: 'Unread message',
+            created_at: '2026-09-27T08:00:00Z',
+          },
+        },
+        {
+          id: 'recipient-2',
+          notification_id: 'notif-2',
+          user_id: 'user-1',
+          is_read: true,
+          read_at: '2026-09-27T09:00:00Z',
+          created_at: '2026-09-27T07:00:00Z',
+          notification: {
+            id: 'notif-2',
+            title: 'Read Notification',
+            message: 'Read message',
+            created_at: '2026-09-27T07:00:00Z',
+          },
+        },
+      ],
+    } as never);
+
+    render(<NotificationBell />);
+
+    // Open drawer
+    fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
+
+    // Default 'All' tab shows both
+    expect(screen.getByText('Unread Notification')).toBeInTheDocument();
+    expect(screen.getByText('Read Notification')).toBeInTheDocument();
+
+    // Click 'Unread' tab
+    const unreadTab = screen.getByRole('tab', { name: /Unread/i });
+    fireEvent.click(unreadTab);
+
+    // Only unread notification is shown
+    expect(screen.getByText('Unread Notification')).toBeInTheDocument();
+    expect(screen.queryByText('Read Notification')).not.toBeInTheDocument();
+
+    // Switch back to 'All'
+    const allTab = screen.getByRole('tab', { name: /All/i });
+    fireEvent.click(allTab);
+    expect(screen.getByText('Unread Notification')).toBeInTheDocument();
+    expect(screen.getByText('Read Notification')).toBeInTheDocument();
   });
 });
