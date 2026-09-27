@@ -202,6 +202,9 @@ verify_jwt = true
 [functions.manage-admin-role]
 verify_jwt = true
 
+[functions.manage-push-subscription]
+verify_jwt = true
+
 [functions.member-lookup]
 verify_jwt = false
 
@@ -218,6 +221,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.search-attendees]
+verify_jwt = true
+
+[functions.send-app-notification]
 verify_jwt = true
 
 [functions.submit-form-submission]

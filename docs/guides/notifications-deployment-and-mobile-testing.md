@@ -196,9 +196,14 @@ Tap **Allow**. The UI will update to confirm: _"Push alerts active on this devic
 2. On a second device/desktop browser logged into `/admin/notifications`:
    - Enter **Title**: `Production Test Notification`
    - Enter **Message**: `Testing lock screen push delivery on iPhone.`
-   - Set **Target Audience**: `All Users`
+   - Set **Target Audience**: Choose one of:
+     - `All Users` (Mass broadcast)
+     - `Specific Roles` (Select multiple Auth or Volunteer roles)
+     - `Specific User` (Search by `@mention` or name/email)
    - Set **Destination URL**: `/profile`
    - Click **Send Broadcast**.
+   - Review the **Confirmation Gate Modal** (confirm target recipients, avatars, roles, and message preview).
+   - Click **Confirm & Send**.
 3. **Verify on iPhone**:
    - The lock screen lights up with a native notification banner showing the title, message, and app icon.
    - Tap the banner: the app opens directly to the destination URL (`/profile`).

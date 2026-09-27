@@ -11,6 +11,7 @@ const payloadSchema = z.object({
   message: z.string().min(1),
   targetType: z.enum(['all', 'role', 'user']),
   targetRole: z.string().nullable().optional(),
+  targetRoles: z.array(z.string()).nullable().optional(),
   targetUserId: z.string().uuid().nullable().optional(),
   url: z.string().optional(),
 });
@@ -40,6 +41,13 @@ serve(async (req) => {
   const { client: supabase, data: payload, userId, corsHeaders } = hook;
 
   try {
+    const resolvedRoles =
+      payload.targetRoles && payload.targetRoles.length > 0
+        ? payload.targetRoles
+        : payload.targetRole
+          ? [payload.targetRole]
+          : null;
+
     // 1. Broadcast notification via atomic database RPC
     const { data: notificationId, error: broadcastError } = await supabase.rpc(
       'broadcast_app_notification',
@@ -47,7 +55,8 @@ serve(async (req) => {
         p_title: payload.title,
         p_message: payload.message,
         p_target_type: payload.targetType,
-        p_target_role: payload.targetRole ?? null,
+        p_target_role: payload.targetRole ?? (resolvedRoles ? resolvedRoles[0] : null),
+        p_target_roles: resolvedRoles,
         p_user_ids: payload.targetUserId ? [payload.targetUserId] : null,
         p_created_by: userId,
       },

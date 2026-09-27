@@ -59,12 +59,13 @@ Features are organized into 9 epic folders:
 - **Update Member ID**: Admins change a member's ID (RFID or identifier)
 - **Import Members via CSV**: Admins preview and atomically upsert members from CSV with fail-all validation
 
-### 7. System Features (4 features)
+### 7. System Features (5 features)
 
 - **Auth Protection**: System restricts admin pages to authenticated users
 - **Event Availability**: System prevents registration if event is not open
 - **Error Handling**: System shows clear error messages to users
 - **Pagination**: System handles large lists with cursor-based pagination
+- **App Notifications & Broadcasting**: Admins broadcast alerts to all users, multiple roles, or specific users with confirmation gate and real-time delivery
 
 ### 8. Event-Day Attendance Tracking (7 features)
 

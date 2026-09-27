@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -12,34 +14,67 @@ import {
   FormTextareaField,
   SectionCard,
 } from '@/components/ui';
+import { type AuthUserItem } from '@/hooks/domain/auth';
 import { type SendAppNotificationPayload, sendAppNotification } from '@/lib/domain/notifications';
 
-const broadcastSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(255),
-  message: z.string().min(1, 'Message is required'),
-  targetType: z.enum(['all', 'role', 'user']),
-  targetRole: z.string().optional(),
-  targetUserId: z.string().uuid('Invalid user ID').optional().or(z.literal('')),
-  destinationUrl: z.string().optional(),
-});
+import { BroadcastConfirmDialog } from './components/BroadcastConfirmDialog';
+import { BroadcastRoleMultiSelect } from './components/BroadcastRoleMultiSelect';
+import { BroadcastUserPicker } from './components/BroadcastUserPicker';
+
+const broadcastSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required').max(255),
+    message: z.string().min(1, 'Message is required'),
+    targetType: z.enum(['all', 'role', 'user']),
+    targetRoles: z.array(z.string()).optional(),
+    targetUserId: z.string().optional(),
+    destinationUrl: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.targetType === 'role') {
+        return !!data.targetRoles && data.targetRoles.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please select at least one role',
+      path: ['targetRoles'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.targetType === 'user') {
+        return !!data.targetUserId && data.targetUserId.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please select a target user',
+      path: ['targetUserId'],
+    },
+  );
 
 type BroadcastFormValues = z.infer<typeof broadcastSchema>;
 
 export function AdminNotificationsPage() {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<BroadcastFormValues | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AuthUserItem | null>(null);
+
   const form = useForm<BroadcastFormValues>({
     resolver: zodResolver(broadcastSchema),
     defaultValues: {
       targetType: 'all',
       title: '',
       message: '',
-      targetRole: '',
+      targetRoles: [],
       targetUserId: '',
       destinationUrl: '',
     },
   });
 
   const targetType = useWatch({ control: form.control, name: 'targetType' });
-  const targetRole = useWatch({ control: form.control, name: 'targetRole' });
 
   const broadcastMutation = useMutation({
     mutationFn: async (values: BroadcastFormValues) => {
@@ -53,8 +88,9 @@ export function AdminNotificationsPage() {
         payload.url = values.destinationUrl;
       }
 
-      if (values.targetType === 'role' && values.targetRole) {
-        payload.targetRole = values.targetRole;
+      if (values.targetType === 'role' && values.targetRoles && values.targetRoles.length > 0) {
+        payload.targetRoles = values.targetRoles;
+        payload.targetRole = values.targetRoles[0];
       } else if (values.targetType === 'user' && values.targetUserId) {
         payload.targetUserId = values.targetUserId;
       }
@@ -63,12 +99,26 @@ export function AdminNotificationsPage() {
     },
     onSuccess: (data: { count: number }) => {
       toast.success(`Successfully sent broadcast to ${data.count} users!`);
+      setIsConfirmOpen(false);
+      setPendingValues(null);
+      setSelectedUser(null);
       form.reset();
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
+
+  const handleFormSubmit = (values: BroadcastFormValues) => {
+    setPendingValues(values);
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmBroadcast = () => {
+    if (pendingValues) {
+      broadcastMutation.mutate(pendingValues);
+    }
+  };
 
   return (
     <AdminPageShell>
@@ -83,10 +133,7 @@ export function AdminNotificationsPage() {
             title="Notification Broadcast"
             subtitle="Compose and send an announcement to application users."
           >
-            <form
-              onSubmit={form.handleSubmit((v) => broadcastMutation.mutate(v))}
-              className="space-y-4 pt-4"
-            >
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
               <Controller
                 control={form.control}
                 name="title"
@@ -105,14 +152,15 @@ export function AdminNotificationsPage() {
               <Controller
                 control={form.control}
                 name="message"
-                render={() => (
+                render={({ field }) => (
                   <FormTextareaField
                     id="message"
                     label="Message"
                     rows={3}
                     placeholder="Enter notification details..."
                     error={form.formState.errors.message?.message}
-                    registration={form.register('message')}
+                    {...field}
+                    value={field.value ?? ''}
                   />
                 )}
               />
@@ -122,29 +170,31 @@ export function AdminNotificationsPage() {
                 label="Target Audience"
                 options={[
                   { value: 'all', label: 'All Users' },
-                  { value: 'role', label: 'Specific Role' },
-                  { value: 'user', label: 'Specific User ID' },
+                  { value: 'role', label: 'Specific Roles' },
+                  { value: 'user', label: 'Specific User' },
                 ]}
                 value={targetType}
-                onChange={(value) =>
-                  form.setValue('targetType', value as BroadcastFormValues['targetType'])
-                }
+                onChange={(value) => {
+                  form.setValue('targetType', value as BroadcastFormValues['targetType']);
+                  form.setValue('targetRoles', []);
+                  form.setValue('targetUserId', '');
+                  setSelectedUser(null);
+                }}
                 error={form.formState.errors.targetType?.message}
               />
 
               {targetType === 'role' && (
-                <FormSelectField
-                  id="targetRole"
-                  label="Role"
-                  options={[
-                    { value: 'super_admin', label: 'Super Admin' },
-                    { value: 'admin', label: 'Admin' },
-                    { value: 'slod', label: 'SLOD' },
-                    { value: 'imt', label: 'IMT' },
-                  ]}
-                  value={targetRole || ''}
-                  onChange={(value) => form.setValue('targetRole', value)}
-                  error={form.formState.errors.targetRole?.message}
+                <Controller
+                  control={form.control}
+                  name="targetRoles"
+                  render={({ field }) => (
+                    <BroadcastRoleMultiSelect
+                      id="targetRoles"
+                      selectedRoles={field.value ?? []}
+                      onChange={(roles) => form.setValue('targetRoles', roles)}
+                      error={form.formState.errors.targetRoles?.message}
+                    />
+                  )}
                 />
               )}
 
@@ -153,13 +203,14 @@ export function AdminNotificationsPage() {
                   control={form.control}
                   name="targetUserId"
                   render={({ field }) => (
-                    <FormInputField
+                    <BroadcastUserPicker
                       id="targetUserId"
-                      label="User ID (UUID)"
-                      placeholder="e.g. a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+                      value={field.value}
+                      onChange={(userId, user) => {
+                        form.setValue('targetUserId', userId);
+                        setSelectedUser(user ?? null);
+                      }}
                       error={form.formState.errors.targetUserId?.message}
-                      {...field}
-                      value={field.value ?? ''}
                     />
                   )}
                 />
@@ -182,12 +233,21 @@ export function AdminNotificationsPage() {
 
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={broadcastMutation.isPending}>
-                  {broadcastMutation.isPending ? 'Sending...' : 'Send Broadcast'}
+                  Send Broadcast
                 </Button>
               </div>
             </form>
           </SectionCard>
         </div>
+
+        <BroadcastConfirmDialog
+          isOpen={isConfirmOpen}
+          onClose={() => setIsConfirmOpen(false)}
+          onConfirm={handleConfirmBroadcast}
+          isPending={broadcastMutation.isPending}
+          values={pendingValues}
+          targetUser={selectedUser}
+        />
       </AdminPageShell.Content>
     </AdminPageShell>
   );

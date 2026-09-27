@@ -18,6 +18,7 @@ export type SendAppNotificationPayload = {
   message: string;
   targetType: 'all' | 'role' | 'user';
   targetRole?: string | null;
+  targetRoles?: string[] | null;
   targetUserId?: string | null;
   url?: string;
 };

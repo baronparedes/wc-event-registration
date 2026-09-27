@@ -68,13 +68,26 @@ This file contains the core principles, architecture rules, and domain logic con
 - Service commitments are snapshotted in `public.user_commitment_history` via the `users_snapshot_commitment_metadata` trigger on `public.users`. The trigger function `snapshot_user_commitment_metadata` is declared `SECURITY DEFINER` with `search_path = public`, and only snapshots when Sunday commitment keys (`first_sunday` through `fifth_sunday`) change. Snapshots are effective-dated to the nearest upcoming Sunday (`get_nearest_upcoming_sunday`).
 - The profile service attendance history UI (`ServiceAttendanceHistoryTab`) queries snapshots to evaluate historical schedule alignment per Sunday using `resolveMetadataForDate`.
 
-## 8. Testing
+## 8. Domain Logic: App Notifications & Push Broadcasting
+
+- **Notification Center & Header Drawer**:
+  - The notification bell in the main app header renders unread alert badges, supports real-time listening via Supabase Realtime on `app_notification_recipients`, and offers a slide-over drawer with filtering (`All` and `Unread`), tab switching, mark-as-read, and deletion.
+- **Admin Broadcasting (`/admin/notifications`)**:
+  - Restricted to administrators.
+  - Supports multi-role selection across Auth Roles (`super_admin`, `admin`, `slod`, `imt`, `kiosk`) and Member/Volunteer Roles (`Prayer Coach`, `Backroom Support`, `IMT Support`, `VMT Support`, `OIC`, `Usher`).
+  - Supports mention-style autocomplete user search (`BroadcastUserPicker`) with debounced querying.
+  - Mandatory Confirmation Gate (`BroadcastConfirmDialog`) displaying rich recipient profiles, role pills, warning notices, and payload previews before dispatching.
+- **Edge Functions & Web Push**:
+  - Web push delivery and device registration are handled by edge functions `send-app-notification` and `manage-push-subscription`.
+  - Registered in `supabase/config.toml` with `verify_jwt = true`.
+
+## 9. Testing
 
 - **Unit Tests**: Executed with `npm run test:unit` using Vitest.
 - **Environment**: Vitest expects Supabase environment variables to be defined in `.env.local`.
 - **Coverage**: Supabase Edge Functions (`supabase/functions/**`) are intentionally excluded from Vitest test coverage reporting.
 
-## 9. Repository Skills & Specialized Guides (`.agent/skills/`)
+## 10. Repository Skills & Specialized Guides (`.agent/skills/`)
 
 The repository maintains specialized skills in [`.agent/skills/`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
 
