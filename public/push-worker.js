@@ -29,7 +29,10 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/';
+  const rawUrl = event.notification.data?.url || '/';
+  const targetUrlObj = new URL(rawUrl, self.location.origin);
+  targetUrlObj.searchParams.set('openDrawer', 'notifications');
+  const targetUrl = targetUrlObj.pathname + targetUrlObj.search + targetUrlObj.hash;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
