@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   type EnrichedServiceAttendanceRow,
   MatchMemberModal,
+  MigrationConfigDialog,
   MigrationConfirmDialog,
   MigrationPreviewTable,
   MigrationUploadControls,
@@ -360,5 +361,57 @@ describe('MigrationConfirmDialog', () => {
     expect(
       screen.getByText(/Note: 3 failed records will be ignored and skipped\./i),
     ).toBeInTheDocument();
+  });
+});
+
+describe('MigrationConfigDialog', () => {
+  it('renders default 3 sheets and allows editing, toggling walkin, removing, and adding sheets', () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    render(<MigrationConfigDialog isOpen={true} onClose={onClose} onConfirm={onConfirm} />);
+
+    expect(screen.getByText('Configure Migration')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Comm_Attend')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('OIC_Attend')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Walkin_Attend')).toBeInTheDocument();
+
+    // Check that Walk-in checkbox for Walkin_Attend is checked
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(3);
+    expect(checkboxes[0]).not.toBeChecked();
+    expect(checkboxes[1]).not.toBeChecked();
+    expect(checkboxes[2]).toBeChecked();
+
+    // Set target date
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-15' } });
+
+    // Add a new sheet
+    const addSheetBtn = screen.getByRole('button', { name: /Add Sheet/i });
+    fireEvent.click(addSheetBtn);
+
+    const sheet4Input = screen.getByPlaceholderText('Sheet name 4');
+    fireEvent.change(sheet4Input, { target: { value: 'Extra_Attend' } });
+
+    // Remove OIC_Attend (second remove button)
+    const removeBtns = screen.getAllByRole('button', { name: /Remove sheet/i });
+    fireEvent.click(removeBtns[1]);
+
+    expect(screen.queryByDisplayValue('OIC_Attend')).not.toBeInTheDocument();
+
+    // Submit
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
+    fireEvent.click(continueBtn);
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      targetDate: '2026-03-15',
+      sheets: [
+        { name: 'Comm_Attend', isWalkIn: false },
+        { name: 'Walkin_Attend', isWalkIn: true },
+        { name: 'Extra_Attend', isWalkIn: false },
+      ],
+    });
+    expect(onClose).toHaveBeenCalled();
   });
 });

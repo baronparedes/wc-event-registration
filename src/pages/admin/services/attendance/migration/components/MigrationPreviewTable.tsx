@@ -1,5 +1,6 @@
 import { AlertCircle, AlertTriangle, Download, Loader2 } from 'lucide-react';
 
+import { Badge } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import {
   ListTable,
@@ -263,25 +264,17 @@ export function MigrationPreviewTable({
                   <ListTableCell className="text-xs text-muted">#{row.row_number}</ListTableCell>
                   <ListTableCell>
                     {row.isValid ? (
-                      <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                        Valid
-                      </span>
+                      <Badge>Valid</Badge>
                     ) : (
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center rounded-full bg-danger/10 border border-danger/30 px-2 py-0.5 text-xs font-semibold text-danger">
-                            Error
-                          </span>
-                          {isIgnoringFailed && (
-                            <span className="inline-flex items-center rounded-full bg-muted/15 border border-border px-2 py-0.5 text-[10px] font-semibold text-muted">
-                              Ignored
-                            </span>
-                          )}
+                          <Badge variant="destructive">Error</Badge>
+                          {isIgnoringFailed && <Badge variant="accent">Ignored</Badge>}
                         </div>
                         {row.errors.map((e, i) => (
-                          <span key={i} className="text-xs text-danger">
+                          <Badge key={i} variant="destructive">
                             {e}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     )}
@@ -311,11 +304,7 @@ export function MigrationPreviewTable({
                       <span className="text-xs text-text">
                         {(row.metadata?.role as string) || '—'}
                       </span>
-                      {row.is_walk_in && (
-                        <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-text">
-                          Walk-in
-                        </span>
-                      )}
+                      {row.is_walk_in && <Badge variant="secondary">Walk-in</Badge>}
                     </div>
                   </ListTableCell>
                   {onEditRow && (

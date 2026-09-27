@@ -200,5 +200,50 @@ describe('Service Attendance CSV Parser', () => {
       expect(result[2].metadata.original_table_number).toBe('x');
       expect(result[2].isValid).toBe(true);
     });
+
+    it('handles various date formats (YYYY-MM-DD, M/D/YYYY, MM/DD/YYYY, ISO, etc.)', () => {
+      const parsed = {
+        headers: ['RFID', 'Date', 'Time', 'Time_Slot', 'Table'],
+        rows: [
+          { RFID: '1', Date: '2026-03-15', Time: '09:00:00', Time_Slot: '9AM', Table: '1' },
+          { RFID: '2', Date: '3/15/2026', Time: '09:00:00', Time_Slot: '9AM', Table: '2' },
+          { RFID: '3', Date: '03/15/26', Time: '09:00:00', Time_Slot: '9AM', Table: '3' },
+          { RFID: '4', Date: '2026/3/15', Time: '09:00:00', Time_Slot: '9AM', Table: '4' },
+          {
+            RFID: '5',
+            Date: '2026-03-15T00:00:00.000Z',
+            Time: '09:00:00',
+            Time_Slot: '9AM',
+            Table: '5',
+          },
+        ],
+      };
+
+      const result = processParsedCsvData(parsed);
+      for (const row of result) {
+        expect(row.service_date).toBe('2026-03-15');
+        expect(row.isValid).toBe(true);
+      }
+    });
+
+    it('normalizes header variations like "Time Slot" and "Table Number"', () => {
+      const parsed = {
+        headers: ['RFID', 'Date', 'Time', 'Time Slot', 'Table Number'],
+        rows: [
+          {
+            RFID: '123',
+            Date: '2026-03-15',
+            Time: '09:00:00',
+            'Time Slot': '9AM',
+            'Table Number': '10',
+          },
+        ],
+      };
+
+      const result = processParsedCsvData(parsed);
+      expect(result[0].time_slot).toBe('9AM');
+      expect(result[0].table_number).toBe('10');
+      expect(result[0].isValid).toBe(true);
+    });
   });
 });

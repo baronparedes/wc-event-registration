@@ -47,7 +47,7 @@ export function ServiceAttendanceMigrationPanel() {
     rowOverrides,
   });
 
-  const handleFileChange = async ({ file, targetDate, walkinSheetName }: FileChangeData) => {
+  const handleFileChange = async ({ file, targetDate, sheets }: FileChangeData) => {
     if (!selectedLayoutId) {
       toast.error('Please select a layout before uploading.');
       setFileInputKey((k) => k + 1);
@@ -63,7 +63,7 @@ export function ServiceAttendanceMigrationPanel() {
       let parseResult;
 
       if (isXlsx) {
-        parseResult = await parseServiceAttendanceXlsx(file, walkinSheetName);
+        parseResult = await parseServiceAttendanceXlsx(file, { sheets });
       } else {
         const text = await file.text();
         parseResult = parseServiceAttendanceCsv(text);

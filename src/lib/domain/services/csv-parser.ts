@@ -146,13 +146,115 @@ export function mapServiceAttendanceTableNumber(tableInput: string): string {
   return trimmed;
 }
 
+export function normalizeHeaderKey(key: string): string {
+  const trimmed = key.trim();
+  const lower = trimmed.toLowerCase().replace(/[\s_-]+/g, '');
+  if (lower === 'rfid' || lower === 'memberid') return 'RFID';
+  if (lower === 'date' || lower === 'servicedate') return 'Date';
+  if (lower === 'time' || lower === 'checkintime') return 'Time';
+  if (lower === 'timeslot') return 'Time_Slot';
+  if (lower === 'table' || lower === 'tablenumber' || lower === 'table#') return 'Table';
+  if (lower === 'name' || lower === 'fullname' || lower === 'membername') return 'Name';
+  if (lower === 'role') return 'Role';
+  if (lower === 'walkin' || lower === 'iswalkin') return 'Walkin';
+  if (lower === 'manualentry' || lower === 'ismanualentry') return 'Manual_Entry';
+  if (lower === 'override' || lower === 'isoverride') return 'Override';
+  if (lower === 'volunteerid') return 'VolunteerID';
+  return trimmed;
+}
+
+export function normalizeDateToYYYYMMDD(dateInput: unknown): string | null {
+  if (!dateInput) return null;
+
+  if (dateInput instanceof Date) {
+    if (Number.isNaN(dateInput.getTime())) return null;
+    const year = dateInput.getUTCFullYear();
+    const month = String(dateInput.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateInput.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const str = String(dateInput).trim();
+  if (!str) return null;
+
+  // 1. Direct YYYY-MM-DD or YYYY-M-D (e.g. "2026-03-15", "2026-3-9", "2026-03-15T00:00:00.000Z")
+  const ymdDashMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(str);
+  if (ymdDashMatch) {
+    const year = ymdDashMatch[1];
+    const month = ymdDashMatch[2].padStart(2, '0');
+    const day = ymdDashMatch[3].padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // 2. YYYY/MM/DD or YYYY/M/D (e.g. "2026/03/15", "2026/3/9")
+  const ymdSlashMatch = /^(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(str);
+  if (ymdSlashMatch) {
+    const year = ymdSlashMatch[1];
+    const month = ymdSlashMatch[2].padStart(2, '0');
+    const day = ymdSlashMatch[3].padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // 3. M/D/YYYY, MM/DD/YYYY, M/D/YY, MM/DD/YY (e.g. "3/15/2026", "03/15/2026", "3/15/26")
+  const mdySlashMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(str);
+  if (mdySlashMatch) {
+    const month = mdySlashMatch[1].padStart(2, '0');
+    const day = mdySlashMatch[2].padStart(2, '0');
+    let year = mdySlashMatch[3];
+    if (year.length === 2) {
+      year = `20${year}`;
+    }
+    return `${year}-${month}-${day}`;
+  }
+
+  // 4. M-D-YYYY, MM-DD-YYYY, M-D-YY (e.g. "3-15-2026", "03-15-2026")
+  const mdyDashMatch = /^(\d{1,2})-(\d{1,2})-(\d{2,4})/.exec(str);
+  if (mdyDashMatch) {
+    const month = mdyDashMatch[1].padStart(2, '0');
+    const day = mdyDashMatch[2].padStart(2, '0');
+    let year = mdyDashMatch[3];
+    if (year.length === 2) {
+      year = `20${year}`;
+    }
+    return `${year}-${month}-${day}`;
+  }
+
+  // 5. Excel numeric serial date (e.g. 45731)
+  const numVal = Number(str);
+  if (!Number.isNaN(numVal) && numVal > 30000 && numVal < 70000) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const dateFromSerial = new Date(excelEpoch.getTime() + numVal * 86400000);
+    const year = dateFromSerial.getUTCFullYear();
+    const month = String(dateFromSerial.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateFromSerial.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // 6. Generic Date fallback (e.g. "Sun Mar 15 2026")
+  const parsedDate = new Date(str);
+  if (!Number.isNaN(parsedDate.getTime())) {
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return null;
+}
+
 export function processParsedCsvData(
   parsedData: ParsedServiceAttendanceCsv,
 ): ServiceAttendanceCsvPreviewRow[] {
   const previewRows: ServiceAttendanceCsvPreviewRow[] = [];
 
   for (let i = 0; i < parsedData.rows.length; i++) {
-    const rowData = parsedData.rows[i];
+    const rawRow = parsedData.rows[i];
+    // Normalize keys in rowData
+    const rowData: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawRow)) {
+      rowData[normalizeHeaderKey(k)] = v;
+    }
+
     const errors: string[] = [];
     const rfid = rowData['RFID']?.trim() ?? '';
     const dateStr = rowData['Date']?.trim() ?? '';
@@ -174,21 +276,9 @@ export function processParsedCsvData(
       errors.push('Table is missing');
     }
 
-    let serviceDate = '';
-    if (dateStr) {
-      // Expect M/D/YY or M/D/YYYY from Excel, convert to YYYY-MM-DD
-      const dateParts = dateStr.split('/');
-      if (dateParts.length === 3) {
-        let year = dateParts[2];
-        if (year.length === 2) {
-          year = `20${year}`;
-        }
-        const month = dateParts[0].padStart(2, '0');
-        const day = dateParts[1].padStart(2, '0');
-        serviceDate = `${year}-${month}-${day}`;
-      } else {
-        errors.push(`Invalid Date format: ${dateStr}. Expected M/D/YYYY`);
-      }
+    const serviceDate = normalizeDateToYYYYMMDD(dateStr);
+    if (dateStr && !serviceDate) {
+      errors.push(`Invalid Date format: ${dateStr}. Expected M/D/YYYY or YYYY-MM-DD`);
     }
 
     let checkedInAt = '';
@@ -229,7 +319,7 @@ export function processParsedCsvData(
       isValid: errors.length === 0,
       errors,
       rfid,
-      service_date: serviceDate,
+      service_date: serviceDate ?? '',
       time_slot: timeSlot,
       checked_in_at: checkedInAt,
       is_manual_entry: isManualEntry,

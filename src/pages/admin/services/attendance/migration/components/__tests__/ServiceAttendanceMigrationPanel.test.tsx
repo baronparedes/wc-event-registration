@@ -100,7 +100,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
     fireEvent.click(selectFileBtn);
     // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
-    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
     fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
@@ -162,7 +162,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
     fireEvent.click(selectFileBtn);
     // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
-    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
     fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
@@ -199,7 +199,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
     fireEvent.click(selectFileBtn);
     // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
-    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
     fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
@@ -273,7 +273,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
     fireEvent.click(selectFileBtn);
     // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
-    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
     fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
@@ -363,7 +363,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
     fireEvent.click(selectFileBtn);
     // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
-    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
     fireEvent.change(dateInput, { target: { value: '2026-03-09' } });

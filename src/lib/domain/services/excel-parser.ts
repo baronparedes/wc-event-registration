@@ -1,10 +1,19 @@
 import * as XLSX from 'xlsx';
 
-import type { ParseServiceAttendanceCsvResult } from './csv-parser';
+import { type ParseServiceAttendanceCsvResult, normalizeHeaderKey } from './csv-parser';
+
+export interface ServiceAttendanceSheetConfig {
+  name: string;
+  isWalkIn?: boolean;
+}
+
+export interface ServiceAttendanceXlsxConfig {
+  sheets?: ServiceAttendanceSheetConfig[];
+}
 
 export async function parseServiceAttendanceXlsx(
   file: File,
-  walkinSheetName: string,
+  config?: ServiceAttendanceXlsxConfig,
 ): Promise<ParseServiceAttendanceCsvResult> {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -14,12 +23,34 @@ export async function parseServiceAttendanceXlsx(
       return { success: false, error: 'XLSX file is empty.' };
     }
 
+    const configuredSheets: ServiceAttendanceSheetConfig[] =
+      config?.sheets && config.sheets.length > 0
+        ? config.sheets
+        : [
+            { name: 'Comm_Attend', isWalkIn: false },
+            { name: 'OIC_Attend', isWalkIn: false },
+            { name: 'Walkin_Attend', isWalkIn: true },
+          ];
+
     const allDataRows: Record<string, string>[] = [];
     let headers: string[] = [];
 
-    // The logic below assumes all sheets should be processed and combined,
-    // as per user instructions
     for (const sheetName of workbook.SheetNames) {
+      const sheetNameLower = sheetName.trim().toLowerCase();
+
+      const matchedConfig = configuredSheets.find((s) => {
+        const configuredName = s.name.trim().toLowerCase();
+        if (!configuredName) return false;
+        if (configuredName === sheetNameLower) return true;
+        const clean = (str: string) => str.replace(/[\s_-]+/g, '');
+        return clean(configuredName) === clean(sheetNameLower);
+      });
+
+      // If sheet doesn't match any configured sheet, skip it
+      if (!matchedConfig) {
+        continue;
+      }
+
       const worksheet = workbook.Sheets[sheetName];
       // sheet_to_json with defval: '' guarantees all expected keys exist even if cell is empty
       const sheetData = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false }) as Record<
@@ -30,22 +61,27 @@ export async function parseServiceAttendanceXlsx(
       if (sheetData.length === 0) continue;
 
       if (headers.length === 0) {
-        // Extract headers from the first non-empty sheet
-        headers = Object.keys(sheetData[0]).map((h) => h.trim());
+        // Extract headers from the first non-empty matching sheet
+        headers = Object.keys(sheetData[0]).map((h) => normalizeHeaderKey(h));
       }
-
-      const isWalkinSheet =
-        walkinSheetName && sheetName.trim().toLowerCase() === walkinSheetName.trim().toLowerCase();
 
       for (const rawRow of sheetData) {
         const rowData: Record<string, string> = {};
 
         for (const [key, value] of Object.entries(rawRow)) {
-          rowData[key.trim()] = String(value).trim();
+          const normalizedKey = normalizeHeaderKey(key);
+          if (value instanceof Date) {
+            const y = value.getUTCFullYear();
+            const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(value.getUTCDate()).padStart(2, '0');
+            rowData[normalizedKey] = `${y}-${m}-${d}`;
+          } else {
+            rowData[normalizedKey] = String(value ?? '').trim();
+          }
         }
 
-        // If the current sheet matches the walkinSheetName config, mark row as walkin
-        if (isWalkinSheet) {
+        // If the current sheet is marked as walkin, set Walkin = '1'
+        if (matchedConfig.isWalkIn) {
           rowData['Walkin'] = '1';
         }
 
@@ -54,7 +90,7 @@ export async function parseServiceAttendanceXlsx(
     }
 
     if (allDataRows.length === 0) {
-      return { success: false, error: 'XLSX file contains no data rows.' };
+      return { success: false, error: 'XLSX file contains no matching sheet data rows.' };
     }
 
     const REQUIRED_HEADERS = ['RFID', 'Date', 'Time', 'Time_Slot', 'Table'];

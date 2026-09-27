@@ -7,10 +7,8 @@ import { FormSelectField } from '@/components/ui/FormSelectField';
 
 import { type MigrationConfig, MigrationConfigDialog } from './MigrationConfigDialog';
 
-export interface FileChangeData {
+export interface FileChangeData extends MigrationConfig {
   file: File;
-  targetDate: string;
-  walkinSheetName: string;
 }
 
 interface MigrationUploadControlsProps {
