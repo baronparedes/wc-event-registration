@@ -70,7 +70,7 @@ export function Button(props: ButtonProps) {
   } = props;
 
   const classes = cx(
-    'inline-flex items-center justify-center gap-2 rounded-md font-medium leading-snug transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/30',
+    'inline-flex items-center justify-center gap-2 rounded-md font-medium leading-snug transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
     variantClassName[variant],
     sizeClassName[size],
     fullWidth && 'w-full',
