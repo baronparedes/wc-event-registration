@@ -12,6 +12,7 @@ import {
   type ServiceAttendanceCsvPreviewRow,
   buildFailedServiceAttendanceCsvExport,
   parseServiceAttendanceCsv,
+  parseServiceAttendanceXlsx,
   processParsedCsvData,
 } from '@/lib/domain/services';
 
@@ -20,7 +21,7 @@ import type { EnrichedServiceAttendanceRow, RowOverride, StatusFilter } from '..
 import { MatchMemberModal } from './MatchMemberModal';
 import { MigrationConfirmDialog } from './MigrationConfirmDialog';
 import { MigrationPreviewTable } from './MigrationPreviewTable';
-import { MigrationUploadControls } from './MigrationUploadControls';
+import { type FileChangeData, MigrationUploadControls } from './MigrationUploadControls';
 
 export function ServiceAttendanceMigrationPanel() {
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
@@ -46,10 +47,7 @@ export function ServiceAttendanceMigrationPanel() {
     rowOverrides,
   });
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleFileChange = async ({ file, targetDate, sheets }: FileChangeData) => {
     if (!selectedLayoutId) {
       toast.error('Please select a layout before uploading.');
       setFileInputKey((k) => k + 1);
@@ -60,8 +58,16 @@ export function ServiceAttendanceMigrationPanel() {
     try {
       // Yield slightly to paint the loading state
       await new Promise((resolve) => setTimeout(resolve, 10));
-      const text = await file.text();
-      const parseResult = parseServiceAttendanceCsv(text);
+
+      const isXlsx = file.name.endsWith('.xlsx');
+      let parseResult;
+
+      if (isXlsx) {
+        parseResult = await parseServiceAttendanceXlsx(file, { sheets });
+      } else {
+        const text = await file.text();
+        parseResult = parseServiceAttendanceCsv(text);
+      }
 
       if (!parseResult.success) {
         toast.error(parseResult.error);
@@ -69,14 +75,26 @@ export function ServiceAttendanceMigrationPanel() {
         return;
       }
 
-      const initialPreview = processParsedCsvData(parseResult.data);
+      let initialPreview = processParsedCsvData(parseResult.data);
+
+      // Filter out rows where the mapped date does not match the chosen target Sunday
+      if (targetDate) {
+        initialPreview = initialPreview.filter((r) => r.service_date === targetDate);
+      }
+
+      if (initialPreview.length === 0) {
+        toast.error(`No records found matching the target date: ${targetDate}`);
+        setRawRows([]);
+        return;
+      }
+
       setRawRows(initialPreview);
       setStatusFilter('all');
       setIgnoreFailedRecords(false);
       setRowOverrides({});
     } catch (err) {
       console.error(err);
-      toast.error('Failed to read CSV file');
+      toast.error('Failed to read or parse the file');
       setRawRows([]);
       setStatusFilter('all');
       setIgnoreFailedRecords(false);

@@ -91,6 +91,22 @@ function getVendorChunkName(id: string) {
     return 'chart-vendor';
   }
 
+  if (
+    id.includes('node_modules/easymde/') ||
+    id.includes('node_modules/react-simplemde-editor/') ||
+    id.includes('node_modules/codemirror/')
+  ) {
+    return 'editor-vendor';
+  }
+
+  if (id.includes('node_modules/date-fns/') || id.includes('node_modules/react-day-picker/')) {
+    return 'date-vendor';
+  }
+
+  if (id.includes('node_modules/xlsx/')) {
+    return 'xlsx-vendor';
+  }
+
   return 'vendor';
 }
 
