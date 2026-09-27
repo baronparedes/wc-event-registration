@@ -125,7 +125,7 @@ export function AdminRegistrationsPage() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             onClear={clearSearch}
-            placeholder="Search by name, member ID, or email"
+            placeholder="Search by name, member ID, email, or role"
           />
           <Button
             type="button"
