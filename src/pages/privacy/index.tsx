@@ -36,16 +36,23 @@ export function PrivacyPolicyPage() {
             <li>
               <strong>Account & Profile Data:</strong> When you sign in using single sign-on (such
               as Google OAuth), we receive profile data including your email address, full name, and
-              profile image URL as permitted by your OAuth provider settings.
+              profile image URL as permitted by your OAuth provider settings. We may also collect
+              additional profile information such as phone numbers, dates of birth, and nicknames.
             </li>
             <li>
-              <strong>Event Registration Data:</strong> Information you submit when registering for
-              events, such as contact details, attendance preferences, and event-specific responses.
+              <strong>Event Registration & Forms Data:</strong> Information you submit when
+              registering for events or filling out general forms, such as contact details,
+              preferences, and custom responses.
             </li>
             <li>
-              <strong>Technical & Usage Data:</strong> Basic technical logs, IP address, device /
-              browser header information, and session data required for service security and rate
-              limiting.
+              <strong>Service & Attendance Data:</strong> Data regarding your participation in
+              events and services, including service schedules, attendance check-ins, and service
+              commitments.
+            </li>
+            <li>
+              <strong>Technical, Usage & Audit Data:</strong> Basic technical logs, administrative
+              audit logs, IP address, device / browser header information, and session data required
+              for service security, rate limiting, and operational compliance.
             </li>
           </ul>
         </section>
@@ -60,11 +67,15 @@ export function PrivacyPolicyPage() {
           </p>
           <ul className="list-disc space-y-2 pl-6 text-sm sm:text-base">
             <li>Authenticating your identity and providing access to administrative features.</li>
-            <li>Processing event registrations and managing event attendance records.</li>
+            <li>
+              Processing event registrations, analyzing general form submissions, and managing event
+              attendance records.
+            </li>
+            <li>Tracking service attendance and managing service schedules/commitments.</li>
             <li>Sending event confirmations, updates, and essential administrative notices.</li>
             <li>
-              Maintaining system security, preventing unauthorized access, and rate limiting
-              requests.
+              Maintaining system security, preventing unauthorized access, logging administrative
+              actions for auditing, and rate limiting requests.
             </li>
           </ul>
         </section>
