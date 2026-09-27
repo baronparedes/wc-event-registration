@@ -1,5 +1,7 @@
 begin;
 
+drop function if exists public.get_member_service_attendance_stats (date, date, text, integer, integer);
+
 create or replace function public.get_member_service_attendance_stats (
   p_start_date date,
   p_end_date date,
