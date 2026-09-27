@@ -1,4 +1,9 @@
+import { Bell } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/Button';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { usePushSubscription } from '@/hooks/domain/notifications';
 import type { AdminMember } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
 
@@ -50,6 +55,7 @@ interface MemberInfoTabProps {
 
 export function MemberInfoTab({ member }: MemberInfoTabProps) {
   const metadata = member.extra_metadata ?? {};
+  const push = usePushSubscription();
 
   const promotedFields = PROMOTED_METADATA_FIELDS.map((field) => ({
     label: field.label,
@@ -95,6 +101,52 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
       <SectionCard title="Sunday Availability">
         <SundayAvailabilityDisplay metadata={metadata} />
       </SectionCard>
+
+      {push.isSupported && (
+        <SectionCard title="Push Notifications">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text">Device Notifications</p>
+                <p className="text-xs text-muted">
+                  {push.isSubscribed
+                    ? 'This device is currently registered to receive announcements and updates.'
+                    : 'Enable web push to receive event updates and announcements directly on this device.'}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant={push.isSubscribed ? 'accent' : 'default'}
+              onClick={async () => {
+                try {
+                  if (push.isSubscribed) {
+                    await push.unsubscribeAsync();
+                    toast.success('Unsubscribed this device from push notifications.');
+                  } else {
+                    await push.subscribeAsync();
+                    toast.success('Successfully subscribed this device to push notifications!');
+                  }
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error ? err.message : 'Failed to update push subscription',
+                  );
+                }
+              }}
+              disabled={push.isLoading}
+            >
+              {push.isLoading
+                ? 'Updating...'
+                : push.isSubscribed
+                  ? 'Unsubscribe Device'
+                  : 'Subscribe Device'}
+            </Button>
+          </div>
+        </SectionCard>
+      )}
     </div>
   );
 }

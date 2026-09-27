@@ -105,6 +105,11 @@ const AdminServiceAttendanceMigrationPage = lazy(() =>
     default: module.AdminServiceAttendanceMigrationPage,
   })),
 );
+const AdminNotificationsPage = lazy(() =>
+  import('../pages/admin/notifications').then((module) => ({
+    default: module.AdminNotificationsPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -309,6 +314,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServiceAttendanceMigration: AdminServiceAttendanceMigrationPage,
   adminServiceAttendanceData: AdminServiceAttendanceDataPage,
   adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
+  adminNotifications: AdminNotificationsPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {

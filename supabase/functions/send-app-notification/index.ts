@@ -12,6 +12,7 @@ const payloadSchema = z.object({
   targetType: z.enum(['all', 'role', 'user']),
   targetRole: z.string().nullable().optional(),
   targetUserId: z.string().uuid().nullable().optional(),
+  url: z.string().optional(),
 });
 
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
@@ -36,7 +37,7 @@ serve(async (req) => {
     return hook.response;
   }
 
-  const { client: supabase, data: payload, corsHeaders } = hook;
+  const { client: supabase, data: payload, userId, corsHeaders } = hook;
 
   try {
     // 1. Broadcast notification via atomic database RPC
@@ -48,6 +49,7 @@ serve(async (req) => {
         p_target_type: payload.targetType,
         p_target_role: payload.targetRole ?? null,
         p_user_ids: payload.targetUserId ? [payload.targetUserId] : null,
+        p_created_by: userId,
       },
     );
 
@@ -78,7 +80,7 @@ serve(async (req) => {
         const pushPayload = JSON.stringify({
           title: payload.title,
           body: payload.message,
-          url: '/admin/notifications',
+          url: payload.url || (payload.targetType === 'role' ? '/admin/notifications' : '/'),
         });
 
         const pushPromises = subscriptions.map((sub) => {

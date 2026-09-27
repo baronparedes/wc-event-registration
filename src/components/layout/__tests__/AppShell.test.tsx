@@ -39,6 +39,19 @@ vi.mock('@/hooks/domain/members', () => ({
   useMemberAvatarQuery: (...args: unknown[]) => mockUseMemberAvatarQuery(...args),
 }));
 
+vi.mock('@/hooks/domain/notifications', () => ({
+  useNotificationsQuery: () => ({ data: [] }),
+  useMarkNotificationReadMutation: () => ({ mutate: vi.fn() }),
+  useMarkAllNotificationsReadMutation: () => ({ mutate: vi.fn() }),
+  usePushSubscription: () => ({
+    isSupported: false,
+    isSubscribed: false,
+    isLoading: false,
+    subscribe: vi.fn(),
+    subscribeAsync: vi.fn(),
+  }),
+}));
+
 vi.mock('../AppDrawerNavigation', () => ({
   AppDrawerNavigation: (props: {
     isOpen: boolean;

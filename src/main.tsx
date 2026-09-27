@@ -5,11 +5,14 @@ import { inject } from '@vercel/analytics';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 
+import { env } from '@/config/env';
+
 import App from './App.tsx';
 import './index.css';
 
-if (import.meta.env.PROD) {
-  registerSW({ immediate: true });
+registerSW({ immediate: true });
+
+if (env.isProd) {
   inject({
     scriptSrc: 'https://va.vercel-scripts.com/v1/script.js',
   });

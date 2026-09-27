@@ -1,3 +1,5 @@
+import { env } from '@/config/env';
+
 export function createLogger(isDev: boolean) {
   return {
     debug: (...args: unknown[]) => {
@@ -23,4 +25,4 @@ export function createLogger(isDev: boolean) {
   };
 }
 
-export const logger = createLogger(import.meta.env.DEV);
+export const logger = createLogger(env.isDev);

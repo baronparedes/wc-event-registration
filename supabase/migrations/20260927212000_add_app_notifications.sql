@@ -243,25 +243,35 @@ grant all on table public.user_push_subscriptions to service_role;
 -- 4. Broadcast RPC Function
 drop function if exists public.broadcast_app_notification (text, text, text, text, uuid[]);
 
+drop function if exists public.broadcast_app_notification (text, text, text, text, uuid[], uuid);
+
 create or replace function public.broadcast_app_notification (
   p_title text,
   p_message text,
   p_target_type text,
   p_target_role text default null,
-  p_user_ids uuid[] default null
+  p_user_ids uuid[] default null,
+  p_created_by uuid default null
 ) returns uuid language plpgsql security definer
 set
   search_path = public as $$
 declare
   v_notification_id uuid;
+  v_creator_id uuid;
 begin
-  if not public.is_admin() then
+  if not (
+    public.is_admin()
+    or auth.role() = 'service_role'
+    or current_user = 'service_role'
+  ) then
     raise exception 'unauthorized';
   end if;
 
   if p_target_type not in ('all', 'role', 'user') then
     raise exception 'invalid target_type: %', p_target_type;
   end if;
+
+  v_creator_id := coalesce(p_created_by, auth.uid());
 
   -- 1. Create master notification record
   insert into public.app_notifications (
@@ -276,7 +286,7 @@ begin
     trim(p_message),
     p_target_type,
     p_target_role,
-    auth.uid()
+    v_creator_id
   )
   returning id into v_notification_id;
 
@@ -306,10 +316,10 @@ end;
 $$;
 
 grant
-execute on function public.broadcast_app_notification (text, text, text, text, uuid[]) to authenticated;
+execute on function public.broadcast_app_notification (text, text, text, text, uuid[], uuid) to authenticated;
 
 grant
-execute on function public.broadcast_app_notification (text, text, text, text, uuid[]) to service_role;
+execute on function public.broadcast_app_notification (text, text, text, text, uuid[], uuid) to service_role;
 
 -- Realtime publication
 alter publication supabase_realtime

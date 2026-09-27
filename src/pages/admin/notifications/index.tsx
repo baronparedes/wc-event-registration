@@ -12,8 +12,7 @@ import {
   FormTextareaField,
   SectionCard,
 } from '@/components/ui';
-import { usePushSubscription } from '@/hooks/domain/notifications';
-import { supabase } from '@/lib/infrastructure';
+import { type SendAppNotificationPayload, sendAppNotification } from '@/lib/domain/notifications';
 
 const broadcastSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -21,18 +20,12 @@ const broadcastSchema = z.object({
   targetType: z.enum(['all', 'role', 'user']),
   targetRole: z.string().optional(),
   targetUserId: z.string().uuid('Invalid user ID').optional().or(z.literal('')),
+  destinationUrl: z.string().optional(),
 });
 
 type BroadcastFormValues = z.infer<typeof broadcastSchema>;
 
 export function AdminNotificationsPage() {
-  const {
-    isSupported,
-    isSubscribed,
-    isLoading: isPushLoading,
-    subscribeAsync,
-  } = usePushSubscription();
-
   const form = useForm<BroadcastFormValues>({
     resolver: zodResolver(broadcastSchema),
     defaultValues: {
@@ -41,6 +34,7 @@ export function AdminNotificationsPage() {
       message: '',
       targetRole: '',
       targetUserId: '',
+      destinationUrl: '',
     },
   });
 
@@ -49,13 +43,15 @@ export function AdminNotificationsPage() {
 
   const broadcastMutation = useMutation({
     mutationFn: async (values: BroadcastFormValues) => {
-      const { data: session } = await supabase.auth.getSession();
-
-      const payload: Record<string, string | null> = {
+      const payload: SendAppNotificationPayload = {
         title: values.title,
         message: values.message,
         targetType: values.targetType,
       };
+
+      if (values.destinationUrl) {
+        payload.url = values.destinationUrl;
+      }
 
       if (values.targetType === 'role' && values.targetRole) {
         payload.targetRole = values.targetRole;
@@ -63,24 +59,7 @@ export function AdminNotificationsPage() {
         payload.targetUserId = values.targetUserId;
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-app-notification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.session?.access_token}`,
-          },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to send broadcast');
-      }
-
-      return response.json();
+      return sendAppNotification(payload);
     },
     onSuccess: (data: { count: number }) => {
       toast.success(`Successfully sent broadcast to ${data.count} users!`);
@@ -91,141 +70,123 @@ export function AdminNotificationsPage() {
     },
   });
 
-  const handleSubscribe = async () => {
-    try {
-      await subscribeAsync();
-      toast.success('Successfully subscribed to push notifications!');
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to subscribe');
-    }
-  };
-
   return (
     <AdminPageShell>
       <AdminPageShell.Header
         title="App Notifications"
-        description="Manage push subscriptions and broadcast notifications to users."
+        description="Broadcast push notifications and in-app alerts to users."
       />
 
       <AdminPageShell.Content>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-6">
-            <SectionCard
-              title="Notification Broadcast"
-              subtitle="Send a notification to application users."
+        <div className="w-full">
+          <SectionCard
+            title="Notification Broadcast"
+            subtitle="Compose and send an announcement to application users."
+          >
+            <form
+              onSubmit={form.handleSubmit((v) => broadcastMutation.mutate(v))}
+              className="space-y-4 pt-4"
             >
-              <form
-                onSubmit={form.handleSubmit((v) => broadcastMutation.mutate(v))}
-                className="space-y-4 pt-4"
-              >
+              <Controller
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormInputField
+                    id="title"
+                    label="Title"
+                    placeholder="e.g. Sunday Service Reminder"
+                    error={form.formState.errors.title?.message}
+                    {...field}
+                    value={field.value ?? ''}
+                  />
+                )}
+              />
+
+              <Controller
+                control={form.control}
+                name="message"
+                render={() => (
+                  <FormTextareaField
+                    id="message"
+                    label="Message"
+                    rows={3}
+                    placeholder="Enter notification details..."
+                    error={form.formState.errors.message?.message}
+                    registration={form.register('message')}
+                  />
+                )}
+              />
+
+              <FormSelectField
+                id="targetType"
+                label="Target Audience"
+                options={[
+                  { value: 'all', label: 'All Users' },
+                  { value: 'role', label: 'Specific Role' },
+                  { value: 'user', label: 'Specific User ID' },
+                ]}
+                value={targetType}
+                onChange={(value) =>
+                  form.setValue('targetType', value as BroadcastFormValues['targetType'])
+                }
+                error={form.formState.errors.targetType?.message}
+              />
+
+              {targetType === 'role' && (
+                <FormSelectField
+                  id="targetRole"
+                  label="Role"
+                  options={[
+                    { value: 'super_admin', label: 'Super Admin' },
+                    { value: 'admin', label: 'Admin' },
+                    { value: 'slod', label: 'SLOD' },
+                    { value: 'imt', label: 'IMT' },
+                  ]}
+                  value={targetRole || ''}
+                  onChange={(value) => form.setValue('targetRole', value)}
+                  error={form.formState.errors.targetRole?.message}
+                />
+              )}
+
+              {targetType === 'user' && (
                 <Controller
                   control={form.control}
-                  name="title"
+                  name="targetUserId"
                   render={({ field }) => (
                     <FormInputField
-                      label="Title"
-                      error={form.formState.errors.title?.message}
+                      id="targetUserId"
+                      label="User ID (UUID)"
+                      placeholder="e.g. a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+                      error={form.formState.errors.targetUserId?.message}
                       {...field}
                       value={field.value ?? ''}
                     />
                   )}
                 />
+              )}
 
-                <Controller
-                  control={form.control}
-                  name="message"
-                  render={() => (
-                    <FormTextareaField
-                      id="message"
-                      label="Message"
-                      rows={3}
-                      error={form.formState.errors.message?.message}
-                      registration={form.register('message')}
-                    />
-                  )}
-                />
-
-                <FormSelectField
-                  label="Target Audience"
-                  options={[
-                    { value: 'all', label: 'All Users' },
-                    { value: 'role', label: 'Specific Role' },
-                    { value: 'user', label: 'Specific User ID' },
-                  ]}
-                  value={targetType}
-                  onChange={(value) =>
-                    form.setValue('targetType', value as BroadcastFormValues['targetType'])
-                  }
-                  error={form.formState.errors.targetType?.message}
-                />
-
-                {targetType === 'role' && (
-                  <FormSelectField
-                    label="Role"
-                    options={[
-                      { value: 'super_admin', label: 'Super Admin' },
-                      { value: 'admin', label: 'Admin' },
-                      { value: 'slod', label: 'SLOD' },
-                      { value: 'imt', label: 'IMT' },
-                    ]}
-                    value={targetRole || ''}
-                    onChange={(value) => form.setValue('targetRole', value)}
-                    error={form.formState.errors.targetRole?.message}
+              <Controller
+                control={form.control}
+                name="destinationUrl"
+                render={({ field }) => (
+                  <FormInputField
+                    id="destinationUrl"
+                    label="Destination URL (Optional)"
+                    placeholder="e.g. / or /profile (defaults to /)"
+                    error={form.formState.errors.destinationUrl?.message}
+                    {...field}
+                    value={field.value ?? ''}
                   />
                 )}
+              />
 
-                {targetType === 'user' && (
-                  <Controller
-                    control={form.control}
-                    name="targetUserId"
-                    render={({ field }) => (
-                      <FormInputField
-                        label="User ID (UUID)"
-                        error={form.formState.errors.targetUserId?.message}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    )}
-                  />
-                )}
-
-                <div className="flex justify-end pt-2">
-                  <Button type="submit" disabled={broadcastMutation.isPending}>
-                    {broadcastMutation.isPending ? 'Sending...' : 'Send Broadcast'}
-                  </Button>
-                </div>
-              </form>
-            </SectionCard>
-          </div>
-
-          <div className="space-y-6">
-            <SectionCard
-              title="My Push Subscriptions"
-              subtitle="Manage your device's subscription to push notifications."
-            >
-              <div className="pt-4">
-                {!isSupported ? (
-                  <p className="text-sm text-muted">
-                    Push notifications are not supported by this browser.
-                  </p>
-                ) : isSubscribed ? (
-                  <p className="text-sm font-medium text-emerald-600">
-                    This device is subscribed to push notifications.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted">
-                      Subscribe this device to receive web push notifications when admins broadcast
-                      messages.
-                    </p>
-                    <Button onClick={handleSubscribe} disabled={isPushLoading} variant="outline">
-                      {isPushLoading ? 'Subscribing...' : 'Subscribe Device'}
-                    </Button>
-                  </div>
-                )}
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={broadcastMutation.isPending}>
+                  {broadcastMutation.isPending ? 'Sending...' : 'Send Broadcast'}
+                </Button>
               </div>
-            </SectionCard>
-          </div>
+            </form>
+          </SectionCard>
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>
