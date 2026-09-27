@@ -1,9 +1,22 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { makeAdminMember } from '@/__tests__/factories';
+import { usePushSubscription } from '@/hooks/domain/notifications';
 
 import { MemberInfoTab } from '../MemberInfoTab';
+
+vi.mock('@/hooks/domain/notifications', () => ({
+  usePushSubscription: vi.fn(() => ({
+    isSupported: true,
+    isSubscribed: false,
+    isLoading: false,
+    subscribe: vi.fn(),
+    subscribeAsync: vi.fn(),
+    unsubscribe: vi.fn(),
+    unsubscribeAsync: vi.fn(),
+  })),
+}));
 
 describe('MemberInfoTab', () => {
   it('renders Personal Details and Sunday Availability', () => {
@@ -69,5 +82,102 @@ describe('MemberInfoTab', () => {
 
     expect(screen.getByText('DGroup Member Since')).toBeInTheDocument();
     expect(screen.getByText('2020')).toBeInTheDocument();
+  });
+
+  it('handles subscribing to push notifications successfully', async () => {
+    const subscribeAsync = vi.fn().mockResolvedValue(true);
+    vi.mocked(usePushSubscription).mockReturnValue({
+      isSupported: true,
+      isSubscribed: false,
+      isLoading: false,
+      subscribe: vi.fn(),
+      subscribeAsync,
+      unsubscribe: vi.fn(),
+      unsubscribeAsync: vi.fn(),
+    });
+
+    const member = makeAdminMember({
+      member_id: 'MEM-001',
+      extra_metadata: {},
+    });
+
+    render(<MemberInfoTab member={member} />);
+
+    const subscribeBtn = screen.getByRole('button', { name: 'Subscribe Device' });
+    expect(subscribeBtn).toBeInTheDocument();
+
+    fireEvent.click(subscribeBtn);
+    expect(subscribeAsync).toHaveBeenCalled();
+  });
+
+  it('handles unsubscribing from push notifications successfully', async () => {
+    const unsubscribeAsync = vi.fn().mockResolvedValue(true);
+    vi.mocked(usePushSubscription).mockReturnValue({
+      isSupported: true,
+      isSubscribed: true,
+      isLoading: false,
+      subscribe: vi.fn(),
+      subscribeAsync: vi.fn(),
+      unsubscribe: vi.fn(),
+      unsubscribeAsync,
+    });
+
+    const member = makeAdminMember({
+      member_id: 'MEM-001',
+      extra_metadata: {},
+    });
+
+    render(<MemberInfoTab member={member} />);
+
+    const unsubscribeBtn = screen.getByRole('button', { name: 'Unsubscribe Device' });
+    expect(unsubscribeBtn).toBeInTheDocument();
+
+    fireEvent.click(unsubscribeBtn);
+    expect(unsubscribeAsync).toHaveBeenCalled();
+  });
+
+  it('handles subscription error with toast notification', async () => {
+    const subscribeAsync = vi.fn().mockRejectedValue(new Error('Permission denied'));
+    vi.mocked(usePushSubscription).mockReturnValue({
+      isSupported: true,
+      isSubscribed: false,
+      isLoading: false,
+      subscribe: vi.fn(),
+      subscribeAsync,
+      unsubscribe: vi.fn(),
+      unsubscribeAsync: vi.fn(),
+    });
+
+    const member = makeAdminMember({
+      member_id: 'MEM-001',
+      extra_metadata: {},
+    });
+
+    render(<MemberInfoTab member={member} />);
+
+    const subscribeBtn = screen.getByRole('button', { name: 'Subscribe Device' });
+    fireEvent.click(subscribeBtn);
+    expect(subscribeAsync).toHaveBeenCalled();
+  });
+
+  it('shows loading state when push mutation is in progress', () => {
+    vi.mocked(usePushSubscription).mockReturnValue({
+      isSupported: true,
+      isSubscribed: false,
+      isLoading: true,
+      subscribe: vi.fn(),
+      subscribeAsync: vi.fn(),
+      unsubscribe: vi.fn(),
+      unsubscribeAsync: vi.fn(),
+    });
+
+    const member = makeAdminMember({
+      member_id: 'MEM-001',
+      extra_metadata: {},
+    });
+
+    render(<MemberInfoTab member={member} />);
+
+    expect(screen.getByRole('button', { name: 'Updating...' })).toBeDisabled();
   });
 });

@@ -24,20 +24,22 @@ export function useDropdownPlacement({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const computeOpenDirection = useCallback((): boolean => {
-    const triggerElement = containerRef.current?.querySelector('button');
+    const triggerElement =
+      containerRef.current?.querySelector('button, input') ?? containerRef.current;
     if (!triggerElement) return false;
 
     const triggerRect = triggerElement.getBoundingClientRect();
     const estimatedOptionRows = Math.min(optionCount + (includesPlaceholder ? 1 : 0), 6);
-    const estimatedMenuHeight = estimatedOptionRows * 40 + 12;
-    const minimumSpaceThreshold = 160;
+    const estimatedMenuHeight = Math.max(estimatedOptionRows * 40 + 16, 220);
     const availableSpaceBelow = window.innerHeight - triggerRect.bottom;
     const availableSpaceAbove = triggerRect.top;
 
-    return (
-      availableSpaceBelow < Math.max(minimumSpaceThreshold, estimatedMenuHeight / 2) &&
-      availableSpaceAbove > availableSpaceBelow
-    );
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    if (isMobile) {
+      return availableSpaceAbove > availableSpaceBelow || availableSpaceBelow < estimatedMenuHeight;
+    }
+
+    return availableSpaceBelow < estimatedMenuHeight && availableSpaceAbove > availableSpaceBelow;
   }, [includesPlaceholder, optionCount]);
 
   const prepareOpenDirection = useCallback(() => {

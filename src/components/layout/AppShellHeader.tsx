@@ -9,14 +9,21 @@ import { Button } from '../ui';
 type AppShellHeaderProps = {
   isMinimizedShell: boolean;
   userBadge: ReactNode;
+  actions?: ReactNode;
   onOpenDrawer: () => void;
 };
 
-export function AppShellHeader({ isMinimizedShell, userBadge, onOpenDrawer }: AppShellHeaderProps) {
+export function AppShellHeader({
+  isMinimizedShell,
+  userBadge,
+  actions,
+  onOpenDrawer,
+}: AppShellHeaderProps) {
   if (isMinimizedShell) {
     return (
       <div className="sticky top-0 z-40 px-3 pt-1.5 print:hidden">
-        <div className="mx-auto flex w-fit justify-center">
+        <div className="mx-auto flex w-fit items-center justify-center gap-1.5">
+          {actions}
           <button
             type="button"
             aria-label="Open app navigation drawer"
@@ -45,7 +52,8 @@ export function AppShellHeader({ isMinimizedShell, userBadge, onOpenDrawer }: Ap
           <img src={brandLogo} alt="Welcome Hub" className="h-20 object-cover object-center" />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {actions}
           {userBadge}
           <Button
             type="button"

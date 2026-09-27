@@ -15,6 +15,18 @@ vi.mock('@/components/ui/Avatar', () => ({
   Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
 }));
 
+vi.mock('@/hooks/domain/notifications', () => ({
+  usePushSubscription: () => ({
+    isSupported: true,
+    isSubscribed: false,
+    isLoading: false,
+    subscribe: vi.fn(),
+    subscribeAsync: vi.fn(),
+    unsubscribe: vi.fn(),
+    unsubscribeAsync: vi.fn(),
+  }),
+}));
+
 vi.mock('@/hooks/domain/members', async () => {
   const actual =
     await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');

@@ -2,6 +2,7 @@ import { type ComponentType, useMemo } from 'react';
 
 import {
   BarChart3,
+  Bell,
   Bot,
   Calendar,
   CalendarDays,
@@ -187,6 +188,14 @@ export function useAppDrawerNavigation({
       });
     }
 
+    if (canWrite) {
+      items.push({
+        to: ROUTE_PATHS.adminNotifications,
+        label: 'Notifications',
+        icon: Bell,
+      });
+    }
+
     if (canRead) {
       items.push({
         to: ROUTE_PATHS.adminChat,
@@ -200,6 +209,7 @@ export function useAppDrawerNavigation({
     isAuthenticated,
     canReadDashboard,
     canRead,
+    canWrite,
     canAccessCheckIn,
     canReadMembers,
     canManageRoles,

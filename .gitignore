@@ -8,10 +8,12 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+dev-dist
 dist
 dist-ssr
 coverage
 coverage_*
+test-results
 *.local
 
 # Editor directories and files
