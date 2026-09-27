@@ -14,13 +14,18 @@ import {
   mapServiceAttendanceTableNumber,
 } from '@/lib/domain/services';
 
-import { type EnrichedServiceAttendanceRow, getMemberNameFromRow } from '../types';
+import {
+  type EnrichedServiceAttendanceRow,
+  type RowOverride,
+  getMemberNameFromRow,
+} from '../types';
 
 interface UseAttendanceMigrationEnrichmentProps {
   rawRows: ServiceAttendanceCsvPreviewRow[];
   seats: Array<{ id: string; table_number: string }> | undefined;
   isParsingCsv: boolean;
   fileInputKey: number;
+  rowOverrides?: Record<number, RowOverride>;
 }
 
 export function useAttendanceMigrationEnrichment({
@@ -28,6 +33,7 @@ export function useAttendanceMigrationEnrichment({
   seats,
   isParsingCsv,
   fileInputKey,
+  rowOverrides,
 }: UseAttendanceMigrationEnrichmentProps) {
   const rfidsToLookup = useMemo(() => {
     return Array.from(new Set(rawRows.map((r) => r.rfid).filter(Boolean)));
@@ -114,10 +120,24 @@ export function useAttendanceMigrationEnrichment({
       const rowName = getMemberNameFromRow(row.originalData);
       const normalizedRowName = rowName.trim().replace(/\s+/g, ' ').toLowerCase();
 
-      // Try matching by RFID first, then fallback to nickname + last name / name matching
-      const matchedUser =
-        (row.rfid ? rfidToUserMap.get(row.rfid) : undefined) ??
-        (normalizedRowName ? nameToUserMap.get(normalizedRowName) : undefined);
+      const override = rowOverrides?.[row.row_number];
+
+      // Try matching by override first, then RFID, then fallback to nickname + last name / name matching
+      const matchedUser = override
+        ? {
+            id: override.userId,
+            member_id: override.rfid,
+            full_name: override.memberName,
+          }
+        : ((row.rfid ? rfidToUserMap.get(row.rfid) : undefined) ??
+          (normalizedRowName ? nameToUserMap.get(normalizedRowName) : undefined));
+
+      if (override) {
+        enriched.isManuallyMatched = true;
+        if (override.rfid) {
+          enriched.rfid = override.rfid;
+        }
+      }
 
       const effectiveTableNumber = mapServiceAttendanceTableNumber(row.table_number);
       enriched.table_number = effectiveTableNumber;
@@ -142,7 +162,9 @@ export function useAttendanceMigrationEnrichment({
         if (!enriched.rfid && matchedUser.member_id) {
           enriched.rfid = matchedUser.member_id;
         }
-        enriched.errors = enriched.errors.filter((e) => e !== 'RFID is missing');
+        enriched.errors = enriched.errors.filter(
+          (e) => e !== 'RFID is missing' && !e.includes('not found in system'),
+        );
         enriched.isValid = enriched.errors.length === 0;
       } else {
         enriched.isValid = false;
@@ -166,7 +188,7 @@ export function useAttendanceMigrationEnrichment({
 
       return enriched;
     });
-  }, [rawRows, rfidToUserMap, nameToUserMap, tableToSeatIdMap]);
+  }, [rawRows, rfidToUserMap, nameToUserMap, tableToSeatIdMap, rowOverrides]);
 
   const notifiedFileKeyRef = useRef<number>(-1);
   useEffect(() => {

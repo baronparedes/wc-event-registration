@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildFailedServiceAttendanceCsvExport,
   buildServiceAttendanceCsvExport,
   escapeServiceCsvValue,
   formatCheckedInTime,
@@ -147,6 +148,38 @@ describe('service-attendance-export', () => {
       });
 
       expect(filename).toMatch(/^service-attendance-2026-03-01-to-2026-03-15-\d{8}-\d{6}\.csv$/);
+    });
+  });
+
+  describe('buildFailedServiceAttendanceCsvExport', () => {
+    it('exports failed rows with row number, combined errors, and original columns in preferred order', () => {
+      const failedRows = [
+        {
+          row_number: 3,
+          errors: ['RFID not found in system.', 'Table 999 not found in layout.'],
+          originalData: {
+            RFID: 'UNKNOWN123',
+            Date: '3/9/2026',
+            Time: '09:00:00',
+            Time_Slot: '9AM',
+            Table: '999',
+            Name: 'Mystery Person',
+            Role: 'Attendee',
+            CustomNotes: 'Need check',
+          },
+        },
+      ];
+
+      const { csvText, filename } = buildFailedServiceAttendanceCsvExport({ failedRows });
+      const lines = csvText.split('\n');
+
+      expect(lines[0]).toBe('Row,Errors,RFID,Date,Time,Time_Slot,Table,Name,Role,CustomNotes');
+      expect(lines[1]).toContain('3');
+      expect(lines[1]).toContain('RFID not found in system.; Table 999 not found in layout.');
+      expect(lines[1]).toContain('UNKNOWN123');
+      expect(lines[1]).toContain('Mystery Person');
+      expect(lines[1]).toContain('Need check');
+      expect(filename).toMatch(/^failed-service-attendance-migration-\d{8}-\d{6}\.csv$/);
     });
   });
 });

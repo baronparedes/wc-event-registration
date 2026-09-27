@@ -117,3 +117,53 @@ export function buildServiceAttendanceCsvExport(params: BuildServiceAttendanceCs
 
   return { csvText, filename };
 }
+
+export interface BuildFailedServiceAttendanceCsvExportParams {
+  failedRows: Array<{
+    row_number: number;
+    errors: string[];
+    originalData: Record<string, string>;
+  }>;
+}
+
+export function buildFailedServiceAttendanceCsvExport(
+  params: BuildFailedServiceAttendanceCsvExportParams,
+): {
+  csvText: string;
+  filename: string;
+} {
+  const { failedRows } = params;
+
+  const originalKeySet = new Set<string>();
+  failedRows.forEach((row) => {
+    Object.keys(row.originalData).forEach((k) => originalKeySet.add(k));
+  });
+
+  const preferredOrder = ['RFID', 'Date', 'Time', 'Time_Slot', 'Table', 'Name', 'Role'];
+  const sortedOriginalKeys = [
+    ...preferredOrder.filter((k) => originalKeySet.has(k)),
+    ...Array.from(originalKeySet).filter((k) => !preferredOrder.includes(k)),
+  ];
+
+  const headers = ['Row', 'Errors', ...sortedOriginalKeys];
+
+  const rows: string[][] = [
+    headers,
+    ...failedRows.map((row) => {
+      return [
+        String(row.row_number),
+        row.errors.join('; '),
+        ...sortedOriginalKeys.map((k) => row.originalData[k] ?? ''),
+      ];
+    }),
+  ];
+
+  const csvText = rows
+    .map((row) => row.map((val) => escapeServiceCsvValue(val)).join(','))
+    .join('\n');
+
+  const timestamp = format(new Date(), 'yyyyMMdd-HHmmss');
+  const filename = `failed-service-attendance-migration-${timestamp}.csv`;
+
+  return { csvText, filename };
+}
