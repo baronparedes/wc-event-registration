@@ -67,6 +67,12 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
       .describe(
         'Filter by user role, such as "usher" or "prayer coach". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
       ),
+    userTokens: z
+      .union([z.string().trim(), z.array(z.string().trim())])
+      .optional()
+      .describe(
+        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -83,14 +89,21 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
 
   return tool({
     description:
-      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by this tool) and Unexcused (committed volunteers who did not check in and have no approved excuse request, handled by getUnexcusedVolunteers). Defaults to the coming Sunday when no dates are provided. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
+      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens, optionally filtered by user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by this tool) and Unexcused (committed volunteers who did not check in and have no approved excuse request, handled by getUnexcusedVolunteers). Defaults to the coming Sunday when no dates are provided. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
     parameters: schema,
-    execute: async ({ role, targetStartDate, targetEndDate }) => {
+    execute: async ({ role, userTokens, targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);
 
+      const tokensList = userTokens
+        ? (Array.isArray(userTokens) ? userTokens : [userTokens])
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
+
       console.log('[chat:tool:getExcusedMembers] Executing', {
         role,
+        userTokens: tokensList,
         targetStartDate,
         targetEndDate,
         resolvedRange: range
@@ -119,6 +132,42 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         };
       }
 
+      let targetUserIds: string[] | null = null;
+      if (tokensList.length > 0) {
+        const { data: tokenData, error: tokenError } = await client
+          .from('user_tokens')
+          .select('user_id, token')
+          .in('token', tokensList);
+
+        if (tokenError) {
+          console.error('[chat:tool:getExcusedMembers] Token lookup error', tokenError);
+          return { error: tokenError.message };
+        }
+
+        targetUserIds = (tokenData ?? [])
+          .map((t) => t.user_id)
+          .filter((id): id is string => Boolean(id));
+
+        if (targetUserIds.length === 0) {
+          return {
+            count: 0,
+            tokens: [],
+            service_breakdown: Object.fromEntries(
+              serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
+            ),
+            sunday_breakdown: targetSundayDates.map((date) => ({
+              date: formatDate(date),
+              count: 0,
+              service_breakdown: Object.fromEntries(
+                serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
+              ),
+            })),
+            role_breakdown: {},
+            note: `No volunteers found matching tokens: ${tokensList.join(', ')}.`,
+          };
+        }
+      }
+
       const queryMonth = targetSundayDates[0];
       const targetYear = queryMonth.getFullYear();
       const targetMonthIndex = queryMonth.getMonth();
@@ -132,10 +181,10 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
       const daysInMonth = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
       const endDate = `${datePrefix}-${String(daysInMonth).padStart(2, '0')}`;
 
-      const { data: dateAnswers, error: dateAnswersError } = await client
+      let answersQuery = client
         .from('registration_answers')
         .select(
-          'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id)',
+          'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id, user_id)',
         )
         .eq('registrations.event_id', eventId)
         .neq('registrations.status', 'cancelled')
@@ -143,6 +192,12 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         .or(
           `and(answer_date.gte.${startDate},answer_date.lte.${endDate}),answer_text.ilike.%${datePrefix}%`,
         );
+
+      if (targetUserIds && targetUserIds.length > 0) {
+        answersQuery = answersQuery.in('registrations.user_id', targetUserIds);
+      }
+
+      const { data: dateAnswers, error: dateAnswersError } = await answersQuery;
 
       if (dateAnswersError) return { error: dateAnswersError.message };
 

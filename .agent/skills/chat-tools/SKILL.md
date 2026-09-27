@@ -59,6 +59,51 @@ Call resolveDateRange immediately at the top of execute. Never do date math inli
 
 ---
 
+## User Token Filtering Pattern (`userTokens`)
+
+For member/volunteer-specific tools, support the optional `userTokens` parameter so that the model can query specific member(s) efficiently:
+
+### Tool schema
+
+```typescript
+userTokens: z
+  .union([z.string().trim(), z.array(z.string().trim())])
+  .optional()
+  .describe(
+    'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
+  ),
+```
+
+### Tool execute function
+
+Resolve matching `user_id` values from `user_tokens` first and scope downstream database queries to those user IDs:
+
+```typescript
+const tokensList = userTokens
+  ? (Array.isArray(userTokens) ? userTokens : [userTokens]).map((t) => t.trim()).filter(Boolean)
+  : [];
+
+let targetUserIds: string[] | null = null;
+if (tokensList.length > 0) {
+  const { data: tokenData, error: tokenError } = await client
+    .from('user_tokens')
+    .select('user_id, token')
+    .in('token', tokensList);
+
+  if (tokenError) return { error: tokenError.message };
+
+  targetUserIds = (tokenData ?? [])
+    .map((t) => t.user_id)
+    .filter((id): id is string => Boolean(id));
+
+  if (targetUserIds.length === 0) {
+    return { count: 0, tokens: [], note: `No volunteers found matching tokens: ${tokensList.join(', ')}.` };
+  }
+}
+```
+
+---
+
 ## timeframes.ts utility API
 
 All helpers live in supabase/functions/chat/tools/timeframes.ts.

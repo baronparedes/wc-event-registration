@@ -14,6 +14,12 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
       .describe(
         'Filter by user role (e.g., "prayer coach", "usher"). If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
       ),
+    userTokens: z
+      .union([z.string().trim(), z.array(z.string().trim())])
+      .optional()
+      .describe(
+        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -34,14 +40,21 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
 
   return tool({
     description:
-      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed within the specified date range, optionally filtered by role. Defaults to the coming Sunday when no dates are provided. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
+      'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed within the specified date range, optionally filtered by role or user tokens. Defaults to the coming Sunday when no dates are provided. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
     parameters: schema,
-    execute: async ({ role, targetStartDate, targetEndDate, sunday_availability }) => {
+    execute: async ({ role, userTokens, targetStartDate, targetEndDate, sunday_availability }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);
 
+      const tokensList = userTokens
+        ? (Array.isArray(userTokens) ? userTokens : [userTokens])
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
+
       console.log('[chat:tool:getUserCommitments] Executing', {
         role,
+        userTokens: tokensList,
         targetStartDate,
         targetEndDate,
         resolvedRange: range
@@ -55,17 +68,52 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         return { error: 'Could not resolve a date range for the request.' };
       }
 
+      let targetUserIds: string[] | null = null;
+      if (tokensList.length > 0) {
+        const { data: tokenData, error: tokenError } = await client
+          .from('user_tokens')
+          .select('user_id, token')
+          .in('token', tokensList);
+
+        if (tokenError) {
+          console.error('[chat:tool:getUserCommitments] Token lookup error', tokenError);
+          return { error: tokenError.message };
+        }
+
+        targetUserIds = (tokenData ?? [])
+          .map((t) => t.user_id)
+          .filter((id): id is string => Boolean(id));
+
+        if (targetUserIds.length === 0) {
+          return {
+            count: 0,
+            tokens: [],
+            service_breakdown: {},
+            sunday_breakdown: [],
+            role_breakdown: {},
+            sundays: [],
+            hub_calendar_url: '/admin/hub-calendar',
+            note: `No volunteers found matching tokens: ${tokensList.join(', ')}.`,
+          };
+        }
+      }
+
       // Start the query on users
       let query = client
         .from('users')
         .select(
           `
+          id,
           role,
           metadata,
           user_tokens ( token )
         `,
         )
         .eq('is_active', true);
+
+      if (targetUserIds && targetUserIds.length > 0) {
+        query = query.in('id', targetUserIds);
+      }
 
       if (isSpecificRole(role)) {
         const cleanRole = getPrimaryRole(role).toLowerCase();

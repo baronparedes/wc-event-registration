@@ -50,6 +50,12 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
       .trim()
       .optional()
       .describe('Optional volunteer category filter (e.g., "regular", "probationary").'),
+    userTokens: z
+      .union([z.string().trim(), z.array(z.string().trim())])
+      .optional()
+      .describe(
+        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -66,16 +72,23 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
 
   return tool({
     description:
-      'Retrieve inactive volunteers who have scheduled Sunday service commitments in the specified timeframe (e.g. this quarter, last quarter, this year, or custom dates) but recorded ZERO attendances (committed > 0 and attended = 0). Returns tokenized volunteer identities with committed slots, unexcused absences, excused absences, and attendance scores. Secondary roles (after "/") are ignored; only primary roles are evaluated. NEVER returns PII like real names or emails.',
+      'Retrieve inactive volunteers who have scheduled Sunday service commitments in the specified timeframe (e.g. this quarter, last quarter, this year, or custom dates) but recorded ZERO total attendances (both scheduled check-ins and walk-ins = 0). Returns tokenized volunteer identities with committed slots, unexcused absences, excused absences, and attendance scores. Secondary roles (after "/") are ignored; only primary roles are evaluated. NEVER returns PII like real names or emails.',
     parameters: schema,
-    execute: async ({ limit = 50, role, category, targetStartDate, targetEndDate }) => {
+    execute: async ({ limit = 50, role, category, userTokens, targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);
+
+      const tokensList = userTokens
+        ? (Array.isArray(userTokens) ? userTokens : [userTokens])
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
 
       console.log('[chat:tool:getInactiveVolunteers] Executing', {
         limit,
         role,
         category,
+        userTokens: tokensList,
         targetStartDate,
         targetEndDate,
         resolvedRange: range
@@ -89,6 +102,33 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
       }
 
       const { start_date: formattedStart, end_date: formattedEnd } = describeDateRange(range);
+
+      let targetUserIds: string[] | null = null;
+      if (tokensList.length > 0) {
+        const { data: tokenData, error: tokenError } = await client
+          .from('user_tokens')
+          .select('user_id, token')
+          .in('token', tokensList);
+
+        if (tokenError) {
+          console.error('[chat:tool:getInactiveVolunteers] Token lookup error', tokenError);
+          return { error: tokenError.message };
+        }
+
+        if (!tokenData || tokenData.length === 0) {
+          return {
+            timeframe: { start_date: formattedStart, end_date: formattedEnd },
+            role_filter: role ? getPrimaryRole(role) : null,
+            category_filter: category || null,
+            total_inactive_volunteers: 0,
+            returned_count: 0,
+            inactive_volunteers: [],
+            note: `No volunteers found matching tokens: ${tokensList.join(', ')}.`,
+          };
+        }
+
+        targetUserIds = tokenData.map((t) => t.user_id).filter((id): id is string => Boolean(id));
+      }
 
       const allStats: CommitmentStatRow[] = [];
       let page = 1;
@@ -120,14 +160,26 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
         page += 1;
       }
 
-      // Filter by primary role and inactivity criteria:
-      // Inactivity = committed > 0 and attended == 0 (meaning they were scheduled but never attended)
-      const inactive = allStats.filter(
-        (row) =>
-          matchesPrimaryRole(row.role, role) &&
-          Number(row.committed) > 0 &&
-          Number(row.attended) === 0,
-      );
+      // Filter by target tokens, primary role, and inactivity criteria:
+      // Inactivity = committed > 0 and total attendances == 0 (both scheduled check-ins and walk-ins = 0)
+      const inactive = allStats.filter((row) => {
+        if (targetUserIds && targetUserIds.length > 0) {
+          if (!targetUserIds.includes(row.user_id)) {
+            return false;
+          }
+        }
+
+        if (!matchesPrimaryRole(row.role, role)) {
+          return false;
+        }
+
+        const scheduledAttended = Number(row.attended || 0);
+        const walkIns =
+          Number(row.wi_9am_3pm || 0) + Number(row.wi_12nn || 0) + Number(row.wi_5th_sunday || 0);
+        const totalAttended = scheduledAttended + walkIns;
+
+        return Number(row.committed) > 0 && totalAttended === 0;
+      });
 
       // Sort by number of committed slots descending (most missed commitments first), then attendance score ascending
       inactive.sort((a, b) => {
@@ -138,13 +190,13 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
       });
 
       const inactiveRows = inactive.slice(0, limit);
-      const targetUserIds = inactiveRows.map((r) => r.user_id).filter(Boolean);
+      const userIdsToLookup = inactiveRows.map((r) => r.user_id).filter(Boolean);
       const tokenMap = new Map<string, string>();
 
       // Fetch tokens only for the sliced records in safe batch chunks
       const CHUNK_SIZE = 50;
-      for (let i = 0; i < targetUserIds.length; i += CHUNK_SIZE) {
-        const chunk = targetUserIds.slice(i, i + CHUNK_SIZE);
+      for (let i = 0; i < userIdsToLookup.length; i += CHUNK_SIZE) {
+        const chunk = userIdsToLookup.slice(i, i + CHUNK_SIZE);
         const { data: tokenRows, error: tokenError } = await client
           .from('user_tokens')
           .select('user_id, token')
@@ -164,17 +216,26 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
         }
       }
 
-      const returnedVolunteers = inactiveRows.map((r) => ({
-        token: tokenMap.get(r.user_id) ?? 'Unknown',
-        role: getPrimaryRole(r.role),
-        category: r.category || 'regular',
-        start_date: r.start_date,
-        committed: Number(r.committed),
-        attended: 0,
-        absences: Number(r.absences),
-        excused: Number(r.excused),
-        attendance_score: Number(r.attendance_score),
-      }));
+      const returnedVolunteers = inactiveRows.map((r) => {
+        const scheduledAttended = Number(r.attended || 0);
+        const walkIns =
+          Number(r.wi_9am_3pm || 0) + Number(r.wi_12nn || 0) + Number(r.wi_5th_sunday || 0);
+        const totalAttended = scheduledAttended + walkIns;
+
+        return {
+          token: tokenMap.get(r.user_id) ?? 'Unknown',
+          role: getPrimaryRole(r.role),
+          category: r.category || 'regular',
+          start_date: r.start_date,
+          committed: Number(r.committed),
+          attended: totalAttended,
+          scheduled_attended: scheduledAttended,
+          walk_ins: walkIns,
+          absences: Number(r.absences),
+          excused: Number(r.excused),
+          attendance_score: Number(r.attendance_score),
+        };
+      });
 
       return {
         timeframe: { start_date: formattedStart, end_date: formattedEnd },

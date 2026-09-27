@@ -96,6 +96,12 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
       .describe(
         'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer". Secondary roles (after "/") are ignored.',
       ),
+    userTokens: z
+      .union([z.string().trim(), z.array(z.string().trim())])
+      .optional()
+      .describe(
+        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -116,14 +122,21 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
 
   return tool({
     description:
-      'Identify unexcused absent volunteers for a given Sunday or date range. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by getExcusedMembers) and Unexcused (committed volunteers who did NOT check in and have NO approved excuse request, handled by this tool). Any volunteer with a recorded service_attendance check-in is NOT unexcused. Secondary roles (after "/") are ignored. NEVER returns PII like names or emails; it uses user tokens instead.',
+      'Identify unexcused absent volunteers for a given Sunday or date range, optionally filtered by role or user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by getExcusedMembers) and Unexcused (committed volunteers who did NOT check in and have NO approved excuse request, handled by this tool). Any volunteer with a recorded service_attendance check-in is NOT unexcused. Secondary roles (after "/") are ignored. NEVER returns PII like names or emails; it uses user tokens instead.',
     parameters: schema,
-    execute: async ({ role, targetStartDate, targetEndDate, service_slot }) => {
+    execute: async ({ role, userTokens, targetStartDate, targetEndDate, service_slot }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);
 
+      const tokensList = userTokens
+        ? (Array.isArray(userTokens) ? userTokens : [userTokens])
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
+
       console.log('[chat:tool:getUnexcusedVolunteers] Executing', {
         role,
+        userTokens: tokensList,
         targetStartDate,
         targetEndDate,
         service_slot,
@@ -157,11 +170,46 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
         };
       }
 
+      let targetUserIds: string[] | null = null;
+      if (tokensList.length > 0) {
+        const { data: tokenData, error: tokenError } = await client
+          .from('user_tokens')
+          .select('user_id, token')
+          .in('token', tokensList);
+
+        if (tokenError) {
+          console.error('[chat:tool:getUnexcusedVolunteers] Token lookup error', tokenError);
+          return { error: tokenError.message };
+        }
+
+        targetUserIds = (tokenData ?? [])
+          .map((t) => t.user_id)
+          .filter((id): id is string => Boolean(id));
+
+        if (targetUserIds.length === 0) {
+          return {
+            count: 0,
+            tokens: [],
+            service_breakdown: Object.fromEntries(
+              serviceSlots.map((slot) => [slot, { count: 0, tokens: [] }]),
+            ),
+            role_breakdown: {},
+            sunday_breakdown: [],
+            volunteers: [],
+            note: `No volunteers found matching tokens: ${tokensList.join(', ')}.`,
+          };
+        }
+      }
+
       // 1. Fetch active users matching role
       let usersQuery = client
         .from('users')
         .select('id, role, metadata, user_tokens ( token )')
         .eq('is_active', true);
+
+      if (targetUserIds && targetUserIds.length > 0) {
+        usersQuery = usersQuery.in('id', targetUserIds);
+      }
 
       if (isSpecificRole(role)) {
         const cleanRole = getPrimaryRole(role).toLowerCase();
@@ -189,10 +237,10 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
         const minDate = formatDate(firstSunday);
         const maxDate = formatDate(lastSunday);
 
-        const { data: dateAnswers, error: dateAnswersError } = await client
+        let dateAnswersQuery = client
           .from('registration_answers')
           .select(
-            'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id)',
+            'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id, user_id)',
           )
           .eq('registrations.event_id', eventId)
           .neq('registrations.status', 'cancelled')
@@ -200,6 +248,12 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
           .or(
             `and(answer_date.gte.${minDate},answer_date.lte.${maxDate}),and(answer_text.gte.${minDate},answer_text.lte.${maxDate})`,
           );
+
+        if (targetUserIds && targetUserIds.length > 0) {
+          dateAnswersQuery = dateAnswersQuery.in('registrations.user_id', targetUserIds);
+        }
+
+        const { data: dateAnswers, error: dateAnswersError } = await dateAnswersQuery;
 
         if (!dateAnswersError && dateAnswers && dateAnswers.length > 0) {
           const registrationIds = [
@@ -274,7 +328,7 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
 
       let attendanceFrom = 0;
       while (true) {
-        const { data: attendanceData, error: attendanceError } = await client
+        let attendanceQuery = client
           .from('service_attendance')
           .select(
             'id, user_id, service_date, checked_in_at, time_slot, users ( id, user_tokens ( token ) )',
@@ -283,6 +337,12 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
           .lte('service_date', formattedEnd)
           .order('id', { ascending: true })
           .range(attendanceFrom, attendanceFrom + PAGE_SIZE - 1);
+
+        if (targetUserIds && targetUserIds.length > 0) {
+          attendanceQuery = attendanceQuery.in('user_id', targetUserIds);
+        }
+
+        const { data: attendanceData, error: attendanceError } = await attendanceQuery;
 
         if (attendanceError) {
           console.error(
