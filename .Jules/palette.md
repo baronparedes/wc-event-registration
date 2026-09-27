@@ -12,3 +12,6 @@
 
 **Learning:** Custom interactive elements (e.g. `CopyButton` inside `ChatMessageContent`) that lack explicit `type="button"` declarations could inadvertently submit adjacent forms if placed inside one. Additionally, the lack of `focus-visible` styles makes the element invisible to keyboard navigation.
 **Action:** Always ensure explicitly set `type="button"` on `<button>` elements that are not acting as form submissions. Also ensure `focus-visible:ring-2 focus-visible:ring-primary/50` is added to custom interactive elements, especially if `focus:outline-none` is used.
+## 2026-09-27 - Focus Visible for Buttons
+**Learning:** Replaced `focus:ring-2` with `focus-visible:ring-2` in the base `Button` component. This prevents focus rings from appearing when mouse users click buttons, reducing visual noise, while maintaining strong visual indicators for keyboard navigators.
+**Action:** When creating or modifying interactive elements, always prefer `focus-visible:` over `focus:` for focus rings to ensure a good experience for both mouse and keyboard users.
