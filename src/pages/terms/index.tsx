@@ -27,9 +27,10 @@ export function TermsOfServicePage() {
             2. Description of Service
           </h2>
           <p className="text-sm sm:text-base">
-            {LEGAL_CONFIG.appName} provides event registration, attendance tracking, and
-            administrative management features. Services may include user authentication via single
-            sign-on (such as Google OAuth) and public event registration forms.
+            {LEGAL_CONFIG.appName} provides event registration, service scheduling, attendance
+            tracking, general form submissions, and administrative management features. Services may
+            include user authentication via single sign-on (such as Google OAuth) and public event
+            registration or custom forms.
           </p>
         </section>
 
@@ -51,7 +52,7 @@ export function TermsOfServicePage() {
             you agree not to:
           </p>
           <ul className="list-disc space-y-2 pl-6 text-sm sm:text-base">
-            <li>Submit false, misleading, or fraudulent registration data.</li>
+            <li>Submit false, misleading, or fraudulent registration or form data.</li>
             <li>Attempt to bypass authentication, security controls, or system rate limits.</li>
             <li>Interfere with or disrupt the performance or integrity of the Platform.</li>
             <li>Use the Platform for any unlawful or unauthorized purpose.</li>
