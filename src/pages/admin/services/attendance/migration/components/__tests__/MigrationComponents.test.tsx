@@ -3,10 +3,33 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   type EnrichedServiceAttendanceRow,
+  MatchMemberModal,
   MigrationConfirmDialog,
   MigrationPreviewTable,
   MigrationUploadControls,
 } from '../index';
+
+vi.mock('@/hooks/domain/members', () => ({
+  useAdminMembersQuery: () => ({
+    data: {
+      pages: [
+        {
+          items: [
+            {
+              id: 'user-alice',
+              member_id: 'RFID-001',
+              full_name: 'Alice Smith',
+              first_name: 'Alice',
+              last_name: 'Smith',
+              nickname: 'Ali',
+            },
+          ],
+        },
+      ],
+    },
+    isLoading: false,
+  }),
+}));
 
 describe('MigrationUploadControls', () => {
   it('renders layout selection and file upload input', () => {
@@ -110,6 +133,185 @@ describe('MigrationPreviewTable', () => {
     fireEvent.click(failedTab);
     expect(onStatusFilterChange).toHaveBeenCalledWith('failed');
   });
+
+  it('triggers onToggleIgnoreFailed and onExportFailedRows when buttons are clicked', () => {
+    const onToggleIgnoreFailed = vi.fn();
+    const onExportFailedRows = vi.fn();
+
+    render(
+      <MigrationPreviewTable
+        filteredRows={sampleRows}
+        totalRowCount={2}
+        invalidRowCount={1}
+        validRowCount={1}
+        statusFilter="all"
+        onStatusFilterChange={vi.fn()}
+        isLoadingLookups={false}
+        isIgnoringFailed={false}
+        onToggleIgnoreFailed={onToggleIgnoreFailed}
+        onExportFailedRows={onExportFailedRows}
+      />,
+    );
+
+    const exportBtn = screen.getByRole('button', { name: /Export Failed Records/i });
+    fireEvent.click(exportBtn);
+    expect(onExportFailedRows).toHaveBeenCalledTimes(1);
+
+    const ignoreBtn = screen.getByRole('button', { name: /Ignore Failed Records/i });
+    fireEvent.click(ignoreBtn);
+    expect(onToggleIgnoreFailed).toHaveBeenCalledWith(true);
+  });
+
+  it('renders ignored status banner and ignored badge when isIgnoringFailed is true', () => {
+    const onToggleIgnoreFailed = vi.fn();
+
+    render(
+      <MigrationPreviewTable
+        filteredRows={sampleRows}
+        totalRowCount={2}
+        invalidRowCount={1}
+        validRowCount={1}
+        statusFilter="all"
+        onStatusFilterChange={vi.fn()}
+        isLoadingLookups={false}
+        isIgnoringFailed={true}
+        onToggleIgnoreFailed={onToggleIgnoreFailed}
+      />,
+    );
+
+    expect(screen.getByText(/1 failed record ignored\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Only 1 valid record will be migrated\./i)).toBeInTheDocument();
+    expect(screen.getByText('Ignored')).toBeInTheDocument();
+
+    const dontIgnoreBtn = screen.getByRole('button', { name: /Don't Ignore/i });
+    fireEvent.click(dontIgnoreBtn);
+    expect(onToggleIgnoreFailed).toHaveBeenCalledWith(false);
+  });
+
+  it('renders actions column and triggers onEditRow when Match Member button is clicked', () => {
+    const onEditRow = vi.fn();
+
+    render(
+      <MigrationPreviewTable
+        filteredRows={sampleRows}
+        totalRowCount={2}
+        invalidRowCount={1}
+        validRowCount={1}
+        statusFilter="all"
+        onStatusFilterChange={vi.fn()}
+        isLoadingLookups={false}
+        onEditRow={onEditRow}
+      />,
+    );
+
+    expect(screen.getByText('Actions')).toBeInTheDocument();
+    const matchBtns = screen.getAllByRole('button', { name: /Match Member|Edit Match/i });
+    expect(matchBtns.length).toBe(2);
+
+    fireEvent.click(matchBtns[1]);
+    expect(onEditRow).toHaveBeenCalledWith(sampleRows[1]);
+  });
+});
+
+describe('MatchMemberModal', () => {
+  const sampleRow: EnrichedServiceAttendanceRow = {
+    row_number: 2,
+    originalData: { Name: 'Bobby', RFID: '9999' },
+    isValid: false,
+    errors: ['RFID not found in system.'],
+    rfid: '9999',
+    service_date: '2026-03-15',
+    time_slot: '9AM',
+    checked_in_at: '09:10:00',
+    is_manual_entry: false,
+    is_override: false,
+    is_walk_in: false,
+    table_number: '12',
+    metadata: {},
+  };
+
+  const matchingRow: EnrichedServiceAttendanceRow = {
+    row_number: 5,
+    originalData: { Name: 'bobby', RFID: '9999' },
+    isValid: false,
+    errors: ['RFID not found in system.'],
+    rfid: '9999',
+    service_date: '2026-03-22',
+    time_slot: '9AM',
+    checked_in_at: '09:12:00',
+    is_manual_entry: false,
+    is_override: false,
+    is_walk_in: false,
+    table_number: '12',
+    metadata: {},
+  };
+
+  it('renders modal with row metadata, allows selecting a member, and triggers onAssignMember', () => {
+    const onAssignMember = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <MatchMemberModal
+        isOpen={true}
+        row={sampleRow}
+        onClose={onClose}
+        onAssignMember={onAssignMember}
+      />,
+    );
+
+    expect(screen.getByText('Match Member for Row #2')).toBeInTheDocument();
+    expect(screen.getByText('Bobby')).toBeInTheDocument();
+    expect(screen.getByText('RFID not found in system.')).toBeInTheDocument();
+
+    const searchInput = screen.getByRole('textbox', { name: /Search/i });
+    expect(searchInput).toHaveValue('Bobby');
+
+    // Type to search
+    fireEvent.change(searchInput, { target: { value: 'Alice' } });
+    expect(searchInput).toHaveValue('Alice');
+  });
+
+  it('detects matching failed rows and displays bulk matching checkbox', () => {
+    const onAssignMember = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <MatchMemberModal
+        isOpen={true}
+        row={sampleRow}
+        allRows={[sampleRow, matchingRow]}
+        onClose={onClose}
+        onAssignMember={onAssignMember}
+      />,
+    );
+
+    // Select Alice
+    const aliceBtn = screen.getByRole('button', { name: /Alice Smith/i });
+    fireEvent.click(aliceBtn);
+
+    // Verify bulk match checkbox is shown
+    expect(
+      screen.getByText(/Apply match to all 1 other matching failed record/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Assign to 2 Records/i)).toBeInTheDocument();
+
+    // Confirm assign
+    const assignBtn = screen.getByRole('button', { name: /Assign to 2 Records/i });
+    fireEvent.click(assignBtn);
+
+    expect(onAssignMember).toHaveBeenCalledWith(
+      2,
+      {
+        userId: 'user-alice',
+        memberName: 'Alice Smith',
+        rfid: 'RFID-001',
+      },
+      {
+        applyToMatchingFailed: true,
+        matchingRowNumbers: [2, 5],
+      },
+    );
+  });
 });
 
 describe('MigrationConfirmDialog', () => {
@@ -136,5 +338,23 @@ describe('MigrationConfirmDialog', () => {
     const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
     fireEvent.click(cancelBtn);
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('renders skipped note when ignoredRowCount is greater than 0', () => {
+    render(
+      <MigrationConfirmDialog
+        isOpen={true}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+        isPending={false}
+        previewRowCount={10}
+        ignoredRowCount={3}
+      />,
+    );
+
+    expect(screen.getByText(/This will upsert 10 attendance records/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Note: 3 failed records will be ignored and skipped\./i),
+    ).toBeInTheDocument();
   });
 });
