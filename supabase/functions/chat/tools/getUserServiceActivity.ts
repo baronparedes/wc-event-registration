@@ -34,6 +34,12 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
       .describe(
         'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
       ),
+    userTokens: z
+      .union([z.string().trim(), z.array(z.string().trim())])
+      .optional()
+      .describe(
+        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
+      ),
     targetStartDate: z
       .string()
       .optional()
@@ -50,15 +56,22 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
   return tool({
     description:
-      "Determine a user's service attendance check-in activity within a specific date range. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Secondary roles (after '/') are ignored for role filtering and reporting; only the primary role (before '/') is evaluated. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
+      "Determine a user's service attendance check-in activity within a specific date range, optionally filtered by role or user tokens. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Secondary roles (after '/') are ignored for role filtering and reporting; only the primary role (before '/') is evaluated. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
     parameters: schema,
-    execute: async ({ activityType, role, targetStartDate, targetEndDate }) => {
+    execute: async ({ activityType, role, userTokens, targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);
+
+      const tokensList = userTokens
+        ? (Array.isArray(userTokens) ? userTokens : [userTokens])
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
 
       console.log('[chat:tool:getUserServiceActivity] Executing', {
         activityType,
         role,
+        userTokens: tokensList,
         targetStartDate,
         targetEndDate,
         resolvedRange: range
@@ -73,6 +86,48 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
 
       const formattedStart = formatDate(range.start);
       const formattedEnd = formatDate(range.end);
+
+      let targetUserIds: string[] | null = null;
+      if (tokensList.length > 0) {
+        const { data: tokenData, error: tokenError } = await client
+          .from('user_tokens')
+          .select('user_id, token')
+          .in('token', tokensList);
+
+        if (tokenError) {
+          console.error('[chat:tool:getUserServiceActivity] Token lookup error', tokenError);
+          return { error: tokenError.message };
+        }
+
+        targetUserIds = (tokenData ?? [])
+          .map((t) => t.user_id)
+          .filter((id): id is string => Boolean(id));
+
+        if (targetUserIds.length === 0) {
+          return activityType === 'active'
+            ? {
+                timeframe: { start_date: formattedStart, end_date: formattedEnd },
+                activity_type: activityType,
+                role_filter: role ? getPrimaryRole(role) : null,
+                volunteers: [],
+                summary: {
+                  total_active_volunteers: 0,
+                  total_checkins: 0,
+                  total_walk_ins: 0,
+                  total_lates: 0,
+                },
+                note: `No volunteers found matching tokens: ${tokensList.join(', ')}.`,
+              }
+            : {
+                timeframe: { start_date: formattedStart, end_date: formattedEnd },
+                activity_type: 'inactive',
+                role_filter: role ? getPrimaryRole(role) : null,
+                inactive_volunteers: [],
+                total_inactive_count: 0,
+                note: `No volunteers found matching tokens: ${tokensList.join(', ')}.`,
+              };
+        }
+      }
 
       if (activityType === 'active') {
         // Find active users by joining service_attendance -> users -> user_tokens across paginated pages
@@ -96,6 +151,10 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
             .lte('service_date', formattedEnd)
             .order('checked_in_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
+
+          if (targetUserIds && targetUserIds.length > 0) {
+            query = query.in('user_id', targetUserIds);
+          }
 
           if (isSpecificRole(role)) {
             const cleanRole = getPrimaryRole(role).toLowerCase();
@@ -221,6 +280,10 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           .select('id, role, user_tokens(token)')
           .eq('is_active', true);
 
+        if (targetUserIds && targetUserIds.length > 0) {
+          usersQuery = usersQuery.in('id', targetUserIds);
+        }
+
         if (isSpecificRole(role)) {
           const cleanRole = getPrimaryRole(role).toLowerCase();
           usersQuery = usersQuery.ilike('role', `%${cleanRole}%`);
@@ -243,12 +306,18 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
         const activeUserIds = new Set<string>();
         let attendanceFrom = 0;
         while (true) {
-          const { data: attendanceData, error: attendanceError } = await client
+          let attendanceQuery = client
             .from('service_attendance')
             .select('user_id')
             .gte('service_date', formattedStart)
             .lte('service_date', formattedEnd)
             .range(attendanceFrom, attendanceFrom + PAGE_SIZE - 1);
+
+          if (targetUserIds && targetUserIds.length > 0) {
+            attendanceQuery = attendanceQuery.in('user_id', targetUserIds);
+          }
+
+          const { data: attendanceData, error: attendanceError } = await attendanceQuery;
 
           if (attendanceError) {
             console.error(
