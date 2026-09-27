@@ -36,68 +36,39 @@ serve(async (req) => {
     return hook.response;
   }
 
-  const { client: supabase, data: payload, userId, corsHeaders } = hook;
+  const { client: supabase, data: payload, corsHeaders } = hook;
 
   try {
-    // 1. Insert into app_notifications
-    const { data: notification, error: notifError } = await supabase
-      .from('app_notifications')
-      .insert({
-        title: payload.title,
-        message: payload.message,
-        target_type: payload.targetType,
-        target_role: payload.targetRole,
-        created_by: userId,
-      })
-      .select('id')
-      .single();
+    // 1. Broadcast notification via atomic database RPC
+    const { data: notificationId, error: broadcastError } = await supabase.rpc(
+      'broadcast_app_notification',
+      {
+        p_title: payload.title,
+        p_message: payload.message,
+        p_target_type: payload.targetType,
+        p_target_role: payload.targetRole ?? null,
+        p_user_ids: payload.targetUserId ? [payload.targetUserId] : null,
+      },
+    );
 
-    if (notifError || !notification) {
-      throw new Error(`Failed to create notification: ${notifError?.message}`);
+    if (broadcastError || !notificationId) {
+      throw new Error(`Failed to broadcast notification: ${broadcastError?.message}`);
     }
 
-    const notificationId = notification.id;
+    // 2. Resolve recipient auth user IDs for web push delivery
+    const { data: recipients, error: recipientError } = await supabase
+      .from('app_notification_recipients')
+      .select('user_id')
+      .eq('notification_id', notificationId);
 
-    // 2. Resolve users
-    let userIds: string[] = [];
-
-    if (payload.targetType === 'all') {
-      const { data: users } = await supabase.from('users').select('id').eq('is_active', true);
-      userIds = users?.map((u) => u.id) ?? [];
-    } else if (payload.targetType === 'role' && payload.targetRole) {
-      const { data: adminRoles } = await supabase
-        .from('admin_roles')
-        .select('auth_user_id')
-        .eq('role', payload.targetRole);
-      userIds = adminRoles?.map((r) => r.auth_user_id) ?? [];
-    } else if (payload.targetType === 'user' && payload.targetUserId) {
-      userIds = [payload.targetUserId];
+    if (recipientError) {
+      console.error('Failed to fetch recipients for push notification:', recipientError);
     }
 
-    if (userIds.length === 0) {
-      return jsonResponse(corsHeaders, { success: true, count: 0 });
-    }
+    const userIds = recipients?.map((r) => r.user_id) ?? [];
 
-    // 3. Insert recipients in chunks
-    const recipientInserts = userIds.map((id) => ({
-      notification_id: notificationId,
-      user_id: id,
-      is_read: false,
-    }));
-
-    for (let i = 0; i < recipientInserts.length; i += 1000) {
-      const chunk = recipientInserts.slice(i, i + 1000);
-      const { error: recipientError } = await supabase
-        .from('app_notification_recipients')
-        .insert(chunk);
-      if (recipientError) {
-        console.error('Failed to insert recipients chunk:', recipientError);
-      }
-    }
-
-    // 4. Send Web Push
-    if (vapidPublicKey && vapidPrivateKey) {
-      // Chunk user IDs for subscription lookup if needed, assuming < 1000 for MVP
+    // 3. Send Web Push
+    if (vapidPublicKey && vapidPrivateKey && userIds.length > 0) {
       const { data: subscriptions } = await supabase
         .from('user_push_subscriptions')
         .select('user_id, endpoint, auth_key, p256dh_key')
@@ -107,7 +78,7 @@ serve(async (req) => {
         const pushPayload = JSON.stringify({
           title: payload.title,
           body: payload.message,
-          url: '/admin/notifications', // default url if clicked
+          url: '/admin/notifications',
         });
 
         const pushPromises = subscriptions.map((sub) => {
@@ -125,11 +96,15 @@ serve(async (req) => {
 
         await Promise.allSettled(pushPromises);
       }
-    } else {
+    } else if (!vapidPublicKey || !vapidPrivateKey) {
       console.warn('VAPID keys not configured, skipping web push.');
     }
 
-    return jsonResponse(corsHeaders, { success: true, count: userIds.length });
+    return jsonResponse(corsHeaders, {
+      success: true,
+      count: userIds.length,
+      notificationId,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, message);
