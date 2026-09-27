@@ -36,7 +36,7 @@ vi.mock('@/hooks/domain/members', () => ({
 }));
 
 describe('MigrationUploadControls', () => {
-  it('renders layout selection and file upload input', () => {
+  it('renders layout selection and file upload button', () => {
     const onSelectLayoutId = vi.fn();
     const onFileChange = vi.fn();
 
@@ -53,11 +53,11 @@ describe('MigrationUploadControls', () => {
     );
 
     expect(screen.getByText('1. Select Layout for Migration')).toBeInTheDocument();
-    expect(screen.getByText('2. Upload CSV File')).toBeInTheDocument();
+    expect(screen.getByText('2. Upload File (.csv, .xlsx)')).toBeInTheDocument();
 
-    const fileInput = document.querySelector('input[type="file"]');
-    expect(fileInput).toBeInTheDocument();
-    expect(fileInput).toBeDisabled();
+    const selectFileBtn = screen.getByRole('button', { name: /Select File\.\.\./i });
+    expect(selectFileBtn).toBeInTheDocument();
+    expect(selectFileBtn).toBeDisabled();
   });
 
   it('renders loading indicator when processing', () => {
@@ -73,7 +73,7 @@ describe('MigrationUploadControls', () => {
       />,
     );
 
-    expect(screen.getByText('Parsing and validating CSV file...')).toBeInTheDocument();
+    expect(screen.getByText('Parsing and validating file...')).toBeInTheDocument();
   });
 });
 

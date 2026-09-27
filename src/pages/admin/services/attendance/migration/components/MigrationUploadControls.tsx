@@ -1,15 +1,24 @@
-import type { ChangeEvent } from 'react';
+import { type ChangeEvent, useRef, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, UploadCloud } from 'lucide-react';
 
+import { Button } from '@/components/ui/Button';
 import { FormSelectField } from '@/components/ui/FormSelectField';
+
+import { type MigrationConfig, MigrationConfigDialog } from './MigrationConfigDialog';
+
+export interface FileChangeData {
+  file: File;
+  targetDate: string;
+  walkinSheetName: string;
+}
 
 interface MigrationUploadControlsProps {
   layouts: Array<{ id: string; description: string }> | undefined;
   selectedLayoutId: string;
   onSelectLayoutId: (layoutId: string) => void;
   fileInputKey: number;
-  onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onFileChange: (data: FileChangeData) => void;
   isProcessing: boolean;
   isParsingCsv: boolean;
 }
@@ -23,10 +32,28 @@ export function MigrationUploadControls({
   isProcessing,
   isParsingCsv,
 }: MigrationUploadControlsProps) {
+  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
+  const [migrationConfig, setMigrationConfig] = useState<MigrationConfig | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const layoutOptions = (layouts ?? []).map((l) => ({
     value: l.id,
     label: l.description,
   }));
+
+  const handleConfigConfirm = (config: MigrationConfig) => {
+    setMigrationConfig(config);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleNativeFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && migrationConfig) {
+      onFileChange({ file, ...migrationConfig });
+    }
+  };
 
   return (
     <>
@@ -42,27 +69,43 @@ export function MigrationUploadControls({
       </div>
 
       <div className="mb-6">
-        <label className="mb-2 block text-sm font-medium">2. Upload CSV File</label>
+        <label className="mb-2 block text-sm font-medium">2. Upload File (.csv, .xlsx)</label>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsConfigDialogOpen(true)}
+          disabled={!selectedLayoutId || isProcessing}
+          className="w-full max-w-sm justify-center gap-2"
+        >
+          <UploadCloud className="h-4 w-4" />
+          Select File...
+        </Button>
         <input
-          id="csv-upload"
+          ref={fileInputRef}
+          id="file-upload"
           key={fileInputKey}
           type="file"
-          accept=".csv"
-          onChange={onFileChange}
-          disabled={!selectedLayoutId || isProcessing}
-          className="block w-full max-w-sm text-sm text-text-secondary file:mr-4 file:rounded-md file:border-0 file:bg-surface-elevated file:px-4 file:py-2 file:text-sm file:font-medium file:text-text-primary hover:file:bg-surface-elevated-hover focus:outline-none disabled:opacity-50"
+          accept=".csv,.xlsx"
+          onChange={handleNativeFileChange}
+          className="hidden"
         />
         {isProcessing && (
           <div className="mt-3 flex items-center gap-2 text-sm text-text-secondary">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <span>
               {isParsingCsv
-                ? 'Parsing and validating CSV file...'
+                ? 'Parsing and validating file...'
                 : 'Looking up member details and seat assignments...'}
             </span>
           </div>
         )}
       </div>
+
+      <MigrationConfigDialog
+        isOpen={isConfigDialogOpen}
+        onClose={() => setIsConfigDialogOpen(false)}
+        onConfirm={handleConfigConfirm}
+      />
     </>
   );
 }

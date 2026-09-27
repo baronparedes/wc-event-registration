@@ -97,6 +97,14 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
+    fireEvent.click(selectFileBtn);
+    // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
+    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    // Actually we need to set the date first since continue is disabled
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     // 3. Verify preview rows
@@ -151,6 +159,14 @@ describe('ServiceAttendanceMigrationPanel', () => {
     ].join('\n');
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
+    fireEvent.click(selectFileBtn);
+    // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
+    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    // Actually we need to set the date first since continue is disabled
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
@@ -180,6 +196,14 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
+    fireEvent.click(selectFileBtn);
+    // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
+    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    // Actually we need to set the date first since continue is disabled
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
@@ -246,6 +270,14 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
+    fireEvent.click(selectFileBtn);
+    // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
+    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    // Actually we need to set the date first since continue is disabled
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
@@ -323,11 +355,19 @@ describe('ServiceAttendanceMigrationPanel', () => {
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
       ',3/9/2026,09:00:00,9AM,105,Bong Torres,Usher',
       ',3/9/2026,09:00:00,9AM,10,Unknown Person,Attendee',
-      ',3/16/2026,09:00:00,9AM,10,Unknown Person,Attendee',
+      ',3/9/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const selectFileBtn = screen.getByRole('button', { name: /Select File.../i });
+    fireEvent.click(selectFileBtn);
+    // Now modal is open. We don't really care about testing modal inputs here, just need to submit it to trigger the hidden file input.
+    const continueBtn = screen.getByRole('button', { name: 'Continue' });
+    // Actually we need to set the date first since continue is disabled
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     await waitFor(() => {
@@ -375,7 +415,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
         rows: [
           expect.objectContaining({ user_id: 'user-marrion' }),
           expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-09' }),
-          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-16' }),
+          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-09' }),
         ],
       });
     });
