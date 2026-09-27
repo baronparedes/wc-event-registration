@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx';
-
 import { type ParseServiceAttendanceCsvResult, normalizeHeaderKey } from './csv-parser';
 
 export interface ServiceAttendanceSheetConfig {
@@ -16,6 +14,7 @@ export async function parseServiceAttendanceXlsx(
   config?: ServiceAttendanceXlsxConfig,
 ): Promise<ParseServiceAttendanceCsvResult> {
   try {
+    const XLSX = await import('xlsx');
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
 

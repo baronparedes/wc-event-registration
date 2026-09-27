@@ -34,9 +34,21 @@ const DEFAULT_SHEETS: InternalSheetItem[] = [
   { id: '3', name: 'Walkin_Attend', isWalkIn: true },
 ];
 
+function isSundayDate(dateString: string): boolean {
+  if (!dateString) return false;
+  const parts = dateString.split('-').map(Number);
+  if (parts.length !== 3 || parts.some((p) => isNaN(p))) return false;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  return date.getDay() === 0;
+}
+
 export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationConfigDialogProps) {
   const [targetDate, setTargetDate] = useState('');
   const [sheets, setSheets] = useState<InternalSheetItem[]>(DEFAULT_SHEETS);
+
+  const isDateValid = Boolean(targetDate && isSundayDate(targetDate));
+  const dateError = targetDate && !isDateValid ? 'Target date must be a Sunday.' : undefined;
 
   const handleSheetNameChange = (id: string, name: string) => {
     setSheets((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
@@ -71,13 +83,13 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetDate || validSheets.length === 0) return;
+    if (!isDateValid || validSheets.length === 0) return;
     onConfirm({ targetDate, sheets: validSheets });
     onClose();
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="md">
+    <Dialog isOpen={isOpen} onClose={onClose} size="xl">
       <form onSubmit={handleSubmit}>
         <Dialog.Header showCloseButton>
           <Dialog.Title>Configure Migration</Dialog.Title>
@@ -89,15 +101,14 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
         <Dialog.Body>
           <div className="space-y-4">
             <div>
-              <label htmlFor="targetDate" className="mb-2 block text-sm font-medium">
-                Target Date (Sunday)
-              </label>
               <FormInputField
                 id="targetDate"
+                label="Target Date (Sunday)"
                 type="date"
                 required
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
+                error={dateError}
                 className="w-full"
               />
             </div>
@@ -197,7 +208,7 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!targetDate || validSheets.length === 0}>
+          <Button type="submit" disabled={!isDateValid || validSheets.length === 0}>
             Select File
           </Button>
         </Dialog.Footer>

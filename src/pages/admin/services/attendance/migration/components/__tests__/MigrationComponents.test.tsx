@@ -414,4 +414,26 @@ describe('MigrationConfigDialog', () => {
     });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('validates that target date must be a Sunday and displays an error message', () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    render(<MigrationConfigDialog isOpen={true} onClose={onClose} onConfirm={onConfirm} />);
+
+    const continueBtn = screen.getByRole('button', { name: 'Select File' });
+    expect(continueBtn).toBeDisabled();
+
+    // Select a Monday (2026-03-16)
+    const dateInput = screen.getByLabelText(/Target Date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-03-16' } });
+
+    expect(screen.getByText('Target date must be a Sunday.')).toBeInTheDocument();
+    expect(continueBtn).toBeDisabled();
+
+    // Change to Sunday (2026-03-15)
+    fireEvent.change(dateInput, { target: { value: '2026-03-15' } });
+    expect(screen.queryByText('Target date must be a Sunday.')).not.toBeInTheDocument();
+    expect(continueBtn).toBeEnabled();
+  });
 });

@@ -91,8 +91,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV content
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/9/2026,09:00:00,9AM,105,Bong Torres,Usher',
-      ',3/9/2026,09:00:00,9AM,999,Unknown Person,Attendee',
+      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,999,Unknown Person,Attendee',
     ].join('\n');
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
@@ -103,7 +103,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
-    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.change(dateInput, { target: { value: '2026-03-08' } });
     fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
@@ -155,7 +155,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name',
-      '1322281947,3/9/2026,09:00:00,9AM,10,Bong Torres',
+      '1322281947,3/8/2026,09:00:00,9AM,10,Bong Torres',
     ].join('\n');
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -165,7 +165,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
-    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.change(dateInput, { target: { value: '2026-03-08' } });
     fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
@@ -190,8 +190,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 1 valid and 1 invalid row
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/9/2026,09:00:00,9AM,105,Bong Torres,Usher',
-      ',3/9/2026,09:00:00,9AM,999,Unknown Person,Attendee',
+      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,999,Unknown Person,Attendee',
     ].join('\n');
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
@@ -202,7 +202,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
-    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.change(dateInput, { target: { value: '2026-03-08' } });
     fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
@@ -241,7 +241,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
           expect.objectContaining({
             user_id: 'user-marrion',
             rfid: '1322281947',
-            service_date: '2026-03-09',
+            service_date: '2026-03-08',
             time_slot: '9AM',
             service_seat_id: 'seat-usher',
           }),
@@ -264,8 +264,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 1 valid row (table 105 maps to seat-usher) and 1 invalid row (table 10 maps to seat-10)
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/9/2026,09:00:00,9AM,105,Bong Torres,Usher',
-      ',3/9/2026,09:00:00,9AM,10,Unknown Person,Attendee',
+      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
@@ -276,7 +276,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
-    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.change(dateInput, { target: { value: '2026-03-08' } });
     fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
@@ -353,9 +353,9 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 3 rows: 1 valid, 2 failed rows sharing the same name "Unknown Person"
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/9/2026,09:00:00,9AM,105,Bong Torres,Usher',
-      ',3/9/2026,09:00:00,9AM,10,Unknown Person,Attendee',
-      ',3/9/2026,09:00:00,9AM,10,Unknown Person,Attendee',
+      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
+      ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');
 
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
@@ -366,7 +366,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const continueBtn = screen.getByRole('button', { name: 'Select File' });
     // Actually we need to set the date first since continue is disabled
     const dateInput = screen.getByLabelText(/Target Date/i);
-    fireEvent.change(dateInput, { target: { value: '2026-03-09' } });
+    fireEvent.change(dateInput, { target: { value: '2026-03-08' } });
     fireEvent.click(continueBtn);
     fireEvent.change(fileInput, { target: { files: [file] } });
 
@@ -414,8 +414,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
         layout_id: 'layout-1',
         rows: [
           expect.objectContaining({ user_id: 'user-marrion' }),
-          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-09' }),
-          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-09' }),
+          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-08' }),
+          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-08' }),
         ],
       });
     });
