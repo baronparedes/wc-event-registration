@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import webpush from 'npm:web-push';
 import { z } from 'npm:zod';
 
@@ -18,13 +17,13 @@ const payloadSchema = z.object({
 
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
-const subject = 'mailto:admin@welcomehub.com';
+const subject = 'mailto:admin@welcomehub.app';
 
 if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(subject, vapidPublicKey, vapidPrivateKey);
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const hook = await useEdgeHook({
     req,
     functionName: 'send-app-notification',

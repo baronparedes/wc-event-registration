@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
 import type { AdminEvent, DuplicatePolicy, EventStatus, RegistrationMode } from './types';
 
@@ -7,6 +7,11 @@ export type DuplicateEventInput = {
   new_title: string;
   new_slug: string;
 };
+
+const callDuplicateEvent = createEdgeFunctionCaller<
+  DuplicateEventInput,
+  { success: boolean; new_event_id?: string; error?: string }
+>('duplicate-event');
 
 export type EventInsertPayload = {
   id: string;
@@ -133,17 +138,7 @@ export async function updateEvent(id: string, values: Record<string, unknown>): 
 }
 
 export async function duplicateEvent(input: DuplicateEventInput): Promise<string> {
-  const { data, error } = await supabase.functions.invoke<{
-    success: boolean;
-    new_event_id?: string;
-    error?: string;
-  }>('duplicate-event', {
-    body: input,
-  });
-
-  if (error) {
-    throw error;
-  }
+  const data = await callDuplicateEvent(input);
 
   if (!data || !data.success || !data.new_event_id) {
     throw new Error(data?.error || 'Failed to duplicate event');

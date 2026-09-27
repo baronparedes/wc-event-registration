@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
 import type {
   AppNotificationRecipient,
@@ -7,19 +7,20 @@ import type {
   SendAppNotificationResponse,
 } from './types';
 
+const callSendAppNotification = createEdgeFunctionCaller<
+  SendAppNotificationPayload,
+  SendAppNotificationResponse
+>('send-app-notification');
+
+const callManagePushSubscription = createEdgeFunctionCaller<
+  ManagePushSubscriptionPayload,
+  { success: boolean }
+>('manage-push-subscription');
+
 export async function sendAppNotification(
   payload: SendAppNotificationPayload,
 ): Promise<SendAppNotificationResponse> {
-  const { data, error } = await supabase.functions.invoke<SendAppNotificationResponse>(
-    'send-app-notification',
-    {
-      body: payload,
-    },
-  );
-
-  if (error) {
-    throw error;
-  }
+  const data = await callSendAppNotification(payload);
 
   if (!data || !data.success) {
     throw new Error('Failed to send broadcast notification');
@@ -31,16 +32,7 @@ export async function sendAppNotification(
 export async function managePushSubscription(
   payload: ManagePushSubscriptionPayload,
 ): Promise<{ success: boolean }> {
-  const { data, error } = await supabase.functions.invoke<{ success: boolean }>(
-    'manage-push-subscription',
-    {
-      body: payload,
-    },
-  );
-
-  if (error) {
-    throw error;
-  }
+  const data = await callManagePushSubscription(payload);
 
   if (!data?.success) {
     throw new Error('Failed to manage push subscription');

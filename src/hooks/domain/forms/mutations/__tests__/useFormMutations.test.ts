@@ -13,28 +13,30 @@ import { adminFormQueryKey } from '@/hooks/domain/forms/queries/useAdminFormQuer
 import { ADMIN_FORMS_QUERY_KEY } from '@/hooks/domain/forms/queries/useAdminFormsQuery';
 import { formFieldsQueryKey } from '@/hooks/domain/forms/queries/useFormFieldsQuery';
 
-const { mockFrom, mockInvoke, mockSingle, mockRpc } = vi.hoisted(() => {
-  const single = vi.fn();
+const { mockFrom, mockInvoke, mockSingle, mockRpc, mockCreateEdgeFunctionCaller } = vi.hoisted(
+  () => {
+    const single = vi.fn();
+    const invoke = vi.fn();
 
-  return {
-    mockSingle: single,
-    mockInvoke: vi.fn(),
-    mockFrom: vi.fn(),
-    mockRpc: vi.fn(),
-  };
-});
+    return {
+      mockSingle: single,
+      mockInvoke: invoke,
+      mockCreateEdgeFunctionCaller: vi.fn(() => invoke),
+      mockFrom: vi.fn(),
+      mockRpc: vi.fn(),
+    };
+  },
+);
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
     supabase: {
       from: mockFrom,
       rpc: mockRpc,
-      functions: {
-        invoke: mockInvoke,
-      },
     },
   };
 });
@@ -413,8 +415,8 @@ describe('useFormMutations', () => {
   describe('useSubmitFormMutation', () => {
     it('submits form response successfully and invalidates submissions query', async () => {
       mockInvoke.mockResolvedValueOnce({
-        data: { success: true, submission_id: 'sub-new-123' },
-        error: null,
+        success: true,
+        submission_id: 'sub-new-123',
       });
 
       const { result, queryClient } = renderHookWithClient(() => useSubmitFormMutation());
@@ -429,21 +431,18 @@ describe('useFormMutations', () => {
         });
       });
 
-      expect(mockInvoke).toHaveBeenCalledWith('submit-form-submission', {
-        body: expect.objectContaining({
+      expect(mockInvoke).toHaveBeenCalledWith(
+        expect.objectContaining({
           form_slug: 'volunteer-signup',
           idempotency_key: 'idem-123',
         }),
-      });
+      );
       expect(response).toEqual({ success: true, submission_id: 'sub-new-123' });
       expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['form-submissions'] });
     });
 
     it('throws error when supabase function invoke encounters error', async () => {
-      mockInvoke.mockResolvedValueOnce({
-        data: null,
-        error: new Error('Function invocation error'),
-      });
+      mockInvoke.mockRejectedValueOnce(new Error('Function invocation error'));
 
       const { result } = renderHookWithClient(() => useSubmitFormMutation());
 
@@ -458,8 +457,8 @@ describe('useFormMutations', () => {
 
     it('throws custom error message when data.success is false', async () => {
       mockInvoke.mockResolvedValueOnce({
-        data: { success: false, error: 'User already submitted' },
-        error: null,
+        success: false,
+        error: 'User already submitted',
       });
 
       const { result } = renderHookWithClient(() => useSubmitFormMutation());
@@ -475,8 +474,8 @@ describe('useFormMutations', () => {
 
     it('throws default error message when data.success is false with empty error', async () => {
       mockInvoke.mockResolvedValueOnce({
-        data: { success: false, error: '' },
-        error: null,
+        success: false,
+        error: '',
       });
 
       const { result } = renderHookWithClient(() => useSubmitFormMutation());

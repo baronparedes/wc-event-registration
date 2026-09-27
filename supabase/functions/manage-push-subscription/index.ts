@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { z } from 'npm:zod';
 
 import { HTTP_STATUS } from '../_shared/constants.ts';
@@ -18,7 +17,7 @@ const payloadSchema = z.object({
     .optional(),
 });
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const hook = await useEdgeHook({
     req,
     functionName: 'manage-push-subscription',

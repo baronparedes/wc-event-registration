@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
 import type { AdminFormInput, FormFieldInput } from './schemas';
 import type { AdminForm, FormField, FormSubmission } from './types';
@@ -8,6 +8,16 @@ export type DuplicateFormInput = {
   new_title: string;
   new_slug: string;
 };
+
+const callDuplicateForm = createEdgeFunctionCaller<
+  DuplicateFormInput,
+  { success: boolean; new_form_id?: string; error?: string }
+>('duplicate-form');
+
+const callSubmitFormSubmission = createEdgeFunctionCaller<
+  SubmitFormSubmissionPayload,
+  SubmitFormSubmissionResponse
+>('submit-form-submission');
 
 export type SubmitFormSubmissionPayload = {
   form_slug: string;
@@ -193,17 +203,7 @@ export async function reorderFormFields(formId: string, orderedIds: string[]): P
 }
 
 export async function duplicateForm(input: DuplicateFormInput): Promise<string> {
-  const { data, error } = await supabase.functions.invoke<{
-    success: boolean;
-    new_form_id?: string;
-    error?: string;
-  }>('duplicate-form', {
-    body: input,
-  });
-
-  if (error) {
-    throw error;
-  }
+  const data = await callDuplicateForm(input);
 
   if (!data || !data.success || !data.new_form_id) {
     throw new Error(data?.error || 'Failed to duplicate form');
@@ -215,12 +215,8 @@ export async function duplicateForm(input: DuplicateFormInput): Promise<string> 
 export async function submitFormSubmission(
   payload: SubmitFormSubmissionPayload,
 ): Promise<SubmitFormSubmissionResponse> {
-  const { data, error } = await supabase.functions.invoke('submit-form-submission', {
-    body: payload,
-  });
+  const response = await callSubmitFormSubmission(payload);
 
-  if (error) throw error;
-  const response = data as SubmitFormSubmissionResponse;
   if (!response.success) {
     throw new Error(response.error || 'Failed to submit form response');
   }

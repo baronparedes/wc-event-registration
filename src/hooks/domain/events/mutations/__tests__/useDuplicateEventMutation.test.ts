@@ -6,20 +6,20 @@ import { renderHookWithClient } from '@/__tests__/unit-test-utils';
 import { useDuplicateEventMutation } from '@/hooks/domain/events/mutations/useDuplicateEventMutation';
 import { ADMIN_EVENTS_QUERY_KEY } from '@/hooks/domain/events/queries/useAdminEventsQuery';
 
-const { mockFunctionsInvoke } = vi.hoisted(() => ({
-  mockFunctionsInvoke: vi.fn(),
-}));
+const { mockDuplicateCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const duplicateCaller = vi.fn();
+  return {
+    mockDuplicateCaller: duplicateCaller,
+    mockCreateEdgeFunctionCaller: vi.fn(() => duplicateCaller),
+  };
+});
 
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
   return {
     ...actual,
-    supabase: {
-      functions: {
-        invoke: mockFunctionsInvoke,
-      },
-    },
+    createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
   };
 });
 
@@ -34,12 +34,9 @@ describe('useDuplicateEventMutation', () => {
     const newTitle = 'Duplicated Conference';
     const newSlug = 'duplicated-conference';
 
-    mockFunctionsInvoke.mockResolvedValueOnce({
-      data: {
-        success: true,
-        new_event_id: newEventId,
-      },
-      error: null,
+    mockDuplicateCaller.mockResolvedValueOnce({
+      success: true,
+      new_event_id: newEventId,
     });
 
     const { result, queryClient } = renderHookWithClient(() => useDuplicateEventMutation());
@@ -55,22 +52,17 @@ describe('useDuplicateEventMutation', () => {
     });
 
     expect(createdId).toBe(newEventId);
-    expect(mockFunctionsInvoke).toHaveBeenCalledWith('duplicate-event', {
-      body: {
-        source_event_id: sourceEventId,
-        new_title: newTitle,
-        new_slug: newSlug,
-      },
+    expect(mockDuplicateCaller).toHaveBeenCalledWith({
+      source_event_id: sourceEventId,
+      new_title: newTitle,
+      new_slug: newSlug,
     });
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_EVENTS_QUERY_KEY });
   });
 
   it('throws an error if edge function invocation returns an error', async () => {
-    mockFunctionsInvoke.mockResolvedValueOnce({
-      data: null,
-      error: new Error('Network error'),
-    });
+    mockDuplicateCaller.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHookWithClient(() => useDuplicateEventMutation());
 
@@ -84,12 +76,9 @@ describe('useDuplicateEventMutation', () => {
   });
 
   it('throws an error if data indicates failure with custom error message', async () => {
-    mockFunctionsInvoke.mockResolvedValueOnce({
-      data: {
-        success: false,
-        error: 'An event with this slug already exists. Please choose a different slug.',
-      },
-      error: null,
+    mockDuplicateCaller.mockResolvedValueOnce({
+      success: false,
+      error: 'An event with this slug already exists. Please choose a different slug.',
     });
 
     const { result } = renderHookWithClient(() => useDuplicateEventMutation());

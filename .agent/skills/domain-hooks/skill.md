@@ -5,7 +5,8 @@
 **Instructions:**
 
 - **Location:** Domain hooks must reside directly in `src/hooks/domain/`.
-- **Repository Layer:** All Supabase database operations (`supabase.from`, `supabase.rpc`, `supabase.functions.invoke`) live in `src/lib/domain/<feature>/api.ts` as explicitly named, strongly typed async functions, re-exported from the feature's `index.ts` barrel.
+- **Repository Layer:** All Supabase database operations (`supabase.from`, `supabase.rpc`) and Edge Function calls live in `src/lib/domain/<feature>/api.ts` as explicitly named, strongly typed async functions, re-exported from the feature's `index.ts` barrel.
+- **Edge Function Calls:** Edge function calls MUST use `createEdgeFunctionCaller<TRequest, TResponse>('function-name')` from `@/lib/infrastructure` rather than calling `supabase.functions.invoke` directly. This guarantees consistent token attachment, structured JSON response handling, and unified error parsing across domains.
 - **Hooks Call the API:** `queryFn`/`mutationFn` call these API functions; hook files must not import `supabase` except for `supabase.auth` and `supabase.storage` operations.
 - **No Hook-Level Abstractions:** Do not create data abstraction files inside `src/hooks/`; query keys, pagination (`decodeOffsetCursor`, `getTotalPages`), transforms, and invalidation stay in the hooks.
 - **File Structure:** Each hook must be defined in its own independent file.

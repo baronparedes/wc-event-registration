@@ -10,11 +10,24 @@ import {
   sendAppNotification,
 } from '../api';
 
+const { mockSendCaller, mockPushCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const sendCaller = vi.fn();
+  const pushCaller = vi.fn();
+  const createCaller = vi.fn((fnName: string) => {
+    if (fnName === 'send-app-notification') return sendCaller;
+    if (fnName === 'manage-push-subscription') return pushCaller;
+    return vi.fn();
+  });
+  return {
+    mockSendCaller: sendCaller,
+    mockPushCaller: pushCaller,
+    mockCreateEdgeFunctionCaller: createCaller,
+  };
+});
+
 vi.mock('@/lib/infrastructure', () => ({
+  createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
   supabase: {
-    functions: {
-      invoke: vi.fn(),
-    },
     auth: {
       getSession: vi.fn(),
     },
@@ -29,9 +42,10 @@ describe('Notifications Domain API', () => {
 
   describe('sendAppNotification', () => {
     it('successfully invokes send-app-notification edge function', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: { success: true, count: 10, notificationId: 'notif-123' },
-        error: null,
+      mockSendCaller.mockResolvedValueOnce({
+        success: true,
+        count: 10,
+        notificationId: 'notif-123',
       });
 
       const payload = {
@@ -42,16 +56,11 @@ describe('Notifications Domain API', () => {
 
       const result = await sendAppNotification(payload);
       expect(result).toEqual({ success: true, count: 10, notificationId: 'notif-123' });
-      expect(supabase.functions.invoke).toHaveBeenCalledWith('send-app-notification', {
-        body: payload,
-      });
+      expect(mockSendCaller).toHaveBeenCalledWith(payload);
     });
 
     it('throws error when edge function invocation returns error', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: null,
-        error: new Error('Function error'),
-      });
+      mockSendCaller.mockRejectedValueOnce(new Error('Function error'));
 
       await expect(
         sendAppNotification({
@@ -63,9 +72,10 @@ describe('Notifications Domain API', () => {
     });
 
     it('throws error when data.success is false', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: { success: false, count: 0, notificationId: '' },
-        error: null,
+      mockSendCaller.mockResolvedValueOnce({
+        success: false,
+        count: 0,
+        notificationId: '',
       });
 
       await expect(
@@ -80,20 +90,17 @@ describe('Notifications Domain API', () => {
 
   describe('managePushSubscription', () => {
     it('successfully invokes manage-push-subscription', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: { success: true },
-        error: null,
+      mockPushCaller.mockResolvedValueOnce({
+        success: true,
       });
 
       const result = await managePushSubscription({ action: 'subscribe' });
       expect(result).toEqual({ success: true });
+      expect(mockPushCaller).toHaveBeenCalledWith({ action: 'subscribe' });
     });
 
     it('throws error when manage-push-subscription fails', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: null,
-        error: new Error('Network failure'),
-      });
+      mockPushCaller.mockRejectedValueOnce(new Error('Network failure'));
 
       await expect(managePushSubscription({ action: 'subscribe' })).rejects.toThrow(
         'Network failure',
@@ -101,9 +108,8 @@ describe('Notifications Domain API', () => {
     });
 
     it('throws error when result is not success', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: { success: false },
-        error: null,
+      mockPushCaller.mockResolvedValueOnce({
+        success: false,
       });
 
       await expect(managePushSubscription({ action: 'subscribe' })).rejects.toThrow(

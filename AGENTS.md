@@ -18,7 +18,8 @@ This file contains the core principles, architecture rules, and domain logic con
 ## 3. Architecture & Code Organization
 
 - **Domain Hooks**: Domain hooks must reside in `src/hooks/domain/`.
-  - Supabase database operations (`.from`, `.rpc`, `.functions.invoke`) must live in `src/lib/domain/<feature>/api.ts` as explicitly named, strongly typed functions re-exported from the feature barrel; hooks call these functions.
+  - Supabase database operations (`.from`, `.rpc`) and Edge Function calls must live in `src/lib/domain/<feature>/api.ts` as explicitly named, strongly typed functions re-exported from the feature barrel; hooks call these functions.
+  - Edge Function calls MUST use `createEdgeFunctionCaller` from `@/lib/infrastructure` rather than calling `supabase.functions.invoke` directly.
   - Hook files must not import `supabase`, except for `supabase.auth` and `supabase.storage` operations.
   - Do NOT create data abstraction files inside `src/hooks/`.
   - Each hook must be defined in its own file.
