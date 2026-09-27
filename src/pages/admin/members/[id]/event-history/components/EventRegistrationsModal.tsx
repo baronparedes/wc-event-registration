@@ -130,7 +130,11 @@ export function EventRegistrationsModal({ group, isOpen, onClose, formatDateTime
             if (!a.submitted_at && !b.submitted_at) return 0;
             if (!a.submitted_at) return 1;
             if (!b.submitted_at) return -1;
-            return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
+            // ⚡ Bolt: Performance Improvement
+            // Replaced `new Date(time).getTime()` with string comparison for ISO-8601 strings.
+            // This avoids expensive object allocations inside the O(N log N) sort loop.
+            // Impact: Reduces CPU time and memory overhead during client-side sorting.
+            return a.submitted_at > b.submitted_at ? -1 : a.submitted_at < b.submitted_at ? 1 : 0;
           })
           .map((item) => (
             <RegistrationDetail
