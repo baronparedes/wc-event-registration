@@ -23,6 +23,7 @@ vi.mock('@/hooks/domain/services', () => ({
 
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersQuery: () => mockUseAdminMembersQuery(),
+  useMemberAvatarQuery: () => ({ data: null, isLoading: false }),
 }));
 
 describe('ServiceAttendanceMigrationPanel', () => {

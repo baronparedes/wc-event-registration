@@ -49,7 +49,7 @@ export function MigrationPreviewTable({
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="flex items-center gap-2 font-semibold">
+          <h3 className="flex items-center gap-2 font-heading font-semibold text-text">
             <span>
               Preview ({totalRowCount} row{totalRowCount === 1 ? '' : 's'})
             </span>
@@ -64,7 +64,9 @@ export function MigrationPreviewTable({
             <span
               className={cx(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                isIgnoringFailed ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700',
+                isIgnoringFailed
+                  ? 'bg-amber-500/15 text-amber-800 border border-amber-500/30'
+                  : 'bg-danger/15 text-danger border border-danger/30',
               )}
             >
               {invalidRowCount} with error{invalidRowCount === 1 ? '' : 's'}
@@ -86,9 +88,7 @@ export function MigrationPreviewTable({
               value="failed"
               className={cx(
                 '!px-3 !py-1.5 !text-xs',
-                statusFilter === 'failed'
-                  ? '!bg-red-600 text-white shadow-xs'
-                  : 'hover:text-red-600',
+                statusFilter === 'failed' ? '!bg-danger text-white shadow-xs' : 'hover:text-danger',
               )}
             >
               <span>Failed</span>
@@ -100,8 +100,8 @@ export function MigrationPreviewTable({
                     : invalidRowCount > 0
                       ? isIgnoringFailed
                         ? 'bg-amber-100 text-amber-800'
-                        : 'bg-red-100 text-red-700'
-                      : 'bg-border text-text-secondary',
+                        : 'bg-danger/15 text-danger'
+                      : 'bg-border text-muted',
                 )}
               >
                 {invalidRowCount}
@@ -112,8 +112,8 @@ export function MigrationPreviewTable({
               className={cx(
                 '!px-3 !py-1.5 !text-xs',
                 statusFilter === 'valid'
-                  ? '!bg-emerald-600 text-white shadow-xs'
-                  : 'hover:text-emerald-600',
+                  ? '!bg-primary text-white shadow-xs'
+                  : 'hover:text-primary',
               )}
             >
               <span>Valid</span>
@@ -122,7 +122,7 @@ export function MigrationPreviewTable({
                   'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
                   statusFilter === 'valid'
                     ? 'bg-white/25 text-white'
-                    : 'bg-emerald-100 text-emerald-700',
+                    : 'bg-primary/15 text-primary',
                 )}
               >
                 {validRowCount}
@@ -137,20 +137,20 @@ export function MigrationPreviewTable({
           className={cx(
             'mb-4 flex flex-col gap-3 rounded-xl border p-3.5 text-xs sm:flex-row sm:items-center sm:justify-between',
             isIgnoringFailed
-              ? 'border-amber-200 bg-amber-50/80 text-amber-900'
-              : 'border-red-200 bg-red-50/80 text-red-800',
+              ? 'border-amber-200 bg-amber-50/90 text-amber-900'
+              : 'border-danger/30 bg-danger/10 text-danger',
           )}
         >
           <div className="flex items-center gap-2">
             {isIgnoringFailed ? (
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-danger" />
             )}
             <span>
               {isIgnoringFailed ? (
                 <>
-                  <strong>
+                  <strong className="font-semibold">
                     {invalidRowCount} failed record{invalidRowCount === 1 ? '' : 's'} ignored.
                   </strong>{' '}
                   Only {validRowCount} valid record{validRowCount === 1 ? '' : 's'} will be
@@ -158,7 +158,7 @@ export function MigrationPreviewTable({
                 </>
               ) : (
                 <>
-                  <strong>
+                  <strong className="font-semibold">
                     {invalidRowCount} row{invalidRowCount === 1 ? '' : 's'} have errors
                   </strong>{' '}
                   and will prevent migration from running.
@@ -172,10 +172,10 @@ export function MigrationPreviewTable({
                 type="button"
                 onClick={() => onStatusFilterChange('failed')}
                 className={cx(
-                  'font-semibold underline',
+                  'font-semibold underline cursor-pointer',
                   isIgnoringFailed
                     ? 'text-amber-900 hover:text-amber-950'
-                    : 'text-red-700 hover:text-red-950',
+                    : 'text-danger hover:text-red-800',
                 )}
               >
                 Review failed rows
@@ -188,10 +188,10 @@ export function MigrationPreviewTable({
                 variant="outline"
                 onClick={onExportFailedRows}
                 className={cx(
-                  'h-7 bg-white text-xs',
+                  'h-7 bg-surface text-xs shadow-xs',
                   isIgnoringFailed
-                    ? 'border-amber-300 text-amber-800 hover:bg-amber-100'
-                    : 'border-red-300 text-red-700 hover:bg-red-100',
+                    ? 'border-amber-300 text-amber-900 hover:bg-amber-100'
+                    : 'border-danger/40 text-danger hover:bg-danger/10',
                 )}
               >
                 <Download className="mr-1.5 h-3.5 w-3.5" />
@@ -205,10 +205,10 @@ export function MigrationPreviewTable({
                 variant={isIgnoringFailed ? 'outline' : 'destructive'}
                 onClick={() => onToggleIgnoreFailed(!isIgnoringFailed)}
                 className={cx(
-                  'h-7 text-xs',
+                  'h-7 text-xs shadow-xs',
                   isIgnoringFailed
-                    ? 'border-amber-300 bg-white text-amber-800 hover:bg-amber-100'
-                    : 'bg-red-600 text-white hover:bg-red-700',
+                    ? 'border-amber-300 bg-surface text-amber-900 hover:bg-amber-100'
+                    : '',
                 )}
               >
                 {isIgnoringFailed ? "Don't Ignore" : 'Ignore Failed Records'}
@@ -218,7 +218,7 @@ export function MigrationPreviewTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
         <ListTable>
           <ListTableHead>
             <ListTableHeaderRow>
@@ -239,7 +239,7 @@ export function MigrationPreviewTable({
               <ListTableRow>
                 <ListTableCell
                   colSpan={onEditRow ? 8 : 7}
-                  className="py-8 text-center text-sm text-text-secondary"
+                  className="py-8 text-center text-sm text-muted"
                 >
                   {statusFilter === 'failed'
                     ? 'No failed rows found! All rows are valid.'
@@ -256,28 +256,30 @@ export function MigrationPreviewTable({
                     !row.isValid
                       ? isIgnoringFailed
                         ? 'bg-amber-50/40 opacity-80'
-                        : 'bg-red-50/50'
+                        : 'bg-danger/5'
                       : ''
                   }
                 >
-                  <ListTableCell className="text-xs text-text-secondary">
-                    #{row.row_number}
-                  </ListTableCell>
+                  <ListTableCell className="text-xs text-muted">#{row.row_number}</ListTableCell>
                   <ListTableCell>
                     {row.isValid ? (
-                      <span className="text-green-600 font-medium text-sm">Valid</span>
+                      <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                        Valid
+                      </span>
                     ) : (
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-red-600 font-medium text-sm">Error</span>
+                          <span className="inline-flex items-center rounded-full bg-danger/10 border border-danger/30 px-2 py-0.5 text-xs font-semibold text-danger">
+                            Error
+                          </span>
                           {isIgnoringFailed && (
-                            <span className="inline-flex items-center rounded-sm bg-neutral-200 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-700">
+                            <span className="inline-flex items-center rounded-full bg-muted/15 border border-border px-2 py-0.5 text-[10px] font-semibold text-muted">
                               Ignored
                             </span>
                           )}
                         </div>
                         {row.errors.map((e, i) => (
-                          <span key={i} className="text-xs text-red-500">
+                          <span key={i} className="text-xs text-danger">
                             {e}
                           </span>
                         ))}
@@ -287,26 +289,30 @@ export function MigrationPreviewTable({
                   <ListTableCell>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1.5">
-                        <span>{row.rfid || '—'}</span>
+                        <span className="font-mono text-xs font-semibold text-text">
+                          {row.rfid || '—'}
+                        </span>
                         {row.isManuallyMatched && (
-                          <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+                          <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/30 px-2 py-0.2 text-[10px] font-semibold text-primary">
                             Matched
                           </span>
                         )}
                       </div>
                       {row.member_name && (
-                        <span className="text-xs text-text-secondary">{row.member_name}</span>
+                        <span className="text-xs text-muted">{row.member_name}</span>
                       )}
                     </div>
                   </ListTableCell>
-                  <ListTableCell>{row.service_date}</ListTableCell>
-                  <ListTableCell>{row.time_slot}</ListTableCell>
-                  <ListTableCell>{row.table_number}</ListTableCell>
+                  <ListTableCell className="text-xs text-text">{row.service_date}</ListTableCell>
+                  <ListTableCell className="text-xs text-text">{row.time_slot}</ListTableCell>
+                  <ListTableCell className="text-xs text-text">{row.table_number}</ListTableCell>
                   <ListTableCell>
                     <div className="flex flex-col items-start gap-1">
-                      <span>{(row.metadata?.role as string) || '—'}</span>
+                      <span className="text-xs text-text">
+                        {(row.metadata?.role as string) || '—'}
+                      </span>
                       {row.is_walk_in && (
-                        <span className="inline-flex items-center rounded-sm border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                        <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-text">
                           Walk-in
                         </span>
                       )}
@@ -316,8 +322,8 @@ export function MigrationPreviewTable({
                     <ListTableCell className="text-right">
                       <Button
                         type="button"
-                        size="xs"
-                        variant="outline"
+                        size="sm"
+                        variant="secondary"
                         onClick={() => onEditRow(row)}
                         className="h-7 text-xs"
                       >

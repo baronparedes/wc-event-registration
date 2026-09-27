@@ -223,12 +223,12 @@ export function ServiceAttendanceMigrationPanel() {
   }, [previewRows, statusFilter]);
 
   return (
-    <div className="rounded-2xl border border-border bg-surface shadow-sm">
+    <div className="rounded-2xl border border-border bg-surface shadow-xs">
       <div className="flex flex-col border-b border-border p-6">
         <h2 className="font-heading text-xl font-semibold text-text">
           Import Service Attendance from CSV
         </h2>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-muted">
           Select a layout, then upload the Excel-exported CSV to map tables and users.
         </p>
       </div>
@@ -268,16 +268,16 @@ export function ServiceAttendanceMigrationPanel() {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-border px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-text-secondary">
+        <div className="text-sm text-muted">
           {hasSelectedFile && (
             <>
               {invalidRowCount > 0 && !ignoreFailedRecords ? (
-                <span className="font-medium text-red-600">
+                <span className="font-medium text-danger">
                   {invalidRowCount} row{invalidRowCount === 1 ? '' : 's'} with errors must be fixed
                   or ignored before migrating.
                 </span>
               ) : invalidRowCount > 0 && ignoreFailedRecords ? (
-                <span className="font-medium text-amber-700">
+                <span className="font-medium text-amber-800">
                   Skipping {invalidRowCount} failed row{invalidRowCount === 1 ? '' : 's'}. Ready to
                   migrate {validRowCount} valid record{validRowCount === 1 ? '' : 's'}.
                 </span>

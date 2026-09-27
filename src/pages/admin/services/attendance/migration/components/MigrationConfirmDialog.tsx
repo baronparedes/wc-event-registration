@@ -22,14 +22,14 @@ export function MigrationConfirmDialog({
       isOpen={isOpen}
       title="Migrate Service Attendance"
       description={
-        <div className="space-y-2 text-sm text-text-secondary">
+        <div className="space-y-2 text-sm text-muted">
           <p>
             This will upsert {previewRowCount} attendance record
             {previewRowCount === 1 ? '' : 's'}. Existing records matching on conflict keys will be
             ignored.
           </p>
           {ignoredRowCount > 0 && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs font-medium text-amber-900">
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-medium text-amber-900">
               Note: {ignoredRowCount} failed record{ignoredRowCount === 1 ? '' : 's'} will be
               ignored and skipped.
             </p>

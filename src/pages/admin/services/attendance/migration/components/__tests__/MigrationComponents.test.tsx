@@ -29,6 +29,10 @@ vi.mock('@/hooks/domain/members', () => ({
     },
     isLoading: false,
   }),
+  useMemberAvatarQuery: () => ({
+    data: null,
+    isLoading: false,
+  }),
 }));
 
 describe('MigrationUploadControls', () => {

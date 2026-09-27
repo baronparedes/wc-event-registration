@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { AlertCircle, Check, Loader2, UserCheck } from 'lucide-react';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { FormInputField } from '@/components/ui/FormInputField';
@@ -97,40 +98,40 @@ function MatchMemberContent({
   return (
     <>
       <Dialog.Header showCloseButton>
-        <Dialog.Title className="flex items-center gap-2">
+        <Dialog.Title className="flex items-center gap-2 font-heading font-semibold text-text">
           <UserCheck className="h-5 w-5 text-primary" />
           <span>Match Member for Row #{row.row_number}</span>
         </Dialog.Title>
-        <Dialog.Description>
+        <Dialog.Description className="text-muted">
           Search and link an existing member profile to this attendance record.
         </Dialog.Description>
       </Dialog.Header>
 
       <Dialog.Body className="space-y-4">
         {/* Row metadata summary */}
-        <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-surface-subtle p-3.5 text-xs sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background p-3.5 text-xs sm:grid-cols-4">
           <div>
-            <span className="text-text-secondary">CSV Name:</span>
+            <span className="text-muted">CSV Name:</span>
             <p className="font-semibold text-text">{csvName || '—'}</p>
           </div>
           <div>
-            <span className="text-text-secondary">CSV RFID:</span>
+            <span className="text-muted">CSV RFID:</span>
             <p className="font-semibold text-text">{row.rfid || 'Missing'}</p>
           </div>
           <div>
-            <span className="text-text-secondary">Service Date / Slot:</span>
+            <span className="text-muted">Service Date / Slot:</span>
             <p className="font-semibold text-text">
               {row.service_date} • {row.time_slot}
             </p>
           </div>
           <div>
-            <span className="text-text-secondary">Table:</span>
+            <span className="text-muted">Table:</span>
             <p className="font-semibold text-text">{row.table_number || '—'}</p>
           </div>
         </div>
 
         {row.errors.length > 0 && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50/75 p-2.5 text-xs text-red-700">
+          <div className="flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <div className="space-y-0.5">
               {row.errors.map((err, i) => (
@@ -144,7 +145,7 @@ function MatchMemberContent({
         <div className="space-y-1.5">
           <label
             htmlFor="match-member-search"
-            className="block text-xs font-semibold uppercase tracking-wider text-text-secondary"
+            className="block text-xs font-semibold uppercase tracking-wider text-muted"
           >
             Search Database Members
           </label>
@@ -159,14 +160,14 @@ function MatchMemberContent({
         </div>
 
         {/* Member results list */}
-        <div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-surface p-1 space-y-1">
+        <div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-surface p-1 space-y-1 shadow-xs">
           {isLoadingMembers ? (
-            <div className="flex items-center justify-center gap-2 py-8 text-xs text-text-secondary">
+            <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
               <span>Searching members...</span>
             </div>
           ) : memberResults.length === 0 ? (
-            <div className="py-8 text-center text-xs text-text-secondary">
+            <div className="py-8 text-center text-xs text-muted">
               {searchTerm.trim()
                 ? `No members found matching "${searchTerm.trim()}".`
                 : 'No active members available.'}
@@ -179,28 +180,34 @@ function MatchMemberContent({
                   key={member.id}
                   type="button"
                   onClick={() => handleSelectMember(member)}
-                  className={`flex w-full items-center justify-between rounded-lg p-2.5 text-left text-xs transition-colors ${
+                  className={`flex w-full items-center justify-between rounded-lg p-2.5 text-left text-sm transition-colors ${
                     isSelected
-                      ? 'bg-primary/10 border border-primary/30 text-primary'
-                      : 'hover:bg-surface-subtle text-text'
+                      ? 'bg-primary/10 border border-primary/30 text-primary font-medium'
+                      : 'hover:bg-background text-text'
                   }`}
                 >
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-text">
-                      {member.full_name}
-                      {member.nickname && (
-                        <span className="ml-1 text-text-secondary font-normal">
-                          ({member.nickname})
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-[11px] text-text-secondary">
-                      RFID: {member.member_id || 'None'}
-                      {member.role ? ` • ${member.role}` : ''}
-                      {member.category ? ` • ${member.category}` : ''}
-                    </span>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar
+                      name={member.full_name}
+                      avatarObjectKey={member.avatar_object_key}
+                      size="sm"
+                      className="h-8 w-8 shrink-0 text-xs"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-text truncate">
+                        {member.full_name}
+                        {member.nickname && (
+                          <span className="ml-1 text-muted font-normal">({member.nickname})</span>
+                        )}
+                      </span>
+                      <span className="text-[11px] text-muted truncate">
+                        RFID: {member.member_id || 'None'}
+                        {member.role ? ` • ${member.role}` : ''}
+                        {member.category ? ` • ${member.category}` : ''}
+                      </span>
+                    </div>
                   </div>
-                  {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  {isSelected && <Check className="h-4 w-4 text-primary shrink-0 ml-2" />}
                 </button>
               );
             })
@@ -211,8 +218,20 @@ function MatchMemberContent({
         {selectedMember && (
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary">Selected Member</span>
-              <span className="text-xs font-bold text-text">{selectedMember.full_name}</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Avatar
+                  name={selectedMember.full_name}
+                  avatarObjectKey={selectedMember.avatar_object_key}
+                  size="sm"
+                  className="h-8 w-8 shrink-0 text-xs"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-medium text-primary">Selected Member</span>
+                  <span className="text-xs font-bold text-text truncate">
+                    {selectedMember.full_name}
+                  </span>
+                </div>
+              </div>
             </div>
             <div>
               <FormInputField
@@ -226,13 +245,13 @@ function MatchMemberContent({
             </div>
 
             {matchingFailedRows.length > 0 && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-surface p-2.5 text-xs">
+              <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-surface p-3 text-xs shadow-xs">
                 <input
                   id="apply-to-matching-failed"
                   type="checkbox"
                   checked={applyToAllMatching}
                   onChange={(e) => setApplyToAllMatching(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/30"
                 />
                 <label
                   htmlFor="apply-to-matching-failed"
@@ -242,12 +261,13 @@ function MatchMemberContent({
                     Apply match to all {matchingFailedRows.length} other matching failed record
                     {matchingFailedRows.length === 1 ? '' : 's'}
                   </div>
-                  <p className="text-[11px] text-text-secondary">
+                  <p className="text-[11px] text-muted">
                     Rows sharing the same CSV name{' '}
-                    {csvName ? <span className="font-medium">"{csvName}"</span> : '—'} or RFID{' '}
-                    {row.rfid ? <span className="font-medium">"{row.rfid}"</span> : '—'} (Rows{' '}
-                    {matchingFailedRows.map((r) => `#${r.row_number}`).join(', ')}) will also be
-                    linked to {selectedMember.full_name}.
+                    {csvName ? <span className="font-medium text-text">"{csvName}"</span> : '—'} or
+                    RFID{' '}
+                    {row.rfid ? <span className="font-medium text-text">"{row.rfid}"</span> : '—'}{' '}
+                    (Rows {matchingFailedRows.map((r) => `#${r.row_number}`).join(', ')}) will also
+                    be linked to {selectedMember.full_name}.
                   </p>
                 </label>
               </div>
@@ -286,7 +306,7 @@ export function MatchMemberModal({
   if (!row) return null;
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="md">
+    <Dialog isOpen={isOpen} onClose={onClose} size="xl">
       <MatchMemberContent
         key={`${row.row_number}-${row.rfid ?? ''}`}
         row={row}
