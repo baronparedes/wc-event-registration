@@ -209,4 +209,31 @@ describe('NotificationBell', () => {
     fireEvent.click(turnOffBtn);
     expect(mockPush.unsubscribeAsync).toHaveBeenCalled();
   });
+
+  it('closes dropdown when clicking outside or pressing Escape', () => {
+    vi.mocked(useNotificationsQuery).mockReturnValue({
+      data: [],
+    } as never);
+
+    render(
+      <div>
+        <div data-testid="outside">Outside area</div>
+        <NotificationBell />
+      </div>,
+    );
+
+    const bellBtn = screen.getByRole('button', { name: /Notifications/i });
+    fireEvent.click(bellBtn);
+    expect(screen.getByText('Notifications')).toBeInTheDocument();
+
+    // Click outside
+    fireEvent.mouseDown(screen.getByTestId('outside'));
+    expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+
+    // Reopen and test Escape key
+    fireEvent.click(bellBtn);
+    expect(screen.getByText('Notifications')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+  });
 });

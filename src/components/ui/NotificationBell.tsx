@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Bell, CheckCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import {
 } from '@/hooks/domain/notifications';
 import { formatDateTime } from '@/lib/infrastructure/dateFormat';
 
+import { Badge } from './Badge';
 import { Button } from './Button';
 import { EmptyState } from './EmptyState';
 
@@ -20,6 +21,30 @@ export function NotificationBell() {
   const markAllRead = useMarkAllNotificationsReadMutation();
   const push = usePushSubscription();
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isOpen]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -42,28 +67,29 @@ export function NotificationBell() {
   };
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative select-none">
       <Button
         variant="ghost"
-        className="relative min-h-[40px] min-w-[40px] p-2"
+        className="relative min-h-[40px] min-w-[40px] p-2 select-none"
         onClick={() => setIsOpen(!isOpen)}
         aria-label={`Notifications (${unreadCount} unread)`}
+        aria-expanded={isOpen}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-background"></span>
+          <span className="absolute right-1 top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-danger ring-2 ring-surface" />
         )}
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-80 sm:w-96 rounded-xl border border-border bg-surface p-2 shadow-lg ring-1 ring-black/5">
+        <div className="absolute right-0 z-50 mt-2 w-80 sm:w-96 rounded-xl border border-border bg-surface p-2 shadow-lg ring-1 ring-black/5 select-none">
           <div className="flex items-center justify-between border-b border-border pb-2 px-3 pt-2">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-text">Notifications</h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                <Badge variant="primaryOutline" className="text-xs">
                   {unreadCount} New
-                </span>
+                </Badge>
               )}
             </div>
             {unreadCount > 0 && (
@@ -86,13 +112,14 @@ export function NotificationBell() {
                   icon={<Bell className="h-8 w-8" />}
                   title="No notifications"
                   description="You're all caught up!"
+                  className="border-none bg-transparent py-6"
                 />
               </div>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`flex flex-col gap-1 rounded-lg p-3 transition-colors hover:bg-surface-hover ${
+                  className={`flex flex-col gap-1 rounded-lg p-3 transition-colors hover:bg-background cursor-pointer select-none ${
                     !n.is_read ? 'bg-primary/5' : ''
                   }`}
                   onClick={() => {
@@ -121,7 +148,7 @@ export function NotificationBell() {
                     )}
                   </div>
                   <p className="text-xs text-muted line-clamp-2">{n.notification.message}</p>
-                  <span className="text-[10px] text-muted-foreground mt-1">
+                  <span className="text-[10px] text-muted mt-1">
                     {formatDateTime(n.notification.created_at)}
                   </span>
                 </div>
@@ -132,24 +159,25 @@ export function NotificationBell() {
           {push.isSupported && (
             <div className="border-t border-border mt-2 pt-2 px-1">
               {!push.isSubscribed ? (
-                <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-secondary/40 p-2">
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-background p-2">
                   <div className="flex items-center gap-1.5 text-xs text-muted">
                     <Bell className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span>Get alerts on this device</span>
                   </div>
-                  <Button onClick={handleSubscribe} disabled={push.isLoading}>
+                  <Button size="xs" onClick={handleSubscribe} disabled={push.isLoading}>
                     {push.isLoading ? 'Enabling...' : 'Enable'}
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-2 px-1 py-1 text-xs text-muted">
-                  <span className="flex items-center gap-1.5 text-xs text-primary dark:text-primary font-medium">
+                  <span className="flex items-center gap-1.5 text-xs text-primary font-medium">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     Push alerts active on this device
                   </span>
                   <Button
                     type="button"
                     variant="accent"
+                    size="xs"
                     onClick={handleUnsubscribe}
                     disabled={push.isLoading}
                   >
@@ -161,9 +189,6 @@ export function NotificationBell() {
           )}
         </div>
       )}
-
-      {/* Invisible backdrop for closing dropdown */}
-      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
     </div>
   );
 }

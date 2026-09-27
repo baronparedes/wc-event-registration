@@ -77,7 +77,7 @@ describe('Notifications Domain Hooks', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(mockData);
-    expect(supabase.channel).toHaveBeenCalledWith('app_notification_recipients_changes');
+    expect(supabase.channel).toHaveBeenCalledWith('app_notification_recipients_u-1');
   });
 
   it('useMarkNotificationReadMutation calls markNotificationAsRead and invalidates cache', async () => {

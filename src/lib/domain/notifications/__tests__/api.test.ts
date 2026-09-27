@@ -148,6 +148,7 @@ describe('Notifications Domain API', () => {
 
       const mockQuery = {
         select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValueOnce({ data: mockNotifications, error: null }),
       };
@@ -168,6 +169,7 @@ describe('Notifications Domain API', () => {
 
       const mockQuery = {
         select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValueOnce({ data: null, error: new Error('DB Error') }),
       };

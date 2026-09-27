@@ -20,11 +20,13 @@ export function useNotificationsQuery() {
   });
 
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     supabase.auth.getSession().then(({ data: session }) => {
       if (!session?.session?.user) return;
 
-      const channel = supabase
-        .channel('app_notification_recipients_changes')
+      channel = supabase
+        .channel(`app_notification_recipients_${session.session.user.id}`)
         .on(
           'postgres_changes',
           {
@@ -38,11 +40,13 @@ export function useNotificationsQuery() {
           },
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     });
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [queryClient]);
 
   return query;

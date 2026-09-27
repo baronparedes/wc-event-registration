@@ -61,6 +61,7 @@ export async function fetchUserNotifications(): Promise<AppNotificationRecipient
       notification_id,
       is_read,
       read_at,
+      created_at,
       notification:app_notifications (
         id,
         title,
@@ -69,11 +70,12 @@ export async function fetchUserNotifications(): Promise<AppNotificationRecipient
       )
     `,
     )
+    .eq('user_id', session.session.user.id)
     .order('created_at', { ascending: false })
     .limit(50);
 
   if (error) throw error;
-  return (data || []) as unknown as AppNotificationRecipient[];
+  return ((data || []) as unknown as AppNotificationRecipient[]).filter((n) => n && n.notification);
 }
 
 export async function markNotificationAsRead(
