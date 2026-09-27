@@ -75,7 +75,7 @@ export async function searchRegistrationUserIds(searchTerm: string): Promise<str
     .from('users')
     .select('id')
     .or(
-      `full_name.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%`,
+      `full_name.ilike.%${escapedSearchTerm}%,member_id.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%,first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,role.ilike.%${escapedSearchTerm}%`,
     );
   if (error) throw error;
   return (data as { id: string }[] | null)?.map((u) => u.id) ?? [];

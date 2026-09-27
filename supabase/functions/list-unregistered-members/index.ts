@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     if (normalizedSearchTerm.length > 0) {
       const escapedSearchTerm = escapeOrFilterValue(normalizedSearchTerm);
       usersQuery = usersQuery.or(
-        `member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%`,
+        `member_id.ilike.%${escapedSearchTerm}%,full_name.ilike.%${escapedSearchTerm}%,email.ilike.%${escapedSearchTerm}%,first_name.ilike.%${escapedSearchTerm}%,last_name.ilike.%${escapedSearchTerm}%,nickname.ilike.%${escapedSearchTerm}%,role.ilike.%${escapedSearchTerm}%`,
       );
     }
 

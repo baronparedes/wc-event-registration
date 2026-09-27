@@ -152,7 +152,7 @@ export function AdminUnregisteredMembersPage() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             onClear={clearSearch}
-            placeholder="Search by member ID, name, or email"
+            placeholder="Search by name, member ID, email, or role"
           />
           <Button
             type="button"
