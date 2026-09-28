@@ -173,7 +173,7 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
       timeSlot: '9AM',
     };
     rerender(<ServiceMatrixCell cell={naCell} />);
-    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getByText('N/A')).toBeInTheDocument();
 
     const offScheduleCell: MatrixCellData = {
       status: 'off_schedule',
@@ -242,7 +242,7 @@ describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {
 
     expect(screen.getByText('1 service attended in June 2026')).toBeInTheDocument();
     expect(screen.getByText('(updating...)')).toBeInTheDocument();
-    expect(screen.getByText('1 Total')).toBeInTheDocument();
+    expect(screen.queryByText('1 Total')).not.toBeInTheDocument();
     expect(screen.queryByText(/No-Check In/)).not.toBeInTheDocument();
 
     rerender(
@@ -255,7 +255,7 @@ describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {
     );
 
     expect(screen.getByText('3 services attended in June 2026')).toBeInTheDocument();
-    expect(screen.getByText('3 Total')).toBeInTheDocument();
+    expect(screen.queryByText('3 Total')).not.toBeInTheDocument();
     expect(screen.getByText('2 No-Check In')).toBeInTheDocument();
   });
 

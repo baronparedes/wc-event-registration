@@ -120,13 +120,13 @@ function AdminPageContent({
 }: AdminPageContentProps) {
   if (isLoading) {
     return (
-      <div className={cx(className, 'print:p-0')}>
+      <div className={cx('space-y-6 print:p-0', className)}>
         <p className="text-sm text-muted">{loadingMessage || 'Loading...'}</p>
       </div>
     );
   }
 
-  return <div className={className}>{children}</div>;
+  return <div className={cx('space-y-6', className)}>{children}</div>;
 }
 
 type AdminPageSubNavProps = {

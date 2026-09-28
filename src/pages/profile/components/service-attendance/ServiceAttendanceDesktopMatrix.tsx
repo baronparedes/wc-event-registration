@@ -31,7 +31,7 @@ export function ServiceAttendanceDesktopMatrix({
   matrixGrid,
 }: ServiceAttendanceDesktopMatrixProps) {
   return (
-    <div className="hidden sm:block overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
+    <div className="hidden xl:block overflow-x-auto rounded-xl border border-border bg-surface shadow-xs">
       <ListTable density="default" className="min-w-[720px] table-fixed">
         <ListTableHead>
           <ListTableHeaderRow variant="default">

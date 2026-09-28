@@ -216,10 +216,10 @@ export function ServiceAttendanceHistoryTab({
               missedCount={missedCount}
               isFetching={isFetching}
             />
-            <ServiceAttendanceLegend />
             <ServiceAttendanceMobileCards sundays={sundays} matrixGrid={matrixGrid} />
             <ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={matrixGrid} />
             {!isLoadingAttendance && <NonSundayAttendanceList records={nonSundayAttendances} />}
+            <ServiceAttendanceLegend />
           </div>
         )}
       </div>

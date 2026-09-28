@@ -13,7 +13,7 @@ export function AdminServiceAttendanceMigrationPage() {
         breadcrumbs={[{ label: 'Services', to: ROUTE_PATHS.adminServices }, { label: 'Migration' }]}
       />
       <ServiceNavigationLinks />
-      <AdminPageShell.Content className="mt-6">
+      <AdminPageShell.Content>
         <ServiceAttendanceMigrationPanel />
       </AdminPageShell.Content>
     </AdminPageShell>

@@ -25,6 +25,10 @@ describe('MemberOverviewCard', () => {
   it('renders member profile details correctly', () => {
     render(<MemberOverviewCard member={member} />);
 
+    const avatar = screen.getByTitle('Aaron Atienza');
+    expect(avatar).toHaveClass('w-48', 'h-48', 'self-center', 'sm:self-start');
+    expect(avatar.parentElement).toHaveClass('flex', 'flex-col', 'sm:flex-row');
+    expect(screen.getByText('Full Name').closest('dl')).toHaveClass('grid-cols-2');
     expect(screen.getByText('Aaron Atienza')).toBeInTheDocument();
     expect(screen.getByText('1627343318')).toBeInTheDocument();
     expect(screen.getByText('OIC')).toBeInTheDocument();
