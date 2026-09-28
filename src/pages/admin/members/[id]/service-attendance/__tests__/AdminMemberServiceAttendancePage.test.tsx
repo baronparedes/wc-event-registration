@@ -72,7 +72,7 @@ describe('AdminMemberServiceAttendancePage', () => {
 
     expect(screen.getByRole('heading', { name: 'Service Commitment History' })).toBeInTheDocument();
     expect(
-      screen.getByText("Member's church service attendance and seat assignments."),
+      screen.getByText("Member's service attendance and seat assignments."),
     ).toBeInTheDocument();
 
     // Breadcrumbs and links

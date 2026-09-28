@@ -69,9 +69,9 @@ describe('ServiceAttendanceMigrationPanel', () => {
         {
           id: 'user-marrion',
           member_id: '1322281947',
-          full_name: 'Marrion Torres',
+          full_name: 'Marrion Rivera',
           first_name: 'Marrion',
-          last_name: 'Torres',
+          last_name: 'Rivera',
           nickname: 'Bong',
         },
       ],
@@ -91,7 +91,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV content
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
       ',3/8/2026,09:00:00,9AM,999,Unknown Person,Attendee',
     ].join('\n');
 
@@ -112,8 +112,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
       expect(screen.getByText('Preview (2 rows)')).toBeInTheDocument();
     });
 
-    // Bong Torres should resolve to Marrion Torres via nickname + last name matching
-    expect(screen.getByText('Marrion Torres')).toBeInTheDocument();
+    // Bong Rivera should resolve to Marrion Rivera via nickname + last name matching
+    expect(screen.getByText('Marrion Rivera')).toBeInTheDocument();
     // Table 105 should map to Usher / Backroom / IMT / VMT
     const usherCells = screen.getAllByText('Usher / Backroom / IMT / VMT');
     expect(usherCells.length).toBeGreaterThan(0);
@@ -129,13 +129,13 @@ describe('ServiceAttendanceMigrationPanel', () => {
     expect(
       screen.getByText('Member "Unknown Person" (RFID: N/A) not found in system.'),
     ).toBeInTheDocument();
-    expect(screen.queryByText('Marrion Torres')).not.toBeInTheDocument();
+    expect(screen.queryByText('Marrion Rivera')).not.toBeInTheDocument();
 
     // Switch to valid filter view
     const validFilterBtn = screen.getByRole('tab', { name: /Valid/i });
     fireEvent.click(validFilterBtn);
 
-    expect(screen.getByText('Marrion Torres')).toBeInTheDocument();
+    expect(screen.getByText('Marrion Rivera')).toBeInTheDocument();
     expect(screen.queryByText(/Unknown Person/)).not.toBeInTheDocument();
   });
 
@@ -155,7 +155,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name',
-      '1322281947,3/8/2026,09:00:00,9AM,10,Bong Torres',
+      '1322281947,3/8/2026,09:00:00,9AM,10,Bong Rivera',
     ].join('\n');
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -190,7 +190,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 1 valid and 1 invalid row
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
       ',3/8/2026,09:00:00,9AM,999,Unknown Person,Attendee',
     ].join('\n');
 
@@ -264,7 +264,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 1 valid row (table 105 maps to seat-usher) and 1 invalid row (table 10 maps to seat-10)
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
       ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');
 
@@ -353,7 +353,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 3 rows: 1 valid, 2 failed rows sharing the same name "Unknown Person"
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Torres,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
       ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
       ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');

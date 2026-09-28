@@ -36,7 +36,7 @@ export function MemberOverviewCard({
           size="xl"
           className="shrink-0 self-center sm:self-start"
         />
-        <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="grid min-w-0 flex-1 grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-muted">Full Name</dt>
             <dd className="break-words font-medium text-text">{member.full_name}</dd>

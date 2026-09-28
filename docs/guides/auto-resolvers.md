@@ -26,10 +26,10 @@ In multi-timeslot events (e.g., conferences, batch orientations, repeated worksh
 
 ### Key Code References
 
-- **Domain Transforms & Selectors**: [`src/lib/domain/attendance/transforms.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/lib/domain/attendance/transforms.ts#L143-L170)
-- **Suggested Slot Calculation**: [`src/pages/admin/events/[id]/attendance/check-in/utils/timeslotCalculations.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/utils/timeslotCalculations.ts#L12-L42)
-- **Check-In Submission Guard**: [`src/pages/admin/events/[id]/attendance/check-in/hooks/useCheckInSubmission.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/hooks/useCheckInSubmission.ts#L49-L88)
-- **UI Selection Panel**: [`src/pages/admin/events/[id]/attendance/check-in/components/AttendeeTimeslotSelectionPanel.tsx`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/components/AttendeeTimeslotSelectionPanel.tsx#L52-L69)
+- **Domain Transforms & Selectors**: [`src/lib/domain/attendance/transforms.ts`](../../src/lib/domain/attendance/transforms.ts#L143-L170)
+- **Suggested Slot Calculation**: [`src/pages/admin/events/[id]/attendance/check-in/utils/timeslotCalculations.ts`](../../src/pages/admin/events/[id]/attendance/check-in/utils/timeslotCalculations.ts#L12-L42)
+- **Check-In Submission Guard**: [`src/pages/admin/events/[id]/attendance/check-in/hooks/useCheckInSubmission.ts`](../../src/pages/admin/events/[id]/attendance/check-in/hooks/useCheckInSubmission.ts#L49-L88)
+- **UI Selection Panel**: [`src/pages/admin/events/[id]/attendance/check-in/components/AttendeeTimeslotSelectionPanel.tsx`](../../src/pages/admin/events/[id]/attendance/check-in/components/AttendeeTimeslotSelectionPanel.tsx#L52-L69)
 
 ### Data Contract
 
@@ -119,9 +119,9 @@ The system uses point-in-time snapshots in `user_commitment_history` and resolve
 
 ### Key Code References
 
-- **Domain Resolver**: [`src/lib/domain/services/service-matrix.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/lib/domain/services/service-matrix.ts#L145-L157)
-- **Matrix Calculation**: [`computeMatrixGrid` in service-matrix.ts](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/lib/domain/services/service-matrix.ts#L159-L188)
-- **Database Trigger & Arch Guide**: [`docs/guides/user-commitment-history.md`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/docs/guides/user-commitment-history.md)
+- **Domain Resolver**: [`src/lib/domain/services/service-matrix.ts`](../../src/lib/domain/services/service-matrix.ts#L145-L157)
+- **Matrix Calculation**: [`computeMatrixGrid` in service-matrix.ts](../../src/lib/domain/services/service-matrix.ts#L159-L188)
+- **Database Trigger & Arch Guide**: [`docs/guides/user-commitment-history.md`](user-commitment-history.md)
 
 ### Resolution Algorithm
 
@@ -161,8 +161,8 @@ When a signed-in member visits an event registration page (`/events/:slug/regist
 
 ### Key Code References
 
-- **Page State Hook**: [`src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts#L300-L340)
-- **Form State Hook**: [`src/pages/forms/[slug]/submit/hooks/useFormSubmissionPageState.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/forms/[slug]/submit/hooks/useFormSubmissionPageState.ts#L130-L165)
+- **Page State Hook**: [`src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts`](../../src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts#L300-L340)
+- **Form State Hook**: [`src/pages/forms/[slug]/submit/hooks/useFormSubmissionPageState.ts`](../../src/pages/forms/[slug]/submit/hooks/useFormSubmissionPageState.ts#L130-L165)
 - **Auto-Lookup Loading Card**: Rendered during the `executing` status to avoid flickering the Step 1 input form.
 
 ### Execution Flow
@@ -202,8 +202,8 @@ sequenceDiagram
 
 Each resolver is backed by unit tests verifying boundaries, null values, and edge conditions:
 
-| Mechanism                    | Test Files                                                                                                                                                                                                                                                                                                                                                                                                                                             | Run Command                                                                                                                                                            |
-| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Timeslot Active-Window**   | [`src/lib/domain/attendance/__tests__/transforms.test.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/lib/domain/attendance/__tests__/transforms.test.ts)<br>[`src/pages/admin/events/[id]/attendance/check-in/utils/__tests__/timeslotCalculations.test.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/utils/__tests__/timeslotCalculations.test.ts) | `npx vitest run src/lib/domain/attendance/__tests__/transforms.test.ts "src/pages/admin/events/[id]/attendance/check-in/utils/__tests__/timeslotCalculations.test.ts"` |
-| **Commitment Date Resolver** | [`src/lib/domain/services/__tests__/service-matrix.test.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/lib/domain/services/__tests__/service-matrix.test.ts)                                                                                                                                                                                                                                                                | `npx vitest run src/lib/domain/services/__tests__/service-matrix.test.ts`                                                                                              |
-| **Registration Auto-Lookup** | [`src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts)                                                                                                                                                                                                                | `npx vitest run "src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts"`                                                                    |
+| Mechanism                    | Test Files                                                                                                                                                                                                                                                                                                                       | Run Command                                                                                                                                                            |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Timeslot Active-Window**   | [`src/lib/domain/attendance/__tests__/transforms.test.ts`](../../src/lib/domain/attendance/__tests__/transforms.test.ts)<br>[`src/pages/admin/events/[id]/attendance/check-in/utils/__tests__/timeslotCalculations.test.ts`](../../src/pages/admin/events/[id]/attendance/check-in/utils/__tests__/timeslotCalculations.test.ts) | `npx vitest run src/lib/domain/attendance/__tests__/transforms.test.ts "src/pages/admin/events/[id]/attendance/check-in/utils/__tests__/timeslotCalculations.test.ts"` |
+| **Commitment Date Resolver** | [`src/lib/domain/services/__tests__/service-matrix.test.ts`](../../src/lib/domain/services/__tests__/service-matrix.test.ts)                                                                                                                                                                                                     | `npx vitest run src/lib/domain/services/__tests__/service-matrix.test.ts`                                                                                              |
+| **Registration Auto-Lookup** | [`src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts`](../../src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts)                                                                                                                                                     | `npx vitest run "src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts"`                                                                    |

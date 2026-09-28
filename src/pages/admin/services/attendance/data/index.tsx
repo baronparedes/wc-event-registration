@@ -298,7 +298,7 @@ export function AdminServiceAttendanceDataPage() {
         onClearStartDate={handleClearStartDate}
       />
 
-      <AdminPageShell.Content className="space-y-6">
+      <AdminPageShell.Content>
         {!isLoading && (
           <div className="flex justify-center sm:justify-end">
             <Badge variant="secondary">{getCountBadgeLabel()}</Badge>

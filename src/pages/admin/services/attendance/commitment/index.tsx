@@ -128,7 +128,7 @@ export function AdminServiceAttendanceCommitmentPage() {
       />
       <ServiceNavigationLinks />
 
-      <AdminPageShell.Content className="mt-6 space-y-6">
+      <AdminPageShell.Content>
         <CommitmentDashboardFilters
           timeframe={timeframe}
           onTimeframeChange={setTimeframe}

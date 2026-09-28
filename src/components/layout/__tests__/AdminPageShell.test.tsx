@@ -122,6 +122,7 @@ describe('AdminPageShell', () => {
       );
 
       expect(screen.getByText('Loaded Data')).toBeInTheDocument();
+      expect(screen.getByText('Loaded Data').parentElement).toHaveClass('space-y-6');
     });
 
     it('renders loading message when isLoading is true', () => {

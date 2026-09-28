@@ -56,7 +56,7 @@ export function AdminMemberServiceAttendancePage() {
         ]}
         navLinks={<MemberNavigationLinks memberId={id} />}
         title="Service Commitment History"
-        description="Member's church service attendance and seat assignments."
+        description="Member's service attendance and seat assignments."
       />
 
       <AdminPageShell.Content>

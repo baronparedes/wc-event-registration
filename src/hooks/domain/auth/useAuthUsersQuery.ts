@@ -4,12 +4,12 @@ import { type AuthUserItem, fetchAuthUsers } from '@/lib/domain/auth';
 
 export const AUTH_USERS_QUERY_KEY = ['auth-users'] as const;
 
-export function useAuthUsersQuery(search = '', enabled = true) {
+export function useAuthUsersQuery(search = '', enabled = true, verifiedOnly = false) {
   const trimmedSearch = search.trim();
 
   return useQuery<AuthUserItem[]>({
-    queryKey: [...AUTH_USERS_QUERY_KEY, trimmedSearch],
-    queryFn: () => fetchAuthUsers(trimmedSearch),
+    queryKey: [...AUTH_USERS_QUERY_KEY, trimmedSearch, verifiedOnly],
+    queryFn: () => fetchAuthUsers(trimmedSearch, verifiedOnly),
     enabled,
   });
 }

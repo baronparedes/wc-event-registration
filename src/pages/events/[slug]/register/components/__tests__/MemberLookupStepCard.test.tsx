@@ -21,7 +21,7 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('../NameLookupModal', () => ({
   NameLookupModal: ({ onSubmit }: { onSubmit: (name: string) => void }) => (
-    <button type="button" onClick={() => onSubmit('Baron Paredes')}>
+    <button type="button" onClick={() => onSubmit('Baron Geisler')}>
       Submit Name Lookup
     </button>
   ),
@@ -124,7 +124,7 @@ describe('MemberLookupStepCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit Name Lookup' }));
 
     await waitFor(() => {
-      expect(onLookupSubmit).toHaveBeenCalledWith({ memberId: undefined, name: 'Baron Paredes' });
+      expect(onLookupSubmit).toHaveBeenCalledWith({ memberId: undefined, name: 'Baron Geisler' });
     });
   });
 

@@ -81,6 +81,9 @@ describe('ProfilePage', () => {
     expect(
       screen.getByRole('region', { name: /Welcome to CCF Hello Brochure Banner/i }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId('avatar').parentElement?.parentElement).toContainElement(
+      screen.getByRole('region', { name: /Welcome to CCF Hello Brochure Banner/i }),
+    );
     expect(screen.getByText('8 Interactive Slides')).toBeInTheDocument();
     expect(screen.getByText('Explore →')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
@@ -110,7 +113,7 @@ describe('ProfilePage', () => {
     expect(screen.getByText('No events found.')).toBeInTheDocument();
   });
 
-  it('opens modal when clicking View on a group card', async () => {
+  it('opens the details modal when clicking an event row', async () => {
     const eventId = 'shared-event-id';
     const items = [
       makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
@@ -128,8 +131,7 @@ describe('ProfilePage', () => {
       screen.queryByRole('heading', { level: 2, name: 'Shared Event' }),
     ).not.toBeInTheDocument();
 
-    const viewButton = screen.getByRole('button', { name: 'View' });
-    fireEvent.click(viewButton);
+    fireEvent.click(screen.getByRole('button', { name: 'View Shared Event details' }));
 
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Shared Event' }),

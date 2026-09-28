@@ -94,7 +94,7 @@ export function AdminServicesPage() {
         }
       />
       <AdminBaseNavigation />
-      <AdminPageShell.Content className="mt-6 space-y-6">
+      <AdminPageShell.Content>
         <ServiceDashboardFilters
           filterMode={filterMode}
           onFilterModeChange={setFilterMode}

@@ -58,20 +58,20 @@ Proposed timeslot JSON contract:
 
 **Relevant files**
 
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/domain/attendance/types.ts - extend AttendanceSettings and timeslot value contracts.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/domain/attendance/schemas.ts - add Zod rules for optional per-slot check-in windows and helper schema builders.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/domain/attendance/transforms.ts - add legacy/new shape normalization helpers for timeslots.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/domain/attendance/index.ts - export new helper selectors/resolvers if needed.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/hooks/domain/attendance/queries/useAttendanceSettingsQuery.ts - normalize backend payload to new structured shape.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/hooks/domain/attendance/mutations/useUpdateAttendanceSettingsMutation.ts - send normalized structured timeslot payload.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/pages/admin/events/[id]/attendance/index.tsx - attendance settings UI for slot + optional window fields.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/index.tsx - active timeslot resolution and check-in state gates.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/components/AttendeeConfirmStep.tsx - hide generic check-in button in auto-window mode and show blocked-state message.
-- /Users/baronparedes/Documents/projects/wc-event-registration/supabase/migrations/20260703100000_add_attendance_foundation.sql - reference current settings shape.
-- /Users/baronparedes/Documents/projects/wc-event-registration/supabase/migrations/<new_migration>.sql - JSONB migration for timeslot window payload.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/domain/attendance/**tests**/schemas.test.ts - schema validation coverage.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/domain/attendance/**tests**/transforms.test.ts - normalization helper coverage.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/pages/admin/events/[id]/attendance/check-in/**tests**/\* - check-in UI behavior coverage for auto-window mode.
+- [types.ts](../../../src/lib/domain/attendance/types.ts) - extend AttendanceSettings and timeslot value contracts.
+- [schemas.ts](../../../src/lib/domain/attendance/schemas.ts) - add Zod rules for optional per-slot check-in windows and helper schema builders.
+- [transforms.ts](../../../src/lib/domain/attendance/transforms.ts) - add legacy/new shape normalization helpers for timeslots.
+- [index.ts](../../../src/lib/domain/attendance/index.ts) - export new helper selectors/resolvers if needed.
+- [useAttendanceSettingsQuery.ts](../../../src/hooks/domain/attendance/queries/useAttendanceSettingsQuery.ts) - normalize backend payload to new structured shape.
+- [useUpdateAttendanceSettingsMutation.ts](../../../src/hooks/domain/attendance/mutations/useUpdateAttendanceSettingsMutation.ts) - send normalized structured timeslot payload.
+- [attendance settings page](../../../src/pages/admin/events/[id]/attendance/index.tsx) - attendance settings UI for slot + optional window fields.
+- [check-in page](../../../src/pages/admin/events/[id]/attendance/check-in/index.tsx) - active timeslot resolution and check-in state gates.
+- [AttendeeConfirmStep.tsx](../../../src/pages/admin/events/[id]/attendance/check-in/components/AttendeeConfirmStep.tsx) - hide generic check-in button in auto-window mode and show blocked-state message.
+- [20260703100000_add_attendance_foundation.sql](../../../supabase/migrations/20260703100000_add_attendance_foundation.sql) - reference current settings shape.
+- `../../../supabase/migrations/<new_migration>.sql` - JSONB migration for timeslot window payload.
+- `../../../src/lib/domain/attendance/**tests**/schemas.test.ts` - schema validation coverage.
+- `../../../src/lib/domain/attendance/**tests**/transforms.test.ts` - normalization helper coverage.
+- `../../../src/pages/admin/events/[id]/attendance/check-in/**tests**/\*` - check-in UI behavior coverage for auto-window mode.
 
 **Verification**
 

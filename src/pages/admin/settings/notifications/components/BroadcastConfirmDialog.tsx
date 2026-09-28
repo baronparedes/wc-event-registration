@@ -63,10 +63,10 @@ export function BroadcastConfirmDialog({
             <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs text-amber-700 dark:text-amber-300">
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
               <div>
-                <p className="font-semibold text-text">All Registered Users</p>
+                <p className="font-semibold text-text">Registered Members</p>
                 <p className="text-muted mt-0.5">
-                  This will broadcast an in-app alert and push notification to all application
-                  users.
+                  This creates an in-app alert for members with a matching account email. Push
+                  delivery requires an active browser subscription.
                 </p>
               </div>
             </div>

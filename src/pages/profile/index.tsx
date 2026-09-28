@@ -47,25 +47,27 @@ export function ProfilePage() {
   return (
     <AdminPageShell>
       <AdminPageShell.Content>
-        <WelcomeHelloBanner translucentBackground />
-        <div className="relative z-10 -mt-14 sm:-mt-44 md:-mt-52 mb-6 flex flex-col items-center text-center pointer-events-none">
-          <Avatar
-            name={avatarName}
-            avatarObjectKey={member.avatar_object_key}
-            size={isMobile ? 'lg' : '2xl'}
-            className="ring-1 ring-surface shadow-md pointer-events-auto"
-          />
-          <h1 className="text-2xl font-bold text-text pt-3 sm:text-3xl pointer-events-auto">
-            {avatarName}
-          </h1>
-          <p className="text-muted text-sm mt-1 pointer-events-auto">
-            {member.role} • {member.category} • {member.member_id}
-          </p>
-          {member.last_activity && (
-            <div className="mt-2.5 pointer-events-auto">
-              <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
-            </div>
-          )}
+        <div>
+          <WelcomeHelloBanner translucentBackground />
+          <div className="relative z-10 -mt-14 sm:-mt-44 md:-mt-52 mb-6 flex flex-col items-center text-center pointer-events-none">
+            <Avatar
+              name={avatarName}
+              avatarObjectKey={member.avatar_object_key}
+              size={isMobile ? 'lg' : '2xl'}
+              className="ring-1 ring-surface shadow-md pointer-events-auto"
+            />
+            <h1 className="text-2xl font-bold text-text pt-3 sm:text-3xl pointer-events-auto">
+              {avatarName}
+            </h1>
+            <p className="text-muted text-sm mt-1 pointer-events-auto">
+              {member.role} • {member.category} • {member.member_id}
+            </p>
+            {member.last_activity && (
+              <div className="mt-2.5 pointer-events-auto">
+                <Badge>Last Activity: {formatDateTime(member.last_activity)}</Badge>
+              </div>
+            )}
+          </div>
         </div>
 
         <Tabs

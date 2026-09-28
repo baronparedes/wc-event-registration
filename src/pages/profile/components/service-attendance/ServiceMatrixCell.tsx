@@ -168,7 +168,7 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
   if (status === 'not_applicable') {
     return (
       <div className="flex h-[104px] w-full items-center justify-center rounded-xl border border-border/40 bg-surface/50 p-2 text-center text-sm text-muted/40">
-        —
+        N/A
       </div>
     );
   }

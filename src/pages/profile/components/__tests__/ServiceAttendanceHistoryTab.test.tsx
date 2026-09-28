@@ -220,7 +220,7 @@ describe('ServiceAttendanceHistoryTab', () => {
     mockUseServiceAttendanceQuery.mockReturnValue(makeAttendanceQueryResult([]));
 
     renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
-    expect(screen.getByText('0 Total')).toBeInTheDocument();
+    expect(screen.getByText(/0 services attended in/)).toBeInTheDocument();
     expect(screen.getByText('Schedule Alignment:')).toBeInTheDocument();
     expect(screen.getAllByText('1st Sunday').length).toBeGreaterThan(0);
     expect(screen.getAllByText('9AM').length).toBeGreaterThan(0);
@@ -229,7 +229,7 @@ describe('ServiceAttendanceHistoryTab', () => {
   it('renders monthly attendance matrix with records, Sundays, and status badges', () => {
     renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
-    expect(screen.getByText('4 Total')).toBeInTheDocument();
+    expect(screen.getByText(/4 services attended in/)).toBeInTheDocument();
 
     expect(screen.getAllByText('2026-09-06').length).toBeGreaterThan(0);
     expect(screen.getAllByText('2026-09-13').length).toBeGreaterThan(0);
@@ -254,6 +254,39 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('14, Seat 2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Usher / Backroom / IMT / VMT').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Unassigned').length).toBeGreaterThan(0);
+  });
+
+  it('shows mobile Sunday tabs and changes the selected Sunday panel', () => {
+    renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
+
+    const sundayTabList = screen.getByRole('tablist', { name: 'Sunday of the month' });
+    expect(sundayTabList.parentElement?.parentElement?.parentElement).toHaveClass('xl:hidden');
+
+    const firstSundayTab = screen.getByRole('tab', { name: '1st Sunday' });
+    const secondSundayTab = screen.getByRole('tab', { name: '2nd Sunday' });
+
+    expect(firstSundayTab).toHaveAttribute('aria-selected', 'true');
+    expect(secondSundayTab).toHaveAttribute('aria-selected', 'false');
+    expect(firstSundayTab).toHaveTextContent('1st');
+    expect(screen.getByRole('tab', { name: '2nd Sunday' })).toHaveTextContent('2nd');
+
+    fireEvent.click(secondSundayTab);
+
+    expect(secondSundayTab).toHaveAttribute('aria-selected', 'true');
+    expect(secondSundayTab).toHaveAttribute(
+      'aria-controls',
+      screen.getByRole('tabpanel').getAttribute('id'),
+    );
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', secondSundayTab.id);
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('2026-09-13');
+
+    const fifthSundayTab = screen.getByRole('tab', { name: '5th Sunday' });
+    fireEvent.click(fifthSundayTab);
+    const fifthSundayPanel = screen.getByRole('tabpanel');
+    expect(fifthSundayPanel).toHaveTextContent('No 5th Sunday this month');
+    expect(fifthSundayPanel).toHaveTextContent('9AM');
+    expect(fifthSundayPanel).toHaveTextContent('12NN');
+    expect(fifthSundayPanel).toHaveTextContent('3PM');
   });
 
   it('displays committed vs unscheduled alignment badges and missed commitments', () => {
@@ -347,7 +380,7 @@ describe('ServiceAttendanceHistoryTab', () => {
     renderWithClient(<ServiceAttendanceHistoryTab memberId="user-1" />);
 
     expect(screen.getByText('(updating...)')).toBeInTheDocument();
-    expect(screen.getByText('4 Total')).toBeInTheDocument();
+    expect(screen.getByText(/4 services attended in/)).toBeInTheDocument();
     expect(screen.queryByText('Loading attendance history...')).not.toBeInTheDocument();
   });
 

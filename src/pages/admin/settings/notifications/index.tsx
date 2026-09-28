@@ -176,7 +176,7 @@ export function AdminNotificationsPage() {
                 id="targetType"
                 label="Target Audience"
                 options={[
-                  { value: 'all', label: 'All Users' },
+                  { value: 'all', label: 'Registered Members' },
                   { value: 'role', label: 'Specific Roles' },
                   { value: 'user', label: 'Specific User' },
                 ]}

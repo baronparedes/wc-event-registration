@@ -9,9 +9,9 @@ vi.mock('@/hooks/domain/members', () => ({
 
 describe('MilestoneAvatar', () => {
   it('renders avatar with birthday cake badge', () => {
-    render(<MilestoneAvatar name="Baron Paredes" type="birthday" size="sm" />);
+    render(<MilestoneAvatar name="Baron Geisler" type="birthday" size="sm" />);
 
-    expect(screen.getByText('BP')).toBeInTheDocument();
+    expect(screen.getByText('BG')).toBeInTheDocument();
     expect(screen.getByTitle('Birthday')).toBeInTheDocument();
   });
 

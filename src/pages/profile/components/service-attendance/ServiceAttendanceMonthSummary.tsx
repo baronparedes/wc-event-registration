@@ -26,10 +26,7 @@ export function ServiceAttendanceMonthSummary({
           <span className="text-sm text-muted animate-pulse font-normal">(updating...)</span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="default">{attendanceCount} Total</Badge>
-        {missedCount > 0 && <Badge variant="destructive">{missedCount} No-Check In</Badge>}
-      </div>
+      {missedCount > 0 && <Badge variant="destructive">{missedCount} No-Check In</Badge>}
     </div>
   );
 }

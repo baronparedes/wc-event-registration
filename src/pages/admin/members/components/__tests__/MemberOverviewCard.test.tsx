@@ -10,9 +10,9 @@ vi.mock('@/hooks/domain/members', () => ({
 }));
 
 const member = makeAdminMember({
-  full_name: 'Aaron Atienza',
+  full_name: 'Aaron Carter',
   nickname: 'Aaron',
-  last_name: 'Atienza',
+  last_name: 'Carter',
   member_id: '1627343318',
   role: 'OIC',
   category: 'Men',
@@ -25,7 +25,11 @@ describe('MemberOverviewCard', () => {
   it('renders member profile details correctly', () => {
     render(<MemberOverviewCard member={member} />);
 
-    expect(screen.getByText('Aaron Atienza')).toBeInTheDocument();
+    const avatar = screen.getByTitle('Aaron Carter');
+    expect(avatar).toHaveClass('w-48', 'h-48', 'self-center', 'sm:self-start');
+    expect(avatar.parentElement).toHaveClass('flex', 'flex-col', 'sm:flex-row');
+    expect(screen.getByText('Full Name').closest('dl')).toHaveClass('grid-cols-2');
+    expect(screen.getByText('Aaron Carter')).toBeInTheDocument();
     expect(screen.getByText('1627343318')).toBeInTheDocument();
     expect(screen.getByText('OIC')).toBeInTheDocument();
     expect(screen.getByText('Men')).toBeInTheDocument();

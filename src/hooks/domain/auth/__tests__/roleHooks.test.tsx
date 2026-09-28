@@ -102,6 +102,31 @@ describe('role management domain hooks', () => {
       expect(supabase.rpc).toHaveBeenCalledWith('list_auth_users', { p_search: 'test' });
     });
 
+    it('uses the verified-user RPC when requested', async () => {
+      const mockUsers = [
+        {
+          id: 'u1',
+          name: 'Verified User',
+          email: 'verified@example.com',
+          avatar_object_key: null,
+          has_member_profile: true,
+          created_at: '2026-01-01',
+          last_sign_in_at: null,
+        },
+      ];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockUsers, error: null } as never);
+
+      const { result } = renderHook(() => useAuthUsersQuery('verified', true, true), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual(mockUsers);
+      expect(supabase.rpc).toHaveBeenCalledWith('list_verified_auth_users', {
+        p_search: 'verified',
+      });
+    });
+
     it('handles empty search term by passing null', async () => {
       vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } as never);
 

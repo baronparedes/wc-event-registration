@@ -126,7 +126,7 @@ export function AdminSettingsPage() {
         </div>
       </AdminPageShell.Filters>
 
-      <AdminPageShell.Content className="space-y-8">
+      <AdminPageShell.Content>
         {categories.length === 0 ? (
           <div className="rounded-2xl border border-border bg-surface px-6 py-12">
             <EmptyState
