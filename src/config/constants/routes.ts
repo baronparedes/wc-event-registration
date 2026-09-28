@@ -17,7 +17,7 @@ export const ROUTE_PATHS = {
   eventPublicRegisterPattern: '/events/:slug/register-public',
   eventCountdownPattern: '/events/:slug/countdown',
   adminHubCalendar: '/admin/hub-calendar',
-  adminUserRoles: '/admin/users/roles',
+  adminUserRoles: '/admin/settings/roles',
   adminMembers: '/admin/members',
   adminMembersImport: '/admin/members/import',
   adminMemberDetailPattern: '/admin/members/:id',
@@ -54,7 +54,9 @@ export const ROUTE_PATHS = {
   adminServiceAttendanceMigration: '/admin/services/attendance/migration',
   adminServiceAttendanceData: '/admin/services/attendance/data',
   adminServiceAttendanceCommitment: '/admin/services/attendance/commitment',
-  adminNotifications: '/admin/notifications',
+  adminNotifications: '/admin/settings/notifications',
+  adminSettings: '/admin/settings',
+  adminSettingsEmailTemplates: '/admin/settings/email-templates',
 } as const;
 export type AppRouteKey =
   | 'home'
@@ -104,7 +106,9 @@ export type AppRouteKey =
   | 'adminServiceAttendanceMigration'
   | 'adminServiceAttendanceData'
   | 'adminServiceAttendanceCommitment'
-  | 'adminNotifications';
+  | 'adminNotifications'
+  | 'adminSettings'
+  | 'adminSettingsEmailTemplates';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -341,6 +345,18 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminNotifications',
     path: ROUTE_PATHS.adminNotifications,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminSettings',
+    path: ROUTE_PATHS.adminSettings,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'adminSettingsEmailTemplates',
+    path: ROUTE_PATHS.adminSettingsEmailTemplates,
     layout: 'shell',
     allowedRoles: ['admin', 'super_admin'],
   },

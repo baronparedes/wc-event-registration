@@ -22,7 +22,7 @@ export {
 export { Skeleton } from './Skeleton';
 export { ActionLink } from './ActionLink';
 export { SlugField } from './SlugField';
-export { Badge } from './Badge';
+export { Badge, type BadgeVariant } from './Badge';
 export { EmptyState } from './EmptyState';
 export { Grid } from './Grid';
 export { Col } from './Grid';

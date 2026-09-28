@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthUsersQuery } from '@/hooks/domain/auth';
+import { useAdminAuthQuery, useAuthUsersQuery } from '@/hooks/domain/auth';
 import { sendAppNotification } from '@/lib/domain/notifications';
 
 import { AdminNotificationsPage } from '../index';
@@ -14,6 +14,7 @@ vi.mock('@/lib/domain/notifications', () => ({
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAuthUsersQuery: vi.fn(),
+  useAdminAuthQuery: vi.fn(),
 }));
 
 describe('AdminNotificationsPage', () => {
@@ -27,6 +28,16 @@ describe('AdminNotificationsPage', () => {
         mutations: { retry: false },
       },
     });
+
+    vi.mocked(useAdminAuthQuery).mockReturnValue({
+      data: {
+        adminRole: 'admin',
+        isAuthenticated: true,
+        session: null,
+      },
+      isLoading: false,
+      error: null,
+    } as never);
 
     vi.mocked(useAuthUsersQuery).mockReturnValue({
       data: [

@@ -6,7 +6,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { AdminPageShell } from '@/components/layout/AdminPageShell';
+import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
   Button,
   FormInputField,
@@ -14,6 +14,7 @@ import {
   FormTextareaField,
   SectionCard,
 } from '@/components/ui';
+import { ROUTE_PATHS } from '@/config/constants';
 import { type AuthUserItem } from '@/hooks/domain/auth';
 import { type SendAppNotificationPayload, sendAppNotification } from '@/lib/domain/notifications';
 
@@ -125,7 +126,13 @@ export function AdminNotificationsPage() {
       <AdminPageShell.Header
         title="App Notifications"
         description="Broadcast push notifications and in-app alerts to users."
+        breadcrumbs={[
+          { label: 'Settings', to: ROUTE_PATHS.adminSettings },
+          { label: 'Notifications' },
+        ]}
       />
+
+      <AdminBaseNavigation />
 
       <AdminPageShell.Content>
         <div className="w-full">
