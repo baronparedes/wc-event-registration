@@ -32,19 +32,19 @@ Deliver end-to-end Google OAuth for Member/SLOD with strict invite-only authoriz
 
 **Relevant files**
 
-- /Users/baronparedes/Documents/projects/wc-event-registration/docs/mvp-3/technical-design-google-oauth.md — Source architecture decisions and risk model to keep scope aligned.
-- /Users/baronparedes/Documents/projects/wc-event-registration/docs/mvp-3/implementation-plan.md — Existing phased sequence to reuse as baseline.
-- /Users/baronparedes/Documents/projects/wc-event-registration/docs/features/9-account-access/9.1-manage-google-access-invites.feature — Invite creation/management acceptance behavior.
-- /Users/baronparedes/Documents/projects/wc-event-registration/docs/features/9-account-access/9.2-google-sign-in.feature — OAuth sign-in scenarios.
-- /Users/baronparedes/Documents/projects/wc-event-registration/docs/features/9-account-access/9.3-invite-access-protection.feature — Denial and protection scenarios.
-- /Users/baronparedes/Documents/projects/wc-event-registration/docs/features/9-account-access/9.4-role-based-account-area.feature — Role landing and visibility behavior.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/pages/admin/login/index.tsx — Existing login orchestration pattern and insertion point for Google entry.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/app/router.tsx — Existing guard pattern and route wiring for callback/account guards.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/lib/infrastructure/supabase.ts — Supabase auth client boundary for OAuth calls.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/hooks/domain/auth/useAdminAuthQuery.ts — Query hook conventions to mirror for account auth state.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/hooks/domain/auth/useAdminLoginMutation.ts — Mutation conventions to mirror for OAuth entry mutation.
-- /Users/baronparedes/Documents/projects/wc-event-registration/src/config/constants/routes.ts — Canonical route constants to extend for callback/account paths.
-- /Users/baronparedes/Documents/projects/wc-event-registration/supabase/config.toml — Redirect and provider-related auth configuration surface.
+- [technical-design-google-oauth.md](../mvp-3/technical-design-google-oauth.md) — Source architecture decisions and risk model to keep scope aligned.
+- [implementation-plan.md](../mvp-3/implementation-plan.md) — Existing phased sequence to reuse as baseline.
+- [9.1-manage-google-access-invites.feature](../../features/9-account-access/9.1-manage-google-access-invites.feature) — Invite creation/management acceptance behavior.
+- [9.2-google-sign-in.feature](../../features/9-account-access/9.2-google-sign-in.feature) — OAuth sign-in scenarios.
+- [9.3-invite-access-protection.feature](../../features/9-account-access/9.3-invite-access-protection.feature) — Denial and protection scenarios.
+- [9.4-role-based-account-area.feature](../../features/9-account-access/9.4-role-based-account-area.feature) — Role landing and visibility behavior.
+- [login/index.tsx](../../../src/pages/login/index.tsx) — Existing login orchestration pattern and insertion point for Google entry.
+- [router.tsx](../../../src/app/router.tsx) — Existing guard pattern and route wiring for callback/account guards.
+- [supabase.ts](../../../src/lib/infrastructure/supabase.ts) — Supabase auth client boundary for OAuth calls.
+- [useAdminAuthQuery.ts](../../../src/hooks/domain/auth/useAdminAuthQuery.ts) — Query hook conventions to mirror for account auth state.
+- [useAdminLoginMutation.ts](../../../src/hooks/domain/auth/useAdminLoginMutation.ts) — Mutation conventions to mirror for OAuth entry mutation.
+- [routes.ts](../../../src/config/constants/routes.ts) — Canonical route constants to extend for callback/account paths.
+- [config.toml](../../../supabase/config.toml) — Redirect and provider-related auth configuration surface.
 
 **Verification**
 

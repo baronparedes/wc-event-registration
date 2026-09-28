@@ -90,22 +90,22 @@ This file contains the core principles, architecture rules, and domain logic con
 
 ## 10. Repository Skills & Specialized Guides (`.agent/skills/`)
 
-The repository maintains specialized skills in [`.agent/skills/`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
+The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
 
 - **React Architecture & Standards**:
-  - [`react-best-practices`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/react-best-practices/SKILL.md): Component decomposition, hook design rules, state colocation, performance, accessibility, and avoiding anti-patterns. Consult when creating, reviewing, or refactoring React components.
-  - [`react-ui-patterns`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/react-ui-patterns/SKILL.md): Repository UI design system patterns, component composition, and layout conventions.
+  - [`react-best-practices`](.agent/skills/react-best-practices/skill.md): Component decomposition, hook design rules, state colocation, performance, accessibility, and avoiding anti-patterns. Consult when creating, reviewing, or refactoring React components.
+  - [`react-ui-patterns`](.agent/skills/react-ui-patterns/skill.md): Repository UI design system patterns, component composition, and layout conventions.
 - **TypeScript & Planning**:
-  - [`typescript-standards`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/typescript-standards/SKILL.md): Strict typing, Zod schema inference, generic patterns, and zero-linter-override policies.
-  - [`deep-planning`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/deep-planning/SKILL.md): Structured planning requirements, clarifying questions, and risk verification.
+  - [`typescript-standards`](.agent/skills/typescript-standards/skill.md): Strict typing, Zod schema inference, generic patterns, and zero-linter-override policies.
+  - [`deep-planning`](.agent/skills/deep-planning/skill.md): Structured planning requirements, clarifying questions, and risk verification.
 - **Backend, Queries & Edge Functions**:
-  - [`domain-hooks`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/domain-hooks/SKILL.md): Rules for authoring TanStack React Query hooks and direct Supabase client queries in `src/hooks/domain/`.
-  - [`domain-logic`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/domain-logic/SKILL.md): Entity business rules, Hub sectioning, Sunday commitment triggers, and service attendance domain boundaries.
-  - [`edge-functions`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/edge-functions/SKILL.md): Supabase Edge Function standards, Deno runtime conventions, security-definer patterns, and CORS configurations.
-  - [`chat-tools`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/chat-tools/SKILL.md): Guidelines for authoring chat tools in `supabase/functions/chat/tools/`, standardized timeframe schemas, and tool parameter validation.
-  - [`background-jobs`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/background-jobs/SKILL.md): Asynchronous database job queues, email queues, retry patterns, and worker logic.
-  - [`database-migrations`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/database-migrations/SKILL.md): Supabase SQL migration authoring rules, timestamp naming conventions, single responsibility decomposition, idempotent DDL/RLS patterns, and RPC signature preservation.
+  - [`domain-hooks`](.agent/skills/domain-hooks/skill.md): Rules for authoring TanStack React Query hooks and direct Supabase client queries in `src/hooks/domain/`.
+  - [`domain-logic`](.agent/skills/domain-logic/skill.md): Entity business rules, Hub sectioning, Sunday commitment triggers, and service attendance domain boundaries.
+  - [`edge-functions`](.agent/skills/edge-functions/skill.md): Supabase Edge Function standards, Deno runtime conventions, security-definer patterns, and CORS configurations.
+  - [`chat-tools`](.agent/skills/chat-tools/SKILL.md): Guidelines for authoring chat tools in `supabase/functions/chat/tools/`, standardized timeframe schemas, and tool parameter validation.
+  - [`background-jobs`](.agent/skills/background-jobs/skill.md): Asynchronous database job queues, email queues, retry patterns, and worker logic.
+  - [`database-migrations`](.agent/skills/database-migrations/SKILL.md): Supabase SQL migration authoring rules, timestamp naming conventions, single responsibility decomposition, idempotent DDL/RLS patterns, and RPC signature preservation.
 - **Data Transformation, Formatting & Testing**:
-  - [`csv-timezone`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/csv-timezone/SKILL.md): CSV parsing/export conventions and timezone conversions (UTC vs Asia/Manila).
-  - [`attendance-json-filter-translator`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/attendance-json-filter-translator/SKILL.md): Translating plain-language filter criteria into structured JSON query filter trees.
-  - [`testing-vitest`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/.agent/skills/testing-vitest/SKILL.md): Vitest mocking patterns, factory utilities, and React Testing Library standards.
+  - [`csv-timezone`](.agent/skills/csv-timezone/skill.md): CSV parsing/export conventions and timezone conversions (UTC vs Asia/Manila).
+  - [`attendance-json-filter-translator`](.agent/skills/attendance-json-filter-translator/skill.md): Translating plain-language filter criteria into structured JSON query filter trees.
+  - [`testing-vitest`](.agent/skills/testing-vitest/skill.md): Vitest mocking patterns, factory utilities, and React Testing Library standards.
