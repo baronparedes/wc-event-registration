@@ -70,7 +70,7 @@ const AdminHubCalendarPage = lazy(() =>
   })),
 );
 const AdminUserRolesPage = lazy(() =>
-  import('../pages/admin/users/roles').then((module) => ({
+  import('../pages/admin/settings/roles').then((module) => ({
     default: module.AdminUserRolesPage,
   })),
 );
@@ -106,8 +106,13 @@ const AdminServiceAttendanceMigrationPage = lazy(() =>
   })),
 );
 const AdminNotificationsPage = lazy(() =>
-  import('../pages/admin/notifications').then((module) => ({
+  import('../pages/admin/settings/notifications').then((module) => ({
     default: module.AdminNotificationsPage,
+  })),
+);
+const AdminSettingsPage = lazy(() =>
+  import('../pages/admin/settings').then((module) => ({
+    default: module.AdminSettingsPage,
   })),
 );
 const AdminSettingsEmailTemplatesPage = lazy(() =>
@@ -320,6 +325,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServiceAttendanceData: AdminServiceAttendanceDataPage,
   adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
   adminNotifications: AdminNotificationsPage,
+  adminSettings: AdminSettingsPage,
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
 };
 

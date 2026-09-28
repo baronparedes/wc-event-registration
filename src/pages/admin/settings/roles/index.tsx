@@ -19,6 +19,7 @@ import {
 } from '@/components/ui';
 import { ActionButton } from '@/components/ui/ActionLink';
 import { Avatar } from '@/components/ui/Avatar';
+import { ROUTE_PATHS } from '@/config/constants';
 import {
   type AdminRole,
   type AdminRoleAssignment,
@@ -77,7 +78,10 @@ export function AdminUserRolesPage() {
       <AdminPageShell.Header
         title="User Roles"
         description="Assign and manage application roles for users."
-        breadcrumbs={[{ label: 'User Roles' }]}
+        breadcrumbs={[
+          { label: 'Settings', to: ROUTE_PATHS.adminSettings },
+          { label: 'User Roles' },
+        ]}
         actions={
           <Button
             type="button"

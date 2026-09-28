@@ -49,11 +49,15 @@ describe('AdminBaseNavigation', () => {
       'href',
       ROUTE_PATHS.adminServices,
     );
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminSettings,
+    );
     // User Roles is super_admin only
     expect(screen.queryByRole('link', { name: 'User Roles' })).not.toBeInTheDocument();
   });
 
-  it('renders User Roles tab when user is super_admin', () => {
+  it('renders standard and admin tabs when user is super_admin', () => {
     vi.mocked(useAdminAuthQuery).mockReturnValue({
       data: {
         adminRole: 'super_admin',
@@ -65,23 +69,32 @@ describe('AdminBaseNavigation', () => {
     } as unknown as ReturnType<typeof useAdminAuthQuery>);
 
     render(
-      <MemoryRouter initialEntries={[ROUTE_PATHS.adminUserRoles]}>
+      <MemoryRouter initialEntries={[ROUTE_PATHS.adminSettings]}>
         <AdminBaseNavigation />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: 'User Roles' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute(
       'href',
-      ROUTE_PATHS.adminUserRoles,
+      ROUTE_PATHS.adminEvents,
     );
-    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Forms' })).toHaveAttribute(
       'href',
-      ROUTE_PATHS.adminServices,
+      ROUTE_PATHS.adminForms,
     );
     expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminMembers,
     );
+    expect(screen.getByRole('link', { name: 'Services' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminServices,
+    );
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminSettings,
+    );
+    expect(screen.queryByRole('link', { name: 'User Roles' })).not.toBeInTheDocument();
   });
 
   it('hides Members, User Roles, and Services for kiosk role', () => {

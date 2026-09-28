@@ -2,7 +2,6 @@ import { type ComponentType, useMemo } from 'react';
 
 import {
   BarChart3,
-  Bell,
   Bot,
   Calendar,
   CalendarDays,
@@ -17,7 +16,6 @@ import {
   Sliders,
   User,
   UserCheck,
-  UserCog,
   UserX,
   Users,
 } from 'lucide-react';
@@ -98,7 +96,6 @@ export function useAppDrawerNavigation({
   const canRead = canAdminPerform(adminRole, 'canReadAdminData');
   const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
   const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
-  const canManageRoles = canAdminPerform(adminRole, 'canManageAdminRoles');
   const canReadDashboard = canAdminPerform(adminRole, 'canReadDashboard');
   const canManageServices = canAdminPerform(adminRole, 'canManageServices');
 
@@ -172,14 +169,6 @@ export function useAppDrawerNavigation({
       });
     }
 
-    if (canManageRoles) {
-      items.push({
-        to: ROUTE_PATHS.adminUserRoles,
-        label: 'Manage Roles',
-        icon: UserCog,
-      });
-    }
-
     if (canManageServices) {
       items.push({
         to: ROUTE_PATHS.adminServices,
@@ -190,13 +179,8 @@ export function useAppDrawerNavigation({
 
     if (canWrite) {
       items.push({
-        to: ROUTE_PATHS.adminNotifications,
-        label: 'Notifications',
-        icon: Bell,
-      });
-      items.push({
-        to: ROUTE_PATHS.adminSettingsEmailTemplates,
-        label: 'Email Templates',
+        to: ROUTE_PATHS.adminSettings,
+        label: 'Settings',
         icon: Settings,
       });
     }
@@ -217,7 +201,6 @@ export function useAppDrawerNavigation({
     canWrite,
     canAccessCheckIn,
     canReadMembers,
-    canManageRoles,
     canManageServices,
   ]);
 
