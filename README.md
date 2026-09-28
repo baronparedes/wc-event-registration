@@ -84,21 +84,29 @@ Admin:
 
 ## Setup
 
-1. Install dependencies
+1. Use the same Node and npm versions as CI (with nvm installed)
 
-   npm install
+   nvm install
+   nvm use
+   npm install --global npm@10.9.2
 
-2. Create environment file
+2. Install from the committed lockfile
+
+   npm ci
+
+   Use npm install only when intentionally changing dependencies, and commit the updated package-lock.json.
+
+3. Create environment file
 
    cp .env.example .env.local
 
-3. Fill environment variables in .env.local
+4. Fill environment variables in .env.local
 
-4. Start dev server
+5. Start dev server
 
    npm run dev
 
-5. Build for production
+6. Build for production
 
    npm run build
 
