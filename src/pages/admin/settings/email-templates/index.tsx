@@ -13,9 +13,9 @@ import {
   ListTableRow,
   SectionCard,
 } from '@/components/ui';
+import { useEmailTemplatesQuery } from '@/hooks/domain/email-templates';
 
 import { EmailTemplateBuilderDialog } from './components/EmailTemplateBuilderDialog';
-import { useEmailTemplatesQuery } from './hooks/useEmailTemplatesQuery';
 
 export function EmailTemplatesPage() {
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);

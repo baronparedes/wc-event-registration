@@ -154,6 +154,9 @@ verify_jwt = true
 [functions.duplicate-form]
 verify_jwt = true
 
+[functions.enqueue-event]
+verify_jwt = true
+
 [functions.event-slot-availability]
 verify_jwt = false
 
@@ -207,6 +210,9 @@ verify_jwt = true
 
 [functions.member-lookup]
 verify_jwt = false
+
+[functions.process-email-queue]
+verify_jwt = true
 
 [functions.public-attendee-lookup]
 verify_jwt = false

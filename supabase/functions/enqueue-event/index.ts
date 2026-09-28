@@ -7,7 +7,7 @@ const enqueueEventSchema = z.object({
   event_type: z.string().min(1),
   recipient: z.string().min(1),
   template_slug: z.string().min(1),
-  metadata: z.record(z.any()),
+  metadata: z.record(z.unknown()),
   idempotency_key: z.string().optional(),
 });
 
@@ -37,20 +37,10 @@ Deno.serve(async (req) => {
       idempotency_key: data.idempotency_key,
     };
 
-    // Use Postgres RPC to enqueue the message to pgmq
-    // The pgmq extension provides pgmq.send('queue_name', jsonb)
-    // We can call it directly using raw postgres rpc, or a wrapper.
-    // Since we didn't expose a specific wrapper, we can query it via rpc if exposed,
-    // or insert directly if we have a wrapper. Let's use the standard supabase approach:
-    // Calling pgmq.send is typically done via a wrapper function if not exposed to postgrest.
-    // Let's create a small RPC in the database migration to safely wrap pgmq.send since pgmq is in a different schema.
-
-    // Instead of doing raw SQL from edge function (which requires a direct DB connection, not postgrest),
-    // we need an RPC wrapper. Let me update the migration first. Let's assume we have `public.enqueue_email_notification`
     const { data: queueResult, error: queueError } = await client.rpc(
       'enqueue_email_notification',
       {
-        payload: payload,
+        payload,
       },
     );
 
@@ -66,10 +56,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Attempt to trigger immediate processing (fire-and-forget)
-    await client.rpc('trigger_email_processor').catch((err) => {
-      console.warn('[enqueue-event] Non-fatal error triggering email processor immediately:', err);
-    });
+    // Attempt to trigger immediate processing (fire-and-forget via pg_net helper)
+    const { error: triggerError } = await client.rpc('trigger_email_processor');
+    if (triggerError) {
+      console.warn(
+        '[enqueue-event] Non-fatal error triggering email processor immediately:',
+        triggerError,
+      );
+    }
 
     return createJsonResponse(
       { success: true, message_id: queueResult },

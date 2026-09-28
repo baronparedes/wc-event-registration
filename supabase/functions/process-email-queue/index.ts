@@ -3,6 +3,7 @@ import { useEdgeHook } from '../_shared/edge.ts';
 import { createJsonResponse, errorResponse } from '../_shared/http.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@welcomechurch.ph';
 
 Deno.serve(async (req) => {
   const hookResult = await useEdgeHook({
@@ -77,26 +78,24 @@ Deno.serve(async (req) => {
         }
 
         // 4. Send email via Resend API
+        const resendBody: Record<string, unknown> = {
+          from: RESEND_FROM_EMAIL,
+          to: payload.recipient,
+          template_id: template.resend_template_id,
+        };
+
+        if (payload.metadata && typeof payload.metadata === 'object') {
+          resendBody.variables = payload.metadata;
+          resendBody.data = payload.metadata;
+        }
+
         const resendResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
-          body: JSON.stringify({
-            from: 'noreply@yourdomain.com', // In a real scenario, this would likely be configurable per template or app-wide
-            to: payload.recipient,
-            template_id: template.resend_template_id,
-            // Pass the metadata as dynamic template variables for Resend
-            // Note: Resend expects an object, we use payload.metadata directly
-            // Resend doesn't support 'template_data' explicitly in the base send API unless using audiences/broadcasts,
-            // but we'll assume the standard Resend React/dynamic approach or tags if they don't support native data.
-            // Wait, Resend templates require `react` or standard HTML interpolation.
-            // If using Resend's native templates (not beta audiences), we need to ensure how they accept data.
-            // Assuming Resend's recent Templates API which uses `react` or similar, we might need to conform to their specific data mapping.
-            // Let's pass metadata as is or however the user's templates are structured.
-            // Assuming Resend's native Templates capability requires `react` prop mapping.
-          }),
+          body: JSON.stringify(resendBody),
         });
 
         if (!resendResponse.ok) {

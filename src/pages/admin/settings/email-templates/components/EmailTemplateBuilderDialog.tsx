@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button, Dialog, FormInputField, FormTextareaField } from '@/components/ui';
-import { supabase } from '@/lib/infrastructure/supabase';
-
-import { useEmailTemplateMutation } from '../hooks/useEmailTemplateMutation';
+import { useEmailTemplateMutation, useEmailTemplateQuery } from '@/hooks/domain/email-templates';
+import type { EmailTemplate } from '@/lib/domain/email-templates';
 
 type Props = {
   isOpen: boolean;
@@ -12,41 +11,19 @@ type Props = {
   onSuccess: () => void;
 };
 
-export function EmailTemplateBuilderDialog({ isOpen, onClose, templateId, onSuccess }: Props) {
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [resendId, setResendId] = useState('');
-  const [variables, setVariables] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+type FormProps = {
+  template?: EmailTemplate | null;
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+function EmailTemplateBuilderForm({ template, onClose, onSuccess }: FormProps) {
+  const [name, setName] = useState(template?.name ?? '');
+  const [slug, setSlug] = useState(template?.slug ?? '');
+  const [resendId, setResendId] = useState(template?.resend_template_id ?? '');
+  const [variables, setVariables] = useState((template?.required_variables || []).join(', '));
 
   const mutation = useEmailTemplateMutation();
-
-  useEffect(() => {
-    if (isOpen && templateId) {
-      setTimeout(() => setIsLoading(true), 0);
-      supabase
-        .from('email_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single()
-        .then(({ data, error }) => {
-          if (data && !error) {
-            setName(data.name);
-            setSlug(data.slug);
-            setResendId(data.resend_template_id);
-            setVariables((data.required_variables || []).join(', '));
-          }
-          setIsLoading(false);
-        });
-    } else if (isOpen && !templateId) {
-      setTimeout(() => {
-        setName('');
-        setSlug('');
-        setResendId('');
-        setVariables('');
-      }, 0);
-    }
-  }, [isOpen, templateId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +33,7 @@ export function EmailTemplateBuilderDialog({ isOpen, onClose, templateId, onSucc
       .filter(Boolean);
 
     await mutation.mutateAsync({
-      id: templateId || undefined,
+      id: template?.id,
       name,
       slug,
       resend_template_id: resendId,
@@ -67,60 +44,71 @@ export function EmailTemplateBuilderDialog({ isOpen, onClose, templateId, onSucc
   };
 
   return (
+    <form onSubmit={handleSubmit}>
+      <Dialog.Body className="space-y-4">
+        <FormInputField
+          label="Template Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Welcome Email"
+          required
+        />
+        <FormInputField
+          label="System Slug"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          placeholder="e.g. welcome_email"
+          helperText="Used by the system to identify this template."
+          required
+        />
+        <FormInputField
+          label="Resend Template ID"
+          value={resendId}
+          onChange={(e) => setResendId(e.target.value)}
+          placeholder="e.g. d-1234567890abcdef"
+          required
+        />
+        <FormTextareaField
+          label="Required Variables (comma separated)"
+          value={variables}
+          onChange={(e) => setVariables(e.target.value)}
+          placeholder="first_name, event_date, invite_link"
+          helperText="These will be passed as dynamic data to Resend."
+        />
+      </Dialog.Body>
+
+      <Dialog.Footer>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="default" disabled={mutation.isPending}>
+          {mutation.isPending ? 'Saving...' : 'Save Template'}
+        </Button>
+      </Dialog.Footer>
+    </form>
+  );
+}
+
+export function EmailTemplateBuilderDialog({ isOpen, onClose, templateId, onSuccess }: Props) {
+  const { data: template, isLoading } = useEmailTemplateQuery(isOpen ? templateId : null);
+
+  return (
     <Dialog isOpen={isOpen} onClose={onClose}>
       <Dialog.Header showCloseButton>
         <Dialog.Title>{templateId ? 'Edit Template Mapping' : 'New Template Mapping'}</Dialog.Title>
         <Dialog.Description>Map a system event slug to a Resend Template ID.</Dialog.Description>
       </Dialog.Header>
 
-      <form onSubmit={handleSubmit}>
-        <Dialog.Body className="space-y-4">
-          {isLoading ? (
-            <div className="py-4 text-center text-muted">Loading...</div>
-          ) : (
-            <>
-              <FormInputField
-                label="Template Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Welcome Email"
-                required
-              />
-              <FormInputField
-                label="System Slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="e.g. welcome_email"
-                helperText="Used by the system to identify this template."
-                required
-              />
-              <FormInputField
-                label="Resend Template ID"
-                value={resendId}
-                onChange={(e) => setResendId(e.target.value)}
-                placeholder="e.g. d-1234567890abcdef"
-                required
-              />
-              <FormTextareaField
-                label="Required Variables (comma separated)"
-                value={variables}
-                onChange={(e) => setVariables(e.target.value)}
-                placeholder="first_name, event_date, invite_link"
-                helperText="These will be passed as dynamic data to Resend."
-              />
-
-              <Dialog.Footer>
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="default" disabled={mutation.isPending}>
-                  {mutation.isPending ? 'Saving...' : 'Save Template'}
-                </Button>
-              </Dialog.Footer>
-            </>
-          )}
-        </Dialog.Body>
-      </form>
+      {templateId && isLoading ? (
+        <Dialog.Body className="py-8 text-center text-muted">Loading...</Dialog.Body>
+      ) : (
+        <EmailTemplateBuilderForm
+          key={templateId ?? 'new'}
+          template={template}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      )}
     </Dialog>
   );
 }
