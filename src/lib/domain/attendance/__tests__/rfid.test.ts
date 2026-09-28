@@ -115,10 +115,10 @@ describe('RFID Utilities', () => {
       public_registration_id: null,
       user_id: 'user-1',
       member_id: '12345',
-      nickname: 'John',
-      last_name: 'Doe',
-      full_name: 'John Doe',
-      email: 'john@example.com',
+      nickname: 'Test',
+      last_name: 'Test Member',
+      full_name: 'Test Member',
+      email: 'member@example.com',
       role: 'member',
       category: 'regular',
       registration_status: 'submitted',
@@ -132,19 +132,19 @@ describe('RFID Utilities', () => {
 
     const mockAttendees: AttendeeSearchResult[] = [
       createMockAttendee({
-        full_name: 'Alice Johnson',
-        nickname: 'Alice',
-        last_name: 'Johnson',
+        full_name: 'Test Alpha',
+        nickname: 'Test Alpha',
+        last_name: 'Test Alpha',
         member_id: String(0x69216c46), // Converted RFID value
-        email: 'alice@example.com',
+        email: 'alpha@example.com',
         registration_id: 'reg-1',
       }),
       createMockAttendee({
-        full_name: 'Bob Smith',
-        nickname: 'Bob',
-        last_name: 'Smith',
+        full_name: 'Test Bravo',
+        nickname: 'Test Bravo',
+        last_name: 'Test Bravo',
         member_id: '12345',
-        email: 'bob@example.com',
+        email: 'bravo@example.com',
         role: 'admin',
         category: 'vip',
         check_in_status: 'checked_in',
@@ -155,43 +155,43 @@ describe('RFID Utilities', () => {
     it('finds attendee by exact decimal member_id (Pass 1)', () => {
       const results = searchAttendeesWithRfidFallback(mockAttendees, '12345');
       expect(results).toHaveLength(1);
-      expect(results[0].full_name).toBe('Bob Smith');
+      expect(results[0].full_name).toBe('Test Bravo');
     });
 
     it('finds attendee by name (Pass 1)', () => {
-      const results = searchAttendeesWithRfidFallback(mockAttendees, 'Alice');
+      const results = searchAttendeesWithRfidFallback(mockAttendees, 'Alpha');
       expect(results).toHaveLength(1);
-      expect(results[0].full_name).toBe('Alice Johnson');
+      expect(results[0].full_name).toBe('Test Alpha');
     });
 
     it('finds attendee by email (Pass 1)', () => {
-      const results = searchAttendeesWithRfidFallback(mockAttendees, 'bob@example');
+      const results = searchAttendeesWithRfidFallback(mockAttendees, 'bravo@example');
       expect(results).toHaveLength(1);
-      expect(results[0].full_name).toBe('Bob Smith');
+      expect(results[0].full_name).toBe('Test Bravo');
     });
 
     it('finds attendee by RFID hex via fallback (Pass 2)', () => {
       const results = searchAttendeesWithRfidFallback(mockAttendees, '466C2169');
       expect(results).toHaveLength(1);
-      expect(results[0].full_name).toBe('Alice Johnson');
+      expect(results[0].full_name).toBe('Test Alpha');
     });
 
     it('prefers Pass 1 results over Pass 2 (does not convert if Pass 1 matches)', () => {
       // If a decimal number happens to match someone's name, use that result
       const attendees: AttendeeSearchResult[] = [
         createMockAttendee({
-          full_name: '12345',
+          full_name: 'Test 12345',
           member_id: 'XXXXX',
         }),
         createMockAttendee({
-          full_name: 'Bob',
+          full_name: 'Test Bravo',
           member_id: '12345',
           registration_id: 'reg-2',
         }),
       ];
 
       const results = searchAttendeesWithRfidFallback(attendees, '12345');
-      // Should match Bob (exact member_id match) first
+      // Should match Test Bravo (exact member_id match) first
       expect(results.length).toBeGreaterThan(0);
     });
 
@@ -206,15 +206,15 @@ describe('RFID Utilities', () => {
     });
 
     it('case-insensitive search', () => {
-      const results = searchAttendeesWithRfidFallback(mockAttendees, 'alice');
+      const results = searchAttendeesWithRfidFallback(mockAttendees, 'alpha');
       expect(results).toHaveLength(1);
-      expect(results[0].full_name).toBe('Alice Johnson');
+      expect(results[0].full_name).toBe('Test Alpha');
     });
 
     it('handles RFID with spaces (Pass 2)', () => {
       const results = searchAttendeesWithRfidFallback(mockAttendees, '46 6C 21 69');
       expect(results).toHaveLength(1);
-      expect(results[0].full_name).toBe('Alice Johnson');
+      expect(results[0].full_name).toBe('Test Alpha');
     });
   });
 });

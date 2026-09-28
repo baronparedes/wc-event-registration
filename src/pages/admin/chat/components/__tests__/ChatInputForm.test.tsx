@@ -17,20 +17,20 @@ describe('ChatInputForm', () => {
   const mockTokenMap = {
     USR_000001: {
       id: 'user-1',
-      name: 'John Doe',
-      fullName: 'John Doe',
-      avatarObjectKey: 'avatars/john-doe.jpg',
-      firstName: 'John',
-      lastName: 'Doe',
-      nickname: 'Johnny',
+      name: 'Test Bravo',
+      fullName: 'Test Bravo',
+      avatarObjectKey: 'avatars/member-1.jpg',
+      firstName: 'Test Bravo',
+      lastName: 'Test Member',
+      nickname: 'Test Bravo Nick',
     },
     USR_000002: {
       id: 'user-2',
-      name: 'Jane Smith',
-      fullName: 'Jane Smith',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      nickname: 'Janey',
+      name: 'Test Alpha',
+      fullName: 'Test Alpha',
+      firstName: 'Test Alpha',
+      lastName: 'Test Member',
+      nickname: 'Test Alpha Nick',
     },
   };
 
@@ -82,18 +82,18 @@ describe('ChatInputForm', () => {
     );
 
     const input = screen.getByPlaceholderText(/Ask/i);
-    fireEvent.change(input, { target: { value: 'Is @joh' } });
+    fireEvent.change(input, { target: { value: 'Is @test b' } });
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /John Doe/ })).toHaveClass('bg-primary/10');
-    expect(screen.getByRole('img', { name: 'Avatar of John Doe' })).toHaveAttribute(
+    expect(screen.getByText('Test Bravo')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Test Bravo/ })).toHaveClass('bg-primary/10');
+    expect(screen.getByRole('img', { name: 'Avatar of Test Bravo' })).toHaveAttribute(
       'data-avatar-object-key',
-      'avatars/john-doe.jpg',
+      'avatars/member-1.jpg',
     );
 
-    fireEvent.mouseDown(screen.getByText('John Doe'));
-    expect(input).toHaveValue('Is @John Doe ');
+    fireEvent.mouseDown(screen.getByText('Test Bravo'));
+    expect(input).toHaveValue('Is @Test Bravo ');
     expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
   });
 
@@ -116,7 +116,7 @@ describe('ChatInputForm', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    expect(input).toHaveValue('@John Doe ');
+    expect(input).toHaveValue('@Test Bravo ');
     expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
   });
 
@@ -132,19 +132,19 @@ describe('ChatInputForm', () => {
     );
 
     const input = screen.getByPlaceholderText(/Ask/i);
-    fireEvent.change(input, { target: { value: '@joh' } });
+    fireEvent.change(input, { target: { value: '@test b' } });
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
 
     // First Enter selects candidate and closes popover
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(input).toHaveValue('@John Doe ');
+    expect(input).toHaveValue('@Test Bravo ');
     expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
     expect(handleSubmit).not.toHaveBeenCalled();
 
     // Second Enter submits the form directly
     fireEvent.submit(input.closest('form')!);
-    expect(handleSubmit).toHaveBeenCalledWith('@John Doe');
+    expect(handleSubmit).toHaveBeenCalledWith('@Test Bravo');
   });
 
   it('dismisses mention popover when Escape is pressed', () => {
@@ -158,7 +158,7 @@ describe('ChatInputForm', () => {
     );
 
     const input = screen.getByPlaceholderText(/Ask/i);
-    fireEvent.change(input, { target: { value: '@joh' } });
+    fireEvent.change(input, { target: { value: '@test b' } });
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
 
@@ -177,7 +177,7 @@ describe('ChatInputForm', () => {
     );
 
     const input = screen.getByPlaceholderText(/Ask/i);
-    fireEvent.change(input, { target: { value: 'Ask @John Doe about Sunday' } });
+    fireEvent.change(input, { target: { value: 'Ask @Test Bravo about Sunday' } });
 
     // The input becomes text-transparent so the backdrop is visible beneath it
     expect(input.className).toContain('text-transparent');
@@ -185,7 +185,7 @@ describe('ChatInputForm', () => {
     // The backdrop renders the styled mention
     const mentionSpan = container.querySelector('span.text-primary.underline');
     expect(mentionSpan).toBeInTheDocument();
-    expect(mentionSpan).toHaveTextContent('@John Doe');
+    expect(mentionSpan).toHaveTextContent('@Test Bravo');
   });
 
   it('submits on Enter keypress without Shift, and does not submit on Shift+Enter', () => {

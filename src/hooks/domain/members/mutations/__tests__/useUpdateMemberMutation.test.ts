@@ -57,7 +57,7 @@ describe('useUpdateMemberMutation', () => {
     const userId = faker.string.uuid();
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
-    const email = faker.internet.email({ firstName, lastName });
+    const email = faker.internet.exampleEmail({ firstName, lastName });
     mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
       data: { metadata: { role: 'old-role', category: 'old-category', other: 'keep' } },
       error: null,

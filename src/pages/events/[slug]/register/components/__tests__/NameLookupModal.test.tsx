@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -54,6 +55,7 @@ describe('NameLookupModal', () => {
 
   it('submits form with name and closes modal on success', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const name = faker.person.fullName();
 
     render(<NameLookupModal onSubmit={onSubmit} isLookupPending={false} />);
 
@@ -65,7 +67,7 @@ describe('NameLookupModal', () => {
     // Fill and submit form
     await act(async () => {
       fireEvent.change(screen.getByLabelText('Your Name'), {
-        target: { value: 'John Doe' },
+        target: { value: name },
       });
     });
 
@@ -76,7 +78,7 @@ describe('NameLookupModal', () => {
     });
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith('John Doe');
+      expect(onSubmit).toHaveBeenCalledWith(name);
     });
 
     // Modal should close after successful submission
@@ -98,7 +100,7 @@ describe('NameLookupModal', () => {
     // Fill and submit form
     await act(async () => {
       fireEvent.change(screen.getByLabelText('Your Name'), {
-        target: { value: 'Jane Smith' },
+        target: { value: faker.person.fullName() },
       });
     });
 

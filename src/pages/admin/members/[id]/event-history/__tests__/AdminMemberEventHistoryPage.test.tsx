@@ -41,7 +41,7 @@ function renderPage() {
   );
 }
 
-const member = makeAdminMember({ full_name: 'Jane Doe', member_id: 'WC-001', role: 'player' });
+const member = makeAdminMember({ member_id: 'WC-001', role: 'player' });
 
 describe('AdminMemberEventHistoryPage', () => {
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe('AdminMemberEventHistoryPage', () => {
     renderPage();
     expect(screen.getByRole('heading', { name: 'Event History' })).toBeInTheDocument();
     // full_name appears in breadcrumb and profile section; assert at least one
-    expect(screen.getAllByText('Jane Doe').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(member.full_name).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('WC-001')).toBeInTheDocument();
     expect(screen.getByText('player')).toBeInTheDocument();
   });

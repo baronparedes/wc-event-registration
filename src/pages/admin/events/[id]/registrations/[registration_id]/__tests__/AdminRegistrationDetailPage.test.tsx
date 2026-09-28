@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -94,6 +95,10 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
     ) : null,
 }));
 
+const memberFullName = faker.person.fullName();
+const memberEmail = faker.internet.exampleEmail();
+const memberNickname = faker.person.firstName();
+
 describe('AdminRegistrationDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -131,8 +136,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -148,7 +153,7 @@ describe('AdminRegistrationDetailPage', () => {
     renderWithRouter();
 
     expect(screen.getByText('Member Information')).toBeInTheDocument();
-    expect(screen.getByText('jane@example.com')).toBeInTheDocument();
+    expect(screen.getByText(memberEmail)).toBeInTheDocument();
     expect(
       screen.getByText('No field responses recorded for this registration.'),
     ).toBeInTheDocument();
@@ -173,8 +178,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -268,12 +273,12 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-002',
-          full_name: 'John Doe',
-          email: 'john@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: '555-1234',
           role: 'captain',
           category: 'adult',
-          nickname: 'JD',
+          nickname: memberNickname,
         },
         fieldResponses: [
           {
@@ -339,7 +344,7 @@ describe('AdminRegistrationDetailPage', () => {
     renderWithRouter();
 
     expect(screen.getByText('pending_review')).toBeInTheDocument();
-    expect(screen.getByText('JD')).toBeInTheDocument();
+    expect(screen.getByText(memberNickname)).toBeInTheDocument();
     expect(screen.getByText('one: Yes, two: No, three: maybe')).toBeInTheDocument();
     expect(screen.getByText('raw')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
@@ -360,8 +365,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -392,8 +397,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -430,8 +435,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -460,8 +465,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -492,8 +497,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -530,8 +535,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -560,8 +565,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',
@@ -599,8 +604,8 @@ describe('AdminRegistrationDetailPage', () => {
         },
         member: {
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
-          email: 'jane@example.com',
+          full_name: memberFullName,
+          email: memberEmail,
           phone: null,
           role: 'player',
           category: 'adult',

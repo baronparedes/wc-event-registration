@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 
 import type { AdminEventField, EventFieldType } from '@/lib/domain/event-fields';
@@ -49,7 +50,7 @@ describe('parsePublicRegistrationCsvText', () => {
   });
 
   it('rejects CSV without required headers', () => {
-    const result = parsePublicRegistrationCsvText('first_name,last_name\nJane,Doe');
+    const result = parsePublicRegistrationCsvText('first_name,last_name\nTest,Sample');
 
     expect(result).toEqual({
       success: false,
@@ -59,7 +60,7 @@ describe('parsePublicRegistrationCsvText', () => {
 
   it('rejects unterminated quoted values', () => {
     const result = parsePublicRegistrationCsvText(
-      'first_name,last_name,email,notes\nJane,Doe,jane@example.com,"needs seat',
+      'first_name,last_name,email,notes\nTest,Sample,test@example.com,"needs seat',
     );
 
     expect(result).toEqual({
@@ -70,7 +71,7 @@ describe('parsePublicRegistrationCsvText', () => {
 
   it('rejects rows with a different number of columns', () => {
     const result = parsePublicRegistrationCsvText(
-      'first_name,last_name,email\nJane,Doe,jane@example.com,extra',
+      'first_name,last_name,email\nTest,Sample,test@example.com,extra',
     );
 
     expect(result).toEqual({
@@ -81,7 +82,7 @@ describe('parsePublicRegistrationCsvText', () => {
 
   it('parses trimmed values, quoted commas, escaped quotes, and CRLF rows', () => {
     const result = parsePublicRegistrationCsvText(
-      'first_name,last_name,email,notes\r\n Jane ,Doe,jane@example.com,"Bring lunch, please"\r\n',
+      'first_name,last_name,email,notes\r\n Test ,Sample,test@example.com,"Bring lunch, please"\r\n',
     );
 
     expect(result).toEqual({
@@ -90,9 +91,9 @@ describe('parsePublicRegistrationCsvText', () => {
         headers: ['first_name', 'last_name', 'email', 'notes'],
         rows: [
           {
-            first_name: 'Jane',
-            last_name: 'Doe',
-            email: 'jane@example.com',
+            first_name: 'Test',
+            last_name: 'Sample',
+            email: 'test@example.com',
             notes: 'Bring lunch, please',
           },
         ],
@@ -111,14 +112,18 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
       makeField('preferences', 'multi_select_toggle'),
       makeField('notes', 'textarea'),
     ];
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = faker.internet.exampleEmail({ firstName, lastName });
+    const nickname = faker.internet.username();
 
     const result = buildBulkPublicRegistrationRowsFromCsv(
       [
         {
-          first_name: ' Jane ',
-          last_name: ' Doe ',
-          email: ' jane@example.com ',
-          nickname: ' J ',
+          first_name: ` ${firstName} `,
+          last_name: ` ${lastName} `,
+          email: ` ${email} `,
+          nickname: ` ${nickname} `,
           phone: ' 09171234567 ',
           public_registration_id: ' reg-1 ',
           age: ' 42 ',
@@ -136,10 +141,10 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
       errors: [],
       rows: [
         {
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
-          nickname: 'J',
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          nickname,
           phone: '09171234567',
           public_registration_id: 'reg-1',
           answers: {
@@ -166,9 +171,9 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
     const result = buildBulkPublicRegistrationRowsFromCsv(
       [
         {
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: 'Test',
+          last_name: 'Sample',
+          email: 'test@example.com',
           age: 'not a number',
           is_ready: 'maybe',
           preferences: 'quiet maybe',
@@ -180,9 +185,9 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
 
     expect(result.errors).toEqual([]);
     expect(result.rows[0]).toEqual({
-      first_name: 'Jane',
-      last_name: 'Doe',
-      email: 'jane@example.com',
+      first_name: 'Test',
+      last_name: 'Sample',
+      email: 'test@example.com',
       nickname: undefined,
       phone: undefined,
       public_registration_id: undefined,
@@ -198,10 +203,15 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
   it('returns errors for required attendee fields and continues with other rows', () => {
     const result = buildBulkPublicRegistrationRowsFromCsv(
       [
-        { first_name: ' ', last_name: 'Doe', email: 'jane@example.com' },
-        { first_name: 'Jane', last_name: ' ', email: 'jane@example.com' },
-        { first_name: 'Jane', last_name: 'Doe', email: ' ' },
-        { first_name: 'John', last_name: 'Smith', email: 'john@example.com', notes: 'Valid row' },
+        { first_name: ' ', last_name: 'Sample', email: 'test@example.com' },
+        { first_name: 'Test', last_name: ' ', email: 'test@example.com' },
+        { first_name: 'Test', last_name: 'Sample', email: ' ' },
+        {
+          first_name: 'Sample',
+          last_name: 'Test',
+          email: 'sample@example.com',
+          notes: 'Valid row',
+        },
       ],
       [makeField('notes', 'text')],
     );
@@ -213,9 +223,9 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
     ]);
     expect(result.rows).toEqual([
       {
-        first_name: 'John',
-        last_name: 'Smith',
-        email: 'john@example.com',
+        first_name: 'Sample',
+        last_name: 'Test',
+        email: 'sample@example.com',
         nickname: undefined,
         phone: undefined,
         public_registration_id: undefined,
@@ -228,9 +238,9 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
     const result = buildBulkPublicRegistrationRowsFromCsv(
       [
         {
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: 'Test',
+          last_name: 'Sample',
+          email: 'test@example.com',
           included: 'yes',
           excluded: 'no',
         },
@@ -249,9 +259,9 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
       buildBulkPublicRegistrationRowsFromCsv(
         [
           {
-            first_name: 'Jane',
-            last_name: 'Doe',
-            email: 'jane@example.com',
+            first_name: 'Test',
+            last_name: 'Sample',
+            email: 'test@example.com',
             preferences: ': true',
           },
         ],
@@ -262,9 +272,9 @@ describe('buildBulkPublicRegistrationRowsFromCsv', () => {
       buildBulkPublicRegistrationRowsFromCsv(
         [
           {
-            first_name: 'Jane',
-            last_name: 'Doe',
-            email: 'jane@example.com',
+            first_name: 'Test',
+            last_name: 'Sample',
+            email: 'test@example.com',
             preferences: 'quiet: maybe',
           },
         ],

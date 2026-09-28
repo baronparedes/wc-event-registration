@@ -31,9 +31,9 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
         user_id: 'u-1',
         member_id: 'MEM-001',
         avatar_object_key: null,
-        full_name: 'Jane Doe',
-        nickname: 'JD',
-        email: 'jane@example.com',
+        full_name: 'Test Alpha',
+        nickname: 'Test A',
+        email: 'test.alpha@example.com',
         role: 'Usher',
         category: 'Women',
         start_date: '2025-01-01',
@@ -54,9 +54,9 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
         user_id: 'u-2',
         member_id: 'MEM-002',
         avatar_object_key: null,
-        full_name: 'John Smith',
-        nickname: 'Johnny',
-        email: 'john@example.com',
+        full_name: 'Test Bravo',
+        nickname: 'Test B',
+        email: 'test.bravo@example.com',
         role: 'Greeter',
         category: 'Men',
         start_date: '2025-02-01',
@@ -85,7 +85,7 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
       start_date: '2025-01-01',
       end_date: '2025-03-31',
       timeframe: 'Q1',
-      search_query: 'Jane',
+      search_query: 'Test Alpha',
       role: 'Usher',
       category: 'Women',
     });
@@ -97,7 +97,7 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
       p_start_date: '2025-01-01',
       p_end_date: '2025-03-31',
       p_excuse_event_id: null,
-      p_search_query: 'Jane',
+      p_search_query: 'Test Alpha',
       p_role: 'Usher',
       p_category: 'Women',
       p_page: 1,
@@ -108,7 +108,7 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
       p_start_date: '2025-01-01',
       p_end_date: '2025-03-31',
       p_excuse_event_id: null,
-      p_search_query: 'Jane',
+      p_search_query: 'Test Alpha',
       p_role: 'Usher',
       p_category: 'Women',
       p_page: 2,
@@ -117,8 +117,8 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
 
     expect(output.totalCount).toBe(2);
     expect(output.filename).toMatch(/^service-commitment-q1-\d{8}-\d{6}\.csv$/);
-    expect(output.csvText).toContain('Jane Doe');
-    expect(output.csvText).toContain('John Smith');
+    expect(output.csvText).toContain('Test Alpha');
+    expect(output.csvText).toContain('Test Bravo');
   });
 
   it('throws error when first page RPC fails', async () => {

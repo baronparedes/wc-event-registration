@@ -36,8 +36,8 @@ const onSave = vi.fn();
 function renderAvatar(overrides: Partial<React.ComponentProps<typeof EditableMemberAvatar>> = {}) {
   return render(
     <EditableMemberAvatar
-      name="Jane Doe"
-      avatarObjectKey="avatars/jane.jpg"
+      name="Test Member"
+      avatarObjectKey="avatars/member.jpg"
       isSaving={false}
       onSave={onSave}
       {...overrides}
@@ -99,7 +99,7 @@ describe('EditableMemberAvatar', () => {
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith('data:image/jpeg;base64,uploaded-photo'),
     );
-    expect(screen.getByRole('img', { name: 'Jane Doe' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Test Member' })).toHaveAttribute(
       'src',
       'data:image/jpeg;base64,uploaded-photo',
     );
@@ -128,7 +128,7 @@ describe('EditableMemberAvatar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Capture photo' }));
 
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('data:image/jpeg;base64,camera-photo'));
-    expect(screen.getByRole('img', { name: 'Jane Doe' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Test Member' })).toHaveAttribute(
       'src',
       'data:image/jpeg;base64,camera-photo',
     );
@@ -180,6 +180,6 @@ describe('EditableMemberAvatar', () => {
     });
 
     expect(await screen.findByText('Upload failed.')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Jane Doe' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Test Member' })).toBeInTheDocument();
   });
 });

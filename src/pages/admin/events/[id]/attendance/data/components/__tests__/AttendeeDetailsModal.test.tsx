@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -14,10 +15,10 @@ describe('AttendeeDetailsModal', () => {
     registration_id: 'reg-1',
     public_registration_id: null,
     member_id: 'MID-001',
-    nickname: 'John',
-    last_name: 'Doe',
-    full_name: 'John Doe',
-    email: 'john@example.com',
+    nickname: faker.person.firstName(),
+    last_name: faker.person.lastName(),
+    full_name: faker.person.fullName(),
+    email: faker.internet.exampleEmail(),
     role: 'admin',
     category: 'staff',
     check_in_status: 'not_checked_in',
@@ -100,9 +101,9 @@ describe('AttendeeDetailsModal', () => {
       />,
     );
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText(baseRegistrant.full_name)).toBeInTheDocument();
     expect(screen.getByText('Member ID: MID-001')).toBeInTheDocument();
-    expect(screen.getByText('Email: john@example.com')).toBeInTheDocument();
+    expect(screen.getByText(`Email: ${baseRegistrant.email}`)).toBeInTheDocument();
     expect(screen.getByText('Role: admin')).toBeInTheDocument();
     expect(screen.getByText('Category: staff')).toBeInTheDocument();
   });

@@ -66,10 +66,10 @@ describe('useCurrentProfileQuery', () => {
   });
 
   it('returns mapped member profile when session email matches a member', async () => {
-    const userEmail = faker.internet.email();
+    const userEmail = faker.internet.exampleEmail();
     const member = makeAdminMember({
       email: userEmail,
-      nickname: 'Alex',
+      nickname: faker.person.firstName(),
       role: 'player',
       category: 'adult',
     });

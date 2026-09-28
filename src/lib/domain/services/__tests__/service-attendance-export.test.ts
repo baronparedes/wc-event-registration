@@ -17,12 +17,12 @@ describe('service-attendance-export', () => {
     });
 
     it('returns untouched string if no special characters exist', () => {
-      expect(escapeServiceCsvValue('Jane Doe')).toBe('Jane Doe');
+      expect(escapeServiceCsvValue('Test Member')).toBe('Test Member');
       expect(escapeServiceCsvValue('12345')).toBe('12345');
     });
 
     it('wraps with quotes if value contains commas, quotes, or newlines', () => {
-      expect(escapeServiceCsvValue('Doe, Jane')).toBe('"Doe, Jane"');
+      expect(escapeServiceCsvValue('Member, Test')).toBe('"Member, Test"');
       expect(escapeServiceCsvValue('He said "Hello"')).toBe('"He said ""Hello"""');
 
       expect(escapeServiceCsvValue('Line 1\nLine 2')).toBe('"Line 1\nLine 2"');
@@ -108,8 +108,8 @@ describe('service-attendance-export', () => {
         },
         user: {
           member_id: 'MEM-001',
-          full_name: 'Doe, Jane',
-          nickname: 'Jane',
+          full_name: 'Test Member, Sample',
+          nickname: 'Sample',
           avatar_object_key: null,
         },
       },
@@ -126,8 +126,8 @@ describe('service-attendance-export', () => {
       expect(lines[0]).toBe(
         'Full Name,Nickname,Member ID,RFID,Service Date,Time Slot,Role,Status,Checked In At,Table,Seat,Area',
       );
-      expect(lines[1]).toContain('"Doe, Jane"');
-      expect(lines[1]).toContain('Jane');
+      expect(lines[1]).toContain('"Test Member, Sample"');
+      expect(lines[1]).toContain('Sample');
       expect(lines[1]).toContain('MEM-001');
       expect(lines[1]).toContain('RFID001');
       expect(lines[1]).toContain('2026-03-15');

@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 
@@ -21,9 +22,9 @@ const mockVolunteer = {
   user_id: 'user-1',
   member_id: 'member-1',
   avatar_object_key: null,
-  full_name: 'Herminio Fajardo',
-  nickname: 'Hermie',
-  email: 'hermie@example.com',
+  full_name: faker.person.fullName(),
+  nickname: faker.person.firstName(),
+  email: faker.internet.exampleEmail(),
   role: 'Prayer Coach / Backroom',
   category: 'Ministry',
   start_date: '2025-04-08',
@@ -87,9 +88,13 @@ describe('VolunteerAttendanceModal', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: /Herminio Fajardo/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        name: (accessibleName) => accessibleName.includes(mockVolunteer.full_name),
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('avatar')).toBeInTheDocument();
-    expect(screen.getByText('(Hermie)')).toBeInTheDocument();
+    expect(screen.getByText(`(${mockVolunteer.nickname})`)).toBeInTheDocument();
     expect(screen.getByText('YTD · Year to Date')).toBeInTheDocument();
 
     // Check section headers

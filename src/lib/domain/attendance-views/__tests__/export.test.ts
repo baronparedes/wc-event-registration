@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
@@ -12,9 +13,9 @@ function makeAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchR
     public_registration_id: null,
     user_id: 'user-1',
     member_id: 'MID-001',
-    nickname: 'Alpha',
-    last_name: 'Member',
-    full_name: 'Alpha Member',
+    nickname: 'Test Alpha',
+    last_name: 'Test Member',
+    full_name: 'Test Alpha Member',
     email: 'alpha@example.com',
     role: 'Member',
     category: 'Adult',
@@ -36,7 +37,7 @@ describe('attendance-views export', () => {
       attendee_kind: 'registered',
       registration_id: 'reg-100',
       member_id: 'MID-100',
-      full_name: 'Registered Person',
+      full_name: 'Test Registered',
       email: 'registered@example.com',
       role: 'Member',
       category: 'Adult',
@@ -49,7 +50,7 @@ describe('attendance-views export', () => {
       registration_id: 'fallback-public-reg',
       public_registration_id: 'pub-200',
       member_id: null,
-      full_name: 'Public Person',
+      full_name: 'Test Public',
       email: 'public@example.com',
       role: null,
       category: null,
@@ -70,9 +71,9 @@ describe('attendance-views export', () => {
               registration_id: 'reg-100',
               public_registration_id: null,
               member_id: 'MID-100',
-              nickname: 'Registered',
-              last_name: 'Person',
-              full_name: 'Registered Person',
+              nickname: 'Test Registered',
+              last_name: 'Test Person',
+              full_name: 'Test Registered',
               email: 'registered@example.com',
               role: 'Member',
               category: 'Adult',
@@ -84,9 +85,9 @@ describe('attendance-views export', () => {
               registration_id: null,
               public_registration_id: 'pub-200',
               member_id: null,
-              nickname: 'Public',
-              last_name: 'Person',
-              full_name: 'Public Person',
+              nickname: 'Test Public',
+              last_name: 'Test Person',
+              full_name: 'Test Public',
               email: 'public@example.com',
               role: null,
               category: null,
@@ -108,10 +109,10 @@ describe('attendance-views export', () => {
       'group,attendee_kind,registration_id,public_registration_id,member_id,full_name,email,role,category,check_in_status,official_check_in_time',
     );
     expect(lines[1]).toBe(
-      'All attendees,registered,reg-100,,MID-100,Registered Person,registered@example.com,Member,Adult,checked_in,2026-07-22T10:00:00.000Z',
+      'All attendees,registered,reg-100,,MID-100,Test Registered,registered@example.com,Member,Adult,checked_in,2026-07-22T10:00:00.000Z',
     );
     expect(lines[2]).toBe(
-      'All attendees,public,,pub-200,,Public Person,public@example.com,,,not_checked_in,',
+      'All attendees,public,,pub-200,,Test Public,public@example.com,,,not_checked_in,',
     );
   });
 
@@ -151,9 +152,9 @@ describe('attendance-views export', () => {
               registration_id: 'reg-num',
               public_registration_id: null,
               member_id: 'MID-001',
-              nickname: 'Num',
-              last_name: 'Person',
-              full_name: 'Num Person',
+              nickname: 'Test Num',
+              last_name: 'Test Person',
+              full_name: 'Test Num Person',
               email: null,
               role: null,
               category: null,
@@ -212,9 +213,9 @@ describe('attendance-views export', () => {
               registration_id: 'reg-101',
               public_registration_id: null,
               member_id: 'MID-001',
-              nickname: 'Alpha',
-              last_name: 'Member',
-              full_name: 'Alpha Member',
+              nickname: 'Test Alpha',
+              last_name: 'Test Member',
+              full_name: 'Test Alpha Member',
               email: 'alpha@example.com',
               role: 'Member',
               category: 'Adult',
@@ -243,7 +244,7 @@ describe('attendance-views export', () => {
   it('escapes csv values with commas, quotes, and new lines', () => {
     const attendee = makeAttendee({
       registration_id: 'reg-quote',
-      full_name: 'Quoted "Name"',
+      full_name: 'Test "Quoted"',
       email: 'comma@example.com',
       registration_answers: [
         {
@@ -270,9 +271,9 @@ describe('attendance-views export', () => {
               registration_id: 'reg-quote',
               public_registration_id: null,
               member_id: 'MID-001',
-              nickname: 'Quoted',
-              last_name: 'Name',
-              full_name: 'Quoted "Name"',
+              nickname: 'Test Quoted',
+              last_name: 'Test Name',
+              full_name: 'Test "Quoted"',
               email: 'comma@example.com',
               role: 'Member',
               category: 'Adult',
@@ -287,7 +288,7 @@ describe('attendance-views export', () => {
     });
 
     expect(result.csvText).toContain('"All, attendees"');
-    expect(result.csvText).toContain('"Quoted ""Name"""');
+    expect(result.csvText).toContain('"Test ""Quoted"""');
     expect(result.csvText).toContain('"Line 1\nLine 2, with comma"');
   });
 
@@ -305,9 +306,9 @@ describe('attendance-views export', () => {
               registration_id: 'reg-missing',
               public_registration_id: null,
               member_id: 'MID-999',
-              nickname: 'Missing',
-              last_name: 'Person',
-              full_name: 'Missing Person',
+              nickname: 'Test Missing',
+              last_name: 'Test Person',
+              full_name: 'Test Missing',
               email: null,
               role: null,
               category: null,
@@ -323,17 +324,22 @@ describe('attendance-views export', () => {
 
     const lines = result.csvText.split('\n');
     expect(lines[1]).toBe(
-      'All attendees,registered,reg-missing,,MID-999,Missing Person,,,,not_checked_in,',
+      'All attendees,registered,reg-missing,,MID-999,Test Missing,,,,not_checked_in,',
     );
   });
 
   describe('buildDashboardCheckInsCsvExport', () => {
     it('builds csv for checked-in attendees in dashboard format', () => {
+      const nickname1 = faker.person.firstName();
+      const lastName1 = faker.person.lastName();
+      const nickname2 = faker.person.firstName();
+      const lastName2 = faker.person.lastName();
+
       const checkedIn1 = makeAttendee({
         registration_id: 'reg-1',
-        nickname: 'Alice',
-        last_name: 'Smith',
-        full_name: 'Alice Smith',
+        nickname: nickname1,
+        last_name: lastName1,
+        full_name: `${nickname1} ${lastName1}`,
         official_check_in_time: '2026-07-22T08:00:00.000Z',
         check_in_status: 'checked_in',
         slot_records: [
@@ -344,9 +350,9 @@ describe('attendance-views export', () => {
 
       const checkedIn2 = makeAttendee({
         registration_id: 'reg-2',
-        nickname: 'Bob',
-        last_name: 'Jones',
-        full_name: 'Bob Jones',
+        nickname: nickname2,
+        last_name: lastName2,
+        full_name: `${nickname2} ${lastName2}`,
         official_check_in_time: '2026-07-22T09:00:00.000Z',
         check_in_status: 'checked_in',
         slot_records: [
@@ -369,10 +375,10 @@ describe('attendance-views export', () => {
 
       const lines = result.csvText.split('\n');
       expect(lines[0]).toBe('#,Name,Check-In Time,Slot Record,Role');
-      // Most recent first: Bob (09:00), then Alice (08:00)
-      expect(lines[1]).toContain('2,Bob Jones,2026-07-22T09:00:00.000Z,');
+      // Most recent first: attendee 2 (09:00), then attendee 1 (08:00)
+      expect(lines[1]).toContain(`2,${nickname2} ${lastName2},2026-07-22T09:00:00.000Z,`);
       expect(lines[1]).toContain('VIP');
-      expect(lines[2]).toContain('1,Alice Smith,2026-07-22T08:00:00.000Z,');
+      expect(lines[2]).toContain(`1,${nickname1} ${lastName1},2026-07-22T08:00:00.000Z,`);
       expect(lines[2]).toContain('Member');
     });
   });

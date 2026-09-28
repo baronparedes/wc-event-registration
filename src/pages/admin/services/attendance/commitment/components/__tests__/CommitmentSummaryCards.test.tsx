@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
@@ -11,9 +12,9 @@ describe('CommitmentSummaryCards', () => {
       user_id: '1',
       member_id: 'MEM-001',
       avatar_object_key: null,
-      full_name: 'Alice',
-      nickname: 'Ali',
-      email: 'alice@example.com',
+      full_name: faker.person.fullName(),
+      nickname: faker.person.firstName(),
+      email: faker.internet.exampleEmail(),
       role: 'Usher',
       category: 'Women',
       start_date: '2025-01-01',
@@ -30,9 +31,9 @@ describe('CommitmentSummaryCards', () => {
       user_id: '2',
       member_id: 'MEM-002',
       avatar_object_key: null,
-      full_name: 'Bob',
-      nickname: 'Bobby',
-      email: 'bob@example.com',
+      full_name: faker.person.fullName(),
+      nickname: faker.person.firstName(),
+      email: faker.internet.exampleEmail(),
       role: 'Greeter',
       category: 'Men',
       start_date: '2025-02-01',

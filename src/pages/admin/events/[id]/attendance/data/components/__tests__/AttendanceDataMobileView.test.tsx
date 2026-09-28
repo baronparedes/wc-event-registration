@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,15 +8,20 @@ import type { DynamicFieldRef } from '@/lib/domain/attendance-views';
 
 import { AttendanceDataMobileView } from '../AttendanceDataMobileView';
 
+const nickname = faker.person.firstName();
+const lastName = faker.person.lastName();
+const fullName = `${nickname} ${lastName}`;
+const email = faker.internet.exampleEmail();
+
 const sampleRegistrant: RegistrantAttendanceRow = {
   registration_id: 'reg-1',
   public_registration_id: null,
   attendee_kind: 'registered',
   member_id: 'm-1',
-  nickname: 'John',
-  last_name: 'Doe',
-  full_name: 'John Doe',
-  email: 'john@example.com',
+  nickname,
+  last_name: lastName,
+  full_name: fullName,
+  email,
   check_in_status: 'checked_in',
   answers: [],
 };
@@ -26,10 +32,10 @@ const sampleAttendee: AttendeeSearchResult = {
   user_id: 'u-1',
   attendee_kind: 'registered',
   member_id: 'm-1',
-  nickname: 'John',
-  last_name: 'Doe',
-  full_name: 'John Doe',
-  email: 'john@example.com',
+  nickname,
+  last_name: lastName,
+  full_name: fullName,
+  email,
   role: 'member',
   category: 'adult',
   registration_status: 'submitted',
@@ -86,7 +92,7 @@ describe('AttendanceDataMobileView', () => {
       />,
     );
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText(fullName)).toBeInTheDocument();
 
     const editBtn = screen.getByRole('button', { name: 'Edit attendance details' });
     fireEvent.click(editBtn);

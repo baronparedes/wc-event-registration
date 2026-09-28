@@ -1,15 +1,17 @@
+import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 
 import { createMemberSchema, updateMemberSchema } from '@/lib/domain/members';
 
 describe('members schemas', () => {
   it('accepts valid create member input', () => {
+    const email = faker.internet.exampleEmail();
     const parsed = createMemberSchema.parse({
       member_id: 'WC-001',
-      first_name: 'Jane',
-      last_name: 'Doe',
-      nickname: 'J',
-      email: 'jane.doe@example.com',
+      first_name: faker.person.firstName(),
+      last_name: faker.person.lastName(),
+      nickname: faker.person.firstName(),
+      email,
       phone: '+15551234567',
       date_of_birth: '1995-10-12',
       role: 'player',
@@ -17,7 +19,7 @@ describe('members schemas', () => {
     });
 
     expect(parsed.member_id).toBe('WC-001');
-    expect(parsed.email).toBe('jane.doe@example.com');
+    expect(parsed.email).toBe(email);
   });
 
   it('rejects create member input when required fields are missing', () => {
@@ -39,8 +41,8 @@ describe('members schemas', () => {
   it('rejects create member input with invalid email', () => {
     const parsed = createMemberSchema.safeParse({
       member_id: 'WC-002',
-      first_name: 'John',
-      last_name: 'Smith',
+      first_name: faker.person.firstName(),
+      last_name: faker.person.lastName(),
       nickname: '',
       email: 'not-an-email',
       phone: '',
@@ -53,11 +55,13 @@ describe('members schemas', () => {
   });
 
   it('accepts valid update member input with optional blank values', () => {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
     const parsed = updateMemberSchema.parse({
       full_name: '',
-      first_name: 'Jane',
-      last_name: 'Doe',
-      nickname: 'Janie',
+      first_name: firstName,
+      last_name: lastName,
+      nickname: faker.person.firstName(),
       email: '',
       phone: '',
       date_of_birth: '',
@@ -66,7 +70,7 @@ describe('members schemas', () => {
       metadata_entries: [],
     });
 
-    expect(parsed.full_name).toBe('Jane Doe');
+    expect(parsed.full_name).toBe(`${firstName} ${lastName}`);
   });
 
   it('rejects update member input when required fields are missing', () => {
@@ -88,10 +92,10 @@ describe('members schemas', () => {
   it('rejects update member input with invalid date format', () => {
     const parsed = updateMemberSchema.safeParse({
       full_name: '',
-      first_name: 'Jane',
-      last_name: 'Doe',
-      nickname: 'Janie',
-      email: 'jane.doe@example.com',
+      first_name: faker.person.firstName(),
+      last_name: faker.person.lastName(),
+      nickname: faker.person.firstName(),
+      email: faker.internet.exampleEmail(),
       phone: '',
       date_of_birth: '12/10/1995',
       role: 'player',

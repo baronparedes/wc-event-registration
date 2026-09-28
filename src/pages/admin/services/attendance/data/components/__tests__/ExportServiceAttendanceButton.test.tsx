@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,9 +26,9 @@ const mockAttendanceRecords: ServiceAttendance[] = [
     service_seats: { id: 'seat-1', table_number: '12', seat_number: '1', area: 'Main' },
     user: {
       member_id: 'RFID001',
-      full_name: 'Jane Doe',
-      nickname: 'Jane',
-      avatar_object_key: 'avatars/jane.jpg',
+      full_name: faker.person.fullName(),
+      nickname: faker.person.firstName(),
+      avatar_object_key: 'avatars/member.jpg',
     },
   },
 ];

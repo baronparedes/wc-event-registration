@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,10 +13,10 @@ function makeAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchR
     public_registration_id: null,
     user_id: 'user-1',
     member_id: 'MID-001',
-    nickname: 'Alpha',
-    last_name: 'Member',
-    full_name: 'Alpha Member',
-    email: 'alpha@example.com',
+    nickname: faker.person.firstName(),
+    last_name: faker.person.lastName(),
+    full_name: faker.person.fullName(),
+    email: faker.internet.exampleEmail(),
     role: 'Member',
     category: 'Adult',
     registration_status: 'submitted',
@@ -53,7 +54,9 @@ describe('ExportDashboardCheckInsButton', () => {
   });
 
   it('triggers CSV download on click', () => {
-    const checkedIn = [makeAttendee({ nickname: 'John', last_name: 'Doe' })];
+    const checkedIn = [
+      makeAttendee({ nickname: faker.person.firstName(), last_name: faker.person.lastName() }),
+    ];
 
     render(
       <ExportDashboardCheckInsButton

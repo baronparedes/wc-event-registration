@@ -9,24 +9,24 @@ vi.mock('@/hooks/domain/members', () => ({
 
 describe('MilestoneAvatar', () => {
   it('renders avatar with birthday cake badge', () => {
-    render(<MilestoneAvatar name="Baron Geisler" type="birthday" size="sm" />);
+    render(<MilestoneAvatar name="Test Bravo" type="birthday" size="sm" />);
 
-    expect(screen.getByText('BG')).toBeInTheDocument();
+    expect(screen.getByText('TB')).toBeInTheDocument();
     expect(screen.getByTitle('Birthday')).toBeInTheDocument();
   });
 
   it('renders avatar with wedding anniversary heart badge in md size', () => {
-    render(<MilestoneAvatar name="Chris Smith" type="wedding_anniversary" size="md" />);
+    render(<MilestoneAvatar name="Sample Charlie" type="wedding_anniversary" size="md" />);
 
-    expect(screen.getByText('CS')).toBeInTheDocument();
+    expect(screen.getByText('SC')).toBeInTheDocument();
     expect(screen.getByTitle('Wedding Anniversary')).toBeInTheDocument();
   });
 
   it('supports custom className and lg size', () => {
     render(
-      <MilestoneAvatar name="Alex Doe" type="birthday" size="lg" className="test-avatar-class" />,
+      <MilestoneAvatar name="Test Alpha" type="birthday" size="lg" className="test-avatar-class" />,
     );
 
-    expect(screen.getByText('AD')).toBeInTheDocument();
+    expect(screen.getByText('TA')).toBeInTheDocument();
   });
 });

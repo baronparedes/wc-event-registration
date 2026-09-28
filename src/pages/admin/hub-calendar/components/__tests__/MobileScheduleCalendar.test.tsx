@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -16,16 +17,19 @@ vi.mock('@/components/ui', () => ({
   ),
 }));
 
+const firstName = faker.person.firstName();
+const lastName = faker.person.lastName();
+
 const mockMember: AdminMember = {
   id: 'm1',
   member_id: 'MEM-001',
   avatar_object_key: null,
   is_active: true,
-  first_name: 'John',
-  last_name: 'Doe',
-  nickname: 'Johnny',
-  full_name: 'John Doe',
-  email: 'john@example.com',
+  first_name: firstName,
+  last_name: lastName,
+  nickname: faker.person.firstName(),
+  full_name: `${firstName} ${lastName}`,
+  email: faker.internet.exampleEmail({ firstName, lastName }),
   phone: '123-456',
   date_of_birth: '1990-05-15',
   role: 'Usher',
@@ -43,17 +47,17 @@ describe('MobileScheduleCalendar', () => {
     const scheduleEntries: MemberScheduleEntry[] = [
       { member: mockMember, sundayKey: 'first_sunday', timeSlots: ['9AM'] },
       {
-        member: { ...mockMember, id: 'm2', full_name: 'Jane' },
+        member: { ...mockMember, id: 'm2', full_name: faker.person.fullName() },
         sundayKey: 'first_sunday',
         timeSlots: ['9AM'],
       },
       {
-        member: { ...mockMember, id: 'm3', full_name: 'Bob' },
+        member: { ...mockMember, id: 'm3', full_name: faker.person.fullName() },
         sundayKey: 'first_sunday',
         timeSlots: ['9AM'],
       },
       {
-        member: { ...mockMember, id: 'm4', full_name: 'Alice' },
+        member: { ...mockMember, id: 'm4', full_name: faker.person.fullName() },
         sundayKey: 'first_sunday',
         timeSlots: ['9AM'],
       },
@@ -64,9 +68,13 @@ describe('MobileScheduleCalendar', () => {
       {
         id: 'ms2',
         type: 'wedding_anniversary',
-        member: { ...mockMember, id: 'm2', full_name: 'Jane' },
+        member: { ...mockMember, id: 'm2', full_name: faker.person.fullName() },
       },
-      { id: 'ms3', type: 'birthday', member: { ...mockMember, id: 'm3', full_name: 'Bob' } },
+      {
+        id: 'ms3',
+        type: 'birthday',
+        member: { ...mockMember, id: 'm3', full_name: faker.person.fullName() },
+      },
     ];
 
     const mobileWeekCells: WeekCell[] = [

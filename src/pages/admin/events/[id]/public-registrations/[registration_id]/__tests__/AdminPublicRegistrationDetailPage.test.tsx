@@ -74,12 +74,23 @@ vi.mock('@/hooks/utils', async () => {
 describe('AdminPublicRegistrationDetailPage', () => {
   let testEventId: string;
   let testRegistrationId: string;
+  let attendeeFirstName: string;
+  let attendeeLastName: string;
+  let attendeeEmail: string;
+  let attendeeNickname: string;
   const mockShowError = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     testEventId = faker.string.uuid();
     testRegistrationId = faker.string.uuid();
+    attendeeFirstName = faker.person.firstName();
+    attendeeLastName = faker.person.lastName();
+    attendeeEmail = faker.internet.exampleEmail({
+      firstName: attendeeFirstName,
+      lastName: attendeeLastName,
+    });
+    attendeeNickname = faker.internet.username();
 
     mockUseParams.mockReturnValue({
       id: testEventId,
@@ -198,11 +209,11 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: '555-1234',
-          nickname: 'JD',
+          nickname: attendeeNickname,
           status: 'submitted',
           submitted_at: '2026-07-04T12:00:00Z',
           updated_at: '2026-07-04T12:00:00Z',
@@ -239,14 +250,16 @@ describe('AdminPublicRegistrationDetailPage', () => {
       expect(screen.getByText('Summer Event 2026')).toBeInTheDocument();
       expect(screen.getByText('Public Registrations')).toBeInTheDocument();
 
-      // Check registration details appear (there will be multiple "Jane Doe" - in breadcrumb and detail)
-      const janeNames = screen.getAllByText(/Jane\s+Doe/);
-      expect(janeNames.length).toBeGreaterThanOrEqual(1);
+      // Check registration details appear (there will be multiple attendee names - in breadcrumb and detail)
+      const attendeeNames = screen.getAllByText(
+        new RegExp(`${attendeeFirstName}\\s+${attendeeLastName}`),
+      );
+      expect(attendeeNames.length).toBeGreaterThanOrEqual(1);
 
       // Check registration details
-      expect(screen.getByText('jane@example.com')).toBeInTheDocument();
+      expect(screen.getByText(attendeeEmail)).toBeInTheDocument();
       expect(screen.getByText('555-1234')).toBeInTheDocument();
-      expect(screen.getByText('JD')).toBeInTheDocument();
+      expect(screen.getByText(attendeeNickname)).toBeInTheDocument();
     });
 
     it('renders attendee information section', () => {
@@ -254,9 +267,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'John',
-          last_name: 'Smith',
-          email: 'john@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -296,8 +309,8 @@ describe('AdminPublicRegistrationDetailPage', () => {
       expect(screen.getByText('Email')).toBeInTheDocument();
       expect(screen.getByText('Phone')).toBeInTheDocument();
       // Verify all sections rendered by checking for multiple elements
-      const johnElements = screen.getAllByText(/Smith/);
-      expect(johnElements.length).toBeGreaterThan(0);
+      const attendeeElements = screen.getAllByText(new RegExp(attendeeLastName));
+      expect(attendeeElements.length).toBeGreaterThan(0);
     });
 
     it('renders registration details section with status', () => {
@@ -305,9 +318,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -352,9 +365,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -418,9 +431,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -463,9 +476,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -515,9 +528,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -586,9 +599,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -639,9 +652,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -684,9 +697,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -736,9 +749,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -789,9 +802,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -835,9 +848,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -881,9 +894,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'updated',
@@ -929,9 +942,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -982,9 +995,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1045,9 +1058,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1106,9 +1119,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1169,9 +1182,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1216,9 +1229,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1262,9 +1275,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1338,9 +1351,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1385,9 +1398,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1445,9 +1458,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1503,9 +1516,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -1565,9 +1578,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -1625,9 +1638,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'cancelled',
@@ -1694,9 +1707,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'submitted',
@@ -1751,9 +1764,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
         registration: {
           id: testRegistrationId,
           event_id: testEventId,
-          first_name: 'Jane',
-          last_name: 'Doe',
-          email: 'jane@example.com',
+          first_name: attendeeFirstName,
+          last_name: attendeeLastName,
+          email: attendeeEmail,
           phone: null,
           nickname: null,
           status: 'pending',
@@ -1809,9 +1822,9 @@ describe('AdminPublicRegistrationDetailPage', () => {
           registration: {
             id: testRegistrationId,
             event_id: testEventId,
-            first_name: 'Jane',
-            last_name: 'Doe',
-            email: 'jane@example.com',
+            first_name: attendeeFirstName,
+            last_name: attendeeLastName,
+            email: attendeeEmail,
             phone: null,
             nickname: null,
             status: 'submitted',

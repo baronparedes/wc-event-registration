@@ -35,12 +35,12 @@ describe('ServiceAttendanceMigrationPanel', () => {
           {
             items: [
               {
-                id: 'user-sarah',
+                id: 'user-2',
                 member_id: '8888',
-                full_name: 'Sarah Connor',
-                first_name: 'Sarah',
-                last_name: 'Connor',
-                nickname: 'Sarah',
+                full_name: 'Test Bravo Member',
+                first_name: 'Test Bravo',
+                last_name: 'Test Member',
+                nickname: 'Test Bravo',
               },
             ],
           },
@@ -67,12 +67,12 @@ describe('ServiceAttendanceMigrationPanel', () => {
     mockUseLookupUsersByNamesQuery.mockReturnValue({
       data: [
         {
-          id: 'user-marrion',
+          id: 'user-1',
           member_id: '1322281947',
-          full_name: 'Marrion Rivera',
-          first_name: 'Marrion',
-          last_name: 'Rivera',
-          nickname: 'Bong',
+          full_name: 'Test Alpha Member',
+          first_name: 'Test Alpha',
+          last_name: 'Test Surname',
+          nickname: 'Test Nick',
         },
       ],
       isLoading: false,
@@ -91,7 +91,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV content
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Test Nick Test Surname,Usher',
       ',3/8/2026,09:00:00,9AM,999,Unknown Person,Attendee',
     ].join('\n');
 
@@ -112,8 +112,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
       expect(screen.getByText('Preview (2 rows)')).toBeInTheDocument();
     });
 
-    // Bong Rivera should resolve to Marrion Rivera via nickname + last name matching
-    expect(screen.getByText('Marrion Rivera')).toBeInTheDocument();
+    // Nickname + last name should resolve to Test Alpha Member via nickname + last name matching
+    expect(screen.getByText('Test Alpha Member')).toBeInTheDocument();
     // Table 105 should map to Usher / Backroom / IMT / VMT
     const usherCells = screen.getAllByText('Usher / Backroom / IMT / VMT');
     expect(usherCells.length).toBeGreaterThan(0);
@@ -129,13 +129,13 @@ describe('ServiceAttendanceMigrationPanel', () => {
     expect(
       screen.getByText('Member "Unknown Person" (RFID: N/A) not found in system.'),
     ).toBeInTheDocument();
-    expect(screen.queryByText('Marrion Rivera')).not.toBeInTheDocument();
+    expect(screen.queryByText('Test Alpha Member')).not.toBeInTheDocument();
 
     // Switch to valid filter view
     const validFilterBtn = screen.getByRole('tab', { name: /Valid/i });
     fireEvent.click(validFilterBtn);
 
-    expect(screen.getByText('Marrion Rivera')).toBeInTheDocument();
+    expect(screen.getByText('Test Alpha Member')).toBeInTheDocument();
     expect(screen.queryByText(/Unknown Person/)).not.toBeInTheDocument();
   });
 
@@ -155,7 +155,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name',
-      '1322281947,3/8/2026,09:00:00,9AM,10,Bong Rivera',
+      '1322281947,3/8/2026,09:00:00,9AM,10,Test Nick Test Surname',
     ].join('\n');
     const file = new File([csvContent], 'attendance.csv', { type: 'text/csv' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -190,7 +190,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 1 valid and 1 invalid row
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Test Nick Test Surname,Usher',
       ',3/8/2026,09:00:00,9AM,999,Unknown Person,Attendee',
     ].join('\n');
 
@@ -239,7 +239,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
         layout_id: 'layout-1',
         rows: [
           expect.objectContaining({
-            user_id: 'user-marrion',
+            user_id: 'user-1',
             rfid: '1322281947',
             service_date: '2026-03-08',
             time_slot: '9AM',
@@ -264,7 +264,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 1 valid row (table 105 maps to seat-usher) and 1 invalid row (table 10 maps to seat-10)
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Test Nick Test Surname,Usher',
       ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');
 
@@ -293,11 +293,11 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     // MatchMemberModal opens
     expect(screen.getByText('Match Member for Row #3')).toBeInTheDocument();
-    expect(screen.getByText('Sarah Connor')).toBeInTheDocument();
+    expect(screen.getByText('Test Bravo Member')).toBeInTheDocument();
 
-    // Select Sarah Connor
-    const sarahBtn = screen.getByRole('button', { name: /Sarah Connor/i });
-    fireEvent.click(sarahBtn);
+    // Select member
+    const memberBtn = screen.getByRole('button', { name: /Test Bravo Member/i });
+    fireEvent.click(memberBtn);
 
     // Click Assign Member
     const assignBtn = screen.getByRole('button', { name: 'Assign Member' });
@@ -305,7 +305,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     // 4. Row 2 should now be valid and Matched badge displayed
     await waitFor(() => {
-      expect(screen.getByText('Sarah Connor')).toBeInTheDocument();
+      expect(screen.getByText('Test Bravo Member')).toBeInTheDocument();
       expect(screen.getByText('Matched')).toBeInTheDocument();
       expect(screen.queryByText(/1 with error/i)).not.toBeInTheDocument();
     });
@@ -325,12 +325,12 @@ describe('ServiceAttendanceMigrationPanel', () => {
         layout_id: 'layout-1',
         rows: [
           expect.objectContaining({
-            user_id: 'user-marrion',
+            user_id: 'user-1',
             rfid: '1322281947',
             service_seat_id: 'seat-usher',
           }),
           expect.objectContaining({
-            user_id: 'user-sarah',
+            user_id: 'user-2',
             rfid: '8888',
             service_seat_id: 'seat-10',
           }),
@@ -353,7 +353,7 @@ describe('ServiceAttendanceMigrationPanel', () => {
     // 2. Upload CSV with 3 rows: 1 valid, 2 failed rows sharing the same name "Unknown Person"
     const csvContent = [
       'RFID,Date,Time,Time_Slot,Table,Name,Role',
-      ',3/8/2026,09:00:00,9AM,105,Bong Rivera,Usher',
+      ',3/8/2026,09:00:00,9AM,105,Test Nick Test Surname,Usher',
       ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
       ',3/8/2026,09:00:00,9AM,10,Unknown Person,Attendee',
     ].join('\n');
@@ -381,9 +381,9 @@ describe('ServiceAttendanceMigrationPanel', () => {
     const matchBtns = screen.getAllByRole('button', { name: /Match Member|Edit Match/i });
     fireEvent.click(matchBtns[1]);
 
-    // Select Sarah Connor
-    const sarahBtn = screen.getByRole('button', { name: /Sarah Connor/i });
-    fireEvent.click(sarahBtn);
+    // Select member
+    const memberBtn = screen.getByRole('button', { name: /Test Bravo Member/i });
+    fireEvent.click(memberBtn);
 
     // Bulk match checkbox is visible and checked by default for 1 other matching failed row
     expect(
@@ -396,8 +396,8 @@ describe('ServiceAttendanceMigrationPanel', () => {
 
     // 4. Both failed rows are now matched and valid!
     await waitFor(() => {
-      const sarahInstances = screen.getAllByText('Sarah Connor');
-      expect(sarahInstances.length).toBe(2);
+      const memberInstances = screen.getAllByText('Test Bravo Member');
+      expect(memberInstances.length).toBe(2);
       expect(screen.queryByText(/with errors/i)).not.toBeInTheDocument();
     });
 
@@ -413,9 +413,9 @@ describe('ServiceAttendanceMigrationPanel', () => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
         layout_id: 'layout-1',
         rows: [
-          expect.objectContaining({ user_id: 'user-marrion' }),
-          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-08' }),
-          expect.objectContaining({ user_id: 'user-sarah', service_date: '2026-03-08' }),
+          expect.objectContaining({ user_id: 'user-1' }),
+          expect.objectContaining({ user_id: 'user-2', service_date: '2026-03-08' }),
+          expect.objectContaining({ user_id: 'user-2', service_date: '2026-03-08' }),
         ],
       });
     });

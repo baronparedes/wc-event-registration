@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,13 +38,14 @@ describe('useAdminMembersImportSnapshotQuery', () => {
   });
 
   it('returns normalized snapshot rows', async () => {
+    const lastName = faker.person.lastName();
     mockQueryBuilder.order.mockResolvedValueOnce({
       data: [
         {
           id: 'member-1',
           member_id: 'RFID-1',
           first_name: null,
-          last_name: 'Doe',
+          last_name: lastName,
           nickname: null,
           is_active: true,
         },
@@ -62,7 +64,7 @@ describe('useAdminMembersImportSnapshotQuery', () => {
         id: 'member-1',
         member_id: 'RFID-1',
         first_name: '',
-        last_name: 'Doe',
+        last_name: lastName,
         nickname: '',
         is_active: true,
       },

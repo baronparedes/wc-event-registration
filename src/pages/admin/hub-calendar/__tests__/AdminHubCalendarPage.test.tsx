@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -33,16 +34,19 @@ vi.mock('@/hooks/utils', () => ({
 const now = new Date();
 const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
 
+const firstName = faker.person.firstName();
+const lastName = faker.person.lastName();
+
 const sampleMember: AdminMember = {
   id: 'm1',
   member_id: 'MEM-001',
   avatar_object_key: null,
   is_active: true,
-  first_name: 'John',
-  last_name: 'Doe',
-  nickname: 'Johnny',
-  full_name: 'John Doe',
-  email: 'john@example.com',
+  first_name: firstName,
+  last_name: lastName,
+  nickname: faker.person.firstName(),
+  full_name: `${firstName} ${lastName}`,
+  email: faker.internet.exampleEmail({ firstName, lastName }),
   phone: '123-456',
   date_of_birth: `1990-${currentMonthStr}-15`,
   role: 'Usher',
@@ -166,7 +170,12 @@ describe('AdminHubCalendarPage', () => {
       data: [
         sampleSchedule,
         {
-          member: { ...sampleMember, id: 'm2', full_name: 'Jane Smith', role: 'Greeter' },
+          member: {
+            ...sampleMember,
+            id: 'm2',
+            full_name: faker.person.fullName(),
+            role: 'Greeter',
+          },
           sundayKey: 'first_sunday',
           timeSlots: ['9AM'],
         },
@@ -219,7 +228,7 @@ describe('AdminHubCalendarPage', () => {
     fireEvent.click(allFilter);
 
     // Click member card
-    const memberCard = screen.getByText('John Doe');
+    const memberCard = screen.getByText(sampleMember.full_name);
     fireEvent.click(memberCard);
 
     // Click second Sunday (which has no schedules)

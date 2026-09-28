@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +14,12 @@ vi.mock('sonner', () => ({
   },
 }));
 
+const memberFullName = `${faker.person.firstName()} ${faker.person.lastName()}`;
+const memberEmail = faker.internet.exampleEmail();
+const guestFirstName = faker.person.firstName();
+const guestLastName = faker.person.lastName();
+const guestEmail = faker.internet.exampleEmail();
+
 const mockMemberSubmission: FormSubmission = {
   id: 'sub-1',
   form_id: 'form-123',
@@ -26,8 +33,8 @@ const mockMemberSubmission: FormSubmission = {
   updated_at: '2026-01-15T10:30:00Z',
   users: {
     member_id: 'WC-001',
-    full_name: 'Jane Doe',
-    email: 'jane@example.com',
+    full_name: memberFullName,
+    email: memberEmail,
   },
   form_submission_answers: [
     {
@@ -211,9 +218,9 @@ const mockGuestSubmission: FormSubmission = {
   idempotency_key: null,
   user_id: null,
   public_registrant_info: {
-    first_name: 'Bob',
-    last_name: 'Guest',
-    email: 'bob@example.com',
+    first_name: guestFirstName,
+    last_name: guestLastName,
+    email: guestEmail,
     phone: '09991234567',
   },
   submitted_at: '2026-01-16T14:00:00Z',
@@ -245,9 +252,9 @@ describe('SubmissionDetailDialog', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Submission Details' })).toBeInTheDocument();
-    expect(screen.getAllByText(/Jane Doe/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(memberFullName)).length).toBeGreaterThan(0);
     expect(screen.getByText('WC-001')).toBeInTheDocument();
-    expect(screen.getByText('jane@example.com')).toBeInTheDocument();
+    expect(screen.getByText(memberEmail)).toBeInTheDocument();
     expect(screen.getByText('sub-1')).toBeInTheDocument();
 
     // Check answers
@@ -267,8 +274,10 @@ describe('SubmissionDetailDialog', () => {
       <SubmissionDetailDialog submission={mockGuestSubmission} isOpen={true} onClose={onClose} />,
     );
 
-    expect(screen.getAllByText(/Bob Guest/).length).toBeGreaterThan(0);
-    expect(screen.getByText('bob@example.com')).toBeInTheDocument();
+    expect(
+      screen.getAllByText(new RegExp(`${guestFirstName} ${guestLastName}`)).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(guestEmail)).toBeInTheDocument();
     expect(screen.getByText('09991234567')).toBeInTheDocument();
     expect(screen.getByText('No answers captured for this submission.')).toBeInTheDocument();
   });

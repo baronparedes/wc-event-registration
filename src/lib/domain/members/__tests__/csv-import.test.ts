@@ -14,10 +14,10 @@ function makePreparedRow(
   return {
     row_number: 2,
     member_id: 'RFID-1',
-    first_name: 'John',
-    last_name: 'Doe',
-    nickname: 'JD',
-    email: 'john@example.com',
+    first_name: 'Test John',
+    last_name: 'Test Doe',
+    nickname: 'Test JD',
+    email: 'test.member@example.com',
     phone: '12345',
     date_of_birth: '1990-01-01',
     role: 'Prayer Coach',
@@ -33,9 +33,9 @@ function makeExistingMember(
   return {
     id: 'member-1',
     member_id: 'RFID-1',
-    first_name: 'John',
-    last_name: 'Doe',
-    nickname: 'JD',
+    first_name: 'Test John',
+    last_name: 'Test Doe',
+    nickname: 'Test JD',
     is_active: true,
     ...overrides,
   };
@@ -51,7 +51,7 @@ describe('parseMemberCsvText', () => {
   });
 
   it('returns error for unterminated quotes', () => {
-    const result = parseMemberCsvText('RFID,Firstname\n"abc,John');
+    const result = parseMemberCsvText('RFID,Firstname\n"abc,Test John');
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toContain('Unterminated quoted value');
@@ -67,7 +67,9 @@ describe('parseMemberCsvText', () => {
   });
 
   it('returns error for duplicate normalized headers', () => {
-    const csv = ['RFID,rfid,Firstname,Surname,Nickname', '1,1,John,Doe,JD'].join('\n');
+    const csv = ['RFID,rfid,Firstname,Surname,Nickname', '1,1,Test John,Test Doe,Test JD'].join(
+      '\n',
+    );
     const result = parseMemberCsvText(csv);
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -78,7 +80,7 @@ describe('parseMemberCsvText', () => {
   it('returns error when headers collide after canonicalization', () => {
     const csv = [
       'RFID,Firstname,Surname,Nickname,1st Sunday,first_sunday',
-      '1,John,Doe,JD,9AM,12NN',
+      '1,Test John,Test Doe,Test JD,9AM,12NN',
     ].join('\n');
     const result = parseMemberCsvText(csv);
     expect(result.success).toBe(false);
@@ -89,7 +91,7 @@ describe('parseMemberCsvText', () => {
   });
 
   it('returns error for mismatched column count', () => {
-    const csv = ['RFID,Firstname,Surname,Nickname', '1,John,Doe'].join('\n');
+    const csv = ['RFID,Firstname,Surname,Nickname', '1,Test John,Test Doe'].join('\n');
     const result = parseMemberCsvText(csv);
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -100,7 +102,7 @@ describe('parseMemberCsvText', () => {
   it('parses valid csv and keeps header-based mapping', () => {
     const csv = [
       'Surname,Role,RFID,Nickname,Firstname,SR_PWD',
-      'Doe,Prayer Coach,123,JD,John,1',
+      'Test Doe,Prayer Coach,123,Test JD,Test John,1',
     ].join('\n');
 
     const result = parseMemberCsvText(csv);
@@ -115,22 +117,22 @@ describe('parseMemberCsvText', () => {
         'SR_PWD',
       ]);
       expect(result.data.rows[0]).toEqual({
-        Surname: 'Doe',
+        Surname: 'Test Doe',
         Role: 'Prayer Coach',
         RFID: '123',
-        Nickname: 'JD',
-        Firstname: 'John',
+        Nickname: 'Test JD',
+        Firstname: 'Test John',
         SR_PWD: '1',
       });
     }
   });
 
   it('parses escaped quotes and CRLF rows', () => {
-    const csv = 'RFID,Firstname,Surname,Nickname\r\n1,"Jo""hn",Doe,JD\r\n';
+    const csv = 'RFID,Firstname,Surname,Nickname\r\n1,"Test Jo""hn",Test Doe,Test JD\r\n';
     const result = parseMemberCsvText(csv);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.rows[0].Firstname).toBe('Jo"hn');
+      expect(result.data.rows[0].Firstname).toBe('Test Jo"hn');
     }
   });
 });
@@ -139,16 +141,16 @@ describe('buildMemberCsvPreparedRows', () => {
   it('maps aliases, promotes role/category, and normalizes booleans', () => {
     const result = buildMemberCsvPreparedRows([
       {
-        Surname: 'Doe',
+        Surname: 'Test Doe',
         Role: 'Prayer Coach',
         Category: 'Adults',
         RFID: '123',
-        Nickname: 'JD',
-        Firstname: 'John',
+        Nickname: 'Test JD',
+        Firstname: 'Test John',
         SR_PWD: '1',
         IsOIC: 'false',
         '1st Sunday': '9AM, 12NN',
-        Email: 'john@example.com',
+        Email: 'test.member@example.com',
         Phone: '0917',
         DateOfBirth: '1990-01-01',
       },
@@ -159,10 +161,10 @@ describe('buildMemberCsvPreparedRows', () => {
     expect(result.rows[0]).toMatchObject({
       row_number: 2,
       member_id: '123',
-      first_name: 'John',
-      last_name: 'Doe',
-      nickname: 'JD',
-      email: 'john@example.com',
+      first_name: 'Test John',
+      last_name: 'Test Doe',
+      nickname: 'Test JD',
+      email: 'test.member@example.com',
       phone: '0917',
       date_of_birth: '1990-01-01',
       role: 'Prayer Coach',
@@ -179,7 +181,7 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         RFID: '1',
-        Firstname: 'A',
+        Firstname: 'Test A',
         Surname: 'B',
         Nickname: 'C',
         Role: 'R',
@@ -188,7 +190,7 @@ describe('buildMemberCsvPreparedRows', () => {
       },
       {
         RFID: '2',
-        Firstname: 'D',
+        Firstname: 'Test D',
         Surname: 'E',
         Nickname: 'F',
         Role: 'R',
@@ -215,7 +217,7 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         RFID: '1',
-        Firstname: 'A',
+        Firstname: 'Test A',
         Surname: 'B',
         Nickname: 'C',
         Role: 'R',
@@ -261,9 +263,9 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         member_id: 'A-1',
-        first_name: 'Ann',
-        last_name: 'Lee',
-        nickname: 'Annie',
+        first_name: 'Test Ann',
+        last_name: 'Test Lee',
+        nickname: 'Test Annie',
         role: 'Role A',
         category: 'Category A',
         email: '   ',
@@ -282,9 +284,9 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         member_id: 'A-2',
-        first_name: 'Bob',
-        last_name: 'Lee',
-        nickname: 'BL',
+        first_name: 'Test Bob',
+        last_name: 'Test Lee',
+        nickname: 'Test BL',
         role: 'Role B',
         category: 'Category B',
         '!!!': 'some value',
@@ -299,9 +301,9 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         RFID: 'A-3',
-        Firstname: 'Nina',
-        Surname: 'Roe',
-        Nickname: 'NR',
+        Firstname: 'Test Nina',
+        Surname: 'Test Roe',
+        Nickname: 'Test NR',
         Role: 'Prayer Coach',
         Category: 'Women',
         IsOIC: '1',
@@ -312,9 +314,9 @@ describe('buildMemberCsvPreparedRows', () => {
       },
       {
         RFID: 'A-4',
-        Firstname: 'Jake',
-        Surname: 'Poe',
-        Nickname: 'JP',
+        Firstname: 'Test Jake',
+        Surname: 'Test Poe',
+        Nickname: 'Test JP',
         Role: 'Usher',
         Category: 'Men',
         '2ndSunday': '9AM',
@@ -346,36 +348,36 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         member_id: 'D-1',
-        first_name: 'D',
-        last_name: 'D',
-        nickname: 'D',
+        first_name: 'Test D',
+        last_name: 'Test D',
+        nickname: 'Test D',
         role: 'Role',
         category: 'Cat',
         date_of_birth: '1/2/2023',
       },
       {
         member_id: 'D-2',
-        first_name: 'D',
-        last_name: 'D',
-        nickname: 'D',
+        first_name: 'Test D',
+        last_name: 'Test D',
+        nickname: 'Test D',
         role: 'Role',
         category: 'Cat',
         date_of_birth: '12/31/99',
       },
       {
         member_id: 'D-3',
-        first_name: 'D',
-        last_name: 'D',
-        nickname: 'D',
+        first_name: 'Test D',
+        last_name: 'Test D',
+        nickname: 'Test D',
         role: 'Role',
         category: 'Cat',
         date_of_birth: '05/06/05',
       },
       {
         member_id: 'D-4',
-        first_name: 'D',
-        last_name: 'D',
-        nickname: 'D',
+        first_name: 'Test D',
+        last_name: 'Test D',
+        nickname: 'Test D',
         role: 'Role',
         category: 'Cat',
         date_of_birth: '  2/3/80  ',
@@ -393,54 +395,54 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         member_id: 'S-1',
-        first_name: 'Sara',
-        last_name: 'Tan',
-        nickname: 'Sara',
+        first_name: 'Test Sara',
+        last_name: 'Test Tan',
+        nickname: 'Test Sara',
         role: 'Role',
         category: 'Cat',
         'Start Date': '2024-05-15',
       },
       {
         member_id: 'S-2',
-        first_name: 'Sam',
-        last_name: 'Tan',
-        nickname: 'Sam',
+        first_name: 'Test Sam',
+        last_name: 'Test Tan',
+        nickname: 'Test Sam',
         role: 'Role',
         category: 'Cat',
         startdate: '1/20/2023',
       },
       {
         member_id: 'S-3',
-        first_name: 'Seth',
-        last_name: 'Tan',
-        nickname: 'Seth',
+        first_name: 'Test Seth',
+        last_name: 'Test Tan',
+        nickname: 'Test Seth',
         role: 'Role',
         category: 'Cat',
         'Date Joined': '2025-01-01T08:00:00.000Z',
       },
       {
         member_id: 'S-4',
-        first_name: 'Sue',
-        last_name: 'Tan',
-        nickname: 'Sue',
+        first_name: 'Test Sue',
+        last_name: 'Test Tan',
+        nickname: 'Test Sue',
         role: 'Role',
         category: 'Cat',
         joined_date: '11/05/24',
       },
       {
         member_id: 'S-5',
-        first_name: 'Sid',
-        last_name: 'Tan',
-        nickname: 'Sid',
+        first_name: 'Test Sid',
+        last_name: 'Test Tan',
+        nickname: 'Test Sid',
         role: 'Role',
         category: 'Cat',
         start_date: 'invalid-date-string',
       },
       {
         member_id: 'S-6',
-        first_name: 'Sky',
-        last_name: 'Tan',
-        nickname: 'Sky',
+        first_name: 'Test Sky',
+        last_name: 'Test Tan',
+        nickname: 'Test Sky',
         role: 'Role',
         category: 'Cat',
         start_date: '   ',
@@ -460,9 +462,9 @@ describe('buildMemberCsvPreparedRows', () => {
     const result = buildMemberCsvPreparedRows([
       {
         member_id: 'M-1',
-        first_name: 'M',
-        last_name: 'M',
-        nickname: 'M',
+        first_name: 'Test M',
+        last_name: 'Test M',
+        nickname: 'Test M',
         role: 'Role',
         category: 'Cat',
         'Some Meta': '  ',
@@ -485,9 +487,9 @@ describe('buildMemberCsvImportPreview', () => {
       makeExistingMember({
         id: 'member-2',
         member_id: 'RFID-2',
-        first_name: 'Jane',
-        last_name: 'Roe',
-        nickname: 'JR',
+        first_name: 'Test Jane',
+        last_name: 'Test Roe',
+        nickname: 'Test JR',
       }),
     ];
 
@@ -496,16 +498,16 @@ describe('buildMemberCsvImportPreview', () => {
       makePreparedRow({
         row_number: 3,
         member_id: 'NEW-RFID',
-        first_name: 'Jane',
-        last_name: 'Roe',
-        nickname: 'JR',
+        first_name: 'Test Jane',
+        last_name: 'Test Roe',
+        nickname: 'Test JR',
       }),
       makePreparedRow({
         row_number: 4,
         member_id: 'RFID-3',
-        first_name: 'Carl',
-        last_name: 'Kent',
-        nickname: 'CK',
+        first_name: 'Test Carl',
+        last_name: 'Test Kent',
+        nickname: 'Test CK',
       }),
     ];
 
@@ -526,7 +528,12 @@ describe('buildMemberCsvImportPreview', () => {
   it('marks duplicate member IDs in csv as errors', () => {
     const rows = [
       makePreparedRow({ row_number: 2, member_id: 'DUP' }),
-      makePreparedRow({ row_number: 3, member_id: 'DUP', first_name: 'Ann', nickname: 'A' }),
+      makePreparedRow({
+        row_number: 3,
+        member_id: 'DUP',
+        first_name: 'Test Ann',
+        nickname: 'Test A',
+      }),
     ];
 
     const preview = buildMemberCsvImportPreview(rows, []);
@@ -564,21 +571,21 @@ describe('buildMemberCsvImportPreview', () => {
 
   it('marks conflicting RFID match vs triplet match as error', () => {
     const existing = [
-      makeExistingMember({ id: 'rfid-match', member_id: 'RFID-1', first_name: 'John' }),
+      makeExistingMember({ id: 'rfid-match', member_id: 'RFID-1', first_name: 'Test John' }),
       makeExistingMember({
         id: 'triplet-match',
         member_id: 'RFID-2',
-        first_name: 'Jane',
-        last_name: 'Roe',
-        nickname: 'JR',
+        first_name: 'Test Jane',
+        last_name: 'Test Roe',
+        nickname: 'Test JR',
       }),
     ];
 
     const row = makePreparedRow({
       member_id: 'RFID-1',
-      first_name: 'Jane',
-      last_name: 'Roe',
-      nickname: 'JR',
+      first_name: 'Test Jane',
+      last_name: 'Test Roe',
+      nickname: 'Test JR',
     });
 
     const preview = buildMemberCsvImportPreview([row], existing);
@@ -592,9 +599,9 @@ describe('buildMemberCsvImportPreview', () => {
         makePreparedRow({
           row_number: 2,
           member_id: 'RFID-1',
-          first_name: 'Other',
-          last_name: 'Person',
-          nickname: 'OP',
+          first_name: 'Test Other',
+          last_name: 'Test Person',
+          nickname: 'Test OP',
         }),
         makePreparedRow({ row_number: 3, member_id: 'NEW-1' }),
       ],
@@ -609,9 +616,9 @@ describe('buildMemberCsvImportPreview', () => {
     const existing = [
       makeExistingMember({
         id: 'member-1',
-        first_name: 'John  ',
-        last_name: 'DOE',
-        nickname: ' jd',
+        first_name: 'Test John  ',
+        last_name: 'Test DOE',
+        nickname: 'Test jd',
       }),
     ];
 
@@ -619,9 +626,9 @@ describe('buildMemberCsvImportPreview', () => {
       [
         makePreparedRow({
           member_id: 'NEW-RFID',
-          first_name: '  jOhn',
-          last_name: 'doe  ',
-          nickname: 'Jd',
+          first_name: 'Test jOhn',
+          last_name: 'Test doe  ',
+          nickname: 'Test Jd',
         }),
       ],
       existing,
@@ -636,9 +643,9 @@ describe('buildMemberCsvImportPreview', () => {
       makeExistingMember({
         id: 'member-1',
         member_id: 'RFID-1',
-        first_name: 'John',
-        last_name: 'Doe',
-        nickname: 'JD',
+        first_name: 'Test John',
+        last_name: 'Test Doe',
+        nickname: 'Test JD',
       }),
     ];
 
@@ -646,9 +653,9 @@ describe('buildMemberCsvImportPreview', () => {
       [
         makePreparedRow({
           member_id: 'RFID-1',
-          first_name: 'John',
-          last_name: 'Doe',
-          nickname: 'JD',
+          first_name: 'Test John',
+          last_name: 'Test Doe',
+          nickname: 'Test JD',
         }),
       ],
       existing,
@@ -664,9 +671,9 @@ describe('buildMemberCsvImportPreview', () => {
       makeExistingMember({
         id: 'member-1',
         member_id: 'RFID-1',
-        first_name: 'John',
-        last_name: 'Doe',
-        nickname: 'JD',
+        first_name: 'Test John',
+        last_name: 'Test Doe',
+        nickname: 'Test JD',
       }),
     ];
 
@@ -675,16 +682,16 @@ describe('buildMemberCsvImportPreview', () => {
         makePreparedRow({
           row_number: 2,
           member_id: 'RFID-1',
-          first_name: 'Other',
-          last_name: 'Person',
-          nickname: 'OP',
+          first_name: 'Test Other',
+          last_name: 'Test Person',
+          nickname: 'Test OP',
         }), // Matches by RFID
         makePreparedRow({
           row_number: 3,
           member_id: 'NEW-RFID',
-          first_name: 'John',
-          last_name: 'Doe',
-          nickname: 'JD',
+          first_name: 'Test John',
+          last_name: 'Test Doe',
+          nickname: 'Test JD',
         }), // Matches by Triplet
       ],
       existing,

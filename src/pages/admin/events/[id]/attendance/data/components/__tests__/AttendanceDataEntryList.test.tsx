@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -93,16 +94,19 @@ describe('AttendanceDataEntryList', () => {
   });
 
   it('renders default core columns and hides attendance field columns', () => {
+    const nickname = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = faker.internet.exampleEmail();
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
         registration_id: 'reg-1',
         public_registration_id: null,
         member_id: 'MID-001',
-        nickname: 'Jane',
-        last_name: 'Doe',
-        full_name: 'Jane Doe',
-        email: 'jane@example.com',
+        nickname,
+        last_name: lastName,
+        full_name: `${nickname} ${lastName}`,
+        email,
         role: 'Volunteer',
         category: 'North Team',
         check_in_status: 'checked_in',
@@ -143,10 +147,10 @@ describe('AttendanceDataEntryList', () => {
             public_registration_id: null,
             user_id: 'user-1',
             member_id: 'MID-001',
-            nickname: 'Jane',
-            last_name: 'Doe',
-            full_name: 'Jane Doe',
-            email: 'jane@example.com',
+            nickname,
+            last_name: lastName,
+            full_name: `${nickname} ${lastName}`,
+            email,
             role: 'Volunteer',
             category: 'North Team',
             registration_status: 'submitted',
@@ -165,7 +169,7 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.queryByText('Area')).not.toBeInTheDocument();
     expect(screen.queryByText('Notes')).not.toBeInTheDocument();
 
-    expect(screen.queryByText('jane@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText(email)).not.toBeInTheDocument();
     expect(screen.getByText('Volunteer')).toBeInTheDocument();
     expect(screen.getByText('North Team')).toBeInTheDocument();
     expect(screen.getByText('MID-001')).toBeInTheDocument();
@@ -179,9 +183,9 @@ describe('AttendanceDataEntryList', () => {
         registration_id: 'reg-6',
         public_registration_id: null,
         member_id: 'MID-006',
-        nickname: 'Visible',
-        last_name: 'Fields User',
-        full_name: 'Visible Fields User',
+        nickname: 'Test Visible',
+        last_name: 'Test Fields User',
+        full_name: 'Test Visible Fields User',
         email: 'visible@example.com',
         role: 'Member',
         category: 'Adult',
@@ -202,9 +206,9 @@ describe('AttendanceDataEntryList', () => {
             public_registration_id: null,
             user_id: 'user-6',
             member_id: 'MID-006',
-            nickname: 'Visible',
-            last_name: 'Fields User',
-            full_name: 'Visible Fields User',
+            nickname: 'Test Visible',
+            last_name: 'Test Fields User',
+            full_name: 'Test Visible Fields User',
             email: 'visible@example.com',
             role: 'Member',
             category: 'Adult',
@@ -249,15 +253,18 @@ describe('AttendanceDataEntryList', () => {
   });
 
   it('opens panel on row click and shows fallback values for missing optional columns', () => {
+    const nickname = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const fullName = `${nickname} ${lastName}`;
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
         registration_id: 'reg-2',
         public_registration_id: null,
         member_id: 'MID-002',
-        full_name: 'John Smith',
-        last_name: 'Smith',
-        nickname: 'John',
+        full_name: fullName,
+        last_name: lastName,
+        nickname,
         email: null,
         answers: [],
       },
@@ -276,21 +283,24 @@ describe('AttendanceDataEntryList', () => {
     expect(screen.queryByText('MID-002')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Fill in attendance details' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('John Smith'));
+    fireEvent.click(screen.getByText(fullName));
 
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
   it('renders public attendees by full name in attendee column', () => {
+    const nickname = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const fullName = `${nickname} ${lastName}`;
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'public',
         registration_id: null,
         public_registration_id: 'pub-1',
         member_id: null,
-        nickname: 'Guest',
-        last_name: 'One',
-        full_name: 'Guest One',
+        nickname,
+        last_name: lastName,
+        full_name: fullName,
         email: 'guest@example.com',
         role: null,
         category: null,
@@ -309,7 +319,7 @@ describe('AttendanceDataEntryList', () => {
       />,
     );
 
-    expect(screen.getByText('Guest One')).toBeInTheDocument();
+    expect(screen.getByText(fullName)).toBeInTheDocument();
   });
 
   it('shows "Edit" button when attendance answers are filled', () => {
@@ -319,10 +329,10 @@ describe('AttendanceDataEntryList', () => {
         registration_id: 'reg-3',
         public_registration_id: null,
         member_id: 'MID-003',
-        nickname: 'Jane',
-        last_name: 'Smith',
-        full_name: 'Jane Smith',
-        email: 'jane.smith@example.com',
+        nickname: faker.person.firstName(),
+        last_name: faker.person.lastName(),
+        full_name: faker.person.fullName(),
+        email: faker.internet.exampleEmail(),
         role: 'Staff',
         category: 'Team Lead',
         check_in_status: 'checked_in',
@@ -371,10 +381,10 @@ describe('AttendanceDataEntryList', () => {
         registration_id: 'reg-4',
         public_registration_id: null,
         member_id: 'MID-004',
-        nickname: 'Alice',
-        last_name: 'Johnson',
-        full_name: 'Alice Johnson',
-        email: 'alice@example.com',
+        nickname: faker.person.firstName(),
+        last_name: faker.person.lastName(),
+        full_name: faker.person.fullName(),
+        email: faker.internet.exampleEmail(),
         role: 'Volunteer',
         category: 'Team A',
         check_in_status: 'checked_in',
@@ -385,10 +395,10 @@ describe('AttendanceDataEntryList', () => {
         registration_id: 'reg-5',
         public_registration_id: null,
         member_id: 'MID-005',
-        nickname: 'Bob',
-        last_name: 'Wilson',
-        full_name: 'Bob Wilson',
-        email: 'bob@example.com',
+        nickname: faker.person.firstName(),
+        last_name: faker.person.lastName(),
+        full_name: faker.person.fullName(),
+        email: faker.internet.exampleEmail(),
         role: 'Volunteer',
         category: 'Team B',
         check_in_status: 'not_checked_in',
@@ -431,10 +441,10 @@ describe('AttendanceDataEntryList', () => {
         attendee_kind: 'registered',
         registration_id: 'reg-toggle',
         public_registration_id: null,
-        nickname: 'Toggle',
-        last_name: 'User',
+        nickname: 'Test Toggle',
+        last_name: 'Test User',
         member_id: 'MID-100',
-        full_name: 'Toggle User',
+        full_name: 'Test Toggle User',
         email: 'toggle@example.com',
         role: 'Admin',
         category: 'Management',
@@ -460,16 +470,17 @@ describe('AttendanceDataEntryList', () => {
   });
 
   it('opens edit panel when Edit button is clicked', () => {
+    const fullName = faker.person.fullName();
     const registrants: RegistrantAttendanceRow[] = [
       {
         attendee_kind: 'registered',
         registration_id: 'reg-6',
         public_registration_id: null,
-        nickname: 'Charlie',
-        last_name: 'Brown',
+        nickname: faker.person.firstName(),
+        last_name: faker.person.lastName(),
         member_id: 'MID-006',
-        full_name: 'Charlie Brown',
-        email: 'charlie@example.com',
+        full_name: fullName,
+        email: faker.internet.exampleEmail(),
         role: 'Admin',
         category: 'Management',
         check_in_status: 'checked_in',
@@ -501,6 +512,6 @@ describe('AttendanceDataEntryList', () => {
     const editButton = screen.getByRole('button', { name: 'Edit attendance details' });
     fireEvent.click(editButton);
 
-    expect(screen.getByText('Panel for Charlie Brown')).toBeInTheDocument();
+    expect(screen.getByText(`Panel for ${fullName}`)).toBeInTheDocument();
   });
 });

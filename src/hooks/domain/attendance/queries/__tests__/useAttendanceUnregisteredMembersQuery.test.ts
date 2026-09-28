@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -51,14 +52,17 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
   });
 
   it('loads unregistered members and maps pagination metadata', async () => {
+    const fullName = faker.person.fullName();
+    const email = faker.internet.exampleEmail();
+
     mockCaller.mockResolvedValueOnce({
       success: true,
       items: [
         {
           user_id: 'user-1',
           member_id: 'WC-101',
-          full_name: 'Alex Rivera',
-          email: 'alex@example.com',
+          full_name: fullName,
+          email,
           role: 'attendee',
           category: 'participant',
         },
@@ -71,7 +75,7 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAttendanceUnregisteredMembersQuery('event-1', {
         pageSize: 20,
-        searchTerm: ' Alex ',
+        searchTerm: ' Test ',
       }),
     );
 
@@ -84,15 +88,15 @@ describe('useAttendanceUnregisteredMembersQuery', () => {
       event_id: 'event-1',
       page_size: 20,
       offset: 0,
-      search_term: 'Alex',
+      search_term: 'Test',
     });
     expect(result.current.data?.pages[0]).toEqual({
       items: [
         {
           user_id: 'user-1',
           member_id: 'WC-101',
-          full_name: 'Alex Rivera',
-          email: 'alex@example.com',
+          full_name: fullName,
+          email,
           role: 'attendee',
           category: 'participant',
         },

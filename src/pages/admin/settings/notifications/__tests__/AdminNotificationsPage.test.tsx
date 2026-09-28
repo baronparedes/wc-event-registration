@@ -43,8 +43,8 @@ describe('AdminNotificationsPage', () => {
       data: [
         {
           id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
+          name: 'Test Alpha',
+          email: 'test.alpha@example.com',
           avatar_object_key: null,
           has_member_profile: true,
           created_at: '2026-01-01T00:00:00Z',
@@ -52,8 +52,8 @@ describe('AdminNotificationsPage', () => {
         },
         {
           id: 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380b22',
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
+          name: 'Test Beta',
+          email: 'test.beta@example.com',
           avatar_object_key: null,
           has_member_profile: true,
           created_at: '2026-01-02T00:00:00Z',
@@ -250,14 +250,14 @@ describe('AdminNotificationsPage', () => {
 
     // Focus / type search term
     fireEvent.focus(userSearchInput);
-    fireEvent.change(userSearchInput, { target: { value: '@john' } });
+    fireEvent.change(userSearchInput, { target: { value: '@alpha' } });
 
-    // Select John Doe from option list
-    const userOption = screen.getByText('John Doe');
+    // Select Test Alpha from option list
+    const userOption = screen.getByText('Test Alpha');
     fireEvent.click(userOption);
 
     // Selected user card is displayed
-    expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
+    expect(screen.getByText('test.alpha@example.com')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove selected user' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Send Broadcast/i }));
@@ -287,9 +287,9 @@ describe('AdminNotificationsPage', () => {
 
     const userSearchInput = screen.getByRole('combobox');
     fireEvent.focus(userSearchInput);
-    fireEvent.click(screen.getByText('Jane Smith'));
+    fireEvent.click(screen.getByText('Test Beta'));
 
-    expect(screen.getByText('jane.smith@example.com')).toBeInTheDocument();
+    expect(screen.getByText('test.beta@example.com')).toBeInTheDocument();
 
     // Click remove
     const removeBtn = screen.getByRole('button', { name: 'Remove selected user' });

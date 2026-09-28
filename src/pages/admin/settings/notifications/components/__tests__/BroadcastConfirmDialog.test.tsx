@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -91,6 +92,8 @@ describe('BroadcastConfirmDialog', () => {
   });
 
   it('renders target user avatar, name, email, and member badge when targetType is "user"', () => {
+    const targetName = faker.person.fullName();
+    const targetEmail = faker.internet.exampleEmail();
     renderDialog({
       isOpen: true,
       onClose: vi.fn(),
@@ -103,8 +106,8 @@ describe('BroadcastConfirmDialog', () => {
       },
       targetUser: {
         id: 'user-uuid-1234',
-        name: 'Cecile Vitalicio',
-        email: 'cesvitalicio23@gmail.com',
+        name: targetName,
+        email: targetEmail,
         avatar_object_key: null,
         has_member_profile: true,
         created_at: '2026-01-01T00:00:00Z',
@@ -112,8 +115,8 @@ describe('BroadcastConfirmDialog', () => {
       },
     });
 
-    expect(screen.getByText('Cecile Vitalicio')).toBeInTheDocument();
-    expect(screen.getByText('cesvitalicio23@gmail.com')).toBeInTheDocument();
+    expect(screen.getByText(targetName)).toBeInTheDocument();
+    expect(screen.getByText(targetEmail)).toBeInTheDocument();
     expect(screen.getByText('Member')).toBeInTheDocument();
   });
 

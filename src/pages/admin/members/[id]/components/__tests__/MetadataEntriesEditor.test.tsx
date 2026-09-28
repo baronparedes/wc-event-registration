@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -9,9 +10,9 @@ import { MetadataEntriesEditor } from '../MetadataEntriesEditor';
 
 const DEFAULT_FORM_VALUES: UpdateMemberInput = {
   full_name: '',
-  first_name: 'Jane',
-  last_name: 'Doe',
-  nickname: 'Janie',
+  first_name: faker.person.firstName(),
+  last_name: faker.person.lastName(),
+  nickname: faker.person.firstName(),
   email: '',
   phone: '',
   date_of_birth: '',

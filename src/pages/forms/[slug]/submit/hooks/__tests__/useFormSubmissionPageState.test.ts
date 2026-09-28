@@ -1,9 +1,14 @@
+import { faker } from '@faker-js/faker';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
 
 import { useFormSubmissionPageState } from '../useFormSubmissionPageState';
+
+const guestFirstName = faker.person.firstName();
+const guestLastName = faker.person.lastName();
+const guestEmail = faker.internet.exampleEmail();
 
 const {
   mockUseParams,
@@ -236,14 +241,14 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
         phone: '1234567890',
       });
     });
 
-    expect(result.current.guestInfo?.email).toBe('john@example.com');
+    expect(result.current.guestInfo?.email).toBe(guestEmail);
     expect(result.current.activeWizardStep).toBe(2);
   });
 
@@ -266,9 +271,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 
@@ -282,7 +287,7 @@ describe('useFormSubmissionPageState', () => {
       expect.objectContaining({
         form_slug: 'sample-form',
         public_registrant_info: expect.objectContaining({
-          email: 'john@example.com',
+          email: guestEmail,
         }),
         responses: {
           comments: 'Great initiative!',
@@ -310,9 +315,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 
@@ -460,9 +465,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 
@@ -492,9 +497,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 
@@ -523,9 +528,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 
@@ -549,9 +554,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 
@@ -575,9 +580,9 @@ describe('useFormSubmissionPageState', () => {
 
     act(() => {
       result.current.handleGuestInfoSubmit({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+        first_name: guestFirstName,
+        last_name: guestLastName,
+        email: guestEmail,
       });
     });
 

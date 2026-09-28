@@ -32,7 +32,7 @@ vi.mock('@/pages/profile/components/ServiceAttendanceHistoryTab', () => ({
   ),
 }));
 
-const member = makeAdminMember({ id: 'user-123', full_name: 'John Smith', member_id: 'WC-007' });
+const member = makeAdminMember({ id: 'user-123', member_id: 'WC-007' });
 
 function renderPage() {
   return render(
@@ -77,7 +77,7 @@ describe('AdminMemberServiceAttendancePage', () => {
 
     // Breadcrumbs and links
     expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute('href', '/admin/members');
-    expect(screen.getByRole('link', { name: 'John Smith' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: member.full_name })).toHaveAttribute(
       'href',
       `/admin/members/${member.id}`,
     );

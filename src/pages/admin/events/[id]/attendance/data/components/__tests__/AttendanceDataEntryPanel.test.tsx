@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,14 +30,14 @@ vi.mock('sonner', () => ({
 
 describe('AttendanceDataEntryPanel', () => {
   const registrant: RegistrantAttendanceRow = {
-    nickname: 'Jane',
-    last_name: 'Doe',
+    nickname: faker.person.firstName(),
+    last_name: faker.person.lastName(),
     attendee_kind: 'registered',
     registration_id: 'reg-1',
     public_registration_id: null,
     member_id: 'member-1',
-    full_name: 'Jane Doe',
-    email: 'jane@example.com',
+    full_name: faker.person.fullName(),
+    email: faker.internet.exampleEmail(),
     answers: [
       {
         id: 'ans-1',
@@ -158,13 +159,13 @@ describe('AttendanceDataEntryPanel', () => {
     const onClose = vi.fn();
 
     const mixedRegistrant: RegistrantAttendanceRow = {
-      nickname: 'John',
-      last_name: 'Smith',
+      nickname: faker.person.firstName(),
+      last_name: faker.person.lastName(),
       attendee_kind: 'registered',
       registration_id: 'reg-2',
       public_registration_id: null,
       member_id: '',
-      full_name: 'John Smith',
+      full_name: faker.person.fullName(),
       email: null,
       answers: [
         {
@@ -371,7 +372,9 @@ describe('AttendanceDataEntryPanel', () => {
       answer_number: null,
     });
 
-    expect(mockToast.success).toHaveBeenCalledWith('Attendance data saved for John Smith.');
+    expect(mockToast.success).toHaveBeenCalledWith(
+      `Attendance data saved for ${mixedRegistrant.full_name}.`,
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -379,14 +382,14 @@ describe('AttendanceDataEntryPanel', () => {
     const onClose = vi.fn();
 
     const registrantForFormTypes: RegistrantAttendanceRow = {
-      nickname: 'Sam',
-      last_name: 'Lee',
+      nickname: faker.person.firstName(),
+      last_name: faker.person.lastName(),
       attendee_kind: 'registered',
       registration_id: 'reg-3',
       public_registration_id: null,
       member_id: 'member-3',
-      full_name: 'Sam Lee',
-      email: 'sam@example.com',
+      full_name: faker.person.fullName(),
+      email: faker.internet.exampleEmail(),
       answers: [],
     };
 
@@ -565,9 +568,9 @@ describe('AttendanceDataEntryPanel', () => {
       registration_id: 'reg-4',
       public_registration_id: null,
       member_id: '',
-      nickname: 'Default',
-      last_name: 'Case',
-      full_name: 'Default Case',
+      nickname: 'Test Default',
+      last_name: 'Test Case',
+      full_name: 'Test Default Case',
       email: null,
       answers: [
         {
@@ -709,13 +712,13 @@ describe('AttendanceDataEntryPanel', () => {
 
   it('handles public registrant type and clear multi-select button', async () => {
     const publicRegistrant: RegistrantAttendanceRow = {
-      nickname: 'Guest',
-      last_name: 'User',
+      nickname: 'Test Guest',
+      last_name: 'Test User',
       attendee_kind: 'public',
       registration_id: null,
       public_registration_id: 'pub-1',
       member_id: null,
-      full_name: 'Guest User',
+      full_name: 'Test Guest User',
       email: 'guest@example.com',
       answers: [],
     };

@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -83,6 +84,8 @@ describe('AdminMembersPage', () => {
   });
 
   it('renders members table rows from query data and shows count summary', () => {
+    const fullName = faker.person.fullName();
+    const email = faker.internet.exampleEmail();
     mockUseAdminMembersQuery.mockReturnValue({
       data: {
         pages: [
@@ -92,9 +95,9 @@ describe('AdminMembersPage', () => {
                 id: 'user-1',
                 member_id: 'WC-001',
                 is_active: true,
-                full_name: 'Jane Doe',
-                nickname: 'J',
-                email: 'jane@example.com',
+                full_name: fullName,
+                nickname: faker.person.firstName(),
+                email,
                 phone: '123',
                 role: 'player',
                 category: 'adult',
@@ -121,9 +124,9 @@ describe('AdminMembersPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByText(fullName)).toBeInTheDocument();
     expect(screen.getByText('WC-001')).toBeInTheDocument();
-    expect(screen.getByText('jane@example.com')).toBeInTheDocument();
+    expect(screen.getByText(email)).toBeInTheDocument();
     expect(screen.getByText('Showing all 1 member')).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: 'Upload CSV' })).toBeInTheDocument();
@@ -141,9 +144,9 @@ describe('AdminMembersPage', () => {
                 id: 'user-1',
                 member_id: 'WC-001',
                 is_active: true,
-                full_name: 'Jane Doe',
-                nickname: 'J',
-                email: 'jane@example.com',
+                full_name: faker.person.fullName(),
+                nickname: faker.person.firstName(),
+                email: faker.internet.exampleEmail(),
                 phone: '123',
                 role: 'player',
                 category: 'adult',
@@ -272,7 +275,7 @@ describe('AdminMembersPage', () => {
     expect(clearButton).toBeDisabled();
 
     fireEvent.change(screen.getByPlaceholderText(/Search by first name/i), {
-      target: { value: 'Jane' },
+      target: { value: faker.person.firstName() },
     });
 
     act(() => {
@@ -338,9 +341,9 @@ describe('AdminMembersPage', () => {
                 id: 'user-1',
                 member_id: 'WC-001',
                 is_active: true,
-                full_name: 'Jane Doe',
+                full_name: faker.person.fullName(),
                 nickname: null,
-                email: 'jane@example.com',
+                email: faker.internet.exampleEmail(),
                 phone: null,
                 role: 'player',
                 category: 'adult',

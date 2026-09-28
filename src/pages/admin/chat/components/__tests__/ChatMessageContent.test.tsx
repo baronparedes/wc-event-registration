@@ -87,10 +87,10 @@ describe('ChatMessageContent', () => {
 
   it('renders untokenized user links targeting a new tab with secure attributes', () => {
     mockResolvedTokens.mockReturnValue({
-      USR_000123: { id: 'user-456', name: 'John Doe' },
+      USR_000123: { id: 'user-456', name: 'Test Member' },
     });
     render(<ChatMessageContent content="Assigned to USR_000123" />);
-    const link = screen.getByRole('link', { name: /John Doe/i });
+    const link = screen.getByRole('link', { name: /Test Member/i });
     expect(link).toHaveAttribute('href', '/admin/members/user-456');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
@@ -98,12 +98,12 @@ describe('ChatMessageContent', () => {
 
   it('renders clean plain names without markdown link syntax inside code blocks', () => {
     mockResolvedTokens.mockReturnValue({
-      USR_000123: { id: 'user-456', name: 'John Doe' },
+      USR_000123: { id: 'user-456', name: 'Test Member' },
     });
     const markdown = '```csv\nName,Role\nUSR_000123,Usher\n```';
     render(<ChatMessageContent content={markdown} />);
-    expect(screen.getByText(/John Doe,Usher/)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /John Doe/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Test Member,Usher/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Test Member/i })).not.toBeInTheDocument();
   });
 
   it('provides a copy button on code blocks', async () => {

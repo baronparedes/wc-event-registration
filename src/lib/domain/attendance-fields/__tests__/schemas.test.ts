@@ -41,9 +41,9 @@ describe('buildDynamicAttendanceResponseSchema', () => {
       }),
     ]);
 
-    expect(schema.safeParse({ first_name: 'John', last_name: 'Doe' }).success).toBe(true);
-    expect(schema.safeParse({ last_name: 'Doe' }).success).toBe(false); // first_name is required
-    expect(schema.safeParse({ first_name: 'John' }).success).toBe(true); // last_name is optional
+    expect(schema.safeParse({ first_name: 'Test', last_name: 'Test' }).success).toBe(true);
+    expect(schema.safeParse({ last_name: 'Test' }).success).toBe(false); // first_name is required
+    expect(schema.safeParse({ first_name: 'Test' }).success).toBe(true); // last_name is optional
   });
 
   it('sanitizes validation rules with <= 0 for max, max_length, max_selections', () => {

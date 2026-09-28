@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -213,8 +214,8 @@ describe('Services Domain Hooks', () => {
 
     it('useLookupUsersByRfidsQuery fetches users by RFIDs', async () => {
       const mockUsers = [
-        { id: 'user-1', member_id: 'RFID-1', full_name: 'Alice Smith' },
-        { id: 'user-2', member_id: 'RFID-2', full_name: 'Bob Jones' },
+        { id: 'user-1', member_id: 'RFID-1', full_name: faker.person.fullName() },
+        { id: 'user-2', member_id: 'RFID-2', full_name: faker.person.fullName() },
       ];
       const mockBuilder = {
         select: vi.fn().mockReturnThis(),
@@ -251,18 +252,18 @@ describe('Services Domain Hooks', () => {
         {
           id: 'user-1',
           member_id: 'RFID-1',
-          full_name: 'Alice Smith',
-          first_name: 'Alice',
-          last_name: 'Smith',
-          nickname: 'Ali',
+          full_name: 'Test Alpha',
+          first_name: 'Test',
+          last_name: 'Test Alpha',
+          nickname: 'Test Al',
         },
         {
           id: 'user-2',
           member_id: 'RFID-2',
-          full_name: 'Bob Jones, Jr.',
-          first_name: 'Bob',
-          last_name: 'Jones, Jr.',
-          nickname: 'Bobby',
+          full_name: 'Test Bravo, Jr.',
+          first_name: 'Test',
+          last_name: 'Test Bravo, Jr.',
+          nickname: 'Test Brav',
         },
       ];
       const mockBuilder = {
@@ -275,7 +276,7 @@ describe('Services Domain Hooks', () => {
       mockFrom.mockReturnValue(mockBuilder);
 
       const { result } = renderHookWithClient(() =>
-        useLookupUsersByNamesQuery(['Alice Smith', 'Bob Jones, Jr.']),
+        useLookupUsersByNamesQuery(['Test Alpha', 'Test Bravo, Jr.']),
       );
 
       await waitFor(() => {
@@ -288,7 +289,7 @@ describe('Services Domain Hooks', () => {
         'id, member_id, full_name, first_name, last_name, nickname',
       );
       expect(mockBuilder.or).toHaveBeenCalledWith(
-        expect.stringContaining('and(nickname.ilike.Alice,last_name.ilike.Smith)'),
+        expect.stringContaining('and(nickname.ilike.Test,last_name.ilike.Alpha)'),
       );
     });
 

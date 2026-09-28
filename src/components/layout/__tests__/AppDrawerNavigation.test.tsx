@@ -101,7 +101,7 @@ describe('AppDrawerNavigation', () => {
     mockUseAdminFormQuery.mockReturnValue({ data: null });
     mockUseAdminMemberQuery.mockReturnValue({ data: null });
     mockUseMemberAvatarQuery.mockReturnValue({ data: null });
-    const member = makeAdminMember({ full_name: 'John Smith' });
+    const member = makeAdminMember();
     mockUseCurrentProfileQuery.mockReturnValue({ data: member });
 
     renderDrawer({
@@ -115,7 +115,7 @@ describe('AppDrawerNavigation', () => {
       'href',
       ROUTE_PATHS.profile,
     );
-    expect(screen.getByText('John Smith')).toBeInTheDocument();
+    expect(screen.getByText(member.full_name)).toBeInTheDocument();
   });
 
   it('hides My Profile link when user has a session but no matching member profile', () => {

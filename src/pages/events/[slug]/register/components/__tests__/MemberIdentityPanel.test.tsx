@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
@@ -10,7 +11,7 @@ vi.mock('@/components/ui/Avatar', () => ({
 const baseProfile = {
   member_token: 'mlt2.token.payload',
   role: 'usher',
-  first_name: 'Jane',
+  first_name: faker.person.firstName(),
   last_initial: 'D',
 };
 
@@ -22,7 +23,7 @@ describe('MemberIdentityPanel', () => {
     expect(screen.getByText('Last initial')).toBeInTheDocument();
     expect(screen.getByText('Role')).toBeInTheDocument();
 
-    expect(screen.getByText('Jane')).toBeInTheDocument();
+    expect(screen.getByText(baseProfile.first_name)).toBeInTheDocument();
     expect(screen.getByText('D')).toBeInTheDocument();
     expect(screen.getByText('usher')).toBeInTheDocument();
   });

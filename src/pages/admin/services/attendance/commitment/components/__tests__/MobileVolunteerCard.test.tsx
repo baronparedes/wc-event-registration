@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,10 +18,10 @@ describe('MobileVolunteerCard', () => {
   const mockStat: CommitmentDashboardStat = {
     user_id: 'user-1',
     member_id: 'MEM-001',
-    avatar_object_key: 'avatars/alice.jpg',
-    full_name: 'Alice Smith',
-    nickname: 'Ali',
-    email: 'alice@example.com',
+    avatar_object_key: 'avatars/member.jpg',
+    full_name: faker.person.fullName(),
+    nickname: faker.person.firstName(),
+    email: faker.internet.exampleEmail(),
     role: 'Usher',
     category: 'Women',
     start_date: '2024-01-01',
@@ -37,8 +38,8 @@ describe('MobileVolunteerCard', () => {
   it('renders all volunteer details and formatted values matching the table view', () => {
     render(<MobileVolunteerCard stat={mockStat} />);
 
-    expect(screen.getByText('Alice Smith')).toBeInTheDocument();
-    expect(screen.getByText('(Ali)')).toBeInTheDocument();
+    expect(screen.getByText(mockStat.full_name)).toBeInTheDocument();
+    expect(screen.getByText(`(${mockStat.nickname})`)).toBeInTheDocument();
     expect(screen.getByText('Usher • Women')).toBeInTheDocument();
     expect(screen.getByText('2024-01-01')).toBeInTheDocument();
     expect(screen.getByText('8.5')).toBeInTheDocument();

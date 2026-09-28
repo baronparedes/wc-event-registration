@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -23,6 +24,10 @@ vi.mock('@/hooks/domain/auth', () => ({
 
 const queryClient = new QueryClient();
 
+const firstVolunteerName = faker.person.fullName();
+const firstVolunteerNickname = faker.person.firstName();
+const secondVolunteerName = faker.person.fullName();
+
 const mockAttendanceRecords: ServiceAttendance[] = [
   {
     id: 'rec-1',
@@ -43,9 +48,9 @@ const mockAttendanceRecords: ServiceAttendance[] = [
     service_seats: { id: 'seat-1', table_number: '12', seat_number: '1', area: 'Main' },
     user: {
       member_id: 'RFID001',
-      full_name: 'Jane Doe',
-      nickname: 'Jane',
-      avatar_object_key: 'avatars/jane.jpg',
+      full_name: firstVolunteerName,
+      nickname: firstVolunteerNickname,
+      avatar_object_key: 'avatars/member.jpg',
     },
   },
   {
@@ -67,7 +72,7 @@ const mockAttendanceRecords: ServiceAttendance[] = [
     service_seats: null,
     user: {
       member_id: 'RFID002',
-      full_name: 'John Smith',
+      full_name: secondVolunteerName,
       nickname: null,
       avatar_object_key: null,
     },
@@ -113,9 +118,9 @@ describe('AdminServiceAttendanceDataPage', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
-    expect(screen.getByText('Jane')).toBeInTheDocument();
-    expect(screen.getByText('John Smith')).toBeInTheDocument();
+    expect(screen.getByText(firstVolunteerName)).toBeInTheDocument();
+    expect(screen.getByText(firstVolunteerNickname)).toBeInTheDocument();
+    expect(screen.getByText(secondVolunteerName)).toBeInTheDocument();
     expect(screen.getByText('RFID001')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getAllByText('Walk-in').length).toBeGreaterThanOrEqual(1);
@@ -184,8 +189,8 @@ describe('AdminServiceAttendanceDataPage', () => {
     // After clearing, button is disabled again and Start Date reverts to fallback
     expect(clearButton).toBeDisabled();
     expect(dateInput.value).toBe(expectedFallback);
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
-    expect(screen.getByText('John Smith')).toBeInTheDocument();
+    expect(screen.getByText(firstVolunteerName)).toBeInTheDocument();
+    expect(screen.getByText(secondVolunteerName)).toBeInTheDocument();
 
     vi.useRealTimers();
   });

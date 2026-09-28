@@ -18,9 +18,9 @@ function makeAttendee(overrides: Partial<AttendeeSearchResult>): AttendeeSearchR
     public_registration_id: null,
     user_id: 'user-1',
     member_id: 'M-001',
-    nickname: 'Alpha',
-    last_name: 'Member',
-    full_name: 'Alpha Member',
+    nickname: 'Test Alpha',
+    last_name: 'Test Member',
+    full_name: 'Test Alpha Member',
     email: 'alpha@example.com',
     role: 'Member',
     category: 'Adult',
@@ -83,7 +83,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'Beta Member',
+        full_name: 'Test Beta Member',
         registration_answers: [
           {
             event_field_id: 'event-field-service',
@@ -186,21 +186,21 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        nickname: 'Ali',
-        full_name: 'Alice Santos',
+        nickname: 'Test Al',
+        full_name: 'Test Alpha',
         member_id: 'MID-100',
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        nickname: 'Bobby',
-        full_name: 'Bob Reyes',
+        nickname: 'Test Bee',
+        full_name: 'Test Bravo',
         member_id: 'MID-200',
       }),
     ];
 
     const byName = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      nameOrMemberQuery: 'alice',
+      nameOrMemberQuery: 'alpha',
     });
     expect(byName.filteredAttendees).toHaveLength(1);
     expect(byName.filteredAttendees[0].registration_id).toBe('reg-1');
@@ -214,7 +214,7 @@ describe('attendance-views transforms', () => {
 
     const byNickname = buildAttendeeView(attendees, {
       ...defaultViewConfig,
-      nameOrMemberQuery: 'bobby',
+      nameOrMemberQuery: 'bee',
     });
     expect(byNickname.filteredAttendees).toHaveLength(1);
     expect(byNickname.filteredAttendees[0].registration_id).toBe('reg-2');
@@ -228,7 +228,7 @@ describe('attendance-views transforms', () => {
       const attendees: AttendeeSearchResult[] = [
         makeAttendee({
           registration_id: 'reg-1',
-          full_name: 'Sunday Member',
+          full_name: 'Test Sunday Member',
           registration_answers: [
             {
               event_field_id: 'event-field-service-date',
@@ -242,7 +242,7 @@ describe('attendance-views transforms', () => {
         }),
         makeAttendee({
           registration_id: 'reg-2',
-          full_name: 'Previous Week Member',
+          full_name: 'Test Previous Week Member',
           registration_answers: [
             {
               event_field_id: 'event-field-service-date',
@@ -256,7 +256,7 @@ describe('attendance-views transforms', () => {
         }),
         makeAttendee({
           registration_id: 'reg-3',
-          full_name: 'Previous Month Member',
+          full_name: 'Test Previous Month Member',
           registration_answers: [
             {
               event_field_id: 'event-field-service-date',
@@ -270,7 +270,7 @@ describe('attendance-views transforms', () => {
         }),
         makeAttendee({
           registration_id: 'reg-4',
-          full_name: 'Different Year Member',
+          full_name: 'Test Different Year Member',
           registration_answers: [
             {
               event_field_id: 'event-field-service-date',
@@ -284,7 +284,7 @@ describe('attendance-views transforms', () => {
         }),
         makeAttendee({
           registration_id: 'reg-5',
-          full_name: 'DateTime Member',
+          full_name: 'Test DateTime Member',
           registration_answers: [
             {
               event_field_id: 'event-field-check-in-time',
@@ -363,7 +363,7 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        full_name: 'Alpha Member',
+        full_name: 'Test Alpha Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -387,7 +387,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'Beta Member',
+        full_name: 'Test Beta Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -540,9 +540,9 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        nickname: 'Zulu',
-        last_name: 'Anderson',
-        full_name: 'Aaron Zed',
+        nickname: 'Test Zulu',
+        last_name: 'Test Alpha',
+        full_name: 'Test Alpha Zulu',
         category: 'Adult',
         check_in_status: 'checked_in',
         attendance_answers: [
@@ -558,9 +558,9 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        nickname: 'Alpha',
-        last_name: 'Zimmer',
-        full_name: 'Zack Aed',
+        nickname: 'Test Alpha',
+        last_name: 'Test Zulu',
+        full_name: 'Test Zulu Alpha',
         category: 'Adult',
         check_in_status: 'checked_in',
         attendance_answers: [
@@ -576,7 +576,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-3',
-        full_name: 'Filtered Member',
+        full_name: 'Test Filtered Member',
         category: 'Youth',
         check_in_status: 'not_checked_in',
         attendance_answers: [
@@ -618,7 +618,7 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        full_name: 'Alpha Member',
+        full_name: 'Test Alpha Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -632,7 +632,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'Beta Member',
+        full_name: 'Test Beta Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -667,7 +667,7 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        full_name: 'Alpha Member',
+        full_name: 'Test Alpha Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -681,7 +681,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'Beta Member',
+        full_name: 'Test Beta Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -716,7 +716,7 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        full_name: 'Alpha Member',
+        full_name: 'Test Alpha Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -730,7 +730,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'Beta Member',
+        full_name: 'Test Beta Member',
         registration_answers: [
           {
             event_field_id: 'field-service',
@@ -1542,7 +1542,7 @@ describe('attendance-views transforms', () => {
     const attendees: AttendeeSearchResult[] = [
       makeAttendee({
         registration_id: 'reg-1',
-        full_name: 'Has Area',
+        full_name: 'Test Has Area',
         attendance_answers: [
           {
             attendance_field_id: 'field-area',
@@ -1556,7 +1556,7 @@ describe('attendance-views transforms', () => {
       }),
       makeAttendee({
         registration_id: 'reg-2',
-        full_name: 'No Area',
+        full_name: 'Test No Area',
         attendance_answers: [],
       }),
     ];

@@ -9,8 +9,9 @@ import {
 
 describe('attendeeViewConfigSchema', () => {
   it('parses valid input with all fields', () => {
+    const query = faker.person.firstName();
     const result = attendeeViewConfigSchema.parse({
-      nameOrMemberQuery: 'John',
+      nameOrMemberQuery: query,
       role: ['Member'],
       category: 'Adult',
       checkInStatus: 'checked_in',
@@ -32,7 +33,7 @@ describe('attendeeViewConfigSchema', () => {
       visibleFields: [{ source: 'registration', fieldKey: 'service', label: 'Service' }],
     });
 
-    expect(result.nameOrMemberQuery).toBe('John');
+    expect(result.nameOrMemberQuery).toBe(query);
     expect(result.role).toEqual(['Member']);
     expect(result.category).toBe('Adult');
     expect(result.checkInStatus).toBe('checked_in');

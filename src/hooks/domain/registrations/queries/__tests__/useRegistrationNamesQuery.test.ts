@@ -40,7 +40,7 @@ describe('useRegistrationNamesQuery', () => {
         {
           full_name: faker.person.fullName(),
           member_id: `WC-${faker.string.numeric(3)}`,
-          email: faker.internet.email(),
+          email: faker.internet.exampleEmail(),
           phone: faker.phone.number(),
           metadata: 'team: Alpha; first_sunday: true',
           role: 'Member',
