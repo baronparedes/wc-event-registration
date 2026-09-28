@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,8 +49,10 @@ function renderPage() {
   );
 }
 
+const email = faker.internet.exampleEmail();
 const member = makeAdminMember({
   member_id: 'MEM-100',
+  email,
   role: 'Athlete',
   category: 'Adult',
   extra_metadata: { MembershipType: 'Gold' },
@@ -87,7 +90,7 @@ describe('ProfilePage', () => {
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
     expect(screen.getByText(/Athlete/)).toBeInTheDocument();
     expect(screen.getByText(/Adult/)).toBeInTheDocument();
-    expect(screen.getByText(member.email)).toBeInTheDocument();
+    expect(screen.getByText(email)).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Info' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Commitments' })).toBeInTheDocument();

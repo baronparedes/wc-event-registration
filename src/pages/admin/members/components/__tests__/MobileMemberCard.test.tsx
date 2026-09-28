@@ -15,11 +15,13 @@ vi.mock('../UpdateMemberIdDialog', () => ({
   UpdateMemberIdDialog: () => <button data-testid="update-member-id-dialog">Update ID</button>,
 }));
 
+const email = faker.internet.exampleEmail();
 const mockMember = makeAdminMember({
   id: 'user-1',
   member_id: 'WC-001',
   is_active: true,
   nickname: faker.person.firstName(),
+  email,
   phone: '+1234567890',
   role: 'Leader',
   category: 'Regular',
@@ -41,7 +43,7 @@ describe('MobileMemberCard', () => {
 
     expect(screen.getByText(mockMember.full_name)).toBeInTheDocument();
     expect(screen.getByText(`(${mockMember.nickname})`)).toBeInTheDocument();
-    expect(screen.getByText(mockMember.email)).toBeInTheDocument();
+    expect(screen.getByText(email)).toBeInTheDocument();
     expect(screen.getByText('WC-001')).toBeInTheDocument();
     expect(screen.getByText('Leader • Regular')).toBeInTheDocument();
     expect(screen.getByText('+1234567890')).toBeInTheDocument();

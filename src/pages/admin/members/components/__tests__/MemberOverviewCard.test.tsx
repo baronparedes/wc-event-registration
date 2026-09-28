@@ -10,8 +10,10 @@ vi.mock('@/hooks/domain/members', () => ({
   useMemberAvatarQuery: () => ({ data: null }),
 }));
 
+const email = faker.internet.exampleEmail();
 const member = makeAdminMember({
   nickname: faker.person.firstName(),
+  email,
   role: 'OIC',
   category: 'Men',
   date_of_birth: '2026-04-28',
@@ -30,7 +32,7 @@ describe('MemberOverviewCard', () => {
     expect(screen.getByText(member.member_id)).toBeInTheDocument();
     expect(screen.getByText('OIC')).toBeInTheDocument();
     expect(screen.getByText('Men')).toBeInTheDocument();
-    expect(screen.getByText(member.email)).toBeInTheDocument();
+    expect(screen.getByText(email)).toBeInTheDocument();
     expect(screen.getByText('Apr 28, 2026')).toBeInTheDocument();
   });
 
