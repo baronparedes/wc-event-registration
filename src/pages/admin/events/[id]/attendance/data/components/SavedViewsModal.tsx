@@ -243,6 +243,8 @@ export function SavedViewsModal({
                                     size="sm"
                                     variant="destructive"
                                     onClick={() => handleDeleteView(view.id)}
+                                    aria-label="Delete saved view"
+                                    title="Delete saved view"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>

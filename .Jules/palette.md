@@ -17,3 +17,8 @@
 
 **Learning:** Replaced `focus:ring-2` with `focus-visible:ring-2` in the base `Button` component. This prevents focus rings from appearing when mouse users click buttons, reducing visual noise, while maintaining strong visual indicators for keyboard navigators.
 **Action:** When creating or modifying interactive elements, always prefer `focus-visible:` over `focus:` for focus rings to ensure a good experience for both mouse and keyboard users.
+
+## 2024-05-18 - Icon-Only Action Buttons Need ARIA Labels
+
+**Learning:** Found an icon-only delete action button inside `SavedViewsModal` that was inaccessible. It only rendered a `Trash2` icon with no textual context or `aria-label`, making it completely opaque to screen readers (and verified by a test searching for an empty name `name: ''`).
+**Action:** When adding icon-only buttons (like delete, edit, move), especially in dynamic mappings or lists within modals, always add an `aria-label` attribute (e.g., `aria-label="Delete saved view"`) and ideally a `title` attribute to provide tooltip context on hover.

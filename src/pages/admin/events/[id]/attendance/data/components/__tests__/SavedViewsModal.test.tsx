@@ -144,7 +144,7 @@ describe('SavedViewsModal', () => {
 
     renderModal();
 
-    const trashButton = screen.getByRole('button', { name: '' }); // Trash2 icon-only button
+    const trashButton = screen.getByRole('button', { name: 'Delete saved view' });
     fireEvent.click(trashButton);
 
     expect(screen.getByText('Delete Saved View')).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe('SavedViewsModal', () => {
     const onOpenChange = vi.fn();
     renderModal({ currentViewId: selectedViewId, onViewDeleted, onOpenChange });
 
-    fireEvent.click(screen.getByRole('button', { name: '' })); // open confirm
+    fireEvent.click(screen.getByRole('button', { name: 'Delete saved view' })); // open confirm
 
     mockDeleteMutate.mockImplementation((_payload: unknown, opts: { onSuccess: () => void }) => {
       opts.onSuccess();
@@ -184,7 +184,7 @@ describe('SavedViewsModal', () => {
     const onOpenChange = vi.fn();
     renderModal({ currentViewId: selectedView.id, onViewDeleted, onOpenChange });
 
-    fireEvent.click(screen.getByRole('button', { name: '' })); // open confirm
+    fireEvent.click(screen.getByRole('button', { name: 'Delete saved view' })); // open confirm
 
     mockDeleteMutate.mockImplementation((_payload: unknown, opts: { onSuccess: () => void }) => {
       opts.onSuccess();
@@ -243,7 +243,7 @@ describe('SavedViewsModal', () => {
 
     renderModal();
 
-    fireEvent.click(screen.getByRole('button', { name: '' })); // open confirm
+    fireEvent.click(screen.getByRole('button', { name: 'Delete saved view' })); // open confirm
     expect(screen.getByText('Delete Saved View')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
