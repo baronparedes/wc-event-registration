@@ -11,6 +11,7 @@ This document outlines the coding standards, patterns, and conventions for the f
 - **Routing:** React Router
 
 **Core Philosophy:**
+
 - **Separation of Concerns:** Pages orchestrate (fetch data, manage layout/routing), while components render UI.
 - **Type Safety:** Strict TypeScript usage. No `any` types. External data must be validated at the boundary with Zod.
 - **Derived State:** Prefer computing values during render over synchronizing state with `useEffect`.
