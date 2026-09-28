@@ -84,11 +84,13 @@ Admin:
 
 ## Setup
 
-1. Use the same Node and npm versions as CI (with nvm installed)
+1. Use the same Node and npm versions as CI when changing dependencies (with nvm installed)
 
    nvm install
    nvm use
    npm install --global npm@10.9.2
+
+   CI uses Node 22 and npm 10.9.2 to verify the lockfile. Vercel uses the Node version in its project settings; its npm version may differ.
 
 2. Install from the committed lockfile
 
