@@ -85,13 +85,32 @@ Deno.serve(async (req) => {
         .in('user_id', userIds);
 
       if (subscriptions && subscriptions.length > 0) {
-        const pushPayload = JSON.stringify({
-          title: payload.title,
-          body: payload.message,
-          url: payload.url || (payload.targetType === 'role' ? '/admin/notifications' : '/'),
+        const subscribedUserIds = Array.from(new Set(subscriptions.map((s) => s.user_id)));
+
+        const { data: unreadRows, error: unreadError } = await supabase
+          .from('app_notification_recipients')
+          .select('user_id')
+          .in('user_id', subscribedUserIds)
+          .eq('is_read', false);
+
+        if (unreadError) {
+          console.error('Failed to fetch unread counts for push notifications:', unreadError);
+        }
+
+        const unreadCountByUser = new Map<string, number>();
+        unreadRows?.forEach((row) => {
+          unreadCountByUser.set(row.user_id, (unreadCountByUser.get(row.user_id) ?? 0) + 1);
         });
 
         const pushPromises = subscriptions.map((sub) => {
+          const unreadCount = unreadCountByUser.get(sub.user_id) ?? 1;
+          const pushPayload = JSON.stringify({
+            title: payload.title,
+            body: payload.message,
+            url: payload.url || (payload.targetType === 'role' ? '/admin/notifications' : '/'),
+            unreadCount,
+          });
+
           const pushSubscription = {
             endpoint: sub.endpoint,
             keys: {

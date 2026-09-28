@@ -5,7 +5,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ADMIN_AUTH_QUERY_KEY } from '@/hooks/domain/auth';
 import { CURRENT_PROFILE_QUERY_KEY } from '@/hooks/domain/members/queries/useCurrentProfileQuery';
+import { useAppBadgeSync, useNotificationsQuery } from '@/hooks/domain/notifications';
 import { supabase } from '@/lib/infrastructure';
+
+function AppBadgeProvider({ children }: PropsWithChildren) {
+  const { data: notifications = [] } = useNotificationsQuery();
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  useAppBadgeSync(unreadCount);
+
+  return <>{children}</>;
+}
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(
@@ -33,5 +43,9 @@ export function AppProviders({ children }: PropsWithChildren) {
     };
   }, [queryClient]);
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppBadgeProvider>{children}</AppBadgeProvider>
+    </QueryClientProvider>
+  );
 }
