@@ -68,14 +68,7 @@ function compareTimeslotConfig(
   left: AttendanceTimeslotConfig,
   right: AttendanceTimeslotConfig,
 ): number {
-  const leftTime = Date.parse(left.slot_at);
-  const rightTime = Date.parse(right.slot_at);
-
-  if (Number.isFinite(leftTime) && Number.isFinite(rightTime)) {
-    return leftTime - rightTime;
-  }
-
-  return left.slot_at.localeCompare(right.slot_at);
+  return left.slot_at < right.slot_at ? -1 : left.slot_at > right.slot_at ? 1 : 0;
 }
 
 export function normalizeAttendanceTimeslots(

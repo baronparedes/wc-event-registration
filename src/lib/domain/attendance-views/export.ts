@@ -161,9 +161,9 @@ export function buildDashboardCheckInsCsvExport({
   now = new Date(),
 }: BuildDashboardCheckInsCsvExportInput): BuildDashboardCheckInsCsvExportResult {
   const sortedCheckedIn = [...checkedInAttendees].sort((a, b) => {
-    const aMs = a.official_check_in_time ? Date.parse(a.official_check_in_time) : 0;
-    const bMs = b.official_check_in_time ? Date.parse(b.official_check_in_time) : 0;
-    return bMs - aMs;
+    const aTime = a.official_check_in_time || '0';
+    const bTime = b.official_check_in_time || '0';
+    return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
   });
 
   const renderableFields = selectedFields.filter((field) => {

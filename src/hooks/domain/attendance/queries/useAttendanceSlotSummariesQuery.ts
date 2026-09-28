@@ -127,16 +127,7 @@ export function useAttendanceSlotSummariesQuery(eventId: string | undefined, ena
         attendees: attendees.sort((a, b) => a.full_name.localeCompare(b.full_name)),
       }));
 
-      return summaries.sort((a, b) => {
-        const aTime = Date.parse(a.slot);
-        const bTime = Date.parse(b.slot);
-
-        if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
-          return aTime - bTime;
-        }
-
-        return a.slot.localeCompare(b.slot);
-      });
+      return summaries.sort((a, b) => (a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0));
     },
     enabled: Boolean(eventId) && enabled,
   });
