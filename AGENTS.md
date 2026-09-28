@@ -2,6 +2,16 @@
 
 This file contains the core principles, architecture rules, and domain logic constraints for this repository. **All AI Agents MUST read and follow these instructions** before proposing or making changes.
 
+## Global Execution Constraints for AI Agents
+
+### Timezone & Migration Rules
+
+- ALL AI agents, code assistants, migration scripts, testing configurations, and system validation steps must be run under the **Asia/Manila** timezone (Philippine Standard Time, PHT).
+- Before executing any shell commands, building code, running tests, or performing migrations, you must explicitly set the system environment timezone variable by prefixing instructions or variables with `TZ=Asia/Manila` (e.g., `export TZ=Asia/Manila` or `TZ=Asia/Manila npm run migrate`).
+- Do not let underlying cloud virtual machines, containers, or runner environments default to generic UTC/Zulu time if it conflicts with localized database triggers or data mappings.
+- Before date-sensitive work, verify the current date and time in Asia/Manila; do not rely on stale conversation context or cached dates.
+- When generating date manipulation tests or code, always write timezone-aware logic referencing Asia/Manila or explicitly mock timestamps to account for PHT.
+
 ## 1. Agent Workflow & Planning Mode
 
 - **Deep Planning Mode**: Before making changes or creating an execution plan, you must ALWAYS enter a deep planning mode by asking clarifying questions to confirm the user's expectations and assumptions. Never assume requirements.
