@@ -141,6 +141,7 @@ describe('useAppDrawerNavigation', () => {
       'Manage Members',
       'Manage Services',
       'Notifications',
+      'Email Templates',
       'AI Assistant',
     ]);
     expect(result.current.eventWorkspaceNavItems.map((i) => i.label)).toEqual([

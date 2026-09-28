@@ -110,6 +110,11 @@ const AdminNotificationsPage = lazy(() =>
     default: module.AdminNotificationsPage,
   })),
 );
+const AdminSettingsEmailTemplatesPage = lazy(() =>
+  import('../pages/admin/settings/email-templates').then((module) => ({
+    default: module.EmailTemplatesPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -315,6 +320,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServiceAttendanceData: AdminServiceAttendanceDataPage,
   adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
   adminNotifications: AdminNotificationsPage,
+  adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {

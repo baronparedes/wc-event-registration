@@ -194,6 +194,11 @@ export function useAppDrawerNavigation({
         label: 'Notifications',
         icon: Bell,
       });
+      items.push({
+        to: ROUTE_PATHS.adminSettingsEmailTemplates,
+        label: 'Email Templates',
+        icon: Settings,
+      });
     }
 
     if (canRead) {
