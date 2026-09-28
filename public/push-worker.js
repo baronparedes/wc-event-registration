@@ -13,7 +13,14 @@ self.addEventListener('push', (event) => {
       },
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    const notificationPromise = self.registration.showNotification(title, options);
+
+    let badgePromise = Promise.resolve();
+    if (typeof data.unreadCount === 'number' && 'setAppBadge' in navigator) {
+      badgePromise = navigator.setAppBadge(data.unreadCount);
+    }
+
+    event.waitUntil(Promise.all([notificationPromise, badgePromise]));
   } catch (error) {
     console.error('Error handling push event:', error);
     const text = event.data.text();
@@ -44,4 +51,18 @@ self.addEventListener('notificationclick', (event) => {
       }
     }),
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_NOTIFICATIONS') {
+    event.waitUntil(
+      self.registration.getNotifications().then((notifications) => {
+        notifications.forEach((notification) => notification.close());
+
+        if ('clearAppBadge' in navigator) {
+          navigator.clearAppBadge();
+        }
+      }),
+    );
+  }
 });
