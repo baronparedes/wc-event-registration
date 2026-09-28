@@ -8,7 +8,6 @@ on:
 
 jobs:
   quality:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     env:
       VITE_SUPABASE_URL: http://127.0.0.1:54321
