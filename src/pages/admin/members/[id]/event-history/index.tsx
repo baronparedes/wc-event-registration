@@ -10,11 +10,7 @@ import { formatDateTime } from '@/lib/infrastructure';
 import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
 import { MemberOverviewCard } from '@/pages/admin/members/components/MemberOverviewCard';
 
-import {
-  EventGroupCard,
-  EventSingleCard,
-  type MemberEventGroup,
-} from './components/EventHistoryCard';
+import { EventHistoryRow, type MemberEventGroup } from './components/EventHistoryCard';
 import { EventRegistrationsModal } from './components/EventRegistrationsModal';
 
 export function AdminMemberEventHistoryPage() {
@@ -109,23 +105,15 @@ export function AdminMemberEventHistoryPage() {
               <p className="text-sm text-muted">No events found for this member.</p>
             )}
             {eventGroups.length > 0 && (
-              <div className="space-y-4">
-                {eventGroups.map((group) =>
-                  group.registrations.length === 1 ? (
-                    <EventSingleCard
-                      key={group.event_id}
-                      group={group}
-                      formatDateTime={formatDateTime}
-                    />
-                  ) : (
-                    <EventGroupCard
-                      key={group.event_id}
-                      group={group}
-                      formatDateTime={formatDateTime}
-                      onView={() => setSelectedGroup(group)}
-                    />
-                  ),
-                )}
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                {eventGroups.map((group) => (
+                  <EventHistoryRow
+                    key={group.event_id}
+                    group={group}
+                    formatDateTime={formatDateTime}
+                    onView={() => setSelectedGroup(group)}
+                  />
+                ))}
               </div>
             )}
           </SectionCard>

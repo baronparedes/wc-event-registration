@@ -4,8 +4,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { useMemberEventHistoryQuery } from '@/hooks/domain/members';
 import { formatDateTime } from '@/lib/infrastructure';
 import {
-  EventGroupCard,
-  EventSingleCard,
+  EventHistoryRow,
   type MemberEventGroup,
 } from '@/pages/admin/members/[id]/event-history/components/EventHistoryCard';
 import { EventRegistrationsModal } from '@/pages/admin/members/[id]/event-history/components/EventRegistrationsModal';
@@ -52,23 +51,15 @@ export function EventHistoryTab({ memberId }: EventHistoryTabProps) {
           <p className="text-base text-muted">No events found.</p>
         )}
         {eventGroups.length > 0 && (
-          <div className="space-y-4">
-            {eventGroups.map((group) =>
-              group.registrations.length === 1 ? (
-                <EventSingleCard
-                  key={group.event_id}
-                  group={group}
-                  formatDateTime={formatDateTime}
-                />
-              ) : (
-                <EventGroupCard
-                  key={group.event_id}
-                  group={group}
-                  formatDateTime={formatDateTime}
-                  onView={() => setSelectedGroup(group)}
-                />
-              ),
-            )}
+          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+            {eventGroups.map((group) => (
+              <EventHistoryRow
+                key={group.event_id}
+                group={group}
+                formatDateTime={formatDateTime}
+                onView={() => setSelectedGroup(group)}
+              />
+            ))}
           </div>
         )}
       </SectionCard>

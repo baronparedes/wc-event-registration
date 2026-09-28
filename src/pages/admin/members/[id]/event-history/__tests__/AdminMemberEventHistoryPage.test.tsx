@@ -93,7 +93,7 @@ describe('AdminMemberEventHistoryPage', () => {
     expect(screen.getByText('Failed to load event history.')).toBeInTheDocument();
   });
 
-  it('renders an event card for each unique event in history', () => {
+  it('renders a list row for each unique event in history', () => {
     const items = [
       makeMemberEventHistoryItem({ event_title: 'Alpha Training' }),
       makeMemberEventHistoryItem({ event_title: 'Beta Seminar' }),
@@ -108,7 +108,7 @@ describe('AdminMemberEventHistoryPage', () => {
     expect(screen.getByText('Beta Seminar')).toBeInTheDocument();
   });
 
-  it('groups multiple registrations for the same event into one card', () => {
+  it('groups multiple registrations for the same event into one list row', () => {
     const eventId = 'shared-event-id';
     const items = [
       makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
@@ -138,7 +138,7 @@ describe('AdminMemberEventHistoryPage', () => {
     expect(screen.getByText('Event History (2)')).toBeInTheDocument();
   });
 
-  it('opens modal when clicking View on a group card', async () => {
+  it('opens the details modal when clicking a grouped event row', async () => {
     const eventId = 'shared-event-id';
     const items = [
       makeMemberEventHistoryItem({ event_id: eventId, event_title: 'Shared Event' }),
@@ -157,12 +157,39 @@ describe('AdminMemberEventHistoryPage', () => {
       screen.queryByRole('heading', { level: 2, name: 'Shared Event' }),
     ).not.toBeInTheDocument();
 
-    const viewButton = screen.getByRole('button', { name: 'View' });
-    fireEvent.click(viewButton);
+    fireEvent.click(screen.getByRole('button', { name: 'View Shared Event details' }));
 
     // After clicking view, the modal should open showing the title
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Shared Event' }),
     ).toBeInTheDocument();
+  });
+
+  it('opens the details modal for a single-registration event row', async () => {
+    const item = makeMemberEventHistoryItem({
+      event_title: 'Single Event',
+      registration_answers: [
+        {
+          event_field_id: 'field-1',
+          field_type: 'text',
+          field_key: 'reason',
+          label: 'Reason',
+          answer_text: 'Family event',
+          answer_number: null,
+        },
+      ],
+    });
+    mockUseMemberEventHistoryQuery.mockReturnValue({
+      data: [item],
+      isLoading: false,
+      isError: false,
+    });
+    renderPage();
+
+    expect(screen.queryByText('Registration data:')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'View Single Event details' }));
+
+    expect(await screen.findByText('Registration data:')).toBeInTheDocument();
+    expect(screen.getByText('Family event')).toBeInTheDocument();
   });
 });

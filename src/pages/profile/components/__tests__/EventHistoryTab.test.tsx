@@ -60,7 +60,7 @@ describe('EventHistoryTab', () => {
     expect(screen.getByText('Event History (0)')).toBeInTheDocument();
   });
 
-  it('renders single event card when registration count is 1', () => {
+  it('renders a row for a single event and opens its details modal', async () => {
     const item = makeMemberEventHistoryItem({
       event_id: 'ev-1',
       event_title: 'Singles Conference',
@@ -73,12 +73,18 @@ describe('EventHistoryTab', () => {
 
     render(<EventHistoryTab memberId="user-123" />);
 
-    expect(screen.getByText('Singles Conference')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'View Singles Conference details' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Event History (1)')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'View' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View Singles Conference details' }));
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Singles Conference' }),
+    ).toBeInTheDocument();
   });
 
-  it('renders event group card and opens/closes modal when registrations > 1', async () => {
+  it('renders one row for grouped registrations and opens/closes the modal', async () => {
     const items = [
       makeMemberEventHistoryItem({
         event_id: 'multi-ev',
@@ -102,8 +108,7 @@ describe('EventHistoryTab', () => {
       screen.queryByRole('heading', { level: 2, name: 'Camp Retreat' }),
     ).not.toBeInTheDocument();
 
-    const viewButton = screen.getByRole('button', { name: 'View' });
-    fireEvent.click(viewButton);
+    fireEvent.click(screen.getByRole('button', { name: 'View Camp Retreat details' }));
 
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Camp Retreat' }),
