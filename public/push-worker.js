@@ -58,10 +58,6 @@ self.addEventListener('message', (event) => {
     event.waitUntil(
       self.registration.getNotifications().then((notifications) => {
         notifications.forEach((notification) => notification.close());
-
-        if ('clearAppBadge' in navigator) {
-          navigator.clearAppBadge();
-        }
       }),
     );
   }
