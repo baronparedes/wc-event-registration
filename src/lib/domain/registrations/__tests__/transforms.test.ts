@@ -13,9 +13,9 @@ const secondAnswerValue = 'Red Team';
 
 const rows: RegistrationSharePayloadRow[] = [
   makeRegistrationSharePayloadRow({
-    full_name: 'Alice Santos',
+    full_name: 'Test Alpha',
     member_id: 'M-100',
-    email: 'alice@example.com',
+    email: 'test.alpha@example.com',
     role: 'Member',
     category: 'Adult',
     answer_values: {
@@ -23,9 +23,9 @@ const rows: RegistrationSharePayloadRow[] = [
     },
   }),
   makeRegistrationSharePayloadRow({
-    full_name: 'Bob Reyes',
+    full_name: 'Test Bravo',
     member_id: 'M-101',
-    email: 'bob@example.com',
+    email: 'test.bravo@example.com',
     role: 'Volunteer',
     category: 'Youth',
     answer_values: {
@@ -42,7 +42,7 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toBe('1. Alice Santos\n2. Bob Reyes');
+    expect(output).toBe('1. Test Alpha\n2. Test Bravo');
   });
 
   it('includes header and selected fields in deterministic order', () => {
@@ -53,8 +53,8 @@ describe('formatRegistrationShareText', () => {
     });
 
     expect(output).toContain(`Registered attendees for ${eventTitle} (2)`);
-    expect(output).toContain('1. Alice Santos | Email: alice@example.com');
-    expect(output).toContain('2. Bob Reyes | Email: bob@example.com');
+    expect(output).toContain('1. Test Alpha | Email: test.alpha@example.com');
+    expect(output).toContain('2. Test Bravo | Email: test.bravo@example.com');
   });
 
   it('includes selected answer fields when provided', () => {
@@ -66,8 +66,8 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toContain(`1. Alice Santos | ${answerFieldLabel}: ${firstAnswerValue}`);
-    expect(output).toContain(`2. Bob Reyes | ${answerFieldLabel}: ${secondAnswerValue}`);
+    expect(output).toContain(`1. Test Alpha | ${answerFieldLabel}: ${firstAnswerValue}`);
+    expect(output).toContain(`2. Test Bravo | ${answerFieldLabel}: ${secondAnswerValue}`);
   });
 
   it('falls back to full name when selected fields are empty', () => {
@@ -77,14 +77,14 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toBe('1. Alice Santos\n2. Bob Reyes');
+    expect(output).toBe('1. Test Alpha\n2. Test Bravo');
   });
 
   it('skips empty static and answer values while preserving row numbering', () => {
     const output = formatRegistrationShareText({
       rows: [
         makeRegistrationSharePayloadRow({
-          full_name: 'Charlie Dela Cruz',
+          full_name: 'Test Charlie',
           member_id: 'M-102',
           email: '',
           role: '',
@@ -100,16 +100,16 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toBe('1. Charlie Dela Cruz');
+    expect(output).toBe('1. Test Charlie');
   });
 
   it('uses generic answer label and default header title when metadata is missing', () => {
     const output = formatRegistrationShareText({
       rows: [
         makeRegistrationSharePayloadRow({
-          full_name: 'Dana Villanueva',
+          full_name: 'Test Delta',
           member_id: 'M-103',
-          email: 'dana@example.com',
+          email: 'test.delta@example.com',
           role: 'Member',
           category: 'Adult',
           answer_values: {
@@ -124,14 +124,14 @@ describe('formatRegistrationShareText', () => {
     });
 
     expect(output).toContain('Registered attendees for Event (1)');
-    expect(output).toContain('1. Dana Villanueva | Answer: Needs a seat near front');
+    expect(output).toContain('1. Test Delta | Answer: Needs a seat near front');
   });
 
   it('formats registration status and datetime fields for readability', () => {
     const output = formatRegistrationShareText({
       rows: [
         makeRegistrationSharePayloadRow({
-          full_name: 'Elliot Perez',
+          full_name: 'Test Echo',
           registration_status: 'submitted',
           submitted_at: '2026-07-12T03:30:00.000Z',
           updated_at: '2026-07-12T05:00:00.000Z',
@@ -141,7 +141,7 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toContain('1. Elliot Perez | Registration Status: Submitted');
+    expect(output).toContain('1. Test Echo | Registration Status: Submitted');
     expect(output).toContain('Submitted At:');
     expect(output).toContain('Updated At:');
     expect(output).toContain('2026');
@@ -151,7 +151,7 @@ describe('formatRegistrationShareText', () => {
     const output = formatRegistrationShareText({
       rows: [
         makeRegistrationSharePayloadRow({
-          full_name: 'Fiona',
+          full_name: 'Test Foxtrot',
           email: null as unknown as string,
           phone: undefined as unknown as string,
         }),
@@ -160,14 +160,14 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toBe('1. Fiona');
+    expect(output).toBe('1. Test Foxtrot');
   });
 
   it('handles invalid date strings by returning the raw value', () => {
     const output = formatRegistrationShareText({
       rows: [
         makeRegistrationSharePayloadRow({
-          full_name: 'George',
+          full_name: 'Test Golf',
           submitted_at: 'not-a-valid-date',
         }),
       ],
@@ -175,14 +175,14 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toContain('1. George | Submitted At: not-a-valid-date');
+    expect(output).toContain('1. Test Golf | Submitted At: not-a-valid-date');
   });
 
   it('handles missing answer values for selected answer fields', () => {
     const output = formatRegistrationShareText({
       rows: [
         makeRegistrationSharePayloadRow({
-          full_name: 'Hannah',
+          full_name: 'Test Hotel',
           answer_values: {},
         }),
       ],
@@ -192,7 +192,7 @@ describe('formatRegistrationShareText', () => {
       includeHeader: false,
     });
 
-    expect(output).toBe('1. Hannah');
+    expect(output).toBe('1. Test Hotel');
   });
 });
 
@@ -205,7 +205,7 @@ describe('formatRegistrationShareFieldValue', () => {
   });
 
   it('returns trimmed string for generic fields', () => {
-    expect(formatRegistrationShareFieldValue('full_name', ' John Doe ')).toBe('John Doe');
+    expect(formatRegistrationShareFieldValue('full_name', ' Test Member ')).toBe('Test Member');
     expect(formatRegistrationShareFieldValue('email', ' test@example.com ')).toBe(
       'test@example.com',
     );

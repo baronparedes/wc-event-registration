@@ -96,7 +96,7 @@ describe('AdminPublicRegistrationsPage', () => {
 
   it('renders registrations and published-state banner', () => {
     const eventTitle = faker.lorem.words(2);
-    const attendeeEmail = faker.internet.email();
+    const attendeeEmail = faker.internet.exampleEmail();
 
     mockUseAdminEventQuery.mockReturnValue({
       data: { id: testEventId, title: eventTitle, status: 'published' },

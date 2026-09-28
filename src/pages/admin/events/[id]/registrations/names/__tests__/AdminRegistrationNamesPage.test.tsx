@@ -189,8 +189,8 @@ describe('AdminRegistrationNamesPage', () => {
     });
 
     it('renders rows sorted A-Z by full name', async () => {
-      const rowA = makeRegistrationSharePayloadRow({ full_name: 'Zara Smith' });
-      const rowB = makeRegistrationSharePayloadRow({ full_name: 'Aaron Jones' });
+      const rowA = makeRegistrationSharePayloadRow({ full_name: 'Test Zulu' });
+      const rowB = makeRegistrationSharePayloadRow({ full_name: 'Test Alpha' });
       setupDefaults('full_name');
       mocks.mockUseRegistrationNamesQuery.mockReturnValue(
         makeQueryResult({ data: makePayload([rowA, rowB]) }),
@@ -201,10 +201,10 @@ describe('AdminRegistrationNamesPage', () => {
       await waitFor(() => {
         const cells = screen.getAllByRole('cell');
         const nameCells = cells.filter(
-          (cell) => cell.textContent === 'Aaron Jones' || cell.textContent === 'Zara Smith',
+          (cell) => cell.textContent === 'Test Alpha' || cell.textContent === 'Test Zulu',
         );
-        expect(nameCells[0]).toHaveTextContent('Aaron Jones');
-        expect(nameCells[1]).toHaveTextContent('Zara Smith');
+        expect(nameCells[0]).toHaveTextContent('Test Alpha');
+        expect(nameCells[1]).toHaveTextContent('Test Zulu');
       });
     });
 
@@ -317,7 +317,7 @@ describe('AdminRegistrationNamesPage', () => {
 
     it('formats selected status and datetime core fields for display', async () => {
       const row = makeRegistrationSharePayloadRow({
-        full_name: 'Pat Garcia',
+        full_name: 'Test Member',
         registration_status: 'updated',
         submitted_at: '2026-07-12T03:30:00.000Z',
         updated_at: '2026-07-12T06:00:00.000Z',

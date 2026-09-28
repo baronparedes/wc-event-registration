@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -46,7 +47,7 @@ describe('AdminChatPage', () => {
       data: { session: { user: { email: 'admin@example.com' } } },
     });
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { full_name: 'Admin User', avatar_object_key: 'avatars/admin.jpg' },
+      data: { full_name: 'Test Admin', avatar_object_key: 'avatars/admin.jpg' },
     });
   });
 
@@ -84,7 +85,7 @@ describe('AdminChatPage', () => {
 
     expect(screen.getByText('How many members registered?')).toBeInTheDocument();
     // Verify user avatar is rendered with user initials / name title
-    expect(screen.getByTitle('Admin User')).toBeInTheDocument();
+    expect(screen.getByTitle('Test Admin')).toBeInTheDocument();
     // Verify bot brand avatar is rendered
     expect(screen.getAllByAltText('AI Assistant').length).toBeGreaterThanOrEqual(1);
 
@@ -292,14 +293,17 @@ describe('AdminChatPage', () => {
   });
 
   it('tokenizes user names in the network request payload while displaying natural names in UI', async () => {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const fullName = `${firstName} ${lastName}`;
     mockUseUserTokenMapQuery.mockReturnValue({
       data: {
         USR_000001: {
           id: 'u-1',
-          name: 'John Doe',
-          fullName: 'John Doe',
-          firstName: 'John',
-          lastName: 'Doe',
+          name: fullName,
+          fullName,
+          firstName,
+          lastName,
         },
       },
     });
@@ -311,7 +315,7 @@ describe('AdminChatPage', () => {
     );
 
     const input = screen.getByPlaceholderText(/Ask/i);
-    fireEvent.change(input, { target: { value: 'Is John Doe scheduled for Sunday?' } });
+    fireEvent.change(input, { target: { value: `Is ${fullName} scheduled for Sunday?` } });
 
     const sendButton = screen.getByRole('button', { name: /Send/i });
     fireEvent.click(sendButton);
@@ -325,9 +329,9 @@ describe('AdminChatPage', () => {
     };
     // Ensure raw name NEVER reached the request
     expect(callPayload.messages[0]?.content).toBe('Is USR_000001 scheduled for Sunday?');
-    expect(callPayload.messages[0]?.content).not.toContain('John Doe');
+    expect(callPayload.messages[0]?.content).not.toContain(fullName);
 
     // UI displays the untokenized name
-    expect(screen.getByText('Is John Doe scheduled for Sunday?')).toBeInTheDocument();
+    expect(screen.getByText(`Is ${fullName} scheduled for Sunday?`)).toBeInTheDocument();
   });
 });

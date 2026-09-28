@@ -1,8 +1,9 @@
+import { faker } from '@faker-js/faker';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { AdminMember } from '@/lib/domain/members';
+import { makeAdminMember } from '@/__tests__/factories';
 
 import { MobileMemberCard } from '../MobileMemberCard';
 
@@ -14,13 +15,11 @@ vi.mock('../UpdateMemberIdDialog', () => ({
   UpdateMemberIdDialog: () => <button data-testid="update-member-id-dialog">Update ID</button>,
 }));
 
-const mockMember: AdminMember = {
+const mockMember = makeAdminMember({
   id: 'user-1',
   member_id: 'WC-001',
   is_active: true,
-  full_name: 'John Doe',
-  nickname: 'Johnny',
-  email: 'john@example.com',
+  nickname: faker.person.firstName(),
   phone: '+1234567890',
   role: 'Leader',
   category: 'Regular',
@@ -28,11 +27,9 @@ const mockMember: AdminMember = {
   updated_at: '2024-01-01T00:00:00Z',
   extra_metadata: {},
   date_of_birth: null,
-  first_name: 'John',
-  last_name: 'Doe',
   avatar_object_key: null,
   last_activity: undefined,
-};
+});
 
 describe('MobileMemberCard', () => {
   it('renders member information correctly', () => {
@@ -42,9 +39,9 @@ describe('MobileMemberCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('(Johnny)')).toBeInTheDocument();
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+    expect(screen.getByText(mockMember.full_name)).toBeInTheDocument();
+    expect(screen.getByText(`(${mockMember.nickname})`)).toBeInTheDocument();
+    expect(screen.getByText(mockMember.email)).toBeInTheDocument();
     expect(screen.getByText('WC-001')).toBeInTheDocument();
     expect(screen.getByText('Leader • Regular')).toBeInTheDocument();
     expect(screen.getByText('+1234567890')).toBeInTheDocument();

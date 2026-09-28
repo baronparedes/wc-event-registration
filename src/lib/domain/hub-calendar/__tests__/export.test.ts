@@ -16,11 +16,11 @@ function makeMember(overrides?: Partial<AdminMember>): AdminMember {
     member_id: 'MEM-001',
     avatar_object_key: null,
     is_active: true,
-    full_name: 'John Doe',
-    first_name: 'John',
-    last_name: 'Doe',
-    nickname: 'Johnny',
-    email: 'john@example.com',
+    full_name: 'Test Member',
+    first_name: 'Test',
+    last_name: 'Test Member',
+    nickname: 'Test Nick',
+    email: 'member@example.com',
     phone: '123-456',
     date_of_birth: '1990-09-15',
     role: 'Usher',
@@ -43,8 +43,8 @@ describe('hub-calendar export functions', () => {
   });
 
   it('builds month milestones CSV export sorted by date, type, and full name', () => {
-    const member1 = makeMember({ id: 'm1', full_name: 'Alice', date_of_birth: '1990-09-10' });
-    const member2 = makeMember({ id: 'm2', full_name: 'Bob', date_of_birth: '1990-09-10' });
+    const member1 = makeMember({ id: 'm1', full_name: 'Test Alpha', date_of_birth: '1990-09-10' });
+    const member2 = makeMember({ id: 'm2', full_name: 'Test Bravo', date_of_birth: '1990-09-10' });
 
     const milestoneEntries: MilestoneEntry[] = [
       { id: 'm2-birthday', type: 'birthday', member: member2 },
@@ -62,13 +62,13 @@ describe('hub-calendar export functions', () => {
     expect(lines[0]).toBe(
       'Member ID,Full Name,Nickname,Milestone Type,Milestone Date,Email,Phone,Role,Category',
     );
-    expect(lines[1]).toContain('Alice');
-    expect(lines[2]).toContain('Bob');
+    expect(lines[1]).toContain('Test Alpha');
+    expect(lines[2]).toContain('Test Bravo');
   });
 
   it('builds Sunday schedules CSV export sorted by time slot order then full name', () => {
-    const member1 = makeMember({ id: 'm1', full_name: 'Zack' });
-    const member2 = makeMember({ id: 'm2', full_name: 'Adam' });
+    const member1 = makeMember({ id: 'm1', full_name: 'Test Zulu' });
+    const member2 = makeMember({ id: 'm2', full_name: 'Test Alpha' });
 
     const entries: MemberScheduleEntry[] = [
       {
@@ -95,22 +95,30 @@ describe('hub-calendar export functions', () => {
     expect(lines[0]).toBe(
       'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
     );
-    // 9AM slot: Adam first, then Zack
+    // 9AM slot: Test Alpha first, then Test Zulu
     expect(lines[1]).toContain(
-      '9:00 AM,MEM-001,Adam,Johnny,Usher,adult,john@example.com,123-456,No,',
+      '9:00 AM,MEM-001,Test Alpha,Test Nick,Usher,adult,member@example.com,123-456,No,',
     );
     expect(lines[2]).toContain(
-      '9:00 AM,MEM-001,Zack,Johnny,Usher,adult,john@example.com,123-456,No,',
+      '9:00 AM,MEM-001,Test Zulu,Test Nick,Usher,adult,member@example.com,123-456,No,',
     );
-    // 12NN slot: Zack
+    // 12NN slot: Test Zulu
     expect(lines[3]).toContain(
-      '12:00 NN,MEM-001,Zack,Johnny,Usher,adult,john@example.com,123-456,No,',
+      '12:00 NN,MEM-001,Test Zulu,Test Nick,Usher,adult,member@example.com,123-456,No,',
     );
   });
 
   it('exports excused status and reason when excusedMap is provided', () => {
-    const excusedMember = makeMember({ id: 'm-excused', member_id: 'MEM-EXC', full_name: 'Bob' });
-    const normalMember = makeMember({ id: 'm-normal', member_id: 'MEM-NORM', full_name: 'Alice' });
+    const excusedMember = makeMember({
+      id: 'm-excused',
+      member_id: 'MEM-EXC',
+      full_name: 'Test Bravo',
+    });
+    const normalMember = makeMember({
+      id: 'm-normal',
+      member_id: 'MEM-NORM',
+      full_name: 'Test Alpha',
+    });
 
     const entries: MemberScheduleEntry[] = [
       {
@@ -153,14 +161,14 @@ describe('hub-calendar export functions', () => {
     expect(lines[0]).toBe(
       'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
     );
-    // 9AM: Alice (not excused)
-    expect(lines[1]).toContain('9:00 AM,MEM-NORM,Alice');
+    // 9AM: Test Alpha (not excused)
+    expect(lines[1]).toContain('9:00 AM,MEM-NORM,Test Alpha');
     expect(lines[1]).toContain(',No,');
-    // 9AM: Bob (excused with reason, quoted for comma)
-    expect(lines[2]).toContain('9:00 AM,MEM-EXC,Bob');
+    // 9AM: Test Bravo (excused with reason, quoted for comma)
+    expect(lines[2]).toContain('9:00 AM,MEM-EXC,Test Bravo');
     expect(lines[2]).toContain(',Yes,"Medical rest, doctor advise"');
-    // 12NN: Bob (not excused for 12NN)
-    expect(lines[3]).toContain('12:00 NN,MEM-EXC,Bob');
+    // 12NN: Test Bravo (not excused for 12NN)
+    expect(lines[3]).toContain('12:00 NN,MEM-EXC,Test Bravo');
     expect(lines[3]).toContain(',No,');
   });
 });

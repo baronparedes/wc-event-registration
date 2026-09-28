@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ChatMessageItem } from '../ChatMessageItem';
 
 const mockTokens: Record<string, { id: string; name: string }> = {
-  USR_000123: { id: 'user-1', name: 'John Doe' },
+  USR_000123: { id: 'user-1', name: 'Test Member' },
 };
 
 vi.mock('@/hooks/domain/chat', () => ({
@@ -21,30 +21,30 @@ describe('ChatMessageItem', () => {
     render(
       <ChatMessageItem
         message={{ id: '1', role: 'user', content: 'Can you show me the attendees?' }}
-        displayName="Jane Doe"
+        displayName="Test Admin"
       />,
     );
 
     expect(screen.getByText('Can you show me the attendees?')).toBeInTheDocument();
-    expect(screen.getByTitle('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByTitle('Test Admin')).toBeInTheDocument();
   });
 
   it('untokenizes member tokens for display in user message bubbles', () => {
     render(
       <ChatMessageItem
         message={{ id: '1', role: 'user', content: 'Is USR_000123 scheduled for Sunday?' }}
-        displayName="Jane Doe"
+        displayName="Test Admin"
       />,
     );
 
-    expect(screen.getByText('Is John Doe scheduled for Sunday?')).toBeInTheDocument();
+    expect(screen.getByText('Is Test Member scheduled for Sunday?')).toBeInTheDocument();
   });
 
   it('renders assistant message with brand avatar and content', () => {
     render(
       <ChatMessageItem
         message={{ id: '2', role: 'assistant', content: 'Here are the attendees.' }}
-        displayName="Jane Doe"
+        displayName="Test Admin"
         isLoading={false}
       />,
     );
@@ -58,7 +58,7 @@ describe('ChatMessageItem', () => {
     render(
       <ChatMessageItem
         message={{ id: '3', role: 'assistant', content: '' }}
-        displayName="Jane Doe"
+        displayName="Test Admin"
         isLoading={true}
       />,
     );

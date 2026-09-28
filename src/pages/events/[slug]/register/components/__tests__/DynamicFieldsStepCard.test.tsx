@@ -2,23 +2,20 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
+import { makeMemberLookupProfile } from '@/__tests__/factories';
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
 import type { MemberLookupProfile } from '@/lib/domain/members';
 
 import { DynamicFieldsStepCard } from '../index';
 
-const matchedMember: MemberLookupProfile = {
+const matchedMember: MemberLookupProfile = makeMemberLookupProfile({
   user_id: 'user-1',
   member_token: 'mlt2.token.payload',
   avatar_object_key: 'avatars/member/user-1.jpg',
   role: 'usher',
   category: 'regular',
-  full_name: 'Jane Doe',
   nickname: null,
-  first_name: 'Jane',
-  last_name: 'Doe',
-  last_initial: 'D',
-};
+});
 
 const baseFields: PublicEventField[] = [
   {

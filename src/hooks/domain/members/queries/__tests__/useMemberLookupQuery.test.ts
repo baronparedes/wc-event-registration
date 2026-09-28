@@ -98,14 +98,15 @@ describe('useMemberLookupQuery', () => {
     });
 
     const { result } = renderHookWithClient(() => useMemberLookupQuery());
+    const name = faker.person.fullName();
 
     const response = await act(async () =>
-      result.current.mutateAsync({ name: '  Juan Dela Cruz  ', eventSlug: 'sunday-service' }),
+      result.current.mutateAsync({ name: `  ${name}  `, eventSlug: 'sunday-service' }),
     );
 
     expect(mockLookupCaller).toHaveBeenCalledWith({
       memberId: undefined,
-      name: 'Juan Dela Cruz',
+      name,
       eventSlug: 'sunday-service',
     });
     expect(response).toEqual({

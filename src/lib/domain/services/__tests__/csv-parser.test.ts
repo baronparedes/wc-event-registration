@@ -83,7 +83,7 @@ describe('Service Attendance CSV Parser', () => {
             Time: '09:00:00',
             Time_Slot: '9AM',
             Table: '105',
-            Name: 'John Doe',
+            Name: 'Test Usher',
             Role: 'Usher',
           },
           {
@@ -92,7 +92,7 @@ describe('Service Attendance CSV Parser', () => {
             Time: '09:00:00',
             Time_Slot: '9AM',
             Table: '42',
-            Name: 'Jane Smith',
+            Name: 'Test Attendee',
             Role: 'Attendee',
           },
         ],

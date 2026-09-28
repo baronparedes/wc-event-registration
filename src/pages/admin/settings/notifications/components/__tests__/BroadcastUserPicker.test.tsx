@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,11 +11,16 @@ vi.mock('@/hooks/domain/auth', () => ({
   useAuthUsersQuery: vi.fn(),
 }));
 
+const firstUserName = faker.person.fullName();
+const firstUserEmail = faker.internet.exampleEmail();
+const secondUserName = faker.person.fullName();
+const thirdUserName = faker.person.fullName();
+
 const mockUsers = [
   {
     id: 'user-1',
-    name: 'Cecile Vitalicio',
-    email: 'cesvitalicio23@gmail.com',
+    name: firstUserName,
+    email: firstUserEmail,
     avatar_object_key: null,
     has_member_profile: true,
     created_at: '2026-01-01T00:00:00Z',
@@ -22,8 +28,8 @@ const mockUsers = [
   },
   {
     id: 'user-2',
-    name: 'Cesar Salad',
-    email: 'cSalad@gmail.com',
+    name: secondUserName,
+    email: faker.internet.exampleEmail(),
     avatar_object_key: null,
     has_member_profile: false,
     created_at: '2026-01-02T00:00:00Z',
@@ -31,8 +37,8 @@ const mockUsers = [
   },
   {
     id: 'user-3',
-    name: 'Cynthia Cruz',
-    email: 'ccruz@gmail.com',
+    name: thirdUserName,
+    email: faker.internet.exampleEmail(),
     avatar_object_key: null,
     has_member_profile: true,
     created_at: '2026-01-03T00:00:00Z',
@@ -83,9 +89,9 @@ describe('BroadcastUserPicker', () => {
     fireEvent.focus(input);
 
     expect(screen.getByRole('listbox')).toBeInTheDocument();
-    expect(screen.getByText('Cecile Vitalicio')).toBeInTheDocument();
-    expect(screen.getByText('Cynthia Cruz')).toBeInTheDocument();
-    expect(screen.queryByText('Cesar Salad')).not.toBeInTheDocument();
+    expect(screen.getByText(firstUserName)).toBeInTheDocument();
+    expect(screen.getByText(thirdUserName)).toBeInTheDocument();
+    expect(screen.queryByText(secondUserName)).not.toBeInTheDocument();
     expect(useAuthUsersQuery).toHaveBeenCalledWith('', true, true);
   });
 
@@ -96,11 +102,11 @@ describe('BroadcastUserPicker', () => {
     const input = screen.getByRole('combobox');
     fireEvent.focus(input);
 
-    fireEvent.click(screen.getByText('Cecile Vitalicio'));
+    fireEvent.click(screen.getByText(firstUserName));
 
     expect(handleChange).toHaveBeenCalledWith(
       'user-1',
-      expect.objectContaining({ id: 'user-1', name: 'Cecile Vitalicio' }),
+      expect.objectContaining({ id: 'user-1', name: firstUserName }),
     );
   });
 
@@ -108,8 +114,8 @@ describe('BroadcastUserPicker', () => {
     const handleChange = vi.fn();
     renderComponent({ value: 'user-1', onChange: handleChange });
 
-    expect(screen.getByText('Cecile Vitalicio')).toBeInTheDocument();
-    expect(screen.getByText('cesvitalicio23@gmail.com')).toBeInTheDocument();
+    expect(screen.getByText(firstUserName)).toBeInTheDocument();
+    expect(screen.getByText(firstUserEmail)).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
@@ -136,7 +142,7 @@ describe('BroadcastUserPicker', () => {
 
     expect(handleChange).toHaveBeenCalledWith(
       'user-3',
-      expect.objectContaining({ id: 'user-3', name: 'Cynthia Cruz' }),
+      expect.objectContaining({ id: 'user-3', name: thirdUserName }),
     );
   });
 

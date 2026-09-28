@@ -79,7 +79,7 @@ const createTestUserRow = (overrides?: Record<string, unknown>) => ({
   id: faker.string.uuid(),
   member_id: faker.helpers.slugify(faker.lorem.words(2)).toUpperCase(),
   full_name: faker.person.fullName(),
-  email: faker.internet.email(),
+  email: faker.internet.exampleEmail(),
   phone: faker.datatype.boolean() ? faker.phone.number() : null,
   role: 'player',
   category: 'adult',
@@ -284,7 +284,7 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(regRow.event_id, {
           pageSize: 25,
-          searchTerm: 'Jane',
+          searchTerm: 'Test',
         }),
       );
 
@@ -293,7 +293,7 @@ describe('useAdminRegistrationsQuery', () => {
       });
 
       expect(mockUsersBuilder.or).toHaveBeenCalledWith(
-        expect.stringContaining('full_name.ilike.%Jane%'),
+        expect.stringContaining('full_name.ilike.%Test%'),
       );
       expect(result.current.data?.pages[0]?.items).toHaveLength(1);
       expect(result.current.data?.pages[0]?.items[0]).toMatchObject({
@@ -337,7 +337,7 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(testEventId, {
           pageSize: 25,
-          searchTerm: 'Jane',
+          searchTerm: 'Test',
         }),
       );
 
@@ -366,7 +366,7 @@ describe('useAdminRegistrationsQuery', () => {
       const { result } = renderHookWithClient(() =>
         useAdminRegistrationsQuery(regRow.event_id, {
           pageSize: 25,
-          searchTerm: '  Jane  ',
+          searchTerm: '  Test  ',
         }),
       );
 
@@ -375,7 +375,7 @@ describe('useAdminRegistrationsQuery', () => {
       });
 
       expect(mockUsersBuilder.or).toHaveBeenCalledWith(
-        expect.stringContaining('full_name.ilike.%Jane%'),
+        expect.stringContaining('full_name.ilike.%Test%'),
       );
     });
   });

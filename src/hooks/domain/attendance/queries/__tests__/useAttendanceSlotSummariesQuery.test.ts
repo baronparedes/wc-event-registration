@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -94,6 +95,12 @@ describe('useAttendanceSlotSummariesQuery', () => {
   });
 
   it('returns grouped slot summaries for registered and public attendees', async () => {
+    const registeredFullName = faker.person.fullName();
+    const registeredEmail = faker.internet.exampleEmail();
+    const publicFirstName = faker.person.firstName();
+    const publicLastName = faker.person.lastName();
+    const publicEmail = faker.internet.exampleEmail();
+
     mockSlotRecordsBuilder.order.mockResolvedValueOnce({
       data: [
         {
@@ -140,8 +147,8 @@ describe('useAttendanceSlotSummariesQuery', () => {
         {
           id: 'user-1',
           member_id: 'MID-001',
-          full_name: 'Registered Person',
-          email: 'registered@test.com',
+          full_name: registeredFullName,
+          email: registeredEmail,
         },
       ],
       error: null,
@@ -151,9 +158,9 @@ describe('useAttendanceSlotSummariesQuery', () => {
       data: [
         {
           id: 'pub-1',
-          first_name: 'Public',
-          last_name: 'Attendee',
-          email: 'public@test.com',
+          first_name: publicFirstName,
+          last_name: publicLastName,
+          email: publicEmail,
         },
       ],
       error: null,
@@ -175,9 +182,9 @@ describe('useAttendanceSlotSummariesQuery', () => {
             attendee_kind: 'registered',
             registration_id: 'reg-1',
             public_registration_id: null,
-            full_name: 'Registered Person',
+            full_name: registeredFullName,
             member_id: 'MID-001',
-            email: 'registered@test.com',
+            email: registeredEmail,
             official_check_in_time: '2026-07-11T01:00:00.000Z',
             recorded_at: '2026-07-11T01:01:00.000Z',
           },
@@ -192,9 +199,9 @@ describe('useAttendanceSlotSummariesQuery', () => {
             attendee_kind: 'public',
             registration_id: null,
             public_registration_id: 'pub-1',
-            full_name: 'Public Attendee',
+            full_name: `${publicFirstName} ${publicLastName}`,
             member_id: null,
-            email: 'public@test.com',
+            email: publicEmail,
             official_check_in_time: '2026-07-11T01:00:30.000Z',
             recorded_at: '2026-07-11T01:02:00.000Z',
           },

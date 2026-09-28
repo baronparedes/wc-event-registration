@@ -49,7 +49,7 @@ describe('useAdminMemberQuery', () => {
 
   it('returns mapped member record', async () => {
     const member = makeAdminMember({
-      nickname: 'J',
+      nickname: faker.person.firstName(),
       role: 'player',
       category: 'adult',
       phone: null,

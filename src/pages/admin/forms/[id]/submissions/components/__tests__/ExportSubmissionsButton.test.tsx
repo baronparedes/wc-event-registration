@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,8 +28,8 @@ const mockSubmissions: FormSubmission[] = [
     updated_at: '2026-01-15T10:30:00Z',
     users: {
       member_id: 'WC-001',
-      full_name: 'Jane, "Doe"',
-      email: 'jane@example.com',
+      full_name: 'Test, "Member"',
+      email: faker.internet.exampleEmail(),
     },
     form_submission_answers: [
       {
@@ -163,9 +164,9 @@ const mockSubmissions: FormSubmission[] = [
     created_at: '2026-01-16T14:00:00Z',
     updated_at: '2026-01-16T14:00:00Z',
     public_registrant_info: {
-      first_name: 'John',
-      last_name: 'Smith',
-      email: 'john.smith@example.com',
+      first_name: faker.person.firstName(),
+      last_name: faker.person.lastName(),
+      email: faker.internet.exampleEmail(),
       phone: '09123456789',
     },
     form_submission_answers: [

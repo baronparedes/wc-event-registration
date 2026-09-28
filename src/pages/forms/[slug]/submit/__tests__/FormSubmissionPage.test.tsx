@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -199,6 +200,8 @@ describe('FormSubmissionPage', () => {
   it('renders profile card on member step 2, handles continue and change member', () => {
     const mockContinue = vi.fn();
     const mockBackToOne = vi.fn();
+    const memberFirstName = faker.person.firstName();
+    const memberLastName = faker.person.lastName();
 
     mockUseFormSubmissionPageState.mockReturnValue({
       ...baseState,
@@ -210,10 +213,10 @@ describe('FormSubmissionPage', () => {
         ...baseState.memberLookup,
         matchedMember: {
           user_id: 'u-1',
-          first_name: 'Jane',
-          last_name: 'Doe',
-          full_name: 'Jane Doe',
-          nickname: 'Janey',
+          first_name: memberFirstName,
+          last_name: memberLastName,
+          full_name: `${memberFirstName} ${memberLastName}`,
+          nickname: faker.person.firstName(),
         },
       },
     });

@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it } from 'vitest';
@@ -26,9 +27,9 @@ function DynamicFieldsStepCardHarness(props: {
   return (
     <DynamicFieldsStepCard
       matchedMember={{
-        full_name: 'Jane Doe',
+        full_name: faker.person.fullName(),
         role: 'Member',
-        first_name: 'Jane',
+        first_name: faker.person.firstName(),
         last_initial: 'D',
         member_token: 'MEM-001',
       }}

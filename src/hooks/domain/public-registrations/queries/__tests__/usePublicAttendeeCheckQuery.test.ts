@@ -34,7 +34,7 @@ describe('usePublicAttendeeCheckQuery', () => {
       status: 'submitted',
       responses: {},
     };
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({
@@ -52,7 +52,7 @@ describe('usePublicAttendeeCheckQuery', () => {
   });
 
   it('returns null when edge function succeeds without existing registration', async () => {
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({
@@ -69,7 +69,7 @@ describe('usePublicAttendeeCheckQuery', () => {
   });
 
   it('returns null when attendee is not found', async () => {
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({ success: false, reason: 'not_found' });
@@ -84,7 +84,7 @@ describe('usePublicAttendeeCheckQuery', () => {
   });
 
   it('throws edge function reason for non-not-found failures', async () => {
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({ success: false, reason: 'forbidden' });
@@ -99,7 +99,7 @@ describe('usePublicAttendeeCheckQuery', () => {
   });
 
   it('throws default error when failure reason is missing', async () => {
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({ success: false });
@@ -132,7 +132,7 @@ describe('usePublicAttendeeCheckQuery', () => {
       status: 'submitted',
       responses: {},
     };
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
 
     mockCaller.mockResolvedValueOnce({

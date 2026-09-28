@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,14 +27,17 @@ describe('useCommitmentDashboardStatsQuery', () => {
   });
 
   it('fetches and correctly maps commitment dashboard stats', async () => {
+    const fullName = faker.person.fullName();
+    const nickname = faker.person.firstName();
+    const email = faker.internet.exampleEmail();
     const mockData = [
       {
         user_id: 'u-1',
         member_id: 'MEM-001',
-        avatar_object_key: 'avatars/jane.jpg',
-        full_name: 'Jane Doe',
-        nickname: 'JD',
-        email: 'jane@example.com',
+        avatar_object_key: 'avatars/member.jpg',
+        full_name: fullName,
+        nickname,
+        email,
         role: 'Usher',
         category: 'Women',
         start_date: '2025-01-01',
@@ -56,7 +60,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
         start_date: '2025-01-01',
         end_date: '2025-03-31',
         excuse_event_id: 'event-123',
-        search_query: 'Jane',
+        search_query: fullName,
         role: 'Usher',
         category: 'Women',
       }),
@@ -68,7 +72,7 @@ describe('useCommitmentDashboardStatsQuery', () => {
       p_start_date: '2025-01-01',
       p_end_date: '2025-03-31',
       p_excuse_event_id: 'event-123',
-      p_search_query: 'Jane',
+      p_search_query: fullName,
       p_role: 'Usher',
       p_category: 'Women',
       p_page: 1,
@@ -83,10 +87,10 @@ describe('useCommitmentDashboardStatsQuery', () => {
       {
         user_id: 'u-1',
         member_id: 'MEM-001',
-        avatar_object_key: 'avatars/jane.jpg',
-        full_name: 'Jane Doe',
-        nickname: 'JD',
-        email: 'jane@example.com',
+        avatar_object_key: 'avatars/member.jpg',
+        full_name: fullName,
+        nickname,
+        email,
         role: 'Usher',
         category: 'Women',
         start_date: '2025-01-01',
@@ -126,9 +130,9 @@ describe('useCommitmentDashboardStatsQuery', () => {
       {
         user_id: 'u-1',
         member_id: 'MEM-001',
-        full_name: 'Jane Doe',
-        nickname: 'JD',
-        email: 'jane@example.com',
+        full_name: faker.person.fullName(),
+        nickname: faker.person.firstName(),
+        email: faker.internet.exampleEmail(),
         role: 'Usher',
         category: 'Women',
         start_date: '2025-01-01',

@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -46,6 +47,9 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
     </QueryClientProvider>
   );
 
+  const volunteerName = faker.person.fullName();
+  const volunteerNickname = faker.person.firstName();
+
   const mockQueryReturnValue = {
     data: {
       pages: [
@@ -55,9 +59,9 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
               user_id: '1',
               member_id: 'MEM-001',
               avatar_object_key: null,
-              full_name: 'John Doe',
-              nickname: 'Johnny',
-              email: 'john@example.com',
+              full_name: volunteerName,
+              nickname: volunteerNickname,
+              email: faker.internet.exampleEmail(),
               role: 'Usher',
               category: 'Men',
               start_date: '2025-01-01',
@@ -92,7 +96,7 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
     render(<AdminServiceAttendanceCommitmentPage />, { wrapper });
 
     expect(screen.getAllByText('Commitment Dashboard')[0]).toBeInTheDocument();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText(volunteerName)).toBeInTheDocument();
     expect(screen.getByText('Volunteers')).toBeInTheDocument();
   });
 
@@ -123,7 +127,7 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
     render(<AdminServiceAttendanceCommitmentPage />, { wrapper });
 
     const searchInput = screen.getByLabelText('Search name or nickname');
-    fireEvent.change(searchInput, { target: { value: 'Johnny' } });
+    fireEvent.change(searchInput, { target: { value: volunteerNickname } });
 
     act(() => {
       vi.advanceTimersByTime(400);
@@ -131,7 +135,7 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
 
     expect(useCommitmentDashboardStatsQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        search_query: 'Johnny',
+        search_query: volunteerNickname,
       }),
     );
 

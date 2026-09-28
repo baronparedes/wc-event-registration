@@ -30,7 +30,7 @@ describe('useSubmitPublicRegistrationMutation', () => {
 
   it('submits registration and invalidates attendee-check and event queries', async () => {
     const eventSlug = faker.helpers.slugify(faker.lorem.words(2)).toLowerCase();
-    const email = faker.internet.email();
+    const email = faker.internet.exampleEmail();
 
     mockCaller.mockResolvedValueOnce({ success: true, registration_id: faker.string.uuid() });
 
@@ -74,7 +74,7 @@ describe('useSubmitPublicRegistrationMutation', () => {
           first_name: faker.person.firstName(),
           last_name: faker.person.lastName(),
           nickname: null,
-          email: faker.internet.email(),
+          email: faker.internet.exampleEmail(),
           phone: null,
         },
         responses: {},
@@ -95,7 +95,7 @@ describe('useSubmitPublicRegistrationMutation', () => {
           first_name: faker.person.firstName(),
           last_name: faker.person.lastName(),
           nickname: null,
-          email: faker.internet.email(),
+          email: faker.internet.exampleEmail(),
           phone: null,
         },
         responses: {},

@@ -18,10 +18,10 @@ describe('VolunteerListTable', () => {
     {
       user_id: '1',
       member_id: 'MEM-001',
-      avatar_object_key: 'avatars/alice.jpg',
-      full_name: 'Alice Smith',
-      nickname: 'Ali',
-      email: 'alice@example.com',
+      avatar_object_key: 'avatars/alpha.jpg',
+      full_name: 'Test Alpha',
+      nickname: 'Test Ali',
+      email: 'test.alpha@example.com',
       role: 'Usher',
       category: 'Women',
       start_date: '2024-01-01',
@@ -38,9 +38,9 @@ describe('VolunteerListTable', () => {
       user_id: '2',
       member_id: 'MEM-002',
       avatar_object_key: null,
-      full_name: 'Bob Jones',
-      nickname: 'Bobby',
-      email: 'bob@example.com',
+      full_name: 'Test Bravo',
+      nickname: 'Test Bobby',
+      email: 'test.bravo@example.com',
       role: 'Greeter',
       category: 'Men',
       start_date: '2024-02-01',
@@ -57,9 +57,9 @@ describe('VolunteerListTable', () => {
       user_id: '3',
       member_id: 'MEM-003',
       avatar_object_key: null,
-      full_name: 'Charlie Brown',
-      nickname: 'Chuck',
-      email: 'charlie@example.com',
+      full_name: 'Test Charlie',
+      nickname: 'Test Chuck',
+      email: 'test.charlie@example.com',
       role: 'Media',
       category: 'Youth',
       start_date: '2024-03-01',
@@ -92,10 +92,10 @@ describe('VolunteerListTable', () => {
     render(<VolunteerListTable {...defaultProps} />);
 
     const rows = screen.getAllByRole('row');
-    // Row 0 is header, Row 1 is Bob (score 8), Row 2 is Alice (score 6.5), Row 3 is Charlie (score -1.5)
-    expect(rows[1]).toHaveTextContent('Bob Jones');
-    expect(rows[2]).toHaveTextContent('Alice Smith');
-    expect(rows[3]).toHaveTextContent('Charlie Brown');
+    // Row 0 is header, Row 1 is Bravo (score 8), Row 2 is Alpha (score 6.5), Row 3 is Charlie (score -1.5)
+    expect(rows[1]).toHaveTextContent('Test Bravo');
+    expect(rows[2]).toHaveTextContent('Test Alpha');
+    expect(rows[3]).toHaveTextContent('Test Charlie');
   });
 
   it('sorts by volunteer name ascending and descending when volunteer header is clicked', () => {
@@ -105,17 +105,17 @@ describe('VolunteerListTable', () => {
     fireEvent.click(volunteerHeaderBtn);
 
     const rows = screen.getAllByRole('row');
-    // Ascending: Alice -> Bob -> Charlie
-    expect(rows[1]).toHaveTextContent('Alice Smith');
-    expect(rows[2]).toHaveTextContent('Bob Jones');
-    expect(rows[3]).toHaveTextContent('Charlie Brown');
+    // Ascending: Alpha -> Bravo -> Charlie
+    expect(rows[1]).toHaveTextContent('Test Alpha');
+    expect(rows[2]).toHaveTextContent('Test Bravo');
+    expect(rows[3]).toHaveTextContent('Test Charlie');
 
-    // Click again to sort descending: Charlie -> Bob -> Alice
+    // Click again to sort descending: Charlie -> Bravo -> Alpha
     fireEvent.click(volunteerHeaderBtn);
     const descRows = screen.getAllByRole('row');
-    expect(descRows[1]).toHaveTextContent('Charlie Brown');
-    expect(descRows[2]).toHaveTextContent('Bob Jones');
-    expect(descRows[3]).toHaveTextContent('Alice Smith');
+    expect(descRows[1]).toHaveTextContent('Test Charlie');
+    expect(descRows[2]).toHaveTextContent('Test Bravo');
+    expect(descRows[3]).toHaveTextContent('Test Alpha');
   });
 
   it('sorts by start date column', () => {
@@ -125,50 +125,50 @@ describe('VolunteerListTable', () => {
     fireEvent.click(startDateHeaderBtn);
 
     const rows = screen.getAllByRole('row');
-    // Ascending by start date: Jan (Alice) -> Feb (Bob) -> Mar (Charlie)
-    expect(rows[1]).toHaveTextContent('Alice Smith');
-    expect(rows[2]).toHaveTextContent('Bob Jones');
-    expect(rows[3]).toHaveTextContent('Charlie Brown');
+    // Ascending by start date: Jan (Alpha) -> Feb (Bravo) -> Mar (Charlie)
+    expect(rows[1]).toHaveTextContent('Test Alpha');
+    expect(rows[2]).toHaveTextContent('Test Bravo');
+    expect(rows[3]).toHaveTextContent('Test Charlie');
   });
 
   it('sorts numeric columns properly (committed, attended, absences, excused, walk-ins, attendance score)', () => {
     render(<VolunteerListTable {...defaultProps} />);
 
-    // Committed: desc (Charlie: 12 -> Alice: 10 -> Bob: 8)
+    // Committed: desc (Charlie: 12 -> Alpha: 10 -> Bravo: 8)
     const committedHeaderBtn = screen.getByRole('button', { name: /^committed$/i });
     fireEvent.click(committedHeaderBtn);
     let rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Charlie Brown');
-    expect(rows[2]).toHaveTextContent('Alice Smith');
-    expect(rows[3]).toHaveTextContent('Bob Jones');
+    expect(rows[1]).toHaveTextContent('Test Charlie');
+    expect(rows[2]).toHaveTextContent('Test Alpha');
+    expect(rows[3]).toHaveTextContent('Test Bravo');
 
-    // Attended: desc (Alice: 8, Bob: 8 (Bob first alphabetically) -> Charlie: 5)
+    // Attended: desc (Alpha: 8, Bravo: 8 -> Charlie: 5)
     const attendedHeaderBtn = screen.getByRole('button', { name: /^attended$/i });
     fireEvent.click(attendedHeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Alice Smith');
-    expect(rows[2]).toHaveTextContent('Bob Jones');
-    expect(rows[3]).toHaveTextContent('Charlie Brown');
+    expect(rows[1]).toHaveTextContent('Test Alpha');
+    expect(rows[2]).toHaveTextContent('Test Bravo');
+    expect(rows[3]).toHaveTextContent('Test Charlie');
 
-    // Absences: desc (Charlie: 6 -> Alice: 2 -> Bob: 0)
+    // Absences: desc (Charlie: 6 -> Alpha: 2 -> Bravo: 0)
     const absencesHeaderBtn = screen.getByRole('button', { name: /^absences$/i });
     fireEvent.click(absencesHeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Charlie Brown');
-    expect(rows[2]).toHaveTextContent('Alice Smith');
-    expect(rows[3]).toHaveTextContent('Bob Jones');
+    expect(rows[1]).toHaveTextContent('Test Charlie');
+    expect(rows[2]).toHaveTextContent('Test Alpha');
+    expect(rows[3]).toHaveTextContent('Test Bravo');
 
-    // Excused: desc (Charlie: 1 -> Alice: 0, Bob: 0)
+    // Excused: desc (Charlie: 1 -> Alpha: 0, Bravo: 0)
     const excusedHeaderBtn = screen.getByRole('button', { name: /^excused$/i });
     fireEvent.click(excusedHeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Charlie Brown');
+    expect(rows[1]).toHaveTextContent('Test Charlie');
 
-    // WI 9AM/3PM: desc (Alice: 1 -> Bob: 0, Charlie: 0)
+    // WI 9AM/3PM: desc (Alpha: 1 -> Bravo: 0, Charlie: 0)
     const wi9HeaderBtn = screen.getByRole('button', { name: /^wi 9am\/3pm$/i });
     fireEvent.click(wi9HeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Alice Smith');
+    expect(rows[1]).toHaveTextContent('Test Alpha');
 
     // WI 12NN
     const wi12HeaderBtn = screen.getByRole('button', { name: /^wi 12nn$/i });
@@ -176,26 +176,26 @@ describe('VolunteerListTable', () => {
     rows = screen.getAllByRole('row');
     expect(rows[1]).toBeDefined();
 
-    // WI 5th Sun (Bob: 2 -> Alice: 0, Charlie: 0)
+    // WI 5th Sun (Bravo: 2 -> Alpha: 0, Charlie: 0)
     const wi5thHeaderBtn = screen.getByRole('button', { name: /^wi 5th sun$/i });
     fireEvent.click(wi5thHeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Bob Jones');
+    expect(rows[1]).toHaveTextContent('Test Bravo');
 
-    // Attendance score (switched to attendance_score -> defaults to desc: Bob: 8 -> Alice: 6.5 -> Charlie: -1.5)
+    // Attendance score (switched to attendance_score -> defaults to desc: Bravo: 8 -> Alpha: 6.5 -> Charlie: -1.5)
     const attendanceHeaderBtn = screen.getByRole('button', { name: /^attendance$/i });
     fireEvent.click(attendanceHeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Bob Jones');
-    expect(rows[2]).toHaveTextContent('Alice Smith');
-    expect(rows[3]).toHaveTextContent('Charlie Brown');
+    expect(rows[1]).toHaveTextContent('Test Bravo');
+    expect(rows[2]).toHaveTextContent('Test Alpha');
+    expect(rows[3]).toHaveTextContent('Test Charlie');
 
     // Clicking attendance score again toggles to asc (-1.5 -> 6.5 -> 8)
     fireEvent.click(attendanceHeaderBtn);
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Charlie Brown');
-    expect(rows[2]).toHaveTextContent('Alice Smith');
-    expect(rows[3]).toHaveTextContent('Bob Jones');
+    expect(rows[1]).toHaveTextContent('Test Charlie');
+    expect(rows[2]).toHaveTextContent('Test Alpha');
+    expect(rows[3]).toHaveTextContent('Test Bravo');
   });
 
   it('handles multi-role dropdown interactions (toggle, check, uncheck, clear, escape)', () => {
@@ -263,12 +263,12 @@ describe('VolunteerListTable', () => {
 
     // Sort start date
     const startDateBtn = screen.getByRole('button', { name: /^start date$/i });
-    fireEvent.click(startDateBtn); // asc: 2024-01-01 (Alice) -> 2024-02-01 (Bob) -> 2024-03-01 (Charlie)
+    fireEvent.click(startDateBtn); // asc: 2024-01-01 (Alpha) -> 2024-02-01 (Bravo) -> 2024-03-01 (Charlie)
     let rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Alice Smith');
-    fireEvent.click(startDateBtn); // desc: 2024-03-01 (Charlie) -> 2024-02-01 (Bob) -> 2024-01-01 (Alice)
+    expect(rows[1]).toHaveTextContent('Test Alpha');
+    fireEvent.click(startDateBtn); // desc: 2024-03-01 (Charlie) -> 2024-02-01 (Bravo) -> 2024-01-01 (Alpha)
     rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveTextContent('Charlie Brown');
+    expect(rows[1]).toHaveTextContent('Test Charlie');
   });
 
   it('handles volunteer rows with missing/null values for role, category, nickname, and start_date', () => {
@@ -277,9 +277,9 @@ describe('VolunteerListTable', () => {
         user_id: '4',
         member_id: 'MEM-004',
         avatar_object_key: null,
-        full_name: 'Daniel Defoe',
+        full_name: 'Test Delta',
         nickname: '',
-        email: 'daniel@example.com',
+        email: 'test.delta@example.com',
         role: '',
         category: '',
         start_date: '',
@@ -296,7 +296,7 @@ describe('VolunteerListTable', () => {
 
     render(<VolunteerListTable {...defaultProps} stats={sparseStats} totalVolunteers={1} />);
 
-    expect(screen.getAllByText('Daniel Defoe').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Test Delta').length).toBeGreaterThan(0);
     expect(screen.getAllByText('-').length).toBeGreaterThan(0);
   });
 
@@ -304,9 +304,9 @@ describe('VolunteerListTable', () => {
     render(<VolunteerListTable {...defaultProps} />);
 
     const avatars = screen.getAllByTestId('avatar');
-    // The first rendered row sorted by score is Bob (null), then Alice ('avatars/alice.jpg'), then Charlie (null)
-    const aliceAvatar = avatars.find((el) => el.textContent === 'Alice Smith');
-    expect(aliceAvatar).toHaveAttribute('data-avatar-key', 'avatars/alice.jpg');
+    // The first rendered row sorted by score is Bravo (null), then Alpha ('avatars/alpha.jpg'), then Charlie (null)
+    const alphaAvatar = avatars.find((el) => el.textContent === 'Test Alpha');
+    expect(alphaAvatar).toHaveAttribute('data-avatar-key', 'avatars/alpha.jpg');
   });
 
   it('triggers category filter change', () => {
@@ -339,8 +339,8 @@ describe('VolunteerListTable', () => {
     render(<VolunteerListTable {...defaultProps} />);
 
     const searchInput = screen.getByLabelText('Search name or nickname');
-    fireEvent.change(searchInput, { target: { value: 'Alice' } });
+    fireEvent.change(searchInput, { target: { value: 'Test Alpha' } });
 
-    expect(defaultProps.onSearchChange).toHaveBeenCalledWith('Alice');
+    expect(defaultProps.onSearchChange).toHaveBeenCalledWith('Test Alpha');
   });
 });

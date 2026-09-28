@@ -17,12 +17,12 @@ vi.mock('@/hooks/domain/members', () => ({
         {
           items: [
             {
-              id: 'user-alice',
+              id: 'user-alpha',
               member_id: 'RFID-001',
-              full_name: 'Alice Smith',
-              first_name: 'Alice',
-              last_name: 'Smith',
-              nickname: 'Ali',
+              full_name: 'Test Alpha Member',
+              first_name: 'Test Alpha',
+              last_name: 'Test Member',
+              nickname: 'Test Ali',
             },
           ],
         },
@@ -82,11 +82,11 @@ describe('MigrationPreviewTable', () => {
   const sampleRows: EnrichedServiceAttendanceRow[] = [
     {
       row_number: 1,
-      originalData: { Name: 'Alice' },
+      originalData: { Name: 'Test Alpha' },
       isValid: true,
       errors: [],
       rfid: 'RFID-001',
-      member_name: 'Alice Smith',
+      member_name: 'Test Alpha Member',
       service_date: '2026-03-15',
       time_slot: '9AM',
       checked_in_at: '09:05:00',
@@ -98,7 +98,7 @@ describe('MigrationPreviewTable', () => {
     },
     {
       row_number: 2,
-      originalData: { Name: 'Bob' },
+      originalData: { Name: 'Test Bravo' },
       isValid: false,
       errors: ['RFID not found in system.'],
       rfid: 'RFID-999',
@@ -130,7 +130,7 @@ describe('MigrationPreviewTable', () => {
 
     expect(screen.getByText('Preview (2 rows)')).toBeInTheDocument();
     expect(screen.getByText('1 with error')).toBeInTheDocument();
-    expect(screen.getByText('Alice Smith')).toBeInTheDocument();
+    expect(screen.getByText('Test Alpha Member')).toBeInTheDocument();
     expect(screen.getByText('Walk-in')).toBeInTheDocument();
     expect(screen.getByText('RFID not found in system.')).toBeInTheDocument();
 
@@ -221,7 +221,7 @@ describe('MigrationPreviewTable', () => {
 describe('MatchMemberModal', () => {
   const sampleRow: EnrichedServiceAttendanceRow = {
     row_number: 2,
-    originalData: { Name: 'Bobby', RFID: '9999' },
+    originalData: { Name: 'Test Bobby', RFID: '9999' },
     isValid: false,
     errors: ['RFID not found in system.'],
     rfid: '9999',
@@ -237,7 +237,7 @@ describe('MatchMemberModal', () => {
 
   const matchingRow: EnrichedServiceAttendanceRow = {
     row_number: 5,
-    originalData: { Name: 'bobby', RFID: '9999' },
+    originalData: { Name: 'test bobby', RFID: '9999' },
     isValid: false,
     errors: ['RFID not found in system.'],
     rfid: '9999',
@@ -265,15 +265,15 @@ describe('MatchMemberModal', () => {
     );
 
     expect(screen.getByText('Match Member for Row #2')).toBeInTheDocument();
-    expect(screen.getByText('Bobby')).toBeInTheDocument();
+    expect(screen.getByText('Test Bobby')).toBeInTheDocument();
     expect(screen.getByText('RFID not found in system.')).toBeInTheDocument();
 
     const searchInput = screen.getByRole('textbox', { name: /Search/i });
-    expect(searchInput).toHaveValue('Bobby');
+    expect(searchInput).toHaveValue('Test Bobby');
 
     // Type to search
-    fireEvent.change(searchInput, { target: { value: 'Alice' } });
-    expect(searchInput).toHaveValue('Alice');
+    fireEvent.change(searchInput, { target: { value: 'Test Alpha' } });
+    expect(searchInput).toHaveValue('Test Alpha');
   });
 
   it('detects matching failed rows and displays bulk matching checkbox', () => {
@@ -290,9 +290,9 @@ describe('MatchMemberModal', () => {
       />,
     );
 
-    // Select Alice
-    const aliceBtn = screen.getByRole('button', { name: /Alice Smith/i });
-    fireEvent.click(aliceBtn);
+    // Select member
+    const memberBtn = screen.getByRole('button', { name: /Test Alpha Member/i });
+    fireEvent.click(memberBtn);
 
     // Verify bulk match checkbox is shown
     expect(
@@ -307,8 +307,8 @@ describe('MatchMemberModal', () => {
     expect(onAssignMember).toHaveBeenCalledWith(
       2,
       {
-        userId: 'user-alice',
-        memberName: 'Alice Smith',
+        userId: 'user-alpha',
+        memberName: 'Test Alpha Member',
         rfid: 'RFID-001',
       },
       {

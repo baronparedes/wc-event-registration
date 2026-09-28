@@ -82,7 +82,7 @@ describe('MobileCard Components', () => {
       render(
         <MobileCardContentItem
           label="Email"
-          value="john@example.com"
+          value="member@example.com"
           colSpan={2}
           isBreakAll
           isMono
@@ -90,7 +90,7 @@ describe('MobileCard Components', () => {
       );
 
       expect(screen.getByText('Email')).toBeInTheDocument();
-      const valueEl = screen.getByText('john@example.com');
+      const valueEl = screen.getByText('member@example.com');
       expect(valueEl).toBeInTheDocument();
       expect(valueEl).toHaveClass('break-all');
       expect(valueEl).toHaveClass('font-mono');

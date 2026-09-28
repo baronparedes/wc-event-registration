@@ -44,7 +44,7 @@ describe('ExportCommitmentDashboardButton', () => {
 
   it('triggers CSV download on click when data exists', async () => {
     mockMutateAsync.mockResolvedValueOnce({
-      csvText: 'Full Name,Attendance Score\nJane Doe,10',
+      csvText: 'Full Name,Attendance Score\nTest Member,10',
       filename: 'service-commitment-2026-01-01-to-2026-12-31-20260925-000000.csv',
       totalCount: 1,
     });

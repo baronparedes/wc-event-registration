@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -39,6 +40,8 @@ describe('useAdminMembersMilestonesQuery', () => {
   });
 
   it('returns normalized milestone members and keeps only string metadata values', async () => {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
     mockQueryBuilder.order.mockReturnValueOnce(mockQueryBuilder).mockResolvedValueOnce({
       data: [
         {
@@ -46,9 +49,9 @@ describe('useAdminMembersMilestonesQuery', () => {
           member_id: 'WC-001',
           avatar_object_key: 123,
           is_active: true,
-          full_name: 'Jane Doe',
-          first_name: 'Jane',
-          last_name: 'Doe',
+          full_name: `${firstName} ${lastName}`,
+          first_name: firstName,
+          last_name: lastName,
           nickname: null,
           email: null,
           phone: null,
@@ -77,9 +80,9 @@ describe('useAdminMembersMilestonesQuery', () => {
         member_id: 'WC-001',
         avatar_object_key: null,
         is_active: true,
-        full_name: 'Jane Doe',
-        first_name: 'Jane',
-        last_name: 'Doe',
+        full_name: `${firstName} ${lastName}`,
+        first_name: firstName,
+        last_name: lastName,
         nickname: null,
         email: null,
         phone: null,

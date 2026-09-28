@@ -49,10 +49,10 @@ describe('usePublicRegistrationDetailQuery', () => {
       data: {
         id: registrationId,
         event_id: eventId,
-        first_name: 'Jane',
-        last_name: 'Doe',
+        first_name: faker.person.firstName(),
+        last_name: faker.person.lastName(),
         nickname: null,
-        email: 'jane@example.com',
+        email: faker.internet.exampleEmail(),
         phone: null,
         status: 'submitted',
         submitted_at: faker.date.recent().toISOString(),

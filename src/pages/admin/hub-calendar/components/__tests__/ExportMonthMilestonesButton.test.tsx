@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,10 +22,10 @@ function makeMember(overrides?: Partial<Record<string, unknown>>) {
     member_id: 'WC-001',
     avatar_object_key: null,
     is_active: true,
-    full_name: 'Jane Doe',
-    first_name: 'Jane',
-    last_name: 'Doe',
-    nickname: 'J',
+    full_name: 'Test Member',
+    first_name: faker.person.firstName(),
+    last_name: faker.person.lastName(),
+    nickname: 'Test Nick',
     email: null,
     phone: null,
     date_of_birth: '1990-06-15',
@@ -75,9 +76,9 @@ describe('ExportMonthMilestonesButton', () => {
         id: 'member-1-birthday',
         type: 'birthday',
         member: makeMember({
-          full_name: 'Jane, "JJ" Doe',
-          nickname: 'Line\nBreak',
-          email: 'jane@example.com',
+          full_name: 'Test, "JJ" Member',
+          nickname: 'Test Line\nBreak',
+          email: 'test.member@example.com',
           phone: '123',
         }),
       }),
@@ -99,8 +100,8 @@ describe('ExportMonthMilestonesButton', () => {
     const exportedBlob = createObjectURLMock.mock.calls[0]?.[0];
     const csvText = await exportedBlob.text();
 
-    expect(csvText).toContain('"Jane, ""JJ"" Doe"');
-    expect(csvText).toContain('"Line\nBreak"');
+    expect(csvText).toContain('"Test, ""JJ"" Member"');
+    expect(csvText).toContain('"Test Line\nBreak"');
   });
 
   it('shows a toast error message when export fails and re-enables the button', async () => {
@@ -136,7 +137,7 @@ describe('ExportMonthMilestonesButton', () => {
         member: makeMember({
           id: 'member-2',
           member_id: 'WC-002',
-          full_name: 'John Roe',
+          full_name: 'Test Bravo',
           date_of_birth: '1990-06-15',
           extra_metadata: { wedanniv_date: '2001-06-10' },
         }),
@@ -147,7 +148,7 @@ describe('ExportMonthMilestonesButton', () => {
         member: makeMember({
           id: 'member-1',
           member_id: 'WC-001',
-          full_name: 'Jane Doe',
+          full_name: 'Test Member',
           date_of_birth: '1990-06-10',
         }),
       }),
@@ -157,7 +158,7 @@ describe('ExportMonthMilestonesButton', () => {
         member: makeMember({
           id: 'member-3',
           member_id: 'WC-003',
-          full_name: 'Alice Able',
+          full_name: 'Test Alpha',
           extra_metadata: { wedanniv_date: '2001-06-10' },
         }),
       }),
@@ -183,8 +184,8 @@ describe('ExportMonthMilestonesButton', () => {
     expect(lines[0]).toBe(
       'Member ID,Full Name,Nickname,Milestone Type,Milestone Date,Email,Phone,Role,Category',
     );
-    expect(lines[1]).toContain('WC-001,Jane Doe,J,Birthday,1990-06-10');
-    expect(lines[2]).toContain('WC-003,Alice Able,J,Wedding Anniversary,2001-06-10');
-    expect(lines[3]).toContain('WC-002,John Roe,J,Wedding Anniversary,2001-06-10');
+    expect(lines[1]).toContain('WC-001,Test Member,Test Nick,Birthday,1990-06-10');
+    expect(lines[2]).toContain('WC-003,Test Alpha,Test Nick,Wedding Anniversary,2001-06-10');
+    expect(lines[3]).toContain('WC-002,Test Bravo,Test Nick,Wedding Anniversary,2001-06-10');
   });
 });

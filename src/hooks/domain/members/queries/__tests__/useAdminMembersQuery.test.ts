@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,7 +50,7 @@ describe('useAdminMembersQuery', () => {
 
   it('returns paginated members and reads role/category from user columns', async () => {
     const member = makeAdminMember({
-      nickname: 'J',
+      nickname: faker.person.firstName(),
       role: 'player',
       category: 'adult',
       phone: null,
@@ -144,9 +145,9 @@ describe('useAdminMembersQuery', () => {
           member_id: 'WC-009',
           avatar_object_key: null,
           is_active: true,
-          full_name: 'A_B,Name%Here',
-          first_name: 'A_B',
-          last_name: 'Name',
+          full_name: 'Test A_B,Name%Here',
+          first_name: 'Test A_B',
+          last_name: 'Test Name',
           nickname: null,
           email: null,
           phone: null,
@@ -163,7 +164,7 @@ describe('useAdminMembersQuery', () => {
     });
 
     const { result } = renderHookWithClient(() =>
-      useAdminMembersQuery({ pageSize: 1, searchTerm: 'A_B,Name%Here' }),
+      useAdminMembersQuery({ pageSize: 1, searchTerm: 'Test A_B,Name%Here' }),
     );
 
     await waitFor(() => {
@@ -171,7 +172,7 @@ describe('useAdminMembersQuery', () => {
     });
 
     expect(mockQueryBuilder.or).toHaveBeenCalledWith(
-      expect.stringContaining('A\\_B\\,Name\\%Here'),
+      expect.stringContaining('Test A\\_B\\,Name\\%Here'),
     );
     expect(result.current.data?.pages[0]?.items[0]?.role).toBe('');
     expect(result.current.data?.pages[0]?.items[0]?.category).toBe('');
@@ -218,6 +219,8 @@ describe('useAdminMembersQuery', () => {
   });
 
   it('excludes non-string extra metadata values from extra_metadata in list results', async () => {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
     mockQueryBuilder.range.mockResolvedValueOnce({
       data: [
         {
@@ -225,9 +228,9 @@ describe('useAdminMembersQuery', () => {
           member_id: 'WC-001',
           avatar_object_key: null,
           is_active: true,
-          full_name: 'Jane Doe',
-          first_name: 'Jane',
-          last_name: 'Doe',
+          full_name: `${firstName} ${lastName}`,
+          first_name: firstName,
+          last_name: lastName,
           nickname: null,
           email: null,
           phone: null,
@@ -253,12 +256,12 @@ describe('useAdminMembersQuery', () => {
   });
 
   it.each([
-    ['first name', 'John', 'first_name.ilike.%John%'],
-    ['last name', 'Smith', 'last_name.ilike.%Smith%'],
-    ['nickname', 'Johnny', 'nickname.ilike.%Johnny%'],
+    ['first name', 'Test Alpha', 'first_name.ilike.%Test Alpha%'],
+    ['last name', 'Test Bravo', 'last_name.ilike.%Test Bravo%'],
+    ['nickname', 'Test Nick', 'nickname.ilike.%Test Nick%'],
     ['member ID', 'WC-002', 'member_id.ilike.%WC-002%'],
-    ['email', 'john.smith@email.com', 'email.ilike.%john.smith@email.com%'],
-    ['multiple name or email tokens', 'John Smith', 'full_name.ilike.%John%Smith%'],
+    ['email', 'test.member@example.com', 'email.ilike.%test.member@example.com%'],
+    ['multiple name or email tokens', 'Test Alpha', 'full_name.ilike.%Test%Alpha%'],
   ])('filters by %s', async (_field, searchTerm, expectedFilter) => {
     mockQueryBuilder.or.mockResolvedValueOnce({
       data: [
@@ -267,11 +270,11 @@ describe('useAdminMembersQuery', () => {
           member_id: 'WC-002',
           avatar_object_key: null,
           is_active: true,
-          full_name: 'John Smith',
-          first_name: 'John',
-          last_name: 'Smith',
+          full_name: 'Test Alpha Test Bravo',
+          first_name: 'Test Alpha',
+          last_name: 'Test Bravo',
           nickname: null,
-          email: 'john.smith@email.com',
+          email: 'test.member@example.com',
           phone: null,
           date_of_birth: null,
           role: 'player',

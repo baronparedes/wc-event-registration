@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -59,10 +60,11 @@ describe('MemberInfoTab', () => {
   });
 
   it('promotes Civil Status, DGroup Leader, DGroup Status, and DGroup Member Since to Personal Details', () => {
+    const leaderName = faker.person.fullName();
     const member = makeAdminMember({
       extra_metadata: {
         civil_status: 'Married',
-        dgroup_leader: 'Jane Smith',
+        dgroup_leader: leaderName,
         dgroup_status: 'Active',
         dgroup_member_since: '2020',
       },
@@ -75,7 +77,7 @@ describe('MemberInfoTab', () => {
     expect(screen.getByText('Married')).toBeInTheDocument();
 
     expect(screen.getByText('DGroup Leader')).toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    expect(screen.getByText(leaderName)).toBeInTheDocument();
 
     expect(screen.getByText('DGroup Status')).toBeInTheDocument();
     expect(screen.getByText('Active')).toBeInTheDocument();

@@ -49,11 +49,9 @@ function renderPage() {
 }
 
 const member = makeAdminMember({
-  full_name: 'John Doe',
   member_id: 'MEM-100',
   role: 'Athlete',
   category: 'Adult',
-  email: 'john@example.com',
   extra_metadata: { MembershipType: 'Gold' },
 });
 
@@ -89,7 +87,7 @@ describe('ProfilePage', () => {
     expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
     expect(screen.getByText(/Athlete/)).toBeInTheDocument();
     expect(screen.getByText(/Adult/)).toBeInTheDocument();
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+    expect(screen.getByText(member.email)).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Info' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Commitments' })).toBeInTheDocument();

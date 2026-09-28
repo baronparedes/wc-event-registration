@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -8,15 +9,20 @@ import type { DynamicFieldRef } from '@/lib/domain/attendance-views';
 
 import { AttendanceDataTableView } from '../AttendanceDataTableView';
 
+const nickname = faker.person.firstName();
+const lastName = faker.person.lastName();
+const fullName = `${nickname} ${lastName}`;
+const email = faker.internet.exampleEmail();
+
 const sampleRegistrant: RegistrantAttendanceRow = {
   registration_id: 'reg-1',
   public_registration_id: null,
   attendee_kind: 'registered',
   member_id: 'm-1',
-  nickname: 'Jane',
-  last_name: 'Doe',
-  full_name: 'Jane Doe',
-  email: 'jane@example.com',
+  nickname,
+  last_name: lastName,
+  full_name: fullName,
+  email,
   check_in_status: 'checked_in',
   answers: [],
 };
@@ -27,10 +33,10 @@ const sampleAttendee: AttendeeSearchResult = {
   user_id: 'u-1',
   attendee_kind: 'registered',
   member_id: 'm-1',
-  nickname: 'Jane',
-  last_name: 'Doe',
-  full_name: 'Jane Doe',
-  email: 'jane@example.com',
+  nickname,
+  last_name: lastName,
+  full_name: fullName,
+  email,
   role: 'member',
   category: 'adult',
   registration_status: 'submitted',
@@ -94,10 +100,10 @@ describe('AttendanceDataTableView', () => {
       />,
     );
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByText(fullName)).toBeInTheDocument();
     expect(screen.getByText('MEM-001')).toBeInTheDocument();
 
-    const row = screen.getByText('Jane Doe').closest('tr')!;
+    const row = screen.getByText(fullName).closest('tr')!;
     fireEvent.click(row);
     expect(onViewRegistrant).toHaveBeenCalledWith(sampleRegistrant);
 
@@ -135,7 +141,7 @@ describe('AttendanceDataTableView', () => {
       />,
     );
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByText(fullName)).toBeInTheDocument();
     expect(screen.getByTitle('Not Checked In')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /attendance details/ })).not.toBeInTheDocument();
   });

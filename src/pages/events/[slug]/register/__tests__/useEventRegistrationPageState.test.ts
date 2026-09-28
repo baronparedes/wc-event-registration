@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +8,10 @@ import {
   stepBadgeClassName,
   useEventRegistrationPageState,
 } from '@/pages/events/[slug]/register/hooks';
+
+const memberFirstName = faker.person.firstName();
+const memberLastName = faker.person.lastName();
+const memberFullName = `${memberFirstName} ${memberLastName}`;
 
 const {
   mockUseParams,
@@ -218,10 +223,10 @@ describe('useEventRegistrationPageState', () => {
   it('derives wizard step 3 when member is matched and not blocked', () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.isRegistrationBlocked = false;
 
@@ -302,10 +307,10 @@ describe('useEventRegistrationPageState', () => {
     mockUseParams.mockReturnValue({});
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
 
@@ -382,10 +387,10 @@ describe('useEventRegistrationPageState', () => {
 
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventQuery.mockReturnValue({
@@ -405,10 +410,10 @@ describe('useEventRegistrationPageState', () => {
   it('handles submit failure and success paths including cancel update reset', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockSubmitMutateAsync
@@ -455,10 +460,10 @@ describe('useEventRegistrationPageState', () => {
   it('maps duplicate blocked submission errors to the dedicated user message', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockSubmitMutateAsync.mockResolvedValueOnce({
@@ -480,10 +485,10 @@ describe('useEventRegistrationPageState', () => {
   it('maps duplicate compound key errors to inline unique field errors', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
@@ -534,10 +539,10 @@ describe('useEventRegistrationPageState', () => {
   it('maps validation failed responses to field errors and generic submit message', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockSubmitMutateAsync.mockResolvedValueOnce({
@@ -577,10 +582,10 @@ describe('useEventRegistrationPageState', () => {
   it('keeps update-mode users on Step 3 confirmed state after successful submission', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     memberLookupState.isUpdateMode = true;
@@ -611,10 +616,10 @@ describe('useEventRegistrationPageState', () => {
   it('does not bypass dynamic step when user has not explicitly entered step 3', () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
@@ -635,10 +640,10 @@ describe('useEventRegistrationPageState', () => {
   it('auto-submits once when user enters step 3 and there are no active fields', async () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'WC-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
@@ -702,10 +707,10 @@ describe('useEventRegistrationPageState', () => {
   it('prefills field values for all supported event field types', () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.prefillResponses = {
       f_text: 'Hello',
@@ -791,7 +796,7 @@ describe('useEventRegistrationPageState', () => {
 
   it('sets isVerifyingSignedInMember to true while profile or auto lookup is pending for signed in user', () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      data: { member_id: 'MEM-001', full_name: memberFullName },
       isLoading: true,
     });
 
@@ -802,7 +807,7 @@ describe('useEventRegistrationPageState', () => {
 
   it('automatically performs lookup and enters step 3 when member is signed in', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      data: { member_id: 'MEM-001', full_name: memberFullName },
       isLoading: false,
     });
     memberLookupState.handleLookupSubmit.mockResolvedValueOnce({
@@ -824,15 +829,15 @@ describe('useEventRegistrationPageState', () => {
 
   it('does not bypass dynamic fields card for signed in members when activeFields is empty', () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      data: { member_id: 'MEM-001', full_name: memberFullName },
       isLoading: false,
     });
     memberLookupState.matchedMember = {
       user_id: 'user-1',
-      full_name: 'Signed In User',
+      full_name: memberFullName,
       nickname: null,
-      first_name: 'Signed',
-      last_name: 'User',
+      first_name: memberFirstName,
+      last_name: memberLastName,
     };
     memberLookupState.verifiedMemberCredential = 'MEM-001';
     mockUsePublicEventFieldsQuery.mockReturnValue({
@@ -851,7 +856,7 @@ describe('useEventRegistrationPageState', () => {
 
   it('navigates to home when signed in user cancels or acknowledges confirmation', () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-001', full_name: 'Signed In User' },
+      data: { member_id: 'MEM-001', full_name: memberFullName },
       isLoading: false,
     });
 

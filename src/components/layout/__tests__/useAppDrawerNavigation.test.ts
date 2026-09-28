@@ -1,5 +1,6 @@
 import { type ReactNode, createElement } from 'react';
 
+import { faker } from '@faker-js/faker';
 import { renderHook } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -117,8 +118,9 @@ describe('useAppDrawerNavigation', () => {
     mockUseAdminEventQuery.mockReturnValue({
       data: { title: 'Sunday Worship' },
     });
+    const fullName = faker.person.fullName();
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { full_name: 'John Doe', avatar_object_key: 'avatar-1' },
+      data: { full_name: fullName, avatar_object_key: 'avatar-1' },
     });
 
     const { result } = renderHook(
@@ -158,7 +160,7 @@ describe('useAppDrawerNavigation', () => {
       'Unregistered Members',
     ]);
     expect(result.current.eventId).toBe('event-456');
-    expect(result.current.displayName).toBe('John Doe');
+    expect(result.current.displayName).toBe(fullName);
     expect(result.current.hasProfileAccess).toBe(true);
   });
 
@@ -241,7 +243,7 @@ describe('useAppDrawerNavigation', () => {
 
   it('builds member workspace navigation for admin on a member route', () => {
     mockUseAdminMemberQuery.mockReturnValue({
-      data: { full_name: 'John Doe' },
+      data: { full_name: faker.person.fullName() },
     });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null });
 

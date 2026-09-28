@@ -1,9 +1,14 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FormSubmission } from '@/lib/domain/forms';
 
 import { SubmissionsList } from '../SubmissionsList';
+
+const memberFullName = faker.person.fullName();
+const guestFirstName = faker.person.firstName();
+const guestLastName = faker.person.lastName();
 
 const mockSubmissions: FormSubmission[] = [
   {
@@ -19,8 +24,8 @@ const mockSubmissions: FormSubmission[] = [
     updated_at: '2026-01-15T10:30:00Z',
     users: {
       member_id: 'WC-001',
-      full_name: 'Jane Doe',
-      email: 'jane@example.com',
+      full_name: memberFullName,
+      email: faker.internet.exampleEmail(),
     },
     form_submission_answers: [
       {
@@ -53,9 +58,9 @@ const mockSubmissions: FormSubmission[] = [
     created_at: '2026-01-16T14:00:00Z',
     updated_at: '2026-01-16T14:00:00Z',
     public_registrant_info: {
-      first_name: 'John',
-      last_name: 'Smith',
-      email: 'john.smith@example.com',
+      first_name: guestFirstName,
+      last_name: guestLastName,
+      email: faker.internet.exampleEmail(),
       phone: '09123456789',
     },
     form_submission_answers: [],
@@ -73,7 +78,7 @@ const mockSubmissions: FormSubmission[] = [
     updated_at: '2026-01-17T10:00:00Z',
     users: {
       member_id: '',
-      full_name: 'Member Email Only',
+      full_name: 'Test Member Email Only',
       email: 'member.email@example.com',
     },
     form_submission_answers: [],
@@ -91,7 +96,7 @@ const mockSubmissions: FormSubmission[] = [
     updated_at: '2026-01-17T11:00:00Z',
     users: {
       member_id: '',
-      full_name: 'Member No Identifier',
+      full_name: 'Test Member No Identifier',
       email: null,
     },
     form_submission_answers: [],
@@ -107,8 +112,8 @@ const mockSubmissions: FormSubmission[] = [
     created_at: '2026-01-17T12:00:00Z',
     updated_at: '2026-01-17T12:00:00Z',
     public_registrant_info: {
-      first_name: 'Guest',
-      last_name: 'Phone Only',
+      first_name: 'Test Guest',
+      last_name: 'Test Phone Only',
       email: undefined,
       phone: '09998887777',
     },
@@ -180,11 +185,11 @@ describe('SubmissionsList', () => {
     );
 
     // Desktop & mobile elements
-    expect(screen.getAllByText('Jane Doe').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('John Smith').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(memberFullName).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(`${guestFirstName} ${guestLastName}`).length).toBeGreaterThan(0);
 
     // Click desktop row
-    const desktopRows = screen.getAllByText('Jane Doe');
+    const desktopRows = screen.getAllByText(memberFullName);
     fireEvent.click(desktopRows[0]);
     expect(onSelectSubmission).toHaveBeenCalledWith(mockSubmissions[0]);
 
@@ -197,7 +202,7 @@ describe('SubmissionsList', () => {
     expect(onSelectSubmission).toHaveBeenCalled();
 
     // Click on mobile card container
-    const mobileCards = screen.getAllByText('Member Email Only');
+    const mobileCards = screen.getAllByText('Test Member Email Only');
     const mobileCardContainer = mobileCards[mobileCards.length - 1].closest('.cursor-pointer');
     expect(mobileCardContainer).not.toBeNull();
     fireEvent.click(mobileCardContainer!);

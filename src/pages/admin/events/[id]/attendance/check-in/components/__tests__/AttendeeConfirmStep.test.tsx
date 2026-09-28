@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -44,16 +45,19 @@ vi.mock('@/components/ui/Avatar', () => ({
   },
 }));
 
+const nickname = faker.person.firstName();
+const lastName = faker.person.lastName();
+
 const attendee = {
   attendee_kind: 'registered' as const,
   registration_id: 'registration-1',
   public_registration_id: null,
   user_id: 'user-1',
   member_id: 'M-001',
-  nickname: 'Alex',
-  last_name: 'Rivera',
-  full_name: 'Alex Rivera',
-  email: 'alex@example.com',
+  nickname,
+  last_name: lastName,
+  full_name: `${nickname} ${lastName}`,
+  email: faker.internet.exampleEmail(),
   role: 'Member',
   category: 'Adults',
   registration_status: 'submitted' as const,
@@ -167,7 +171,7 @@ describe('AttendeeConfirmStep', () => {
       <AttendeeConfirmStep
         attendee={{
           ...attendee,
-          avatar_object_key: 'avatars/alex.jpg',
+          avatar_object_key: 'avatars/member.jpg',
           registration_answers: [
             {
               event_field_id: 'field-1',
@@ -229,8 +233,8 @@ describe('AttendeeConfirmStep', () => {
 
     expect(mockAvatar).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: 'Alex Rivera',
-        avatarObjectKey: 'avatars/alex.jpg',
+        name: `${nickname} ${lastName}`,
+        avatarObjectKey: 'avatars/member.jpg',
       }),
     );
     expect(screen.getByText('formatted-date:2026-07-10T08:00:00+08:00')).toBeInTheDocument();

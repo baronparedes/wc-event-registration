@@ -1,7 +1,12 @@
+import { faker } from '@faker-js/faker';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EventRegistrationPage } from '../index';
+
+const signedInFirstName = faker.person.firstName();
+const signedInLastName = faker.person.lastName();
+const signedInFullName = `${signedInFirstName} ${signedInLastName}`;
 
 const {
   mockUseParams,
@@ -28,10 +33,10 @@ const {
   const lookupState = {
     matchedMember: {
       user_id: 'user-1',
-      full_name: 'Jane Doe',
+      full_name: 'Test First Last',
       nickname: null,
-      first_name: 'Jane',
-      last_name: 'Doe',
+      first_name: 'Test First',
+      last_name: 'Test Last',
     },
     verifiedMemberCredential: 'WC-001',
     memberIdHighlight: false,
@@ -730,7 +735,7 @@ describe('EventRegistrationPage', () => {
 
   it('renders seamless verification loading state while verifying signed-in member', () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-100', full_name: 'John SignedIn' },
+      data: { member_id: 'MEM-100', full_name: signedInFullName },
       isLoading: true,
     });
 
@@ -762,7 +767,7 @@ describe('EventRegistrationPage', () => {
 
   it('renders Step 3 directly for signed-in members without Back to Step 2 button', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-100', full_name: 'John SignedIn' },
+      data: { member_id: 'MEM-100', full_name: signedInFullName },
       isLoading: false,
     });
 
@@ -775,10 +780,10 @@ describe('EventRegistrationPage', () => {
       ...memberLookupState,
       matchedMember: {
         user_id: 'user-signedin',
-        full_name: 'John SignedIn',
+        full_name: signedInFullName,
         nickname: null,
-        first_name: 'John',
-        last_name: 'SignedIn',
+        first_name: signedInFirstName,
+        last_name: signedInLastName,
       },
       handleLookupSubmit: runMemberLookupSubmit,
     });
@@ -815,7 +820,7 @@ describe('EventRegistrationPage', () => {
 
   it('shows Back to Events button on Step 2 when signed-in member is already registered and blocked', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
-      data: { member_id: 'MEM-100', full_name: 'John SignedIn' },
+      data: { member_id: 'MEM-100', full_name: signedInFullName },
       isLoading: false,
     });
 
@@ -829,10 +834,10 @@ describe('EventRegistrationPage', () => {
       ...memberLookupState,
       matchedMember: {
         user_id: 'user-signedin',
-        full_name: 'John SignedIn',
+        full_name: signedInFullName,
         nickname: null,
-        first_name: 'John',
-        last_name: 'SignedIn',
+        first_name: signedInFirstName,
+        last_name: signedInLastName,
       },
       isRegistrationBlocked: true,
       handleLookupSubmit: runMemberLookupSubmit,

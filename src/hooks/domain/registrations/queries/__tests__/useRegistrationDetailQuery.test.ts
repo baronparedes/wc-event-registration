@@ -90,7 +90,7 @@ describe('useRegistrationDetailQuery', () => {
     const submittedAt = faker.date.recent().toISOString();
     const updatedAt = faker.date.recent().toISOString();
 
-    const userEmail = faker.internet.email();
+    const userEmail = faker.internet.exampleEmail();
     const userName = faker.person.fullName();
     const userNickname = faker.person.firstName();
     const teamName = faker.company.name();
@@ -223,8 +223,8 @@ describe('useRegistrationDetailQuery', () => {
         users: {
           id: 'user-2',
           member_id: 'WC-002',
-          full_name: 'John Doe',
-          email: 'john@example.com',
+          full_name: faker.person.fullName(),
+          email: faker.internet.exampleEmail(),
           phone: '123',
           nickname: null,
           role: 7,
@@ -350,8 +350,8 @@ describe('useRegistrationDetailQuery', () => {
         users: {
           id: 'user-3',
           member_id: 'WC-003',
-          full_name: 'Sam Doe',
-          email: 'sam@example.com',
+          full_name: faker.person.fullName(),
+          email: faker.internet.exampleEmail(),
           phone: null,
           nickname: null,
           metadata: {},

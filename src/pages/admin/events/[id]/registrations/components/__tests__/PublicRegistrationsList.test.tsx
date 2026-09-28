@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { makePublicRegistrationSummary } from '@/__tests__/factories';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 import { PublicRegistrationsList } from '@/pages/admin/events/[id]/registrations/components/PublicRegistrationsList';
 
@@ -26,16 +27,11 @@ vi.mock('@/hooks/utils', () => ({
   useErrorWithFadeout: () => ({ showError: mockShowError }),
 }));
 
-const baseRegistration: PublicRegistrationSummary = {
+const baseRegistration: PublicRegistrationSummary = makePublicRegistrationSummary({
   id: 'reg-1',
-  first_name: 'Baron',
-  last_name: 'Geisler',
-  nickname: null,
-  email: 'baron@email.com',
-  phone: null,
   status: 'submitted',
   submitted_at: '2026-06-30T12:00:00.000Z',
-};
+});
 
 function renderList(
   registrations: PublicRegistrationSummary[],
@@ -67,7 +63,7 @@ describe('PublicRegistrationsList', () => {
       {
         ...baseRegistration,
         id: 'reg-2',
-        email: 'cancelled@email.com',
+        email: 'cancelled@example.com',
         status: 'cancelled',
       },
     ]);
@@ -105,7 +101,7 @@ describe('PublicRegistrationsList', () => {
 
     rerender(
       <MemoryRouter>
-        <PublicRegistrationsList registrations={[]} eventId="event-1" searchTerm="baron" />
+        <PublicRegistrationsList registrations={[]} eventId="event-1" searchTerm="test" />
       </MemoryRouter>,
     );
 

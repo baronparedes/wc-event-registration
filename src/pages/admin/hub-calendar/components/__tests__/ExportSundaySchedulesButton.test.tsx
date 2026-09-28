@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,11 +23,11 @@ function makeMember(overrides?: Partial<AdminMember>): AdminMember {
     member_id: 'MEM-001',
     avatar_object_key: null,
     is_active: true,
-    full_name: 'John Doe',
-    first_name: 'John',
-    last_name: 'Doe',
-    nickname: 'Johnny',
-    email: 'john@example.com',
+    full_name: 'Test Member',
+    first_name: faker.person.firstName(),
+    last_name: faker.person.lastName(),
+    nickname: 'Test Nick',
+    email: 'test.member@example.com',
     phone: '123-456-7890',
     date_of_birth: '1990-01-01',
     role: 'Usher',
@@ -69,7 +70,7 @@ describe('ExportSundaySchedulesButton', () => {
         member: makeMember({
           id: 'm1',
           member_id: 'MEM-001',
-          full_name: 'Zack Morris',
+          full_name: 'Test Zulu',
           role: 'Greeter',
         }),
         sundayKey: 'first_sunday',
@@ -79,7 +80,7 @@ describe('ExportSundaySchedulesButton', () => {
         member: makeMember({
           id: 'm2',
           member_id: 'MEM-002',
-          full_name: 'Alice Wonder',
+          full_name: 'Test Alpha',
           role: 'Usher',
         }),
         sundayKey: 'first_sunday',
@@ -111,21 +112,21 @@ describe('ExportSundaySchedulesButton', () => {
     expect(lines[0]).toBe(
       'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
     );
-    // 9AM slot: Alice Wonder first, then Zack Morris
-    expect(lines[1]).toContain('9:00 AM,MEM-002,Alice Wonder,Johnny,Usher,adult');
-    expect(lines[2]).toContain('9:00 AM,MEM-001,Zack Morris,Johnny,Greeter,adult');
-    // 12NN slot: Zack Morris
-    expect(lines[3]).toContain('12:00 NN,MEM-001,Zack Morris,Johnny,Greeter,adult');
-    // 3PM slot: Alice Wonder
-    expect(lines[4]).toContain('3:00 PM,MEM-002,Alice Wonder,Johnny,Usher,adult');
+    // 9AM slot: Test Alpha first, then Test Zulu
+    expect(lines[1]).toContain('9:00 AM,MEM-002,Test Alpha,Test Nick,Usher,adult');
+    expect(lines[2]).toContain('9:00 AM,MEM-001,Test Zulu,Test Nick,Greeter,adult');
+    // 12NN slot: Test Zulu
+    expect(lines[3]).toContain('12:00 NN,MEM-001,Test Zulu,Test Nick,Greeter,adult');
+    // 3PM slot: Test Alpha
+    expect(lines[4]).toContain('3:00 PM,MEM-002,Test Alpha,Test Nick,Usher,adult');
   });
 
   it('escapes CSV cells with quotes, commas, and newlines', async () => {
     const entries: MemberScheduleEntry[] = [
       {
         member: makeMember({
-          full_name: 'Jane, "JJ" Doe',
-          nickname: 'Line\nBreak',
+          full_name: 'Test, "JJ" Member',
+          nickname: 'Test Line\nBreak',
         }),
         sundayKey: 'first_sunday',
         timeSlots: ['9AM'],
@@ -149,8 +150,8 @@ describe('ExportSundaySchedulesButton', () => {
     const exportedBlob = createObjectURLMock.mock.calls[0]?.[0];
     const csvText = await exportedBlob.text();
 
-    expect(csvText).toContain('"Jane, ""JJ"" Doe"');
-    expect(csvText).toContain('"Line\nBreak"');
+    expect(csvText).toContain('"Test, ""JJ"" Member"');
+    expect(csvText).toContain('"Test Line\nBreak"');
   });
 
   it('shows error toast when export throws', async () => {
@@ -191,7 +192,7 @@ describe('ExportSundaySchedulesButton', () => {
     const member = makeMember({
       id: 'member-excused-1',
       member_id: 'MEM-001',
-      full_name: 'Excused Volunteer',
+      full_name: 'Test Excused Volunteer',
     });
 
     const entries: MemberScheduleEntry[] = [
@@ -239,7 +240,7 @@ describe('ExportSundaySchedulesButton', () => {
     expect(lines[0]).toBe(
       'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
     );
-    expect(lines[1]).toContain('9:00 AM,MEM-001,Excused Volunteer');
+    expect(lines[1]).toContain('9:00 AM,MEM-001,Test Excused Volunteer');
     expect(lines[1]).toContain(',Yes,Vacation leave');
   });
 });

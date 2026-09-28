@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -47,6 +48,12 @@ const mockForm: AdminForm = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
+const memberFullName = faker.person.fullName();
+const guestFirstName = faker.person.firstName();
+const guestLastName = faker.person.lastName();
+const guestFullName = `${guestFirstName} ${guestLastName}`;
+const guestEmail = faker.internet.exampleEmail();
+
 const mockSubmissions: FormSubmission[] = [
   {
     id: 'sub-1',
@@ -61,8 +68,8 @@ const mockSubmissions: FormSubmission[] = [
     updated_at: '2026-01-15T10:30:00Z',
     users: {
       member_id: 'WC-001',
-      full_name: 'Jane Doe',
-      email: 'jane@example.com',
+      full_name: memberFullName,
+      email: faker.internet.exampleEmail(),
     },
     form_submission_answers: [
       {
@@ -95,9 +102,9 @@ const mockSubmissions: FormSubmission[] = [
     created_at: '2026-01-16T14:00:00Z',
     updated_at: '2026-01-16T14:00:00Z',
     public_registrant_info: {
-      first_name: 'John',
-      last_name: 'Smith',
-      email: 'john.smith@example.com',
+      first_name: guestFirstName,
+      last_name: guestLastName,
+      email: guestEmail,
       phone: '09123456789',
     },
     form_submission_answers: [],
@@ -195,24 +202,24 @@ describe('AdminFormSubmissionsPage', () => {
     act(() => {
       vi.advanceTimersByTime(350);
     });
-    expect(screen.getAllByText('Jane Doe')[0]).toBeInTheDocument();
-    expect(screen.queryByText('John Smith')).not.toBeInTheDocument();
+    expect(screen.getAllByText(memberFullName)[0]).toBeInTheDocument();
+    expect(screen.queryByText(guestFullName)).not.toBeInTheDocument();
 
     // Search by guest phone
     fireEvent.change(searchInput, { target: { value: '09123456789' } });
     act(() => {
       vi.advanceTimersByTime(350);
     });
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument();
-    expect(screen.getAllByText('John Smith')[0]).toBeInTheDocument();
+    expect(screen.queryByText(memberFullName)).not.toBeInTheDocument();
+    expect(screen.getAllByText(guestFullName)[0]).toBeInTheDocument();
 
     // Search by email
-    fireEvent.change(searchInput, { target: { value: 'john.smith@example.com' } });
+    fireEvent.change(searchInput, { target: { value: guestEmail } });
     act(() => {
       vi.advanceTimersByTime(350);
     });
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument();
-    expect(screen.getAllByText('John Smith')[0]).toBeInTheDocument();
+    expect(screen.queryByText(memberFullName)).not.toBeInTheDocument();
+    expect(screen.getAllByText(guestFullName)[0]).toBeInTheDocument();
 
     vi.useRealTimers();
   });
@@ -244,27 +251,27 @@ describe('AdminFormSubmissionsPage', () => {
     const guestTab = screen.getByRole('button', { name: 'Guests' });
     fireEvent.click(guestTab);
 
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument();
-    expect(screen.getAllByText('John Smith')[0]).toBeInTheDocument();
+    expect(screen.queryByText(memberFullName)).not.toBeInTheDocument();
+    expect(screen.getAllByText(guestFullName)[0]).toBeInTheDocument();
 
     const membersTab = screen.getByRole('button', { name: 'Members' });
     fireEvent.click(membersTab);
 
-    expect(screen.getAllByText('Jane Doe')[0]).toBeInTheDocument();
-    expect(screen.queryByText('John Smith')).not.toBeInTheDocument();
+    expect(screen.getAllByText(memberFullName)[0]).toBeInTheDocument();
+    expect(screen.queryByText(guestFullName)).not.toBeInTheDocument();
 
     const clearButton = screen.getByRole('button', { name: 'Clear' });
     fireEvent.click(clearButton);
 
-    expect(screen.getAllByText('Jane Doe')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('John Smith')[0]).toBeInTheDocument();
+    expect(screen.getAllByText(memberFullName)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(guestFullName)[0]).toBeInTheDocument();
 
     // Click All tab explicitly
     const allTab = screen.getByRole('button', { name: /All/i });
     fireEvent.click(guestTab);
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument();
+    expect(screen.queryByText(memberFullName)).not.toBeInTheDocument();
     fireEvent.click(allTab);
-    expect(screen.getAllByText('Jane Doe')[0]).toBeInTheDocument();
+    expect(screen.getAllByText(memberFullName)[0]).toBeInTheDocument();
   });
 
   it('opens submission detail dialog when view answers button is clicked', () => {

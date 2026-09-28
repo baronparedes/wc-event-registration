@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -65,12 +66,12 @@ describe('Conditional Visibility in Attendance Data Entry', () => {
   const registrant: RegistrantAttendanceRow = {
     registration_id: 'reg-1',
     public_registration_id: null,
-    full_name: 'John Smith',
-    nickname: 'John',
-    last_name: 'Smith',
+    full_name: faker.person.fullName(),
+    nickname: faker.person.firstName(),
+    last_name: faker.person.lastName(),
     attendee_kind: 'registered',
     member_id: 'MEM-002',
-    email: 'john@example.com',
+    email: faker.internet.exampleEmail(),
     answers: [],
   };
 

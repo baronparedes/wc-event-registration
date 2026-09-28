@@ -38,23 +38,26 @@ describe('useMemberAvatarQuery', () => {
   });
 
   it('exports a stable query key factory', () => {
-    expect(memberAvatarQueryKey('avatars/jane.jpg')).toEqual(['member-avatar', 'avatars/jane.jpg']);
+    expect(memberAvatarQueryKey('avatars/member.jpg')).toEqual([
+      'member-avatar',
+      'avatars/member.jpg',
+    ]);
   });
 
   it('returns the public avatar URL for a valid object key', async () => {
     mockGetPublicUrl.mockReturnValueOnce({
-      data: { publicUrl: 'https://example.com/avatars/jane.jpg' },
+      data: { publicUrl: 'https://example.com/avatars/member.jpg' },
     });
 
-    const { result } = renderHookWithClient(() => useMemberAvatarQuery('avatars/jane.jpg'));
+    const { result } = renderHookWithClient(() => useMemberAvatarQuery('avatars/member.jpg'));
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
     expect(mockStorageFrom).toHaveBeenCalledWith('member_avatars');
-    expect(mockGetPublicUrl).toHaveBeenCalledWith('avatars/jane.jpg');
-    expect(result.current.data).toBe('https://example.com/avatars/jane.jpg');
+    expect(mockGetPublicUrl).toHaveBeenCalledWith('avatars/member.jpg');
+    expect(result.current.data).toBe('https://example.com/avatars/member.jpg');
   });
 
   it('returns null when the storage response has no public URL', async () => {

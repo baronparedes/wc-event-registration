@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,16 +13,21 @@ vi.mock('@/hooks/domain/members', () => ({
   useMemberAvatarQuery: vi.fn(() => ({ data: null })),
 }));
 
+const firstName1 = faker.person.firstName();
+const lastName1 = faker.person.lastName();
+const firstName2 = faker.person.firstName();
+const lastName2 = faker.person.lastName();
+
 const mockMember1: AdminMember = {
   id: 'm1',
   member_id: 'MEM-001',
   avatar_object_key: null,
   is_active: true,
-  first_name: 'John',
-  last_name: 'Doe',
-  nickname: 'Johnny',
-  full_name: 'John Doe',
-  email: 'john@example.com',
+  first_name: firstName1,
+  last_name: lastName1,
+  nickname: faker.person.firstName(),
+  full_name: `${firstName1} ${lastName1}`,
+  email: faker.internet.exampleEmail({ firstName: firstName1, lastName: lastName1 }),
   phone: '123-456',
   date_of_birth: '1990-05-15',
   role: 'Usher',
@@ -36,11 +42,11 @@ const mockMember2: AdminMember = {
   member_id: 'MEM-002',
   avatar_object_key: null,
   is_active: true,
-  first_name: 'Jane',
-  last_name: 'Smith',
-  nickname: 'Janey',
-  full_name: 'Jane Smith',
-  email: 'jane@example.com',
+  first_name: firstName2,
+  last_name: lastName2,
+  nickname: faker.person.firstName(),
+  full_name: `${firstName2} ${lastName2}`,
+  email: faker.internet.exampleEmail({ firstName: firstName2, lastName: lastName2 }),
   phone: '654-321',
   date_of_birth: '1992-08-20',
   role: 'Greeter',
@@ -97,11 +103,11 @@ describe('SelectedDateDetails', () => {
       </MemoryRouter>,
     );
 
-    // On 9AM tab: John Doe (entry1) is excused; Jane Smith (entry2) is not excused
+    // On 9AM tab: member 1 (entry1) is excused; member 2 (entry2) is not excused
     expect(screen.getAllByTitle('Excused')).toHaveLength(1);
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
 
-    // Rerender with activeTab="12NN" where John Doe is scheduled but NOT excused for 12NN
+    // Rerender with activeTab="12NN" where member 1 is scheduled but NOT excused for 12NN
     rerender(
       <MemoryRouter>
         <SelectedDateDetails
@@ -123,9 +129,9 @@ describe('SelectedDateDetails', () => {
       </MemoryRouter>,
     );
 
-    // John Doe is present in 12NN but should NOT be marked excused!
+    // Member 1 is present in 12NN but should NOT be marked excused!
     expect(screen.queryByTitle('Excused')).not.toBeInTheDocument();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
   });
 
   it('does not tag as excused if excused record date is for another year or month', () => {
@@ -221,9 +227,9 @@ describe('SelectedDateDetails', () => {
     fireEvent.click(excusedBtn);
     expect(handleRoleChange).toHaveBeenCalledWith(null);
 
-    // Only excused member (John Doe) should be visible
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
+    // Only excused member (member 1) should be visible
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
+    expect(screen.queryByText(mockMember2.full_name)).not.toBeInTheDocument();
   });
 
   it('displays empty message when Excused filter is active and no members are excused', () => {
@@ -250,6 +256,6 @@ describe('SelectedDateDetails', () => {
     );
 
     expect(screen.getByText('No excused members for this service.')).toBeInTheDocument();
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+    expect(screen.queryByText(mockMember1.full_name)).not.toBeInTheDocument();
   });
 });

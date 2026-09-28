@@ -1,7 +1,13 @@
+import { faker } from '@faker-js/faker';
 import '@testing-library/jest-dom/vitest';
 import dotenv from 'dotenv';
 import path from 'path';
 import { afterAll, beforeAll } from 'vitest';
+
+const FAKER_SEED = Number(process.env.FAKER_SEED ?? 20260928);
+
+// Seed once per test file; re-seeding per test would replay values already used by module-scope fixtures.
+faker.seed(FAKER_SEED);
 
 // Load environment variables from .env.example
 dotenv.config({ path: path.resolve(__dirname, '.env.example') });

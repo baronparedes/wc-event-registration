@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
@@ -13,10 +14,10 @@ const sampleAttendee: AttendeeSearchResult = {
   user_id: 'u1',
   attendee_kind: 'registered',
   member_id: 'M1',
-  nickname: 'Jane',
-  last_name: 'Doe',
-  full_name: 'Jane Doe',
-  email: 'jane@example.com',
+  nickname: faker.person.firstName(),
+  last_name: faker.person.lastName(),
+  full_name: faker.person.fullName(),
+  email: faker.internet.exampleEmail(),
   role: 'Leader',
   category: 'Adult',
   registration_status: 'submitted',

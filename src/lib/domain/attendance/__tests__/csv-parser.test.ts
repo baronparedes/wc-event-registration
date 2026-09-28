@@ -165,14 +165,14 @@ describe('attendance csv parser', () => {
   it('parses escaped quotes inside csv cells', () => {
     const csv = [
       'attendee_kind,registration_id,public_registration_id,full_name,table_number',
-      'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,"Doe ""Johnny""",12',
+      'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,"Test Member ""Nick""",12',
     ].join('\n');
 
     const parsed = parseCsvText(csv);
     expect(parsed.success).toBe(true);
 
     if (!parsed.success) return;
-    expect(parsed.data.rows[0]?.full_name).toBe('Doe "Johnny"');
+    expect(parsed.data.rows[0]?.full_name).toBe('Test Member "Nick"');
   });
 
   it('parses boolean, multi-select, and multi-select-toggle values from CSV rows', () => {
@@ -301,7 +301,7 @@ describe('attendance csv parser', () => {
   it('parses exported csv rows that contain quoted commas and multiline field values', () => {
     const csv = [
       'attendee_kind,registration_id,public_registration_id,member_id,full_name,email,role,category,table_number,team_color',
-      'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,MID-001,"Doe, Jane",jane@example.com,Staff,Adults,12,red',
+      'registered,aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa,,MID-001,"Test Member, Alpha",member@example.com,Staff,Adults,12,red',
       'public,,bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb,,"Guest Person",guest@example.com,,,"34\n35",blue',
     ].join('\n');
 
@@ -311,7 +311,7 @@ describe('attendance csv parser', () => {
     if (!parsed.success) return;
 
     expect(parsed.data.rows).toHaveLength(2);
-    expect(parsed.data.rows[0]?.full_name).toBe('Doe, Jane');
+    expect(parsed.data.rows[0]?.full_name).toBe('Test Member, Alpha');
     expect(parsed.data.rows[0]?.role).toBe('Staff');
     expect(parsed.data.rows[0]?.category).toBe('Adults');
     expect(parsed.data.rows[1]?.table_number).toBe('34\n35');

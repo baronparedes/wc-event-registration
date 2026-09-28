@@ -18,19 +18,19 @@ describe('Avatar', () => {
   });
 
   it('renders initials when no avatar URL is available', () => {
-    render(<Avatar name="Jane Doe" />);
+    render(<Avatar name="Test Member" />);
 
-    expect(screen.getByTitle('Jane Doe')).toHaveTextContent('JD');
-    expect(screen.queryByRole('img', { name: 'Jane Doe' })).not.toBeInTheDocument();
+    expect(screen.getByTitle('Test Member')).toHaveTextContent('TM');
+    expect(screen.queryByRole('img', { name: 'Test Member' })).not.toBeInTheDocument();
     expect(mockUseMemberAvatarQuery).toHaveBeenCalledWith(undefined);
   });
 
   it('renders the avatar image and reveals it after load', () => {
     mockUseMemberAvatarQuery.mockReturnValue({ data: 'https://example.com/avatar.jpg' });
 
-    render(<Avatar name="Jane Doe" avatarObjectKey="avatars/jane.jpg" />);
+    render(<Avatar name="Test Member" avatarObjectKey="avatars/member.jpg" />);
 
-    const image = screen.getByRole('img', { name: 'Avatar of Jane Doe' });
+    const image = screen.getByRole('img', { name: 'Avatar of Test Member' });
 
     expect(image).toHaveAttribute('src', 'https://example.com/avatar.jpg');
     expect(image).toHaveClass('opacity-0');
@@ -38,31 +38,31 @@ describe('Avatar', () => {
     fireEvent.load(image);
 
     expect(image).toHaveClass('opacity-100');
-    expect(mockUseMemberAvatarQuery).toHaveBeenCalledWith('avatars/jane.jpg');
+    expect(mockUseMemberAvatarQuery).toHaveBeenCalledWith('avatars/member.jpg');
   });
 
   it('falls back to initials when the avatar image fails to load', () => {
     mockUseMemberAvatarQuery.mockReturnValue({ data: 'https://example.com/avatar.jpg' });
 
-    render(<Avatar name="Jane Doe" avatarObjectKey="avatars/jane.jpg" />);
+    render(<Avatar name="Test Member" avatarObjectKey="avatars/member.jpg" />);
 
-    fireEvent.error(screen.getByRole('img', { name: 'Avatar of Jane Doe' }));
+    fireEvent.error(screen.getByRole('img', { name: 'Avatar of Test Member' }));
 
-    expect(screen.getByTitle('Jane Doe')).toHaveTextContent('JD');
-    expect(screen.queryByRole('img', { name: 'Avatar of Jane Doe' })).not.toBeInTheDocument();
+    expect(screen.getByTitle('Test Member')).toHaveTextContent('TM');
+    expect(screen.queryByRole('img', { name: 'Avatar of Test Member' })).not.toBeInTheDocument();
   });
 
   it('renders a new avatar URL after a previous one failed', () => {
     mockUseMemberAvatarQuery.mockReturnValue({ data: 'https://example.com/avatar-1.jpg' });
 
-    const { rerender } = render(<Avatar name="Jane Doe" avatarObjectKey="avatars/jane-1.jpg" />);
+    const { rerender } = render(<Avatar name="Test Member" avatarObjectKey="avatars/m-1.jpg" />);
 
-    fireEvent.error(screen.getByRole('img', { name: 'Avatar of Jane Doe' }));
+    fireEvent.error(screen.getByRole('img', { name: 'Avatar of Test Member' }));
 
     mockUseMemberAvatarQuery.mockReturnValue({ data: 'https://example.com/avatar-2.jpg' });
-    rerender(<Avatar name="Jane Doe" avatarObjectKey="avatars/jane-2.jpg" />);
+    rerender(<Avatar name="Test Member" avatarObjectKey="avatars/m-2.jpg" />);
 
-    const image = screen.getByRole('img', { name: 'Avatar of Jane Doe' });
+    const image = screen.getByRole('img', { name: 'Avatar of Test Member' });
     expect(image).toHaveAttribute('src', 'https://example.com/avatar-2.jpg');
     expect(image).toHaveClass('opacity-0');
   });

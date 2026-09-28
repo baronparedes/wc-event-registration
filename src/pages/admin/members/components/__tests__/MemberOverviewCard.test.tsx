@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -10,13 +11,9 @@ vi.mock('@/hooks/domain/members', () => ({
 }));
 
 const member = makeAdminMember({
-  full_name: 'Aaron Carter',
-  nickname: 'Aaron',
-  last_name: 'Carter',
-  member_id: '1627343318',
+  nickname: faker.person.firstName(),
   role: 'OIC',
   category: 'Men',
-  email: 'aaron@example.com',
   date_of_birth: '2026-04-28',
   last_activity: '2024-01-01T12:00:00Z',
 });
@@ -25,15 +22,15 @@ describe('MemberOverviewCard', () => {
   it('renders member profile details correctly', () => {
     render(<MemberOverviewCard member={member} />);
 
-    const avatar = screen.getByTitle('Aaron Carter');
+    const avatar = screen.getByTitle(`${member.nickname} ${member.last_name}`);
     expect(avatar).toHaveClass('w-48', 'h-48', 'self-center', 'sm:self-start');
     expect(avatar.parentElement).toHaveClass('flex', 'flex-col', 'sm:flex-row');
     expect(screen.getByText('Full Name').closest('dl')).toHaveClass('grid-cols-2');
-    expect(screen.getByText('Aaron Carter')).toBeInTheDocument();
-    expect(screen.getByText('1627343318')).toBeInTheDocument();
+    expect(screen.getByText(member.full_name)).toBeInTheDocument();
+    expect(screen.getByText(member.member_id)).toBeInTheDocument();
     expect(screen.getByText('OIC')).toBeInTheDocument();
     expect(screen.getByText('Men')).toBeInTheDocument();
-    expect(screen.getByText('aaron@example.com')).toBeInTheDocument();
+    expect(screen.getByText(member.email)).toBeInTheDocument();
     expect(screen.getByText('Apr 28, 2026')).toBeInTheDocument();
   });
 

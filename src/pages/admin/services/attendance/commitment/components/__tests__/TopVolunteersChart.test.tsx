@@ -37,7 +37,7 @@ vi.mock('recharts', async () => {
       <div data-testid="tooltip">
         {content({
           active: true,
-          payload: [{ payload: { fullName: 'Alice Smith', score: 10 } }],
+          payload: [{ payload: { fullName: 'Test Alpha', score: 10 } }],
         })}
         {content({
           active: false,
@@ -55,9 +55,9 @@ describe('TopVolunteersChart', () => {
       user_id: '1',
       member_id: 'MEM-001',
       avatar_object_key: null,
-      full_name: 'Alice Smith',
-      nickname: 'Ali',
-      email: 'alice@example.com',
+      full_name: 'Test Alpha',
+      nickname: 'Test Ali',
+      email: 'test.alpha@example.com',
       role: 'Usher',
       category: 'Women',
       start_date: '2025-01-01',
@@ -74,9 +74,9 @@ describe('TopVolunteersChart', () => {
       user_id: '2',
       member_id: 'MEM-002',
       avatar_object_key: null,
-      full_name: 'Bob Jones',
+      full_name: 'Test Bravo',
       nickname: '',
-      email: 'bob@example.com',
+      email: 'test.bravo@example.com',
       role: 'Greeter',
       category: 'Men',
       start_date: '2025-02-01',
@@ -102,13 +102,13 @@ describe('TopVolunteersChart', () => {
     const chart = screen.getByTestId('bar-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');
     expect(items).toHaveLength(2);
-    // Bob should be first (score 10), Alice second (score 6)
-    expect(items[0].fullName).toBe('Bob Jones');
-    expect(items[0].name).toBe('Bob'); // derived from full_name when nickname is empty
-    expect(items[1].fullName).toBe('Alice Smith');
-    expect(items[1].name).toBe('Ali'); // nickname
+    // Test Bravo should be first (score 10), Test Alpha second (score 6)
+    expect(items[0].fullName).toBe('Test Bravo');
+    expect(items[0].name).toBe('Test'); // derived from full_name when nickname is empty
+    expect(items[1].fullName).toBe('Test Alpha');
+    expect(items[1].name).toBe('Test Ali'); // nickname
 
-    expect(screen.getByText('Alice Smith')).toBeInTheDocument();
+    expect(screen.getByText('Test Alpha')).toBeInTheDocument();
   });
 
   it('returns null when stats array is empty', () => {

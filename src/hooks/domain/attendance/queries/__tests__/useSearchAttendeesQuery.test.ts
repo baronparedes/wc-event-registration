@@ -60,7 +60,7 @@ describe('useSearchAttendeesQuery', () => {
         public_registration_id: 'public-registration-1',
         user_id: null,
         member_id: 'Guest',
-        full_name: 'Guest Person',
+        full_name: 'Test Guest',
         email: 'guest@example.com',
         role: null,
         category: null,

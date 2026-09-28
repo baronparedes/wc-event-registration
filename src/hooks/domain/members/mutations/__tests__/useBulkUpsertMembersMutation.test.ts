@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,6 +38,9 @@ describe('useBulkUpsertMembersMutation', () => {
       imported_count: 3,
     });
 
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const nickname = faker.person.firstName();
     const { result, queryClient } = renderHookWithClient(() => useBulkUpsertMembersMutation());
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -46,9 +50,9 @@ describe('useBulkUpsertMembersMutation', () => {
           {
             row_number: 2,
             member_id: 'RFID-1',
-            first_name: 'John',
-            last_name: 'Doe',
-            nickname: 'JD',
+            first_name: firstName,
+            last_name: lastName,
+            nickname,
             email: null,
             phone: null,
             date_of_birth: null,
@@ -67,9 +71,9 @@ describe('useBulkUpsertMembersMutation', () => {
         {
           row_number: 2,
           member_id: 'RFID-1',
-          first_name: 'John',
-          last_name: 'Doe',
-          nickname: 'JD',
+          first_name: firstName,
+          last_name: lastName,
+          nickname,
           email: null,
           phone: null,
           date_of_birth: null,

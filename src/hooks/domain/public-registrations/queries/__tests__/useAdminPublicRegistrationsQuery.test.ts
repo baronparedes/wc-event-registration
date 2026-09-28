@@ -73,7 +73,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
 
   it('returns paged registrations and does not apply search filter when search is blank', async () => {
     const eventId = faker.string.uuid();
-    const attendeeEmail = faker.internet.email();
+    const attendeeEmail = faker.internet.exampleEmail();
 
     mockSetQueryResult({
       data: [
@@ -125,7 +125,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
         first_name: faker.person.firstName(),
         last_name: faker.person.lastName(),
         nickname: null,
-        email: faker.internet.email(),
+        email: faker.internet.exampleEmail(),
         phone: null,
         status: 'submitted',
         submitted_at: faker.date.recent().toISOString(),
@@ -137,7 +137,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
     const { result } = renderHookWithClient(() =>
       useAdminPublicRegistrationsQuery(eventId, {
         pageSize,
-        searchTerm: 'john%_smith,',
+        searchTerm: 'test%_member,',
       }),
     );
 
@@ -148,7 +148,7 @@ describe('useAdminPublicRegistrationsQuery', () => {
     expect(result.current.data?.pages[0]?.hasMore).toBe(true);
     expect(result.current.data?.pages[0]?.nextCursor).toBe('20');
     expect(mockBuilder.or).toHaveBeenCalledWith(
-      'first_name.ilike.%john\\%\\_smith\\,%,last_name.ilike.%john\\%\\_smith\\,%,nickname.ilike.%john\\%\\_smith\\,%,email.ilike.%john\\%\\_smith\\,%',
+      'first_name.ilike.%test\\%\\_member\\,%,last_name.ilike.%test\\%\\_member\\,%,nickname.ilike.%test\\%\\_member\\,%,email.ilike.%test\\%\\_member\\,%',
     );
   });
 

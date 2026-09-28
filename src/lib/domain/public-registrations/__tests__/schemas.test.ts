@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 
 import type { PublicEventField } from '@/lib/domain/event-fields';
@@ -48,9 +49,9 @@ describe('buildSubmitPublicRegistrationSchema with Conditional Visibility', () =
   ];
 
   const validAttendee = {
-    first_name: 'Jane',
-    last_name: 'Doe',
-    email: 'jane@example.com',
+    first_name: faker.person.firstName(),
+    last_name: faker.person.lastName(),
+    email: faker.internet.exampleEmail(),
   };
 
   it('passes when conditionally hidden required field is omitted from responses', () => {

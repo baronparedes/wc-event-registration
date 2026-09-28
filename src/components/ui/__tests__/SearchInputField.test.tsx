@@ -16,12 +16,12 @@ describe('SearchInputField', () => {
   it('renders custom label and handles change events', () => {
     const handleChange = vi.fn();
     render(
-      <SearchInputField id="test-search" label="Find User" value="john" onChange={handleChange} />,
+      <SearchInputField id="test-search" label="Find User" value="test" onChange={handleChange} />,
     );
 
     expect(screen.getByLabelText('Find User')).toBeInTheDocument();
-    const input = screen.getByDisplayValue('john');
-    fireEvent.change(input, { target: { value: 'john doe' } });
+    const input = screen.getByDisplayValue('test');
+    fireEvent.change(input, { target: { value: 'test member' } });
     expect(handleChange).toHaveBeenCalled();
   });
 

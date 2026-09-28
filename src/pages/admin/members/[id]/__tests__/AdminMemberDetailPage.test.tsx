@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -52,14 +53,17 @@ function renderPage(path = '/admin/members/m1') {
   );
 }
 
+const sampleFirstName = faker.person.firstName();
+const sampleLastName = faker.person.lastName();
+
 const sampleMember = {
   id: 'm1',
   member_id: 'MEM-001',
-  first_name: 'John',
-  last_name: 'Doe',
-  nickname: 'Johnny',
-  full_name: 'John Doe',
-  email: 'john@example.com',
+  first_name: sampleFirstName,
+  last_name: sampleLastName,
+  nickname: faker.person.firstName(),
+  full_name: `${sampleFirstName} ${sampleLastName}`,
+  email: faker.internet.exampleEmail({ firstName: sampleFirstName, lastName: sampleLastName }),
   phone: '1234567',
   date_of_birth: '1990-01-01',
   role: 'Leader',
@@ -101,7 +105,7 @@ describe('AdminMemberDetailPage', () => {
     expect(screen.getByDisplayValue('MEM-001')).toBeInTheDocument();
 
     const firstNameInput = screen.getByLabelText(/First Name/i);
-    fireEvent.change(firstNameInput, { target: { value: 'Johnny' } });
+    fireEvent.change(firstNameInput, { target: { value: faker.person.firstName() } });
 
     const saveBtn = screen.getByRole('button', { name: 'Save Changes' });
     fireEvent.click(saveBtn);

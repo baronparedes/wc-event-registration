@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -134,17 +135,18 @@ describe('AppShell', () => {
         session: { user: { email: 'admin@example.com' } },
       },
     });
+    const fullName = faker.person.fullName();
     mockUseCurrentProfileQuery.mockReturnValue({
       data: {
         id: 'user-1',
-        full_name: 'Jane Doe',
-        avatar_object_key: 'avatars/jane.jpg',
+        full_name: fullName,
+        avatar_object_key: 'avatars/member.jpg',
       },
     });
 
     renderShell('/admin/events');
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+    expect(screen.getByText(fullName)).toBeInTheDocument();
     expect(screen.getByText('(admin)')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open app navigation drawer' }));

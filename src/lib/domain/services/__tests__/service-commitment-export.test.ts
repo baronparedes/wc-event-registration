@@ -9,9 +9,9 @@ describe('service-commitment-export', () => {
       user_id: 'u-1',
       member_id: 'MEM-001',
       avatar_object_key: null,
-      full_name: 'Doe, Jane',
-      nickname: 'Jane',
-      email: 'jane@example.com',
+      full_name: 'Test Bravo, Sample',
+      nickname: 'Test B',
+      email: 'test.bravo@example.com',
       role: 'Usher',
       category: 'Women',
       start_date: '2025-01-01',
@@ -28,9 +28,9 @@ describe('service-commitment-export', () => {
       user_id: 'u-2',
       member_id: 'MEM-002',
       avatar_object_key: null,
-      full_name: 'Smith, John',
-      nickname: 'Johnny',
-      email: 'john@example.com',
+      full_name: 'Test Alpha, Sample',
+      nickname: 'Test A',
+      email: 'test.alpha@example.com',
       role: 'Greeter',
       category: 'Men',
       start_date: '2025-02-01',
@@ -56,21 +56,21 @@ describe('service-commitment-export', () => {
     expect(lines[0]).toBe(
       'Full Name,Nickname,Member ID,Email,Role,Category,Start Date,Attendance Score,Committed,Attended,Absences,Excused,WI 9AM/3PM,WI 12NN,WI 5th Sun',
     );
-    // John has score 12, should be first
-    expect(lines[1]).toContain('"Smith, John"');
-    expect(lines[1]).toContain('Johnny');
+    // Alpha has score 12, should be first
+    expect(lines[1]).toContain('"Test Alpha, Sample"');
+    expect(lines[1]).toContain('Test A');
     expect(lines[1]).toContain('MEM-002');
-    expect(lines[1]).toContain('john@example.com');
+    expect(lines[1]).toContain('test.alpha@example.com');
     expect(lines[1]).toContain('Greeter');
     expect(lines[1]).toContain('Men');
     expect(lines[1]).toContain('2025-02-01');
     expect(lines[1]).toContain('12');
 
-    // Jane has score 9, should be second
-    expect(lines[2]).toContain('"Doe, Jane"');
-    expect(lines[2]).toContain('Jane');
+    // Bravo has score 9, should be second
+    expect(lines[2]).toContain('"Test Bravo, Sample"');
+    expect(lines[2]).toContain('Test B');
     expect(lines[2]).toContain('MEM-001');
-    expect(lines[2]).toContain('jane@example.com');
+    expect(lines[2]).toContain('test.bravo@example.com');
     expect(lines[2]).toContain('Usher');
     expect(lines[2]).toContain('Women');
     expect(lines[2]).toContain('2025-01-01');

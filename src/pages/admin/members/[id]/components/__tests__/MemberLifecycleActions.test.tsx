@@ -17,7 +17,7 @@ describe('MemberLifecycleActions', () => {
     render(
       <MemberLifecycleActions
         isDeletedMember={false}
-        memberFullName="Jane Doe"
+        memberFullName="Test Member"
         isDeleting={false}
         isRestoring={false}
         onDeleteMember={onDeleteMember}
@@ -39,7 +39,7 @@ describe('MemberLifecycleActions', () => {
     render(
       <MemberLifecycleActions
         isDeletedMember={true}
-        memberFullName="Jane Doe"
+        memberFullName="Test Member"
         isDeleting={false}
         isRestoring={false}
         onDeleteMember={onDeleteMember}
@@ -61,7 +61,7 @@ describe('MemberLifecycleActions', () => {
     render(
       <MemberLifecycleActions
         isDeletedMember={false}
-        memberFullName="Jane Doe"
+        memberFullName="Test Member"
         isDeleting={false}
         isRestoring={false}
         onDeleteMember={onDeleteMember}
@@ -81,7 +81,7 @@ describe('MemberLifecycleActions', () => {
     render(
       <MemberLifecycleActions
         isDeletedMember={true}
-        memberFullName="Jane Doe"
+        memberFullName="Test Member"
         isDeleting={false}
         isRestoring={false}
         onDeleteMember={onDeleteMember}
@@ -101,7 +101,7 @@ describe('MemberLifecycleActions', () => {
     render(
       <MemberLifecycleActions
         isDeletedMember={false}
-        memberFullName="Jane Doe"
+        memberFullName="Test Member"
         isDeleting={true}
         isRestoring={false}
         onDeleteMember={onDeleteMember}
@@ -116,7 +116,7 @@ describe('MemberLifecycleActions', () => {
     render(
       <MemberLifecycleActions
         isDeletedMember={true}
-        memberFullName="Jane Doe"
+        memberFullName="Test Member"
         isDeleting={false}
         isRestoring={true}
         onDeleteMember={onDeleteMember}
