@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Bell } from 'lucide-react';
 
@@ -10,6 +10,27 @@ import { NotificationDrawer } from './NotificationDrawer';
 export function NotificationBell() {
   const { data: notifications = [] } = useNotificationsQuery();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('openDrawer') === 'notifications') {
+        setTimeout(() => setIsOpen(true), 0);
+        params.delete('openDrawer');
+        const newUrl =
+          window.location.pathname +
+          (params.toString() ? `?${params.toString()}` : '') +
+          window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+      }
+    };
+
+    handleUrlChange();
+
+    // Fallback if window URL changes without unmounting
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
