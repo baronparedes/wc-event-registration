@@ -55,7 +55,7 @@ describe('AdminNotificationsPage', () => {
           name: 'Jane Smith',
           email: 'jane.smith@example.com',
           avatar_object_key: null,
-          has_member_profile: false,
+          has_member_profile: true,
           created_at: '2026-01-02T00:00:00Z',
           last_sign_in_at: null,
         },
@@ -84,7 +84,7 @@ describe('AdminNotificationsPage', () => {
     expect(screen.getByRole('button', { name: /Send Broadcast/i })).toBeInTheDocument();
   });
 
-  it('submits a broadcast to all users successfully through confirmation modal', async () => {
+  it('submits a broadcast to registered members successfully through confirmation modal', async () => {
     vi.mocked(sendAppNotification).mockResolvedValueOnce({
       success: true,
       count: 42,
@@ -366,7 +366,7 @@ describe('AdminNotificationsPage', () => {
     expect(screen.queryByText('Confirm Broadcast')).not.toBeInTheDocument();
   });
 
-  it('resets target roles and user fields when switching audience back to All Users', async () => {
+  it('resets target roles and user fields when switching audience back to Registered Members', async () => {
     renderPage();
 
     // Select role and check a role
@@ -380,7 +380,7 @@ describe('AdminNotificationsPage', () => {
 
     // Switch to All Users
     fireEvent.click(screen.getByLabelText(/^Target Audience/i));
-    fireEvent.click(screen.getByRole('option', { name: 'All Users' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Registered Members' }));
 
     // Switch back to Specific Roles and verify reset
     fireEvent.click(screen.getByLabelText(/^Target Audience/i));

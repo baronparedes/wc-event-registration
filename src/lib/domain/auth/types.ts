@@ -24,6 +24,8 @@ export type AdminRoleAssignment = {
 export type AuthUserItem = {
   id: string;
   name: string;
+  full_name?: string;
+  last_name?: string | null;
   email: string;
   avatar_object_key: string | null;
   has_member_profile: boolean;

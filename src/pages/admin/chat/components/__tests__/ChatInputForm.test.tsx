@@ -3,12 +3,23 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ChatInputForm } from '../ChatInputForm';
 
+vi.mock('@/components/ui/Avatar', () => ({
+  Avatar: ({ name, avatarObjectKey }: { name: string; avatarObjectKey?: string | null }) => (
+    <div
+      role="img"
+      aria-label={`Avatar of ${name}`}
+      data-avatar-object-key={avatarObjectKey ?? ''}
+    />
+  ),
+}));
+
 describe('ChatInputForm', () => {
   const mockTokenMap = {
     USR_000001: {
       id: 'user-1',
       name: 'John Doe',
       fullName: 'John Doe',
+      avatarObjectKey: 'avatars/john-doe.jpg',
       firstName: 'John',
       lastName: 'Doe',
       nickname: 'Johnny',
@@ -75,6 +86,11 @@ describe('ChatInputForm', () => {
 
     expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
     expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /John Doe/ })).toHaveClass('bg-primary/10');
+    expect(screen.getByRole('img', { name: 'Avatar of John Doe' })).toHaveAttribute(
+      'data-avatar-object-key',
+      'avatars/john-doe.jpg',
+    );
 
     fireEvent.mouseDown(screen.getByText('John Doe'));
     expect(input).toHaveValue('Is @John Doe ');

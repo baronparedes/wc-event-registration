@@ -29,7 +29,7 @@ vi.mock('@/hooks/utils', () => ({
 const baseRegistration: PublicRegistrationSummary = {
   id: 'reg-1',
   first_name: 'Baron',
-  last_name: 'Paredes',
+  last_name: 'Geisler',
   nickname: null,
   email: 'baron@email.com',
   phone: null,

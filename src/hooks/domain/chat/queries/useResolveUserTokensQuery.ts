@@ -7,6 +7,7 @@ import { createEdgeFunctionCaller } from '@/lib/infrastructure';
 export type ResolvedToken = {
   id: string;
   name: string;
+  avatarObjectKey?: string | null;
   fullName?: string | null;
   firstName?: string | null;
   lastName?: string | null;

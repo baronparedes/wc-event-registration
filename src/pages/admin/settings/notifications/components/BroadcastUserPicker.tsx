@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { AtSign, Check, X } from 'lucide-react';
 
-import { Avatar, Badge } from '@/components/ui';
+import { Avatar } from '@/components/ui';
 import { type AuthUserItem, useAuthUsersQuery } from '@/hooks/domain/auth';
 import { useDebounceSearch, useDropdownPlacement } from '@/hooks/utils';
 
@@ -32,7 +32,7 @@ export function BroadcastUserPicker({
   const query = debouncedSearchTerm.startsWith('@')
     ? debouncedSearchTerm.slice(1)
     : debouncedSearchTerm;
-  const { data: authUsers = [], isLoading, isFetching } = useAuthUsersQuery(query, true);
+  const { data: authUsers = [], isLoading, isFetching } = useAuthUsersQuery(query, true, true);
 
   const isDebouncing = searchTerm.trim() !== debouncedSearchTerm.trim();
   const isSearchActive = isLoading || isFetching || isDebouncing;
@@ -45,7 +45,9 @@ export function BroadcastUserPicker({
 
   const effectiveSelectedUser = value
     ? selectedUserCache?.id === value
-      ? selectedUserCache
+      ? selectedUserCache.has_member_profile
+        ? selectedUserCache
+        : null
       : (authUsers.find((u) => u.id === value) ?? null)
     : null;
 
@@ -62,8 +64,6 @@ export function BroadcastUserPicker({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [containerRef]);
-
-  const filteredUsers = authUsers;
 
   const handleSelectUser = (user: AuthUserItem) => {
     setSelectedUserCache(user);
@@ -93,14 +93,14 @@ export function BroadcastUserPicker({
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1 < filteredUsers.length ? prev + 1 : 0));
+      setSelectedIndex((prev) => (prev + 1 < authUsers.length ? prev + 1 : 0));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : filteredUsers.length - 1));
+      setSelectedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : authUsers.length - 1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredUsers[selectedIndex]) {
-        handleSelectUser(filteredUsers[selectedIndex]);
+      if (authUsers[selectedIndex]) {
+        handleSelectUser(authUsers[selectedIndex]);
       }
     } else if (e.key === 'Escape') {
       setIsOpen(false);
@@ -117,20 +117,21 @@ export function BroadcastUserPicker({
         <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary/[0.04] p-3 shadow-xs transition-all">
           <div className="flex items-center gap-3 min-w-0">
             <Avatar
-              name={effectiveSelectedUser.name || effectiveSelectedUser.email}
+              name={
+                effectiveSelectedUser.full_name ||
+                effectiveSelectedUser.name ||
+                effectiveSelectedUser.email
+              }
               avatarObjectKey={effectiveSelectedUser.avatar_object_key}
               size="sm"
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-text truncate">
-                  {effectiveSelectedUser.name}
+                  {effectiveSelectedUser.full_name ||
+                    effectiveSelectedUser.name ||
+                    effectiveSelectedUser.email}
                 </p>
-                {effectiveSelectedUser.has_member_profile && (
-                  <Badge variant="primaryOutline" className="text-[10px] px-1.5 py-0.5">
-                    Member
-                  </Badge>
-                )}
               </div>
               <p className="text-xs text-muted truncate">{effectiveSelectedUser.email}</p>
             </div>
@@ -204,12 +205,12 @@ export function BroadcastUserPicker({
                 </span>
               </div>
 
-              {filteredUsers.length === 0 ? (
+              {authUsers.length === 0 ? (
                 <div className="py-4 text-center text-xs text-muted">
                   {isSearchActive ? 'Searching...' : 'No users found matching query.'}
                 </div>
               ) : (
-                filteredUsers.map((user, index) => {
+                authUsers.map((user, index) => {
                   const isSelected = index === selectedIndex;
                   return (
                     <div
@@ -223,7 +224,7 @@ export function BroadcastUserPicker({
                       }`}
                     >
                       <Avatar
-                        name={user.name || user.email}
+                        name={user.full_name || user.name || user.email}
                         avatarObjectKey={user.avatar_object_key}
                         size="sm"
                       />
@@ -234,13 +235,8 @@ export function BroadcastUserPicker({
                               isSelected ? 'font-semibold text-primary' : 'font-medium text-text'
                             }`}
                           >
-                            {user.name}
+                            {user.full_name || user.name || user.email}
                           </p>
-                          {user.has_member_profile && (
-                            <Badge variant="primaryOutline" className="text-[9px] px-1 py-0.2">
-                              Member
-                            </Badge>
-                          )}
                         </div>
                         <p className="text-xs text-muted truncate">{user.email}</p>
                       </div>

@@ -15,7 +15,7 @@ Use this skill to convert natural-language boolean filter rules into the advance
 - You have human-readable logic and need valid JSON for Custom filter JSON.
 - You need grouped `and`/`or` with nested parentheses.
 - You need exclusions using `NOT`.
-- You need multi-name matching (for example `Robel / Paredes`).
+- You need multi-name matching (for example `Rebel / Geisler`).
 - You want reusable translation patterns for 9AM/12NN/3PM SLOD filters.
 
 ---
@@ -131,7 +131,7 @@ JSON skeleton:
 
 Human logic:
 
-`FIELD = Robel / Paredes`
+`FIELD = Rebel / Geisler`
 
 JSON skeleton:
 
@@ -140,8 +140,8 @@ JSON skeleton:
   "type": "group",
   "op": "or",
   "children": [
-    { "type": "condition", "filter": { "token": "<field_token>", "value": "Robel" } },
-    { "type": "condition", "filter": { "token": "<field_token>", "value": "Paredes" } }
+    { "type": "condition", "filter": { "token": "<field_token>", "value": "Rebel" } },
+    { "type": "condition", "filter": { "token": "<field_token>", "value": "Geisler" } }
   ]
 }
 ```
@@ -192,7 +192,7 @@ JSON only
 
 Human logic:
 
-`(9AM = Robel / Paredes OR 12NN = Robel / Paredes OR 3PM = Robel / Paredes) AND (9AM NOT Reserved OR NOT Not Serving) AND (12NN NOT Reserved OR NOT Not Serving) AND (3PM NOT Reserved OR NOT Not Serving)`
+`(9AM = Rebel / Geisler OR 12NN = Rebel / Geisler OR 3PM = Rebel / Geisler) AND (9AM NOT Reserved OR NOT Not Serving) AND (12NN NOT Reserved OR NOT Not Serving) AND (3PM NOT Reserved OR NOT Not Serving)`
 
 Output shape: root `and` with 4 children:
 

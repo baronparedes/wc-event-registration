@@ -22,11 +22,20 @@ const mockUsers = [
   },
   {
     id: 'user-2',
-    name: 'Cesar Cudala',
-    email: 'ccudala@gmail.com',
+    name: 'Cesar Salad',
+    email: 'cSalad@gmail.com',
     avatar_object_key: null,
     has_member_profile: false,
     created_at: '2026-01-02T00:00:00Z',
+    last_sign_in_at: null,
+  },
+  {
+    id: 'user-3',
+    name: 'Cynthia Cruz',
+    email: 'ccruz@gmail.com',
+    avatar_object_key: null,
+    has_member_profile: true,
+    created_at: '2026-01-03T00:00:00Z',
     last_sign_in_at: null,
   },
 ];
@@ -43,7 +52,7 @@ describe('BroadcastUserPicker', () => {
     });
 
     vi.mocked(useAuthUsersQuery).mockReturnValue({
-      data: mockUsers,
+      data: mockUsers.filter((user) => user.has_member_profile),
       isLoading: false,
       isFetching: false,
     } as never);
@@ -75,8 +84,9 @@ describe('BroadcastUserPicker', () => {
 
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(screen.getByText('Cecile Vitalicio')).toBeInTheDocument();
-    expect(screen.getByText('Cesar Cudala')).toBeInTheDocument();
-    expect(screen.getByText('Member')).toBeInTheDocument();
+    expect(screen.getByText('Cynthia Cruz')).toBeInTheDocument();
+    expect(screen.queryByText('Cesar Salad')).not.toBeInTheDocument();
+    expect(useAuthUsersQuery).toHaveBeenCalledWith('', true, true);
   });
 
   it('selects a user on click and calls onChange with user id', () => {
@@ -120,13 +130,13 @@ describe('BroadcastUserPicker', () => {
     const input = screen.getByRole('combobox');
     fireEvent.focus(input);
 
-    // Press ArrowDown to highlight second user
+    // The unmatched auth user is filtered out, so the second option is a verified member.
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(handleChange).toHaveBeenCalledWith(
-      'user-2',
-      expect.objectContaining({ id: 'user-2', name: 'Cesar Cudala' }),
+      'user-3',
+      expect.objectContaining({ id: 'user-3', name: 'Cynthia Cruz' }),
     );
   });
 
@@ -187,11 +197,11 @@ describe('BroadcastUserPicker', () => {
     const input = screen.getByRole('combobox');
     fireEvent.focus(input);
 
-    // Initial selected index is 0. ArrowUp wraps to last item (user-2)
+    // Initial selected index is 0. ArrowUp wraps to the last verified member.
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    expect(handleChange).toHaveBeenCalledWith('user-2', expect.objectContaining({ id: 'user-2' }));
+    expect(handleChange).toHaveBeenCalledWith('user-3', expect.objectContaining({ id: 'user-3' }));
   });
 
   it('renders empty message when query returns no matching users', () => {

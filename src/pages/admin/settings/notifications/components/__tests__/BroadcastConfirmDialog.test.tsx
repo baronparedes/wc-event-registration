@@ -65,7 +65,8 @@ describe('BroadcastConfirmDialog', () => {
 
     expect(screen.getByText('Confirm Broadcast')).toBeInTheDocument();
     expect(screen.getByText('Mass Broadcast')).toBeInTheDocument();
-    expect(screen.getByText('All Registered Users')).toBeInTheDocument();
+    expect(screen.getByText('Registered Members')).toBeInTheDocument();
+    expect(screen.getByText(/members with a matching account email/i)).toBeInTheDocument();
     expect(screen.getByText('Sunday Service Update')).toBeInTheDocument();
     expect(screen.getByText('Service starts at 10:00 AM.')).toBeInTheDocument();
     expect(screen.getByText('/profile')).toBeInTheDocument();
