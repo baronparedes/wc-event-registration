@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       notificationId,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, message);
+    console.error('[send-app-notification] unexpected error:', error);
+    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Internal server error');
   }
 });

@@ -721,8 +721,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     // 3.3 Return safe internal error response for unexpected failures.
     console.error('Unexpected error:', error);
-    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
 
-    return sharedErrorResponse(corsHeaders, 500, 'Internal server error', message);
+    return sharedErrorResponse(corsHeaders, 500, 'Internal server error');
   }
 });
