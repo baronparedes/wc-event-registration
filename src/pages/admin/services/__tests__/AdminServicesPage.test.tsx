@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
+import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 
 import { AdminServicesPage } from '../index';
 
@@ -17,15 +18,8 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 vi.mock('@/hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => ({
-    data: {
-      adminRole: 'admin',
-      isAuthenticated: true,
-      session: null,
-    },
-    isLoading: false,
-    error: null,
-  }),
+  useAdminAuthQuery: vi.fn(),
+  canAdminPerform: vi.fn(),
 }));
 
 const mockUseServiceDashboardQuery = vi.fn();
@@ -38,6 +32,25 @@ const queryClient = new QueryClient();
 describe('AdminServicesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    vi.mocked(useAdminAuthQuery).mockReturnValue({
+      data: {
+        adminRole: 'admin',
+        isAuthenticated: true,
+        session: null,
+        user: { id: 'test-user-id' },
+      },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useAdminAuthQuery>);
+
+    vi.mocked(canAdminPerform).mockImplementation((role, action) => {
+      if (action === 'canWriteAdminData') {
+        return role === 'admin' || role === 'super_admin';
+      }
+      return true;
+    });
+
     mockUseServiceDashboardQuery.mockReturnValue({
       data: {
         time_slots: {
@@ -82,6 +95,29 @@ describe('AdminServicesPage', () => {
     const ctaButton = screen.getByRole('button', { name: 'Upload CSV' });
     fireEvent.click(ctaButton);
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceMigration);
+  });
+
+  it('does not render Upload CSV for slod users', () => {
+    vi.mocked(useAdminAuthQuery).mockReturnValue({
+      data: {
+        adminRole: 'slod',
+        isAuthenticated: true,
+        session: null,
+        user: { id: 'test-user-id' },
+      },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useAdminAuthQuery>);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[ROUTE_PATHS.adminServices]}>
+          <AdminServicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Upload CSV' })).not.toBeInTheDocument();
   });
 
   it('renders safely without crashing when roles is null or empty', () => {

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
+import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useServiceDashboardQuery } from '@/hooks/domain/services';
 
 import {
@@ -18,6 +19,7 @@ import { type FilterMode, getLastSundayOfYear, getNearestPreviousSunday } from '
 
 export function AdminServicesPage() {
   const navigate = useNavigate();
+  const { data: authState } = useAdminAuthQuery();
   const [filterMode, setFilterMode] = useState<FilterMode>('sunday');
 
   const now = new Date();
@@ -68,14 +70,16 @@ export function AdminServicesPage() {
         breadcrumbs={[{ label: 'Services' }]}
         actions={
           <>
-            <Button
-              className="w-full sm:w-auto sm:inline-flex"
-              variant="primaryOutline"
-              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Upload CSV
-            </Button>
+            {canAdminPerform(authState?.adminRole, 'canWriteAdminData') && (
+              <Button
+                className="w-full sm:w-auto sm:inline-flex"
+                variant="primaryOutline"
+                onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceMigration)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload CSV
+              </Button>
+            )}
             <Button
               className="w-full sm:w-auto sm:inline-flex"
               onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceCommitment)}
