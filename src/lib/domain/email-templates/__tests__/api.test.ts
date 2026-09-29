@@ -69,6 +69,19 @@ describe('Email Templates Domain API', () => {
 
       await expect(fetchEmailTemplates()).rejects.toThrow('DB Error');
     });
+
+    it('rejects malformed rows from the database', async () => {
+      const mockQuery = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValueOnce({
+          data: [{ id: 'template-1', required_variables: 'name' }],
+          error: null,
+        }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockQuery as never);
+
+      await expect(fetchEmailTemplates()).rejects.toThrow();
+    });
   });
 
   describe('fetchEmailTemplateById', () => {
@@ -79,6 +92,8 @@ describe('Email Templates Domain API', () => {
         slug: 'welcome',
         resend_template_id: 'resend-1',
         required_variables: [],
+        created_at: '2026-09-28T00:00:00Z',
+        updated_at: '2026-09-28T00:00:00Z',
       };
 
       const mockQuery = {
@@ -104,7 +119,11 @@ describe('Email Templates Domain API', () => {
         required_variables: ['first_name'],
       };
 
-      const mockUpdated = { ...input, updated_at: '2026-09-28T01:00:00Z' };
+      const mockUpdated = {
+        ...input,
+        created_at: '2026-09-28T00:00:00Z',
+        updated_at: '2026-09-28T01:00:00Z',
+      };
       const mockQuery = {
         update: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -133,7 +152,12 @@ describe('Email Templates Domain API', () => {
         required_variables: ['code'],
       };
 
-      const mockCreated = { id: 'template-new', ...input, created_at: '2026-09-28T00:00:00Z' };
+      const mockCreated = {
+        id: 'template-new',
+        ...input,
+        created_at: '2026-09-28T00:00:00Z',
+        updated_at: '2026-09-28T00:00:00Z',
+      };
       const mockQuery = {
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),

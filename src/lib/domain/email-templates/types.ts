@@ -1,12 +1,6 @@
-export type EmailTemplate = {
-  id: string;
-  slug: string;
-  name: string;
-  resend_template_id: string;
-  required_variables: string[];
-  created_at: string;
-  updated_at: string;
-};
+import { emailTemplateSchema } from './schemas';
+
+export type EmailTemplate = import('zod').infer<typeof emailTemplateSchema>;
 
 export type SaveEmailTemplateInput = {
   id?: string;

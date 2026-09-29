@@ -1,5 +1,6 @@
 import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
+import { emailTemplateListSchema, emailTemplateSchema } from './schemas';
 import type {
   EmailTemplate,
   EnqueueEventPayload,
@@ -18,7 +19,7 @@ export async function fetchEmailTemplates(): Promise<EmailTemplate[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data || []) as unknown as EmailTemplate[];
+  return emailTemplateListSchema.parse(data ?? []);
 }
 
 export async function fetchEmailTemplateById(id: string): Promise<EmailTemplate | null> {
@@ -29,7 +30,7 @@ export async function fetchEmailTemplateById(id: string): Promise<EmailTemplate 
     .maybeSingle();
 
   if (error) throw error;
-  return data ? (data as unknown as EmailTemplate) : null;
+  return data ? emailTemplateSchema.parse(data) : null;
 }
 
 export async function saveEmailTemplate(input: SaveEmailTemplateInput): Promise<EmailTemplate> {
@@ -48,7 +49,7 @@ export async function saveEmailTemplate(input: SaveEmailTemplateInput): Promise<
       .single();
 
     if (error) throw error;
-    return data as unknown as EmailTemplate;
+    return emailTemplateSchema.parse(data);
   }
 
   const { data, error } = await supabase
@@ -65,7 +66,7 @@ export async function saveEmailTemplate(input: SaveEmailTemplateInput): Promise<
     .single();
 
   if (error) throw error;
-  return data as unknown as EmailTemplate;
+  return emailTemplateSchema.parse(data);
 }
 
 export async function enqueueEventNotification(
