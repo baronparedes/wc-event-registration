@@ -65,6 +65,7 @@ export function useCurrentProfileQuery() {
         created_at: member.created_at,
         updated_at: member.updated_at,
         last_activity,
+        has_account: member.has_account,
       } satisfies AdminMember;
     },
     staleTime: 1000 * 60 * 5,

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { BadgeCheck } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -289,6 +290,14 @@ export function AdminMemberDetailPage() {
               <FormInputField
                 id="email"
                 label="Email"
+                labelAdornment={
+                  member.has_account ? (
+                    <BadgeCheck
+                      className="h-4 w-4 shrink-0 text-[#178e9f]"
+                      aria-label="Verified account"
+                    />
+                  ) : undefined
+                }
                 registration={register('email')}
                 error={errors.email?.message}
                 type="email"

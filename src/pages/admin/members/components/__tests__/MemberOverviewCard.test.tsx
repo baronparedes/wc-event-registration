@@ -18,6 +18,7 @@ const member = makeAdminMember({
   category: 'Men',
   date_of_birth: '2026-04-28',
   last_activity: '2024-01-01T12:00:00Z',
+  has_account: true,
 });
 
 describe('MemberOverviewCard', () => {
@@ -34,6 +35,7 @@ describe('MemberOverviewCard', () => {
     expect(screen.getByText('Men')).toBeInTheDocument();
     expect(screen.getByText(email)).toBeInTheDocument();
     expect(screen.getByText('Apr 28, 2026')).toBeInTheDocument();
+    expect(screen.getByLabelText('Verified account')).toBeInTheDocument();
   });
 
   it('renders last activity badge when last_activity is present', () => {

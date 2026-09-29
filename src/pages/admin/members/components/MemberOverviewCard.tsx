@@ -1,3 +1,5 @@
+import { BadgeCheck } from 'lucide-react';
+
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -56,7 +58,15 @@ export function MemberOverviewCard({
           {member.email && (
             <div className="min-w-0">
               <dt className="text-muted">Email</dt>
-              <dd className="break-all font-medium text-text">{member.email}</dd>
+              <dd className="break-all font-medium text-text flex items-center gap-1.5">
+                {member.email}
+                {member.has_account && (
+                  <BadgeCheck
+                    className="h-4 w-4 shrink-0 text-[#178e9f]"
+                    aria-label="Verified account"
+                  />
+                )}
+              </dd>
             </div>
           )}
           {member.date_of_birth && (

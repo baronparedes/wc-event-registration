@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { BadgeCheck, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/Button';
@@ -69,7 +69,15 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
           {member.email && (
             <div className="col-span-2 min-w-0 md:col-span-1">
               <dt className="text-muted text-sm">Email</dt>
-              <dd className="break-all font-medium text-text">{member.email}</dd>
+              <dd className="break-all font-medium text-text flex items-center gap-1.5">
+                {member.email}
+                {member.has_account && (
+                  <BadgeCheck
+                    className="h-4 w-4 shrink-0 text-[#178e9f]"
+                    aria-label="Verified account"
+                  />
+                )}
+              </dd>
             </div>
           )}
           {member.phone && (

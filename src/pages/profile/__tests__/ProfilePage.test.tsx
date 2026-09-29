@@ -77,6 +77,7 @@ const member = makeAdminMember({
   role: 'Athlete',
   category: 'Adult',
   extra_metadata: { MembershipType: 'Gold' },
+  has_account: true,
 });
 
 describe('ProfilePage', () => {
@@ -115,6 +116,7 @@ describe('ProfilePage', () => {
     expect(screen.getByRole('tab', { name: 'Info' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Commitments' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Verified account')).toBeInTheDocument();
   });
 
   it('renders event history items when present', () => {
