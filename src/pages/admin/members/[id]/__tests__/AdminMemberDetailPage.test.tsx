@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -137,6 +137,45 @@ describe('AdminMemberDetailPage', () => {
 
     renderPage();
 
+    expect(screen.getByText(/This member is soft deleted/)).toBeInTheDocument();
+  });
+
+  it('refetches member details after restoring a deleted member', async () => {
+    const restoreMember = vi.fn().mockResolvedValue({ id: 'm1' });
+    const refetch = vi.fn();
+    mockUseRestoreMemberMutation.mockReturnValue({ mutateAsync: restoreMember, isPending: false });
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: { ...sampleMember, is_active: false },
+      isLoading: false,
+      refetch,
+    });
+
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Save Changes' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Member' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => expect(restoreMember).toHaveBeenCalledWith({ id: 'm1' }));
+    await waitFor(() => expect(refetch).toHaveBeenCalledOnce());
+  });
+
+  it('keeps a deactivated member visible when restoration fails', async () => {
+    const restoreMember = vi.fn().mockRejectedValue(new Error('Restore failed'));
+    const refetch = vi.fn();
+    mockUseRestoreMemberMutation.mockReturnValue({ mutateAsync: restoreMember, isPending: false });
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: { ...sampleMember, is_active: false },
+      isLoading: false,
+      refetch,
+    });
+
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Member' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => expect(restoreMember).toHaveBeenCalledWith({ id: 'm1' }));
+    expect(refetch).not.toHaveBeenCalled();
     expect(screen.getByText(/This member is soft deleted/)).toBeInTheDocument();
   });
 });

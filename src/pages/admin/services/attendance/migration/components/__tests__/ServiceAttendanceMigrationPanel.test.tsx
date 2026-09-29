@@ -79,6 +79,259 @@ describe('ServiceAttendanceMigrationPanel', () => {
     });
   });
 
+  it('rejects a CSV with no rows on the target date and accepts a corrected upload', async () => {
+    render(<ServiceAttendanceMigrationPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+
+    const upload = async (targetDate: string) => {
+      fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+      fireEvent.change(screen.getByLabelText(/Target Date/i), {
+        target: { value: targetDate },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+      const file = new File(
+        [
+          [
+            'RFID,Date,Time,Time_Slot,Table,Name',
+            ',3/8/2026,09:00:00,9AM,10,Test Nick Test Surname',
+          ].join('\n'),
+        ],
+        'attendance.csv',
+        { type: 'text/csv' },
+      );
+      fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+        target: { files: [file] },
+      });
+    };
+
+    await upload('2026-03-15');
+    await waitFor(() => {
+      expect(screen.queryByText('Parsing and validating file...')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText('Preview (1 row)')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run Migration' })).toBeDisabled();
+
+    await upload('2026-03-08');
+    await waitFor(() => {
+      expect(screen.getByText('Preview (1 row)')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: 'Run Migration' })).toBeEnabled();
+  });
+
+  it('keeps the preview available when the migration request fails', async () => {
+    mockMutateAsync.mockRejectedValueOnce(new Error('Migration unavailable'));
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      render(<ServiceAttendanceMigrationPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+      fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+      fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+      fireEvent.change(screen.getByLabelText(/Target Date/i), {
+        target: { value: '2026-03-08' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+      const file = new File(
+        [
+          [
+            'RFID,Date,Time,Time_Slot,Table,Name',
+            ',3/8/2026,09:00:00,9AM,10,Test Nick Test Surname',
+          ].join('\n'),
+        ],
+        'attendance.csv',
+        { type: 'text/csv' },
+      );
+      fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+        target: { files: [file] },
+      });
+
+      await waitFor(() => expect(screen.getByText('Preview (1 row)')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: 'Run Migration' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(mockMutateAsync).not.toHaveBeenCalled();
+      expect(screen.getByText('Preview (1 row)')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Run Migration' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm Migration' }));
+
+      await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledOnce());
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: 'Confirm Migration' })).not.toBeInTheDocument();
+      });
+      expect(screen.getByText('Preview (1 row)')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Run Migration' })).toBeEnabled();
+    } finally {
+      logError.mockRestore();
+    }
+  });
+
+  it('exports unmatched rows and releases the temporary download URL', async () => {
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:failed-rows');
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+
+    try {
+      render(<ServiceAttendanceMigrationPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+      fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+      fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+      fireEvent.change(screen.getByLabelText(/Target Date/i), {
+        target: { value: '2026-03-08' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+      const file = new File(
+        [
+          [
+            'RFID,Date,Time,Time_Slot,Table,Name',
+            ',3/8/2026,09:00:00,9AM,10,Test Unknown Member',
+          ].join('\n'),
+        ],
+        'attendance.csv',
+        { type: 'text/csv' },
+      );
+      fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+        target: { files: [file] },
+      });
+
+      await waitFor(() => expect(screen.getByText('Preview (1 row)')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: 'Export Failed Records' }));
+
+      expect(createObjectURL).toHaveBeenCalledOnce();
+      expect(click).toHaveBeenCalledOnce();
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:failed-rows');
+    } finally {
+      createObjectURL.mockRestore();
+      revokeObjectURL.mockRestore();
+      click.mockRestore();
+    }
+  });
+
+  it('keeps the failed-row preview when creating an export URL fails', async () => {
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      throw new Error('Download unavailable');
+    });
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      render(<ServiceAttendanceMigrationPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+      fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+      fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+      fireEvent.change(screen.getByLabelText(/Target Date/i), {
+        target: { value: '2026-03-08' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+      const file = new File(
+        ['RFID,Date,Time,Time_Slot,Table,Name\n,3/8/2026,09:00:00,9AM,10,Test Unknown Member'],
+        'attendance.csv',
+        { type: 'text/csv' },
+      );
+      fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+        target: { files: [file] },
+      });
+
+      await waitFor(() => expect(screen.getByText('Preview (1 row)')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: 'Export Failed Records' }));
+
+      expect(logError).toHaveBeenCalledWith(new Error('Download unavailable'));
+      expect(screen.getByText('Preview (1 row)')).toBeInTheDocument();
+    } finally {
+      createObjectURL.mockRestore();
+      logError.mockRestore();
+    }
+  });
+
+  it('clears the old preview when selecting a different layout', async () => {
+    mockUseServiceLayoutsQuery.mockReturnValue({
+      data: [
+        { id: 'layout-1', description: 'Base Layout' },
+        { id: 'layout-2', description: 'Alternate Layout' },
+      ],
+      isLoading: false,
+    });
+    render(<ServiceAttendanceMigrationPanel />);
+    fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+    fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+    fireEvent.change(screen.getByLabelText(/Target Date/i), {
+      target: { value: '2026-03-08' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: {
+        files: [
+          new File(
+            [
+              'RFID,Date,Time,Time_Slot,Table,Name\n,3/8/2026,09:00:00,9AM,10,Test Nick Test Surname',
+            ],
+            'attendance.csv',
+            { type: 'text/csv' },
+          ),
+        ],
+      },
+    });
+
+    await waitFor(() => expect(screen.getByText('Preview (1 row)')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Base Layout' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Alternate Layout' }));
+
+    expect(screen.queryByText('Preview (1 row)')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run Migration' })).toBeDisabled();
+    expect(mockUseServiceSeatsQuery).toHaveBeenCalledWith('layout-2');
+  });
+
+  it('rejects an invalid CSV without leaving a runnable preview', async () => {
+    render(<ServiceAttendanceMigrationPanel />);
+    fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+    fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+    fireEvent.change(screen.getByLabelText(/Target Date/i), {
+      target: { value: '2026-03-08' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+    const file = new File(['Name,Date\nTest Missing Columns,3/8/2026'], 'attendance.csv', {
+      type: 'text/csv',
+    });
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [file] },
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Parsing and validating file...')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Preview \(/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run Migration' })).toBeDisabled();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('recovers from a file read error without offering migration', async () => {
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      render(<ServiceAttendanceMigrationPanel />);
+      fireEvent.click(screen.getByRole('button', { name: /Select a layout.../i }));
+      fireEvent.click(screen.getByRole('option', { name: 'Base Layout' }));
+      fireEvent.click(screen.getByRole('button', { name: /Select File.../i }));
+      fireEvent.change(screen.getByLabelText(/Target Date/i), {
+        target: { value: '2026-03-08' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Select File' }));
+      const file = new File(['unreadable'], 'attendance.csv', { type: 'text/csv' });
+      file.text = vi.fn().mockRejectedValue(new Error('Read failure'));
+      fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+        target: { files: [file] },
+      });
+
+      await waitFor(() => expect(logError).toHaveBeenCalledWith(new Error('Read failure')));
+      expect(screen.queryByText(/Preview \(/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Run Migration' })).toBeDisabled();
+    } finally {
+      logError.mockRestore();
+    }
+  });
+
   it('matches members by nickname + last_name, maps tables > 100 to Usher / Backroom / IMT / VMT, and filters status', async () => {
     render(<ServiceAttendanceMigrationPanel />);
 

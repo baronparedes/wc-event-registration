@@ -4,6 +4,7 @@ import {
   UNASSIGNED_TABLE,
   USHER_BACKROOM_TABLE,
   mapServiceAttendanceTableNumber,
+  normalizeDateToYYYYMMDD,
   parseCsvTextToRows,
   parseServiceAttendanceCsv,
   processParsedCsvData,
@@ -48,9 +49,23 @@ describe('Service Attendance CSV Parser', () => {
         ['1', '2', '3'],
       ]);
     });
+
+    it('handles escaped quotes, CRLF and trailing blank rows', () => {
+      expect(parseCsvTextToRows('RFID,Name\r\n123,"Test ""Nickname"" Member"\r\n\r\n')).toEqual([
+        ['RFID', 'Name'],
+        ['123', 'Test "Nickname" Member'],
+      ]);
+    });
   });
 
   describe('parseServiceAttendanceCsv', () => {
+    it('rejects a header-only CSV', () => {
+      expect(parseServiceAttendanceCsv('RFID,Date,Time,Time_Slot,Table')).toEqual({
+        success: false,
+        error: 'CSV file is empty or missing data rows.',
+      });
+    });
+
     it('returns error if missing required headers', () => {
       const csv = 'RFID,Date,Time\n123,3/9/25,09:00:00';
       const result = parseServiceAttendanceCsv(csv);
@@ -72,7 +87,75 @@ describe('Service Attendance CSV Parser', () => {
     });
   });
 
+  describe('normalizeDateToYYYYMMDD', () => {
+    it('normalizes Date objects, dash-separated dates and Excel serial dates', () => {
+      expect(normalizeDateToYYYYMMDD(new Date('2026-03-15T00:00:00Z'))).toBe('2026-03-15');
+      expect(normalizeDateToYYYYMMDD('3-15-26')).toBe('2026-03-15');
+      expect(normalizeDateToYYYYMMDD('45731')).toBe('2025-03-15');
+    });
+
+    it('rejects missing, invalid and unrecognized dates', () => {
+      expect(normalizeDateToYYYYMMDD(null)).toBeNull();
+      expect(normalizeDateToYYYYMMDD(new Date('invalid'))).toBeNull();
+      expect(normalizeDateToYYYYMMDD('not a date')).toBeNull();
+    });
+  });
+
   describe('processParsedCsvData', () => {
+    it('normalizes optional import columns into flags and audit metadata', () => {
+      const [row] = processParsedCsvData({
+        headers: [],
+        rows: [
+          {
+            'Member ID': 'RFID-001',
+            'Service Date': '2026/3/15',
+            'Check In Time': '09:20:00',
+            'Time Slot': '9AM',
+            'Table #': 'Table 101',
+            'Full Name': 'Test Import Member',
+            'Volunteer ID': 'VOL-001',
+            Id: 'legacy-1',
+            'Manual Entry': 'TRUE',
+            'Is Override': '1',
+            'Is Walk In': 'yes',
+          },
+        ],
+      });
+
+      expect(row).toMatchObject({
+        rfid: 'RFID-001',
+        service_date: '2026-03-15',
+        checked_in_at: '2026-03-15T09:20:00+08:00',
+        table_number: USHER_BACKROOM_TABLE,
+        is_manual_entry: true,
+        is_override: true,
+        is_walk_in: true,
+        metadata: {
+          legacy_name: 'Test Import Member',
+          volunteer_id: 'VOL-001',
+          legacy_id: 'legacy-1',
+          original_table_number: 'Table 101',
+        },
+      });
+    });
+
+    it('reports missing fields and invalid dates without generating a check-in timestamp', () => {
+      const [row] = processParsedCsvData({
+        headers: ['RFID', 'Date', 'Time_Slot', 'Table'],
+        rows: [{ RFID: '', Date: 'not a date', Time_Slot: '', Table: '' }],
+      });
+
+      expect(row.row_number).toBe(2);
+      expect(row.isValid).toBe(false);
+      expect(row.errors).toEqual([
+        'RFID is missing',
+        'Time_Slot is missing',
+        'Invalid Date format: not a date. Expected M/D/YYYY or YYYY-MM-DD',
+      ]);
+      expect(row.checked_in_at).toBe('');
+      expect(row.table_number).toBe(UNASSIGNED_TABLE);
+    });
+
     it('processes rows and maps table > 100 to Usher / Backroom / IMT / VMT preserving original table in metadata', () => {
       const parsed = {
         headers: ['RFID', 'Date', 'Time', 'Time_Slot', 'Table', 'Name', 'Role'],

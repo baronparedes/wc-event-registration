@@ -210,13 +210,21 @@ describe('AttendanceViewControls', () => {
     fireEvent.click(leaderCheckbox);
     expect(onRoleChange).toHaveBeenCalledWith(['Volunteer', 'Leader']);
 
+    fireEvent.click(screen.getByLabelText('Volunteer'));
+    expect(onRoleChange).toHaveBeenCalledWith([]);
+
     // Clear role selection button
     const clearRolesBtn = screen.getByRole('button', { name: 'All roles' });
     fireEvent.click(clearRolesBtn);
     expect(onRoleChange).toHaveBeenCalledWith([]);
 
-    // Escape closes role dropdown
+    fireEvent.click(roleDropdownBtn);
+    fireEvent.mouseDown(document.body);
+    expect(roleDropdownBtn).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(roleDropdownBtn);
     fireEvent.keyDown(document, { key: 'Escape' });
+    expect(roleDropdownBtn).toHaveAttribute('aria-expanded', 'false');
 
     // Category selection
     const categorySelect = screen.getByLabelText('Category');

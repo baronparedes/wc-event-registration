@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ServiceAttendance } from '@/lib/domain/services';
 
@@ -109,6 +109,39 @@ describe('AdminServiceAttendanceDataPage', () => {
     );
   });
 
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('groups records into date summaries and cards on narrow viewports', () => {
+    vi.stubGlobal('innerWidth', 375);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText(/2 members, 2 check-ins/)).toBeInTheDocument();
+    expect(screen.getByText(firstVolunteerName)).toBeInTheDocument();
+    expect(screen.getByText(secondVolunteerName)).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'RFID' })).not.toBeInTheDocument();
+  });
+
+  it('shows the mobile empty state when no records match', () => {
+    vi.stubGlobal('innerWidth', 375);
+    mockUseServiceAttendanceQuery.mockReturnValue(makeMockInfiniteQueryResult([]));
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText('No attendance records found matching filters.')).toBeInTheDocument();
+    expect(screen.queryByText(firstVolunteerName)).not.toBeInTheDocument();
+  });
+
   it('renders table columns, volunteer names, and avatars', () => {
     render(
       <QueryClientProvider client={queryClient}>
@@ -140,9 +173,8 @@ describe('AdminServiceAttendanceDataPage', () => {
   });
 
   it('shows "Showing X of Y" in badge when more pages exist', () => {
-    mockUseServiceAttendanceQuery.mockReturnValue(
-      makeMockInfiniteQueryResult(mockAttendanceRecords, true),
-    );
+    const query = makeMockInfiniteQueryResult(mockAttendanceRecords, true);
+    mockUseServiceAttendanceQuery.mockReturnValue(query);
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -153,7 +185,118 @@ describe('AdminServiceAttendanceDataPage', () => {
     );
 
     expect(screen.getAllByText('Showing 2 of 100 records').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByRole('button', { name: 'Load More' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Load More' }));
+    expect(query.fetchNextPage).toHaveBeenCalledOnce();
+  });
+
+  it('filters roles locally while passing date, slot and attendance flags to the query', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={[
+            '/admin/services/attendance/data?role=Usher&service_start_date=2026-03-15&service_end_date=2026-03-15&time_slot=9AM&is_walk_in=false&is_late_tardy=true',
+          ]}
+        >
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(mockUseServiceAttendanceQuery).toHaveBeenCalledWith({
+      start_date: '2026-03-15',
+      end_date: '2026-03-15',
+      time_slot: '9AM',
+      is_walk_in: false,
+      is_override: true,
+    });
+    expect(screen.getByText(firstVolunteerName)).toBeInTheDocument();
+    expect(screen.queryByText(secondVolunteerName)).not.toBeInTheDocument();
+    expect(screen.getAllByText('1 record found').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('adds and removes role filters and restores all records when cleared', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'OIC' }));
+    expect(screen.queryByText(firstVolunteerName)).not.toBeInTheDocument();
+    expect(screen.getByText(secondVolunteerName)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Usher' }));
+    expect(screen.getByRole('button', { name: 'Role' })).toHaveTextContent('2 roles selected');
+    expect(screen.getByText(firstVolunteerName)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'OIC' }));
+    expect(screen.getByRole('button', { name: 'Role' })).toHaveTextContent('Usher');
+    expect(screen.queryByText(secondVolunteerName)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'All roles' }));
+    expect(screen.getByRole('button', { name: 'Role' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText(secondVolunteerName)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    fireEvent.mouseDown(document.body);
+    expect(screen.getByRole('button', { name: 'Role' })).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Role' }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('button', { name: 'Role' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('filters volunteers by debounced nickname search', async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Search by name or nickname'), {
+      target: { value: firstVolunteerNickname },
+    });
+
+    await waitFor(() => expect(screen.queryByText(secondVolunteerName)).not.toBeInTheDocument());
+    expect(screen.getByText(firstVolunteerName)).toBeInTheDocument();
+    expect(screen.getAllByText('2 records found').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows an empty result when the selected role has no matching records', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data?role=Prayer%20Coach']}>
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText('No records found')).toBeInTheDocument();
+    expect(screen.getByText('No attendance records found matching filters.')).toBeInTheDocument();
+    expect(screen.queryByText(firstVolunteerName)).not.toBeInTheDocument();
+  });
+
+  it('hides attendance records and disables export while loading', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue({
+      ...makeMockInfiniteQueryResult(mockAttendanceRecords),
+      isLoading: true,
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/data']}>
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByText(firstVolunteerName)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export/i })).toBeDisabled();
   });
 
   it('handles clear filter button state and click', () => {
@@ -193,5 +336,30 @@ describe('AdminServiceAttendanceDataPage', () => {
     expect(screen.getByText(secondVolunteerName)).toBeInTheDocument();
 
     vi.useRealTimers();
+  });
+
+  it('clears the end date when the start date is removed', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={[
+            '/admin/services/attendance/data?service_start_date=2026-03-01&service_end_date=2026-03-15',
+          ]}
+        >
+          <AdminServiceAttendanceDataPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const [start, end] = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    expect(end).toHaveValue('2026-03-15');
+
+    fireEvent.change(start, { target: { value: '' } });
+
+    expect(end).toBeDisabled();
+    expect(mockUseServiceAttendanceQuery).toHaveBeenLastCalledWith({
+      start_date: expect.any(String),
+      end_date: expect.any(String),
+    });
   });
 });
