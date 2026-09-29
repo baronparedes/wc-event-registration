@@ -17,6 +17,7 @@ export type MemberUserRow = {
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  has_account?: boolean;
 };
 
 export type MemberUserListRow = MemberUserRow & {
@@ -56,7 +57,7 @@ export type MemberUpdatePayload = {
 export type MemberStatusFilter = 'active' | 'deleted' | 'all';
 
 const MEMBER_USER_SELECT =
-  'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at';
+  'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, has_account';
 
 function escapeOrFilterValue(value: string): string {
   return value.replace(/[,%_]/g, (char) => `\\${char}`);
@@ -73,7 +74,7 @@ export async function fetchAdminMembersPage(params: {
   let query = supabase
     .from('users')
     .select(
-      'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, last_activity',
+      'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, last_activity, has_account',
       { count: 'exact' },
     );
 
