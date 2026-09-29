@@ -8,10 +8,11 @@ const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@welcomec
 Deno.serve(async (req) => {
   const hookResult = await useEdgeHook({
     req,
-    functionName: 'process-email-queue',
+    functionName: 'cron-process-email-queue',
     method: 'POST',
     requireAdmin: true,
-    allowServiceRole: true, // Allow cron/pg_net to call this
+    allowServiceRole: true,
+    allowCronRole: true,
   });
 
   if (!hookResult.valid) {
@@ -21,7 +22,7 @@ Deno.serve(async (req) => {
   const { client, corsHeaders, requestId } = hookResult;
 
   if (!RESEND_API_KEY) {
-    console.error('[process-email-queue] RESEND_API_KEY is not configured');
+    console.error('[cron-process-email-queue] RESEND_API_KEY is not configured');
     return errorResponse(
       corsHeaders,
       HTTP_STATUS.internalServerError,
@@ -37,7 +38,10 @@ Deno.serve(async (req) => {
     });
 
     if (popError) {
-      console.error('[process-email-queue] Failed to pop messages', { requestId, error: popError });
+      console.error('[cron-process-email-queue] Failed to pop messages', {
+        requestId,
+        error: popError,
+      });
       return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Failed to read queue');
     }
 
@@ -54,7 +58,9 @@ Deno.serve(async (req) => {
 
       try {
         if (payload.event_type !== 'email_notification') {
-          console.warn(`[process-email-queue] Skipping unknown event_type: ${payload.event_type}`);
+          console.warn(
+            `[cron-process-email-queue] Skipping unknown event_type: ${payload.event_type}`,
+          );
           // Acknowledge invalid message to remove from queue
           await client.rpc('archive_email_notification', { message_id: messageId });
           continue;
@@ -69,7 +75,7 @@ Deno.serve(async (req) => {
 
         if (templateError || !template) {
           console.error(
-            `[process-email-queue] Template not found for slug: ${payload.template_slug}`,
+            `[cron-process-email-queue] Template not found for slug: ${payload.template_slug}`,
             { error: templateError },
           );
           // If a template doesn't exist, we might want to let it retry or fail permanently.
@@ -100,7 +106,10 @@ Deno.serve(async (req) => {
 
         if (!resendResponse.ok) {
           const errorBody = await resendResponse.text();
-          console.error(`[process-email-queue] Resend API error for msg ${messageId}:`, errorBody);
+          console.error(
+            `[cron-process-email-queue] Resend API error for msg ${messageId}:`,
+            errorBody,
+          );
           // Let it stay in queue to retry
           continue;
         }
@@ -109,7 +118,10 @@ Deno.serve(async (req) => {
         await client.rpc('archive_email_notification', { message_id: messageId });
         processedCount++;
       } catch (innerError) {
-        console.error(`[process-email-queue] Error processing message ${messageId}:`, innerError);
+        console.error(
+          `[cron-process-email-queue] Error processing message ${messageId}:`,
+          innerError,
+        );
         // Leave in queue for retry
       }
     }
@@ -120,7 +132,7 @@ Deno.serve(async (req) => {
       corsHeaders,
     );
   } catch (error) {
-    console.error('[process-email-queue] Unexpected error', { requestId, error });
+    console.error('[cron-process-email-queue] Unexpected error', { requestId, error });
     return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Internal server error');
   }
 });
