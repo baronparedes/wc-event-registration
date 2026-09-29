@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
     .order('starts_at', { ascending: true });
 
   if (error) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event listing', error.message);
+    console.error('Failed to fetch event listing:', error.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event listing');
   }
 
   return sharedSuccessResponse(corsHeaders, { events: events ?? [] });

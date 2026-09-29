@@ -1,5 +1,5 @@
-## 2024-10-24 - Edge Functions Internal Error Leakage
+## 2026-09-29 - Information Leakage in Supabase Edge Functions Error Responses
 
-**Vulnerability:** Several Supabase Edge Functions (e.g., `member-lookup`, `send-app-notification`, `cron-tokenize-users`, `bulk-upsert-service-attendance`, `manage-push-subscription`, `list-unregistered-members`) were directly exposing internal `error.message` strings to the client in HTTP response bodies when exceptions were thrown.
-**Learning:** Returning unhandled exception messages to the client can leak sensitive system internals (e.g., database schema details, API keys, file paths, or internal logic). This violates the "fail securely" principle.
-**Prevention:** Always log detailed `error.message` internally via `console.error` for server-side debugging, and consistently return a generic, sanitized error message (e.g., "Internal server error") to the client using standardized error response helpers.
+**Vulnerability:** Public Supabase Edge functions (`get-public-form`, `get-public-event-listing`, `get-public-event`, `get-public-event-fields`, `get-public-forms`, `get-public-form-fields`) were inadvertently passing raw internal `error.message` strings directly to the client within HTTP 500 error responses.
+**Learning:** Returning unhandled database or system errors to the client exposes underlying architectural details, database schemas, and potential unhandled states which could be leveraged for targeted attacks.
+**Prevention:** To avoid this in the future, internal errors must always be sanitized at the edge. Detailed errors should only be logged internally using `console.error` and generic, non-descriptive error messages should be returned to the client using `sharedErrorResponse`.

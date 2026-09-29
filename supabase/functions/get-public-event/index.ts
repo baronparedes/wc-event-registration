@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (error) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event', error.message);
+    console.error('Failed to fetch event:', error.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event');
   }
 
   if (!event) {

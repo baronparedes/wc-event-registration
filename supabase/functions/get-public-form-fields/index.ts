@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (formError) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch form', formError.message);
+    console.error('Failed to fetch form:', formError.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch form');
   }
 
   if (!form) {
@@ -61,7 +62,8 @@ Deno.serve(async (req) => {
   const { data: fields, error } = await query;
 
   if (error) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch form fields', error.message);
+    console.error('Failed to fetch form fields:', error.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch form fields');
   }
 
   return sharedSuccessResponse(corsHeaders, { fields: fields ?? [] });

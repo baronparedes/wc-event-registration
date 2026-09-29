@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (eventError) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event', eventError.message);
+    console.error('Failed to fetch event:', eventError.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event');
   }
 
   if (!event) {
@@ -61,7 +62,8 @@ Deno.serve(async (req) => {
   const { data: fields, error } = await query;
 
   if (error) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event fields', error.message);
+    console.error('Failed to fetch event fields:', error.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch event fields');
   }
 
   return sharedSuccessResponse(corsHeaders, { fields: fields ?? [] });
