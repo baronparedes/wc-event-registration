@@ -26,12 +26,18 @@ describe('AppShellHeader', () => {
       <AppShellHeader
         isMinimizedShell={true}
         userBadge={<span>{userName}</span>}
+        actions={<button type="button" aria-label="Notifications" />}
         onOpenDrawer={vi.fn()}
       />,
     );
 
     const menuButton = screen.getByRole('button', { name: 'Open app navigation drawer' });
+    const actionGroup = screen.getByRole('group', {
+      name: 'Notifications and app navigation',
+    });
     expect(menuButton).toBeInTheDocument();
+    expect(actionGroup).toContainElement(screen.getByRole('button', { name: 'Notifications' }));
+    expect(actionGroup).toContainElement(menuButton);
     expect(screen.getByText('Menu')).toBeInTheDocument();
     expect(screen.getByText(userName)).toBeInTheDocument();
   });

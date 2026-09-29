@@ -6,7 +6,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
-process.env.VITE_APP_VERSION = packageJson.version;
+const buildDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+process.env.VITE_APP_VERSION = `${packageJson.version}.${buildDate}`;
 try {
   process.env.VITE_APP_COMMIT_HASH = execSync('git rev-parse --short HEAD').toString().trim();
 } catch (e) {

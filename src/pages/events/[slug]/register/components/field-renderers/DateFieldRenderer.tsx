@@ -10,9 +10,11 @@ import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/
 const baseInputClassName =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary';
 
-const calendarContainerClassName = 'relative';
+const calendarContainerClassName = 'relative [container-type:inline-size]';
 const calendarPopoverClassName =
-  'absolute z-20 mt-2 rounded-md border border-border bg-surface p-3 shadow-lg';
+  'absolute z-20 mt-2 max-w-full rounded-md border border-border bg-surface p-3 shadow-lg';
+const calendarDayPickerClassName =
+  '[--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
 
 type DateFieldRendererProps = {
   field: PublicEventField;
@@ -192,6 +194,7 @@ export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps
       {isOpen && (
         <div className={calendarPopoverClassName}>
           <DayPicker
+            className={calendarDayPickerClassName}
             mode="single"
             selected={selectedDate}
             disabled={disabledDays}
@@ -275,6 +278,7 @@ export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererP
         {isOpen && (
           <div className={calendarPopoverClassName}>
             <DayPicker
+              className={calendarDayPickerClassName}
               mode="single"
               selected={selectedDate}
               disabled={disabledDays}

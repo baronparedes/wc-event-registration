@@ -66,7 +66,7 @@ export function AppMobileShell() {
       <AppShellHeader
         isMinimizedShell={isMinimizedShell}
         userBadge={userBadge}
-        actions={hasSession ? <NotificationBell /> : undefined}
+        actions={hasSession ? <NotificationBell compact={isMinimizedShell} /> : undefined}
         onOpenDrawer={() => setDrawerOpen(true)}
       />
 

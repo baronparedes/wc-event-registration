@@ -62,6 +62,9 @@ describe('NotificationBell', () => {
 
     const bellBtn = screen.getByRole('button', { name: /Notifications \(1 unread\)/i });
     expect(bellBtn).toBeInTheDocument();
+    expect(bellBtn).toHaveClass('border-0', 'bg-transparent');
+    expect(bellBtn.querySelector('svg')).toHaveClass('text-black', 'h-6', 'w-6');
+    expect(bellBtn.querySelector('svg')).not.toHaveClass('fill-primary');
   });
 
   it('opens notification dropdown, displays notifications, and allows marking individual as read', () => {
@@ -102,7 +105,11 @@ describe('NotificationBell', () => {
 
     const bellBtn = screen.getByRole('button', { name: /Notifications \(/i });
     fireEvent.click(bellBtn);
+    expect(bellBtn).toHaveClass('is-ringing');
 
+    expect(screen.getByRole('complementary', { name: 'Notifications drawer' }).parentElement).toBe(
+      document.body,
+    );
     expect(screen.getByText('Sunday Service Alert')).toBeInTheDocument();
     expect(screen.getByText('Welcome New Member')).toBeInTheDocument();
     expect(screen.getByText('1 New')).toBeInTheDocument();

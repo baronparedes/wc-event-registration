@@ -22,18 +22,22 @@ export function AppShellHeader({
   if (isMinimizedShell) {
     return (
       <div className="sticky top-0 z-40 px-3 pt-1.5 print:hidden">
-        <div className="mx-auto flex w-fit items-center justify-center gap-1.5">
+        <div
+          role="group"
+          aria-label={actions ? 'Notifications and app navigation' : 'App navigation'}
+          className="mx-auto flex w-fit items-center justify-center gap-0.5 rounded-full border border-border/70 bg-surface/90 p-1 shadow-xs backdrop-blur"
+        >
           {actions}
           <button
             type="button"
             aria-label="Open app navigation drawer"
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/95 px-2 py-1.5 text-[11px] font-semibold text-text shadow-xs backdrop-blur transition hover:bg-primary/10"
+            className="inline-flex items-center gap-1 rounded-full border-0 bg-transparent px-1.5 py-1.5 text-[11px] font-semibold text-text shadow-none transition hover:bg-primary/10"
             onClick={onOpenDrawer}
           >
             {userBadge && <span className="flex items-center justify-center">{userBadge}</span>}
             <span
               className={`inline-flex items-center gap-1.5 ${
-                userBadge ? 'border-l border-border pl-2' : ''
+                userBadge ? 'border-l border-border/60 pl-2' : ''
               }`}
             >
               <ChevronDown className="h-4 w-4" />

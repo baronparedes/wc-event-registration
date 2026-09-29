@@ -132,6 +132,49 @@ textarea {
   animation: skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
+@keyframes notification-bell-ring {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(14deg);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  45% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-8deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+.notification-bell-icon {
+  transform-origin: 50% 10%;
+}
+
+.notification-bell:hover .notification-bell-icon,
+.notification-bell:active .notification-bell-icon {
+  animation: notification-bell-ring 0.8s ease-in-out infinite;
+}
+
+.notification-bell.is-ringing .notification-bell-icon {
+  animation: notification-bell-ring 0.8s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-bell:hover .notification-bell-icon,
+  .notification-bell:active .notification-bell-icon,
+  .notification-bell.is-ringing .notification-bell-icon {
+    animation: none;
+  }
+}
+
 /* EasyMDE Custom Toolbar */
 .editor-toolbar {
   display: flex !important;
