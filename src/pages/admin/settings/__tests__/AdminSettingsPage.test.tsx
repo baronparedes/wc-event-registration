@@ -1,15 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
+import { useDebounceSearch } from '@/hooks/utils';
 
 import { AdminSettingsPage } from '../index';
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: vi.fn(),
+}));
+
+vi.mock('@/hooks/utils', () => ({
+  useDebounceSearch: vi.fn(),
 }));
 
 describe('AdminSettingsPage', () => {
@@ -32,6 +37,12 @@ describe('AdminSettingsPage', () => {
       },
       isLoading: false,
       error: null,
+    } as never);
+    vi.mocked(useDebounceSearch).mockReturnValue({
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      normalizedSearchTerm: '',
+      clearSearch: vi.fn(),
     } as never);
   });
 
@@ -56,6 +67,10 @@ describe('AdminSettingsPage', () => {
     expect(screen.getByRole('link', { name: /broadcast notifications/i })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminNotifications,
+    );
+    expect(screen.getByRole('link', { name: /broadcast dashboard/i })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminNotificationsDashboard,
     );
     expect(screen.getByRole('link', { name: /email templates/i })).toHaveAttribute(
       'href',
@@ -87,36 +102,45 @@ describe('AdminSettingsPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('filters launchpad cards by search keyword', async () => {
+  it('does not render disabled settings search controls', () => {
     renderPage();
 
-    const searchInput = screen.getByPlaceholderText('Search configuration tools and features...');
-    fireEvent.change(searchInput, { target: { value: 'email' } });
-
-    await waitFor(() => {
-      expect(screen.getByRole('link', { name: /email templates/i })).toBeInTheDocument();
-      expect(
-        screen.queryByRole('link', { name: /broadcast notifications/i }),
-      ).not.toBeInTheDocument();
-    });
-
-    // Clear search
-    const clearBtn = screen.getByRole('button', { name: 'Clear' });
-    fireEvent.click(clearBtn);
-
-    await waitFor(() => {
-      expect(screen.getByRole('link', { name: /broadcast notifications/i })).toBeInTheDocument();
-    });
+    expect(
+      screen.queryByPlaceholderText('Search configuration tools and features...'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument();
   });
 
-  it('shows empty state when no features match search', async () => {
+  it('retains feature filtering behavior while the search controls are disabled', () => {
+    vi.mocked(useDebounceSearch).mockReturnValue({
+      searchTerm: 'email',
+      setSearchTerm: vi.fn(),
+      normalizedSearchTerm: 'email',
+      clearSearch: vi.fn(),
+    } as never);
+
     renderPage();
 
-    const searchInput = screen.getByPlaceholderText('Search configuration tools and features...');
-    fireEvent.change(searchInput, { target: { value: 'nonexistent-feature' } });
+    expect(screen.getByRole('link', { name: /email templates/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /broadcast notifications/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText('Search configuration tools and features...'),
+    ).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(screen.getByText('No matching features found')).toBeInTheDocument();
-    });
+  it('shows the no-match state without rendering search actions while disabled', () => {
+    vi.mocked(useDebounceSearch).mockReturnValue({
+      searchTerm: 'no matching setting',
+      setSearchTerm: vi.fn(),
+      normalizedSearchTerm: 'no matching setting',
+      clearSearch: vi.fn(),
+    } as never);
+
+    renderPage();
+
+    expect(screen.getByText('No matching features found')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear Search' })).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { Bell, Mail, Shield } from 'lucide-react';
+import { BarChart3, Bell, Mail, Shield } from 'lucide-react';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, SearchInputField } from '@/components/ui';
@@ -38,6 +38,17 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
     requiredPermission: 'canWriteAdminData',
   },
   {
+    id: 'broadcast-dashboard',
+    category: 'Communications & Messaging',
+    title: 'Broadcast Dashboard',
+    description: 'Review push notification subscriptions and read rates for broadcast campaigns.',
+    to: ROUTE_PATHS.adminNotificationsDashboard,
+    icon: BarChart3,
+    tag: 'Broadcast Analytics',
+    actionLabel: 'View Dashboard',
+    requiredPermission: 'canWriteAdminData',
+  },
+  {
     id: 'email-templates',
     category: 'Communications & Messaging',
     title: 'Email Templates',
@@ -65,6 +76,7 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
 ];
 
 export function AdminSettingsPage() {
+  const isSettingsSearchEnabled = false;
   const { data: authState } = useAdminAuthQuery();
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
@@ -107,24 +119,26 @@ export function AdminSettingsPage() {
 
       <AdminBaseNavigation />
 
-      <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <SearchInputField
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            onClear={clearSearch}
-            placeholder="Search configuration tools and features..."
-          />
-          <Button
-            type="button"
-            variant="primaryOutline"
-            onClick={clearSearch}
-            disabled={normalizedSearchTerm.length === 0}
-          >
-            Clear
-          </Button>
-        </div>
-      </AdminPageShell.Filters>
+      {isSettingsSearchEnabled && (
+        <AdminPageShell.Filters>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <SearchInputField
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              onClear={clearSearch}
+              placeholder="Search configuration tools and features..."
+            />
+            <Button
+              type="button"
+              variant="primaryOutline"
+              onClick={clearSearch}
+              disabled={normalizedSearchTerm.length === 0}
+            >
+              Clear
+            </Button>
+          </div>
+        </AdminPageShell.Filters>
+      )}
 
       <AdminPageShell.Content>
         {categories.length === 0 ? (
@@ -134,9 +148,11 @@ export function AdminSettingsPage() {
               title="No matching features found"
               description={`No settings or features match "${searchTerm}". Try searching for another keyword.`}
               action={
-                <Button variant="primaryOutline" onClick={clearSearch}>
-                  Clear Search
-                </Button>
+                isSettingsSearchEnabled && (
+                  <Button variant="primaryOutline" onClick={clearSearch}>
+                    Clear Search
+                  </Button>
+                )
               }
             />
           </div>

@@ -110,6 +110,11 @@ const AdminNotificationsPage = lazy(() =>
     default: module.AdminNotificationsPage,
   })),
 );
+const AdminNotificationsDashboardPage = lazy(() =>
+  import('../pages/admin/settings/notifications/dashboard').then((module) => ({
+    default: module.AdminNotificationsDashboardPage,
+  })),
+);
 const AdminSettingsPage = lazy(() =>
   import('../pages/admin/settings').then((module) => ({
     default: module.AdminSettingsPage,
@@ -325,6 +330,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServiceAttendanceData: AdminServiceAttendanceDataPage,
   adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
   adminNotifications: AdminNotificationsPage,
+  adminNotificationsDashboard: AdminNotificationsDashboardPage,
   adminSettings: AdminSettingsPage,
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
 };

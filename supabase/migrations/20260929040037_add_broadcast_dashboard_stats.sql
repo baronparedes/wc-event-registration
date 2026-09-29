@@ -1,15 +1,27 @@
-create or replace function public.get_broadcast_dashboard_stats () returns json language plpgsql security definer as $$
+begin;
+
+create or replace function public.get_broadcast_dashboard_stats () returns json language plpgsql stable security definer
+set
+  search_path = public as $$
 declare
-  v_total_users integer;
-  v_subscribed_users integer;
+  v_total_users bigint;
+  v_subscribed_users bigint;
   v_campaigns json;
 begin
   if not public.is_admin() then
     raise exception 'unauthorized';
   end if;
 
-  select count(id) into v_total_users from auth.users;
-  select count(distinct user_id) into v_subscribed_users from public.user_push_subscriptions;
+  select count(id) into v_total_users from public.users;
+
+  select count(distinct member.id) into v_subscribed_users
+  from public.users member
+  join auth.users auth_user
+    on lower(trim(member.email)) = lower(trim(auth_user.email::text))
+  join public.user_push_subscriptions subscription
+    on subscription.user_id = auth_user.id
+  where member.email is not null
+    and auth_user.email is not null;
 
   select json_agg(
     json_build_object(
@@ -38,5 +50,13 @@ begin
 end;
 $$;
 
+revoke
+execute on function public.get_broadcast_dashboard_stats ()
+from
+  public,
+  anon;
+
 grant
 execute on function public.get_broadcast_dashboard_stats () to authenticated;
+
+commit;
