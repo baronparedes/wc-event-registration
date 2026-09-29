@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch form listing', error.message);
+    console.error('Failed to fetch form listing:', error.message);
+    return sharedErrorResponse(corsHeaders, 500, 'Failed to fetch form listing');
   }
 
   return sharedSuccessResponse(corsHeaders, { forms: forms ?? [] });
