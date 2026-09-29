@@ -167,7 +167,8 @@ begin
         jsonb_build_object(
           'user_id', v_user.user_id,
           'message', v_message,
-          'target_date', v_upcoming_sunday
+          'target_date', v_upcoming_sunday,
+          'target_url', '/profile?tab=commitments'
         )
       );
     end if;

@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
             const pushPayload = JSON.stringify({
               title: 'Service Reminder',
               body: notificationMessage,
-              url: '/',
+              url: payload.target_url || payload.url || '/profile?tab=commitments',
             });
 
             const pushPromises = subscriptions.map((sub) => {
