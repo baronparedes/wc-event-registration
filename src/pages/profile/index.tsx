@@ -1,6 +1,4 @@
-import { useState } from 'react';
-
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Badge } from '@/components/ui';
@@ -15,15 +13,32 @@ import { WelcomeHelloBanner } from '@/pages/home/components';
 import { EventHistoryTab } from './components/EventHistoryTab';
 import { MemberInfoTab } from './components/MemberInfoTab';
 import { ServiceAttendanceHistoryTab } from './components/ServiceAttendanceHistoryTab';
+import { resolveProfileTab } from './utils';
 
 export function ProfilePage() {
   const profileQuery = useCurrentProfileQuery();
   const isMobile = useIsMobileViewport();
+  const [searchParams, setSearchParams] = useSearchParams();
   const member = profileQuery.data;
 
-  const [activeTab, setActiveTab] = useState<'member_info' | 'events' | 'service_attendance'>(
-    'member_info',
-  );
+  const activeTab = resolveProfileTab(searchParams.get('tab'));
+
+  const handleTabChange = (val: string) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (val === 'member_info') {
+          next.delete('tab');
+        } else if (val === 'service_attendance') {
+          next.set('tab', 'commitments');
+        } else {
+          next.set('tab', val);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   if (profileQuery.isLoading) {
     return (
@@ -70,12 +85,7 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) =>
-            setActiveTab(val as 'member_info' | 'events' | 'service_attendance')
-          }
-        >
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="member_info">Info</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>

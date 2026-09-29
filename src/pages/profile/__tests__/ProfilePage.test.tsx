@@ -1,11 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeAdminMember, makeMemberEventHistoryItem } from '@/__tests__/factories';
 import { ROUTE_PATHS } from '@/config/constants';
 import { ProfilePage } from '@/pages/profile';
+import { resolveProfileTab } from '@/pages/profile/utils';
 
 const { mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery } = vi.hoisted(() => ({
   mockUseCurrentProfileQuery: vi.fn(),
@@ -28,6 +29,12 @@ vi.mock('@/hooks/domain/notifications', () => ({
   }),
 }));
 
+vi.mock('@/hooks/domain/services', () => ({
+  useServiceAttendanceQuery: () => ({ data: { pages: [] }, isLoading: false, isError: false }),
+  useUserCommitmentHistoryQuery: () => ({ data: [], isLoading: false, isError: false }),
+  useServiceExceptionDatesQuery: () => ({ data: [], isLoading: false, isError: false }),
+}));
+
 vi.mock('@/hooks/domain/members', async () => {
   const actual =
     await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');
@@ -35,14 +42,28 @@ vi.mock('@/hooks/domain/members', async () => {
     ...actual,
     useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
     useMemberEventHistoryQuery: (memberId?: string) => mockUseMemberEventHistoryQuery(memberId),
+    useGetMemberExcusedSchedule: () => ({ data: [], isLoading: false, isError: false }),
   };
 });
 
-function renderPage() {
+function LocationDisplay() {
+  const location = useLocation();
+  return <div data-testid="location-search">{location.search}</div>;
+}
+
+function renderPage(initialEntry: string = ROUTE_PATHS.profile) {
   return render(
-    <MemoryRouter initialEntries={[ROUTE_PATHS.profile]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
-        <Route path={ROUTE_PATHS.profile} element={<ProfilePage />} />
+        <Route
+          path={ROUTE_PATHS.profile}
+          element={
+            <>
+              <ProfilePage />
+              <LocationDisplay />
+            </>
+          }
+        />
         <Route path={ROUTE_PATHS.home} element={<div>Home Page Destination</div>} />
       </Routes>
     </MemoryRouter>,
@@ -137,5 +158,67 @@ describe('ProfilePage', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Shared Event' }),
     ).toBeInTheDocument();
+  });
+
+  describe('Tab switching and URL query parameters', () => {
+    it('resolves tab parameters correctly via resolveProfileTab', () => {
+      expect(resolveProfileTab(null)).toBe('member_info');
+      expect(resolveProfileTab('')).toBe('member_info');
+      expect(resolveProfileTab('unknown')).toBe('member_info');
+      expect(resolveProfileTab('info')).toBe('member_info');
+      expect(resolveProfileTab('member_info')).toBe('member_info');
+      expect(resolveProfileTab('commitments')).toBe('service_attendance');
+      expect(resolveProfileTab('commitment')).toBe('service_attendance');
+      expect(resolveProfileTab('service_attendance')).toBe('service_attendance');
+      expect(resolveProfileTab('events')).toBe('events');
+      expect(resolveProfileTab('event')).toBe('events');
+      expect(resolveProfileTab('history')).toBe('events');
+    });
+
+    it('automatically selects the Commitments tab when URL has ?tab=commitments', () => {
+      renderPage(`${ROUTE_PATHS.profile}?tab=commitments`);
+      expect(screen.getByRole('tab', { name: 'Commitments' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(
+        screen.getByRole('heading', { name: 'Service Commitment History' }),
+      ).toBeInTheDocument();
+    });
+
+    it('automatically selects the Events tab when URL has ?tab=events', () => {
+      renderPage(`${ROUTE_PATHS.profile}?tab=events`);
+      expect(screen.getByRole('tab', { name: 'Events' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('heading', { name: /Event History/i })).toBeInTheDocument();
+    });
+
+    it('defaults to Info tab when ?tab is absent or invalid', () => {
+      renderPage(`${ROUTE_PATHS.profile}?tab=invalid_tab_name`);
+      expect(screen.getByRole('tab', { name: 'Info' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('heading', { name: 'Personal Details' })).toBeInTheDocument();
+    });
+
+    it('updates URL search parameters when switching tabs via UI clicks', () => {
+      renderPage(ROUTE_PATHS.profile);
+      expect(screen.getByTestId('location-search')).toHaveTextContent('');
+
+      // Click Commitments tab
+      fireEvent.click(screen.getByRole('tab', { name: 'Commitments' }));
+      expect(screen.getByRole('tab', { name: 'Commitments' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByTestId('location-search')).toHaveTextContent('?tab=commitments');
+
+      // Click Events tab
+      fireEvent.click(screen.getByRole('tab', { name: 'Events' }));
+      expect(screen.getByRole('tab', { name: 'Events' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByTestId('location-search')).toHaveTextContent('?tab=events');
+
+      // Click Info tab (removes tab parameter)
+      fireEvent.click(screen.getByRole('tab', { name: 'Info' }));
+      expect(screen.getByRole('tab', { name: 'Info' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByTestId('location-search')).toHaveTextContent('');
+    });
   });
 });
