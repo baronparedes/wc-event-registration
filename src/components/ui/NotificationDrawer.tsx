@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { createPortal } from 'react-dom';
+
 import { Bell, CheckCheck, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -68,7 +70,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
     }
   };
 
-  return (
+  return createPortal(
     <>
       {isOpen && (
         <button
@@ -273,6 +275,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
           )}
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }
