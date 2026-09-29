@@ -37,7 +37,7 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
 
         <MobileCardContent>
           <MobileCardContentItem label="Email" colSpan={2}>
-            {member.email ? (
+            {member.email && (
               <div className="flex items-center gap-1.5 break-all">
                 <span>{member.email}</span>
                 {member.has_account && (
@@ -47,7 +47,7 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
                   />
                 )}
               </div>
-            ) : null}
+            )}
           </MobileCardContentItem>
           <MobileCardContentItem label="Contact Number" value={member.phone} />
           <MobileCardContentItem label="Member ID" value={member.member_id} isMono />
