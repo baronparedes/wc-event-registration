@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AdminEvent } from '@/lib/domain/events';
 
 import {
+  type AttendanceDataSnapshot,
   clearAttendanceDataSnapshot,
   readAttendanceDataSnapshot,
   writeAttendanceDataSnapshot,
@@ -51,6 +52,10 @@ describe('attendanceDataSnapshot', () => {
     localStorage.clear();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('writes and reads snapshot from local storage and handles clearing', async () => {
     const written = await writeAttendanceDataSnapshot(sampleInput);
     expect(written.eventId).toBe('e1');
@@ -81,5 +86,79 @@ describe('attendanceDataSnapshot', () => {
 
     localStorage.setItem('wc:offline:attendance-data:e1', 'invalid json{');
     expect(await readAttendanceDataSnapshot('e1')).toBeNull();
+  });
+
+  it('uses the local copy when IndexedDB cannot be opened', async () => {
+    vi.stubGlobal('indexedDB', {
+      open: () => {
+        throw new Error('IndexedDB unavailable');
+      },
+    });
+
+    const written = await writeAttendanceDataSnapshot(sampleInput);
+    expect(await readAttendanceDataSnapshot('e1')).toEqual(written);
+
+    await clearAttendanceDataSnapshot('e1');
+    expect(localStorage.getItem('wc:offline:attendance-data:e1')).toBeNull();
+  });
+
+  it('writes to IndexedDB, reads the newest copy and clears both stores', async () => {
+    const snapshots = new Map<string, AttendanceDataSnapshot>();
+    const makeRequest = (result: unknown) => {
+      const request = { result, onsuccess: null as (() => void) | null, onerror: null };
+      queueMicrotask(() => request.onsuccess?.());
+      return request;
+    };
+    const database = {
+      objectStoreNames: { contains: vi.fn().mockReturnValue(false) },
+      createObjectStore: vi.fn(),
+      close: vi.fn(),
+      transaction: vi.fn(() => ({
+        objectStore: () => ({
+          get: (eventId: string) => makeRequest(snapshots.get(eventId)),
+          put: (snapshot: AttendanceDataSnapshot) => {
+            snapshots.set(snapshot.eventId, snapshot);
+            return makeRequest(undefined);
+          },
+          delete: (eventId: string) => {
+            snapshots.delete(eventId);
+            return makeRequest(undefined);
+          },
+        }),
+      })),
+    };
+    vi.stubGlobal('indexedDB', {
+      open: vi.fn(() => {
+        const request = {
+          result: database,
+          onupgradeneeded: null as (() => void) | null,
+          onsuccess: null as (() => void) | null,
+          onerror: null,
+        };
+        queueMicrotask(() => {
+          request.onupgradeneeded?.();
+          request.onsuccess?.();
+        });
+        return request;
+      }),
+    });
+
+    const written = await writeAttendanceDataSnapshot(sampleInput);
+    expect(snapshots.get('e1')).toEqual(written);
+    expect(database.createObjectStore).toHaveBeenCalledWith('attendance-data-snapshots', {
+      keyPath: 'eventId',
+    });
+
+    const newerIndexedCopy = { ...written, createdAt: written.createdAt + 1 };
+    snapshots.set('e1', newerIndexedCopy);
+    expect(await readAttendanceDataSnapshot('e1')).toEqual(newerIndexedCopy);
+
+    snapshots.set('e1', { ...written, createdAt: written.createdAt - 1 });
+    expect(await readAttendanceDataSnapshot('e1')).toEqual(written);
+
+    await clearAttendanceDataSnapshot('e1');
+    expect(snapshots.has('e1')).toBe(false);
+    expect(localStorage.getItem('wc:offline:attendance-data:e1')).toBeNull();
+    expect(database.close).toHaveBeenCalled();
   });
 });

@@ -96,6 +96,20 @@ describe('ChatMessageContent', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
+  it('leaves unresolved user tokens visible instead of creating a broken link', () => {
+    mockResolvedTokens.mockReturnValue({
+      USR_000123: { id: 'user-456', name: 'Test Member' },
+      USR_000124: { id: 'user-457' },
+    });
+    render(<ChatMessageContent content="Assigned to USR_000124 and USR_000123" />);
+
+    expect(screen.getByText(/USR_000124/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Test Member' })).toHaveAttribute(
+      'href',
+      '/admin/members/user-456',
+    );
+  });
+
   it('renders clean plain names without markdown link syntax inside code blocks', () => {
     mockResolvedTokens.mockReturnValue({
       USR_000123: { id: 'user-456', name: 'Test Member' },
@@ -121,5 +135,21 @@ describe('ChatMessageContent', () => {
       copyButton.click();
     });
     expect(writeTextMock).toHaveBeenCalledWith('Name,Role\nAlice,Usher');
+  });
+
+  it('does not show a copied state when the clipboard write fails', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('Clipboard unavailable'));
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    render(<ChatMessageContent content={'```csv\nTest Member,Usher\n```'} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Copy to clipboard' }).click();
+    });
+
+    expect(writeText).toHaveBeenCalledWith('Test Member,Usher');
+    expect(screen.queryByText('Copied')).not.toBeInTheDocument();
   });
 });

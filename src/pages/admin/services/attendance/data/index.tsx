@@ -130,10 +130,11 @@ export function AdminServiceAttendanceDataPage() {
 
     // Filter by search term
     if (normalizedSearchTerm) {
+      const searchTerm = normalizedSearchTerm.toLowerCase();
       result = result.filter((record) => {
         const fullName = record.user?.full_name?.toLowerCase() || '';
         const nickname = record.user?.nickname?.toLowerCase() || '';
-        return fullName.includes(normalizedSearchTerm) || nickname.includes(normalizedSearchTerm);
+        return fullName.includes(searchTerm) || nickname.includes(searchTerm);
       });
     }
 

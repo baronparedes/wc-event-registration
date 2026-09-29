@@ -116,6 +116,66 @@ describe('ServiceDashboardMetrics', () => {
     expect(screen.getByText('Total Walk-In')).toBeInTheDocument();
     expect(screen.getByText('17 Total')).toBeInTheDocument();
   });
+
+  it('opens filtered attendance records in a new tab for present, late and walk-in metrics', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(
+        <ServiceDashboardMetrics
+          stats={sampleStats}
+          dateFilterParams={new URLSearchParams('service_start_date=2026-03-15')}
+        />,
+      );
+
+      fireEvent.click(screen.getByTitle('View present attendees for 9AM (opens in new tab)'));
+      fireEvent.click(screen.getByTitle('View late/tardy attendees for 12NN (opens in new tab)'));
+      fireEvent.click(screen.getByTitle('View walk-in attendees for 3PM (opens in new tab)'));
+
+      expect(open).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('service_start_date=2026-03-15&time_slot=9AM'),
+        '_blank',
+        'noopener,noreferrer',
+      );
+      expect(open).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('time_slot=12NN&is_late_tardy=true'),
+        '_blank',
+        'noopener,noreferrer',
+      );
+      expect(open).toHaveBeenNthCalledWith(
+        3,
+        expect.stringContaining('time_slot=3PM&is_walk_in=true'),
+        '_blank',
+        'noopener,noreferrer',
+      );
+    } finally {
+      open.mockRestore();
+    }
+  });
+
+  it('shows zero turn-up and disables drill-downs when no check-ins exist', () => {
+    render(
+      <ServiceDashboardMetrics
+        stats={{
+          time_slots: {
+            '9AM': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, roles: {} },
+            '12NN': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, roles: {} },
+            '3PM': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, roles: {} },
+          },
+          roles: [],
+        }}
+        dateFilterParams={new URLSearchParams()}
+      />,
+    );
+
+    expect(screen.getByText('0% Avg')).toBeInTheDocument();
+    expect(screen.queryByTitle(/View present attendees/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(9);
+    expect(screen.getAllByRole('button').every((button) => button.hasAttribute('disabled'))).toBe(
+      true,
+    );
+  });
 });
 
 describe('ServiceDashboardRoleBreakdown', () => {

@@ -120,6 +120,43 @@ describe('ChatInputForm', () => {
     expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
   });
 
+  it('wraps mention selection upward and inserts it with Tab', () => {
+    render(
+      <ChatInputForm
+        isLoading={false}
+        onSubmit={vi.fn()}
+        onStop={vi.fn()}
+        tokenMap={mockTokenMap}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText(/Ask/i);
+    fireEvent.change(input, { target: { value: '@' } });
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    fireEvent.keyDown(input, { key: 'Tab' });
+
+    expect(input).toHaveValue('@Test Bravo ');
+    expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
+  });
+
+  it('ignores overly long mention queries and never sends while loading', () => {
+    const onSubmit = vi.fn();
+    render(
+      <ChatInputForm
+        isLoading={true}
+        onSubmit={onSubmit}
+        onStop={vi.fn()}
+        tokenMap={mockTokenMap}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText(/Ask/i);
+    fireEvent.change(input, { target: { value: `@${'a'.repeat(26)}` } });
+    expect(screen.queryByRole('listbox', { name: /Mention members/i })).not.toBeInTheDocument();
+    fireEvent.submit(input.closest('form')!);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it('closes mention on Enter and submits the form when Enter is pressed a second time', () => {
     const handleSubmit = vi.fn();
     render(
