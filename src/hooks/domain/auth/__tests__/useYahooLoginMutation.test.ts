@@ -30,7 +30,10 @@ describe('useYahooLoginMutation', () => {
 
   it('calls supabase.auth.signInWithOAuth with yahoo provider and default redirect', async () => {
     mockSignInWithOAuth.mockResolvedValueOnce({
-      data: { provider: 'yahoo' as Provider, url: 'https://accounts.yahoo.com/o/oauth2/v2/auth' },
+      data: {
+        provider: 'custom:yahoo' as Provider,
+        url: 'https://accounts.yahoo.com/o/oauth2/v2/auth',
+      },
       error: null,
     });
 
@@ -41,7 +44,7 @@ describe('useYahooLoginMutation', () => {
     });
 
     expect(mockSignInWithOAuth).toHaveBeenCalledWith({
-      provider: 'yahoo' as Provider,
+      provider: 'custom:yahoo' as Provider,
       options: {
         redirectTo: `${window.location.origin}/login`,
       },
@@ -50,7 +53,10 @@ describe('useYahooLoginMutation', () => {
 
   it('calls supabase.auth.signInWithOAuth with custom redirectTo option', async () => {
     mockSignInWithOAuth.mockResolvedValueOnce({
-      data: { provider: 'yahoo' as Provider, url: 'https://accounts.yahoo.com/o/oauth2/v2/auth' },
+      data: {
+        provider: 'custom:yahoo' as Provider,
+        url: 'https://accounts.yahoo.com/o/oauth2/v2/auth',
+      },
       error: null,
     });
 
@@ -61,7 +67,7 @@ describe('useYahooLoginMutation', () => {
     });
 
     expect(mockSignInWithOAuth).toHaveBeenCalledWith({
-      provider: 'yahoo' as Provider,
+      provider: 'custom:yahoo' as Provider,
       options: {
         redirectTo: `${window.location.origin}/login?redirect=%2Fadmin%2Fevents`,
       },
@@ -70,7 +76,7 @@ describe('useYahooLoginMutation', () => {
 
   it('throws when supabase.auth.signInWithOAuth returns an error', async () => {
     mockSignInWithOAuth.mockResolvedValueOnce({
-      data: { provider: 'yahoo' as Provider, url: null },
+      data: { provider: 'custom:yahoo' as Provider, url: null },
       error: new Error('OAuth error'),
     });
 

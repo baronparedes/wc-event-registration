@@ -15,7 +15,7 @@ export function useYahooLoginMutation() {
       const redirectTo = `${origin}${redirectPath}`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'yahoo' as Provider,
+        provider: 'custom:yahoo' as Provider,
         options: {
           redirectTo,
         },
