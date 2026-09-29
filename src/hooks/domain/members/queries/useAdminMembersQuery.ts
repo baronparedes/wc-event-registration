@@ -96,6 +96,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
           updated_at: member.updated_at,
           last_activity:
             typeof member.last_activity === 'string' ? member.last_activity : undefined,
+          has_account: member.has_account,
         } satisfies AdminMember;
       });
 

@@ -1,4 +1,4 @@
-import { Edit, User } from 'lucide-react';
+import { BadgeCheck, Edit, User } from 'lucide-react';
 
 import {
   MobileCard,
@@ -36,7 +36,19 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
         <MobileCardDivider />
 
         <MobileCardContent>
-          <MobileCardContentItem label="Email" value={member.email} colSpan={2} isBreakAll />
+          <MobileCardContentItem label="Email" colSpan={2}>
+            {member.email && (
+              <div className="flex items-center gap-1.5 break-all">
+                <span>{member.email}</span>
+                {member.has_account && (
+                  <BadgeCheck
+                    className="h-4 w-4 shrink-0 text-[#178e9f]"
+                    aria-label="Verified account"
+                  />
+                )}
+              </div>
+            )}
+          </MobileCardContentItem>
           <MobileCardContentItem label="Contact Number" value={member.phone} />
           <MobileCardContentItem label="Member ID" value={member.member_id} isMono />
         </MobileCardContent>

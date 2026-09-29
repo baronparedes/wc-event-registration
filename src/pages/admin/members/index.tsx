@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { Edit, Upload, User, Users } from 'lucide-react';
+import { BadgeCheck, Edit, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -259,7 +259,15 @@ export function AdminMembersPage() {
                           </p>
                         </ListTableCell>
                         <ListTableCell>
-                          <p className="text-sm text-text">{member.email || '—'}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm text-text">{member.email || '—'}</p>
+                            {member.has_account && member.email && (
+                              <BadgeCheck
+                                className="h-4 w-4 text-[#178e9f]"
+                                aria-label="Verified account"
+                              />
+                            )}
+                          </div>
                         </ListTableCell>
                         <ListTableCell>
                           <p className="text-sm text-text">{member.phone || '—'}</p>

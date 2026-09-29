@@ -85,4 +85,5 @@ export type AdminMember = {
   created_at: string;
   updated_at: string;
   last_activity?: string;
+  has_account?: boolean;
 };
