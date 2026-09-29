@@ -1,23 +1,6 @@
 begin;
 
--- Create push_reminders queue if not exists
-do $$
-begin
-  if not exists (select 1 from pgmq.meta where queue_name = 'push_reminders') then
-    perform pgmq.create('push_reminders');
-  end if;
-exception when others then
-  null;
-end $$;
-
--- 1. Create push reminder logs table to ensure idempotency
-create table if not exists public.push_reminder_logs (
-  id uuid primary key default gen_random_uuid(),
-  sunday_date date not null unique,
-  processed_at timestamptz not null default now()
-);
-
--- 2. Helper functions for the queue
+-- Helper functions for the push reminder queue
 create or replace function public.enqueue_push_reminder (payload jsonb) returns bigint language plpgsql security definer
 set
   search_path = public,
@@ -87,7 +70,7 @@ from
 grant
 execute on function public.archive_push_reminder (bigint) to service_role;
 
--- 3. Function to generate upcoming Sunday push reminders
+-- Function to generate upcoming Sunday push reminders
 create or replace function public.generate_upcoming_sunday_push_reminders () returns void language plpgsql security definer
 set
   search_path = public as $$
@@ -151,8 +134,7 @@ begin
 
     v_slots := string_to_array(v_commitments, ',');
 
-    -- Sort or format slots? Assuming they are stored somewhat cleanly like "9AM, 12NN"
-    -- We can just rebuild it nicely
+    -- Sort or format slots
     v_formatted_slots := '';
     for i in 1..array_length(v_slots, 1) loop
       declare
@@ -202,46 +184,5 @@ from
 
 grant
 execute on function public.generate_upcoming_sunday_push_reminders () to service_role;
-
--- 4. Schedule cron jobs
-do $$
-begin
-  -- Schedule generation at Friday 1:00 PM Manila Time (UTC+8) -> Friday 5:00 AM UTC
-  perform cron.unschedule('generate_push_reminders_friday_1pm_pht');
-exception when others then
-  null;
-end $$;
-
-select
-  cron.schedule (
-    'generate_push_reminders_friday_1pm_pht',
-    '0 5 * * 5',
-    $$
-  select public.generate_upcoming_sunday_push_reminders();
-  $$
-  );
-
-do $$
-begin
-  -- Schedule queue processing every 15 minutes
-  perform cron.unschedule('process_push_reminders_15m');
-exception when others then
-  null;
-end $$;
-
-select
-  cron.schedule (
-    'process_push_reminders_15m',
-    '*/15 * * * *',
-    $$
-  select net.http_post(
-      url := current_setting('app.settings.project_url', true) || '/functions/v1/cron-process-push-reminders',
-      headers := jsonb_build_object(
-          'Content-Type', 'application/json',
-          'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
-      )
-  );
-  $$
-  );
 
 commit;

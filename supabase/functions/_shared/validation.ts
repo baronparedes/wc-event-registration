@@ -5,17 +5,20 @@ export { z };
 const functionEnvironmentSchema = z.object({
   SUPABASE_URL: z.string().trim().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1),
+  CRON_ROLE_KEY: z.string().trim().optional(),
 });
 
 export type FunctionEnvironment = {
   supabaseUrl: string;
   supabaseServiceKey: string;
+  cronRoleKey?: string;
 };
 
 export function parseFunctionEnvironment(): FunctionEnvironment | null {
   const parsed = functionEnvironmentSchema.safeParse({
     SUPABASE_URL: Deno.env.get('SUPABASE_URL') ?? '',
     SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    CRON_ROLE_KEY: Deno.env.get('CRON_ROLE_KEY') ?? '',
   });
 
   if (!parsed.success) {
@@ -25,6 +28,7 @@ export function parseFunctionEnvironment(): FunctionEnvironment | null {
   return {
     supabaseUrl: parsed.data.SUPABASE_URL,
     supabaseServiceKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
+    cronRoleKey: parsed.data.CRON_ROLE_KEY || undefined,
   };
 }
 

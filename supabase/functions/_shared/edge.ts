@@ -43,24 +43,41 @@ type EdgeHookAdminOptions =
   | {
       requireAdmin: true;
       requireAuth?: never;
+      requireCron?: never;
       rateLimit?: AdminRateLimitConfig;
       allowedRoles?: AdminAccountRole[];
       /** Also accept SUPABASE_SERVICE_ROLE_KEY as a valid caller (e.g. cron jobs). */
       allowServiceRole?: boolean;
+      /** Also accept CRON_ROLE_KEY (via X-Cron-Key or Bearer token) as a valid caller. */
+      allowCronRole?: boolean;
     }
   | {
       requireAdmin?: false;
       requireAuth: true;
+      requireCron?: never;
       rateLimit?: never;
       allowedRoles?: never;
       allowServiceRole?: never;
+      allowCronRole?: never;
     }
   | {
       requireAdmin?: false;
       requireAuth?: false;
+      /** Strictly require CRON_ROLE_KEY (or optionally SUPABASE_SERVICE_ROLE_KEY if allowServiceRole is true). */
+      requireCron: true;
+      rateLimit?: never;
+      allowedRoles?: never;
+      allowServiceRole?: boolean;
+      allowCronRole?: true;
+    }
+  | {
+      requireAdmin?: false;
+      requireAuth?: false;
+      requireCron?: false;
       rateLimit?: never;
       allowedRoles?: never;
       allowServiceRole?: never;
+      allowCronRole?: boolean;
     };
 
 type EdgeHookOptions = EdgeHookBaseOptions & EdgeHookAdminOptions;
@@ -88,8 +105,8 @@ type EdgeHookSuccess<TData> = {
   client: EdgeClient;
   data: TData;
   userId: string | null;
-  /** 'service_role' when called by a cron/server key, 'admin' when called by an admin JWT, 'user' when called by a normal JWT, null otherwise. */
-  callerType: 'service_role' | 'admin' | 'user' | null;
+  /** 'service_role' when called by service key, 'cron' when called by cron key, 'admin' when called by an admin JWT, 'user' when called by a normal JWT, null otherwise. */
+  callerType: 'service_role' | 'cron' | 'admin' | 'user' | null;
 };
 
 export type EdgeHookResult<TData> = EdgeHookFailure | EdgeHookSuccess<TData>;
@@ -222,15 +239,72 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   }
 
   let userId: string | null = null;
-  let callerType: 'service_role' | 'admin' | 'user' | null = null;
+  let callerType: 'service_role' | 'cron' | 'admin' | 'user' | null = null;
 
-  if (options.requireAdmin) {
+  if (options.allowCronRole || options.requireCron) {
+    const cronKeyHeader = options.req.headers.get('x-cron-key')?.trim();
+    const authHeader = options.req.headers.get('authorization')?.trim() ?? '';
+    const bearerToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const providedKey = cronKeyHeader || bearerToken;
+    const expectedCronKey = env.cronRoleKey || Deno.env.get('CRON_ROLE_KEY');
+
+    if (expectedCronKey && providedKey && providedKey === expectedCronKey) {
+      callerType = 'cron';
+    }
+  }
+
+  if (callerType === 'cron') {
+    console.log(`[${options.functionName}] [auth] Authenticated via CRON_ROLE_KEY`, { requestId });
+  } else if (options.requireCron) {
     if (options.allowServiceRole) {
       const authHeader = options.req.headers.get('authorization')?.trim() ?? '';
       const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
       if (token === env.supabaseServiceKey) {
         callerType = 'service_role';
+        console.log(
+          `[${options.functionName}] [auth] Authenticated via SUPABASE_SERVICE_ROLE_KEY`,
+          {
+            requestId,
+          },
+        );
+      } else {
+        return {
+          valid: false,
+          response: errorResponse(
+            corsHeaders,
+            HTTP_STATUS.unauthorized,
+            'Unauthorized: Invalid Cron or Service Key',
+          ),
+          requestId,
+          corsHeaders,
+        };
+      }
+    } else {
+      return {
+        valid: false,
+        response: errorResponse(
+          corsHeaders,
+          HTTP_STATUS.unauthorized,
+          'Unauthorized: Invalid Cron Key',
+        ),
+        requestId,
+        corsHeaders,
+      };
+    }
+  } else if (options.requireAdmin) {
+    if (options.allowServiceRole) {
+      const authHeader = options.req.headers.get('authorization')?.trim() ?? '';
+      const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+      if (token === env.supabaseServiceKey) {
+        callerType = 'service_role';
+        console.log(
+          `[${options.functionName}] [auth] Authenticated via SUPABASE_SERVICE_ROLE_KEY`,
+          {
+            requestId,
+          },
+        );
       } else {
         const adminAccess = await requireAdminAccess({
           requestId,
@@ -302,9 +376,19 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
     userId = authAccess.userId;
   }
 
+  const clientHeaders: Record<string, string> = {};
+  if (userId) {
+    clientHeaders['x-admin-id'] = userId;
+  }
+  if (callerType === 'cron') {
+    clientHeaders['x-caller-type'] = 'cron';
+  } else if (callerType === 'service_role') {
+    clientHeaders['x-caller-type'] = 'service_role';
+  }
+
   const client = createClient(env.supabaseUrl, env.supabaseServiceKey, {
     global: {
-      headers: userId ? { 'x-admin-id': userId } : {},
+      headers: clientHeaders,
     },
     auth: { autoRefreshToken: false, persistSession: false },
   });

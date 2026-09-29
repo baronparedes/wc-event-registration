@@ -130,6 +130,12 @@ verify_jwt = true
 [functions.create-member]
 verify_jwt = true
 
+[functions.cron-process-email-queue]
+verify_jwt = false
+
+[functions.cron-process-push-reminders]
+verify_jwt = false
+
 [functions.cron-tokenize-users]
 verify_jwt = true
 
@@ -210,9 +216,6 @@ verify_jwt = true
 
 [functions.member-lookup]
 verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
 
 [functions.public-attendee-lookup]
 verify_jwt = false

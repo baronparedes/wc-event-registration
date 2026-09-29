@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
     method: 'POST',
     requireAdmin: true,
     allowServiceRole: true,
+    allowCronRole: true,
   });
 
   if (!hookResult.valid) {
@@ -33,87 +34,101 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { data: messages, error: popError } = await client.rpc('pop_push_reminders', {
-      batch_size: 50,
-    });
-
-    if (popError) {
-      console.error('[cron-process-push-reminders] Failed to pop messages', {
+    // 1. Generate reminders for upcoming Sunday if not already generated
+    const { error: genError } = await client.rpc('generate_upcoming_sunday_push_reminders');
+    if (genError) {
+      console.error('[cron-process-push-reminders] Failed to generate upcoming Sunday reminders', {
         requestId,
-        error: popError,
+        error: genError,
       });
-      return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Failed to read queue');
     }
 
-    if (!messages || messages.length === 0) {
-      return jsonResponse(corsHeaders, { success: true, processed: 0 }, HTTP_STATUS.ok);
-    }
-
+    // 2. Process all pending queue messages in batches
+    let totalProcessed = 0;
     const subscriptionsToDelete = new Set<string>();
 
-    const processPromises = messages.map(async (msg) => {
-      const payload = msg.message;
-      const messageId = msg.msg_id;
-      const userId = payload.user_id;
-      const notificationMessage = payload.message;
+    while (true) {
+      const { data: messages, error: popError } = await client.rpc('pop_push_reminders', {
+        batch_size: 50,
+      });
 
-      if (!userId || !notificationMessage) {
-        console.warn(`[cron-process-push-reminders] Invalid payload structure`, payload);
-        await client.rpc('archive_push_reminder', { message_id: messageId });
-        return;
+      if (popError) {
+        console.error('[cron-process-push-reminders] Failed to pop messages', {
+          requestId,
+          error: popError,
+        });
+        return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Failed to read queue');
       }
 
-      try {
-        const { data: subscriptions, error: subError } = await client
-          .from('user_push_subscriptions')
-          .select('id, endpoint, auth_key, p256dh_key')
-          .eq('user_id', userId);
+      if (!messages || messages.length === 0) {
+        break;
+      }
 
-        if (subError) {
-          console.error(
-            `[cron-process-push-reminders] Failed to fetch sub for user ${userId}`,
-            subError,
-          );
+      const processPromises = messages.map(async (msg) => {
+        const payload = msg.message;
+        const messageId = msg.msg_id;
+        const userId = payload.user_id;
+        const notificationMessage = payload.message;
+
+        if (!userId || !notificationMessage) {
+          console.warn(`[cron-process-push-reminders] Invalid payload structure`, payload);
+          await client.rpc('archive_push_reminder', { message_id: messageId });
           return;
         }
 
-        if (subscriptions && subscriptions.length > 0) {
-          const pushPayload = JSON.stringify({
-            title: 'Service Reminder',
-            body: notificationMessage,
-            url: '/',
-          });
+        try {
+          const { data: subscriptions, error: subError } = await client
+            .from('user_push_subscriptions')
+            .select('id, endpoint, auth_key, p256dh_key')
+            .eq('user_id', userId);
 
-          const pushPromises = subscriptions.map((sub) => {
-            const pushSubscription = {
-              endpoint: sub.endpoint,
-              keys: {
-                auth: sub.auth_key,
-                p256dh: sub.p256dh_key,
-              },
-            };
-            return webpush.sendNotification(pushSubscription, pushPayload).catch((err) => {
-              if (err.statusCode === 404 || err.statusCode === 410) {
-                subscriptionsToDelete.add(sub.id);
-              } else {
-                console.error(`Failed to push to sub ${sub.id}:`, err);
-              }
+          if (subError) {
+            console.error(
+              `[cron-process-push-reminders] Failed to fetch sub for user ${userId}`,
+              subError,
+            );
+            return;
+          }
+
+          if (subscriptions && subscriptions.length > 0) {
+            const pushPayload = JSON.stringify({
+              title: 'Service Reminder',
+              body: notificationMessage,
+              url: '/',
             });
-          });
 
-          await Promise.allSettled(pushPromises);
+            const pushPromises = subscriptions.map((sub) => {
+              const pushSubscription = {
+                endpoint: sub.endpoint,
+                keys: {
+                  auth: sub.auth_key,
+                  p256dh: sub.p256dh_key,
+                },
+              };
+              return webpush.sendNotification(pushSubscription, pushPayload).catch((err) => {
+                if (err.statusCode === 404 || err.statusCode === 410) {
+                  subscriptionsToDelete.add(sub.id);
+                } else {
+                  console.error(`Failed to push to sub ${sub.id}:`, err);
+                }
+              });
+            });
+
+            await Promise.allSettled(pushPromises);
+          }
+
+          await client.rpc('archive_push_reminder', { message_id: messageId });
+        } catch (innerError) {
+          console.error(
+            `[cron-process-push-reminders] Error processing message ${messageId}:`,
+            innerError,
+          );
         }
+      });
 
-        await client.rpc('archive_push_reminder', { message_id: messageId });
-      } catch (innerError) {
-        console.error(
-          `[cron-process-push-reminders] Error processing message ${messageId}:`,
-          innerError,
-        );
-      }
-    });
-
-    await Promise.allSettled(processPromises);
+      await Promise.allSettled(processPromises);
+      totalProcessed += messages.length;
+    }
 
     if (subscriptionsToDelete.size > 0) {
       const { error: deleteError } = await client
@@ -129,7 +144,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return jsonResponse(corsHeaders, { success: true, processed: messages.length }, HTTP_STATUS.ok);
+    return jsonResponse(corsHeaders, { success: true, processed: totalProcessed }, HTTP_STATUS.ok);
   } catch (error) {
     console.error('[cron-process-push-reminders] Unexpected error', { requestId, error });
     return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Internal server error');
