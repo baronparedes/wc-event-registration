@@ -3,6 +3,7 @@ export type AppNotification = {
   title: string;
   message: string;
   created_at: string;
+  target_url?: string | null;
 };
 
 export type AppNotificationRecipient = {

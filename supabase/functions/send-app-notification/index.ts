@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
         p_target_roles: resolvedRoles,
         p_user_ids: payload.targetUserId ? [payload.targetUserId] : null,
         p_created_by: userId,
+        p_target_url: payload.url || null,
       },
     );
 

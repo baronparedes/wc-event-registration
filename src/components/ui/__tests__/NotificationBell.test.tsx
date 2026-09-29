@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -53,7 +54,11 @@ describe('NotificationBell', () => {
       ],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     const bellBtn = screen.getByRole('button', { name: /Notifications \(1 unread\)/i });
     expect(bellBtn).toBeInTheDocument();
@@ -89,7 +94,11 @@ describe('NotificationBell', () => {
       ],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     const bellBtn = screen.getByRole('button', { name: /Notifications \(/i });
     fireEvent.click(bellBtn);
@@ -127,7 +136,11 @@ describe('NotificationBell', () => {
       ],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
@@ -141,7 +154,11 @@ describe('NotificationBell', () => {
       data: [],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
@@ -154,7 +171,11 @@ describe('NotificationBell', () => {
       data: [],
     } as never);
 
-    const { rerender } = render(<NotificationBell />);
+    const { rerender } = render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
@@ -168,7 +189,11 @@ describe('NotificationBell', () => {
       isSubscribed: true,
     } as never);
 
-    rerender(<NotificationBell />);
+    rerender(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByText('Push alerts active on this device')).toBeInTheDocument();
     const turnOffBtn = screen.getByRole('button', { name: 'Turn off' });
@@ -182,7 +207,11 @@ describe('NotificationBell', () => {
       data: [],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
@@ -201,7 +230,11 @@ describe('NotificationBell', () => {
       data: [],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
 
@@ -215,7 +248,11 @@ describe('NotificationBell', () => {
       data: [],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     const bellBtn = screen.getByRole('button', { name: /Notifications \(/i });
     fireEvent.click(bellBtn);
@@ -279,7 +316,11 @@ describe('NotificationBell', () => {
       ],
     } as never);
 
-    render(<NotificationBell />);
+    render(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
 
     // Open drawer
     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
