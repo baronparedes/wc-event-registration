@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { Bell, CheckCheck, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import {
@@ -22,6 +23,7 @@ export type NotificationDrawerProps = {
 };
 
 export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
+  const navigate = useNavigate();
   const { data: notifications = [] } = useNotificationsQuery();
   const markRead = useMarkNotificationReadMutation();
   const markAllRead = useMarkAllNotificationsReadMutation();
@@ -178,6 +180,10 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                     if (!n.is_read) {
                       markRead.mutate(n.id);
                     }
+                    if (n.notification.target_url) {
+                      navigate(n.notification.target_url);
+                      onClose();
+                    }
                   }}
                   role="button"
                   tabIndex={0}
@@ -185,6 +191,10 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                     if (e.key === 'Enter' || e.key === ' ') {
                       if (!n.is_read) {
                         markRead.mutate(n.id);
+                      }
+                      if (n.notification.target_url) {
+                        navigate(n.notification.target_url);
+                        onClose();
                       }
                     }
                   }}

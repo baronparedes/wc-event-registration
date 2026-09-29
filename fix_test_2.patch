@@ -1,0 +1,27 @@
+--- src/components/ui/__tests__/NotificationBell.test.tsx
++++ src/components/ui/__tests__/NotificationBell.test.tsx
+@@ -158,7 +158,11 @@
+       data: [],
+     } as never);
+
+-    render(<NotificationBell />);
++    render(
++      <MemoryRouter>
++        <NotificationBell />
++      </MemoryRouter>,
++    );
+
+     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));
+
+@@ -216,7 +220,11 @@
+       data: [],
+     } as never);
+
+-    render(<NotificationBell />);
++    render(
++      <MemoryRouter>
++        <NotificationBell />
++      </MemoryRouter>,
++    );
+
+     fireEvent.click(screen.getByRole('button', { name: /Notifications \(/i }));

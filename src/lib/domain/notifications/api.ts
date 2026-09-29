@@ -58,7 +58,8 @@ export async function fetchUserNotifications(): Promise<AppNotificationRecipient
         id,
         title,
         message,
-        created_at
+        created_at,
+        target_url
       )
     `,
     )
