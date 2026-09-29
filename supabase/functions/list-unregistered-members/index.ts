@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       200,
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error';
-    return errorResponse(corsHeaders, 500, 'Failed to list unregistered members', message);
+    console.error('[list-unregistered-members] unexpected error:', error);
+    return errorResponse(corsHeaders, 500, 'Failed to list unregistered members');
   }
 });

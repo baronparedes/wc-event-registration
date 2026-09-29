@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     return jsonResponse(corsHeaders, { success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, message);
+    console.error('[manage-push-subscription] unexpected error:', error);
+    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Internal server error');
   }
 });

@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     return errorResponse(
       corsHeaders,
       HTTP_STATUS.internalServerError,
-      error instanceof Error ? error.message : 'An unexpected error occurred during migration',
+      'An unexpected error occurred during migration',
     );
   }
 });

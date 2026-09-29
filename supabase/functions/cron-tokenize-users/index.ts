@@ -71,7 +71,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       guard.corsHeaders,
       HTTP_STATUS.internalServerError,
       'Internal server error',
-      errorMessage,
     );
   }
 });
