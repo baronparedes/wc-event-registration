@@ -66,31 +66,51 @@ function mockFetch(options: FetchOptions = {}) {
     }
     if (url.pathname === '/rest/v1/users' && init?.method === 'PATCH') {
       updates.push({ url, body: JSON.parse(String(init.body)) as unknown });
-      return Promise.resolve(options.updateError
-        ? Response.json({ message: 'update failed' }, { status: 500 })
-        : Response.json(options.updatedMember === undefined ? { id: MEMBER_ID } : options.updatedMember));
+      return Promise.resolve(
+        options.updateError
+          ? Response.json({ message: 'update failed' }, { status: 500 })
+          : Response.json(
+              options.updatedMember === undefined ? { id: MEMBER_ID } : options.updatedMember,
+            ),
+      );
     }
     if (url.pathname === '/rest/v1/users') {
       lookups.push(url);
-      return Promise.resolve(options.memberError
-        ? Response.json({ message: 'lookup failed' }, { status: 500 })
-        : Response.json(options.member === undefined ? { avatar_object_key: null } : options.member));
+      return Promise.resolve(
+        options.memberError
+          ? Response.json({ message: 'lookup failed' }, { status: 500 })
+          : Response.json(
+              options.member === undefined ? { avatar_object_key: null } : options.member,
+            ),
+      );
     }
     if (url.pathname.startsWith('/storage/v1/object/member_avatars/')) {
       uploads.push({ url, headers: new Headers(init?.headers), body: init?.body });
-      return Promise.resolve(options.storageError
-        ? Response.json({ message: 'upload failed' }, { status: 500 })
-        : Response.json({ Key: url.pathname.slice('/storage/v1/object/'.length) }));
+      return Promise.resolve(
+        options.storageError
+          ? Response.json({ message: 'upload failed' }, { status: 500 })
+          : Response.json({ Key: url.pathname.slice('/storage/v1/object/'.length) }),
+      );
     }
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
   };
 
-  return { lookups, updates, uploads, restore: () => { globalThis.fetch = originalFetch; } };
+  return {
+    lookups,
+    updates,
+    uploads,
+    restore: () => {
+      globalThis.fetch = originalFetch;
+    },
+  };
 }
 
 Deno.test('upload-member-avatar validates IDs and requires an admin session', async () => {
   await withFunctionEnv(async () => {
-    assertEquals((await handleUploadMemberAvatar(buildRequest({ ...payload(), id: 'invalid' }))).status, 400);
+    assertEquals(
+      (await handleUploadMemberAvatar(buildRequest({ ...payload(), id: 'invalid' }))).status,
+      400,
+    );
     assertEquals((await handleUploadMemberAvatar(buildRequest(payload(), false))).status, 401);
     const fetchMock = mockFetch({ role: 'slod' });
     try {
@@ -108,7 +128,11 @@ Deno.test('upload-member-avatar rejects invalid JPEG data before member lookup',
   await withFunctionEnv(async () => {
     const fetchMock = mockFetch();
     try {
-      for (const image of ['data:image/png;base64,/9j/2Q==', 'data:image/jpeg;base64,AAAA', 'data:image/jpeg;base64,!!!']) {
+      for (const image of [
+        'data:image/png;base64,/9j/2Q==',
+        'data:image/jpeg;base64,AAAA',
+        'data:image/jpeg;base64,!!!',
+      ]) {
         const response = await handleUploadMemberAvatar(buildRequest(payload(image)));
         assertEquals(response.status, 400);
         assertEquals((await response.json()).error, 'A valid JPEG image is required');
@@ -132,7 +156,9 @@ Deno.test('upload-member-avatar rejects decoded images larger than 1 MB', async 
       for (let offset = 0; offset < bytes.length; offset += 24_576) {
         base64 += btoa(String.fromCharCode(...bytes.subarray(offset, offset + 24_576)));
       }
-      const response = await handleUploadMemberAvatar(buildRequest(payload(`data:image/jpeg;base64,${base64}`)));
+      const response = await handleUploadMemberAvatar(
+        buildRequest(payload(`data:image/jpeg;base64,${base64}`)),
+      );
       assertEquals(response.status, 400);
       assertEquals((await response.json()).error, 'Image must be 1 MB or smaller');
       assertEquals(fetchMock.lookups, []);
@@ -143,21 +169,24 @@ Deno.test('upload-member-avatar rejects decoded images larger than 1 MB', async 
   });
 });
 
-Deno.test('upload-member-avatar handles member lookup failures and missing active members', async () => {
-  await withFunctionEnv(async () => {
-    for (const options of [{ memberError: true }, { member: null }]) {
-      const fetchMock = mockFetch(options);
-      try {
-        const response = await handleUploadMemberAvatar(buildRequest(payload()));
-        assertEquals(response.status, options.memberError ? 500 : 404);
-        assertEquals(fetchMock.lookups[0].searchParams.get('is_active'), 'eq.true');
-        assertEquals(fetchMock.uploads, []);
-      } finally {
-        fetchMock.restore();
+Deno.test(
+  'upload-member-avatar handles member lookup failures and missing active members',
+  async () => {
+    await withFunctionEnv(async () => {
+      for (const options of [{ memberError: true }, { member: null }]) {
+        const fetchMock = mockFetch(options);
+        try {
+          const response = await handleUploadMemberAvatar(buildRequest(payload()));
+          assertEquals(response.status, options.memberError ? 500 : 404);
+          assertEquals(fetchMock.lookups[0].searchParams.get('is_active'), 'eq.true');
+          assertEquals(fetchMock.uploads, []);
+        } finally {
+          fetchMock.restore();
+        }
       }
-    }
-  });
-});
+    });
+  },
+);
 
 Deno.test('upload-member-avatar uploads a JPEG and updates the member avatar key', async () => {
   await withFunctionEnv(async () => {
@@ -179,18 +208,21 @@ Deno.test('upload-member-avatar uploads a JPEG and updates the member avatar key
   });
 });
 
-Deno.test('upload-member-avatar reuses the existing avatar path with a JPEG extension', async () => {
-  await withFunctionEnv(async () => {
-    const fetchMock = mockFetch({ member: { avatar_object_key: 'avatars/member/legacy.JPEG' } });
-    try {
-      const response = await handleUploadMemberAvatar(buildRequest(payload()));
-      assertEquals((await response.json()).avatar_object_key, 'avatars/member/legacy.jpg');
-      assertEquals(fetchMock.updates[0].body, { avatar_object_key: 'avatars/member/legacy.jpg' });
-    } finally {
-      fetchMock.restore();
-    }
-  });
-});
+Deno.test(
+  'upload-member-avatar reuses the existing avatar path with a JPEG extension',
+  async () => {
+    await withFunctionEnv(async () => {
+      const fetchMock = mockFetch({ member: { avatar_object_key: 'avatars/member/legacy.JPEG' } });
+      try {
+        const response = await handleUploadMemberAvatar(buildRequest(payload()));
+        assertEquals((await response.json()).avatar_object_key, 'avatars/member/legacy.jpg');
+        assertEquals(fetchMock.updates[0].body, { avatar_object_key: 'avatars/member/legacy.jpg' });
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
 
 Deno.test('upload-member-avatar does not update the member when storage fails', async () => {
   await withFunctionEnv(async () => {
@@ -205,17 +237,20 @@ Deno.test('upload-member-avatar does not update the member when storage fails', 
   });
 });
 
-Deno.test('upload-member-avatar reports failures after storage when member update fails', async () => {
-  await withFunctionEnv(async () => {
-    for (const options of [{ updateError: true }, { updatedMember: null }]) {
-      const fetchMock = mockFetch(options);
-      try {
-        const response = await handleUploadMemberAvatar(buildRequest(payload()));
-        assertEquals(response.status, options.updateError ? 500 : 404);
-        assertEquals(fetchMock.uploads.length, 1);
-      } finally {
-        fetchMock.restore();
+Deno.test(
+  'upload-member-avatar reports failures after storage when member update fails',
+  async () => {
+    await withFunctionEnv(async () => {
+      for (const options of [{ updateError: true }, { updatedMember: null }]) {
+        const fetchMock = mockFetch(options);
+        try {
+          const response = await handleUploadMemberAvatar(buildRequest(payload()));
+          assertEquals(response.status, options.updateError ? 500 : 404);
+          assertEquals(fetchMock.uploads.length, 1);
+        } finally {
+          fetchMock.restore();
+        }
       }
-    }
-  });
-});
+    });
+  },
+);

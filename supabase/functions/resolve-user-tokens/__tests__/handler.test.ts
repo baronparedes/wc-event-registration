@@ -25,7 +25,9 @@ function request(body: unknown, authenticated = true) {
   const headers = new Headers({ origin: ORIGIN, 'content-type': 'application/json' });
   if (authenticated) headers.set('authorization', 'Bearer admin-access-token');
   return new Request('https://example.functions/resolve-user-tokens', {
-    method: 'POST', headers, body: JSON.stringify(body),
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
   });
 }
 
@@ -42,13 +44,20 @@ function mockFetch(rows: TokenRow[], options: { role?: string; queryError?: bool
     }
     if (url.pathname === '/rest/v1/user_tokens') {
       queries.push(url);
-      return Promise.resolve(options.queryError
-        ? Response.json({ message: 'lookup failed' }, { status: 500 })
-        : Response.json(rows));
+      return Promise.resolve(
+        options.queryError
+          ? Response.json({ message: 'lookup failed' }, { status: 500 })
+          : Response.json(rows),
+      );
     }
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
   };
-  return { queries, restore: () => { globalThis.fetch = originalFetch; } };
+  return {
+    queries,
+    restore: () => {
+      globalThis.fetch = originalFetch;
+    },
+  };
 }
 
 Deno.test('resolve-user-tokens validates input and restricts access', async () => {
@@ -68,18 +77,67 @@ Deno.test('resolve-user-tokens validates input and restricts access', async () =
 Deno.test('resolve-user-tokens filters tokens and maps names and avatars', async () => {
   await withEnv(async () => {
     const fetchMock = mockFetch([
-      { token: 'one', user_id: USER_ID, users: { nickname: 'Jo', first_name: 'John', full_name: 'John Smith', last_name: 'Smith', avatar_object_key: 'avatars/jo.jpg' } },
-      { token: 'two', user_id: USER_ID, users: [{ nickname: null, first_name: 'Alex', full_name: 'Alex Smith', last_name: 'Smith', avatar_object_key: null }] },
+      {
+        token: 'one',
+        user_id: USER_ID,
+        users: {
+          nickname: 'Jo',
+          first_name: 'John',
+          full_name: 'John Smith',
+          last_name: 'Smith',
+          avatar_object_key: 'avatars/jo.jpg',
+        },
+      },
+      {
+        token: 'two',
+        user_id: USER_ID,
+        users: [
+          {
+            nickname: null,
+            first_name: 'Alex',
+            full_name: 'Alex Smith',
+            last_name: 'Smith',
+            avatar_object_key: null,
+          },
+        ],
+      },
       { token: 'three', user_id: USER_ID, users: null },
     ]);
     try {
       const response = await handleResolveUserTokens(request({ tokens: ['one', 'two', 'three'] }));
       assertEquals(response.status, 200);
-      assertEquals(await response.json(), { success: true, data: {
-        one: { id: USER_ID, name: 'Jo', avatarObjectKey: 'avatars/jo.jpg', fullName: 'John Smith', firstName: 'John', lastName: 'Smith', nickname: 'Jo' },
-        two: { id: USER_ID, name: 'Alex', avatarObjectKey: null, fullName: 'Alex Smith', firstName: 'Alex', lastName: 'Smith', nickname: null },
-        three: { id: USER_ID, name: 'three', avatarObjectKey: null, fullName: null, firstName: null, lastName: null, nickname: null },
-      } });
+      assertEquals(await response.json(), {
+        success: true,
+        data: {
+          one: {
+            id: USER_ID,
+            name: 'Jo',
+            avatarObjectKey: 'avatars/jo.jpg',
+            fullName: 'John Smith',
+            firstName: 'John',
+            lastName: 'Smith',
+            nickname: 'Jo',
+          },
+          two: {
+            id: USER_ID,
+            name: 'Alex',
+            avatarObjectKey: null,
+            fullName: 'Alex Smith',
+            firstName: 'Alex',
+            lastName: 'Smith',
+            nickname: null,
+          },
+          three: {
+            id: USER_ID,
+            name: 'three',
+            avatarObjectKey: null,
+            fullName: null,
+            firstName: null,
+            lastName: null,
+            nickname: null,
+          },
+        },
+      });
       assertEquals(fetchMock.queries[0].searchParams.get('token'), 'in.(one,two,three)');
     } finally {
       fetchMock.restore();
