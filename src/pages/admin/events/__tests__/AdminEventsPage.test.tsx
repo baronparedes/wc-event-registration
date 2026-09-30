@@ -276,14 +276,16 @@ describe('AdminEventsPage', () => {
     wrapWithProviders(<AdminEventsPage />);
 
     expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Edit' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Attendance' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Fields' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Attendee Details' })).toHaveAttribute(
+    expect(screen.queryByRole('link', { name: 'Edit Sample Event' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Attendance for Sample Event' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Fields for Sample Event' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Attendee Details for Sample Event' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/attendance/data',
     );
-    expect(screen.getByRole('link', { name: 'Registrations' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Registrations for Sample Event' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/registrations',
     );

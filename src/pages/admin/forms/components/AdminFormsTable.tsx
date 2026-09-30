@@ -76,7 +76,7 @@ export function AdminFormsTable({
                     <ActionLink
                       to={toRoute('adminFormDetail', { id: form.id })}
                       title="Edit Form"
-                      aria-label="Edit Form"
+                      aria-label={`Edit ${form.title}`}
                     >
                       <Settings className="h-5 w-5" />
                     </ActionLink>
@@ -84,7 +84,7 @@ export function AdminFormsTable({
                   {canWrite && onDuplicateClick && (
                     <ActionButton
                       title="Duplicate"
-                      aria-label="Duplicate"
+                      aria-label={`Duplicate ${form.title}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onDuplicateClick(form);
@@ -97,7 +97,7 @@ export function AdminFormsTable({
                     <ActionLink
                       to={toRoute('adminFormFields', { id: form.id })}
                       title="Form Fields"
-                      aria-label="Form Fields"
+                      aria-label={`Fields for ${form.title}`}
                     >
                       <FormInput className="h-5 w-5" />
                     </ActionLink>
@@ -106,7 +106,7 @@ export function AdminFormsTable({
                     <ActionLink
                       to={toRoute('adminFormSubmissions', { id: form.id })}
                       title="Submissions"
-                      aria-label="Submissions"
+                      aria-label={`Submissions for ${form.title}`}
                     >
                       <ClipboardList className="h-5 w-5" />
                     </ActionLink>

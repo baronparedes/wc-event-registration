@@ -97,7 +97,7 @@ export function AdminEventsTable({
                     <ActionLink
                       to={toRoute('adminEventDetail', { id: event.id })}
                       title="Edit"
-                      aria-label="Edit"
+                      aria-label={`Edit ${event.title}`}
                     >
                       <Settings className="h-5 w-5" />
                     </ActionLink>
@@ -105,7 +105,7 @@ export function AdminEventsTable({
                   {canWrite && onDuplicateClick && (
                     <ActionButton
                       title="Duplicate"
-                      aria-label="Duplicate"
+                      aria-label={`Duplicate ${event.title}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onDuplicateClick(event);
@@ -118,7 +118,7 @@ export function AdminEventsTable({
                     <ActionLink
                       to={toRoute('adminEventAttendance', { id: event.id })}
                       title="Attendance"
-                      aria-label="Attendance"
+                      aria-label={`Attendance for ${event.title}`}
                     >
                       <UserCheck className="h-5 w-5" />
                     </ActionLink>
@@ -127,16 +127,16 @@ export function AdminEventsTable({
                     <ActionLink
                       to={toRoute('adminEventFields', { id: event.id })}
                       title="Fields"
-                      aria-label="Fields"
+                      aria-label={`Fields for ${event.title}`}
                     >
-                      <FormInput className="h-5 w-5" aria-label="Fields" />
+                      <FormInput className="h-5 w-5" />
                     </ActionLink>
                   )}
                   {canRead && (
                     <ActionLink
                       to={toRoute('adminAttendanceData', { id: event.id })}
                       title="Attendee Details"
-                      aria-label="Attendee Details"
+                      aria-label={`Attendee Details for ${event.title}`}
                     >
                       <Users className="h-5 w-5" />
                     </ActionLink>
@@ -145,7 +145,7 @@ export function AdminEventsTable({
                     <ActionLink
                       to={toRoute('adminRegistrations', { id: event.id })}
                       title="Registrations"
-                      aria-label="Registrations"
+                      aria-label={`Registrations for ${event.title}`}
                     >
                       <ClipboardList className="h-5 w-5" />
                     </ActionLink>
@@ -154,7 +154,7 @@ export function AdminEventsTable({
                     <ActionLink
                       to={toRoute('adminAttendanceCheckIn', { id: event.id })}
                       title="Check-In"
-                      aria-label="Check-In"
+                      aria-label={`Check-In for ${event.title}`}
                     >
                       <QrCode className="h-5 w-5" />
                     </ActionLink>
