@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: edge-coverage
-          path: supabase/functions/coverage/
+          path: coverage-edge/
           if-no-files-found: warn
           retention-days: 14
 

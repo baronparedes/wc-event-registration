@@ -12,6 +12,7 @@ dev-dist
 dist
 dist-ssr
 coverage
+coverage-edge
 coverage_*
 test-results
 *.local
