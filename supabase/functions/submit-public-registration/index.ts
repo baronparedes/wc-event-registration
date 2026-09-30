@@ -1,4 +1,5 @@
 import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import type { Database, Json } from '@/shared/database.types.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { isRegistrationOpenNow } from '@/shared/registrationAvailability.ts';
 import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
@@ -51,7 +52,7 @@ interface EventFieldRow {
   field_key: string;
   label: string;
   field_type: string;
-  applicability: 'members' | 'guests' | 'both';
+  applicability: string;
   is_required: boolean;
   options: unknown;
   validation_rules: unknown;
@@ -367,7 +368,7 @@ Deno.serve(async (req) => {
         .eq('event_field_id', field.id)
         .neq('public_registrations.status', 'cancelled');
 
-      if (!isNew) {
+      if (!isNew && registrationId) {
         answerQuery = answerQuery.neq('public_registration_id', registrationId);
       }
 
@@ -394,7 +395,7 @@ Deno.serve(async (req) => {
       for (const answer of existingAnswers ?? []) {
         const usedOptions = extractSelectedOptionValuesFromStoredAnswer(field.field_type, {
           answer_text: answer.answer_text,
-          answer_json: answer.answer_json,
+          answer_json: answer.answer_json as Json,
         });
 
         incrementOptionUsageFromSelection(usageByOption, slotConsumingSelections, usedOptions);
@@ -797,7 +798,9 @@ Deno.serve(async (req) => {
       if (answersToInsert.length > 0) {
         const { error: insertAnswersError } = await supabase
           .from('public_registration_answers')
-          .insert(answersToInsert);
+          .insert(
+            answersToInsert as unknown as Database['public']['Tables']['public_registration_answers']['Insert'][],
+          );
 
         if (insertAnswersError) {
           console.error('Insert answers error:', insertAnswersError);

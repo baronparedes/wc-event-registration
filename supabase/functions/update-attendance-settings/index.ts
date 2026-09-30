@@ -119,7 +119,14 @@ function normalizeTimeslots(timeslots: AttendanceTimeslotConfig[]): AttendanceTi
     .sort((left, right) => Date.parse(left.slot_at) - Date.parse(right.slot_at));
 }
 
-function isWithinEventWindow(value: string, startsAt: string, endsAt: string): boolean {
+function isWithinEventWindow(
+  value: string,
+  startsAt: string | null,
+  endsAt: string | null,
+): boolean {
+  if (!startsAt || !endsAt) {
+    return false;
+  }
   const slotMs = new Date(value).getTime();
   const startMs = new Date(startsAt).getTime();
   const endMs = new Date(endsAt).getTime();

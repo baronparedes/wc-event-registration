@@ -172,13 +172,19 @@ function isMissingPublicRegistrationColumnError(error: unknown): boolean {
 }
 
 function logListAttendeesError(stage: string, error: unknown, context?: Record<string, unknown>) {
+  const supabaseError = error as {
+    status?: number;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
   console.error('[list-attendees] error', {
     stage,
     error,
-    supabaseStatus: error?.status,
-    supabaseCode: error?.code,
-    supabaseDetails: error?.details,
-    supabaseHint: error?.hint,
+    supabaseStatus: supabaseError.status,
+    supabaseCode: supabaseError.code,
+    supabaseDetails: supabaseError.details,
+    supabaseHint: supabaseError.hint,
     ...(context ?? {}),
   });
 }

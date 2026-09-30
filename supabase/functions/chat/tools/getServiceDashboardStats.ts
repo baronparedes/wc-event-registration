@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { describeDateRange, formatDate, getPhNow, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
@@ -36,7 +36,7 @@ export function createGetServiceDashboardStatsTool({ client, requestId }: ToolCo
   return tool({
     description:
       'Retrieve high-level aggregate Sunday service attendance metrics, volunteer turn-up percentages, scheduled commitments vs actual check-ins, supervisor late/tardy overrides, walk-ins, and primary role distribution across service time slots (9AM, 12NN, 3PM) for a specific Sunday, month, year, or date range. Defaults to the previous Sunday when no dates are specified. Does NOT return individual volunteer identities or PII. Use this tool whenever users ask about service turn-up rates, attendance statistics, slot counts, walk-in totals, or role distributions across services.',
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'previous_sunday', now);

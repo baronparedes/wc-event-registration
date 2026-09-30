@@ -197,7 +197,9 @@ Deno.serve(async (req) => {
 
     const normalizedSlot = slot?.trim();
     const shouldRecordSlot = Boolean(normalizedSlot);
-    const configuredSlots = normalizeAttendanceTimeslots(settings.timeslots);
+    const configuredSlots = normalizeAttendanceTimeslots(
+      settings.timeslots as unknown as Array<string | AttendanceTimeslotConfig> | null,
+    );
     const configuredSlotSet = new Set(configuredSlots.map((entry) => entry.slot_at));
 
     if (settings.timeslot_enabled) {

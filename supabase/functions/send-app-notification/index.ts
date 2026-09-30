@@ -1,5 +1,5 @@
-import webpush from 'npm:web-push';
-import { z } from 'npm:zod';
+import webpush from 'web-push';
+import { z } from 'zod';
 
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
         p_title: payload.title,
         p_message: payload.message,
         p_target_type: payload.targetType,
-        p_target_role: payload.targetRole ?? (resolvedRoles ? resolvedRoles[0] : null),
-        p_target_roles: resolvedRoles,
-        p_user_ids: payload.targetUserId ? [payload.targetUserId] : null,
-        p_created_by: userId,
+        p_target_role: payload.targetRole ?? resolvedRoles?.[0] ?? undefined,
+        p_target_roles: resolvedRoles ?? undefined,
+        p_user_ids: payload.targetUserId ? [payload.targetUserId] : undefined,
+        p_created_by: userId ?? undefined,
         p_target_url: payload.url || null,
       },
     );
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
               p256dh: sub.p256dh_key,
             },
           };
-          return webpush.sendNotification(pushSubscription, pushPayload).catch((err) => {
+          return webpush.sendNotification(pushSubscription, pushPayload).catch((err: unknown) => {
             console.error(`Failed to push to user ${sub.user_id}:`, err);
           });
         });

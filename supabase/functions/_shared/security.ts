@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+import { createClient } from '@supabase/supabase-js';
 
 import {
   AUTH,
@@ -12,8 +12,9 @@ import {
   RATE_LIMIT,
   SUSPICIOUS_USER_AGENT_PATTERNS,
 } from './constants.ts';
+import type { Database, Json } from './database.types.ts';
 
-const LOCALHOST_HOSTNAMES_SET = new Set(LOCALHOST_HOSTNAMES);
+const LOCALHOST_HOSTNAMES_SET = new Set<string>(LOCALHOST_HOSTNAMES);
 
 type RateLimitBucket = {
   count: number;
@@ -64,20 +65,12 @@ export interface AdminGuardOptions {
 export type AdminAccountRole = 'admin' | 'super_admin' | 'slod' | 'kiosk';
 
 export interface AdminAuditLogOptions {
-  adminClient: ReturnType<typeof createClient>;
-  adminUserId: string;
-  action:
-    | 'create_event'
-    | 'update_event'
-    | 'publish_event'
-    | 'archive_event'
-    | 'cancel_registration'
-    | 'reactivate_registration'
-    | 'export_registrations_csv'
-    | 'bulk_import_registrations';
-  resourceType: 'event' | 'registration' | 'export';
+  adminClient: ReturnType<typeof createClient<Database>>;
+  adminUserId: string | null;
+  action: string;
+  resourceType: string;
   resourceId?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: NonNullable<Json>;
 }
 
 export type AdminGuardResult = { ok: true; userId: string } | { ok: false; response: Response };
@@ -473,6 +466,10 @@ export function buildCorsHeaders(origin: string | null, allowedOrigins: string[]
 export async function logAdminAction(options: AdminAuditLogOptions): Promise<void> {
   const { adminClient, adminUserId, action, resourceType, resourceId, metadata } = options;
 
+  if (!adminUserId) {
+    return;
+  }
+
   const { data: adminRow, error: adminRowError } = await adminClient
     .from('admins')
     .select('id')
@@ -494,7 +491,7 @@ export async function logAdminAction(options: AdminAuditLogOptions): Promise<voi
     action,
     resource_type: resourceType,
     resource_id: resourceId ?? null,
-    metadata: metadata ?? {},
+    metadata: (metadata ?? {}) as NonNullable<Json>,
   });
 
   if (auditError) {

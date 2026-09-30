@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { getPhNow } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
@@ -12,7 +12,7 @@ export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolConte
   return tool({
     description:
       'Analyze the attendees of a specific event. Returns demographics (age, gender, role, category) and registration status counts (confirmed/cancelled) and check-in counts for member registrations.',
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ eventId }) => {
       console.log('[chat:tool:analyzeEventAttendees] Executing', {
         eventId,

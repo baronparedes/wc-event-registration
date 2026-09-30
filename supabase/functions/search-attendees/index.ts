@@ -285,6 +285,7 @@ Deno.serve(async (req) => {
   });
 
   const corsHeaders = guard.corsHeaders;
+  const requestId = guard.requestId;
 
   if (!guard.valid) {
     return guard.response;

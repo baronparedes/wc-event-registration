@@ -492,7 +492,7 @@ async function getExistingSubmissionState(
       exists: true,
       edit_allowed:
         duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update',
-      status: existingSubmission.status,
+      status: existingSubmission.status as 'submitted' | 'updated' | 'cancelled',
       responses: mapFormAnswerRowsToResponses(
         existingSubmission.form_submission_answers as FormAnswerRow[],
       ),

@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       p_source_form_id: payload.source_form_id,
       p_new_title: payload.new_title,
       p_new_slug: payload.new_slug,
-      p_admin_auth_user_id: guard.session?.user?.id ?? null,
+      p_admin_auth_user_id: guard.userId,
     });
 
     if (rpcError) {

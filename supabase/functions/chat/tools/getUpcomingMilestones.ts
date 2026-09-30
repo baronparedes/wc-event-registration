@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { describeDateRange, getPhNow, isMonthDayInRange, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
@@ -25,7 +25,7 @@ export function createGetUpcomingMilestonesTool({ client, requestId }: ToolConte
   return tool({
     description:
       'Retrieve birthdays and wedding anniversaries as separate counts with user tokens within the specified date range. Defaults to the current month when no dates are provided. This tool NEVER returns PII like names or emails.',
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);

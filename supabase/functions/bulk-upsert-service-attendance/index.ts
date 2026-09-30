@@ -1,4 +1,5 @@
 import { HTTP_STATUS, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import type { Json } from '@/shared/database.types.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
 import { logAdminAction } from '@/shared/security.ts';
@@ -55,8 +56,8 @@ Deno.serve(async (req) => {
       'apply_bulk_service_attendance_upsert',
       {
         p_layout_id: layout_id,
-        p_rows: rows,
-        p_admin_user_id: guard.userId ?? null,
+        p_rows: rows as unknown as Json,
+        p_admin_user_id: guard.userId ?? undefined,
       },
     );
 

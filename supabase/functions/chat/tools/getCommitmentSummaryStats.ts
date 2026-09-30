@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import { describeDateRange, getPhNow, resolveDateRange } from './timeframes.ts';
@@ -70,7 +70,7 @@ export function createGetCommitmentSummaryStatsTool({ client, requestId }: ToolC
   return tool({
     description:
       'Retrieve high-level aggregate volunteer commitment metrics, overall fidelity, total scheduled commitments vs attended services, excused vs unexcused absences, walk-in support, and primary role distribution for a quarter, year, or custom date range. Defaults to the current month when no dates are specified. Does NOT return individual volunteer identities or PII. Use this tool whenever users ask about commitment dashboard summaries, overall volunteer attendance fidelity, total missed commitments, or ministry-wide score averages.',
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ role, category, targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);
@@ -99,8 +99,8 @@ export function createGetCommitmentSummaryStatsTool({ client, requestId }: ToolC
         const { data, error } = await client.rpc('get_commitment_dashboard_stats', {
           p_start_date: formattedStart,
           p_end_date: formattedEnd,
-          p_role: isSpecificRole(role) ? getPrimaryRole(role) : null,
-          p_category: category || null,
+          p_role: isSpecificRole(role) ? getPrimaryRole(role) : undefined,
+          p_category: category || undefined,
           p_page: page,
           p_page_size: PAGE_SIZE,
         });

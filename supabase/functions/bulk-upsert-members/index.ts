@@ -1,4 +1,5 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import type { Json } from '@/shared/database.types.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
 
@@ -48,7 +49,7 @@ Deno.serve(async (req) => {
     const { data: upsertResult, error: upsertError } = await adminClient.rpc(
       'apply_bulk_member_upsert',
       {
-        p_rows: resolvedRows,
+        p_rows: resolvedRows as unknown as Json,
       },
     );
 

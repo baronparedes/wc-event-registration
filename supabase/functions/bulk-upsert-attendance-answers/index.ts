@@ -63,6 +63,16 @@ type PreparedAnswerRow = {
   answer_number: number | null;
 };
 
+type AttendanceValidationRules = {
+  min?: number;
+  max?: number;
+  min_selections?: number;
+  max_selections?: number;
+  min_length?: number;
+  max_length?: number;
+  pattern?: string;
+};
+
 const IN_FILTER_CHUNK_SIZE = 200;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -142,7 +152,7 @@ function validateAndNormalizeAnswer(
 ): { hasValue: boolean; answer_text: string | null; answer_number: number | null; error?: string } {
   const rawRules = field.validation_rules ?? {};
   const rules = {
-    ...rawRules,
+    ...(rawRules as AttendanceValidationRules),
     ...(typeof rawRules.max === 'number' && rawRules.max <= 0 ? { max: undefined } : {}),
     ...(typeof rawRules.max_length === 'number' && rawRules.max_length <= 0
       ? { max_length: undefined }

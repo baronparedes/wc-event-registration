@@ -72,7 +72,7 @@ interface EventFieldRow {
   field_key: string;
   label: string;
   field_type: string;
-  applicability: 'members' | 'guests' | 'both';
+  applicability: string;
   is_required: boolean;
   options: unknown;
   validation_rules: unknown;

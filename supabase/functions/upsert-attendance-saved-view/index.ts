@@ -1,4 +1,5 @@
 import { POSTGRES_ERROR_CODES } from '@/shared/constants.ts';
+import type { Json } from '@/shared/database.types.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import type { SupabaseClient } from '@/shared/handler.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
@@ -72,7 +73,7 @@ Deno.serve(async (req) => {
         .from('attendance_saved_views')
         .update({
           name: viewName,
-          view_config,
+          view_config: view_config as NonNullable<Json>,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -95,7 +96,7 @@ Deno.serve(async (req) => {
         .insert({
           event_id,
           name: viewName,
-          view_config,
+          view_config: view_config as NonNullable<Json>,
         })
         .select()
         .single();

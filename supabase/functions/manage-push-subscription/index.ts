@@ -1,4 +1,4 @@
-import { z } from 'npm:zod';
+import { z } from 'zod';
 
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
@@ -31,6 +31,10 @@ Deno.serve(async (req) => {
   }
 
   const { client: supabase, data: payload, userId, corsHeaders } = hook;
+
+  if (!userId) {
+    return errorResponse(corsHeaders, HTTP_STATUS.unauthorized, 'Authentication required');
+  }
 
   try {
     if (payload.action === 'subscribe' && payload.subscription) {

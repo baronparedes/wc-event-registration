@@ -1,10 +1,11 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+import { createClient } from '@supabase/supabase-js';
 
+import type { Database } from './database.types.ts';
 import type { FieldValidationError } from './validation.ts';
 
 export type { FieldValidationError };
 
-export type SupabaseClient = ReturnType<typeof createClient>;
+export type SupabaseClient = ReturnType<typeof createClient<Database>>;
 
 export type HandlerResult<T, E extends string = string> =
   | { ok: true; data: T }

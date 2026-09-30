@@ -1,4 +1,4 @@
-import { assert, assertEquals } from 'jsr:@std/assert@1';
+import { assert, assertEquals } from '@std/assert';
 
 import { HTTP_STATUS } from './constants.ts';
 import { useEdgeHook } from './edge.ts';
@@ -140,12 +140,13 @@ Deno.test('useEdgeHook rejects rateLimit config when requireAdmin is not enabled
       req,
       functionName: 'test-invalid-admin-rate-config',
       allowedOrigins: TEST_ALLOWED_ORIGINS,
+      requireAdmin: false,
       rateLimit: {
         scope: 'invalid-config',
         windowMs: 60_000,
         maxHits: 1,
       },
-    });
+    } as unknown as Parameters<typeof useEdgeHook>[0]);
 
     assert(!result.valid);
     assertEquals(result.response.status, HTTP_STATUS.internalServerError);

@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import { getPhNow } from './timeframes.ts';
@@ -19,7 +19,7 @@ export function createGetUserDemographicsTool({ client, requestId }: ToolContext
   return tool({
     description:
       'Retrieve aggregate volunteer demographics, including role and gender breakdowns (men or ladies) and age distribution. Secondary roles (after "/") are ignored for role filtering and grouping; only the primary role (before "/") is evaluated. This tool NEVER returns PII like names or emails.',
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ role }) => {
       console.log('[chat:tool:getUserDemographics] Executing', { role, requestId });
 

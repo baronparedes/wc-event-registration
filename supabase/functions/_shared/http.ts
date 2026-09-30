@@ -1,6 +1,6 @@
 export type CorsHeaders = Record<string, string>;
 
-export function jsonResponse<T>(corsHeaders: CorsHeaders, body: T, status: number): Response {
+export function jsonResponse<T>(corsHeaders: CorsHeaders, body: T, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },

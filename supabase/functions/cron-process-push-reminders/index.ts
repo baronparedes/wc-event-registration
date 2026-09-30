@@ -1,4 +1,4 @@
-import webpush from 'npm:web-push';
+import webpush from 'web-push';
 
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
@@ -105,13 +105,16 @@ Deno.serve(async (req) => {
                   p256dh: sub.p256dh_key,
                 },
               };
-              return webpush.sendNotification(pushSubscription, pushPayload).catch((err) => {
-                if (err.statusCode === 404 || err.statusCode === 410) {
-                  subscriptionsToDelete.add(sub.id);
-                } else {
-                  console.error(`Failed to push to sub ${sub.id}:`, err);
-                }
-              });
+              return webpush
+                .sendNotification(pushSubscription, pushPayload)
+                .catch((err: unknown) => {
+                  const pushError = err as { statusCode?: number };
+                  if (pushError.statusCode === 404 || pushError.statusCode === 410) {
+                    subscriptionsToDelete.add(sub.id);
+                  } else {
+                    console.error(`Failed to push to sub ${sub.id}:`, err);
+                  }
+                });
             });
 
             await Promise.allSettled(pushPromises);
