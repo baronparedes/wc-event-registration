@@ -102,162 +102,215 @@ openai_api_key = "env(OPENAI_API_KEY)"
 
 [functions.bulk-upsert-attendance-answers]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.bulk-upsert-members]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.bulk-upsert-public-registrations]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.bulk-upsert-registrations]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.bulk-upsert-service-attendance]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.cancel-public-registration]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.cancel-registration]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.chat]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.check-in-attendee]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.create-member]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.cron-process-email-queue]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.cron-process-push-reminders]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.cron-tokenize-users]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.cron-upcoming-sunday-excused-export-email]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.delete-attendance-saved-view]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.download-attendance-csv]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.download-public-registrations-template]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.download-registrations-template]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.duplicate-event]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.duplicate-form]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.enqueue-event]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.event-slot-availability]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.export-attendance-csv]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.export-registrations-csv]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.export-unregistered-members-csv]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.get-excused-members]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.get-member-excused-schedule]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.get-public-event]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.get-public-event-fields]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.get-public-event-listing]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.get-public-form]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.get-public-form-fields]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.get-public-forms]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.list-attendees]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.list-attendees-v2]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.list-unregistered-members]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.manage-admin-role]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.manage-push-subscription]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.member-lookup]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.public-attendee-lookup]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.reactivate-public-registration]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.reactivate-registration]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.resolve-user-tokens]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.search-attendees]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.send-app-notification]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.submit-form-submission]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.submit-public-registration]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.submit-registration]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.submit-registration-v2]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.update-attendance-settings]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.update-member-id]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.upload-member-avatar]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.upsert-attendance-saved-view]
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
