@@ -6,7 +6,7 @@ import {
   resolveIdempotencyRecovery,
   resolveRegistrationScopeKey,
   submitRegistrationRequestSchema,
-} from './utils.ts';
+} from '../utils.ts';
 
 Deno.test('submitRegistrationRequestSchema requires member id for the ID-first flow', () => {
   const result = submitRegistrationRequestSchema.safeParse({

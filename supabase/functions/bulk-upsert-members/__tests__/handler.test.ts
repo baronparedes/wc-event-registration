@@ -1,6 +1,6 @@
 import { assertEquals } from '@std/assert';
 
-import { handleBulkUpsertMembers } from './handler.ts';
+import { handleBulkUpsertMembers } from '../handler.ts';
 
 const TEST_ORIGIN = 'https://app.example.com';
 

@@ -20,5 +20,8 @@
     "singleQuote": true,
     "trailingCommas": "always",
     "useTabs": false
+  },
+  "test": {
+    "include": ["**/__tests__/**/*.test.ts"]
   }
 }

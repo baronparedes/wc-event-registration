@@ -1,8 +1,8 @@
 import { assert, assertEquals } from '@std/assert';
 
-import { HTTP_STATUS } from './constants.ts';
-import { useEdgeHook } from './edge.ts';
-import { z } from './validation.ts';
+import { HTTP_STATUS } from '../constants.ts';
+import { useEdgeHook } from '../edge.ts';
+import { z } from '../validation.ts';
 
 const TEST_ORIGIN = 'https://app.example.com';
 const TEST_ALLOWED_ORIGINS = [TEST_ORIGIN];
@@ -10,9 +10,11 @@ const TEST_ALLOWED_ORIGINS = [TEST_ORIGIN];
 async function withFunctionEnv(run: () => Promise<void>) {
   const previousUrl = Deno.env.get('SUPABASE_URL');
   const previousServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const previousCronRoleKey = Deno.env.get('CRON_ROLE_KEY');
 
   Deno.env.set('SUPABASE_URL', 'https://example.supabase.co');
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
+  Deno.env.set('CRON_ROLE_KEY', 'test-cron-role-key');
 
   try {
     await run();
@@ -27,6 +29,12 @@ async function withFunctionEnv(run: () => Promise<void>) {
       Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
     } else {
       Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', previousServiceRoleKey);
+    }
+
+    if (previousCronRoleKey === undefined) {
+      Deno.env.delete('CRON_ROLE_KEY');
+    } else {
+      Deno.env.set('CRON_ROLE_KEY', previousCronRoleKey);
     }
   }
 }
@@ -173,3 +181,110 @@ Deno.test('useEdgeHook enforces admin auth when requireAdmin is true', async () 
     assertEquals(result.response.status, HTTP_STATUS.unauthorized);
   });
 });
+
+Deno.test('useEdgeHook handles allowed and denied CORS preflight requests', async () => {
+  await withFunctionEnv(async () => {
+    const allowed = await useEdgeHook({
+      req: buildRequest('OPTIONS'),
+      functionName: 'test-preflight-allowed',
+      allowedOrigins: TEST_ALLOWED_ORIGINS,
+    });
+    const denied = await useEdgeHook({
+      req: buildRequest('OPTIONS', { headers: { origin: 'https://evil.example.com' } }),
+      functionName: 'test-preflight-denied',
+      allowedOrigins: TEST_ALLOWED_ORIGINS,
+    });
+
+    assert(!allowed.valid);
+    assertEquals(allowed.response.status, 200);
+    assertEquals(await allowed.response.text(), 'ok');
+    assertEquals(allowed.corsHeaders['Access-Control-Allow-Origin'], TEST_ORIGIN);
+    assert(!denied.valid);
+    assertEquals(denied.response.status, 404);
+  });
+});
+
+Deno.test(
+  'useEdgeHook rejects requests when required Supabase environment is missing',
+  async () => {
+    const previousUrl = Deno.env.get('SUPABASE_URL');
+    const previousServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    Deno.env.delete('SUPABASE_URL');
+    Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
+
+    try {
+      const result = await useEdgeHook({
+        req: buildRequest('POST'),
+        functionName: 'test-missing-env',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+      });
+
+      assert(!result.valid);
+      assertEquals(result.response.status, HTTP_STATUS.internalServerError);
+    } finally {
+      if (previousUrl === undefined) Deno.env.delete('SUPABASE_URL');
+      else Deno.env.set('SUPABASE_URL', previousUrl);
+
+      if (previousServiceRoleKey === undefined) Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
+      else Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', previousServiceRoleKey);
+    }
+  },
+);
+
+Deno.test('useEdgeHook accepts the configured cron key from the dedicated header', async () => {
+  await withFunctionEnv(async () => {
+    const result = await useEdgeHook({
+      req: buildRequest('POST', { headers: { 'x-cron-key': 'test-cron-role-key' } }),
+      functionName: 'test-cron-header',
+      allowedOrigins: TEST_ALLOWED_ORIGINS,
+      requireCron: true,
+    });
+
+    assert(result.valid);
+    assertEquals(result.callerType, 'cron');
+  });
+});
+
+Deno.test('useEdgeHook rejects an invalid required cron key', async () => {
+  await withFunctionEnv(async () => {
+    const result = await useEdgeHook({
+      req: buildRequest('POST', { headers: { 'x-cron-key': 'wrong-key' } }),
+      functionName: 'test-cron-invalid',
+      allowedOrigins: TEST_ALLOWED_ORIGINS,
+      requireCron: true,
+    });
+
+    assert(!result.valid);
+    assertEquals(result.response.status, HTTP_STATUS.unauthorized);
+  });
+});
+
+Deno.test(
+  'useEdgeHook classifies service-role authentication for admin and cron handlers',
+  async () => {
+    await withFunctionEnv(async () => {
+      const serviceRoleRequest = () =>
+        buildRequest('POST', { headers: { authorization: 'Bearer test-service-role-key' } });
+
+      const adminResult = await useEdgeHook({
+        req: serviceRoleRequest(),
+        functionName: 'test-admin-service-role',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+        requireAdmin: true,
+        allowServiceRole: true,
+      });
+      const cronResult = await useEdgeHook({
+        req: serviceRoleRequest(),
+        functionName: 'test-cron-service-role',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+        requireCron: true,
+        allowServiceRole: true,
+      });
+
+      assert(adminResult.valid);
+      assertEquals(adminResult.callerType, 'service_role');
+      assert(cronResult.valid);
+      assertEquals(cronResult.callerType, 'service_role');
+    });
+  },
+);

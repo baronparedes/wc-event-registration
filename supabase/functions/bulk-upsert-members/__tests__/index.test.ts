@@ -1,6 +1,6 @@
 import { assertEquals } from '@std/assert';
 
-import { type ExistingMember, type InputRow, requestSchema, resolveRows } from './logic.ts';
+import { type ExistingMember, type InputRow, requestSchema, resolveRows } from '../logic.ts';
 
 function makeRow(overrides: Partial<InputRow> = {}): InputRow {
   return {

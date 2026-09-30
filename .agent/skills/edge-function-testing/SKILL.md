@@ -14,7 +14,8 @@ description: 'Use when adding or improving tests for Supabase Edge Functions in 
 ## Repository Conventions
 
 - Edge Function tests use Deno, not Vitest. Edge Functions are excluded from Vitest coverage.
-- Co-locate tests with the function they cover. Shared helper tests belong beside modules under `supabase/functions/_shared/`.
+- Put tests in a `__tests__/` subdirectory inside the function or shared module folder, for example `supabase/functions/member-lookup/__tests__/` and `supabase/functions/_shared/__tests__/`.
+- Import the tested source module from the parent directory (for example, `../utils.ts`).
 - Use the existing `@std/assert` and Deno test conventions unless the function already uses another local pattern.
 - Preserve strict typing. Do not introduce `any` or use casts to silence an unresolved test seam.
 - Keep `index.ts` as the deployed entry point. If importing it starts `Deno.serve` and prevents direct handler tests, extract the smallest useful handler boundary; do not broadly restructure the function just for tests.
@@ -49,7 +50,7 @@ npm run test:edge
 For a focused test, run from `supabase/functions`:
 
 ```sh
-deno test -A <function>/<test-file>.test.ts
+deno test -A <function>/__tests__/
 ```
 
 Type-check one function from the repository root with:

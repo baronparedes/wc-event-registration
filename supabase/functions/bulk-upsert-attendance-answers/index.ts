@@ -1,40 +1,8 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
-import { z } from '@/shared/validation.ts';
 
-const bulkRowSchema = z
-  .object({
-    attendee_kind: z.enum(['registered', 'public']),
-    registration_id: z.string().uuid().optional(),
-    public_registration_id: z.string().uuid().optional(),
-    answers: z.record(z.string(), z.unknown()),
-  })
-  .superRefine((value, context) => {
-    if (value.attendee_kind === 'registered' && !value.registration_id) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['registration_id'],
-        message: 'registration_id is required for registered rows.',
-      });
-    }
-
-    if (value.attendee_kind === 'public' && !value.public_registration_id) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['public_registration_id'],
-        message: 'public_registration_id is required for public rows.',
-      });
-    }
-  });
-
-const requestSchema = z.object({
-  event_id: z.string().uuid('event_id must be a valid UUID'),
-  rows: z.array(bulkRowSchema).min(1, 'rows must include at least one item'),
-  uploaded_field_keys: z.array(z.string()).optional(),
-});
-
-type RequestPayload = z.infer<typeof requestSchema>;
+import { type RequestPayload, findUnsupportedAnswerKeys, requestSchema } from './utils.ts';
 
 type AttendanceFieldRow = {
   id: string;
@@ -409,6 +377,7 @@ Deno.serve(async (req) => {
     }
 
     const fieldsByKey = new Map(safeFields.map((field) => [field.field_key, field]));
+    const knownFieldKeys = new Set(fieldsByKey.keys());
     const requestedFieldKeySet = new Set((uploaded_field_keys ?? []).map((key) => key.trim()));
 
     const registrationIds = [
@@ -490,7 +459,7 @@ Deno.serve(async (req) => {
       }
 
       const answerKeys = Object.keys(row.answers ?? {});
-      const unknownKeys = answerKeys.filter((key) => !fieldsByKey.has(key));
+      const unknownKeys = findUnsupportedAnswerKeys(answerKeys, knownFieldKeys);
       if (unknownKeys.length > 0) {
         errors.push(`Row ${rowNumber}: unsupported field key(s): ${unknownKeys.join(', ')}.`);
         return;
