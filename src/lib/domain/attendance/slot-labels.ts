@@ -90,7 +90,11 @@ export function formatCompactSlotLabelsFromSlotRecords(
       return parsed ? { slot: record.slot, parsed } : null;
     })
     .filter((entry): entry is { slot: string; parsed: Date } => entry !== null)
-    .sort((left, right) => (left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0));
+    .sort((left, right) => {
+      const l = left.parsed.getTime();
+      const r = right.parsed.getTime();
+      return l < r ? -1 : l > r ? 1 : 0;
+    });
 
   if (normalizedSlots.length === 0) {
     return [];
