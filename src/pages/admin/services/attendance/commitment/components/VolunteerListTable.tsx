@@ -142,16 +142,9 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           case 'category':
             comparison = (a.category || '').localeCompare(b.category || '');
             break;
-          case 'start_date': {
-            // ⚡ Bolt: Performance Improvement
-            // Replaced `.localeCompare` with standard string comparison (`<`, `>`) for ISO-8601 strings.
-            // This avoids the overhead of Intl.Collator setup inside the sort function since ISO dates sort correctly lexically.
-            // Impact: Reduces CPU overhead when sorting long lists.
-            const aDate = a.start_date || '9999-99-99';
-            const bDate = b.start_date || '9999-99-99';
-            comparison = aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+          case 'start_date':
+            comparison = (a.start_date || '').localeCompare(b.start_date || '');
             break;
-          }
           case 'committed':
             comparison = a.committed - b.committed;
             break;
