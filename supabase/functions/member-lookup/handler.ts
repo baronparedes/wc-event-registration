@@ -1,0 +1,727 @@
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { useEdgeHook } from '@/shared/edge.ts';
+import type { SupabaseClient } from '@/shared/handler.ts';
+import {
+  errorResponse as sharedErrorResponse,
+  successResponse as sharedSuccessResponse,
+} from '@/shared/http.ts';
+import { createMemberLookupToken } from '@/shared/memberLookupToken.ts';
+import { tryConvertRfidInput } from '@/shared/rfid.ts';
+import { parseRequestBody, z } from '@/shared/validation.ts';
+
+const memberLookupRequestSchema = z
+  .object({
+    memberId: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    eventSlug: z.string().trim().min(1).optional(),
+    formSlug: z.string().trim().min(1).optional(),
+  })
+  .refine((value) => !(value.eventSlug && value.formSlug), {
+    message: 'Only one of eventSlug or formSlug may be provided',
+    path: ['formSlug'],
+  })
+  .refine((value) => Boolean(value.memberId || value.name), {
+    message: 'Either memberId or name must be provided',
+    path: ['memberId'],
+  });
+
+type MemberLookupRequest = z.infer<typeof memberLookupRequestSchema>;
+
+interface MemberLookupProfile {
+  member_token: string;
+  role: string;
+  first_name: string | null;
+  last_initial: string | null;
+  avatar_object_key: string | null;
+}
+
+interface ExistingRegistrationState {
+  exists: boolean;
+  edit_allowed: boolean;
+  status: 'submitted' | 'updated' | 'cancelled';
+  responses: Record<string, unknown>;
+}
+
+type AnswerRow = {
+  answer_text: string | null;
+  answer_number: number | null;
+  answer_boolean: boolean | null;
+  answer_date: string | null;
+  answer_json: unknown | null;
+  event_fields:
+    | { field_key: string; field_type?: string | null }
+    | { field_key: string; field_type?: string | null }[]
+    | null;
+};
+
+type UserLookupRow = {
+  id: string;
+  member_id: string;
+  avatar_object_key: string | null;
+  role: string;
+  category: string;
+  full_name: string;
+  nickname: string | null;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type EventLookupRow = {
+  id: string;
+  duplicate_policy: string;
+  metadata: unknown;
+};
+
+type FormLookupRow = {
+  id: string;
+  duplicate_policy: string;
+};
+
+type FormAnswerRow = {
+  answer_text: string | null;
+  answer_number: number | null;
+  answer_boolean: boolean | null;
+  answer_date: string | null;
+  answer_json: unknown | null;
+  form_fields:
+    | { field_key: string; field_type?: string | null }
+    | { field_key: string; field_type?: string | null }[]
+    | null;
+};
+
+type ExistingRegistrationLookupResult = {
+  data: ExistingRegistrationState | null;
+  error: string | null;
+};
+
+type ExistingSubmissionLookupResult = ExistingRegistrationLookupResult;
+
+type ExistingRegistrationRow = {
+  id: string;
+  status: ExistingRegistrationState['status'];
+};
+
+function normalizeName(value: string | null | undefined) {
+  return (value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function tokenizeName(value: string): string[] {
+  return normalizeName(value)
+    .split(' ')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+}
+
+function escapeOrFilterValue(value: string): string {
+  return value.replace(/[,%_]/g, (char) => `\\${char}`);
+}
+
+function buildNameLookupFilter(tokens: string[]): string {
+  const escapedTokens = tokens.map((token) => escapeOrFilterValue(token));
+  const firstToken = escapedTokens[0] ?? '';
+  const lastToken = escapedTokens[escapedTokens.length - 1] ?? '';
+  const aggregatePattern = `%${escapedTokens.join('%')}%`;
+  const filters = new Set<string>();
+
+  if (firstToken) {
+    filters.add(`first_name.ilike.%${firstToken}%`);
+    filters.add(`nickname.ilike.%${firstToken}%`);
+  }
+
+  if (lastToken && lastToken !== firstToken) {
+    filters.add(`last_name.ilike.%${lastToken}%`);
+  }
+
+  filters.add(`full_name.ilike.${aggregatePattern}`);
+
+  if (firstToken && lastToken && tokens.length >= 2) {
+    filters.add(
+      `and(first_name.not.is.null,last_name.not.is.null,first_name.ilike.%${firstToken}%,last_name.ilike.%${lastToken}%)`,
+    );
+    filters.add(
+      `and(nickname.not.is.null,last_name.not.is.null,nickname.ilike.%${firstToken}%,last_name.ilike.%${lastToken}%)`,
+    );
+  }
+
+  return Array.from(filters).join(',');
+}
+
+function hasOrderedTokenMatch(candidate: string, search: string): boolean {
+  const candidateTokens = tokenizeName(candidate);
+  const searchTokens = tokenizeName(search);
+
+  if (searchTokens.length === 0 || candidateTokens.length === 0) {
+    return false;
+  }
+
+  let candidateIndex = 0;
+  for (const searchToken of searchTokens) {
+    while (
+      candidateIndex < candidateTokens.length &&
+      candidateTokens[candidateIndex] !== searchToken
+    ) {
+      candidateIndex += 1;
+    }
+
+    if (candidateIndex === candidateTokens.length) {
+      return false;
+    }
+
+    candidateIndex += 1;
+  }
+
+  return true;
+}
+
+function readString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function getLastInitial(value: string | null): string | null {
+  const normalizedValue = readString(value).trim();
+  if (!normalizedValue) {
+    return null;
+  }
+
+  return normalizedValue.charAt(0).toUpperCase();
+}
+
+function maskFirstName(firstName: string | null): string | null {
+  if (!firstName) {
+    return null;
+  }
+
+  const trimmedFirstName = firstName.trim();
+  if (trimmedFirstName.length === 0) {
+    return null;
+  }
+
+  const nameParts = trimmedFirstName.split(' ');
+  const maskedParts = nameParts.map((part) => {
+    if (part.length <= 2) {
+      return part.charAt(0) + '*'.repeat(part.length - 1);
+    }
+    return part.substring(0, 2) + '*'.repeat(part.length - 2);
+  });
+
+  return maskedParts.join(' ');
+}
+
+function toProfile(
+  row: UserLookupRow | null,
+  memberToken: string | null,
+): MemberLookupProfile | null {
+  if (!row || !memberToken) return null;
+  return {
+    member_token: memberToken,
+    role: readString(row.role),
+    first_name: maskFirstName(row.first_name),
+    last_initial: getLastInitial(row.last_name),
+    avatar_object_key: row.avatar_object_key,
+  };
+}
+
+function getAnswerValue(row: AnswerRow): unknown {
+  const eventField = Array.isArray(row.event_fields) ? row.event_fields[0] : row.event_fields;
+  const fieldType = eventField?.field_type ?? null;
+
+  if (row.answer_json !== null) return row.answer_json;
+  if (row.answer_boolean !== null) return row.answer_boolean;
+  if (row.answer_number !== null) return row.answer_number;
+  if (row.answer_date !== null) return row.answer_date;
+
+  if (row.answer_text !== null) {
+    // Keep text-like answers as raw strings; parsing "12" would coerce it to number 12.
+    if (
+      fieldType === 'text' ||
+      fieldType === 'textarea' ||
+      fieldType === 'email' ||
+      fieldType === 'phone' ||
+      fieldType === 'select' ||
+      fieldType === 'radio' ||
+      fieldType === 'date' ||
+      fieldType === 'datetime'
+    ) {
+      return row.answer_text;
+    }
+
+    try {
+      return JSON.parse(row.answer_text);
+    } catch {
+      return row.answer_text;
+    }
+  }
+  return null;
+}
+
+function getFieldKey(eventFields: AnswerRow['event_fields']): string | null {
+  if (!eventFields) return null;
+  if (Array.isArray(eventFields)) {
+    return eventFields[0]?.field_key ?? null;
+  }
+  return eventFields.field_key ?? null;
+}
+
+function mapAnswerRowsToResponses(rows: AnswerRow[] | null | undefined): Record<string, unknown> {
+  const responses: Record<string, unknown> = {};
+  for (const row of rows ?? []) {
+    const fieldKey = getFieldKey(row.event_fields);
+    if (!fieldKey) continue;
+
+    const value = getAnswerValue(row);
+    if (value !== null) {
+      responses[fieldKey] = value;
+    }
+  }
+  return responses;
+}
+
+function getFormAnswerValue(row: FormAnswerRow): unknown {
+  const formField = Array.isArray(row.form_fields) ? row.form_fields[0] : row.form_fields;
+  const fieldType = formField?.field_type ?? null;
+
+  if (row.answer_json !== null) return row.answer_json;
+  if (row.answer_boolean !== null) return row.answer_boolean;
+  if (row.answer_number !== null) return row.answer_number;
+  if (row.answer_date !== null) return row.answer_date;
+
+  if (row.answer_text !== null) {
+    if (
+      fieldType === 'text' ||
+      fieldType === 'textarea' ||
+      fieldType === 'email' ||
+      fieldType === 'phone' ||
+      fieldType === 'select' ||
+      fieldType === 'radio' ||
+      fieldType === 'date' ||
+      fieldType === 'datetime'
+    ) {
+      return row.answer_text;
+    }
+
+    try {
+      return JSON.parse(row.answer_text);
+    } catch {
+      return row.answer_text;
+    }
+  }
+
+  return null;
+}
+
+function mapFormAnswerRowsToResponses(
+  rows: FormAnswerRow[] | null | undefined,
+): Record<string, unknown> {
+  const responses: Record<string, unknown> = {};
+  for (const row of rows ?? []) {
+    const formField = Array.isArray(row.form_fields) ? row.form_fields[0] : row.form_fields;
+    const fieldKey = formField?.field_key;
+    if (!fieldKey) continue;
+
+    const value = getFormAnswerValue(row);
+    if (value !== null) {
+      responses[fieldKey] = value;
+    }
+  }
+  return responses;
+}
+
+async function findUserByNameOrNickname(supabase: SupabaseClient, normalizedSearchValue: string) {
+  const searchTokens = tokenizeName(normalizedSearchValue);
+  if (searchTokens.length === 0) {
+    return { data: null as UserLookupRow | null, error: null };
+  }
+
+  const nameFilter = buildNameLookupFilter(searchTokens);
+
+  const { data: users, error } = await supabase
+    .from('users')
+    .select(
+      'id, member_id, avatar_object_key, role, category, full_name, nickname, first_name, last_name',
+    )
+    .eq('is_active', true)
+    .not('last_name', 'is', null)
+    .or(nameFilter)
+    .limit(200);
+
+  if (error) {
+    return { data: null as UserLookupRow | null, error: error.message };
+  }
+
+  const matches = ((users ?? []) as UserLookupRow[]).filter((user: UserLookupRow) => {
+    const firstNameWithLastName = normalizeName(`${user.first_name ?? ''} ${user.last_name ?? ''}`);
+    const nicknameWithLastName = normalizeName(`${user.nickname ?? ''} ${user.last_name ?? ''}`);
+
+    return (
+      firstNameWithLastName.includes(normalizedSearchValue) ||
+      nicknameWithLastName.includes(normalizedSearchValue) ||
+      hasOrderedTokenMatch(firstNameWithLastName, normalizedSearchValue) ||
+      hasOrderedTokenMatch(nicknameWithLastName, normalizedSearchValue)
+    );
+  });
+
+  return {
+    data: matches.length === 1 ? (matches[0] as UserLookupRow) : null,
+    error: null,
+  };
+}
+
+async function getEventBySlug(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<{ data: EventLookupRow | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('events')
+    .select('id, duplicate_policy, metadata')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  return { data: data as EventLookupRow | null, error: null };
+}
+
+async function getFormBySlug(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<{ data: FormLookupRow | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('forms')
+    .select('id, duplicate_policy')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  return { data: data as FormLookupRow | null, error: null };
+}
+
+async function getExistingRegistrationState(
+  supabase: SupabaseClient,
+  eventId: string,
+  userId: string,
+  duplicatePolicy: string,
+): Promise<ExistingRegistrationLookupResult> {
+  if (duplicatePolicy === 'allow_multiple' || duplicatePolicy === 'allow_multiple_update') {
+    return { data: null, error: null };
+  }
+
+  let registrationQuery = supabase
+    .from('registrations')
+    .select('id, status')
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
+    .order('submitted_at', { ascending: false })
+    .limit(1);
+
+  if (duplicatePolicy !== 'block') {
+    registrationQuery = registrationQuery.eq('registration_scope_key', 'primary');
+  }
+
+  const { data: existingRegistration, error: registrationError } =
+    await registrationQuery.maybeSingle<ExistingRegistrationRow>();
+
+  if (registrationError) {
+    return { data: null, error: `registration_lookup:${registrationError.message}` };
+  }
+
+  if (!existingRegistration) {
+    return { data: null, error: null };
+  }
+
+  const { data: answerRows, error: answersError } = await supabase
+    .from('registration_answers')
+    .select(
+      'answer_text, answer_number, answer_boolean, answer_date, answer_json, event_fields!inner(field_key, field_type)',
+    )
+    .eq('registration_id', existingRegistration.id);
+
+  if (answersError) {
+    return { data: null, error: `answers_lookup:${answersError.message}` };
+  }
+
+  const responses = mapAnswerRowsToResponses((answerRows as AnswerRow[] | null) ?? null);
+
+  return {
+    data: {
+      exists: true,
+      edit_allowed: duplicatePolicy === 'allow_update',
+      status: existingRegistration.status,
+      responses,
+    },
+    error: null,
+  };
+}
+
+async function getExistingSubmissionState(
+  supabase: SupabaseClient,
+  formId: string,
+  userId: string,
+  duplicatePolicy: string,
+): Promise<ExistingSubmissionLookupResult> {
+  if (duplicatePolicy === 'allow_multiple') {
+    return { data: null, error: null };
+  }
+
+  const { data: existingSubmission, error: submissionError } = await supabase
+    .from('form_submissions')
+    .select(
+      'id, status, form_submission_answers(answer_text, answer_number, answer_boolean, answer_date, answer_json, form_fields!inner(field_key, field_type))',
+    )
+    .eq('form_id', formId)
+    .eq('user_id', userId)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (submissionError) {
+    return { data: null, error: `submission_lookup:${submissionError.message}` };
+  }
+
+  if (!existingSubmission) {
+    return { data: null, error: null };
+  }
+
+  return {
+    data: {
+      exists: true,
+      edit_allowed:
+        duplicatePolicy === 'allow_update' || duplicatePolicy === 'allow_multiple_update',
+      status: existingSubmission.status as 'submitted' | 'updated' | 'cancelled',
+      responses: mapFormAnswerRowsToResponses(
+        existingSubmission.form_submission_answers as FormAnswerRow[],
+      ),
+    },
+    error: null,
+  };
+}
+
+export async function handleMemberLookup(req: Request): Promise<Response> {
+  // Step 1: Validation and Gates
+  // 1.1 Build request context and CORS headers.
+  const guard = await useEdgeHook({
+    req,
+    functionName: 'member-lookup',
+    method: 'POST',
+    publicRateLimit: {
+      scope: 'member-lookup',
+      windowMs: RATE_LIMIT_PRESETS.memberLookup.windowMs,
+      maxHits: RATE_LIMIT_PRESETS.memberLookup.maxHits,
+    },
+  });
+
+  const corsHeaders = guard.corsHeaders;
+
+  if (!guard.valid) {
+    return guard.response;
+  }
+
+  try {
+    const parsedBody = await parseRequestBody(req, memberLookupRequestSchema);
+    if (!parsedBody.success) {
+      return sharedErrorResponse(corsHeaders, 400, parsedBody.error, parsedBody.details);
+    }
+
+    const { memberId, name, eventSlug, formSlug }: MemberLookupRequest = parsedBody.data;
+
+    // Infer lookup type from which field is provided
+    // Prefer memberId if both are provided; otherwise use name
+    const isIdLookup = Boolean(memberId?.trim());
+    const isNameLookup = !isIdLookup && Boolean(name?.trim());
+
+    const normalizedEventSlug = eventSlug;
+    const normalizedFormSlug = formSlug;
+
+    // 1.4 Create Supabase service-role client.
+    const supabase = guard.client;
+
+    // 1.5 Preload event context when eventSlug is provided.
+    let eventData: EventLookupRow | null = null;
+    let formData: FormLookupRow | null = null;
+
+    if (normalizedEventSlug) {
+      const eventResult = await getEventBySlug(supabase, normalizedEventSlug);
+
+      if (eventResult.error) {
+        return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup event', eventResult.error);
+      }
+
+      eventData = eventResult.data;
+    }
+
+    if (normalizedFormSlug) {
+      const formResult = await getFormBySlug(supabase, normalizedFormSlug);
+      if (formResult.error) {
+        return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup form', formResult.error);
+      }
+
+      formData = formResult.data;
+    }
+
+    // 1.6 Enforce event name-lookup policy before running name search.
+    if (isNameLookup && normalizedEventSlug) {
+      if (!eventData) {
+        return sharedSuccessResponse(
+          corsHeaders,
+          { profile: null, existing_registration: null, existing_submission: null },
+          200,
+        );
+      }
+
+      const eventMetadata = (eventData.metadata ?? {}) as Record<string, unknown>;
+      const allowNameLookup = eventMetadata.allow_name_lookup === true;
+      if (!allowNameLookup) {
+        return sharedSuccessResponse(
+          corsHeaders,
+          { profile: null, existing_registration: null, existing_submission: null },
+          200,
+        );
+      }
+    }
+
+    if (isNameLookup && normalizedFormSlug && !formData) {
+      return sharedSuccessResponse(
+        corsHeaders,
+        { profile: null, existing_registration: null, existing_submission: null },
+        200,
+      );
+    }
+
+    // Step 2: Member Lookup
+    // 2.1 Lookup member by member_id or name/nickname.
+    // For ID lookups, automatically detect and convert Big-Endian RFID hex input to decimal.
+    const searchValue = isIdLookup ? tryConvertRfidInput(memberId!.trim()) : name!.trim();
+    let filteredData: UserLookupRow | null = null;
+
+    if (isIdLookup) {
+      const { data } = await supabase
+        .from('users')
+        .select(
+          'id, member_id, avatar_object_key, role, category, full_name, nickname, first_name, last_name',
+        )
+        .eq('is_active', true)
+        .eq('member_id', searchValue)
+        .maybeSingle();
+      filteredData = data;
+    } else {
+      const normalizedSearchValue = normalizeName(searchValue);
+      const lookupResult = await findUserByNameOrNickname(supabase, normalizedSearchValue);
+      if (lookupResult.error) {
+        console.error('Query error:', lookupResult.error);
+        return sharedErrorResponse(corsHeaders, 500, 'Failed to lookup member', lookupResult.error);
+      }
+      filteredData = lookupResult.data;
+    }
+
+    // 2.2 Map DB row to API profile shape and early-return when no profile/event.
+    const memberToken = filteredData
+      ? await createMemberLookupToken(filteredData.member_id, normalizedEventSlug ?? null)
+      : null;
+
+    if (filteredData && !memberToken) {
+      return sharedErrorResponse(corsHeaders, 500, 'Failed to issue member lookup token');
+    }
+
+    const profile = toProfile(filteredData, memberToken);
+
+    if (!profile || !filteredData || (!normalizedEventSlug && !normalizedFormSlug)) {
+      return sharedSuccessResponse(
+        corsHeaders,
+        { profile, existing_registration: null, existing_submission: null },
+        200,
+      );
+    }
+
+    if (normalizedFormSlug) {
+      if (!formData) {
+        return sharedSuccessResponse(
+          corsHeaders,
+          { profile, existing_registration: null, existing_submission: null },
+          200,
+        );
+      }
+
+      const submissionResult = await getExistingSubmissionState(
+        supabase,
+        formData.id,
+        filteredData.id,
+        formData.duplicate_policy,
+      );
+
+      if (submissionResult.error) {
+        return sharedErrorResponse(
+          corsHeaders,
+          500,
+          'Failed to lookup existing form submission',
+          submissionResult.error.replace('submission_lookup:', ''),
+        );
+      }
+
+      return sharedSuccessResponse(
+        corsHeaders,
+        {
+          profile,
+          existing_registration: null,
+          existing_submission: submissionResult.data,
+        },
+        200,
+      );
+    }
+
+    if (!eventData) {
+      return sharedSuccessResponse(
+        corsHeaders,
+        { profile, existing_registration: null, existing_submission: null },
+        200,
+      );
+    }
+
+    // Step 3: Registration Lookup
+    // 3.1 Resolve registration outcome (not registered vs already registered).
+    const registrationResult = await getExistingRegistrationState(
+      supabase,
+      eventData.id,
+      filteredData.id,
+      eventData.duplicate_policy,
+    );
+
+    if (registrationResult.error) {
+      if (registrationResult.error.startsWith('registration_lookup:')) {
+        return sharedErrorResponse(
+          corsHeaders,
+          500,
+          'Failed to lookup existing registration',
+          registrationResult.error.replace('registration_lookup:', ''),
+        );
+      }
+
+      return sharedErrorResponse(
+        corsHeaders,
+        500,
+        'Failed to load registration answers',
+        registrationResult.error.replace('answers_lookup:', ''),
+      );
+    }
+
+    // 3.2 Return successful lookup with registration state (or null when not registered).
+    return sharedSuccessResponse(
+      corsHeaders,
+      {
+        profile,
+        existing_registration: registrationResult.data,
+        existing_submission: null,
+      },
+      200,
+    );
+  } catch (error) {
+    // 3.3 Return safe internal error response for unexpected failures.
+    console.error('Unexpected error:', error);
+
+    return sharedErrorResponse(corsHeaders, 500, 'Internal server error');
+  }
+}

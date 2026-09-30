@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { parseIsoDate } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
@@ -46,7 +46,6 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
   return tool({
     description:
       'Retrieve events from the database with their schedule, location, registration status, registration counts (member_registrations, public_registrations, total_registrations), and app URLs (admin_url, public_url). Provide targetStartDate and targetEndDate for precise date-range filtering, or use timeframe for a directional filter.',
-    parameters: schema,
     inputSchema: schema,
     execute: async ({
       status,

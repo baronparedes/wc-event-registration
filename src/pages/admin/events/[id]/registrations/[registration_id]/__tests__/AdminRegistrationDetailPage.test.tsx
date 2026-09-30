@@ -424,7 +424,7 @@ describe('AdminRegistrationDetailPage', () => {
     });
   });
 
-  it('renders the back to registrations link', () => {
+  it('does not render a back to registrations link', () => {
     mockUseRegistrationDetailQuery.mockReturnValue({
       data: {
         registration: {
@@ -449,9 +449,7 @@ describe('AdminRegistrationDetailPage', () => {
     });
 
     renderWithRouter();
-    const link = screen.getByRole('link', { name: /Back to Registrations/i });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/admin/events/event-1/registrations');
+    expect(screen.queryByRole('link', { name: /Back to Registrations/i })).not.toBeInTheDocument();
   });
 
   it('surfaces error.message for Error objects from cancel/reactivate', async () => {

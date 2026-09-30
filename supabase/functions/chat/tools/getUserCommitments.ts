@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import { formatDate, getPhNow, getSundaysInRange, resolveDateRange } from './timeframes.ts';
@@ -41,7 +41,7 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
   return tool({
     description:
       'Retrieve total, per-role, and per-Sunday service breakdowns with volunteer user tokens for volunteers committed within the specified date range, optionally filtered by role or user tokens. Defaults to the coming Sunday when no dates are provided. Each breakdown includes 9AM, 12NN, and 3PM counts and volunteer tokens. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use these volunteer tokens when asked who is scheduled or to list the volunteers. This tool NEVER returns PII like names or emails.',
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ role, userTokens, targetStartDate, targetEndDate, sunday_availability }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'coming_sunday', now);

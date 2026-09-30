@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import type { ToolContext } from './types.ts';
 
@@ -35,8 +35,8 @@ export function createGetAdminRoutesTool({ requestId }: ToolContext) {
   return tool({
     description:
       'Resolve canonical admin route URLs for links in assistant responses. Use this instead of inventing or guessing admin paths.',
-    parameters: schema,
-    execute: async ({ route, id }) => {
+    inputSchema: schema,
+    execute: ({ route, id }) => {
       console.log('[chat:tool:getAdminRoutes] Resolving route', { route, id, requestId });
 
       const paths: Record<typeof route, string> = {

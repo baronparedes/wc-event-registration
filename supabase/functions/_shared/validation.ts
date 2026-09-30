@@ -1,4 +1,4 @@
-import { z } from 'https://esm.sh/zod@3.25.76';
+import { z } from 'zod';
 
 export { z };
 
@@ -79,7 +79,7 @@ export interface EventFieldWithValidation {
   field_type: string;
   is_required: boolean;
   options: { label: string; value: string }[];
-  validation_rules: Record<string, unknown>;
+  validation_rules: object;
 }
 
 export interface StoredAnswerWithOptionValue {
@@ -359,7 +359,7 @@ export function buildFieldOptionCapacityWorkItems(
     const fieldKey = field.field_key;
     const capacityContext = buildOptionCapacityContext(
       field.field_type,
-      field.validation_rules,
+      field.validation_rules as Record<string, unknown>,
       responses[fieldKey],
     );
 
@@ -526,48 +526,52 @@ function buildFieldSchema(field: EventFieldWithValidation, label: string): z.Zod
 
   // Text-like fields
   if (type === 'text' || type === 'textarea' || type === 'email' || type === 'phone') {
-    schema = z.string();
+    let textSchema = z.string();
 
     const minLength = rules.min_length as number | undefined;
     if (minLength !== undefined) {
-      schema = schema.min(minLength, `${label} must be at least ${minLength} characters.`);
+      textSchema = textSchema.min(minLength, `${label} must be at least ${minLength} characters.`);
     }
 
     const maxLength = rules.max_length as number | undefined;
     if (maxLength !== undefined) {
-      schema = schema.max(maxLength, `${label} must be at most ${maxLength} characters.`);
+      textSchema = textSchema.max(maxLength, `${label} must be at most ${maxLength} characters.`);
     }
 
     if (rules.pattern && typeof rules.pattern === 'string') {
       try {
         const regex = new RegExp(rules.pattern);
-        schema = schema.regex(regex, `${label} format is invalid.`);
+        textSchema = textSchema.regex(regex, `${label} format is invalid.`);
       } catch {
         // Ignore invalid regex patterns
       }
     }
 
     if (type === 'email') {
-      schema = schema.email(`${label} must be a valid email address.`);
+      textSchema = textSchema.email(`${label} must be a valid email address.`);
     }
 
     if (type === 'phone') {
-      schema = schema.refine((val) => /\d/.test(val), `${label} must be a valid phone number.`);
+      schema = textSchema.refine((val) => /\d/.test(val), `${label} must be a valid phone number.`);
+    } else {
+      schema = textSchema;
     }
   }
   // Number field
   else if (type === 'number') {
-    schema = z.coerce.number();
+    let numberSchema = z.coerce.number();
 
     const min = rules.min as number | undefined;
     if (min !== undefined) {
-      schema = schema.min(min, `${label} must be at least ${min}.`);
+      numberSchema = numberSchema.min(min, `${label} must be at least ${min}.`);
     }
 
     const max = rules.max as number | undefined;
     if (max !== undefined) {
-      schema = schema.max(max, `${label} must be at most ${max}.`);
+      numberSchema = numberSchema.max(max, `${label} must be at most ${max}.`);
     }
+
+    schema = numberSchema;
   }
   // Single choice fields
   else if (type === 'select' || type === 'radio') {

@@ -1,6 +1,7 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+import { createClient } from '@supabase/supabase-js';
 
 import { HTTP_STATUS } from './constants.ts';
+import type { Database } from './database.types.ts';
 import { errorResponse } from './http.ts';
 import {
   type AdminAccountRole,
@@ -15,7 +16,7 @@ import {
 import { parseFunctionEnvironment, parseRequestBody, z } from './validation.ts';
 
 type CorsHeaders = Record<string, string>;
-type EdgeClient = ReturnType<typeof createClient>;
+type EdgeClient = ReturnType<typeof createClient<Database>>;
 
 type AdminRateLimitConfig = {
   scope: string;

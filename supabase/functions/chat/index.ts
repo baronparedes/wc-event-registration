@@ -1,5 +1,5 @@
-import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@^4.0.67';
-import { stepCountIs, streamText } from 'npm:ai@latest';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { stepCountIs, streamText } from 'ai';
 
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
@@ -66,8 +66,9 @@ Deno.serve(async (req) => {
     lastMessageRole: messages[messages.length - 1]?.role,
   });
 
-  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GOOGLE_GENERATIVE_AI_API_KEY');
-  const model = Deno.env.get('GOOGLE_AI_MODEL') || 'gemini-3.5-flash-lite';
+  const apiKey =
+    Deno.env.get('GOOGLE_API_KEY') ?? Deno.env.get('GOOGLE_GENERATIVE_AI_API_KEY') ?? undefined;
+  const model = Deno.env.get('GOOGLE_AI_MODEL') ?? 'gemini-3.5-flash-lite';
 
   if (!apiKey) {
     console.error('[chat] GOOGLE_API_KEY environment variable is not configured', {
@@ -92,13 +93,11 @@ Deno.serve(async (req) => {
       messages,
       tools,
       stopWhen: stepCountIs(5),
-      maxSteps: 5,
       onStepFinish: (step) => {
         console.log('[chat] Step finished', {
           requestId,
-          stepType: step.stepType,
           finishReason: step.finishReason,
-          toolCalls: step.toolCalls?.map((tc) => ({ name: tc.toolName, args: tc.args })),
+          toolCalls: step.toolCalls?.map((toolCall) => toolCall.toolName),
           textLength: step.text?.length ?? 0,
         });
       },
@@ -111,8 +110,8 @@ Deno.serve(async (req) => {
           finishReason,
           responseLength: text.length,
           toolsExecuted,
-          promptTokens: usage?.promptTokens,
-          completionTokens: usage?.completionTokens,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
           totalTokens: usage?.totalTokens,
         });
       },

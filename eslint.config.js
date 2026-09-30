@@ -90,4 +90,10 @@ export default defineConfig([
       'no-restricted-syntax': ['error', ...jsxConditionalRestrictions, ...testDataRestrictions],
     },
   },
+  {
+    files: ['supabase/**/*.{ts,tsx}'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+    },
+  },
 ]);

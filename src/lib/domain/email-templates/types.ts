@@ -13,7 +13,9 @@ export type SaveEmailTemplateInput = {
 export type EnqueueEventPayload = {
   event_type: string;
   recipient: string;
-  template_slug: string;
+  template_slug?: string;
+  subject?: string;
+  text?: string;
   metadata: Record<string, unknown>;
   idempotency_key?: string;
 };

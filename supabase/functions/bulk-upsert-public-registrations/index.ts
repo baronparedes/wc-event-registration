@@ -2,26 +2,14 @@ import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, successResponse } from '@/shared/http.ts';
 import { logAdminAction } from '@/shared/security.ts';
-import { z } from '@/shared/validation.ts';
 
-const bulkRowSchema = z.object({
-  first_name: z.string().trim().min(1, 'first_name is required'),
-  last_name: z.string().trim().min(1, 'last_name is required'),
-  nickname: z.string().trim().optional(),
-  email: z.string().trim().email('email must be a valid email address'),
-  phone: z.string().trim().optional(),
-  public_registration_id: z.string().trim().optional(),
-  answers: z.record(z.string(), z.unknown()),
-});
-
-const requestSchema = z.object({
-  event_id: z.string().uuid('event_id must be a valid UUID'),
-  rows: z.array(bulkRowSchema).min(1, 'rows must include at least one item'),
-  uploaded_field_keys: z.array(z.string()).optional(),
-});
-
-type RequestPayload = z.infer<typeof requestSchema>;
-type BulkRow = RequestPayload['rows'][number];
+import {
+  type BulkRow,
+  type RequestPayload,
+  findDuplicateEmailIndexes,
+  requestSchema,
+  toPublicRegistrationRpcRow,
+} from './utils.ts';
 
 type EventFieldRow = {
   id: string;
@@ -458,21 +446,15 @@ Deno.serve(async (req) => {
     );
     const targetFields = safeFields.filter((field) => requestedFieldKeySet.has(field.field_key));
 
-    const emailCounts = new Map<string, number>();
-    rows.forEach((row) => {
-      const key = row.email.trim().toLowerCase();
-      emailCounts.set(key, (emailCounts.get(key) ?? 0) + 1);
-    });
+    const duplicateEmailIndexes = findDuplicateEmailIndexes(rows);
 
     const errors: string[] = [];
-    type ResolvedRow = { rowIndex: number; emailKey: string; row: BulkRow };
+    type ResolvedRow = { rowIndex: number; row: BulkRow };
     const resolvedRows: ResolvedRow[] = [];
 
     rows.forEach((row, index) => {
       const rowNumber = index + 2;
-      const emailKey = row.email.trim().toLowerCase();
-
-      if ((emailCounts.get(emailKey) ?? 0) > 1) {
+      if (duplicateEmailIndexes.has(index)) {
         errors.push(`Row ${rowNumber}: email appears multiple times in this CSV batch.`);
         return;
       }
@@ -484,7 +466,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      resolvedRows.push({ rowIndex: index, emailKey, row });
+      resolvedRows.push({ rowIndex: index, row });
     });
 
     if (errors.length > 0) {
@@ -524,11 +506,7 @@ Deno.serve(async (req) => {
         p_event_id: event_id,
         p_rows: resolvedRows.map(({ rowIndex, row }) => ({
           row_index: rowIndex,
-          first_name: row.first_name.trim(),
-          last_name: row.last_name.trim(),
-          nickname: row.nickname?.trim() ? row.nickname.trim() : null,
-          email: row.email.trim(),
-          phone: row.phone?.trim() ? row.phone.trim() : null,
+          ...toPublicRegistrationRpcRow(row),
         })),
         p_field_ids: targetFields.map((field) => field.id),
         p_answers: preparedAnswers.map((answer) => ({

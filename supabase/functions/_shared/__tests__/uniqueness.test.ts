@@ -1,11 +1,11 @@
-import { assertEquals } from 'jsr:@std/assert@1';
+import { assertEquals } from '@std/assert';
 
 import {
   type UniquenessCandidateField,
   type UniquenessComponentField,
   resolveCompoundScopeKey,
   selectUniquenessComponentFields,
-} from './uniqueness.ts';
+} from '../uniqueness.ts';
 
 const baseField = {
   field_type: 'text',

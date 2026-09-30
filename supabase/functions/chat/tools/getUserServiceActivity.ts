@@ -1,5 +1,5 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
 
 import { getPrimaryRole, isSpecificRole, matchesPrimaryRole } from './roles.ts';
 import { formatDate, getPhNow, resolveDateRange } from './timeframes.ts';
@@ -57,7 +57,7 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
   return tool({
     description:
       "Determine a user's service attendance check-in activity within a specific date range, optionally filtered by role or user tokens. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Secondary roles (after '/') are ignored for role filtering and reporting; only the primary role (before '/') is evaluated. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
-    parameters: schema,
+    inputSchema: schema,
     execute: async ({ activityType, role, userTokens, targetStartDate, targetEndDate }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);

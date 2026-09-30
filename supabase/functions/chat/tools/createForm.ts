@@ -1,5 +1,7 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
+
+import type { Database } from '@/shared/database.types.ts';
 
 import type { ToolContext } from './types.ts';
 
@@ -59,7 +61,7 @@ const formFieldSchema = z.object({
       'List of selectable options for choice types (select, radio, checkbox, multi_select).',
     ),
   validation_rules: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe(
       'Optional validation rules, e.g. visibility_rule: { depends_on_field_key, equals_value }, min_length, max_length.',
@@ -110,7 +112,6 @@ export function createCreateFormTool({ client, requestId, userId }: ToolContext)
   return tool({
     description:
       'Create a new non-event form in the database as a draft, with optional dynamic questionnaire fields. IMPORTANT: You MUST first present the proposed form details to the administrator in chat and receive their explicit confirmation before calling this tool. Returns the newly created form ID and administrative link.',
-    parameters: schema,
     inputSchema: schema,
     execute: async ({
       title,
@@ -233,7 +234,11 @@ export function createCreateFormTool({ client, requestId, userId }: ToolContext)
           display_order: index + 1,
         }));
 
-        const { error: fieldsError } = await client.from('form_fields').insert(formFieldsToInsert);
+        const { error: fieldsError } = await client
+          .from('form_fields')
+          .insert(
+            formFieldsToInsert as unknown as Database['public']['Tables']['form_fields']['Insert'][],
+          );
 
         if (fieldsError) {
           console.error('[chat:tool:createForm] Error inserting form fields:', fieldsError);

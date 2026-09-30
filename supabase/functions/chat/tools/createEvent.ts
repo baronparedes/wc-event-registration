@@ -1,5 +1,7 @@
-import { tool } from 'npm:ai@latest';
-import { z } from 'npm:zod';
+import { tool } from 'ai';
+import { z } from 'chat-zod';
+
+import type { Database } from '@/shared/database.types.ts';
 
 import type { ToolContext } from './types.ts';
 
@@ -100,7 +102,7 @@ const eventFieldSchema = z.object({
       'List of selectable options for choice types (select, radio, checkbox, multi_select).',
     ),
   validation_rules: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe(
       'Optional validation rules, e.g. visibility_rule: { depends_on_field_key, equals_value }, min_length, max_length, max_slots.',
@@ -172,7 +174,6 @@ export function createCreateEventTool({ client, requestId, userId }: ToolContext
   return tool({
     description:
       'Create a new Welcome Center event in the database as a draft, with optional dynamic registration questions/fields. IMPORTANT: You MUST first present the proposed event details to the administrator in chat and receive their explicit confirmation before calling this tool. Returns the newly created event ID and administrative link.',
-    parameters: schema,
     inputSchema: schema,
     execute: async ({
       title,
@@ -320,7 +321,9 @@ export function createCreateEventTool({ client, requestId, userId }: ToolContext
 
         const { error: fieldsError } = await client
           .from('event_fields')
-          .insert(eventFieldsToInsert);
+          .insert(
+            eventFieldsToInsert as unknown as Database['public']['Tables']['event_fields']['Insert'][],
+          );
 
         if (fieldsError) {
           console.error('[chat:tool:createEvent] Error inserting event fields:', fieldsError);

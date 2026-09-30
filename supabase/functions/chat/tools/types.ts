@@ -1,9 +1,11 @@
-import type { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+import type { createClient } from '@supabase/supabase-js';
 
-export type EdgeClient = ReturnType<typeof createClient>;
+import type { Database } from '@/shared/database.types.ts';
+
+export type EdgeClient = ReturnType<typeof createClient<Database>>;
 
 export type ToolContext = {
   client: EdgeClient;
   requestId: string;
-  userId?: string;
+  userId?: string | null;
 };
