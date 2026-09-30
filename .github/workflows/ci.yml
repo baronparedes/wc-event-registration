@@ -23,6 +23,11 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - name: Pin npm
         run: npm i -g npm@10.9.2 && npm --version
 
