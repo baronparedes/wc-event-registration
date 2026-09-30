@@ -23,7 +23,7 @@
     "test:agent": "vitest run --reporter=agent --exclude \"src/__tests__/integration.test.ts\"",
     "test:ci": "npm run test:coverage",
     "test:edge": "cd supabase/functions && deno test -A",
-    "test:edge:coverage": "cd supabase/functions && deno test -A --coverage=../../coverage-edge --coverage-raw-data-only --clean && deno coverage ../../coverage-edge --html && deno coverage ../../coverage-edge --lcov --output=../../coverage-edge/lcov.info",
+    "test:edge:coverage": "cd supabase/functions && deno test -A --coverage=../../coverage-edge --coverage-raw-data-only --clean && deno coverage ../../coverage-edge --include='supabase/functions/' && deno coverage ../../coverage-edge --html",
     "check:edge": "deno check --config supabase/functions/deno.json supabase/functions/**/*.ts",
     "lint:edge": "deno lint --config supabase/functions/deno.json supabase/functions",
     "test:supabase": "supabase test db && npm run test:edge",
