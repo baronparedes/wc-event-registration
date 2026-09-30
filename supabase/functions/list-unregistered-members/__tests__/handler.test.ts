@@ -41,10 +41,7 @@ function buildRequest(body: unknown, authenticated = true) {
   });
 }
 
-function mockFetch(options: {
-  rpcResult?: unknown;
-  rpcError?: { code: string; message: string };
-}) {
+function mockFetch(options: { rpcResult?: unknown; rpcError?: { code: string; message: string } }) {
   const originalFetch = globalThis.fetch;
   const rpcCalls: Array<{ url: URL; body: string }> = [];
 
