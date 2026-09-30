@@ -1,5 +1,4 @@
-## 2026-09-29 - Information Leakage in Supabase Edge Functions Error Responses
-
-**Vulnerability:** Public Supabase Edge functions (`get-public-form`, `get-public-event-listing`, `get-public-event`, `get-public-event-fields`, `get-public-forms`, `get-public-form-fields`) were inadvertently passing raw internal `error.message` strings directly to the client within HTTP 500 error responses.
-**Learning:** Returning unhandled database or system errors to the client exposes underlying architectural details, database schemas, and potential unhandled states which could be leveraged for targeted attacks.
-**Prevention:** To avoid this in the future, internal errors must always be sanitized at the edge. Detailed errors should only be logged internally using `console.error` and generic, non-descriptive error messages should be returned to the client using `sharedErrorResponse`.
+## 2025-02-21 - Explicit XSS Protection in ReactMarkdown
+**Vulnerability:** Potential XSS via malicious links (e.g., `javascript:alert(1)`) if `urlTransform` defaults are accidentally overridden or explicitly removed.
+**Learning:** While `react-markdown` applies `defaultUrlTransform` internally by default to strip unsafe protocols, explicitly defining `urlTransform={defaultUrlTransform}` provides defense-in-depth and prevents future regressions if configuration defaults change or are unknowingly merged incorrectly.
+**Prevention:** Always explicitly pass `urlTransform={defaultUrlTransform}` alongside `remarkPlugins` and `components` when configuring `ReactMarkdown` instances across the application.

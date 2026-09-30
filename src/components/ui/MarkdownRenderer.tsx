@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { twMerge } from 'tailwind-merge';
 
@@ -31,6 +31,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        urlTransform={defaultUrlTransform}
         components={{
           a: ({ href, children, ...props }) => {
             const isExternal = href?.startsWith('http') || href?.startsWith('//');

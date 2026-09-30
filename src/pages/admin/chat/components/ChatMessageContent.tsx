@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 
 import { Check, Copy, ExternalLink } from 'lucide-react';
-import Markdown, { type Components } from 'react-markdown';
+import Markdown, { type Components, defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { useResolveUserTokensQuery } from '@/hooks/domain/chat';
@@ -150,7 +150,11 @@ export const ChatMessageContent = memo(function ChatMessageContent({
 
   return (
     <div className="text-sm text-text space-y-2">
-      <Markdown remarkPlugins={REMARK_PLUGINS} components={MARKDOWN_COMPONENTS}>
+      <Markdown
+        remarkPlugins={REMARK_PLUGINS}
+        components={MARKDOWN_COMPONENTS}
+        urlTransform={defaultUrlTransform}
+      >
         {processedContent}
       </Markdown>
     </div>
