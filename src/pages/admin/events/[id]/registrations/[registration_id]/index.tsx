@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink, AlertBanner, RegistrationStatusBadge, SectionCard } from '@/components/ui';
+import { AlertBanner, RegistrationStatusBadge, SectionCard } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ColorSwatchDisplay } from '@/components/ui/ColorSwatchDisplay';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -231,12 +231,7 @@ export function AdminRegistrationDetailPage() {
           ]}
           title="Manage Registration"
           navLinks={
-            <div className="flex flex-wrap items-center justify-end gap-1.5">
-              <EventNavigationLinks eventId={eventId} currentSection="registrations-detail" />
-              <ActionLink to={toRoute('adminRegistrations', { id: eventId })}>
-                Back to Registrations
-              </ActionLink>
-            </div>
+            <EventNavigationLinks eventId={eventId} currentSection="registrations-detail" />
           }
           actions={pageActions}
         />

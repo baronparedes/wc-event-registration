@@ -1605,6 +1605,18 @@ export type Database = {
           results: Json;
         }[];
       };
+      list_unregistered_members: {
+        Args: {
+          p_event_id: string;
+          p_offset: number;
+          p_page_size: number;
+          p_search_term: string | null;
+        };
+        Returns: {
+          items: Json;
+          total_count: number;
+        }[];
+      };
       list_verified_auth_users: {
         Args: { p_search?: string };
         Returns: {
