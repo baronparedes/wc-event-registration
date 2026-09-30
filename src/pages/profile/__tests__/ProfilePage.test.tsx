@@ -8,11 +8,12 @@ import { ROUTE_PATHS } from '@/config/constants';
 import { ProfilePage } from '@/pages/profile';
 import { resolveProfileTab } from '@/pages/profile/utils';
 
-const { mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery, mockUseAdminAuthQuery } = vi.hoisted(() => ({
-  mockUseCurrentProfileQuery: vi.fn(),
-  mockUseMemberEventHistoryQuery: vi.fn(),
-  mockUseAdminAuthQuery: vi.fn(),
-}));
+const { mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery, mockUseAdminAuthQuery } =
+  vi.hoisted(() => ({
+    mockUseCurrentProfileQuery: vi.fn(),
+    mockUseMemberEventHistoryQuery: vi.fn(),
+    mockUseAdminAuthQuery: vi.fn(),
+  }));
 
 vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
@@ -93,7 +94,11 @@ const member = makeAdminMember({
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseAdminAuthQuery.mockReturnValue({ data: { session: true }, isLoading: false, isError: false });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { session: true },
+      isLoading: false,
+      isError: false,
+    });
     mockUseCurrentProfileQuery.mockReturnValue({ data: member, isLoading: false, isError: false });
     mockUseMemberEventHistoryQuery.mockReturnValue({ data: [], isLoading: false, isError: false });
   });
@@ -105,7 +110,11 @@ describe('ProfilePage', () => {
   });
 
   it('redirects to login page when no session exists', () => {
-    mockUseAdminAuthQuery.mockReturnValue({ data: { session: null }, isLoading: false, isError: false });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { session: null },
+      isLoading: false,
+      isError: false,
+    });
     renderPage();
     expect(screen.getByText('Login Page Destination')).toBeInTheDocument();
   });
