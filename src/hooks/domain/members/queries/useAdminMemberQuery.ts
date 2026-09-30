@@ -70,6 +70,7 @@ export function useAdminMemberQuery(
         created_at: member.created_at,
         updated_at: member.updated_at,
         last_activity,
+        has_account: member.has_account,
       } satisfies AdminMember;
     },
     staleTime: QUERY_STALE_TIME_MS.detail,
