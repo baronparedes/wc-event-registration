@@ -1,4 +1,20 @@
 -- Local-only fixtures should live in supabase/seeds/*.local.sql, which are ignored from git and only applied in local environments.
+-- Local runs never want scheduled jobs firing; unschedule everything pg_cron picked up from migrations.
+do $$
+declare
+  v_job record;
+begin
+  for v_job in select jobname from cron.job loop
+    begin
+      perform cron.unschedule(v_job.jobname);
+    exception when others then
+      null;
+    end;
+  end loop;
+exception when others then
+  null;
+end $$;
+
 -- Base service layout with tables 1 to 100
 do $$
 declare
