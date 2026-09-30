@@ -1,10 +1,11 @@
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Badge } from '@/components/ui';
 import { Avatar } from '@/components/ui/Avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { formatDateTime } from '@/lib/infrastructure';
@@ -17,8 +18,10 @@ import { resolveProfileTab } from './utils';
 
 export function ProfilePage() {
   const profileQuery = useCurrentProfileQuery();
+  const authQuery = useAdminAuthQuery();
   const isMobile = useIsMobileViewport();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const member = profileQuery.data;
 
   const activeTab = resolveProfileTab(searchParams.get('tab'));
@@ -40,14 +43,25 @@ export function ProfilePage() {
     );
   };
 
-  if (profileQuery.isLoading) {
+  if (profileQuery.isLoading || authQuery.isLoading) {
     return (
       <AdminPageShell>
-        <AdminPageShell.Content isLoading={true} loadingMessage={UI_MESSAGES.loading.member}>
+        <AdminPageShell.Content
+          isLoading={true}
+          loadingMessage={authQuery.isLoading ? 'Authenticating...' : UI_MESSAGES.loading.member}
+        >
           {null}
         </AdminPageShell.Content>
       </AdminPageShell>
     );
+  }
+
+  const hasSession = Boolean(authQuery.data?.session);
+
+  if (!hasSession) {
+    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
+    const urlParams = new URLSearchParams({ redirect: redirectTarget });
+    return <Navigate to={`${ROUTE_PATHS.login}?${urlParams.toString()}`} replace />;
   }
 
   if (profileQuery.isError || !member) {

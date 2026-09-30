@@ -85,12 +85,13 @@ export function ServiceAttendanceHistoryTab({
   const isLoadingAttendance = isAttendanceLoading;
 
   const memberScheduleQuery = useGetMemberExcusedSchedule(viewYear, viewMonthIndex, memberId);
+  const hasExcusedData = memberScheduleQuery.data !== undefined;
 
   const isExcusedLoading =
-    memberScheduleQuery.isLoading ||
-    memberScheduleQuery.isPlaceholderData ||
-    memberScheduleQuery.isFetching ||
-    memberScheduleQuery.data === undefined;
+    !hasExcusedData &&
+    (memberScheduleQuery.isLoading ||
+      memberScheduleQuery.isPlaceholderData ||
+      memberScheduleQuery.isFetching);
 
   const excusedRecords = useMemo(() => memberScheduleQuery.data || [], [memberScheduleQuery.data]);
 

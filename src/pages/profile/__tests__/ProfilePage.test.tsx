@@ -8,10 +8,20 @@ import { ROUTE_PATHS } from '@/config/constants';
 import { ProfilePage } from '@/pages/profile';
 import { resolveProfileTab } from '@/pages/profile/utils';
 
-const { mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery } = vi.hoisted(() => ({
-  mockUseCurrentProfileQuery: vi.fn(),
-  mockUseMemberEventHistoryQuery: vi.fn(),
-}));
+const { mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery, mockUseAdminAuthQuery } =
+  vi.hoisted(() => ({
+    mockUseCurrentProfileQuery: vi.fn(),
+    mockUseMemberEventHistoryQuery: vi.fn(),
+    mockUseAdminAuthQuery: vi.fn(),
+  }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  };
+});
 
 vi.mock('@/components/ui/Avatar', () => ({
   Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
@@ -65,6 +75,7 @@ function renderPage(initialEntry: string = ROUTE_PATHS.profile) {
           }
         />
         <Route path={ROUTE_PATHS.home} element={<div>Home Page Destination</div>} />
+        <Route path={ROUTE_PATHS.login} element={<div>Login Page Destination</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -83,6 +94,11 @@ const member = makeAdminMember({
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { session: true },
+      isLoading: false,
+      isError: false,
+    });
     mockUseCurrentProfileQuery.mockReturnValue({ data: member, isLoading: false, isError: false });
     mockUseMemberEventHistoryQuery.mockReturnValue({ data: [], isLoading: false, isError: false });
   });
@@ -91,6 +107,16 @@ describe('ProfilePage', () => {
     mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: true, isError: false });
     renderPage();
     expect(screen.getByText('Loading member...')).toBeInTheDocument();
+  });
+
+  it('redirects to login page when no session exists', () => {
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { session: null },
+      isLoading: false,
+      isError: false,
+    });
+    renderPage();
+    expect(screen.getByText('Login Page Destination')).toBeInTheDocument();
   });
 
   it('redirects to home page when profile query returns null or error', () => {
