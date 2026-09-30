@@ -1,4 +1,4 @@
-import { POSTGRES_ERROR_CODES, RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
+import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { isRegistrationOpenNow } from '@/shared/registrationAvailability.ts';
 import { resolveCompoundScopeKey, selectUniquenessComponentFields } from '@/shared/uniqueness.ts';
@@ -14,17 +14,17 @@ import {
   normalizePrimaryRoleValue,
   parseRequestBody,
   validateFieldValue,
-  z,
 } from '@/shared/validation.ts';
 
-const submitRegistrationRequestSchema = z.object({
-  event_slug: z.string().trim().min(1, 'event_slug is required'),
-  member_id: z.string().trim().min(1, 'member_id is required'),
-  responses: z.record(z.string(), z.unknown()),
-  idempotency_key: z.string().trim().min(1, 'idempotency_key is required'),
-});
-
-type SubmitRegistrationRequest = z.infer<typeof submitRegistrationRequestSchema>;
+import {
+  type PostgrestErrorLike,
+  type SubmitRegistrationRequest,
+  isRegistrationIdempotencyConflict,
+  isRegistrationUniqueConflict,
+  resolveIdempotencyRecovery,
+  resolveRegistrationScopeKey,
+  submitRegistrationRequestSchema,
+} from './utils.ts';
 
 interface SubmitRegistrationSuccess {
   success: true;
@@ -39,13 +39,6 @@ interface SubmitRegistrationError {
   error: string;
   error_code?: string;
   errors?: FieldValidationError[];
-}
-
-interface PostgrestErrorLike {
-  code?: string | null;
-  message?: string | null;
-  details?: string | null;
-  hint?: string | null;
 }
 
 interface RegistrationAnswerRow {
@@ -80,32 +73,6 @@ interface EventFieldRow {
 
 function extractMemberRole(role: string | null): string | null {
   return normalizePrimaryRoleValue(role);
-}
-
-const REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT = 'registrations_event_user_unique_idx';
-const REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT =
-  'registrations_event_idempotency_unique_idx';
-
-function resolveRegistrationScopeKey(duplicatePolicy: string, idempotencyKey: string): string {
-  return duplicatePolicy === 'allow_multiple' || duplicatePolicy === 'allow_multiple_update'
-    ? idempotencyKey
-    : 'primary';
-}
-
-function isUniqueConstraintError(error: PostgrestErrorLike | null, constraint: string): boolean {
-  if (!error || error.code !== POSTGRES_ERROR_CODES.uniqueViolation) {
-    return false;
-  }
-
-  const combinedMessage = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`;
-  return combinedMessage.includes(constraint);
-}
-
-function isRegistrationUniqueConflict(error: PostgrestErrorLike | null): boolean {
-  return (
-    isUniqueConstraintError(error, REGISTRATION_EVENT_USER_UNIQUE_CONSTRAINT) ||
-    isUniqueConstraintError(error, REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT)
-  );
 }
 
 Deno.serve(async (req) => {
@@ -363,9 +330,8 @@ Deno.serve(async (req) => {
     if (!createError && newReg) {
       registrationId = newReg.id;
     } else if (createError && isRegistrationUniqueConflict(createError as PostgrestErrorLike)) {
-      const isIdempotencyConflict = isUniqueConstraintError(
+      const isIdempotencyConflict = isRegistrationIdempotencyConflict(
         createError as PostgrestErrorLike,
-        REGISTRATION_EVENT_IDEMPOTENCY_UNIQUE_CONSTRAINT,
       );
 
       if (isIdempotencyConflict) {
@@ -391,11 +357,12 @@ Deno.serve(async (req) => {
           );
         }
 
-        if (existingByIdempotency?.id && existingByIdempotency.user_id === userId) {
-          registrationId = existingByIdempotency.id;
-          status = existingByIdempotency.status === 'updated' ? 'updated' : 'submitted';
-          isNew = false;
-          shouldWriteAnswers = false;
+        const recovery = resolveIdempotencyRecovery(existingByIdempotency ?? null, userId);
+        if (recovery) {
+          registrationId = recovery.registrationId;
+          status = recovery.status;
+          isNew = recovery.isNew;
+          shouldWriteAnswers = recovery.shouldWriteAnswers;
         }
       }
 

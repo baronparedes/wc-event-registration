@@ -102,6 +102,7 @@ The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/
   - [`domain-hooks`](.agent/skills/domain-hooks/skill.md): Rules for authoring TanStack React Query hooks and direct Supabase client queries in `src/hooks/domain/`.
   - [`domain-logic`](.agent/skills/domain-logic/skill.md): Entity business rules, Hub sectioning, Sunday commitment triggers, and service attendance domain boundaries.
   - [`edge-functions`](.agent/skills/edge-functions/skill.md): Supabase Edge Function standards, Deno runtime conventions, security-definer patterns, and CORS configurations.
+  - [`edge-function-testing`](.agent/skills/edge-function-testing/SKILL.md): Incremental Deno unit, handler, and local-Supabase integration testing for Supabase Edge Functions.
   - [`chat-tools`](.agent/skills/chat-tools/SKILL.md): Guidelines for authoring chat tools in `supabase/functions/chat/tools/`, standardized timeframe schemas, and tool parameter validation.
   - [`background-jobs`](.agent/skills/background-jobs/skill.md): Asynchronous database job queues, email queues, retry patterns, and worker logic.
   - [`database-migrations`](.agent/skills/database-migrations/SKILL.md): Supabase SQL migration authoring rules, timestamp naming conventions, single responsibility decomposition, idempotent DDL/RLS patterns, and RPC signature preservation.
