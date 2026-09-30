@@ -14,6 +14,7 @@ type PushSender = (subscription: PushSubscription, payload: string) => Promise<v
 
 type PushReminderMessage = {
   msg_id: number;
+  read_ct: number;
   message: {
     user_id?: string;
     message?: string;
@@ -28,6 +29,10 @@ type PushSubscriptionRow = {
   auth_key: string;
   p256dh_key: string;
 };
+
+const MAX_PUSH_DELIVERY_ATTEMPTS = 5;
+const PUSH_QUEUE_BATCH_SIZE = 50;
+const PUSH_MESSAGE_CONCURRENCY = 5;
 
 export async function handleCronProcessPushReminders(
   req: Request,
@@ -56,20 +61,33 @@ export async function handleCronProcessPushReminders(
   }
 
   try {
-    const { error: genError } = await client.rpc('generate_upcoming_sunday_push_reminders');
-    if (genError) {
-      console.error('[cron-process-push-reminders] Failed to generate upcoming Sunday reminders', {
-        requestId,
-        error: genError,
-      });
-    }
-
     let totalProcessed = 0;
     const subscriptionsToDelete = new Set<string>();
 
+    const archiveAfterRetryLimit = async (message: PushReminderMessage, error: unknown) => {
+      if (message.read_ct < MAX_PUSH_DELIVERY_ATTEMPTS) {
+        return;
+      }
+
+      console.error('[cron-process-push-reminders] Retry limit reached; archiving failed message', {
+        messageId: message.msg_id,
+        attempts: message.read_ct,
+        error,
+      });
+      const { error: archiveError } = await client.rpc('archive_push_reminder', {
+        message_id: message.msg_id,
+      });
+      if (archiveError) {
+        console.error('[cron-process-push-reminders] Failed to archive exhausted message', {
+          messageId: message.msg_id,
+          error: archiveError,
+        });
+      }
+    };
+
     while (true) {
       const { data: messages, error: popError } = await client.rpc('pop_push_reminders', {
-        batch_size: 50,
+        batch_size: PUSH_QUEUE_BATCH_SIZE,
       });
 
       if (popError) {
@@ -84,71 +102,86 @@ export async function handleCronProcessPushReminders(
         break;
       }
 
-      const processPromises = (messages as PushReminderMessage[]).map(async (msg) => {
-        const payload = msg.message;
-        const messageId = msg.msg_id;
-        const userId = payload.user_id;
-        const notificationMessage = payload.message;
+      const pushMessages = messages as PushReminderMessage[];
+      for (let offset = 0; offset < pushMessages.length; offset += PUSH_MESSAGE_CONCURRENCY) {
+        const concurrentMessages = pushMessages.slice(offset, offset + PUSH_MESSAGE_CONCURRENCY);
+        const processPromises = concurrentMessages.map(async (msg) => {
+          const payload = msg.message;
+          const messageId = msg.msg_id;
+          const userId = payload.user_id;
+          const notificationMessage = payload.message;
 
-        if (!userId || !notificationMessage) {
-          console.warn('[cron-process-push-reminders] Invalid payload structure', payload);
-          await client.rpc('archive_push_reminder', { message_id: messageId });
-          return;
-        }
-
-        try {
-          const { data: subscriptions, error: subError } = await client
-            .from('user_push_subscriptions')
-            .select('id, endpoint, auth_key, p256dh_key')
-            .eq('user_id', userId)
-            .returns<PushSubscriptionRow[]>();
-
-          if (subError) {
-            console.error(
-              `[cron-process-push-reminders] Failed to fetch sub for user ${userId}`,
-              subError,
-            );
+          if (!userId || !notificationMessage) {
+            console.warn('[cron-process-push-reminders] Invalid payload structure', payload);
+            await client.rpc('archive_push_reminder', { message_id: messageId });
             return;
           }
 
-          if (subscriptions && subscriptions.length > 0) {
-            const pushPayload = JSON.stringify({
-              title: 'Service Reminder',
-              body: notificationMessage,
-              url: payload.target_url || payload.url || '/profile?tab=commitments',
-            });
+          try {
+            const { data: subscriptions, error: subError } = await client
+              .from('user_push_subscriptions')
+              .select('id, endpoint, auth_key, p256dh_key')
+              .eq('user_id', userId)
+              .returns<PushSubscriptionRow[]>();
 
-            const pushPromises = subscriptions.map((sub) => {
-              const pushSubscription = {
-                endpoint: sub.endpoint,
-                keys: {
-                  auth: sub.auth_key,
-                  p256dh: sub.p256dh_key,
-                },
-              };
-              return sendPushNotification(pushSubscription, pushPayload).catch((err: unknown) => {
-                const pushError = err as { statusCode?: number };
-                if (pushError.statusCode === 404 || pushError.statusCode === 410) {
-                  subscriptionsToDelete.add(sub.id);
-                } else {
-                  console.error(`Failed to push to sub ${sub.id}:`, err);
-                }
+            if (subError) {
+              console.error(
+                `[cron-process-push-reminders] Failed to fetch sub for user ${userId}`,
+                subError,
+              );
+              await archiveAfterRetryLimit(msg, subError);
+              return;
+            }
+
+            if (subscriptions && subscriptions.length > 0) {
+              const pushPayload = JSON.stringify({
+                title: 'Service Reminder',
+                body: notificationMessage,
+                url: payload.target_url || payload.url || '/profile?tab=commitments',
               });
-            });
 
-            await Promise.allSettled(pushPromises);
+              let deliveryFailed = false;
+              for (const sub of subscriptions) {
+                const pushSubscription = {
+                  endpoint: sub.endpoint,
+                  keys: {
+                    auth: sub.auth_key,
+                    p256dh: sub.p256dh_key,
+                  },
+                };
+                try {
+                  await sendPushNotification(pushSubscription, pushPayload);
+                } catch (err: unknown) {
+                  const pushError = err as { statusCode?: number };
+                  if (pushError.statusCode === 404 || pushError.statusCode === 410) {
+                    subscriptionsToDelete.add(sub.id);
+                  } else {
+                    deliveryFailed = true;
+                    console.error(`Failed to push to sub ${sub.id}:`, err);
+                  }
+                }
+              }
+
+              if (deliveryFailed) {
+                if (msg.read_ct >= MAX_PUSH_DELIVERY_ATTEMPTS) {
+                  await archiveAfterRetryLimit(msg, 'push delivery failed');
+                }
+                return;
+              }
+            }
+
+            await client.rpc('archive_push_reminder', { message_id: messageId });
+          } catch (innerError) {
+            console.error(
+              `[cron-process-push-reminders] Error processing message ${messageId}:`,
+              innerError,
+            );
+            await archiveAfterRetryLimit(msg, innerError);
           }
+        });
 
-          await client.rpc('archive_push_reminder', { message_id: messageId });
-        } catch (innerError) {
-          console.error(
-            `[cron-process-push-reminders] Error processing message ${messageId}:`,
-            innerError,
-          );
-        }
-      });
-
-      await Promise.allSettled(processPromises);
+        await Promise.allSettled(processPromises);
+      }
       totalProcessed += messages.length;
     }
 

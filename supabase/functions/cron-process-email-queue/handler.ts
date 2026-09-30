@@ -18,6 +18,7 @@ type EmailQueuePayload = {
 
 type EmailQueueMessage = {
   msg_id: number;
+  read_ct: number;
   message: EmailQueuePayload;
 };
 
@@ -45,6 +46,10 @@ type EmailQueueClient = {
     };
   };
 };
+
+const MAX_EMAIL_DELIVERY_ATTEMPTS = 5;
+const EMAIL_QUEUE_BATCH_SIZE = 50;
+const EMAIL_SEND_CONCURRENCY = 5;
 
 export async function handleCronProcessEmailQueue(req: Request): Promise<Response> {
   const hookResult = await useEdgeHook({
@@ -75,25 +80,29 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
   }
 
   try {
-    const { data: messages, error: popError } = await queueClient.rpc('pop_email_notifications', {
-      batch_size: 10,
-    });
-
-    if (popError) {
-      console.error('[cron-process-email-queue] Failed to pop messages', {
-        requestId,
-        error: popError,
-      });
-      return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Failed to read queue');
-    }
-
-    if (!messages || messages.length === 0) {
-      return jsonResponse(corsHeaders, { success: true, processed: 0 }, HTTP_STATUS.ok);
-    }
-
     let processedCount = 0;
+    const archiveAfterRetryLimit = async (message: EmailQueueMessage, error: unknown) => {
+      if (message.read_ct < MAX_EMAIL_DELIVERY_ATTEMPTS) {
+        return;
+      }
 
-    for (const msg of messages) {
+      console.error('[cron-process-email-queue] Retry limit reached; archiving failed message', {
+        messageId: message.msg_id,
+        attempts: message.read_ct,
+        error,
+      });
+      const { error: archiveError } = await queueClient.rpc('archive_email_notification', {
+        message_id: message.msg_id,
+      });
+      if (archiveError) {
+        console.error('[cron-process-email-queue] Failed to archive exhausted message', {
+          messageId: message.msg_id,
+          error: archiveError,
+        });
+      }
+    };
+
+    const processMessage = async (msg: EmailQueueMessage) => {
       const payload = msg.message;
       const messageId = msg.msg_id;
 
@@ -103,7 +112,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             `[cron-process-email-queue] Skipping unknown event_type: ${payload.event_type}`,
           );
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
-          continue;
+          return;
         }
 
         const resendBody: Record<string, unknown> = {
@@ -123,7 +132,8 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
               `[cron-process-email-queue] Template not found for slug: ${payload.template_slug}`,
               { error: templateError },
             );
-            continue;
+            await archiveAfterRetryLimit(msg, templateError ?? 'template not found');
+            return;
           }
 
           resendBody.template_id = template.resend_template_id;
@@ -137,7 +147,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         } else {
           console.error(`[cron-process-email-queue] Invalid message ${messageId}: no email body`);
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
-          continue;
+          return;
         }
 
         const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -155,7 +165,8 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             `[cron-process-email-queue] Resend API error for msg ${messageId}:`,
             errorBody,
           );
-          continue;
+          await archiveAfterRetryLimit(msg, errorBody);
+          return;
         }
 
         await queueClient.rpc('archive_email_notification', { message_id: messageId });
@@ -165,6 +176,30 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           `[cron-process-email-queue] Error processing message ${messageId}:`,
           innerError,
         );
+        await archiveAfterRetryLimit(msg, innerError);
+      }
+    };
+
+    while (true) {
+      const { data: messages, error: popError } = await queueClient.rpc('pop_email_notifications', {
+        batch_size: EMAIL_QUEUE_BATCH_SIZE,
+      });
+
+      if (popError) {
+        console.error('[cron-process-email-queue] Failed to pop messages', {
+          requestId,
+          error: popError,
+        });
+        return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'Failed to read queue');
+      }
+
+      if (!messages || messages.length === 0) {
+        break;
+      }
+
+      for (let offset = 0; offset < messages.length; offset += EMAIL_SEND_CONCURRENCY) {
+        const concurrentMessages = messages.slice(offset, offset + EMAIL_SEND_CONCURRENCY);
+        await Promise.allSettled(concurrentMessages.map(processMessage));
       }
     }
 

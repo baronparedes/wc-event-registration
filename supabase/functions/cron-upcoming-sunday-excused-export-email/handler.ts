@@ -256,6 +256,7 @@ export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): 
     method: 'POST',
     requireAdmin: true,
     allowServiceRole: true,
+    allowCronRole: true,
     allowedRoles: ['admin', 'super_admin'],
     publicRateLimit: {
       scope: 'cron-upcoming-sunday-excused-export-email',

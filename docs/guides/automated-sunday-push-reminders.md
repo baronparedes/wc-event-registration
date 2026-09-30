@@ -2,6 +2,8 @@
 
 This document outlines the architecture, data flow, scheduling mechanism, security model, and idempotency guarantees for the **Automated Sunday Service Push Reminder** system.
 
+For the companion email reminder workflow, see [Automated Sunday Email Reminders](automated-sunday-email-reminders.md).
+
 ---
 
 ## 📑 Table of Contents
@@ -15,8 +17,11 @@ This document outlines the architecture, data flow, scheduling mechanism, securi
    - [PGMQ Queue Integration](#pgmq-queue-integration)
 5. [Edge Function Processing (`cron-process-push-reminders`)](#5-edge-function-processing-cron-process-push-reminders)
    - [Batch Processing Loop](#batch-processing-loop)
-   - [Web Push Payload & Deep Linking](#web-push-payload--deep-linking)
-   - [Stale Subscription Auto-Pruning](#stale-subscription-auto-pruning)
+
+- [Retries And Archiving](#retries-and-archiving)
+- [Web Push Payload & Deep Linking](#web-push-payload--deep-linking)
+- [Stale Subscription Auto-Pruning](#stale-subscription-auto-pruning)
+
 6. [Security & Authentication Model](#6-security--authentication-model)
    - [Dedicated `CRON_ROLE_KEY` Validation](#dedicated-cron_role_key-validation)
    - [Vault Storage](#vault-storage)
@@ -31,7 +36,7 @@ The Automated Sunday Service Push Reminder system automatically notifies volunte
 ### Key Characteristics:
 
 - **Zero Manual Admin Action**: Runs on an automated schedule via `pg_cron` and Supabase Edge Functions.
-- **Strict Idempotency**: Each user receives at most **one** push reminder per upcoming Sunday.
+- **Idempotent Generation**: The generator enqueues at most one reminder batch per upcoming Sunday date.
 - **Deep Linking**: Push notifications direct users directly to [`/profile?tab=commitments`](/profile?tab=commitments) to view their schedule.
 - **Decoupled Security**: Authenticated via a dedicated `CRON_ROLE_KEY` stored in Supabase Vault without exposing `SUPABASE_SERVICE_ROLE_KEY` in plain text.
 
@@ -41,37 +46,40 @@ The Automated Sunday Service Push Reminder system automatically notifies volunte
 
 ```mermaid
 flowchart TD
-    A["pg_cron (process_push_reminders_15m)"] -->|"1. Fetch vault secrets & trigger POST"| B["Edge Function: cron-process-push-reminders"]
-    B -->|"2. Authenticate (X-Cron-Key)"| B
-    B -->|"3. Call generate_upcoming_sunday_push_reminders()"| C["PostgreSQL: users metadata"]
-    C -->|"4. Check target Sunday & idempotency logs"| D["Table: push_reminder_logs"]
-    D -->|"5. Enqueue reminders"| E["pgmq: push_reminders_queue"]
-    B -->|"6. Pull batch (pop_push_reminders)"| E
-    B -->|"7. Fetch active subscriptions"| F["Table: user_push_subscriptions"]
-    B -->|"8. Send VAPID Web Push"| G["Web Push Services (Apple / Google / Mozilla)"]
-    G -->|"9. Deliver to device with /profile link"| H["User Device (Mobile / Desktop)"]
-    B -->|"10. Prune 404/410 dead tokens"| F
-    B -->|"11. Archive completed messages"| E
+  A["pg_cron (Friday reminder generation)"] -->|"1. Call generation and dispatch wrapper"| C["PostgreSQL: subscribed users' metadata"]
+  C -->|"2. Check target Sunday & idempotency logs"| D["Table: push_reminder_logs"]
+  D -->|"3. Enqueue reminders"| E["pgmq: push_reminders"]
+  A -->|"4. One immediate dispatch after enqueue"| B["Edge Function: cron-process-push-reminders"]
+  S["pg_cron (process_push_reminders_15m)"] -->|"5. Fallback sweep"| B
+  B -->|"6. Authenticate (X-Cron-Key)"| B
+  B -->|"7. Pull batches (pop_push_reminders)"| E
+  B -->|"8. Fetch active subscriptions"| F["Table: user_push_subscriptions"]
+  B -->|"9. Send VAPID Web Push"| G["Web Push Services (Apple / Google / Mozilla)"]
+  G -->|"10. Deliver to device with /profile link"| H["User Device (Mobile / Desktop)"]
+  B -->|"11. Prune 404/410 dead tokens"| F
+  B -->|"12. Archive completed messages"| E
 ```
 
 ---
 
 ## 3. End-to-End Workflow
 
-1. **Triggering**: Every 15 minutes (`*/15 * * * *`), `pg_cron` calls `net.http_post` targeting the `cron-process-push-reminders` edge function with the header `X-Cron-Key`.
-2. **Authentication**: `useEdgeHook` inspects `X-Cron-Key` (or `Bearer <key>`) against the environment variable `CRON_ROLE_KEY` and authorizes the request as `callerType = 'cron'`.
-3. **Generation**: The function executes the database RPC `generate_upcoming_sunday_push_reminders()`.
+1. **Reminder Generation**: Every Friday at 06:00 Asia/Manila (`0 22 * * 4` UTC), `pg_cron` invokes a wrapper that calls `generate_upcoming_sunday_push_reminders()` for subscribed users and triggers the Edge Function once after enqueueing.
+2. **Queue Sweeping**: Every 15 minutes (`*/15 * * * *`), `pg_cron` calls `net.http_post` targeting the `cron-process-push-reminders` edge function with the header `X-Cron-Key` as a fallback and retry sweep.
+3. **Authentication**: `useEdgeHook` inspects `X-Cron-Key` (or `Bearer <key>`) against the environment variable `CRON_ROLE_KEY` and authorizes the request as `callerType = 'cron'`.
 4. **Resolution**:
    - Calculates the target date of the nearest upcoming Sunday in Manila Time (`Asia/Manila`, UTC+8).
    - Computes whether it is the 1st, 2nd, 3rd, 4th, or 5th Sunday of that month.
    - Maps to the user's commitment field (`first_sunday`, `second_sunday`, `third_sunday`, `fourth_sunday`, `fifth_sunday` in `users.metadata`).
-5. **Idempotency Guard**: For each user with scheduled commitments, it attempts to insert into `push_reminder_logs(user_id, target_date)`. If an entry already exists for that user on that specific Sunday, it skips that user.
-6. **Queue Enqueue**: New reminders are written to `push_reminders_queue` (managed by PostgreSQL Message Queue `pgmq`).
-7. **Queue Processing**: The edge function reads up to 50 messages per batch from `pop_push_reminders()`.
+5. **Idempotency Guard**: The generator inserts the upcoming Sunday into `push_reminder_logs`. If that Sunday has already been generated, it skips the batch.
+6. **Queue Enqueue**: New reminders are written to the `push_reminders` queue managed by PostgreSQL Message Queue `pgmq`.
+7. **Queue Processing**: The edge function reads pages of up to 50 messages from `pop_push_reminders()` with a 60-second visibility timeout. It processes at most five messages concurrently and sends each message's subscriptions sequentially, limiting push requests in flight to five.
 8. **Delivery**: For each message, queries the user's active Web Push subscriptions from `user_push_subscriptions` and delivers the notification using VAPID keys.
 9. **Archiving & Pruning**:
-   - Successfully processed messages are archived (`pgmq.archive`).
-   - Expired/unsubscribed endpoints returning HTTP `404` or `410 Gone` are deleted from `user_push_subscriptions`.
+
+- Successfully processed messages are archived (`pgmq.archive`).
+- Expired endpoints returning HTTP `404` or `410 Gone` are deleted from `user_push_subscriptions`.
+- Transient delivery or subscription lookup failures remain in the queue for another sweep. After five failed reads, the message is archived for inspection.
 
 ---
 
@@ -96,34 +104,23 @@ Slot strings (e.g. `["9AM", "12NN"]` or `"9:00 AM, 12:00 NN"`) are normalized in
 
 ### Idempotency & Duplicate Protection
 
-The `push_reminder_logs` table enforces a composite unique constraint:
+The `push_reminder_logs` table enforces one generation per upcoming Sunday date:
 
 ```sql
 create table if not exists public.push_reminder_logs (
   id uuid primary key default gen_random_uuid (),
-  user_id uuid not null references public.users (id) on delete cascade,
-  target_date date not null,
-  created_at timestamptz not null default now (),
-  constraint push_reminder_logs_user_target_date_key unique (user_id, target_date)
+  sunday_date date not null unique,
+  processed_at timestamptz not null default now ()
 );
 ```
 
-Before enqueuing, `enqueue_push_reminder` checks:
-
-```sql
-insert into
-  public.push_reminder_logs (user_id, target_date)
-values
-  (v_user_id, v_target_date) on conflict do nothing;
-```
-
-If `push_reminder_logs` already recorded this `(user_id, target_date)`, the insert is skipped and no duplicate message enters the queue.
+The generator inserts the Sunday date before walking subscribed users. A unique violation means that Sunday has already been generated, so it returns without enqueueing a duplicate batch.
 
 ### PGMQ Queue Integration
 
-The queue is created via `pgmq.create('push_reminders_queue')`. Two security-definer helper RPCs manage message state:
+The queue is created via `pgmq.create('push_reminders')`. Two security-definer helper RPCs manage message state:
 
-- `public.pop_push_reminders(batch_size int)`: Reads messages with a 30-second visibility lock (`pgmq.read`).
+- `public.pop_push_reminders(batch_size int)`: Reads messages with a 60-second visibility timeout (`pgmq.read`).
 - `public.archive_push_reminder(message_id bigint)`: Permanently archives the processed message (`pgmq.archive`).
 
 ---
@@ -146,6 +143,12 @@ while (true) {
   // Process batch concurrently...
 }
 ```
+
+### Retries And Archiving
+
+The worker acknowledges a reminder only after successful delivery or when the message is terminal (malformed payload or no active subscription). Transient Web Push failures and subscription lookup errors are left unarchived so PGMQ makes them visible again after the 60-second visibility timeout. The immediate Friday dispatch drains the new batch; the 15-minute sweeper retries failures and recovers messages not drained by that invocation.
+
+PGMQ's `read_ct` counts delivery attempts. After five failed reads, the worker archives the message instead of retrying indefinitely. The archived message remains available in PGMQ's archive table for inspection. If a user has multiple subscriptions and one delivery succeeds while another transiently fails, retrying the message may deliver a duplicate to the successful subscription.
 
 ### Web Push Payload & Deep Linking
 
@@ -225,6 +228,8 @@ This prevents hardcoding API keys in migration files or database function defini
 | `project_url`       | Supabase Database Vault                 | Base URL of the Supabase project (e.g. `https://xyz.supabase.co`) |
 | `VAPID_PUBLIC_KEY`  | Edge Function Secrets & Frontend `.env` | Public VAPID key for web push subscription & signing              |
 | `VAPID_PRIVATE_KEY` | Edge Function Secrets                   | Private VAPID key for signing web push payloads                   |
+
+`20261001100100_dispatch_sunday_push_reminders_immediately.sql` installs the push dispatch wrapper and updates the Friday job. `20261001100200_restore_reminder_queue_sweepers.sql` keeps `process_push_reminders_15m` active as the fallback sweep.
 
 ### Deploy Edge Functions
 

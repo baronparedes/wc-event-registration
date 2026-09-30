@@ -140,7 +140,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.cron-upcoming-sunday-excused-export-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.delete-attendance-saved-view]
 verify_jwt = true

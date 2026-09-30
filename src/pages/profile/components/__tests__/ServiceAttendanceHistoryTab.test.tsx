@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ExcusedMemberRecord } from '@/hooks/domain/members';
 import type { ServiceAttendance, ServiceExceptionDate } from '@/lib/domain/services';
@@ -177,7 +177,13 @@ function makeAttendanceQueryResult(
 }
 
 describe('ServiceAttendanceHistoryTab', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 15, 12));
     vi.clearAllMocks();
     mockUseServiceAttendanceQuery.mockReturnValue(makeAttendanceQueryResult(sampleAttendance));
 
