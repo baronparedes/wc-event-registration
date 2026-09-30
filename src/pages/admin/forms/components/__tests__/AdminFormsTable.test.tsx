@@ -69,9 +69,11 @@ describe('AdminFormsTable', () => {
   it('renders action links based on permissions', () => {
     const { rerender } = renderComponent({ canWrite: true, canRead: true });
 
-    expect(screen.getByRole('link', { name: 'Edit Form' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Form Fields' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Submissions' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: `Edit ${mockForm.title}` })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: `Fields for ${mockForm.title}` })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: `Submissions for ${mockForm.title}` }),
+    ).toBeInTheDocument();
 
     rerender(
       <MemoryRouter>
@@ -84,16 +86,20 @@ describe('AdminFormsTable', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.queryByRole('link', { name: 'Edit Form' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Form Fields' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Submissions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: `Edit ${mockForm.title}` })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: `Fields for ${mockForm.title}` }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: `Submissions for ${mockForm.title}` }),
+    ).not.toBeInTheDocument();
   });
 
   it('stops event propagation when clicking actions cell', () => {
     const onFormSelect = vi.fn();
     renderComponent({ onFormSelect, canWrite: true, canRead: true });
 
-    const submissionsLink = screen.getByRole('link', { name: 'Submissions' });
+    const submissionsLink = screen.getByRole('link', { name: `Submissions for ${mockForm.title}` });
     const actionCell = submissionsLink.closest('td');
     expect(actionCell).not.toBeNull();
 
