@@ -4,6 +4,7 @@ import { handleCronProcessPushReminders } from '../handler.ts';
 
 type QueueMessage = {
   msg_id: number;
+  read_ct: number;
   message: {
     user_id?: string;
     message?: string;
@@ -61,10 +62,14 @@ function mockFetch(options: { batches: QueueMessage[][]; subscriptions?: unknown
   const originalFetch = globalThis.fetch;
   const archivedIds: number[] = [];
   const deletedSubscriptionIds: string[] = [];
+  const rpcPaths: string[] = [];
   let batchIndex = 0;
 
   globalThis.fetch = (input, init) => {
     const requestUrl = new URL(input instanceof Request ? input.url : input.toString());
+    if (requestUrl.pathname.startsWith('/rest/v1/rpc/')) {
+      rpcPaths.push(requestUrl.pathname);
+    }
     if (requestUrl.pathname === '/rest/v1/rpc/generate_upcoming_sunday_push_reminders') {
       return Promise.resolve(Response.json(null));
     }
@@ -93,6 +98,7 @@ function mockFetch(options: { batches: QueueMessage[][]; subscriptions?: unknown
   return {
     archivedIds,
     deletedSubscriptionIds,
+    rpcPaths,
     restore: () => {
       globalThis.fetch = originalFetch;
     },
@@ -120,7 +126,7 @@ Deno.test('cron-process-push-reminders requires both VAPID keys', async () => {
 });
 
 Deno.test(
-  'cron-process-push-reminders generates reminders and sends queued notifications',
+  'cron-process-push-reminders sends queued notifications without generating reminders',
   async () => {
     await withFunctionEnv(async () => {
       const fetchMock = mockFetch({
@@ -128,6 +134,7 @@ Deno.test(
           [
             {
               msg_id: 51,
+              read_ct: 1,
               message: {
                 user_id: USER_ID,
                 message: 'Your Sunday service is coming up.',
@@ -168,6 +175,132 @@ Deno.test(
           },
         ]);
         assertEquals(fetchMock.archivedIds, [51]);
+        assertEquals(
+          fetchMock.rpcPaths.includes('/rest/v1/rpc/generate_upcoming_sunday_push_reminders'),
+          false,
+        );
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-push-reminders drains batches with bounded delivery concurrency',
+  async () => {
+    await withFunctionEnv(async () => {
+      const firstBatch = Array.from({ length: 7 }, (_, index) => ({
+        msg_id: 60 + index,
+        read_ct: 1,
+        message: { user_id: USER_ID, message: 'Your Sunday service is coming up.' },
+      }));
+      const secondBatch = Array.from({ length: 2 }, (_, index) => ({
+        msg_id: 67 + index,
+        read_ct: 1,
+        message: { user_id: USER_ID, message: 'Your Sunday service is coming up.' },
+      }));
+      const fetchMock = mockFetch({
+        batches: [firstBatch, secondBatch, []],
+        subscriptions: [
+          {
+            id: '66666666-6666-4666-8666-666666666666',
+            endpoint: 'https://push.example/subscription',
+            auth_key: 'auth-key',
+            p256dh_key: 'p256dh-key',
+          },
+        ],
+      });
+      let activeSends = 0;
+      let maxActiveSends = 0;
+      try {
+        const response = await handleCronProcessPushReminders(buildRequest(), async () => {
+          activeSends++;
+          maxActiveSends = Math.max(maxActiveSends, activeSends);
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          activeSends--;
+        });
+        assertEquals(await response.json(), { success: true, processed: 9 });
+        assertEquals(fetchMock.archivedIds.length, 9);
+        assertEquals(
+          fetchMock.rpcPaths.filter((path) => path.endsWith('/pop_push_reminders')).length,
+          3,
+        );
+        assertEquals(maxActiveSends, 5);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-push-reminders leaves transient delivery failures queued for retry',
+  async () => {
+    await withFunctionEnv(async () => {
+      const fetchMock = mockFetch({
+        batches: [
+          [
+            {
+              msg_id: 54,
+              read_ct: 1,
+              message: { user_id: USER_ID, message: 'Your Sunday service is coming up.' },
+            },
+          ],
+          [],
+        ],
+        subscriptions: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            endpoint: 'https://push.example/subscription',
+            auth_key: 'auth-key',
+            p256dh_key: 'p256dh-key',
+          },
+        ],
+      });
+      try {
+        const response = await handleCronProcessPushReminders(buildRequest(), () =>
+          Promise.reject(Object.assign(new Error('Temporary push failure'), { statusCode: 503 })),
+        );
+        assertEquals(response.status, 200);
+        assertEquals(fetchMock.archivedIds, []);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-push-reminders archives delivery failures after five attempts',
+  async () => {
+    await withFunctionEnv(async () => {
+      const fetchMock = mockFetch({
+        batches: [
+          [
+            {
+              msg_id: 55,
+              read_ct: 5,
+              message: { user_id: USER_ID, message: 'Your Sunday service is coming up.' },
+            },
+          ],
+          [],
+        ],
+        subscriptions: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            endpoint: 'https://push.example/subscription',
+            auth_key: 'auth-key',
+            p256dh_key: 'p256dh-key',
+          },
+        ],
+      });
+      try {
+        const response = await handleCronProcessPushReminders(buildRequest(), () =>
+          Promise.reject(Object.assign(new Error('Permanent push failure'), { statusCode: 503 })),
+        );
+        assertEquals(response.status, 200);
+        assertEquals(fetchMock.archivedIds, [55]);
       } finally {
         fetchMock.restore();
       }
@@ -182,8 +315,8 @@ Deno.test(
       const fetchMock = mockFetch({
         batches: [
           [
-            { msg_id: 52, message: {} },
-            { msg_id: 53, message: { user_id: USER_ID, message: 'Reminder text' } },
+            { msg_id: 52, read_ct: 1, message: {} },
+            { msg_id: 53, read_ct: 1, message: { user_id: USER_ID, message: 'Reminder text' } },
           ],
           [],
         ],
