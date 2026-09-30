@@ -18,6 +18,7 @@ async function withFunctionEnv(run: () => Promise<void>) {
   const envNames = [
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
+    'CRON_ROLE_KEY',
     'ALLOWED_ORIGINS',
     'RESEND_API_KEY',
     'UPCOMING_SUNDAY_TARGET_EMAIL',
@@ -28,6 +29,7 @@ async function withFunctionEnv(run: () => Promise<void>) {
 
   Deno.env.set('SUPABASE_URL', 'https://example.supabase.co');
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', SERVICE_ROLE_KEY);
+  Deno.env.set('CRON_ROLE_KEY', 'test-cron-role-key');
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
   Deno.env.set('RESEND_API_KEY', 'test-resend-key');
   Deno.env.set('UPCOMING_SUNDAY_TARGET_EMAIL', 'reports@example.com');
@@ -46,9 +48,10 @@ async function withFunctionEnv(run: () => Promise<void>) {
 
 let requestNumber = 0;
 
-function buildRequest(authorized = true) {
+function buildRequest(authorized = true, cronAuthorized = false) {
   const headers = new Headers({ origin: TEST_ORIGIN, 'content-type': 'application/json' });
   if (authorized) headers.set('authorization', `Bearer ${SERVICE_ROLE_KEY}`);
+  if (cronAuthorized) headers.set('x-cron-key', 'test-cron-role-key');
   headers.set('x-forwarded-for', `198.51.100.${++requestNumber}`);
   return new Request(
     `https://example.functions/cron-upcoming-sunday-excused-export-email?target_sunday_date=${TARGET_DATE}`,
@@ -107,6 +110,18 @@ Deno.test('cron-upcoming-sunday-excused-export-email requires an authorized call
   await withFunctionEnv(async () => {
     const response = await handleCronUpcomingSundayExcusedExportEmail(buildRequest(false));
     assertEquals(response.status, 401);
+  });
+});
+
+Deno.test('cron-upcoming-sunday-excused-export-email accepts the cron role key', async () => {
+  await withFunctionEnv(async () => {
+    const fetchMock = mockFetch({ requestDateAnswers: [] });
+    try {
+      const response = await handleCronUpcomingSundayExcusedExportEmail(buildRequest(false, true));
+      assertEquals(response.status, 200);
+    } finally {
+      fetchMock.restore();
+    }
   });
 });
 
