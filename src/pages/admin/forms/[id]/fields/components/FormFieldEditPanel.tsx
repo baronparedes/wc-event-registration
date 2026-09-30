@@ -77,8 +77,7 @@ export function FormFieldEditPanel({
     control,
     formState: { errors, isDirty, isValid },
   } = useForm<FormFieldFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(formFieldFormSchema) as any,
+    resolver: zodResolver(formFieldFormSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues: field ? fieldToFormValues(field) : DEFAULT_FORM_FIELD_VALUES,

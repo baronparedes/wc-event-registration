@@ -92,37 +92,15 @@ export const formFieldFormSchema = z.object({
     'datetime',
     'boolean',
   ]),
-  is_required: z.boolean().default(false),
-  is_active: z.boolean().default(true),
-  placeholder: z.string().trim().optional().default(''),
-  help_text: z.string().trim().optional().default(''),
-  options: z.array(formFieldFormOptionSchema).default([]),
-  field_applicability: formFieldApplicabilitySchema.default('all'),
+  is_required: z.boolean().catch(false),
+  is_active: z.boolean().catch(true),
+  placeholder: z.string().trim().nullable().optional().catch(''),
+  help_text: z.string().trim().nullable().optional().catch(''),
+  options: z.array(formFieldFormOptionSchema).catch([]),
+  field_applicability: formFieldApplicabilitySchema.catch('all'),
 });
 
-export type FormFieldFormValues = {
-  field_key: string;
-  label: string;
-  field_type:
-    | 'text'
-    | 'textarea'
-    | 'number'
-    | 'email'
-    | 'phone'
-    | 'select'
-    | 'radio'
-    | 'checkbox'
-    | 'multi_select'
-    | 'date'
-    | 'datetime'
-    | 'boolean';
-  is_required: boolean;
-  is_active: boolean;
-  placeholder: string;
-  help_text: string;
-  options: Array<{ label: string; value: string }>;
-  field_applicability: 'all' | 'member_only' | 'public_only';
-};
+export type FormFieldFormValues = z.infer<typeof formFieldFormSchema>;
 
 export const DEFAULT_FORM_FIELD_VALUES: FormFieldFormValues = {
   field_key: '',

@@ -1,4 +1,9 @@
-import type { FieldArrayWithId, UseFieldArrayReturn, UseFormRegister } from 'react-hook-form';
+import type {
+  FieldArrayWithId,
+  FieldErrors,
+  UseFieldArrayReturn,
+  UseFormRegister,
+} from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -7,7 +12,7 @@ import type { FormFieldFormValues } from '@/lib/domain/forms';
 type FormFieldOptionsSectionProps = {
   optionFields: FieldArrayWithId<FormFieldFormValues, 'options', 'id'>[];
   register: UseFormRegister<FormFieldFormValues>;
-  errors: Record<string, unknown>;
+  errors: FieldErrors<FormFieldFormValues>;
   append: UseFieldArrayReturn<FormFieldFormValues>['append'];
   remove: UseFieldArrayReturn<FormFieldFormValues>['remove'];
 };
@@ -30,10 +35,8 @@ export function FormFieldOptionsSection({
           <p className="text-sm text-muted">No options added yet. Add at least one option.</p>
         )}
         {optionFields.map((field, index) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const fieldErrors = errors as any;
-          const labelError = fieldErrors.options?.[index]?.label?.message as string | undefined;
-          const valueError = fieldErrors.options?.[index]?.value?.message as string | undefined;
+          const labelError = errors.options?.[index]?.label?.message as string | undefined;
+          const valueError = errors.options?.[index]?.value?.message as string | undefined;
 
           return (
             <div
