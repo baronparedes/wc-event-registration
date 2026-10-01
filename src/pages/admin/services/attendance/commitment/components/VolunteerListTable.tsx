@@ -142,9 +142,15 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           case 'category':
             comparison = (a.category || '').localeCompare(b.category || '');
             break;
-          case 'start_date':
-            comparison = (a.start_date || '').localeCompare(b.start_date || '');
+          case 'start_date': {
+            // ⚡ Bolt: Performance Improvement
+            // Use native string comparison for ISO-8601 dates instead of localeCompare
+            // to avoid significant overhead in the sorting loop.
+            const aDate = a.start_date || '';
+            const bDate = b.start_date || '';
+            comparison = aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
             break;
+          }
           case 'committed':
             comparison = a.committed - b.committed;
             break;
