@@ -183,14 +183,17 @@ export function AttendanceDataTableView({
               })}
               {canWrite && (
                 <ListTableCell className="whitespace-nowrap !px-2 !py-2 align-middle print:hidden">
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div className="flex">
                     <ActionButton
                       aria-label={
                         filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'
                       }
                       title={filled > 0 ? 'Edit attendance details' : 'Fill in attendance details'}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md no-underline hover:no-underline"
-                      onClick={() => onEditRegistrant(registrant)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md no-underline hover:no-underline focus-visible:ring-2 focus-visible:ring-primary/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditRegistrant(registrant);
+                      }}
                     >
                       <Pencil aria-hidden="true" className="h-4 w-4" />
                     </ActionButton>
