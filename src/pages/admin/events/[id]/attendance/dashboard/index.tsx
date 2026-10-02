@@ -71,14 +71,10 @@ function buildSlotSummaries(
   }));
 
   return summaries.sort((a, b) => {
-    const aTime = Date.parse(a.slot);
-    const bTime = Date.parse(b.slot);
-
-    if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
-      return aTime - bTime;
-    }
-
-    return a.slot.localeCompare(b.slot);
+    // ⚡ Bolt: Performance Improvement
+    // Use native string comparison for ISO-8601 dates instead of Date.parse
+    // to avoid significant overhead in the sorting loop.
+    return a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0;
   });
 }
 
