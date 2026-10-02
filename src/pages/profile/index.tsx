@@ -1,10 +1,11 @@
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { Badge } from '@/components/ui';
 import { Avatar } from '@/components/ui/Avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { ROUTE_PATHS, UI_MESSAGES } from '@/config/constants';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 import { formatDateTime } from '@/lib/infrastructure';
@@ -16,7 +17,9 @@ import { ServiceAttendanceHistoryTab } from './components/ServiceAttendanceHisto
 import { resolveProfileTab } from './utils';
 
 export function ProfilePage() {
+  const authQuery = useAdminAuthQuery();
   const profileQuery = useCurrentProfileQuery();
+  const location = useLocation();
   const isMobile = useIsMobileViewport();
   const [searchParams, setSearchParams] = useSearchParams();
   const member = profileQuery.data;
@@ -40,7 +43,7 @@ export function ProfilePage() {
     );
   };
 
-  if (profileQuery.isLoading) {
+  if (authQuery.isLoading || profileQuery.isLoading) {
     return (
       <AdminPageShell>
         <AdminPageShell.Content isLoading={true} loadingMessage={UI_MESSAGES.loading.member}>
@@ -48,6 +51,12 @@ export function ProfilePage() {
         </AdminPageShell.Content>
       </AdminPageShell>
     );
+  }
+
+  if (!authQuery.data?.session) {
+    const redirectTarget = `${location.pathname}${location.search}${location.hash}`;
+    const loginSearchParams = new URLSearchParams({ redirect: redirectTarget });
+    return <Navigate to={`${ROUTE_PATHS.login}?${loginSearchParams.toString()}`} replace />;
   }
 
   if (profileQuery.isError || !member) {

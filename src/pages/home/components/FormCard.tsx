@@ -1,4 +1,6 @@
-import { FileText, Share } from 'lucide-react';
+import { useId, useState } from 'react';
+
+import { ChevronDown, FileText, Share } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -15,6 +17,8 @@ type FormCardProps = {
  * Used in the hub page to show available forms.
  */
 export function FormCard({ form }: FormCardProps) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsId = useId();
   const navigate = useNavigate();
   const submitPath = toRoute('formSubmit', { slug: form.slug });
   const shareUrl = new URL(submitPath, window.location.origin).toString();
@@ -29,7 +33,7 @@ export function FormCard({ form }: FormCardProps) {
   };
 
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!isOpen) {
+    if (!isOpen || e.target !== e.currentTarget) {
       return;
     }
 
@@ -72,47 +76,74 @@ export function FormCard({ form }: FormCardProps) {
 
   return (
     <div
-      className={`flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 shadow-sm transition-all hover:shadow-md hover:scale-[1.02] ${isOpen ? 'cursor-pointer' : ''}`}
+      className={`group flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${isOpen ? 'cursor-pointer' : ''}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       role={isOpen ? 'link' : undefined}
       tabIndex={isOpen ? 0 : undefined}
     >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-heading text-base font-semibold text-text flex items-start gap-2 min-w-0">
-          <FileText className="h-5 w-5 shrink-0 text-muted mt-0.5" aria-hidden="true" />
-          <span className="break-words">{form.title}</span>
-        </h3>
-        <div className="shrink-0">
-          <Badge variant="default">Open</Badge>
+      <div className="flex flex-col gap-4 p-5 sm:min-h-[340px]">
+        <div className="flex items-start justify-between gap-3">
+          <FileText className="h-8 w-8 shrink-0 text-primary" aria-hidden="true" />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Badge variant="default">Open</Badge>
+            {form.description && (
+              <button
+                type="button"
+                aria-label={`${detailsOpen ? 'Hide' : 'Show'} details for ${form.title}`}
+                aria-expanded={detailsOpen}
+                aria-controls={detailsId}
+                title={detailsOpen ? 'Hide details' : 'Show details'}
+                onClick={(clickEvent) => {
+                  clickEvent.stopPropagation();
+                  setDetailsOpen(!detailsOpen);
+                }}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`h-4 w-4 transition-transform duration-200 ${detailsOpen ? 'rotate-180' : 'rotate-0'}`}
+                />
+              </button>
+            )}
+          </div>
         </div>
+        <h3 className="mt-auto break-words font-heading text-xl font-bold leading-tight text-text [overflow-wrap:anywhere]">
+          {form.title}
+        </h3>
+        {isOpen && (
+          <div className="flex items-center gap-2">
+            <Button
+              asChild
+              className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold shadow-xs"
+              size="md"
+            >
+              <Link to={submitPath}>Fill out</Link>
+            </Button>
+            <Button
+              aria-label={`Share ${form.title}`}
+              title="Share form"
+              onClick={handleShareClick}
+              size="md"
+              variant="primaryOutline"
+              className="min-h-[44px] min-w-[44px] p-0 flex items-center justify-center shrink-0"
+            >
+              <Share className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
+        )}
       </div>
-
       {form.description && (
-        <MarkdownRenderer
-          content={form.description}
-          className="text-sm prose-p:text-muted prose-p:leading-relaxed"
-        />
-      )}
-
-      {isOpen && (
-        <div className="mt-auto flex items-center gap-2 pt-1">
-          <Button
-            asChild
-            className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold tracking-wide text-white shadow-xs"
-            size="md"
-          >
-            <Link to={submitPath}>Fill out</Link>
-          </Button>
-          <Button
-            aria-label={`Share ${form.title}`}
-            onClick={handleShareClick}
-            size="md"
-            variant="primaryOutline"
-            className="min-h-[44px] min-w-[44px] p-0 flex items-center justify-center shrink-0"
-          >
-            <Share className="h-4 w-4" aria-hidden="true" />
-          </Button>
+        <div
+          id={detailsId}
+          hidden={!detailsOpen}
+          className="space-y-4 border-t border-border p-5 cursor-default"
+          onClick={(clickEvent) => clickEvent.stopPropagation()}
+        >
+          <MarkdownRenderer
+            content={form.description}
+            className="text-sm prose-p:text-muted prose-p:leading-relaxed"
+          />
         </div>
       )}
     </div>

@@ -4,9 +4,9 @@ import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
-
-import { HubSection, PastEventList, WelcomeHelloBanner } from './components';
-import type { HubItem } from './components/HubSection';
+import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/components';
+import { CommunityWelcome } from '@/pages/home/components/CommunityWelcome';
+import type { HubItem } from '@/pages/home/components/HubSection';
 
 export function HomePage() {
   const {
@@ -14,7 +14,7 @@ export function HomePage() {
     isLoading: eventsLoading,
     isError: eventsError,
   } = usePublicEventListingQuery();
-  const { data: forms, isLoading: formsLoading } = usePublicFormsQuery();
+  const { data: forms, isLoading: formsLoading, isError: formsError } = usePublicFormsQuery();
 
   const openEvents = events?.filter((e) => e.listingStatus === 'open') ?? [];
   const upcomingEvents = events?.filter((e) => e.listingStatus === 'upcoming') ?? [];
@@ -37,6 +37,7 @@ export function HomePage() {
     <>
       <section className="space-y-10">
         <WelcomeHelloBanner />
+        <CommunityWelcome />
         {isLoading && (
           <div className="space-y-6" aria-hidden="true">
             <div className="space-y-3">
@@ -70,13 +71,23 @@ export function HomePage() {
           <p className="text-sm text-destructive">Unable to load events. Please try again.</p>
         )}
 
-        {!isLoading && !eventsError && events?.length === 0 && (!forms || forms.length === 0) && (
-          <EmptyState
-            icon={<Calendar className="h-6 w-6" />}
-            title="No items available"
-            description="There are currently no open events or active forms. Check back soon!"
-          />
+        {formsError && (
+          <p className="text-sm text-destructive">Unable to load forms. Please try again.</p>
         )}
+
+        {!isLoading &&
+          !eventsError &&
+          !formsError &&
+          availableItems.length === 0 &&
+          upcomingItems.length === 0 && (
+            <div className="border-y border-border py-8 sm:py-10">
+              <EmptyState
+                icon={<Calendar aria-hidden="true" className="h-6 w-6" />}
+                title="A quiet moment between activities"
+                description="There are no open registrations or forms right now."
+              />
+            </div>
+          )}
 
         <HubSection items={availableItems} title="Available Now" />
         <HubSection items={upcomingItems} title="Upcoming Events" />

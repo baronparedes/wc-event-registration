@@ -8,10 +8,20 @@ import { ROUTE_PATHS } from '@/config/constants';
 import { ProfilePage } from '@/pages/profile';
 import { resolveProfileTab } from '@/pages/profile/utils';
 
-const { mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery } = vi.hoisted(() => ({
-  mockUseCurrentProfileQuery: vi.fn(),
-  mockUseMemberEventHistoryQuery: vi.fn(),
-}));
+const { mockUseAdminAuthQuery, mockUseCurrentProfileQuery, mockUseMemberEventHistoryQuery } =
+  vi.hoisted(() => ({
+    mockUseAdminAuthQuery: vi.fn(),
+    mockUseCurrentProfileQuery: vi.fn(),
+    mockUseMemberEventHistoryQuery: vi.fn(),
+  }));
+
+vi.mock('@/hooks/domain/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
+  return {
+    ...actual,
+    useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  };
+});
 
 vi.mock('@/components/ui/Avatar', () => ({
   Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
@@ -64,6 +74,7 @@ function renderPage(initialEntry: string = ROUTE_PATHS.profile) {
             </>
           }
         />
+        <Route path={ROUTE_PATHS.login} element={<LocationDisplay />} />
         <Route path={ROUTE_PATHS.home} element={<div>Home Page Destination</div>} />
       </Routes>
     </MemoryRouter>,
@@ -83,6 +94,10 @@ const member = makeAdminMember({
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { session: { user: { email } }, isAuthenticated: false },
+      isLoading: false,
+    });
     mockUseCurrentProfileQuery.mockReturnValue({ data: member, isLoading: false, isError: false });
     mockUseMemberEventHistoryQuery.mockReturnValue({ data: [], isLoading: false, isError: false });
   });
@@ -93,7 +108,34 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Loading member...')).toBeInTheDocument();
   });
 
-  it('redirects to home page when profile query returns null or error', () => {
+  it('redirects signed-out visitors to sign in with the profile return destination', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { session: null }, isLoading: false });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false, isError: false });
+    renderPage();
+
+    const search = screen.getByTestId('location-search').textContent ?? '';
+    expect(new URLSearchParams(search).get('redirect')).toBe(ROUTE_PATHS.profile);
+    expect(screen.queryByText('Home Page Destination')).not.toBeInTheDocument();
+  });
+
+  it('preserves the requested profile tab and fragment through sign in', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: { session: null }, isLoading: false });
+    mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false, isError: false });
+    renderPage('/profile?tab=commitments#history');
+
+    const search = screen.getByTestId('location-search').textContent ?? '';
+    expect(new URLSearchParams(search).get('redirect')).toBe('/profile?tab=commitments#history');
+  });
+
+  it('waits for the session check before redirecting', () => {
+    mockUseAdminAuthQuery.mockReturnValue({ data: undefined, isLoading: true });
+    renderPage();
+
+    expect(screen.getByText('Loading member...')).toBeInTheDocument();
+    expect(screen.getByTestId('location-search')).toHaveTextContent('');
+  });
+
+  it('redirects signed-in users to home when no member profile is found', () => {
     mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false, isError: false });
     renderPage();
     expect(screen.getByText('Home Page Destination')).toBeInTheDocument();

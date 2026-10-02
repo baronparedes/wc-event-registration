@@ -2,8 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AdminForm } from '@/lib/domain/forms';
-
-import { FormCard } from '../FormCard';
+import { FormCard } from '@/pages/home/components/FormCard';
 
 const { mockNavigate, mockToastSuccess, mockToastError, mockClipboardWriteText, mockNativeShare } =
   vi.hoisted(() => ({
@@ -73,6 +72,24 @@ describe('FormCard', () => {
     expect(screen.getByText('Open')).toBeInTheDocument();
     const submitLink = screen.getByRole('link', { name: 'Fill out' });
     expect(submitLink).toHaveAttribute('href', '/forms/test-form/submit');
+  });
+
+  it('toggles details without submitting and does not render a date badge or cover', () => {
+    const { container } = render(<FormCard form={mockForm} />);
+    const detailsButton = screen.getByRole('button', { name: 'Show details for Test Form' });
+
+    expect(screen.getByText('A test form description')).not.toBeVisible();
+    expect(container.querySelector('time')).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
+    fireEvent.click(detailsButton);
+    fireEvent.keyDown(detailsButton, { key: 'Enter' });
+    expect(detailsButton).toHaveAttribute('aria-expanded', 'true');
+    expect(detailsButton).toHaveAccessibleName('Hide details for Test Form');
+    expect(screen.getByText('A test form description')).toBeVisible();
+    fireEvent.click(screen.getByText('A test form description'));
+    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(detailsButton);
+    expect(screen.getByText('A test form description')).not.toBeVisible();
   });
 
   it('renders without description when description is null', () => {

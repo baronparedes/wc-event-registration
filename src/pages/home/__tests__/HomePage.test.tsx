@@ -1,7 +1,16 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomePage } from '@/pages/home';
+
+function renderHomePage() {
+  return render(
+    <MemoryRouter>
+      <HomePage />
+    </MemoryRouter>,
+  );
+}
 
 const {
   mockUsePublicEventListingQuery,
@@ -67,7 +76,7 @@ describe('HomePage', () => {
       isError: false,
     });
 
-    render(<HomePage />);
+    renderHomePage();
 
     expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
@@ -81,12 +90,32 @@ describe('HomePage', () => {
       isError: false,
     });
 
-    render(<HomePage />);
+    renderHomePage();
 
-    expect(screen.getByText('No items available')).toBeInTheDocument();
+    expect(screen.getByText('A quiet moment between activities')).toBeInTheDocument();
     expect(
-      screen.getByText('There are currently no open events or active forms. Check back soon!'),
+      screen.getByText('There are no open registrations or forms right now.'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'A community serving together.' }),
+    ).toBeInTheDocument();
+    const banner = screen.getByTestId('welcome-hello-banner');
+    expect(banner).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Forms', exact: true })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your member profile' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign In \u2192', exact: true })).toHaveAttribute(
+      'href',
+      '/profile',
+    );
+    expect(
+      screen.getByText('Sign in to see your profile, commitments, attendance, and events joined.'),
+    ).toBeInTheDocument();
+    expect(
+      banner.compareDocumentPosition(
+        screen.getByRole('heading', { level: 1, name: 'A community serving together.' }),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('renders loading skeleton state', () => {
@@ -96,9 +125,10 @@ describe('HomePage', () => {
       isError: false,
     });
 
-    const { container } = render(<HomePage />);
+    const { container } = renderHomePage();
 
     expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
   });
 
   it('renders error state when listing query fails', () => {
@@ -108,9 +138,10 @@ describe('HomePage', () => {
       isError: true,
     });
 
-    render(<HomePage />);
+    renderHomePage();
 
     expect(screen.getByText('Unable to load events. Please try again.')).toBeInTheDocument();
+    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
   });
 
   it('mixes open events and published forms into Available Now section', () => {
@@ -128,7 +159,7 @@ describe('HomePage', () => {
       isError: false,
     });
 
-    render(<HomePage />);
+    renderHomePage();
 
     expect(screen.getByText('Available Now: 2')).toBeInTheDocument();
     expect(mockHubSection).toHaveBeenCalledWith(
@@ -154,8 +185,58 @@ describe('HomePage', () => {
       isError: false,
     });
 
-    const { container } = render(<HomePage />);
+    const { container } = renderHomePage();
 
     expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
+  });
+
+  it('keeps past events visible alongside the empty activity state', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [{ id: 'past-1', listingStatus: 'past' }],
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: [{ id: 'draft-1', status: 'draft' }],
+      isLoading: false,
+      isError: false,
+    });
+
+    renderHomePage();
+
+    expect(screen.getByText('A quiet moment between activities')).toBeInTheDocument();
+    expect(screen.getByText('Past Events List: 1')).toBeInTheDocument();
+  });
+
+  it('does not show the empty activity state when upcoming events exist', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [{ id: 'upcoming-1', listingStatus: 'upcoming' }],
+      isLoading: false,
+      isError: false,
+    });
+
+    renderHomePage();
+
+    expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
+    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
+  });
+
+  it('shows a forms error without implying that no activities exist', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    mockUsePublicFormsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    });
+
+    renderHomePage();
+
+    expect(screen.getByText('Unable to load forms. Please try again.')).toBeInTheDocument();
+    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
   });
 });
