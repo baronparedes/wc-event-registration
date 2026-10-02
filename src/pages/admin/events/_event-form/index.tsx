@@ -365,7 +365,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             disabled={isArchivedEvent}
           />
 
-          {watchedValues?.status === 'draft' && <PublishRequirementsChecker formValues={watchedValues} />}
+          {watchedValues?.status === 'draft' && (
+            <PublishRequirementsChecker formValues={watchedValues} />
+          )}
 
           <EventFormActions
             isEditMode={isEditMode}
