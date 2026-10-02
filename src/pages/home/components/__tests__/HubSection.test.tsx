@@ -10,67 +10,68 @@ describe('HubSection', () => {
     {
       type: 'event',
       id: '1',
-      title: 'Hub Event 1',
-      slug: 'hub-event-1',
+      title: 'Test Event 1',
+      slug: 'test-event-1',
       listingStatus: 'open',
-      starts_at: '2023-01-01T10:00:00Z',
-      ends_at: '2023-01-01T12:00:00Z',
-      location: 'Main Hall',
+      starts_at: '2023-12-01T10:00:00Z',
+      ends_at: '2023-12-01T12:00:00Z',
+      registration_opens_at: '2023-11-01T10:00:00Z',
+      registration_closes_at: '2023-11-30T10:00:00Z',
       allow_public_registrations: true,
-      registration_opens_at: '2022-12-01T10:00:00Z',
-      registration_closes_at: '2022-12-31T10:00:00Z',
-      description: null,
+      description: 'Test description 1',
+      location: 'Test location 1',
     },
     {
       type: 'form',
       id: '2',
-      slug: 'hub-form-1',
-      title: 'Hub Form 1',
-      description: 'A test form description',
+      title: 'Test Form 1',
+      slug: 'test-form-1',
+      description: 'Test form description 1',
       status: 'published',
-      duplicate_policy: 'allow_multiple',
       audience: 'members_and_public',
+      duplicate_policy: 'allow_multiple',
       metadata: {},
-      created_by_admin_id: 'admin1',
-      created_at: '2023-01-01T00:00:00Z',
-      updated_at: '2023-01-01T00:00:00Z',
+      created_by_admin_id: null,
+      updated_at: '2023-11-01T10:00:00Z',
+      created_at: '2023-11-01T10:00:00Z',
     },
   ];
 
-  it('renders mixed items correctly', () => {
-    render(
-      <MemoryRouter>
-        <HubSection items={mockItems} title="Mixed Section" />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('Mixed Section')).toBeInTheDocument();
-    expect(screen.getByText('Hub Event 1')).toBeInTheDocument();
-    expect(screen.getByText('Hub Form 1')).toBeInTheDocument();
-  });
-
-  it('renders nothing when empty', () => {
+  it('renders null when items array is empty', () => {
     const { container } = render(
       <MemoryRouter>
-        <HubSection items={[]} title="Empty Section" />
+        <HubSection title="Test Hub" items={[]} />
       </MemoryRouter>,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(container.firstChild).toBeNull();
   });
 
-  it('ignores unsupported item types gracefully', () => {
-    const invalidItems = [
-      ...mockItems,
-      { type: 'unsupported' as unknown as 'event', id: '3' } as unknown as HubItem,
-    ];
-
+  it('renders title and mixed cards when items are provided', () => {
     render(
       <MemoryRouter>
-        <HubSection items={invalidItems} title="Mixed Section" />
+        <HubSection title="My Hub" items={mockItems} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Hub Event 1')).toBeInTheDocument();
-    expect(screen.getByText('Hub Form 1')).toBeInTheDocument();
+    // Verify title is rendered
+    expect(screen.getByRole('heading', { level: 2, name: 'My Hub' })).toBeInTheDocument();
+
+    // Verify event card is rendered
+    expect(screen.getByText('Test Event 1')).toBeInTheDocument();
+
+    // Verify form card is rendered
+    expect(screen.getByText('Test Form 1')).toBeInTheDocument();
+  });
+
+  it('renders nothing for an unknown item type', () => {
+    const unknownItem = { type: 'unknown', id: '3', title: 'Unknown' } as unknown as HubItem;
+    render(
+      <MemoryRouter>
+        <HubSection title="Unknown Items" items={[unknownItem]} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Unknown Items' })).toBeInTheDocument();
+    expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
   });
 });

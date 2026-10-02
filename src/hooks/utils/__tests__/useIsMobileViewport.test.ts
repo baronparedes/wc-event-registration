@@ -1,41 +1,64 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useIsMobileViewport } from '../useIsMobileViewport';
 
 describe('useIsMobileViewport', () => {
-  let innerWidthSpy: ReturnType<typeof vi.spyOn>;
+  const originalInnerWidth = window.innerWidth;
 
   beforeEach(() => {
-    innerWidthSpy = vi.spyOn(window, 'innerWidth', 'get');
+    // Reset innerWidth before each test
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: originalInnerWidth,
+    });
   });
 
   afterEach(() => {
-    innerWidthSpy.mockRestore();
-    vi.clearAllMocks();
+    // Restore innerWidth
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: originalInnerWidth,
+    });
+    vi.restoreAllMocks();
   });
 
-  it('returns true when viewport width < 768px', () => {
-    innerWidthSpy.mockReturnValue(500);
+  it('should return true when window width is less than 768', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 767 });
+
     const { result } = renderHook(() => useIsMobileViewport());
+
     expect(result.current).toBe(true);
   });
 
-  it('returns false when viewport width >= 768px', () => {
-    innerWidthSpy.mockReturnValue(1024);
+  it('should return false when window width is 768 or greater', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 768 });
+
     const { result } = renderHook(() => useIsMobileViewport());
+
     expect(result.current).toBe(false);
   });
 
-  it('returns true at exactly 767px', () => {
-    innerWidthSpy.mockReturnValue(767);
+  it('should update value on window resize', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1024 });
     const { result } = renderHook(() => useIsMobileViewport());
-    expect(result.current).toBe(true);
-  });
 
-  it('returns false at exactly 768px', () => {
-    innerWidthSpy.mockReturnValue(768);
-    const { result } = renderHook(() => useIsMobileViewport());
+    expect(result.current).toBe(false);
+
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { value: 500 });
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    expect(result.current).toBe(true);
+
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { value: 800 });
+      window.dispatchEvent(new Event('resize'));
+    });
+
     expect(result.current).toBe(false);
   });
 });
