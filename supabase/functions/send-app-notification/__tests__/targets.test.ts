@@ -157,14 +157,71 @@ Deno.test('resolveRoleEmails resolves both member and admin emails for roles', a
   assertEquals(emails.sort(), ['admin@example.com', 'usher@example.com']);
 });
 
-Deno.test('resolveUserEmail resolves single user email', async () => {
+Deno.test('resolveUserEmail resolves user email via auth.admin', async () => {
   const supabase = createMockSupabase({
-    userData: { email: 'target@example.com' },
+    authUsers: [{ email: 'auth-user@example.com' }],
   });
 
   const emails = await resolveUserEmail(supabase, USER_ID);
-  assertEquals(emails, ['target@example.com']);
+  assertEquals(emails, ['auth-user@example.com']);
 });
+
+Deno.test('resolveUserEmail falls back to public.users when auth.admin fails', async () => {
+  const supabase = {
+    auth: {
+      admin: {
+        getUserById: () => Promise.resolve({ data: null, error: { message: 'Not found' } }),
+      },
+    },
+    from: (table: string) => {
+      if (table === 'users') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: { email: 'member-fallback@example.com' },
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    },
+  } as unknown as SupabaseClient<Database>;
+
+  const emails = await resolveUserEmail(supabase, USER_ID);
+  assertEquals(emails, ['member-fallback@example.com']);
+});
+
+Deno.test(
+  'resolveUserEmail returns empty array when neither auth nor public user has email',
+  async () => {
+    const supabase = {
+      auth: {
+        admin: {
+          getUserById: () => Promise.resolve({ data: { user: { email: null } }, error: null }),
+        },
+      },
+      from: (table: string) => {
+        if (table === 'users') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              }),
+            }),
+          };
+        }
+        throw new Error(`Unexpected table ${table}`);
+      },
+    } as unknown as SupabaseClient<Database>;
+
+    const emails = await resolveUserEmail(supabase, USER_ID);
+    assertEquals(emails, []);
+  },
+);
 
 Deno.test('resolveTargetEmails dispatches according to targetType', async () => {
   const supabase = createMockSupabase();

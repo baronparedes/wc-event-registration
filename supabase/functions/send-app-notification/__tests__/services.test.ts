@@ -216,3 +216,85 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'sendEmailNotifications triggers direct fetch to cron-process-email-queue when keys are present',
+  async () => {
+    await withEnv(async () => {
+      Deno.env.set('CRON_ROLE_KEY', 'test-cron-key');
+      const originalFetch = globalThis.fetch;
+      let fetchCalled = false;
+      let fetchedUrl = '';
+      let fetchedHeaders: HeadersInit | undefined;
+
+      globalThis.fetch = (input: string | URL | Request, init?: RequestInit) => {
+        fetchCalled = true;
+        fetchedUrl = input.toString();
+        fetchedHeaders = init?.headers;
+        return Promise.resolve(new Response(JSON.stringify({ success: true })));
+      };
+
+      try {
+        const { client } = createMockSupabase({
+          regMembers: [{ users: { email: 'member@example.com' } }],
+          pubMembers: [],
+        });
+
+        const result = await sendEmailNotifications({
+          supabase: client,
+          payload: {
+            title: 'Event Reminder',
+            message: 'Check out details',
+            url: 'https://example.com/event',
+            channels: ['email'],
+            targetType: 'event',
+            targetEventId: EVENT_ID,
+          },
+        });
+
+        assertEquals(result.emailCount, 1);
+        assertEquals(fetchCalled, true);
+        assertEquals(fetchedUrl.includes('cron-process-email-queue'), true);
+        assertEquals((fetchedHeaders as Record<string, string>)?.['X-Cron-Key'], 'test-cron-key');
+      } finally {
+        globalThis.fetch = originalFetch;
+        Deno.env.delete('CRON_ROLE_KEY');
+      }
+    });
+  },
+);
+
+Deno.test(
+  'sendEmailNotifications handles direct fetch failure gracefully without throwing',
+  async () => {
+    await withEnv(async () => {
+      Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'service-key');
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = () => Promise.reject(new Error('Network offline'));
+
+      try {
+        const { client } = createMockSupabase({
+          regMembers: [{ users: { email: 'member@example.com' } }],
+          pubMembers: [],
+        });
+
+        const result = await sendEmailNotifications({
+          supabase: client,
+          payload: {
+            title: 'Announcement',
+            message: 'Hello members',
+            channels: ['email'],
+            targetType: 'event',
+            targetEventId: EVENT_ID,
+          },
+        });
+
+        assertEquals(result.emailCount, 1);
+      } finally {
+        globalThis.fetch = originalFetch;
+        Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
+      }
+    });
+  },
+);
