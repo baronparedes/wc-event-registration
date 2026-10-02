@@ -29,9 +29,10 @@ const memberFieldDefinitions: DynamicFieldRef[] = [
   { source: 'role', fieldKey: 'role', label: 'Role', sortOrder: 1 },
   { source: 'category', fieldKey: 'category', label: 'Category', sortOrder: 2 },
   { source: 'member', fieldKey: 'email', label: 'Email', sortOrder: 3 },
-  { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 4 },
-  { source: 'member', fieldKey: 'checked_in_slot', label: 'Checked In Slot', sortOrder: 5 },
-  { source: 'member', fieldKey: 'check_in_status', label: 'Check-In Indicator', sortOrder: 6 },
+  { source: 'member', fieldKey: 'phone', label: 'Contact Number', sortOrder: 4 },
+  { source: 'member', fieldKey: 'avatar', label: 'Avatar', sortOrder: 5 },
+  { source: 'member', fieldKey: 'checked_in_slot', label: 'Checked In Slot', sortOrder: 6 },
+  { source: 'member', fieldKey: 'check_in_status', label: 'Check-In Indicator', sortOrder: 7 },
 ];
 
 function getUniqueValues(attendees: AttendeeSearchResult[], field: keyof AttendeeSearchResult) {
@@ -66,7 +67,9 @@ export function useAttendanceDataViewOptions({
                 ? getUniqueValues(attendees, 'category')
                 : field.fieldKey === 'email'
                   ? getUniqueValues(attendees, 'email')
-                  : [],
+                  : field.fieldKey === 'phone'
+                    ? getUniqueValues(attendees, 'phone')
+                    : [],
       })),
     [attendees],
   );

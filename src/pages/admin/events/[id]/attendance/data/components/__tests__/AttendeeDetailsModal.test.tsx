@@ -108,6 +108,26 @@ describe('AttendeeDetailsModal', () => {
     expect(screen.getByText('Category: staff')).toBeInTheDocument();
   });
 
+  it('displays contact number when present on registrant', () => {
+    const registrantWithPhone = {
+      ...baseRegistrant,
+      phone: '09171234567',
+    };
+
+    render(
+      <AttendeeDetailsModal
+        isOpen={true}
+        registrant={registrantWithPhone}
+        attendanceFields={[]}
+        registrationFields={[]}
+        registrationAnswers={[]}
+        onClose={mockOnClose}
+      />,
+    );
+
+    expect(screen.getByText('Contact Number: 09171234567')).toBeInTheDocument();
+  });
+
   it('displays checked in status badge', () => {
     const checkedInRegistrant = { ...baseRegistrant, check_in_status: 'checked_in' as const };
 
@@ -140,11 +160,12 @@ describe('AttendeeDetailsModal', () => {
     expect(screen.getByText('Not Checked In')).toBeInTheDocument();
   });
 
-  it('hides member id email role category when not present', () => {
+  it('hides member id email contact number role category when not present', () => {
     const minimalRegistrant: RegistrantAttendanceRow = {
       ...baseRegistrant,
       member_id: null,
       email: null,
+      phone: null,
       role: null,
       category: null,
     };
@@ -162,6 +183,7 @@ describe('AttendeeDetailsModal', () => {
 
     expect(screen.getByText('Member ID: Guest')).toBeInTheDocument();
     expect(screen.queryByText(/Email:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Contact Number:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Role:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Category:/)).not.toBeInTheDocument();
   });

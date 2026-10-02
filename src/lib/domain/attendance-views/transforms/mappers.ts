@@ -40,6 +40,7 @@ export function attendeeToRegistrant(attendee: AttendeeSearchResult): Registrant
     last_name: attendee.last_name,
     full_name: attendee.full_name,
     email: attendee.email,
+    phone: attendee.phone ?? null,
     role: attendee.role,
     category: attendee.category,
     check_in_status: attendee.check_in_status,

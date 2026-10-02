@@ -192,6 +192,7 @@ export function getVisibleFieldValue(
   if (field.source === 'member') {
     if (field.fieldKey === 'member_id') return attendee.member_id?.trim() || '—';
     if (field.fieldKey === 'email') return attendee.email?.trim() || '—';
+    if (field.fieldKey === 'phone') return attendee.phone?.trim() || '—';
     if (field.fieldKey === 'full_name') return attendee.full_name?.trim() || '—';
     if (field.fieldKey === 'checked_in_slot') {
       const labels = formatCompactCheckedInSlotLabels(attendee);

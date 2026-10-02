@@ -318,6 +318,15 @@ describe('field-access', () => {
       'm123@example.com',
     );
     expect(
+      getVisibleFieldValue(
+        { ...attendee, phone: '09171234567' },
+        { source: 'member', fieldKey: 'phone', label: '' },
+      ),
+    ).toBe('09171234567');
+    expect(getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'phone', label: '' })).toBe(
+      '—',
+    );
+    expect(
       getVisibleFieldValue(attendee, { source: 'member', fieldKey: 'full_name', label: '' }),
     ).toBe('Test Member');
     expect(

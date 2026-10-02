@@ -5,6 +5,7 @@ import {
   applyAttendanceAnswersPatchToAttendees,
   applyCheckInPatchToAttendees,
   isCacheExpired,
+  searchAttendeesLocally,
 } from '@/hooks/domain/attendance/queries/useAttendeesLocalCacheQuery';
 import type { AttendeeSearchResult } from '@/lib/domain/attendance';
 
@@ -190,5 +191,18 @@ describe('applyAttendanceAnswersPatchToAttendees', () => {
 
     expect(result.didUpdate).toBe(true);
     expect(result.attendees[0].attendance_answers).toEqual([]);
+  });
+});
+
+describe('searchAttendeesLocally', () => {
+  it('filters attendees by contact number / phone', () => {
+    const attendees: AttendeeSearchResult[] = [
+      buildAttendee({ full_name: 'Test Person A', email: 'a@example.com', phone: '09171112222' }),
+      buildAttendee({ full_name: 'Test Person B', email: 'b@example.com', phone: '09183334444' }),
+    ];
+
+    const results = searchAttendeesLocally(attendees, '1112222');
+    expect(results).toHaveLength(1);
+    expect(results[0].full_name).toBe('Test Person A');
   });
 });

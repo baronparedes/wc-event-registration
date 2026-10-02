@@ -81,9 +81,26 @@ Deno.test('list-attendees-v2 rejects invalid event IDs and unauthenticated reque
   });
 });
 
-Deno.test('list-attendees-v2 calls its RPC and returns attendee rows', async () => {
+Deno.test('list-attendees-v2 calls its RPC and returns attendee rows including phone', async () => {
   await withFunctionEnv(async () => {
-    const results = [{ registration_id: 'registration-1', attendee_kind: 'registered' }];
+    const results = [
+      {
+        registration_id: 'registration-1',
+        public_registration_id: null,
+        attendee_kind: 'registered',
+        full_name: 'Test Member',
+        email: 'member@example.com',
+        phone: '09171234567',
+      },
+      {
+        registration_id: 'public-1',
+        public_registration_id: 'public-1',
+        attendee_kind: 'public',
+        full_name: 'Test Public',
+        email: 'public@example.com',
+        phone: '09187654321',
+      },
+    ];
     const fetchMock = mockFetch({ body: { attendance_enabled: true, results } });
 
     try {

@@ -86,6 +86,7 @@ export type RegistrantAttendanceRow = {
   last_name: string;
   full_name: string;
   email: string | null;
+  phone?: string | null;
   role?: string | null;
   category?: string | null;
   check_in_status?: 'checked_in' | 'not_checked_in';
@@ -121,6 +122,7 @@ export type AttendeeSearchResult = {
   last_name: string;
   full_name: string;
   email: string | null;
+  phone?: string | null;
   role: string | null;
   category: string | null;
   registration_status: 'submitted' | 'updated' | 'cancelled';

@@ -429,7 +429,7 @@ export function useAttendeesLocalCacheQuery(
 
 /**
  * Filters a list of attendees by a search token.
- * Matches against full_name, member_id, and email (case-insensitive).
+ * Matches against full_name, member_id, email, and phone (case-insensitive).
  */
 export function searchAttendeesLocally(
   attendees: AttendeeSearchResult[],
@@ -442,8 +442,9 @@ export function searchAttendeesLocally(
     const fullName = a.full_name.toLowerCase();
     const memberId = (a.member_id ?? '').toLowerCase();
     const email = (a.email ?? '').toLowerCase();
+    const phone = (a.phone ?? '').toLowerCase();
 
-    return fullName.includes(t) || memberId.includes(t) || email.includes(t);
+    return fullName.includes(t) || memberId.includes(t) || email.includes(t) || phone.includes(t);
   });
 }
 

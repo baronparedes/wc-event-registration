@@ -105,6 +105,7 @@ export function AttendeeDetailsModal({
           <div className="mt-2 space-y-1 text-sm text-muted">
             <p>Member ID: {registrant.member_id ?? 'Guest'}</p>
             {registrant.email && <p>Email: {registrant.email}</p>}
+            {registrant.phone && <p>Contact Number: {registrant.phone}</p>}
             {registrant.role && <p>Role: {registrant.role}</p>}
             {registrant.category && <p>Category: {registrant.category}</p>}
           </div>

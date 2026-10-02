@@ -76,5 +76,10 @@ describe('useAttendanceDataViewOptions', () => {
     expect(result.current.registrationDynamicFieldOptions).toHaveLength(1);
     expect(result.current.attendanceDynamicFieldOptions).toHaveLength(1);
     expect(result.current.memberDynamicFieldOptions.length).toBeGreaterThan(0);
+    const phoneOption = result.current.memberDynamicFieldOptions.find(
+      (f) => f.fieldKey === 'phone',
+    );
+    expect(phoneOption).toBeDefined();
+    expect(phoneOption?.label).toBe('Contact Number');
   });
 });

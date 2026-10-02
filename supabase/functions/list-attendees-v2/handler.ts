@@ -21,6 +21,7 @@ type ListAttendeesAttendeeRow = {
   last_name: string;
   full_name: string;
   email: string | null;
+  phone?: string | null;
   role: string | null;
   category: string | null;
   registration_status: 'submitted' | 'updated' | 'cancelled';
