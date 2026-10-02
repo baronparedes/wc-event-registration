@@ -111,7 +111,7 @@ export async function handleUpsertAttendanceSavedView(req: Request): Promise<Res
       return successResponse(corsHeaders, newView, 201);
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    return errorResponse(corsHeaders, 500, message);
+    console.error('[upsert-attendance-saved-view] Unexpected error', err);
+    return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 }
