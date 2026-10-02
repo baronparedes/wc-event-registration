@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
-import type { Database } from '../../_shared/database.types.ts';
-import { isLocalBroadcastEnabled, logLocalBroadcast } from '../../_shared/localBroadcast.ts';
+import type { Database } from '@/shared/database.types.ts';
+import { isLocalBroadcastEnabled, logLocalBroadcast } from '@/shared/localBroadcast.ts';
+
 import type { SendAppNotificationPayload } from '../types.ts';
 
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';

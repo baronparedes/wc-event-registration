@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import type { Database } from '../../_shared/database.types.ts';
+import type { Database } from '@/shared/database.types.ts';
 
 export async function resolveAllEmails(supabase: SupabaseClient<Database>): Promise<string[]> {
   const emailSet = new Set<string>();
