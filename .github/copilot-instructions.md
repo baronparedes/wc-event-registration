@@ -52,8 +52,8 @@
 - Read first
 - Minimal edits
 - No commands unless requested
-- Use `build:agent` / `test:agent`
-- Never run `ci:gate`
+- Use `npm run precommit` for fast validation
+- Reserve `ci:gate` for CI
 
 ## Missing Context
 

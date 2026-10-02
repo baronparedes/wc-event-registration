@@ -9,8 +9,10 @@ const FAKER_SEED = Number(process.env.FAKER_SEED ?? 20260928);
 // Seed once per test file; re-seeding per test would replay values already used by module-scope fixtures.
 faker.seed(FAKER_SEED);
 
-// Load environment variables from .env.example
-dotenv.config({ path: path.resolve(__dirname, '.env.example') });
+// Load environment variables from .env.example if not already set
+if (!process.env.VITE_SUPABASE_URL) {
+  dotenv.config({ path: path.resolve(__dirname, '.env.example'), quiet: true });
+}
 
 // Stub fetch if not available in test environment
 if (!globalThis.fetch) {

@@ -5,8 +5,8 @@ This file contains the core principles, architecture rules, and domain logic con
 ## 1. Agent Workflow & Planning Mode
 
 - **Deep Planning Mode**: Before making changes or creating an execution plan, you must ALWAYS enter a deep planning mode by asking clarifying questions to confirm the user's expectations and assumptions. Never assume requirements.
-- **Verification**: Verify changes by running the appropriate checks. Do not guess if code compiles.
-- **CI Gate**: The repository CI gate command is `npm run ci:gate`. Do NOT run this command on every small change or intermediate step, as it takes too much time. ONLY run this command when you are finalizing code and preparing for a commit to ensure formatting, linting, building, and tests pass.
+- **Verification & Fast Pre-Commit**: Validate changes using `npm run precommit`. This fast check validates formatting, linting, TypeScript types, and runs related tests for staged/changed files in ~2-4s.
+- **CI Gate**: `npm run ci:gate` runs the full repository test suite and coverage reports for CI pipeline validation. Agents must use `npm run precommit` (or targeted test commands) for validating work instead of running the full `ci:gate`.
 - **Formatting**: If formatting fails, run `npm run format`.
 
 ## 2. Core Coding Standards & TypeScript Rules

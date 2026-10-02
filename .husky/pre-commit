@@ -1,3 +1,3 @@
 scripts/check-lockfile-sync.sh
 
-npm run ci:gate
+npm run precommit
