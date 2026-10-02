@@ -55,7 +55,13 @@ export function buildServiceAttendanceCsvExport(params: BuildServiceAttendanceCs
   // Sort records by service_date ascending, then by member full_name ascending
   // so the CSV mirrors the grouped-by-date-then-member view in the UI.
   const sortedRecords = [...records].sort((a, b) => {
-    const dateCompare = (a.service_date ?? '').localeCompare(b.service_date ?? '');
+    // ⚡ Bolt: Performance Improvement
+    // Use native string comparison for ISO-8601 dates instead of localeCompare
+    // to avoid significant overhead in the sorting loop.
+    const aDate = a.service_date ?? '';
+    const bDate = b.service_date ?? '';
+    const dateCompare = aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+
     if (dateCompare !== 0) return dateCompare;
     return (a.user?.full_name ?? '').localeCompare(b.user?.full_name ?? '');
   });
