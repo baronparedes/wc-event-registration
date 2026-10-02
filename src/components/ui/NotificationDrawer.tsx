@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
-import { Bell, CheckCheck, X } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -107,13 +107,18 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                   onClick={() => markAllRead.mutate()}
                   disabled={markAllRead.isPending}
                 >
-                  <CheckCheck className="h-4 w-4" />
-                  <span>Mark all as read</span>
+                  {markAllRead.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCheck className="h-4 w-4" />
+                  )}
+                  <span>{markAllRead.isPending ? 'Marking read...' : 'Mark all as read'}</span>
                 </button>
               )}
               <button
                 type="button"
                 aria-label="Close notifications drawer"
+                title="Close notifications drawer"
                 className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={onClose}
               >
@@ -251,6 +256,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                     <span>Get alerts on this device</span>
                   </div>
                   <Button size="sm" onClick={handleSubscribe} disabled={push.isLoading}>
+                    {push.isLoading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                     {push.isLoading ? 'Enabling...' : 'Enable'}
                   </Button>
                 </div>
@@ -267,7 +273,8 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                     onClick={handleUnsubscribe}
                     disabled={push.isLoading}
                   >
-                    Turn off
+                    {push.isLoading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                    {push.isLoading ? 'Turning off...' : 'Turn off'}
                   </Button>
                 </div>
               )}
