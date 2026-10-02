@@ -95,7 +95,13 @@ function runTaskAsync(label, command, args) {
     });
 
     child.on('error', (error) => {
-      resolve({ label, duration: ((Date.now() - startTime) / 1000).toFixed(1), error, stdout, stderr });
+      resolve({
+        label,
+        duration: ((Date.now() - startTime) / 1000).toFixed(1),
+        error,
+        stdout,
+        stderr,
+      });
     });
     child.on('close', (status) => {
       resolve({
