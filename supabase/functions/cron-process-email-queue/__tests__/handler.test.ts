@@ -21,6 +21,7 @@ async function withFunctionEnv(run: () => Promise<void>) {
     [
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY',
+      'CRON_ROLE_KEY',
       'ALLOWED_ORIGINS',
       'RESEND_API_KEY',
       'RESEND_FROM_EMAIL',
@@ -29,6 +30,7 @@ async function withFunctionEnv(run: () => Promise<void>) {
 
   Deno.env.set('SUPABASE_URL', 'https://example.supabase.co');
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', SERVICE_ROLE_KEY);
+  Deno.env.set('CRON_ROLE_KEY', 'test-cron-role-key');
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
   Deno.env.set('RESEND_API_KEY', 'test-resend-key');
   Deno.env.set('RESEND_FROM_EMAIL', 'events@example.com');
@@ -119,6 +121,32 @@ Deno.test('cron-process-email-queue rejects requests without a service or cron k
     assertEquals(response.status, 401);
   });
 });
+
+Deno.test(
+  'cron-process-email-queue accepts an authenticated cron request without an origin',
+  async () => {
+    await withFunctionEnv(async () => {
+      const fetchMock = mockFetch({ messages: [] });
+      const response = await handleCronProcessEmailQueue(
+        new Request('https://example.functions/cron-process-email-queue', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-cron-key': 'test-cron-role-key',
+          },
+          body: '{}',
+        }),
+      );
+
+      try {
+        assertEquals(response.status, 200);
+        assertEquals(await response.json(), { success: true, processed: 0 });
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
 
 Deno.test('cron-process-email-queue returns zero when the queue is empty', async () => {
   await withFunctionEnv(async () => {

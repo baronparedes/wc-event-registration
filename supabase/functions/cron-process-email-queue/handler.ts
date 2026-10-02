@@ -57,6 +57,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
     req,
     functionName: 'cron-process-email-queue',
     method: 'POST',
+    allowMissingOrigin: true,
     requireAdmin: true,
     allowServiceRole: true,
     allowCronRole: true,

@@ -36,6 +36,7 @@ type EdgeHookBaseOptions = {
   functionName: string;
   allowedOrigins?: string[];
   allowAnyOrigin?: boolean;
+  allowMissingOrigin?: boolean;
   method?: 'POST' | 'GET' | 'PUT' | 'PATCH' | 'DELETE';
   publicRateLimit?: PublicRateLimitConfig;
 };
@@ -128,7 +129,11 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
     origin,
     options.allowAnyOrigin && origin ? [origin] : allowedOrigins,
   );
-  const originAllowed = options.allowAnyOrigin || isOriginAllowed(origin, allowedOrigins);
+  const originAllowed =
+    options.allowAnyOrigin ||
+    (origin === null
+      ? options.allowMissingOrigin === true
+      : isOriginAllowed(origin, allowedOrigins));
 
   // ⚠️ CORS allowlist is one layer of defense.
   // Non-browser clients can spoof Origin headers or bypass CORS entirely.

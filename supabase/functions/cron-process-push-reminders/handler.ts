@@ -42,6 +42,7 @@ export async function handleCronProcessPushReminders(
     req,
     functionName: 'cron-process-push-reminders',
     method: 'POST',
+    allowMissingOrigin: true,
     requireAdmin: true,
     allowServiceRole: true,
     allowCronRole: true,

@@ -21,6 +21,7 @@ async function withFunctionEnv(run: () => Promise<void>, configureVapid = true) 
     [
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY',
+      'CRON_ROLE_KEY',
       'ALLOWED_ORIGINS',
       'VAPID_PUBLIC_KEY',
       'VAPID_PRIVATE_KEY',
@@ -29,6 +30,7 @@ async function withFunctionEnv(run: () => Promise<void>, configureVapid = true) 
 
   Deno.env.set('SUPABASE_URL', 'https://example.supabase.co');
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', SERVICE_ROLE_KEY);
+  Deno.env.set('CRON_ROLE_KEY', 'test-cron-role-key');
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
   if (configureVapid) {
     Deno.env.set('VAPID_PUBLIC_KEY', 'test-public-key');
@@ -113,6 +115,33 @@ Deno.test(
         Promise.resolve(),
       );
       assertEquals(response.status, 401);
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-push-reminders accepts an authenticated cron request without an origin',
+  async () => {
+    await withFunctionEnv(async () => {
+      const fetchMock = mockFetch({ batches: [[]] });
+      const response = await handleCronProcessPushReminders(
+        new Request('https://example.functions/cron-process-push-reminders', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-cron-key': 'test-cron-role-key',
+          },
+          body: '{}',
+        }),
+        () => Promise.resolve(),
+      );
+
+      try {
+        assertEquals(response.status, 200);
+        assertEquals(await response.json(), { success: true, processed: 0 });
+      } finally {
+        fetchMock.restore();
+      }
     });
   },
 );
