@@ -101,10 +101,10 @@ describe('HomePage', () => {
     ).toBeInTheDocument();
     const banner = screen.getByTestId('welcome-hello-banner');
     expect(banner).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Forms', exact: true })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Forms' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Your member profile' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign In \u2192', exact: true })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Sign In \u2192' })).toHaveAttribute(
       'href',
       '/profile',
     );

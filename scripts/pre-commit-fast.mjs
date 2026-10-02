@@ -88,8 +88,8 @@ if (targetLintable.length > 0) {
   runTask('Linting (changed files)', `npx eslint ${fileArgs}`);
 }
 
-// 3. Fast TypeScript type-check across project
-runTask('TypeScript typecheck', 'npx tsc --noEmit');
+// 3. TypeScript project check and production build
+runTask('TypeScript & Vite build', 'npm run build:agent');
 
 // 4. Run related Vitest tests for modified React/TS files
 if (targetReactFiles.length > 0) {
