@@ -25,6 +25,30 @@ function createMockSupabase(
   } = {},
 ) {
   return {
+    auth: {
+      admin: {
+        getUserById: (id: string) => {
+          if (overrides.authUsers) {
+            return Promise.resolve({
+              data: { user: { email: overrides.authUsers[0]?.email ?? null } },
+              error: null,
+            });
+          }
+          if (overrides.userData !== undefined) {
+            return Promise.resolve({
+              data: overrides.userData ? { user: { email: overrides.userData.email } } : null,
+              error: overrides.userData ? null : { message: 'User not found' },
+            });
+          }
+          return Promise.resolve({
+            data: {
+              user: { email: id === 'admin-uuid' ? 'admin@example.com' : 'user@example.com' },
+            },
+            error: null,
+          });
+        },
+      },
+    },
     from: (table: string) => {
       if (table === 'registrations') {
         return {

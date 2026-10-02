@@ -29,13 +29,20 @@ export async function resolveRoleEmails(
     .in('role', roles);
 
   if (adminRows && adminRows.length > 0) {
-    const adminIds = adminRows.map((a) => a.auth_user_id);
-    const { data: authUsers } = await supabase.from('users').select('email').in('id', adminIds);
-
-    authUsers?.forEach((au) => {
-      const em = au.email?.trim().toLowerCase();
-      if (em) emailSet.add(em);
-    });
+    for (const admin of adminRows) {
+      if (admin.auth_user_id) {
+        try {
+          const { data: authUserData, error: authError } = await supabase.auth.admin.getUserById(
+            admin.auth_user_id,
+          );
+          if (!authError && authUserData?.user?.email) {
+            emailSet.add(authUserData.user.email.trim().toLowerCase());
+          }
+        } catch {
+          // Ignore auth.admin error
+        }
+      }
+    }
   }
 
   return Array.from(emailSet);
