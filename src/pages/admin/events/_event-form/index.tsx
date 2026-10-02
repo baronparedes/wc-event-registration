@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
@@ -83,27 +83,10 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   const { showDialog, pendingFormData, requestConfirmation, confirmSave, cancelSave } =
     useSaveConfirmation();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    control,
-    formState: { errors, isDirty, dirtyFields },
-  } = useForm<CreateEventInput>({
-    resolver: zodResolver(createEventSchema),
-    defaultValues: DEFAULT_VALUES,
-  });
-
-  // Extract slug generation logic (after useForm to ensure watch/setValue are available)
-  const { slugValue, onSlugChange } = useSlugGeneration(isEditMode, watch, setValue);
-
-  // Prefill form when editing an existing event
-  useEffect(() => {
+  const formValues = useMemo(() => {
     if (isEditMode && existingEvent) {
       const eventMetadata = (existingEvent.metadata ?? {}) as Record<string, unknown>;
-      reset({
+      return {
         title: existingEvent.title,
         slug: existingEvent.slug,
         description: existingEvent.description ?? '',
@@ -122,9 +105,26 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         }),
         allow_name_lookup: eventMetadata.allow_name_lookup === true,
         send_email_after_completion: eventMetadata.send_email_after_completion === true,
-      });
+      };
     }
-  }, [isEditMode, existingEvent, reset]);
+    return undefined;
+  }, [isEditMode, existingEvent]);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    control,
+    formState: { errors, isDirty, dirtyFields },
+  } = useForm<CreateEventInput>({
+    resolver: zodResolver(createEventSchema),
+    defaultValues: DEFAULT_VALUES,
+    values: formValues,
+  });
+
+  // Extract slug generation logic (after useForm to ensure watch/setValue are available)
+  const { slugValue, onSlugChange } = useSlugGeneration(isEditMode, watch, setValue);
 
   async function onSubmit(data: CreateEventInput) {
     // If event is published and we're editing, show confirmation dialog
@@ -186,7 +186,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     }
   }
 
-  const formValues = useWatch({ control }) as CreateEventInput;
+  const watchedValues = useWatch({ control }) as CreateEventInput;
 
   if (isEditMode && isLoadingEvent) {
     return (
@@ -365,7 +365,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             disabled={isArchivedEvent}
           />
 
-          {formValues.status === 'draft' && <PublishRequirementsChecker formValues={formValues} />}
+          {watchedValues?.status === 'draft' && (
+            <PublishRequirementsChecker formValues={watchedValues} />
+          )}
 
           <EventFormActions
             isEditMode={isEditMode}
