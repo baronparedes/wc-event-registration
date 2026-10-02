@@ -1,16 +1,29 @@
-import { AlertTriangle, Bell, ExternalLink, Loader2, Send, Users } from 'lucide-react';
+import {
+  AlertTriangle,
+  Bell,
+  Calendar,
+  ExternalLink,
+  Loader2,
+  Mail,
+  Send,
+  Users,
+} from 'lucide-react';
 
 import { Avatar, Badge, Button, Dialog } from '@/components/ui';
 import type { AuthUserItem } from '@/hooks/domain/auth';
+import type { AdminEvent } from '@/lib/domain/events';
+import type { BroadcastAudienceStats, BroadcastChannel } from '@/lib/domain/notifications';
 
 import { getBroadcastRoleLabel } from '../constants';
 
 export interface BroadcastPreviewValues {
   title: string;
   message: string;
-  targetType: 'all' | 'role' | 'user';
+  channels?: BroadcastChannel[];
+  targetType: 'all' | 'role' | 'user' | 'event';
   targetRoles?: string[];
   targetUserId?: string;
+  targetEventId?: string;
   destinationUrl?: string;
 }
 
@@ -21,6 +34,8 @@ export interface BroadcastConfirmDialogProps {
   isPending: boolean;
   values: BroadcastPreviewValues | null;
   targetUser?: AuthUserItem | null;
+  targetEvent?: AdminEvent | null;
+  audienceStats?: BroadcastAudienceStats | null;
 }
 
 export function BroadcastConfirmDialog({
@@ -30,8 +45,14 @@ export function BroadcastConfirmDialog({
   isPending,
   values,
   targetUser,
+  targetEvent,
+  audienceStats,
 }: BroadcastConfirmDialogProps) {
   if (!values) return null;
+
+  const channels = values.channels ?? ['push'];
+  const isPush = channels.includes('push');
+  const isEmail = channels.includes('email');
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="md">
@@ -43,19 +64,41 @@ export function BroadcastConfirmDialog({
           <div>
             <Dialog.Title>Confirm Broadcast</Dialog.Title>
             <Dialog.Description>
-              Review your target audience and message details before sending.
+              Review your delivery channels and target audience details before sending.
             </Dialog.Description>
           </div>
         </div>
       </Dialog.Header>
 
       <Dialog.Body className="space-y-4 pt-1">
+        {/* Delivery Channels */}
+        <div className="rounded-xl border border-border bg-background p-3.5 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
+            <span>Delivery Channels</span>
+            <div className="flex items-center gap-1.5">
+              {isPush && (
+                <Badge variant="primaryOutline" className="text-xs px-2 py-0.5 gap-1">
+                  <Bell className="h-3 w-3" /> Push
+                </Badge>
+              )}
+              {isEmail && (
+                <Badge variant="primaryOutline" className="text-xs px-2 py-0.5 gap-1">
+                  <Mail className="h-3 w-3" /> Email
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Audience Target Card */}
         <div className="rounded-xl border border-border bg-background p-3.5 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
             <span>Target Audience</span>
             {values.targetType === 'all' && (
               <span className="text-amber-500 font-medium">Mass Broadcast</span>
+            )}
+            {values.targetType === 'event' && (
+              <span className="text-primary font-medium">Event Attendees</span>
             )}
           </div>
 
@@ -65,10 +108,47 @@ export function BroadcastConfirmDialog({
               <div>
                 <p className="font-semibold text-text">Registered Members</p>
                 <p className="text-muted mt-0.5">
-                  This creates an in-app alert for members with a matching account email. Push
-                  delivery requires an active browser subscription.
+                  This sends to members across all enabled delivery channels. Push delivery requires
+                  an active browser subscription.
                 </p>
               </div>
+            </div>
+          )}
+
+          {values.targetType === 'event' && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/[0.03] p-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-text truncate">
+                    {targetEvent?.title || 'Selected Event'}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {audienceStats
+                      ? `${audienceStats.total_recipients} attendees detected (${audienceStats.registered_members_count} members, ${audienceStats.public_registrants_count} guests)`
+                      : 'Registered attendees'}
+                  </p>
+                </div>
+              </div>
+
+              {audienceStats && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg border border-border/70 bg-surface p-2">
+                    <p className="text-muted text-[11px]">Email Coverage</p>
+                    <p className="font-bold text-text mt-0.5">
+                      {audienceStats.email_recipients_count} / {audienceStats.total_recipients}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-surface p-2">
+                    <p className="text-muted text-[11px]">Push Coverage</p>
+                    <p className="font-bold text-text mt-0.5">
+                      {audienceStats.push_recipients_count} devices
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

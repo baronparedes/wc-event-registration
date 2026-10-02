@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
+import { isLocalBroadcastEnabled, logLocalBroadcast } from '../_shared/localBroadcast.ts';
 
 type RpcResult<T> = {
   data: T | null;
@@ -69,8 +70,9 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
   const queueClient = client as unknown as EmailQueueClient;
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@welcomechurch.ph';
+  const isLocalBroadcast = isLocalBroadcastEnabled();
 
-  if (!resendApiKey) {
+  if (!resendApiKey && !isLocalBroadcast) {
     console.error('[cron-process-email-queue] RESEND_API_KEY is not configured');
     return errorResponse(
       corsHeaders,
@@ -112,6 +114,20 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             `[cron-process-email-queue] Skipping unknown event_type: ${payload.event_type}`,
           );
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
+          return;
+        }
+
+        // Local simulation when no real Resend key is available
+        if (isLocalBroadcast && !resendApiKey) {
+          await logLocalBroadcast({
+            type: 'email',
+            targetType: 'email_queue',
+            recipient: payload.recipient,
+            subject: payload.subject || 'Email notification',
+            body: payload.text || JSON.stringify(payload.metadata || {}),
+          });
+          await queueClient.rpc('archive_email_notification', { message_id: messageId });
+          processedCount++;
           return;
         }
 

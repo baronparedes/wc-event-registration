@@ -9,3 +9,8 @@
 
 # Local-only seed data
 seeds/*.sql
+
+# Logs
+*.log
+local-broadcasts.log
+

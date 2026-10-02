@@ -2,6 +2,7 @@ import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
 import type {
   AppNotificationRecipient,
+  BroadcastAudienceStats,
   ManagePushSubscriptionPayload,
   SendAppNotificationPayload,
   SendAppNotificationResponse,
@@ -27,6 +28,35 @@ export async function sendAppNotification(
   }
 
   return data;
+}
+
+export async function getBroadcastAudienceStats(params: {
+  targetType: 'all' | 'role' | 'user' | 'event';
+  targetRoles?: string[] | null;
+  targetUserId?: string | null;
+  targetEventId?: string | null;
+}): Promise<BroadcastAudienceStats> {
+  const { data, error } = await supabase.rpc('get_broadcast_audience_stats', {
+    p_target_type: params.targetType,
+    p_target_roles:
+      params.targetRoles && params.targetRoles.length > 0 ? params.targetRoles : undefined,
+    p_user_id: params.targetUserId || undefined,
+    p_event_id: params.targetEventId || undefined,
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch audience statistics: ${error.message}`);
+  }
+
+  return (
+    (data as unknown as BroadcastAudienceStats) || {
+      total_recipients: 0,
+      email_recipients_count: 0,
+      push_recipients_count: 0,
+      registered_members_count: 0,
+      public_registrants_count: 0,
+    }
+  );
 }
 
 export async function managePushSubscription(

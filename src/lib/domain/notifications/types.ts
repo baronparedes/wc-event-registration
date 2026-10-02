@@ -14,20 +14,26 @@ export type AppNotificationRecipient = {
   notification: AppNotification;
 };
 
+export type BroadcastChannel = 'push' | 'email';
+
 export type SendAppNotificationPayload = {
   title: string;
   message: string;
-  targetType: 'all' | 'role' | 'user';
+  channels?: BroadcastChannel[];
+  targetType: 'all' | 'role' | 'user' | 'event';
   targetRole?: string | null;
   targetRoles?: string[] | null;
   targetUserId?: string | null;
+  targetEventId?: string | null;
   url?: string;
 };
 
 export type SendAppNotificationResponse = {
   success: boolean;
   count: number;
-  notificationId: string;
+  pushCount?: number;
+  emailCount?: number;
+  notificationId?: string | null;
 };
 
 export type ManagePushSubscriptionPayload = {
@@ -39,4 +45,12 @@ export type ManagePushSubscriptionPayload = {
       auth: string;
     };
   };
+};
+
+export type BroadcastAudienceStats = {
+  total_recipients: number;
+  email_recipients_count: number;
+  push_recipients_count: number;
+  registered_members_count: number;
+  public_registrants_count: number;
 };

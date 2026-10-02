@@ -11,6 +11,7 @@ describe('BroadcastConfirmDialog', () => {
   const defaultValues: BroadcastPreviewValues = {
     title: 'Sunday Service Update',
     message: 'Service starts at 10:00 AM.',
+    channels: ['push', 'email'],
     targetType: 'all',
     destinationUrl: '/profile',
   };
@@ -55,7 +56,7 @@ describe('BroadcastConfirmDialog', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders mass broadcast warning when targetType is "all"', () => {
+  it('renders delivery channel badges and mass broadcast warning when targetType is "all"', () => {
     renderDialog({
       isOpen: true,
       onClose: vi.fn(),
@@ -65,12 +66,63 @@ describe('BroadcastConfirmDialog', () => {
     });
 
     expect(screen.getByText('Confirm Broadcast')).toBeInTheDocument();
+    expect(screen.getByText('Delivery Channels')).toBeInTheDocument();
+    expect(screen.getByText('Push')).toBeInTheDocument();
+    expect(screen.getByText('Email')).toBeInTheDocument();
     expect(screen.getByText('Mass Broadcast')).toBeInTheDocument();
     expect(screen.getByText('Registered Members')).toBeInTheDocument();
-    expect(screen.getByText(/members with a matching account email/i)).toBeInTheDocument();
     expect(screen.getByText('Sunday Service Update')).toBeInTheDocument();
     expect(screen.getByText('Service starts at 10:00 AM.')).toBeInTheDocument();
     expect(screen.getByText('/profile')).toBeInTheDocument();
+  });
+
+  it('renders target event and audience stats when targetType is "event"', () => {
+    renderDialog({
+      isOpen: true,
+      onClose: vi.fn(),
+      onConfirm: vi.fn(),
+      isPending: false,
+      values: {
+        ...defaultValues,
+        targetType: 'event',
+        targetEventId: 'event-uuid-1234',
+      },
+      targetEvent: {
+        id: 'event-uuid-1234',
+        title: 'Youth Camp 2026',
+        slug: 'youth-camp-2026',
+        status: 'published',
+        duplicate_policy: 'block',
+        require_id_lookup: false,
+        registration_mode: 'open',
+        allow_public_registrations: true,
+        metadata: {},
+        created_by_admin_id: null,
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        description: 'Annual youth camp',
+        location: 'Camp Venue',
+        starts_at: '2026-10-10T09:00:00Z',
+        ends_at: '2026-10-12T17:00:00Z',
+        registration_opens_at: null,
+        registration_closes_at: null,
+      },
+      audienceStats: {
+        total_recipients: 50,
+        email_recipients_count: 48,
+        push_recipients_count: 32,
+        registered_members_count: 35,
+        public_registrants_count: 15,
+      },
+    });
+
+    expect(screen.getByText('Event Attendees')).toBeInTheDocument();
+    expect(screen.getByText('Youth Camp 2026')).toBeInTheDocument();
+    expect(
+      screen.getByText(/50 attendees detected \(35 members, 15 guests\)/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('48 / 50')).toBeInTheDocument();
+    expect(screen.getByText('32 devices')).toBeInTheDocument();
   });
 
   it('renders role pills when targetType is "role"', () => {
