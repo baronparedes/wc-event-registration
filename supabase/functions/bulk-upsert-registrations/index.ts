@@ -84,7 +84,13 @@ Deno.serve(async (req) => {
         .in('member_id', chunk);
 
       if (usersError) {
-        return errorResponse(corsHeaders, 500, 'Failed to resolve members', usersError.message);
+        console.error('Failed to resolve members:', usersError.message);
+        return errorResponse(
+          corsHeaders,
+          500,
+          'Failed to resolve members',
+          'Internal server error',
+        );
       }
 
       users.push(...((usersData ?? []) as UserRow[]));

@@ -69,7 +69,8 @@ export async function handleUpdateMemberId(req: Request): Promise<Response> {
         );
       }
 
-      return errorResponse(corsHeaders, 500, `Database error: ${updateError.message}`);
+      console.error('Failed to update member ID:', updateError.message);
+      return errorResponse(corsHeaders, 500, 'Internal server error');
     }
 
     if (!updatedMember) {
