@@ -169,7 +169,8 @@ export async function handleUpdateAttendanceSettings(req: Request): Promise<Resp
       .maybeSingle();
 
     if (eventError) {
-      return errorResponse(corsHeaders, 500, 'Failed to verify event', eventError.message, {
+      console.error('Failed to verify event:', eventError.message);
+      return errorResponse(corsHeaders, 500, 'Failed to verify event', 'Internal server error', {
         error_code: 'EVENT_LOOKUP_FAILED',
       });
     }

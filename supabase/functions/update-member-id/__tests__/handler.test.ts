@@ -116,7 +116,7 @@ Deno.test('update-member-id maps duplicate IDs and database errors', async () =>
     try {
       const response = await handleUpdateMemberId(buildRequest({ id: USER_ID, member_id: 'M-2' }));
       assertEquals(response.status, 500);
-      assertEquals((await response.json()).error, 'Database error: database unavailable');
+      assertEquals((await response.json()).error, 'Internal server error');
     } finally {
       errorMock.restore();
     }

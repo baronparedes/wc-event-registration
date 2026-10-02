@@ -131,7 +131,8 @@ export async function handleDownloadRegistrationsTemplate(req: Request): Promise
       .order('full_name', { ascending: true });
 
     if (usersError) {
-      return errorResponse(corsHeaders, 500, 'Failed to read members', usersError.message);
+      console.error('Failed to read members:', usersError.message);
+      return errorResponse(corsHeaders, 500, 'Failed to read members', 'Internal server error');
     }
 
     const safeUsers = (users ?? []) as UserRow[];

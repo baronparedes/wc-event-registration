@@ -68,7 +68,10 @@ export async function handleUploadMemberAvatar(req: Request): Promise<Response> 
     .eq('is_active', true)
     .maybeSingle<{ avatar_object_key: string | null }>();
 
-  if (memberError) return errorResponse(guard.corsHeaders, 500, memberError.message);
+  if (memberError) {
+    console.error('Failed to fetch member:', memberError.message);
+    return errorResponse(guard.corsHeaders, 500, 'Internal server error');
+  }
   if (!member) return errorResponse(guard.corsHeaders, 404, 'Member not found');
 
   const avatarObjectKey = toJpegObjectKey(member.avatar_object_key, id);
@@ -80,7 +83,10 @@ export async function handleUploadMemberAvatar(req: Request): Promise<Response> 
       upsert: true,
     });
 
-  if (uploadError) return errorResponse(guard.corsHeaders, 500, uploadError.message);
+  if (uploadError) {
+    console.error('Failed to upload avatar:', uploadError.message);
+    return errorResponse(guard.corsHeaders, 500, 'Internal server error');
+  }
 
   const { data: updatedMember, error: updateError } = await guard.client
     .from('users')
@@ -89,7 +95,10 @@ export async function handleUploadMemberAvatar(req: Request): Promise<Response> 
     .select('id')
     .single();
 
-  if (updateError) return errorResponse(guard.corsHeaders, 500, updateError.message);
+  if (updateError) {
+    console.error('Failed to update member avatar reference:', updateError.message);
+    return errorResponse(guard.corsHeaders, 500, 'Internal server error');
+  }
   if (!updatedMember) return errorResponse(guard.corsHeaders, 404, 'Member not found');
 
   return jsonResponse(
