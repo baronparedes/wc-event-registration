@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -158,6 +159,7 @@ export function NameLookupModal({
               Cancel
             </Button>
             <Button disabled={isLoading} size="lg" type="submit" variant="default">
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? 'Searching...' : 'Search'}
             </Button>
           </Dialog.Footer>
