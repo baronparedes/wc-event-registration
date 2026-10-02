@@ -1,3 +1,5 @@
+import { Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/Button';
 
 type EventFormActionsProps = {
@@ -33,6 +35,7 @@ export function EventFormActions(props: EventFormActionsProps) {
         Cancel
       </Button>
       <Button disabled={isPending || !hasChanges} size="lg" type="submit" variant="default">
+        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Event'}
       </Button>
     </div>

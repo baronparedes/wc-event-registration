@@ -1,4 +1,4 @@
-import { AlertTriangle, Bell, ExternalLink, Send, Users } from 'lucide-react';
+import { AlertTriangle, Bell, ExternalLink, Loader2, Send, Users } from 'lucide-react';
 
 import { Avatar, Badge, Button, Dialog } from '@/components/ui';
 import type { AuthUserItem } from '@/hooks/domain/auth';
@@ -137,7 +137,7 @@ export function BroadcastConfirmDialog({
           Back to Edit
         </Button>
         <Button onClick={onConfirm} disabled={isPending} className="gap-2">
-          <Send className="h-4 w-4" />
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           <span>{isPending ? 'Broadcasting...' : 'Confirm & Send'}</span>
         </Button>
       </Dialog.Footer>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -241,6 +241,7 @@ export function PublicEventFieldsStep({
 
         <div className="flex w-full flex-col gap-2">
           <Button className="w-full" type="submit" disabled={isSubmitting} size="lg">
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSubmitting ? 'Submitting...' : 'Submit Registration'}
           </Button>
           <Button
