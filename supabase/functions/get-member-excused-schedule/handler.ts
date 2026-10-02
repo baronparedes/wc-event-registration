@@ -276,7 +276,6 @@ export async function handleGetMemberExcusedSchedule(req: Request): Promise<Resp
       requestId: guard.requestId,
       error: err instanceof Error ? err.stack || err.message : err,
     });
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    return errorResponse(corsHeaders, 500, message);
+    return errorResponse(corsHeaders, 500, 'Internal server error');
   }
 }
