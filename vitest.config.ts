@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   test: {
+    css: false,
     reporters: ['default', 'agent'],
     environment: 'happy-dom',
     globals: true,
@@ -13,7 +14,9 @@ export default defineConfig({
     exclude: ['supabase/**'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
+      clean: true,
+      cleanOnRerun: true,
+      reporter: ['text-summary', 'html', 'json-summary'],
       reportsDirectory: './coverage',
       exclude: [
         'src/**/__tests__/**',

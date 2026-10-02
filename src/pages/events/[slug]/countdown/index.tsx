@@ -3,10 +3,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, Home, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Badge, Button, EmptyState, MarkdownRenderer, Skeleton } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { usePublicEventQuery } from '@/hooks/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
@@ -16,6 +13,7 @@ export function EventCountdownPage() {
   const navigate = useNavigate();
   const { data: availability, isLoading, isError } = usePublicEventQuery(slug ?? null);
   const event = availability?.event;
+  const isRegistrationOpen = availability?.status === 'available';
 
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -32,7 +30,7 @@ export function EventCountdownPage() {
 
     const startsAtDate = new Date(event.starts_at);
 
-    const timer = setInterval(() => {
+    const updateTimer = () => {
       const now = new Date();
       const timeDifference = startsAtDate.getTime() - now.getTime();
 
@@ -46,17 +44,15 @@ export function EventCountdownPage() {
       const isAfterStartDay = now.getTime() > startsAtDate.getTime() && !isSameDay;
 
       if (isAfterStartDay) {
-        clearInterval(timer);
         setIsPastDate(true);
         navigate(ROUTE_PATHS.home, { replace: true });
-        return;
+        return false;
       }
 
       if (timeDifference <= 0) {
-        clearInterval(timer);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         setIsEventStarted(true);
-        return;
+        return false;
       }
 
       setTimeLeft({
@@ -65,7 +61,14 @@ export function EventCountdownPage() {
         minutes: Math.floor((timeDifference / 1000 / 60) % 60),
         seconds: Math.floor((timeDifference / 1000) % 60),
       });
-    }, 1000);
+
+      return true;
+    };
+
+    const shouldContinue = updateTimer();
+    if (!shouldContinue) return;
+
+    const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
   }, [event, navigate]);
@@ -92,7 +95,7 @@ export function EventCountdownPage() {
     );
   }
 
-  if (isError || availability?.status === 'unavailable' || !event) {
+  if (isError || !event || availability?.reason === 'not_found_or_unpublished') {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <EmptyState
@@ -128,26 +131,34 @@ export function EventCountdownPage() {
           </div>
           <div className="my-12 rounded-3xl border border-primary/20 bg-primary/5 p-12">
             <h2 className="text-3xl font-bold text-primary">The Event has Started</h2>
-            <p className="mt-4 text-muted">Head over to the registration page to join us.</p>
+            <p className="mt-4 text-muted">
+              {isRegistrationOpen
+                ? 'Head over to the registration page to join us.'
+                : 'Registration for this event is closed.'}
+            </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
-                variant="primaryOutline"
+                variant={isRegistrationOpen ? 'primaryOutline' : 'default'}
                 className="w-full sm:w-auto"
                 onClick={() => navigate(ROUTE_PATHS.home)}
               >
                 <Home className="h-4 w-4 mr-2" aria-hidden="true" />
                 Go Home
               </Button>
-              <Button
-                size="lg"
-                className="w-full sm:w-auto"
-                onClick={() =>
-                  navigate(toRoute('eventPublicRegister', { slug: event.slug }), { replace: true })
-                }
-              >
-                Go to Registration
-              </Button>
+              {isRegistrationOpen && (
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto"
+                  onClick={() =>
+                    navigate(toRoute('eventPublicRegister', { slug: event.slug }), {
+                      replace: true,
+                    })
+                  }
+                >
+                  Go to Registration
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -167,10 +178,10 @@ export function EventCountdownPage() {
               <MarkdownRenderer content={event.description} />
             </div>
           )}
-          <div className="mx-auto max-w-md pt-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-6 py-2 shadow-xs">
-              <Calendar className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-              <p className="font-medium text-text text-sm sm:text-base">
+          <div className="mx-auto max-w-xl pt-2">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-surface px-6 py-3 shadow-xs">
+              <Calendar className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
+              <p className="font-semibold text-text text-base sm:text-lg">
                 {event.starts_at ? formatDateTime(event.starts_at) : 'Date TBA'}
               </p>
             </div>
@@ -201,23 +212,38 @@ export function EventCountdownPage() {
           </div>
         </div>
 
+        {!isRegistrationOpen && (
+          <div className="flex justify-center">
+            <Badge
+              variant="accent"
+              className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider"
+            >
+              {availability?.reason === 'not_open_yet'
+                ? 'Registration Not Open'
+                : 'Registration Closed'}
+            </Badge>
+          </div>
+        )}
+
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             size="3xl"
-            variant="primaryOutline"
+            variant={isRegistrationOpen ? 'primaryOutline' : 'default'}
             className="w-full sm:w-auto"
             onClick={() => navigate(ROUTE_PATHS.home)}
           >
             <Home className="h-5 w-5 mr-2" aria-hidden="true" />
             Go Home
           </Button>
-          <Button
-            size="3xl"
-            className="w-full sm:w-auto"
-            onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}
-          >
-            Go to Registration Page
-          </Button>
+          {isRegistrationOpen && (
+            <Button
+              size="3xl"
+              className="w-full sm:w-auto"
+              onClick={() => navigate(toRoute('eventRegister', { slug: event.slug }))}
+            >
+              Go to Registration Page
+            </Button>
+          )}
         </div>
       </div>
     </div>
