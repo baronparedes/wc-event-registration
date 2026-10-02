@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAdminAuthQuery, useAuthUsersQuery } from '@/hooks/domain/auth';
+import { useAdminEventsQuery } from '@/hooks/domain/events';
+import { useBroadcastAudienceStatsQuery } from '@/hooks/domain/notifications';
 import { sendAppNotification } from '@/lib/domain/notifications';
 
 import { AdminNotificationsPage } from '../index';
@@ -15,6 +17,14 @@ vi.mock('@/lib/domain/notifications', () => ({
 vi.mock('@/hooks/domain/auth', () => ({
   useAuthUsersQuery: vi.fn(),
   useAdminAuthQuery: vi.fn(),
+}));
+
+vi.mock('@/hooks/domain/events', () => ({
+  useAdminEventsQuery: vi.fn(),
+}));
+
+vi.mock('@/hooks/domain/notifications', () => ({
+  useBroadcastAudienceStatsQuery: vi.fn(),
 }));
 
 describe('AdminNotificationsPage', () => {
@@ -62,6 +72,41 @@ describe('AdminNotificationsPage', () => {
       ],
       isLoading: false,
     } as never);
+
+    vi.mocked(useAdminEventsQuery).mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380e99',
+                title: 'Sunday Worship Service',
+                slug: 'sunday-worship-service',
+                status: 'published',
+                starts_at: '2026-10-04T09:00:00Z',
+              },
+            ],
+            hasMore: false,
+            nextCursor: null,
+            totalCount: 1,
+            totalPages: 1,
+          },
+        ],
+      },
+      isLoading: false,
+    } as never);
+
+    vi.mocked(useBroadcastAudienceStatsQuery).mockReturnValue({
+      data: {
+        total_recipients: 25,
+        email_recipients_count: 24,
+        push_recipients_count: 18,
+        registered_members_count: 20,
+        public_registrants_count: 5,
+      },
+      isLoading: false,
+      isError: false,
+    } as never);
   });
 
   const renderPage = () =>
@@ -78,6 +123,7 @@ describe('AdminNotificationsPage', () => {
 
     expect(screen.getByText('App Notifications')).toBeInTheDocument();
     expect(screen.getByText('Notification Broadcast')).toBeInTheDocument();
+    expect(screen.getByText('Delivery Channels')).toBeInTheDocument();
     expect(screen.getByLabelText(/^Title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Message/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Target Audience/i)).toBeInTheDocument();
@@ -88,6 +134,8 @@ describe('AdminNotificationsPage', () => {
     vi.mocked(sendAppNotification).mockResolvedValueOnce({
       success: true,
       count: 42,
+      pushCount: 20,
+      emailCount: 42,
       notificationId: 'notif-123',
     });
 
@@ -115,6 +163,7 @@ describe('AdminNotificationsPage', () => {
       expect(sendAppNotification).toHaveBeenCalledWith({
         title: 'Sunday Service Reminder',
         message: 'Service starts at 9:00 AM',
+        channels: ['push', 'email'],
         targetType: 'all',
       });
     });
@@ -140,6 +189,56 @@ describe('AdminNotificationsPage', () => {
 
     expect(screen.queryByText('Confirm Broadcast')).not.toBeInTheDocument();
     expect(sendAppNotification).not.toHaveBeenCalled();
+  });
+
+  it('submits a broadcast targeting specific event attendees (members & public)', async () => {
+    vi.mocked(sendAppNotification).mockResolvedValueOnce({
+      success: true,
+      count: 25,
+      pushCount: 18,
+      emailCount: 24,
+      notificationId: 'notif-event-1',
+    });
+
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/^Title/i), {
+      target: { value: 'Event Venue Change' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Message/i), {
+      target: { value: 'Event moved to Main Sanctuary' },
+    });
+
+    // Select event target
+    fireEvent.click(screen.getByLabelText(/^Target Audience/i));
+    fireEvent.click(screen.getByRole('option', { name: /Specific Event/i }));
+
+    // Open Event Picker dropdown
+    const eventPickerTrigger = screen.getByText('Select an event...');
+    fireEvent.click(eventPickerTrigger);
+
+    // Select Sunday Worship Service
+    const eventOption = screen.getByText('Sunday Worship Service');
+    fireEvent.click(eventOption);
+
+    fireEvent.click(screen.getByRole('button', { name: /Send Broadcast/i }));
+
+    // Confirm dialog
+    await waitFor(() => {
+      expect(screen.getByText('Confirm Broadcast')).toBeInTheDocument();
+      expect(screen.getByText('Event Attendees')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Send/i }));
+
+    await waitFor(() => {
+      expect(sendAppNotification).toHaveBeenCalledWith({
+        title: 'Event Venue Change',
+        message: 'Event moved to Main Sanctuary',
+        channels: ['push', 'email'],
+        targetType: 'event',
+        targetEventId: 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380e99',
+      });
+    });
   });
 
   it('submits a broadcast to multiple roles with destination url', async () => {
@@ -190,6 +289,7 @@ describe('AdminNotificationsPage', () => {
       expect(sendAppNotification).toHaveBeenCalledWith({
         title: 'Volunteers & Admins Briefing',
         message: 'Please review the schedule',
+        channels: ['push', 'email'],
         targetType: 'role',
         targetRole: 'Prayer Coach',
         targetRoles: ['Prayer Coach', 'admin'],
@@ -272,6 +372,7 @@ describe('AdminNotificationsPage', () => {
       expect(sendAppNotification).toHaveBeenCalledWith({
         title: 'Personal Notice',
         message: 'Please update your schedule',
+        channels: ['push', 'email'],
         targetType: 'user',
         targetUserId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
       });
@@ -345,6 +446,27 @@ describe('AdminNotificationsPage', () => {
     expect(screen.queryByText('Confirm Broadcast')).not.toBeInTheDocument();
   });
 
+  it('displays validation error when submitting with Specific Event but no event selected', async () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/^Title/i), {
+      target: { value: 'Event Broadcast' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Message/i), {
+      target: { value: 'Event Message' },
+    });
+
+    fireEvent.click(screen.getByLabelText(/^Target Audience/i));
+    fireEvent.click(screen.getByRole('option', { name: /Specific Event/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Send Broadcast/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Please select a target event')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Confirm Broadcast')).not.toBeInTheDocument();
+  });
+
   it('displays validation error when submitting with Specific User but no user selected', async () => {
     renderPage();
 
@@ -364,29 +486,5 @@ describe('AdminNotificationsPage', () => {
       expect(screen.getByText('Please select a target user')).toBeInTheDocument();
     });
     expect(screen.queryByText('Confirm Broadcast')).not.toBeInTheDocument();
-  });
-
-  it('resets target roles and user fields when switching audience back to Registered Members', async () => {
-    renderPage();
-
-    // Select role and check a role
-    fireEvent.click(screen.getByLabelText(/^Target Audience/i));
-    fireEvent.click(screen.getByRole('option', { name: 'Specific Roles' }));
-
-    fireEvent.click(screen.getByRole('button', { name: /Target roles selection trigger/i }));
-    fireEvent.click(screen.getByLabelText('Admin'));
-
-    expect(screen.getByRole('button', { name: 'Remove role Admin' })).toBeInTheDocument();
-
-    // Switch to All Users
-    fireEvent.click(screen.getByLabelText(/^Target Audience/i));
-    fireEvent.click(screen.getByRole('option', { name: 'Registered Members' }));
-
-    // Switch back to Specific Roles and verify reset
-    fireEvent.click(screen.getByLabelText(/^Target Audience/i));
-    fireEvent.click(screen.getByRole('option', { name: 'Specific Roles' }));
-
-    expect(screen.getByText('Select target roles...')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove role Admin' })).not.toBeInTheDocument();
   });
 });

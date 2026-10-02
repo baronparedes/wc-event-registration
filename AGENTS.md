@@ -72,18 +72,24 @@ This file contains the core principles, architecture rules, and domain logic con
 - Service commitments are snapshotted in `public.user_commitment_history` via the `users_snapshot_commitment_metadata` trigger on `public.users`. The trigger function `snapshot_user_commitment_metadata` is declared `SECURITY DEFINER` with `search_path = public`, and only snapshots when Sunday commitment keys (`first_sunday` through `fifth_sunday`) change. Snapshots are effective-dated to the nearest upcoming Sunday (`get_nearest_upcoming_sunday`).
 - The profile service attendance history UI (`ServiceAttendanceHistoryTab`) queries snapshots to evaluate historical schedule alignment per Sunday using `resolveMetadataForDate`.
 
-## 8. Domain Logic: App Notifications & Push Broadcasting
+## 8. Domain Logic: App Notifications & Multi-Channel Broadcasting
 
 - **Notification Center & Header Drawer**:
   - The notification bell in the main app header renders unread alert badges, supports real-time listening via Supabase Realtime on `app_notification_recipients`, and offers a slide-over drawer with filtering (`All` and `Unread`), tab switching, mark-as-read, and deletion.
 - **Admin Broadcasting (`/admin/notifications`)**:
-  - Restricted to administrators.
-  - Supports multi-role selection across Auth Roles (`super_admin`, `admin`, `slod`, `imt`, `kiosk`) and Member/Volunteer Roles (`Prayer Coach`, `Backroom Support`, `IMT Support`, `VMT Support`, `OIC`, `Usher`).
-  - Supports mention-style autocomplete user search (`BroadcastUserPicker`) with debounced querying.
-  - Mandatory Confirmation Gate (`BroadcastConfirmDialog`) displaying rich recipient profiles, role pills, warning notices, and payload previews before dispatching.
-- **Edge Functions & Web Push**:
-  - Web push delivery and device registration are handled by edge functions `send-app-notification` and `manage-push-subscription`.
-  - Registered in `supabase/config.toml` with `verify_jwt = true`.
+  - Restricted to administrators (`admin`, `super_admin`).
+  - **Multi-Channel Delivery**: Administrators can toggle **Push** and **Email** channels simultaneously (or individually) for any broadcast.
+  - **Target Audiences**:
+    - `all`: Broadcasts to all registered members.
+    - `role`: Multi-role selection across Auth Roles (`super_admin`, `admin`, `slod`, `imt`, `kiosk`) and Member/Volunteer Roles (`Prayer Coach`, `Backroom Support`, `IMT Support`, `VMT Support`, `OIC`, `Usher`).
+    - `user`: Mention-style autocomplete user search (`BroadcastUserPicker`) with debounced querying.
+    - `event`: Searchable event dropdown (`BroadcastEventPicker`) automatically targeting registered members and public registrants of the selected event.
+  - **Live Audience Reach Validation**: Queries `get_broadcast_audience_stats` to display real-time reachable member/public counts, email reach, and push subscription counts before dispatching.
+  - **Mandatory Confirmation Gate (`BroadcastConfirmDialog`)**: Displays channels, rich recipient profiles, role/event pills, warning notices, and message payload previews.
+- **Edge Functions & Multi-Channel Delivery**:
+  - **`send-app-notification`**: Modularized with dedicated services (`pushService.ts`, `emailService.ts`) and target resolvers in `targets/` (`eventTarget.ts`, `roleTarget.ts`, `allTarget.ts`, `userTarget.ts`).
+  - **`cron-process-email-queue`**: Consumes `email_queue` messages and dispatches via Resend API (`/emails`).
+  - **Local Broadcast Safety Harness (`_shared/localBroadcast.ts`)**: When running in local development (`LOCAL_BROADCAST=true` or non-production environment without Resend API keys), all push and email broadcasts are safely appended to `./local-broadcasts.log` instead of reaching external devices or real email addresses. Output files are gitignored.
 
 ## 9. Testing
 

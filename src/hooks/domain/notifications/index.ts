@@ -4,3 +4,7 @@ export { useMarkAllNotificationsReadMutation } from './useMarkAllNotificationsRe
 export { usePushSubscription } from './usePushSubscription';
 export { useAppBadgeSync } from './useAppBadgeSync';
 export { useBroadcastDashboardStatsQuery } from './useBroadcastDashboardStatsQuery';
+export {
+  useBroadcastAudienceStatsQuery,
+  BROADCAST_AUDIENCE_STATS_QUERY_KEY,
+} from './useBroadcastAudienceStatsQuery';

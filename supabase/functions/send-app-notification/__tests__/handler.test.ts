@@ -4,6 +4,7 @@ const ORIGIN = 'https://app.example.com';
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111';
 const RECIPIENT_ID = '22222222-2222-4222-8222-222222222222';
 const NOTIFICATION_ID = '33333333-3333-4333-8333-333333333333';
+const EVENT_ID = '44444444-4444-4444-8444-444444444444';
 
 async function withEnv(run: (handle: (req: Request) => Promise<Response>) => Promise<void>) {
   const names = [
@@ -51,6 +52,8 @@ function mockFetch(
     recipientError?: boolean;
     recipients?: string[];
     notificationId?: string | null;
+    regMembers?: Array<{ users: { email: string | null } }>;
+    pubMembers?: Array<{ email: string | null }>;
   } = {},
 ) {
   const originalFetch = globalThis.fetch;
@@ -82,6 +85,25 @@ function mockFetch(
               (options.recipients ?? [RECIPIENT_ID]).map((userId) => ({ user_id: userId })),
             ),
       );
+    }
+    if (url.pathname === '/rest/v1/registrations') {
+      return Promise.resolve(
+        Response.json(options.regMembers ?? [{ users: { email: 'member1@example.com' } }]),
+      );
+    }
+    if (url.pathname === '/rest/v1/public_registrations') {
+      return Promise.resolve(
+        Response.json(options.pubMembers ?? [{ email: 'guest1@example.com' }]),
+      );
+    }
+    if (url.pathname === '/rest/v1/users') {
+      return Promise.resolve(Response.json([{ email: 'member@example.com', role: 'IMT Support' }]));
+    }
+    if (url.pathname === '/rest/v1/rpc/enqueue_email_notification') {
+      return Promise.resolve(Response.json(1));
+    }
+    if (url.pathname === '/rest/v1/rpc/trigger_email_processor') {
+      return Promise.resolve(Response.json(null));
     }
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
   };
@@ -128,6 +150,8 @@ Deno.test('send-app-notification broadcasts role targets and counts recipients',
       assertEquals(await response.json(), {
         success: true,
         count: 2,
+        pushCount: 2,
+        emailCount: 0,
         notificationId: NOTIFICATION_ID,
       });
       const broadcast = fetchMock.calls.find(
@@ -146,6 +170,52 @@ Deno.test('send-app-notification broadcasts role targets and counts recipients',
         (call) => call.path === '/rest/v1/app_notification_recipients',
       );
       assertEquals(lookup?.url.searchParams.get('notification_id'), `eq.${NOTIFICATION_ID}`);
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});
+
+Deno.test('send-app-notification broadcasts to event attendees with push and email', async () => {
+  await withEnv(async (handle) => {
+    const fetchMock = mockFetch({
+      recipients: [RECIPIENT_ID],
+      regMembers: [{ users: { email: 'member1@example.com' } }],
+      pubMembers: [{ email: 'guest1@example.com' }],
+    });
+    try {
+      const response = await handle(
+        request(
+          payload({
+            channels: ['push', 'email'],
+            targetType: 'event',
+            targetEventId: EVENT_ID,
+            url: 'https://example.com/event',
+          }),
+        ),
+      );
+      assertEquals(response.status, 200);
+      const json = await response.json();
+      assertEquals(json.success, true);
+      assertEquals(json.pushCount, 1);
+      assertEquals(json.emailCount, 2);
+      assertEquals(json.count, 2);
+      assertEquals(json.notificationId, NOTIFICATION_ID);
+
+      const broadcast = fetchMock.calls.find(
+        (call) => call.path === '/rest/v1/rpc/broadcast_app_notification',
+      );
+      assertEquals((broadcast?.body as Record<string, unknown>).p_event_id, EVENT_ID);
+
+      const emailCalls = fetchMock.calls.filter(
+        (call) => call.path === '/rest/v1/rpc/enqueue_email_notification',
+      );
+      assertEquals(emailCalls.length, 2);
+
+      const triggerCall = fetchMock.calls.find(
+        (call) => call.path === '/rest/v1/rpc/trigger_email_processor',
+      );
+      assertEquals(!!triggerCall, true);
     } finally {
       fetchMock.restore();
     }
@@ -199,6 +269,8 @@ Deno.test('send-app-notification returns success when recipient lookup fails', a
       assertEquals(await response.json(), {
         success: true,
         count: 0,
+        pushCount: 0,
+        emailCount: 0,
         notificationId: NOTIFICATION_ID,
       });
     } finally {
