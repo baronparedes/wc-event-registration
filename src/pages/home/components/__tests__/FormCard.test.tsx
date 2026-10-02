@@ -74,22 +74,17 @@ describe('FormCard', () => {
     expect(submitLink).toHaveAttribute('href', '/forms/test-form/submit');
   });
 
-  it('toggles details without submitting and does not render a date badge or cover', () => {
-    const { container } = render(<FormCard form={mockForm} />);
-    const detailsButton = screen.getByRole('button', { name: 'Show details for Test Form' });
+  it('shows markdown descriptions directly without submitting or an expand control', () => {
+    const { container } = render(
+      <FormCard form={{ ...mockForm, description: 'A **test** form description' }} />,
+    );
 
-    expect(screen.getByText('A test form description')).not.toBeVisible();
+    expect(screen.getByText('test', { selector: 'strong' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /details for Test Form/ })).not.toBeInTheDocument();
     expect(container.querySelector('time')).toBeNull();
     expect(container.querySelector('img')).toBeNull();
-    fireEvent.click(detailsButton);
-    fireEvent.keyDown(detailsButton, { key: 'Enter' });
-    expect(detailsButton).toHaveAttribute('aria-expanded', 'true');
-    expect(detailsButton).toHaveAccessibleName('Hide details for Test Form');
-    expect(screen.getByText('A test form description')).toBeVisible();
-    fireEvent.click(screen.getByText('A test form description'));
+    fireEvent.click(screen.getByText('test', { selector: 'strong' }));
     expect(mockNavigate).not.toHaveBeenCalled();
-    fireEvent.click(detailsButton);
-    expect(screen.getByText('A test form description')).not.toBeVisible();
   });
 
   it('renders without description when description is null', () => {

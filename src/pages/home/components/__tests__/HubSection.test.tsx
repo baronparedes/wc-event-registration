@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { HubItem } from '../HubSection';
-import { HubSection } from '../HubSection';
+import type { HubItem } from '@/pages/home/components/HubSection';
+import { HubSection } from '@/pages/home/components/HubSection';
 
 describe('HubSection', () => {
   const mockItems: HubItem[] = [
@@ -73,5 +73,42 @@ describe('HubSection', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Unknown Items' })).toBeInTheDocument();
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+  });
+
+  it('presents Excuse Request 2026 as a form while keeping its event registration route', () => {
+    const event = mockItems[0];
+    if (event.type !== 'event') throw new Error('Expected event fixture');
+    const { container } = render(
+      <MemoryRouter>
+        <HubSection
+          title="Available Now"
+          items={[{ ...event, title: 'Excuse Request 2026', slug: 'excuse-request-2026' }]}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Fill out' })).toHaveAttribute(
+      'href',
+      '/events/excuse-request-2026/register',
+    );
+    expect(container.querySelector('time')).toBeNull();
+    expect(screen.queryByText(event.location ?? '')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /countdown/i })).not.toBeInTheDocument();
+  });
+
+  it('does not enable the form-style action before excuse registration opens', () => {
+    const event = mockItems[0];
+    if (event.type !== 'event') throw new Error('Expected event fixture');
+    render(
+      <MemoryRouter>
+        <HubSection
+          title="Upcoming Events"
+          items={[{ ...event, title: 'Excuse Request 2026', listingStatus: 'upcoming' }]}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Upcoming')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Fill out' })).not.toBeInTheDocument();
   });
 });

@@ -1,10 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Manrope:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  --font-app: 'Arimo', Helvetica, Arial, sans-serif;
   --color-primary: #1ca0b3;
   --color-secondary: #51a29a;
   --color-accent: #f5bd5c;
@@ -28,7 +27,7 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Source Sans 3', sans-serif;
+  font-family: var(--font-app);
   line-height: 1.6;
   background:
     radial-gradient(circle at 12% -5%, rgba(11, 95, 255, 0.15), transparent 35%),

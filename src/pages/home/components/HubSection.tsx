@@ -1,3 +1,4 @@
+import { toRoute } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
 import type { AdminForm } from '@/lib/domain/forms';
 
@@ -26,6 +27,27 @@ export function HubSection({ title, items }: HubSectionProps) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
           if (item.type === 'event') {
+            if (item.title === 'Excuse Request 2026') {
+              return (
+                <FormCard
+                  key={`event-${item.id}`}
+                  form={{
+                    title: item.title,
+                    slug: item.slug,
+                    description: item.description,
+                    status: item.listingStatus === 'open' ? 'published' : 'draft',
+                  }}
+                  submissionPath={toRoute('eventRegister', { slug: item.slug })}
+                  statusLabel={
+                    item.listingStatus === 'open'
+                      ? 'Open'
+                      : item.listingStatus === 'upcoming'
+                        ? 'Upcoming'
+                        : 'Past'
+                  }
+                />
+              );
+            }
             return <EventCard key={`event-${item.id}`} event={item} />;
           }
           if (item.type === 'form') {

@@ -30,6 +30,7 @@ describe('UserIdentity', () => {
     const profileLink = screen.getByRole('link', { name: /Test Member \(Admin\)/ });
     expect(profileLink).toHaveAttribute('href', '/profile');
     expect(screen.getByTestId('avatar')).toBeInTheDocument();
+    expect(screen.getByText('(Admin)')).toHaveClass('block', 'text-[10px]', 'text-muted');
 
     fireEvent.click(profileLink);
 

@@ -1,6 +1,4 @@
-import { useId, useState } from 'react';
-
-import { ChevronDown, FileText, Share } from 'lucide-react';
+import { FileText, Share } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -9,18 +7,18 @@ import { toRoute } from '@/config/constants';
 import type { AdminForm } from '@/lib/domain/forms';
 
 type FormCardProps = {
-  form: AdminForm;
+  form: Pick<AdminForm, 'title' | 'slug' | 'description' | 'status'>;
+  submissionPath?: string;
+  statusLabel?: string;
 };
 
 /**
  * Displays a single form card with title, status, and description.
  * Used in the hub page to show available forms.
  */
-export function FormCard({ form }: FormCardProps) {
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const detailsId = useId();
+export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCardProps) {
   const navigate = useNavigate();
-  const submitPath = toRoute('formSubmit', { slug: form.slug });
+  const submitPath = submissionPath ?? toRoute('formSubmit', { slug: form.slug });
   const shareUrl = new URL(submitPath, window.location.origin).toString();
   const isOpen = form.status === 'published';
 
@@ -86,33 +84,22 @@ export function FormCard({ form }: FormCardProps) {
         <div className="flex items-start justify-between gap-3">
           <FileText className="h-8 w-8 shrink-0 text-primary" aria-hidden="true" />
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <Badge variant="default">Open</Badge>
-            {form.description && (
-              <button
-                type="button"
-                aria-label={`${detailsOpen ? 'Hide' : 'Show'} details for ${form.title}`}
-                aria-expanded={detailsOpen}
-                aria-controls={detailsId}
-                title={detailsOpen ? 'Hide details' : 'Show details'}
-                onClick={(clickEvent) => {
-                  clickEvent.stopPropagation();
-                  setDetailsOpen(!detailsOpen);
-                }}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`h-4 w-4 transition-transform duration-200 ${detailsOpen ? 'rotate-180' : 'rotate-0'}`}
-                />
-              </button>
-            )}
+            <Badge variant={isOpen ? 'default' : 'secondary'}>{statusLabel}</Badge>
           </div>
         </div>
-        <h3 className="mt-auto break-words font-heading text-xl font-bold leading-tight text-text [overflow-wrap:anywhere]">
+        <h3 className="break-words font-heading text-xl font-bold leading-tight text-text [overflow-wrap:anywhere]">
           {form.title}
         </h3>
+        {form.description && (
+          <div className="cursor-default" onClick={(clickEvent) => clickEvent.stopPropagation()}>
+            <MarkdownRenderer
+              content={form.description}
+              className="text-sm prose-p:text-muted prose-p:leading-relaxed"
+            />
+          </div>
+        )}
         {isOpen && (
-          <div className="flex items-center gap-2">
+          <div className="mt-auto flex items-center gap-2">
             <Button
               asChild
               className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold shadow-xs"
@@ -133,19 +120,6 @@ export function FormCard({ form }: FormCardProps) {
           </div>
         )}
       </div>
-      {form.description && (
-        <div
-          id={detailsId}
-          hidden={!detailsOpen}
-          className="space-y-4 border-t border-border p-5 cursor-default"
-          onClick={(clickEvent) => clickEvent.stopPropagation()}
-        >
-          <MarkdownRenderer
-            content={form.description}
-            className="text-sm prose-p:text-muted prose-p:leading-relaxed"
-          />
-        </div>
-      )}
     </div>
   );
 }

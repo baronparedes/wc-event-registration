@@ -57,8 +57,10 @@ export function AppShellHeader({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {actions}
-          {userBadge}
+          <div className="flex items-center gap-1">
+            {actions}
+            {userBadge}
+          </div>
           <Button
             type="button"
             aria-label="Open app navigation drawer"

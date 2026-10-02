@@ -21,8 +21,9 @@ export default {
         danger: 'var(--color-danger)',
       },
       fontFamily: {
-        heading: ['Manrope', 'sans-serif'],
-        body: ['Source Sans 3', 'sans-serif'],
+        sans: ['var(--font-app)'],
+        heading: ['var(--font-app)'],
+        body: ['var(--font-app)'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {

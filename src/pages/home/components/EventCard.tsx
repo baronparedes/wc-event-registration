@@ -4,6 +4,7 @@ import { ChevronDown, Clock, MapPin, Share, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import helloCoverImage from '@/assets/hello/ccf-hello-cover.png';
 import { Badge, Button, MarkdownRenderer } from '@/components/ui';
 import { toRoute } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
@@ -132,13 +133,23 @@ export function EventCard({ event }: EventCardProps) {
 
   return (
     <div
-      className={`group flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary [container-type:inline-size] ${isOpen ? 'cursor-pointer' : ''}`}
+      className={`group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary [container-type:inline-size] ${isOpen ? 'cursor-pointer' : ''}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       role={isOpen ? 'link' : undefined}
       tabIndex={isOpen ? 0 : undefined}
     >
-      <div className="flex flex-col gap-4 p-5 sm:min-h-[340px]">
+      <div className="relative isolate flex flex-col gap-4 p-5 sm:min-h-[340px]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-2 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.04] blur-lg"
+          style={{ backgroundImage: `url("${helloCoverImage}")` }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-2 -z-10 bg-contain bg-center bg-no-repeat opacity-[0.08] blur-sm"
+          style={{ backgroundImage: `url("${helloCoverImage}")` }}
+        />
         <div className="flex items-start justify-between gap-2">
           {dateBadges.length > 0 ? (
             <div className="flex min-w-0 items-start gap-1 sm:gap-2">
@@ -214,10 +225,13 @@ export function EventCard({ event }: EventCardProps) {
         <div className="mt-auto space-y-4">
           <div className="space-y-2">
             {event.location && (
-              <p className="flex items-start gap-2 text-sm font-medium text-muted">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <Badge
+                icon={<MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                variant="outline"
+                className="max-w-full !whitespace-normal bg-surface text-sm !font-semibold"
+              >
                 <span className="min-w-0 break-words">{event.location}</span>
-              </p>
+              </Badge>
             )}
             <h3 className="break-words font-heading text-xl font-bold leading-tight text-text [overflow-wrap:anywhere]">
               {event.title}
@@ -303,21 +317,27 @@ export function EventCard({ event }: EventCardProps) {
             className="text-sm prose-p:text-muted prose-p:leading-relaxed"
           />
         )}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-sm text-muted">
+        <dl className="divide-y divide-border border-t border-border text-sm">
           {event.starts_at && (
-            <>
-              <dt className="py-0.5 font-semibold text-text">Event date</dt>
-              <dd className="py-0.5 min-w-0 break-words">{formatDateOnly(event.starts_at)}</dd>
-            </>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+              <dt className="text-xs text-muted">Event date</dt>
+              <dd className="min-w-0 break-words text-right font-medium text-text">
+                {formatDateOnly(event.starts_at)}
+              </dd>
+            </div>
           )}
-          <dt className="py-0.5 font-semibold text-text">Registration opens</dt>
-          <dd className="py-0.5 min-w-0 break-words">
-            {formatDateOnly(event.registration_opens_at)}
-          </dd>
-          <dt className="py-0.5 font-semibold text-text">Registration closes</dt>
-          <dd className="py-0.5 min-w-0 break-words">
-            {formatDateOnly(event.registration_closes_at)}
-          </dd>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+            <dt className="text-xs text-muted">Registration opens</dt>
+            <dd className="min-w-0 break-words text-right font-medium text-text">
+              {formatDateOnly(event.registration_opens_at)}
+            </dd>
+          </div>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+            <dt className="text-xs text-muted">Registration closes</dt>
+            <dd className="min-w-0 break-words text-right font-medium text-text">
+              {formatDateOnly(event.registration_closes_at)}
+            </dd>
+          </div>
         </dl>
       </div>
     </div>

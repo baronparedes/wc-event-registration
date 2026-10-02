@@ -41,9 +41,7 @@ export function UserIdentity({
         >
           <span className="font-semibold text-text">{displayName}</span>
           {roleLabel && (
-            <span
-              className={isDrawer ? 'block truncate text-muted' : 'ml-1 font-normal text-muted'}
-            >
+            <span className="block truncate text-[10px] font-normal leading-tight text-muted">
               {roleLabel}
             </span>
           )}
