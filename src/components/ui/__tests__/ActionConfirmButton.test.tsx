@@ -41,7 +41,7 @@ describe('ActionConfirmButton', () => {
     render(
       <ActionConfirmButton {...defaultProps} onConfirm={onConfirmMock}>
         Trigger Action
-      </ActionConfirmButton>
+      </ActionConfirmButton>,
     );
 
     // Open dialog
@@ -64,7 +64,7 @@ describe('ActionConfirmButton', () => {
     render(
       <ActionConfirmButton {...defaultProps} onConfirm={onConfirmMock}>
         Trigger Action
-      </ActionConfirmButton>
+      </ActionConfirmButton>,
     );
 
     // Open dialog
@@ -85,7 +85,7 @@ describe('ActionConfirmButton', () => {
     render(
       <ActionConfirmButton {...defaultProps} isPending={true}>
         Trigger Action
-      </ActionConfirmButton>
+      </ActionConfirmButton>,
     );
 
     const triggerBtn = screen.getByRole('button', { name: 'Trigger Action' });
@@ -96,7 +96,7 @@ describe('ActionConfirmButton', () => {
     const { rerender } = render(
       <ActionConfirmButton {...defaultProps} isPending={false}>
         Trigger Action
-      </ActionConfirmButton>
+      </ActionConfirmButton>,
     );
 
     const user = userEvent.setup();
@@ -108,7 +108,7 @@ describe('ActionConfirmButton', () => {
     rerender(
       <ActionConfirmButton {...defaultProps} isPending={true}>
         Trigger Action
-      </ActionConfirmButton>
+      </ActionConfirmButton>,
     );
 
     // Check loading label is shown on the confirm button
