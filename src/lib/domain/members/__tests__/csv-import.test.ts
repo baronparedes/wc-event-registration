@@ -138,6 +138,22 @@ describe('parseMemberCsvText', () => {
 });
 
 describe('buildMemberCsvPreparedRows', () => {
+  it('ignores exported last activity instead of importing it as custom metadata', () => {
+    const result = buildMemberCsvPreparedRows([
+      {
+        RFID: '123',
+        Firstname: 'Test John',
+        Surname: 'Test Doe',
+        Nickname: 'Test JD',
+        Role: 'Prayer Coach',
+        Category: 'Adults',
+        'Last Activity': '2026-09-30T10:15:00.000Z',
+      },
+    ]);
+
+    expect(result.rows[0].metadata).not.toHaveProperty('last_activity');
+  });
+
   it('maps aliases, promotes role/category, and normalizes booleans', () => {
     const result = buildMemberCsvPreparedRows([
       {

@@ -25,6 +25,7 @@ export { useUpdateMemberMutation } from './mutations/useUpdateMemberMutation';
 export { useUpdateMemberIdMutation } from './mutations/useUpdateMemberIdMutation';
 export { useCreateMemberMutation } from './mutations/useCreateMemberMutation';
 export { useBulkUpsertMembersMutation } from './mutations/useBulkUpsertMembersMutation';
+export { useExportMembersCSVMutation } from './mutations/useExportMembersCSVMutation';
 export { useSoftDeleteMemberMutation } from './mutations/useSoftDeleteMemberMutation';
 export { useRestoreMemberMutation } from './mutations/useRestoreMemberMutation';
 export { useUploadMemberAvatarMutation } from './mutations/useUploadMemberAvatarMutation';

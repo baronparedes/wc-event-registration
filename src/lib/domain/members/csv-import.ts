@@ -380,6 +380,10 @@ export function buildMemberCsvPreparedRows(
         continue;
       }
 
+      if (normalizeLookupHeaderKey(header) === 'lastactivity') {
+        continue;
+      }
+
       const metadataKey = canonicalizeMetadataHeaderKey(normalizeMetadataHeaderKey(header));
       if (!metadataKey || CORE_FIELDS.has(metadataKey)) {
         continue;

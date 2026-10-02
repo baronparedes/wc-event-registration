@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 
-import { BadgeCheck, Edit, Upload, User, Users } from 'lucide-react';
+import { BadgeCheck, Download, Edit, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/ListTable';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
-import { useAdminMembersQuery } from '@/hooks/domain/members';
+import { useAdminMembersQuery, useExportMembersCSVMutation } from '@/hooks/domain/members';
 import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember } from '@/lib/domain/members';
@@ -99,6 +100,18 @@ function getMemberRowClassName(isActive: boolean) {
   return 'cursor-pointer opacity-70';
 }
 
+function downloadCsv(text: string, filename: string) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function AdminMembersPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
@@ -109,6 +122,10 @@ export function AdminMembersPage() {
     pageSize: PAGINATION_DEFAULTS.adminMembersPageSize,
     searchTerm: normalizedSearchTerm,
     statusFilter,
+  });
+  const exportMembersMutation = useExportMembersCSVMutation({
+    search_term: normalizedSearchTerm,
+    status_filter: statusFilter,
   });
 
   const pages = membersQuery.data?.pages;
@@ -136,6 +153,17 @@ export function AdminMembersPage() {
     setStatusFilter(nextStatusFilter);
   }
 
+  async function handleExportMembers() {
+    try {
+      const { text, filename } = await exportMembersMutation.mutateAsync();
+      downloadCsv(text, filename || 'members.csv');
+    } catch (exportError) {
+      toast.error(
+        exportError instanceof Error ? exportError.message : 'Failed to export members CSV.',
+      );
+    }
+  }
+
   return (
     <AdminPageShell>
       <AdminPageShell.Header
@@ -146,6 +174,16 @@ export function AdminMembersPage() {
           <>
             {canWrite && (
               <>
+                <Button
+                  className="w-full sm:w-auto sm:inline-flex"
+                  type="button"
+                  variant="primaryOutline"
+                  onClick={handleExportMembers}
+                  disabled={exportMembersMutation.isPending}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {exportMembersMutation.isPending ? 'Exporting...' : 'Export CSV'}
+                </Button>
                 <Button
                   className="w-full sm:w-auto sm:inline-flex"
                   type="button"

@@ -54,6 +54,7 @@ vi.mock('@/hooks/domain/members', async () => {
     useAdminMembersQuery: vi
       .fn()
       .mockImplementation((...args: unknown[]) => mockUseAdminMembersQuery(...args)),
+    useExportMembersCSVMutation: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   };
 });
 
@@ -130,6 +131,7 @@ describe('AdminMembersPage', () => {
     expect(screen.getByText('Showing all 1 member')).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: 'Upload CSV' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeInTheDocument();
     expect(screen.getByText('Update Member ID Dialog')).toBeInTheDocument();
   });
 
@@ -371,6 +373,7 @@ describe('AdminMembersPage', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Upload CSV' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument();
     expect(screen.queryByText('Add Member Dialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Update Member ID Dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View Member' })).toHaveAttribute(
