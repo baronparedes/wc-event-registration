@@ -97,7 +97,11 @@ export function SundayVolunteersTable({
                 <ListTableRow key={volunteer.user_id}>
                   <ListTableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar name={volunteer.full_name} size="sm" />
+                      <Avatar
+                        name={volunteer.full_name}
+                        avatarObjectKey={volunteer.avatar_object_key}
+                        size="sm"
+                      />
                       <div>
                         <p className="font-medium text-text">{volunteer.full_name}</p>
                         {volunteer.member_id && (
