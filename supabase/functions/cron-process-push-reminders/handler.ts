@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
+import { isLocalBroadcastEnabled, logLocalBroadcast } from '../_shared/localBroadcast.ts';
 
 type PushSubscription = {
   endpoint: string;
@@ -55,10 +56,17 @@ export async function handleCronProcessPushReminders(
   const { client, corsHeaders, requestId } = hookResult;
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
+  const isLocalBroadcast = isLocalBroadcastEnabled();
 
   if (!vapidPublicKey || !vapidPrivateKey) {
-    console.error('[cron-process-push-reminders] VAPID keys not configured');
-    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'VAPID keys not configured');
+    if (!isLocalBroadcast) {
+      console.error('[cron-process-push-reminders] VAPID keys not configured');
+      return errorResponse(
+        corsHeaders,
+        HTTP_STATUS.internalServerError,
+        'VAPID keys not configured',
+      );
+    }
   }
 
   try {
@@ -131,6 +139,19 @@ export async function handleCronProcessPushReminders(
                 subError,
               );
               await archiveAfterRetryLimit(msg, subError);
+              return;
+            }
+
+            if (isLocalBroadcast && (!vapidPublicKey || !vapidPrivateKey)) {
+              await logLocalBroadcast({
+                type: 'push',
+                targetType: 'sunday-schedule-reminder',
+                recipient: userId,
+                title: 'Service Reminder',
+                body: notificationMessage,
+                url: payload.target_url || payload.url || '/profile?tab=commitments',
+              });
+              await client.rpc('archive_push_reminder', { message_id: messageId });
               return;
             }
 

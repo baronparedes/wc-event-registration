@@ -6,4 +6,6 @@ export {
   fetchUserNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  getSundaySchedulePreview,
+  dispatchSundayReminders,
 } from './api';

@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
-import { isLocalBroadcastEnabled } from '../_shared/localBroadcast.ts';
+import { isLocalBroadcastEnabled, logLocalBroadcast } from '../_shared/localBroadcast.ts';
 
 type RpcResult<T> = {
   data: T | null;
@@ -120,6 +120,14 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
 
         // Local simulation when no real Resend key is available
         if (isLocalBroadcast && !resendApiKey) {
+          await logLocalBroadcast({
+            type: 'email',
+            targetType: 'sunday-schedule-reminder',
+            recipient: payload.recipient,
+            subject: payload.subject,
+            body: payload.text ?? '',
+            metadata: payload.metadata,
+          });
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
           processedCount++;
           return;

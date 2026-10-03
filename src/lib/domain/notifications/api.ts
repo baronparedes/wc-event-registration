@@ -3,9 +3,12 @@ import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 import type {
   AppNotificationRecipient,
   BroadcastAudienceStats,
+  DispatchSundayRemindersPayload,
+  DispatchSundayRemindersResponse,
   ManagePushSubscriptionPayload,
   SendAppNotificationPayload,
   SendAppNotificationResponse,
+  SundaySchedulePreview,
 } from './types';
 
 const callSendAppNotification = createEdgeFunctionCaller<
@@ -126,4 +129,34 @@ export async function markAllNotificationsAsRead(): Promise<void> {
     .eq('is_read', false);
 
   if (error) throw error;
+}
+
+export async function getSundaySchedulePreview(
+  targetSundayDate?: string,
+): Promise<SundaySchedulePreview> {
+  const { data, error } = await supabase.rpc('get_sunday_schedule_reminders_preview', {
+    p_sunday_date: targetSundayDate || undefined,
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch Sunday schedule preview: ${error.message}`);
+  }
+
+  return data as unknown as SundaySchedulePreview;
+}
+
+export async function dispatchSundayReminders(
+  payload: DispatchSundayRemindersPayload,
+): Promise<DispatchSundayRemindersResponse> {
+  const { data, error } = await supabase.rpc('dispatch_sunday_schedule_reminders', {
+    p_target_date: payload.targetSundayDate || undefined,
+    p_channels: payload.channels,
+    p_force: payload.force ?? false,
+  });
+
+  if (error) {
+    throw new Error(`Failed to dispatch Sunday schedule reminders: ${error.message}`);
+  }
+
+  return data as unknown as DispatchSundayRemindersResponse;
 }

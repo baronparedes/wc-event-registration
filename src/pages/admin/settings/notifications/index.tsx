@@ -2,7 +2,9 @@ import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
+import { BarChart3, Calendar } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -191,6 +193,22 @@ export function AdminNotificationsPage() {
           { label: 'Settings', to: ROUTE_PATHS.adminSettings },
           { label: 'Notifications' },
         ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link to={ROUTE_PATHS.adminSundayReminders}>
+              <Button className="gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Sunday Reminders</span>
+              </Button>
+            </Link>
+            <Link to={ROUTE_PATHS.adminNotificationsDashboard}>
+              <Button className="gap-1.5">
+                <BarChart3 className="h-3.5 w-3.5" />
+                <span>Dashboard</span>
+              </Button>
+            </Link>
+          </div>
+        }
       />
 
       <AdminBaseNavigation />

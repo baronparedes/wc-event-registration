@@ -54,3 +54,40 @@ export type BroadcastAudienceStats = {
   registered_members_count: number;
   public_registrants_count: number;
 };
+
+export type SundayVolunteerRecipient = {
+  user_id: string;
+  member_id: string | null;
+  full_name: string;
+  email: string | null;
+  formatted_slots: string;
+  has_push: boolean;
+  has_email: boolean;
+};
+
+export type SundaySchedulePreview = {
+  sunday_date: string;
+  ordinal: number;
+  sunday_key: string;
+  already_sent_push: boolean;
+  push_sent_at: string | null;
+  already_sent_email: boolean;
+  email_sent_at: string | null;
+  total_volunteers: number;
+  push_eligible_count: number;
+  email_eligible_count: number;
+  volunteers: SundayVolunteerRecipient[];
+};
+
+export type DispatchSundayRemindersPayload = {
+  targetSundayDate?: string;
+  channels: BroadcastChannel[];
+  force?: boolean;
+};
+
+export type DispatchSundayRemindersResponse = {
+  success: boolean;
+  sunday_date: string;
+  push_enqueued: number;
+  email_enqueued: number;
+};

@@ -68,6 +68,10 @@ describe('AdminSettingsPage', () => {
       'href',
       ROUTE_PATHS.adminNotifications,
     );
+    expect(screen.getByRole('link', { name: /sunday service reminders/i })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminSundayReminders,
+    );
     expect(screen.getByRole('link', { name: /broadcast dashboard/i })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminNotificationsDashboard,
