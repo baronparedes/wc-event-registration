@@ -38,7 +38,11 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const rawUrl = event.notification.data?.url || '/';
   const targetUrlObj = new URL(rawUrl, self.location.origin);
-  targetUrlObj.searchParams.set('openDrawer', 'notifications');
+
+  if (rawUrl === '/') {
+    targetUrlObj.searchParams.set('openDrawer', 'notifications');
+  }
+
   const targetUrl = targetUrlObj.pathname + targetUrlObj.search + targetUrlObj.hash;
 
   event.waitUntil(
