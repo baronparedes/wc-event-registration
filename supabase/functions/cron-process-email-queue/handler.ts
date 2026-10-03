@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
-import { isLocalBroadcastEnabled, logLocalBroadcast } from '../_shared/localBroadcast.ts';
+import { isLocalBroadcastEnabled } from '../_shared/localBroadcast.ts';
 
 type RpcResult<T> = {
   data: T | null;
@@ -120,13 +120,6 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
 
         // Local simulation when no real Resend key is available
         if (isLocalBroadcast && !resendApiKey) {
-          await logLocalBroadcast({
-            type: 'email',
-            targetType: 'email_queue',
-            recipient: payload.recipient,
-            subject: payload.subject || 'Email notification',
-            body: payload.text || JSON.stringify(payload.metadata || {}),
-          });
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
           processedCount++;
           return;
@@ -218,6 +211,12 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         const concurrentMessages = messages.slice(offset, offset + EMAIL_SEND_CONCURRENCY);
         await Promise.allSettled(concurrentMessages.map(processMessage));
       }
+    }
+
+    if (processedCount > 0) {
+      console.log('[cron-process-email-queue] Completed email batch processing:', {
+        processedCount,
+      });
     }
 
     return jsonResponse(corsHeaders, { success: true, processed: processedCount }, HTTP_STATUS.ok);

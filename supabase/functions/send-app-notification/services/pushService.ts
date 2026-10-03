@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
 import type { Database } from '@/shared/database.types.ts';
-import { isLocalBroadcastEnabled, logLocalBroadcast } from '@/shared/localBroadcast.ts';
+import { isLocalBroadcastEnabled } from '@/shared/localBroadcast.ts';
 
 import type { SendAppNotificationPayload } from '../types.ts';
 
@@ -118,21 +118,14 @@ export async function sendPushNotifications({
     console.warn('VAPID keys not configured, skipping web push.');
   }
 
-  // Log to local file if active
+  // Log aggregated summary
   if (isLocalBroadcastEnabled() && userIds.length > 0) {
-    for (const targetId of userIds) {
-      await logLocalBroadcast({
-        type: 'push',
-        targetType: payload.targetType,
-        targetEventId: payload.targetEventId,
-        targetRoles: resolvedRoles,
-        targetUserId: payload.targetUserId,
-        recipient: targetId,
-        title: payload.title,
-        body: payload.message,
-        url: payload.url,
-      });
-    }
+    console.log('[send-app-notification] [push] Broadcast push summary:', {
+      notificationId,
+      targetType: payload.targetType,
+      title: payload.title,
+      pushCount,
+    });
   }
 
   return { notificationId, pushCount };

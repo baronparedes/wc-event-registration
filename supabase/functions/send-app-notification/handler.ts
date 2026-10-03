@@ -33,6 +33,14 @@ export async function handleSendAppNotification(req: Request): Promise<Response>
     const shouldSendPush = channels.includes('push');
     const shouldSendEmail = channels.includes('email');
 
+    console.log('[send-app-notification] Received request:', {
+      targetType: payload.targetType,
+      channels,
+      shouldSendPush,
+      shouldSendEmail,
+      title: payload.title,
+    });
+
     let notificationId: string | null = null;
     let pushRecipientCount = 0;
     let emailRecipientCount = 0;

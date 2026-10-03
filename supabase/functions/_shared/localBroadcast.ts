@@ -79,25 +79,26 @@ export async function logLocalBroadcast(entry: LocalBroadcastLogEntry): Promise<
     .filter((line): line is string => line !== null)
     .join('\n');
 
+  // 1. Always output to stdout/console (visible in Docker container logs and terminal)
   console.log(formatted);
 
-  const targetPaths = ['./local-broadcasts.log'];
+  // 2. Attempt best-effort write to local-broadcasts.log if filesystem write permissions allow
+  const targetPaths: string[] = [];
+
   try {
-    const cwd = Deno.cwd();
-    if (cwd.includes('supabase/functions')) {
-      targetPaths.push('../../local-broadcasts.log');
-      targetPaths.push('../local-broadcasts.log');
-    }
+    targetPaths.push(new URL('../local-broadcasts.log', import.meta.url).pathname);
   } catch {
-    // ignore
+    // ignore URL parsing errors in non-standard environments
   }
+
+  targetPaths.push('./local-broadcasts.log', './supabase/functions/local-broadcasts.log');
 
   for (const logPath of targetPaths) {
     try {
       await Deno.writeTextFile(logPath, formatted, { append: true, create: true });
       break;
     } catch {
-      // try next path
+      // Best-effort in sandboxed environments like Docker Edge Runtime
     }
   }
 }
