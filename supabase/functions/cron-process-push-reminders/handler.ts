@@ -1,13 +1,11 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
+import { type PushSubscriptionKeys, sendWebPushNotification } from '../_shared/push.ts';
 
 type PushSubscription = {
   endpoint: string;
-  keys: {
-    auth: string;
-    p256dh: string;
-  };
+  keys: PushSubscriptionKeys;
 };
 
 type PushSender = (subscription: PushSubscription, payload: string) => Promise<void>;
@@ -159,30 +157,35 @@ export async function handleCronProcessPushReminders(
             }
 
             if (subscriptions && subscriptions.length > 0) {
-              const pushPayload = JSON.stringify({
-                title: 'Service Reminder',
-                body: notificationMessage,
-                url: payload.target_url || payload.url || '/profile?tab=commitments',
-              });
-
               let deliveryFailed = false;
               for (const sub of subscriptions) {
-                const pushSubscription = {
-                  endpoint: sub.endpoint,
-                  keys: {
-                    auth: sub.auth_key,
-                    p256dh: sub.p256dh_key,
+                const sendResult = await sendWebPushNotification({
+                  subscription: {
+                    id: sub.id,
+                    endpoint: sub.endpoint,
+                    keys: {
+                      auth: sub.auth_key,
+                      p256dh: sub.p256dh_key,
+                    },
                   },
-                };
-                try {
-                  await sendPushNotification(pushSubscription, pushPayload);
-                } catch (err: unknown) {
-                  const pushError = err as { statusCode?: number };
-                  if (pushError.statusCode === 404 || pushError.statusCode === 410) {
+                  payload: {
+                    title: 'Service Reminder',
+                    body: notificationMessage,
+                    url: payload.target_url || payload.url || '/profile?tab=commitments',
+                  },
+                  vapidPublicKey,
+                  vapidPrivateKey,
+                  recipientId: userId,
+                  targetType: 'sunday-schedule-reminder',
+                  customSender: sendPushNotification,
+                });
+
+                if (!sendResult.ok) {
+                  if (sendResult.isExpiredSubscription) {
                     subscriptionsToDelete.add(sub.id);
                   } else {
                     deliveryFailed = true;
-                    console.error(`Failed to push to sub ${sub.id}:`, err);
+                    console.error(`Failed to push to sub ${sub.id}:`, sendResult.error);
                   }
                 }
               }
