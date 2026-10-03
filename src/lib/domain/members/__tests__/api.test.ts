@@ -49,8 +49,8 @@ describe('fetchMembersAttendanceScores', () => {
       }),
     );
 
-    expect(result.get('user-1')).toBe(8.5);
-    expect(result.get('user-2')).toBe(-1.0);
+    expect(result.get('user-1')?.attendanceScore).toBe(8.5);
+    expect(result.get('user-2')?.attendanceScore).toBe(-1.0);
     expect(result.has('user-3')).toBe(false);
   });
 
@@ -76,8 +76,8 @@ describe('fetchMembersAttendanceScores', () => {
     const result = await fetchMembersAttendanceScores(12);
 
     expect(mockMocks.rpcMock).toHaveBeenCalledTimes(2);
-    expect(result.get('user-1')).toBe(5);
-    expect(result.get('user-2')).toBe(10);
+    expect(result.get('user-1')?.attendanceScore).toBe(5);
+    expect(result.get('user-2')?.attendanceScore).toBe(10);
   });
 
   it('throws error when rpc fails', async () => {

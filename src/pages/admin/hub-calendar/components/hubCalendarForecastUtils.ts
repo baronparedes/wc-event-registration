@@ -1,0 +1,75 @@
+import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
+import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
+import { isMemberExcused } from '@/lib/domain/hub-calendar';
+import type { MemberAttendanceStats } from '@/lib/domain/members';
+
+export interface SlotConfidenceForecast {
+  totalCommitted: number;
+  expectedTurnup: number;
+  confidencePercentage: number;
+  highCount: number;
+  moderateCount: number;
+  atRiskCount: number;
+  excusedCount: number;
+}
+
+export function calculateSlotConfidenceForecast(
+  entries: MemberScheduleEntry[],
+  excusedMap: ExcusedMemberMap | undefined,
+  isoDateKey: string,
+  slot: TimeSlot,
+  statsMap?: Map<string, MemberAttendanceStats>,
+): SlotConfidenceForecast {
+  const totalCommitted = entries.length;
+  if (totalCommitted === 0) {
+    return {
+      totalCommitted: 0,
+      expectedTurnup: 0,
+      confidencePercentage: 0,
+      highCount: 0,
+      moderateCount: 0,
+      atRiskCount: 0,
+      excusedCount: 0,
+    };
+  }
+
+  let probabilitySum = 0;
+  let highCount = 0;
+  let moderateCount = 0;
+  let atRiskCount = 0;
+  let excusedCount = 0;
+
+  for (const entry of entries) {
+    const isExcused = isMemberExcused(excusedMap, isoDateKey, entry.member, slot);
+    if (isExcused) {
+      excusedCount++;
+      continue;
+    }
+
+    const stat = statsMap?.get(entry.member.id);
+    const turnupRate = stat !== undefined ? stat.turnupRate : 0.8;
+    probabilitySum += turnupRate;
+
+    if (turnupRate >= 0.8) {
+      highCount++;
+    } else if (turnupRate >= 0.5) {
+      moderateCount++;
+    } else {
+      atRiskCount++;
+    }
+  }
+
+  const expectedTurnup = Math.round(probabilitySum);
+  const confidencePercentage =
+    totalCommitted > 0 ? Math.round((probabilitySum / totalCommitted) * 100) : 0;
+
+  return {
+    totalCommitted,
+    expectedTurnup,
+    confidencePercentage,
+    highCount,
+    moderateCount,
+    atRiskCount,
+    excusedCount,
+  };
+}

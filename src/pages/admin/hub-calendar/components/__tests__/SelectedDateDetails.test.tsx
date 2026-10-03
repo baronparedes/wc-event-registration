@@ -258,4 +258,37 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText('No excused members for this service.')).toBeInTheDocument();
     expect(screen.queryByText(mockMember1.full_name)).not.toBeInTheDocument();
   });
+
+  it('renders slot confidence forecast banner on scheduled Sunday', () => {
+    const statsMap = new Map([
+      ['m1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }],
+      ['m2', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }],
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          attendanceScoreMap={statsMap}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/Expected/i)).toBeInTheDocument();
+    expect(screen.getByText(/Confidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Solid/i)).toBeInTheDocument();
+    expect(screen.getByText(/At Risk/i)).toBeInTheDocument();
+  });
 });

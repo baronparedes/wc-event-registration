@@ -12,11 +12,13 @@ import {
   isMemberExcused,
   toIsoDateKey,
 } from '@/lib/domain/hub-calendar';
+import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
+import { calculateSlotConfidenceForecast } from './hubCalendarForecastUtils';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -43,7 +45,7 @@ type SelectedDateDetailsProps = {
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   isCurrentSelectedSunday: boolean;
   excusedMap?: ExcusedMemberMap;
-  attendanceScoreMap?: Map<string, number>;
+  attendanceScoreMap?: Map<string, MemberAttendanceStats>;
   activeTab: TimeSlot;
   selectedRole: string | null;
   searchQuery: string;
@@ -119,8 +121,65 @@ export function SelectedDateDetails({
         )
       : filteredByRole;
 
+    const forecast = calculateSlotConfidenceForecast(
+      entries,
+      excusedMap,
+      isoDateKey,
+      slot,
+      attendanceScoreMap,
+    );
+
     return (
       <div className="flex flex-col gap-4">
+        {entries.length > 0 && (
+          <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-surface p-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-heading text-sm font-semibold text-text">
+                ~{forecast.expectedTurnup} / {forecast.totalCommitted} Expected
+              </span>
+              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                {forecast.confidencePercentage}% Confidence
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span
+                title="Historical turnup rate ≥ 80%"
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-700 dark:text-emerald-300"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {forecast.highCount} Solid (≥80%)
+              </span>
+              {forecast.moderateCount > 0 && (
+                <span
+                  title="Historical turnup rate 50% - 79%"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 font-medium text-amber-700 dark:text-amber-300"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  {forecast.moderateCount} Mod (50-79%)
+                </span>
+              )}
+              {forecast.atRiskCount > 0 && (
+                <span
+                  title="Historical turnup rate < 50%"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-2.5 py-0.5 font-medium text-rose-700 dark:text-rose-300"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                  {forecast.atRiskCount} At Risk (&lt;50%)
+                </span>
+              )}
+              {forecast.excusedCount > 0 && (
+                <span
+                  title="Excused absences filed for this slot"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-muted/20 px-2.5 py-0.5 font-medium text-muted"
+                >
+                  {forecast.excusedCount} Excused
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <SearchInputField
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
@@ -194,7 +253,7 @@ export function SelectedDateDetails({
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
                   excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
-                  attendanceScore={attendanceScoreMap?.get(entry.member.id)}
+                  attendanceScore={attendanceScoreMap?.get(entry.member.id)?.attendanceScore}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>

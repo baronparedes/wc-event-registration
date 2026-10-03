@@ -336,7 +336,9 @@ describe('AdminHubCalendarPage', () => {
 
   it('renders attendance score ring indicator on member avatar in selected date details', () => {
     mockUseMembersAttendanceScoresQuery.mockReturnValue({
-      data: new Map([[sampleMember.id, 8.5]]),
+      data: new Map([
+        [sampleMember.id, { attendanceScore: 8.5, committed: 10, attended: 10, turnupRate: 1.0 }],
+      ]),
       isLoading: false,
       error: null,
     });
