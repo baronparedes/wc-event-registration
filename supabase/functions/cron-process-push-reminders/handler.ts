@@ -154,7 +154,7 @@ export async function handleCronProcessPushReminders(
               return;
             }
 
-            if (isLocalBroadcast && (!vapidPublicKey || !vapidPrivateKey)) {
+            if (isLocalBroadcast) {
               await logLocalBroadcast({
                 type: 'push',
                 targetType: 'sunday-schedule-reminder',

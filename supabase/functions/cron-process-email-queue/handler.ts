@@ -134,8 +134,8 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           return;
         }
 
-        // Local simulation when no real Resend key is available
-        if (isLocalBroadcast && !resendApiKey) {
+        // Local simulation in local / non-production environments
+        if (isLocalBroadcast) {
           await logLocalBroadcast({
             type: 'email',
             targetType: 'sunday-schedule-reminder',
@@ -162,19 +162,25 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             .eq('slug', payload.template_slug)
             .single();
 
-          if (templateError || !template) {
+          if (template && !templateError) {
+            resendBody.template_id = template.resend_template_id;
+            if (payload.metadata && typeof payload.metadata === 'object') {
+              resendBody.variables = payload.metadata;
+              resendBody.data = payload.metadata;
+            }
+          } else if (payload.text) {
+            console.warn(
+              `[cron-process-email-queue] Template not found for slug ${payload.template_slug}; falling back to plain text email`,
+            );
+            resendBody.subject = payload.subject || 'Service Reminder';
+            resendBody.text = payload.text;
+          } else {
             console.error(
               `[cron-process-email-queue] Template not found for slug: ${payload.template_slug}`,
               { error: templateError },
             );
             await archiveAfterRetryLimit(msg, templateError ?? 'template not found');
             return;
-          }
-
-          resendBody.template_id = template.resend_template_id;
-          if (payload.metadata && typeof payload.metadata === 'object') {
-            resendBody.variables = payload.metadata;
-            resendBody.data = payload.metadata;
           }
         } else if (payload.text) {
           resendBody.subject = payload.subject || 'Email notification';

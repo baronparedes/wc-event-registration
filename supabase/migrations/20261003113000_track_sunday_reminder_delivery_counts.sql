@@ -42,6 +42,17 @@ begin
 end;
 $$;
 
+-- Ensure volunteer-schedule template exists in email_templates
+insert into
+  public.email_templates (slug, name, resend_template_id)
+values
+  (
+    'volunteer-schedule',
+    'Volunteer Schedule Reminder',
+    'volunteer-schedule'
+  )
+on conflict (slug) do nothing;
+
 -- 3. RPC to update push reminder delivery stats
 create or replace function public.update_push_reminder_delivery_stats (
   p_sunday_date date,
