@@ -104,8 +104,8 @@ Every volunteer scheduled in the slot is classified into one of four mutually ex
 | Tier         | Criteria                                            | Meaning & Action                                                                      |
 | :----------- | :-------------------------------------------------- | :------------------------------------------------------------------------------------ |
 | **Solid**    | Non-excused AND $\text{TurnupRate} \ge 80\%$        | Highly reliable volunteer; very likely to turn up.                                    |
-| **Moderate** | Non-excused AND $50\% \le \text{TurnupRate} < 80\%$ | Fairly reliable; may occasionally miss.                                               |
-| **At Risk**  | Non-excused AND $\text{TurnupRate} < 50\%$          | Low historical attendance; high chance of absence. Coordinator should prepare backup. |
+| **Moderate** | Non-excused AND $40\% \le \text{TurnupRate} < 80\%$ | Fairly reliable; may occasionally miss.                                               |
+| **At Risk**  | Non-excused AND $\text{TurnupRate} < 40\%$          | Low historical attendance; high chance of absence. Coordinator should prepare backup. |
 | **Excused**  | Formally excused for that date & time slot          | Not expected to serve; excluded from turnup expectation calculations.                 |
 
 ---

@@ -168,7 +168,7 @@ export function buildSundaySchedulesCsvExport(params: {
         turnupRateStr = `${Math.round(turnupRate * 100)}%`;
         if (turnupRate >= 0.8) {
           confidenceLevel = 'Solid';
-        } else if (turnupRate >= 0.5) {
+        } else if (turnupRate >= 0.4) {
           confidenceLevel = 'Moderate';
         } else {
           confidenceLevel = 'At Risk';

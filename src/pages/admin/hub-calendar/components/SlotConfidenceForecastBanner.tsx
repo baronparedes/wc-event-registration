@@ -60,7 +60,7 @@ export function SlotConfidenceForecastBanner({
                 ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 ring-1 ring-amber-500/40 font-semibold'
                 : 'hover:bg-surface hover:text-text cursor-pointer'
             } ${!onSelectTier ? 'cursor-default' : ''}`}
-            title="Filter by Moderate (turnup rate 50% - 79%)"
+            title="Filter by Moderate (turnup rate 40% - 79%)"
           >
             <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
             <span className="text-text font-semibold">{forecast.moderateCount}</span> Moderate
@@ -77,7 +77,7 @@ export function SlotConfidenceForecastBanner({
                 ? 'bg-rose-500/15 text-rose-800 dark:text-rose-300 ring-1 ring-rose-500/40 font-semibold'
                 : 'hover:bg-surface hover:text-text cursor-pointer'
             } ${!onSelectTier ? 'cursor-default' : ''}`}
-            title="Filter by At Risk (turnup rate < 50%)"
+            title="Filter by At Risk (turnup rate < 40%)"
           >
             <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
             <span className="text-text font-semibold">{forecast.atRiskCount}</span> At Risk

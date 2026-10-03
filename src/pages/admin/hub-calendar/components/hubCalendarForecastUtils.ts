@@ -52,7 +52,7 @@ export function calculateSlotConfidenceForecast(
 
     if (turnupRate >= 0.8) {
       highCount++;
-    } else if (turnupRate >= 0.5) {
+    } else if (turnupRate >= 0.4) {
       moderateCount++;
     } else {
       atRiskCount++;
@@ -93,7 +93,7 @@ export function getMemberConfidenceTier(
   if (turnupRate >= 0.8) {
     return 'solid';
   }
-  if (turnupRate >= 0.5) {
+  if (turnupRate >= 0.4) {
     return 'moderate';
   }
   return 'at_risk';

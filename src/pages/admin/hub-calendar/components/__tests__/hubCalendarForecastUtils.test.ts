@@ -136,20 +136,25 @@ describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
     expect(getConfidenceTierLabel('excused')).toBe('Excused');
   });
 
-  it('evaluates solid, moderate, and at risk tiers based on turnup rate', () => {
+  it('evaluates solid, moderate, and at risk tiers based on turnup rate with 40% threshold', () => {
     const mSolid = createMockMember('m-solid', 'Solid');
     const mMod = createMockMember('m-mod', 'Mod');
+    const mModLow = createMockMember('m-mod-low', 'ModLow');
     const mRisk = createMockMember('m-risk', 'Risk');
     const mNew = createMockMember('m-new', 'New');
 
     const statsMap = new Map<string, MemberAttendanceStats>([
       ['m-solid', { attendanceScore: 10, committed: 10, attended: 9, turnupRate: 0.9 }],
       ['m-mod', { attendanceScore: 5, committed: 10, attended: 6, turnupRate: 0.6 }],
-      ['m-risk', { attendanceScore: -2, committed: 10, attended: 3, turnupRate: 0.3 }],
+      ['m-mod-low', { attendanceScore: 1, committed: 13, attended: 6, turnupRate: 0.46 }], // 46% -> Moderate
+      ['m-risk', { attendanceScore: -2, committed: 10, attended: 3, turnupRate: 0.35 }], // 35% -> At risk
     ]);
 
     expect(getMemberConfidenceTier(mSolid, '2026-10-04', '9AM', undefined, statsMap)).toBe('solid');
     expect(getMemberConfidenceTier(mMod, '2026-10-04', '9AM', undefined, statsMap)).toBe(
+      'moderate',
+    );
+    expect(getMemberConfidenceTier(mModLow, '2026-10-04', '9AM', undefined, statsMap)).toBe(
       'moderate',
     );
     expect(getMemberConfidenceTier(mRisk, '2026-10-04', '9AM', undefined, statsMap)).toBe(
