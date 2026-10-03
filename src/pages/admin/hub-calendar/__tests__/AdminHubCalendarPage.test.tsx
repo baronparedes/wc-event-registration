@@ -368,8 +368,8 @@ describe('AdminHubCalendarPage', () => {
     }
 
     const avatarElements = screen.getAllByTitle(sampleMember.full_name);
-    const hasRingPrimary = avatarElements.some((el) => el.classList.contains('ring-primary'));
-    expect(hasRingPrimary).toBe(true);
+    const hasRingEmerald = avatarElements.some((el) => el.classList.contains('ring-emerald-500'));
+    expect(hasRingEmerald).toBe(true);
   });
 });
 

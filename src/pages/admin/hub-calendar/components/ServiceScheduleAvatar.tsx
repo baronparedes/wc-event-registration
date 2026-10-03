@@ -2,7 +2,7 @@ import { CalendarOff } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
-import { getAttendanceScoreBorderVariant } from './serviceScheduleAvatarUtils';
+import { getConfidenceBorderVariant } from './serviceScheduleAvatarUtils';
 
 export type ServiceScheduleAvatarProps = {
   name: string;
@@ -10,7 +10,8 @@ export type ServiceScheduleAvatarProps = {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   excused?: boolean;
-  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'none';
+  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'success' | 'none';
+  turnupRate?: number | null;
   attendanceScore?: number | null;
 };
 
@@ -21,9 +22,11 @@ export function ServiceScheduleAvatar({
   className = '',
   excused = false,
   border,
+  turnupRate,
   attendanceScore,
 }: ServiceScheduleAvatarProps) {
-  const calculatedBorder = border ?? getAttendanceScoreBorderVariant(attendanceScore);
+  const rate = turnupRate ?? attendanceScore;
+  const calculatedBorder = border ?? getConfidenceBorderVariant(rate);
 
   if (!excused) {
     return (

@@ -6,7 +6,7 @@ interface AvatarProps {
   name: string;
   avatarObjectKey?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'none';
+  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'success' | 'none';
   className?: string;
 }
 
@@ -42,6 +42,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     secondary: 'ring-2 ring-secondary ring-offset-2 ring-offset-background',
     destructive: 'ring-2 ring-red-600 ring-offset-2 ring-offset-background',
     accent: 'ring-2 ring-accent ring-offset-2 ring-offset-background',
+    success: 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-background',
   };
 
   const colors = [

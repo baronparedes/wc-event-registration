@@ -291,7 +291,7 @@ export function SelectedDateDetails({
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
                   excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
-                  attendanceScore={attendanceScoreMap?.get(entry.member.id)?.attendanceScore}
+                  turnupRate={attendanceScoreMap?.get(entry.member.id)?.turnupRate}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>

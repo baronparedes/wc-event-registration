@@ -64,15 +64,14 @@ $$\text{Attendance Score} = (1.0 \times \text{Attended Commitments}) + (0.5 \tim
 
 ### Avatar Border Ring Color Thresholds
 
-The resulting score maps directly to standardized avatar ring styles:
+The avatar rings in the volunteer schedule view map directly to the volunteer's **Turnup Rate Confidence Tier**:
 
-| Score Range                      | Tier / Status          | Ring Class                           | Visual Indication                   |
-| :------------------------------- | :--------------------- | :----------------------------------- | :---------------------------------- |
-| **Score $\ge 8.0$**              | **High Fidelity**      | `ring-emerald-500`                   | Exceptional attendance track record |
-| **$4.0 \le \text{Score} < 8.0$** | **Good / Consistent**  | `ring-indigo-500`                    | Reliable regular attendance         |
-| **$0.0 \le \text{Score} < 4.0$** | **Moderate / Neutral** | `ring-amber-500`                     | Mixed record or new volunteer       |
-| **Score $< 0.0$**                | **At Risk**            | `ring-rose-500`                      | High rate of unexcused absences     |
-| _No data / 0 commitments_        | **Default**            | `ring-slate-300 dark:ring-slate-700` | Neutral baseline                    |
+| Turnup Rate Range                        | Confidence Tier    | Ring Class                       | Visual Indication                                |
+| :--------------------------------------- | :----------------- | :------------------------------- | :----------------------------------------------- |
+| **$\text{Turnup Rate} \ge 80\%$**        | **Solid**          | `ring-emerald-500`               | High reliability volunteer ($\ge 80\%$ turnup)   |
+| **$40\% \le \text{Turnup Rate} < 80\%$** | **Moderate**       | `ring-amber-500`                 | Fairly regular attendance ($40\% - 79\%$ turnup) |
+| **$\text{Turnup Rate} < 40\%$**          | **At Risk**        | `ring-rose-500` / `ring-red-600` | Low attendance frequency ($< 40\%$ turnup)       |
+| _Excused / No history_                   | **Default / None** | `ring-none`                      | Neutral baseline                                 |
 
 ---
 

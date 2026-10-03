@@ -38,26 +38,26 @@ describe('ServiceScheduleAvatar', () => {
     expect(container.querySelector('.custom-schedule-avatar')).toBeInTheDocument();
   });
 
-  describe('attendanceScore and ring indicators', () => {
-    it('applies primary ring when attendance score >= 5', () => {
-      render(<ServiceScheduleAvatar name="High Scorer" attendanceScore={8.5} size="sm" />);
-      const avatarEl = screen.getByTitle('High Scorer');
-      expect(avatarEl).toHaveClass('ring-primary');
+  describe('turnupRate and confidence ring indicators', () => {
+    it('applies emerald success ring when turnup rate >= 0.8 (Solid)', () => {
+      render(<ServiceScheduleAvatar name="Solid Volunteer" turnupRate={0.85} size="sm" />);
+      const avatarEl = screen.getByTitle('Solid Volunteer');
+      expect(avatarEl).toHaveClass('ring-emerald-500');
     });
 
-    it('applies accent ring when attendance score is between 0 and 4.5', () => {
-      render(<ServiceScheduleAvatar name="Mid Scorer" attendanceScore={3.5} size="sm" />);
-      const avatarEl = screen.getByTitle('Mid Scorer');
+    it('applies accent amber ring when turnup rate is between 0.4 and 0.79 (Moderate)', () => {
+      render(<ServiceScheduleAvatar name="Moderate Volunteer" turnupRate={0.46} size="sm" />);
+      const avatarEl = screen.getByTitle('Moderate Volunteer');
       expect(avatarEl).toHaveClass('ring-accent');
     });
 
-    it('applies destructive ring when attendance score is negative (< 0)', () => {
-      render(<ServiceScheduleAvatar name="Negative Scorer" attendanceScore={-1.5} size="sm" />);
-      const avatarEl = screen.getByTitle('Negative Scorer');
+    it('applies destructive red ring when turnup rate is < 0.4 (At Risk)', () => {
+      render(<ServiceScheduleAvatar name="At Risk Volunteer" turnupRate={0.35} size="sm" />);
+      const avatarEl = screen.getByTitle('At Risk Volunteer');
       expect(avatarEl).toHaveClass('ring-red-600');
     });
 
-    it('applies no ring when attendanceScore is undefined and border is none', () => {
+    it('applies no ring when turnupRate is undefined and border is none', () => {
       render(<ServiceScheduleAvatar name="No Score" size="sm" />);
       const avatarEl = screen.getByTitle('No Score');
       expect(avatarEl).not.toHaveClass('ring-2');
@@ -67,7 +67,7 @@ describe('ServiceScheduleAvatar', () => {
       render(
         <ServiceScheduleAvatar
           name="Explicit Border"
-          attendanceScore={10}
+          turnupRate={0.9}
           border="secondary"
           size="sm"
         />,
