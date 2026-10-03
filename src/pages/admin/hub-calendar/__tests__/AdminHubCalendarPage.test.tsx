@@ -232,8 +232,8 @@ describe('AdminHubCalendarPage', () => {
     // Toggle role filter off
     fireEvent.click(roleFilter);
 
-    const allFilter = screen.getByRole('button', { name: 'All' });
-    fireEvent.click(allFilter);
+    const allFilters = screen.getAllByRole('button', { name: 'All' });
+    fireEvent.click(allFilters[0]);
 
     // Click member card
     const memberCard = screen.getByText(sampleMember.full_name);

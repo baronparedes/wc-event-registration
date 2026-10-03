@@ -107,14 +107,10 @@ export function SelectedDateDetails({
     }
 
     const isoDateKey = toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber);
-    const hasExcusedMembers = entries.some((e) =>
-      isMemberExcused(excusedMap, isoDateKey, e.member, slot),
-    );
 
-    const EXCUSED_ROLE_FILTER = 'Excused';
-    const uniqueRoles = Array.from(new Set(entries.map((e) => e.member.role).filter(Boolean)))
-      .filter((role) => role !== EXCUSED_ROLE_FILTER)
-      .sort();
+    const uniqueRoles = Array.from(
+      new Set(entries.map((e) => e.member.role).filter(Boolean)),
+    ).sort();
 
     const filteredByConfidence =
       selectedConfidence === null
@@ -133,11 +129,7 @@ export function SelectedDateDetails({
     const filteredByRole =
       selectedRole === null
         ? filteredByConfidence
-        : selectedRole === EXCUSED_ROLE_FILTER
-          ? filteredByConfidence.filter((e) =>
-              isMemberExcused(excusedMap, isoDateKey, e.member, slot),
-            )
-          : filteredByConfidence.filter((e) => e.member.role === selectedRole);
+        : filteredByConfidence.filter((e) => e.member.role === selectedRole);
 
     const query = searchQuery.trim().toLowerCase();
     const filteredEntries = query
@@ -171,33 +163,15 @@ export function SelectedDateDetails({
           placeholder="Search by name or nickname..."
         />
 
-        {selectedConfidence && (
-          <div className="flex items-center gap-2 text-xs text-muted">
-            <span>Filtered by reliability:</span>
-            <Badge
-              variant="outline"
-              className="gap-1 border-primary/40 bg-primary/10 text-primary font-semibold"
-            >
-              <span>{getConfidenceTierLabel(selectedConfidence)}</span>
-              <button
-                type="button"
-                onClick={() => setSelectedConfidence(null)}
-                className="ml-1 text-primary hover:text-text cursor-pointer"
-                aria-label="Clear confidence filter"
-              >
-                ×
-              </button>
-            </Badge>
-          </div>
-        )}
-
-        {(uniqueRoles.length > 1 || hasExcusedMembers) && (
-          <div className="flex flex-wrap gap-2">
+        {/* Filter Pills */}
+        <div className="flex flex-col gap-2">
+          {/* First line: Status / Confidence Tiers */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onRoleChange(null)}
-              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedRole === null
+              onClick={() => setSelectedConfidence(null)}
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === null
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -207,41 +181,98 @@ export function SelectedDateDetails({
             <button
               type="button"
               onClick={() =>
-                onRoleChange(selectedRole === EXCUSED_ROLE_FILTER ? null : EXCUSED_ROLE_FILTER)
+                setSelectedConfidence(selectedConfidence === 'excused' ? null : 'excused')
               }
-              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedRole === EXCUSED_ROLE_FILTER
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'excused'
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
             >
               Excused
             </button>
-            {uniqueRoles.map((role) => (
+            <button
+              type="button"
+              onClick={() => setSelectedConfidence(selectedConfidence === 'solid' ? null : 'solid')}
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'solid'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              Solid
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedConfidence(selectedConfidence === 'moderate' ? null : 'moderate')
+              }
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'moderate'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              Moderate
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedConfidence(selectedConfidence === 'at_risk' ? null : 'at_risk')
+              }
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'at_risk'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              At Risk
+            </button>
+          </div>
+
+          {/* Second line+: Role Filters */}
+          {uniqueRoles.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                key={role}
                 type="button"
-                onClick={() => onRoleChange(role === selectedRole ? null : role)}
-                className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  selectedRole === role
+                onClick={() => onRoleChange(null)}
+                className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  selectedRole === null
                     ? 'bg-primary text-white'
                     : 'bg-surface border border-border text-muted hover:text-text'
                 }`}
               >
-                {role}
+                All
               </button>
-            ))}
-          </div>
-        )}
+              {uniqueRoles.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => onRoleChange(role === selectedRole ? null : role)}
+                  className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    selectedRole === role
+                      ? 'bg-primary text-white'
+                      : 'bg-surface border border-border text-muted hover:text-text'
+                  }`}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {filteredEntries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted">
             {searchQuery
               ? 'No members match your search criteria.'
-              : selectedConfidence
-                ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers for this service.`
-                : selectedRole === EXCUSED_ROLE_FILTER
-                  ? 'No excused members for this service.'
-                  : 'No members for this role.'}
+              : selectedConfidence && selectedRole
+                ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers found for role "${selectedRole}".`
+                : selectedConfidence
+                  ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers for this service.`
+                  : selectedRole
+                    ? `No members found for role "${selectedRole}".`
+                    : 'No members match the selected filters.'}
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
