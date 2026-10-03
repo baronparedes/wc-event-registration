@@ -213,3 +213,29 @@ export async function setMemberActiveStatus(
   if (error) throw error;
   return (data ?? null) as { id: string } | null;
 }
+
+export async function fetchMembersLoginCounts(weeks = 12): Promise<Map<string, number>> {
+  const pastDate = new Date();
+  pastDate.setDate(pastDate.getDate() - weeks * 7);
+  const startDate = pastDate.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('service_attendance')
+    .select('user_id')
+    .gte('service_date', startDate)
+    .eq('is_walk_in', false);
+
+  if (error) {
+    throw new Error(`Failed to fetch login counts: ${error.message}`);
+  }
+
+  const countMap = new Map<string, number>();
+  for (const record of data ?? []) {
+    if (record.user_id) {
+      const count = countMap.get(record.user_id) || 0;
+      countMap.set(record.user_id, count + 1);
+    }
+  }
+
+  return countMap;
+}

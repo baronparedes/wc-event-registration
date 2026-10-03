@@ -333,6 +333,42 @@ describe('AdminHubCalendarPage', () => {
       expect(screen.queryByText(new RegExp(`^${prevMonthName}\\s+\\d+$`))).not.toBeInTheDocument();
     }
   });
+
+  it('renders login count ring indicator on member avatar in selected date details', () => {
+    mockUseMembersLoginCountQuery.mockReturnValue({
+      data: new Map([[sampleMember.id, 10]]),
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminMembersSchedulesQuery.mockReturnValue({
+      data: [sampleSchedule],
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
+      data: [sampleMember],
+      isLoading: false,
+      error: null,
+    });
+
+    renderComponent();
+
+    const now = new Date();
+    let firstSunday = 1;
+    while (new Date(now.getFullYear(), now.getMonth(), firstSunday).getDay() !== 0) {
+      firstSunday++;
+    }
+
+    const dayButtons = screen.getAllByRole('button');
+    const sundayBtn = dayButtons.find((btn) => btn.textContent?.includes(String(firstSunday)));
+    if (sundayBtn) {
+      fireEvent.click(sundayBtn);
+    }
+
+    const avatarElements = screen.getAllByTitle(sampleMember.full_name);
+    const hasRingPrimary = avatarElements.some((el) => el.classList.contains('ring-primary'));
+    expect(hasRingPrimary).toBe(true);
+  });
 });
 
 describe('getMonthWeekRanges', () => {

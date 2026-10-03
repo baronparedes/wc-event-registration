@@ -47,4 +47,5 @@ export {
   fetchMemberMetadata,
   updateMember,
   setMemberActiveStatus,
+  fetchMembersLoginCounts,
 } from './api';

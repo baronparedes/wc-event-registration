@@ -11,6 +11,7 @@ type MobileScheduleCalendarProps = {
   currentWeekNumber: number;
   weekOptions: Array<{ weekNumber: number; isAvailable: boolean }>;
   excusedMap?: ExcusedMemberMap;
+  loginCountMap?: Map<string, number>;
   onSelectWeek: (weekNumber: number) => void;
   onSelectDay: (dayNumber: number, date?: Date) => void;
 };
@@ -23,6 +24,7 @@ export function MobileScheduleCalendar({
   currentWeekNumber,
   weekOptions,
   excusedMap,
+  loginCountMap,
   onSelectWeek,
   onSelectDay,
 }: MobileScheduleCalendarProps) {
@@ -159,6 +161,7 @@ export function MobileScheduleCalendar({
                         name={entry.member.full_name}
                         avatarObjectKey={entry.member.avatar_object_key}
                         excused={isMemberExcused(excusedMap, cell.isoDate, entry.member)}
+                        loginCount={loginCountMap?.get(entry.member.id)}
                       />
                     ))}
                     {excessCount > 0 && (

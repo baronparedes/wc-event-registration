@@ -2,12 +2,16 @@ import { CalendarOff } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
+import { getLoginCountBorderVariant } from './serviceScheduleAvatarUtils';
+
 export type ServiceScheduleAvatarProps = {
   name: string;
   avatarObjectKey?: string | null;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   excused?: boolean;
+  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'none';
+  loginCount?: number;
 };
 
 export function ServiceScheduleAvatar({
@@ -16,10 +20,20 @@ export function ServiceScheduleAvatar({
   size = 'sm',
   className = '',
   excused = false,
+  border,
+  loginCount,
 }: ServiceScheduleAvatarProps) {
+  const calculatedBorder = border ?? getLoginCountBorderVariant(loginCount);
+
   if (!excused) {
     return (
-      <Avatar name={name} avatarObjectKey={avatarObjectKey} size={size} className={className} />
+      <Avatar
+        name={name}
+        avatarObjectKey={avatarObjectKey}
+        size={size}
+        border={calculatedBorder}
+        className={className}
+      />
     );
   }
 
@@ -37,7 +51,13 @@ export function ServiceScheduleAvatar({
 
   return (
     <div className="relative inline-flex shrink-0">
-      <Avatar name={name} avatarObjectKey={avatarObjectKey} size={size} className={className} />
+      <Avatar
+        name={name}
+        avatarObjectKey={avatarObjectKey}
+        size={size}
+        border={calculatedBorder}
+        className={className}
+      />
       <span
         title="Excused"
         className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-danger text-white ${badgeSizeClasses}`}

@@ -7,6 +7,7 @@ import { AlertBanner, Button, SectionCard } from '@/components/ui';
 import {
   useAdminMembersMilestonesQuery,
   useAdminMembersSchedulesQuery,
+  useMembersLoginCountQuery,
 } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 
@@ -24,12 +25,15 @@ export function AdminHubCalendarPage() {
 
   const schedulesQuery = useAdminMembersSchedulesQuery();
   const milestonesQuery = useAdminMembersMilestonesQuery();
+  const loginCountsQuery = useMembersLoginCountQuery();
 
   const scheduleEntries = useMemo(() => schedulesQuery.data ?? [], [schedulesQuery.data]);
   const members = useMemo(() => milestonesQuery.data ?? [], [milestonesQuery.data]);
+  const loginCountMap = loginCountsQuery.data;
 
-  const isLoading = schedulesQuery.isLoading || milestonesQuery.isLoading;
-  const error = schedulesQuery.error || milestonesQuery.error;
+  const isLoading =
+    schedulesQuery.isLoading || milestonesQuery.isLoading || loginCountsQuery.isLoading;
+  const error = schedulesQuery.error || milestonesQuery.error || loginCountsQuery.error;
 
   const {
     viewDate,
@@ -139,6 +143,7 @@ export function AdminHubCalendarPage() {
                 currentWeekNumber={currentWeekNumber}
                 weekOptions={weekOptions}
                 excusedMap={excusedMap}
+                loginCountMap={loginCountMap}
                 onSelectWeek={(week) => handleSelectWeek(week, monthWeeks)}
                 onSelectDay={handleSelectDay}
               />
@@ -148,6 +153,7 @@ export function AdminHubCalendarPage() {
                 scheduleMap={scheduleMap}
                 excusedMap={excusedMap}
                 milestoneMap={milestoneMap}
+                loginCountMap={loginCountMap}
                 selectedDayNumber={selectedDayNumber}
                 onSelectDay={handleSelectDay}
               />
@@ -169,6 +175,7 @@ export function AdminHubCalendarPage() {
           selectedEntries={selectedEntries}
           entriesByTimeSlot={entriesByTimeSlot}
           excusedMap={excusedMap}
+          loginCountMap={loginCountMap}
           isCurrentSelectedSunday={isCurrentSelectedSunday}
           activeTab={activeTab}
           selectedRole={selectedRole}
