@@ -152,7 +152,7 @@ export async function handleCronProcessPushReminders(
                   payload: {
                     title: 'Service Reminder',
                     body: notificationMessage,
-                    url: payload.target_url || payload.url || '/profile?tab=commitment',
+                    url: payload.target_url || payload.url || '/profile?tab=commitments',
                   },
                   recipientId: userId,
                   targetType: 'sunday-schedule-reminder',
