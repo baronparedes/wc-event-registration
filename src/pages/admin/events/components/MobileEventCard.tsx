@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import {
+  BarChart3,
   ClipboardList,
   Copy,
   Edit,
@@ -166,6 +167,14 @@ export function MobileEventCard({
                 <span className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4" />
                   Registrations
+                </span>
+              </DropdownMenuItem>
+            )}
+            {canRead && (
+              <DropdownMenuItem to={toRoute('adminAttendanceDashboard', { id: event.id })}>
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Attendance dashboard
                 </span>
               </DropdownMenuItem>
             )}

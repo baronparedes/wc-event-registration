@@ -85,6 +85,10 @@ describe('MobileEventCard', () => {
       'href',
       toRoute('adminRegistrations', { id: event.id }),
     );
+    expect(screen.getByRole('link', { name: 'Attendance dashboard' })).toHaveAttribute(
+      'href',
+      toRoute('adminAttendanceDashboard', { id: event.id }),
+    );
     expect(screen.getByRole('link', { name: 'Check-in' })).toHaveAttribute(
       'href',
       toRoute('adminAttendanceCheckIn', { id: event.id }),
@@ -102,6 +106,7 @@ describe('MobileEventCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
 
     expect(screen.getByRole('link', { name: 'Registrations' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Attendance dashboard' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Attendance settings' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registration fields' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Check-in' })).not.toBeInTheDocument();
@@ -120,6 +125,7 @@ describe('MobileEventCard', () => {
     expect(screen.getByRole('link', { name: 'Attendance settings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Registration fields' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registrations' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance dashboard' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Check-in' })).not.toBeInTheDocument();
   });
 
@@ -137,6 +143,7 @@ describe('MobileEventCard', () => {
     expect(screen.queryByRole('link', { name: 'Attendance settings' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registration fields' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registrations' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance dashboard' })).not.toBeInTheDocument();
   });
 
   it('hides all actions when the user has no permissions', () => {
