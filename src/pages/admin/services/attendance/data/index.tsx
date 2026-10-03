@@ -175,7 +175,7 @@ export function AdminServiceAttendanceDataPage() {
     // Second pass: sort dates asc, members within each date by full_name asc,
     // and individual check-ins within each member group by time_slot asc.
     return Array.from(dateMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([date, memberMap]) => ({
         date,
         memberGroups: Array.from(memberMap.values())
