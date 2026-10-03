@@ -81,6 +81,8 @@ export async function sendPushNotifications({
         unreadCountByUser.set(row.user_id, (unreadCountByUser.get(row.user_id) ?? 0) + 1);
       });
 
+      const subscriptionsToDelete = new Set<string>();
+
       const pushPromises = subscriptions.map(async (sub) => {
         const unreadCount = unreadCountByUser.get(sub.user_id) ?? 1;
         const result = await sendWebPushNotification({
@@ -103,11 +105,29 @@ export async function sendPushNotifications({
         });
 
         if (!result.ok) {
-          console.error(`Failed to push to user ${sub.user_id}:`, result.error);
+          if (result.isExpiredSubscription) {
+            subscriptionsToDelete.add(sub.id);
+          } else {
+            console.error(`Failed to push to user ${sub.user_id}:`, result.error);
+          }
         }
       });
 
       await Promise.allSettled(pushPromises);
+
+      if (subscriptionsToDelete.size > 0) {
+        const { error: deleteError } = await supabase
+          .from('user_push_subscriptions')
+          .delete()
+          .in('id', Array.from(subscriptionsToDelete));
+
+        if (deleteError) {
+          console.error(
+            '[send-app-notification] Failed to delete stale push subscriptions:',
+            deleteError,
+          );
+        }
+      }
     }
 
     console.log('[send-app-notification] [push] Broadcast push summary:', {

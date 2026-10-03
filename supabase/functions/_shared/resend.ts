@@ -1,3 +1,5 @@
+import { isLocalBroadcastEnabled } from './edge.ts';
+
 export interface SendResendEmailOptions {
   to: string | string[];
   from?: string;
@@ -27,44 +29,6 @@ interface LocalBroadcastEmailEntry {
   body: string;
   targetType?: string;
   metadata?: Record<string, unknown>;
-}
-
-function isLocalBroadcastEnabled(): boolean {
-  const envFlag = Deno.env.get('LOCAL_BROADCAST')?.trim().toLowerCase();
-  if (envFlag === 'false' || envFlag === '0') return false;
-
-  const nodeEnv = Deno.env.get('NODE_ENV')?.trim().toLowerCase();
-  if (nodeEnv === 'test') {
-    return false;
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  // Skip during unit test mocks
-  if (supabaseUrl.includes('example.supabase.co')) {
-    return false;
-  }
-
-  if (envFlag === 'true' || envFlag === '1') return true;
-
-  const runtimeEnv = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase();
-  if (runtimeEnv === 'local' || runtimeEnv === 'development') {
-    return true;
-  }
-  if (runtimeEnv === 'production' || runtimeEnv === 'prod') {
-    return false;
-  }
-
-  if (
-    supabaseUrl.includes('localhost') ||
-    supabaseUrl.includes('127.0.0.1') ||
-    supabaseUrl.includes('kong')
-  ) {
-    return true;
-  }
-
-  const isProd =
-    Deno.env.get('ENVIRONMENT') === 'production' || Deno.env.get('NODE_ENV') === 'production';
-  return !isProd;
 }
 
 async function logLocalBroadcastEmail(entry: LocalBroadcastEmailEntry): Promise<void> {

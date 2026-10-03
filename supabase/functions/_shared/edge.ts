@@ -410,3 +410,57 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
     callerType,
   };
 }
+
+/**
+ * Detects whether the current edge function runtime is operating in a local development/broadcast simulation mode.
+ * In local mode, outbound external network operations (e.g. Resend emails and Web Push dispatches)
+ * are safely simulated and logged locally without making real third-party API calls.
+ */
+export function isLocalBroadcastEnabled(): boolean {
+  const envFlag = Deno.env.get('LOCAL_BROADCAST')?.trim().toLowerCase();
+  if (envFlag === 'false' || envFlag === '0') return false;
+
+  const nodeEnv = Deno.env.get('NODE_ENV')?.trim().toLowerCase();
+  if (nodeEnv === 'test') {
+    return false;
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  // Skip during unit test mocks
+  if (supabaseUrl.includes('example.supabase.co')) {
+    return false;
+  }
+
+  if (envFlag === 'true' || envFlag === '1') return true;
+
+  const runtimeEnv = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase();
+  if (runtimeEnv === 'local' || runtimeEnv === 'development') {
+    return true;
+  }
+  if (runtimeEnv === 'production' || runtimeEnv === 'prod') {
+    return false;
+  }
+
+  // Local Supabase CLI instances
+  if (
+    supabaseUrl.includes('localhost') ||
+    supabaseUrl.includes('127.0.0.1') ||
+    supabaseUrl.includes('kong')
+  ) {
+    return true;
+  }
+
+  // Supabase Cloud hosted edge functions
+  if (
+    supabaseUrl.includes('.supabase.co') ||
+    supabaseUrl.includes('.supabase.net') ||
+    Boolean(Deno.env.get('DENO_REGION')) ||
+    Boolean(Deno.env.get('DENO_DEPLOYMENT_ID'))
+  ) {
+    return false;
+  }
+
+  const isProd =
+    Deno.env.get('ENVIRONMENT') === 'production' || Deno.env.get('NODE_ENV') === 'production';
+  return !isProd;
+}

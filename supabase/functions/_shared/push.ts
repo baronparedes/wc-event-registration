@@ -1,5 +1,7 @@
 import webpush from 'web-push';
 
+import { isLocalBroadcastEnabled } from './edge.ts';
+
 export interface PushSubscriptionKeys {
   auth: string;
   p256dh: string;
@@ -45,44 +47,6 @@ interface LocalBroadcastPushEntry {
   targetType?: string;
 }
 
-function isLocalBroadcastEnabled(): boolean {
-  const envFlag = Deno.env.get('LOCAL_BROADCAST')?.trim().toLowerCase();
-  if (envFlag === 'false' || envFlag === '0') return false;
-
-  const nodeEnv = Deno.env.get('NODE_ENV')?.trim().toLowerCase();
-  if (nodeEnv === 'test') {
-    return false;
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  // Skip during unit test mocks
-  if (supabaseUrl.includes('example.supabase.co')) {
-    return false;
-  }
-
-  if (envFlag === 'true' || envFlag === '1') return true;
-
-  const runtimeEnv = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase();
-  if (runtimeEnv === 'local' || runtimeEnv === 'development') {
-    return true;
-  }
-  if (runtimeEnv === 'production' || runtimeEnv === 'prod') {
-    return false;
-  }
-
-  if (
-    supabaseUrl.includes('localhost') ||
-    supabaseUrl.includes('127.0.0.1') ||
-    supabaseUrl.includes('kong')
-  ) {
-    return true;
-  }
-
-  const isProd =
-    Deno.env.get('ENVIRONMENT') === 'production' || Deno.env.get('NODE_ENV') === 'production';
-  return !isProd;
-}
-
 async function logLocalBroadcastPush(entry: LocalBroadcastPushEntry): Promise<void> {
   const timestamp = new Date().toISOString();
   const divider = '='.repeat(80);
@@ -124,12 +88,19 @@ async function logLocalBroadcastPush(entry: LocalBroadcastPushEntry): Promise<vo
   }
 }
 
-let isVapidInitialized = false;
+let lastConfiguredVapid: { subject: string; publicKey: string; privateKey: string } | null = null;
 
 function ensureVapidConfigured(subject: string, publicKey: string, privateKey: string) {
-  if (!isVapidInitialized && publicKey && privateKey) {
+  if (
+    publicKey &&
+    privateKey &&
+    (!lastConfiguredVapid ||
+      lastConfiguredVapid.subject !== subject ||
+      lastConfiguredVapid.publicKey !== publicKey ||
+      lastConfiguredVapid.privateKey !== privateKey)
+  ) {
     webpush.setVapidDetails(subject, publicKey, privateKey);
-    isVapidInitialized = true;
+    lastConfiguredVapid = { subject, publicKey, privateKey };
   }
 }
 
