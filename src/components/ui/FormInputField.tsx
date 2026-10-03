@@ -75,7 +75,7 @@ export function FormInputField(props: FormInputFieldProps) {
   return (
     <div className={`space-y-1.5 ${className ?? ''}`}>
       {label && (
-        <label className="block text-sm font-semibold text-text" htmlFor={id}>
+        <label className="flex items-center gap-1.5 text-sm font-semibold text-text" htmlFor={id}>
           {label}
           {required && <span className="text-red-500"> *</span>}
           {labelAdornment}

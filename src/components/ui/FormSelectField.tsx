@@ -122,7 +122,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-sm font-semibold text-text" htmlFor={id}>
+        <label className="flex items-center gap-1.5 text-sm font-semibold text-text" htmlFor={id}>
           {label}
           {required && <span className="text-red-500"> *</span>}
           {labelAdornment}
