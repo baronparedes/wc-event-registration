@@ -13,16 +13,19 @@ import { AdminHubCalendarPage } from '../index';
 const {
   mockUseAdminMembersSchedulesQuery,
   mockUseAdminMembersMilestonesQuery,
+  mockUseMembersAttendanceScoresQuery,
   mockUseIsMobileViewport,
 } = vi.hoisted(() => ({
   mockUseAdminMembersSchedulesQuery: vi.fn(),
   mockUseAdminMembersMilestonesQuery: vi.fn(),
+  mockUseMembersAttendanceScoresQuery: vi.fn(),
   mockUseIsMobileViewport: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
   useAdminMembersMilestonesQuery: () => mockUseAdminMembersMilestonesQuery(),
+  useMembersAttendanceScoresQuery: () => mockUseMembersAttendanceScoresQuery(),
   useMemberAvatarQuery: () => ({ data: null }),
   useGetExcusedMembers: () => ({ data: [] }),
 }));
@@ -84,6 +87,11 @@ describe('AdminHubCalendarPage', () => {
     localStorage.clear();
     sessionStorage.clear();
     mockUseIsMobileViewport.mockReturnValue(false);
+    mockUseMembersAttendanceScoresQuery.mockReturnValue({
+      data: new Map(),
+      isLoading: false,
+      error: null,
+    });
   });
 
   it('renders loading state and error state correctly', () => {
@@ -224,8 +232,8 @@ describe('AdminHubCalendarPage', () => {
     // Toggle role filter off
     fireEvent.click(roleFilter);
 
-    const allFilter = screen.getByRole('button', { name: 'All' });
-    fireEvent.click(allFilter);
+    const allFilters = screen.getAllByRole('button', { name: 'All' });
+    fireEvent.click(allFilters[0]);
 
     // Click member card
     const memberCard = screen.getByText(sampleMember.full_name);
@@ -324,6 +332,44 @@ describe('AdminHubCalendarPage', () => {
     if (prevMonthName !== currentMonthName) {
       expect(screen.queryByText(new RegExp(`^${prevMonthName}\\s+\\d+$`))).not.toBeInTheDocument();
     }
+  });
+
+  it('renders attendance score ring indicator on member avatar in selected date details', () => {
+    mockUseMembersAttendanceScoresQuery.mockReturnValue({
+      data: new Map([
+        [sampleMember.id, { attendanceScore: 8.5, committed: 10, attended: 10, turnupRate: 1.0 }],
+      ]),
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminMembersSchedulesQuery.mockReturnValue({
+      data: [sampleSchedule],
+      isLoading: false,
+      error: null,
+    });
+    mockUseAdminMembersMilestonesQuery.mockReturnValue({
+      data: [sampleMember],
+      isLoading: false,
+      error: null,
+    });
+
+    renderComponent();
+
+    const now = new Date();
+    let firstSunday = 1;
+    while (new Date(now.getFullYear(), now.getMonth(), firstSunday).getDay() !== 0) {
+      firstSunday++;
+    }
+
+    const dayButtons = screen.getAllByRole('button');
+    const sundayBtn = dayButtons.find((btn) => btn.textContent?.includes(String(firstSunday)));
+    if (sundayBtn) {
+      fireEvent.click(sundayBtn);
+    }
+
+    const avatarElements = screen.getAllByTitle(sampleMember.full_name);
+    const hasRingEmerald = avatarElements.some((el) => el.classList.contains('ring-emerald-500'));
+    expect(hasRingEmerald).toBe(true);
   });
 });
 

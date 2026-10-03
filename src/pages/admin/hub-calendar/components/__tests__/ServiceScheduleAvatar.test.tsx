@@ -37,4 +37,43 @@ describe('ServiceScheduleAvatar', () => {
 
     expect(container.querySelector('.custom-schedule-avatar')).toBeInTheDocument();
   });
+
+  describe('turnupRate and confidence ring indicators', () => {
+    it('applies emerald success ring when turnup rate >= 0.8 (Solid)', () => {
+      render(<ServiceScheduleAvatar name="Solid Volunteer" turnupRate={0.85} size="sm" />);
+      const avatarEl = screen.getByTitle('Solid Volunteer');
+      expect(avatarEl).toHaveClass('ring-emerald-500');
+    });
+
+    it('applies accent amber ring when turnup rate is between 0.4 and 0.79 (Moderate)', () => {
+      render(<ServiceScheduleAvatar name="Moderate Volunteer" turnupRate={0.46} size="sm" />);
+      const avatarEl = screen.getByTitle('Moderate Volunteer');
+      expect(avatarEl).toHaveClass('ring-accent');
+    });
+
+    it('applies destructive red ring when turnup rate is < 0.4 (At Risk)', () => {
+      render(<ServiceScheduleAvatar name="At Risk Volunteer" turnupRate={0.35} size="sm" />);
+      const avatarEl = screen.getByTitle('At Risk Volunteer');
+      expect(avatarEl).toHaveClass('ring-red-600');
+    });
+
+    it('applies no ring when turnupRate is undefined and border is none', () => {
+      render(<ServiceScheduleAvatar name="No Score" size="sm" />);
+      const avatarEl = screen.getByTitle('No Score');
+      expect(avatarEl).not.toHaveClass('ring-2');
+    });
+
+    it('allows explicit border override', () => {
+      render(
+        <ServiceScheduleAvatar
+          name="Explicit Border"
+          turnupRate={0.9}
+          border="secondary"
+          size="sm"
+        />,
+      );
+      const avatarEl = screen.getByTitle('Explicit Border');
+      expect(avatarEl).toHaveClass('ring-secondary');
+    });
+  });
 });

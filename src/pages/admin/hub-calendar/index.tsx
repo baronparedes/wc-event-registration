@@ -7,6 +7,7 @@ import { AlertBanner, Button, SectionCard } from '@/components/ui';
 import {
   useAdminMembersMilestonesQuery,
   useAdminMembersSchedulesQuery,
+  useMembersAttendanceScoresQuery,
 } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 
@@ -24,12 +25,15 @@ export function AdminHubCalendarPage() {
 
   const schedulesQuery = useAdminMembersSchedulesQuery();
   const milestonesQuery = useAdminMembersMilestonesQuery();
+  const attendanceScoresQuery = useMembersAttendanceScoresQuery();
 
   const scheduleEntries = useMemo(() => schedulesQuery.data ?? [], [schedulesQuery.data]);
   const members = useMemo(() => milestonesQuery.data ?? [], [milestonesQuery.data]);
+  const attendanceScoreMap = attendanceScoresQuery.data;
 
-  const isLoading = schedulesQuery.isLoading || milestonesQuery.isLoading;
-  const error = schedulesQuery.error || milestonesQuery.error;
+  const isLoading =
+    schedulesQuery.isLoading || milestonesQuery.isLoading || attendanceScoresQuery.isLoading;
+  const error = schedulesQuery.error || milestonesQuery.error || attendanceScoresQuery.error;
 
   const {
     viewDate,
@@ -169,6 +173,7 @@ export function AdminHubCalendarPage() {
           selectedEntries={selectedEntries}
           entriesByTimeSlot={entriesByTimeSlot}
           excusedMap={excusedMap}
+          attendanceScoreMap={attendanceScoreMap}
           isCurrentSelectedSunday={isCurrentSelectedSunday}
           activeTab={activeTab}
           selectedRole={selectedRole}

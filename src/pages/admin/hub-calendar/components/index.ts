@@ -7,3 +7,6 @@ export * from './MobileScheduleCalendar';
 export * from './MilestoneStatsBar';
 export * from './SelectedDateDetails';
 export * from './ServiceScheduleAvatar';
+export * from './serviceScheduleAvatarUtils';
+export * from './hubCalendarForecastUtils';
+export * from './SlotConfidenceForecastBanner';

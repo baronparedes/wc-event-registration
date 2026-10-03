@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CalendarDays } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -12,11 +12,19 @@ import {
   isMemberExcused,
   toIsoDateKey,
 } from '@/lib/domain/hub-calendar';
+import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
+import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
+import {
+  type ConfidenceTier,
+  calculateSlotConfidenceForecast,
+  getConfidenceTierLabel,
+  getMemberConfidenceTier,
+} from './hubCalendarForecastUtils';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -43,6 +51,7 @@ type SelectedDateDetailsProps = {
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   isCurrentSelectedSunday: boolean;
   excusedMap?: ExcusedMemberMap;
+  attendanceScoreMap?: Map<string, MemberAttendanceStats>;
   activeTab: TimeSlot;
   selectedRole: string | null;
   searchQuery: string;
@@ -60,6 +69,7 @@ export function SelectedDateDetails({
   entriesByTimeSlot,
   isCurrentSelectedSunday,
   excusedMap,
+  attendanceScoreMap,
   activeTab,
   selectedRole,
   searchQuery,
@@ -70,6 +80,7 @@ export function SelectedDateDetails({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceTier | null>(null);
 
   useEffect(() => {
     // Only scroll if there is an explicit ?date parameter in the URL on mount
@@ -79,6 +90,11 @@ export function SelectedDateDetails({
     // Intentionally empty dependency array to run only once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleTabChange = (slot: TimeSlot) => {
+    setSelectedConfidence(null);
+    onTabChange(slot);
+  };
 
   function renderMemberList(slot: TimeSlot) {
     const entries = entriesByTimeSlot[slot];
@@ -91,21 +107,29 @@ export function SelectedDateDetails({
     }
 
     const isoDateKey = toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber);
-    const hasExcusedMembers = entries.some((e) =>
-      isMemberExcused(excusedMap, isoDateKey, e.member, slot),
-    );
 
-    const EXCUSED_ROLE_FILTER = 'Excused';
-    const uniqueRoles = Array.from(new Set(entries.map((e) => e.member.role).filter(Boolean)))
-      .filter((role) => role !== EXCUSED_ROLE_FILTER)
-      .sort();
+    const uniqueRoles = Array.from(
+      new Set(entries.map((e) => e.member.role).filter(Boolean)),
+    ).sort();
+
+    const filteredByConfidence =
+      selectedConfidence === null
+        ? entries
+        : entries.filter(
+            (e) =>
+              getMemberConfidenceTier(
+                e.member,
+                isoDateKey,
+                slot,
+                excusedMap,
+                attendanceScoreMap,
+              ) === selectedConfidence,
+          );
 
     const filteredByRole =
       selectedRole === null
-        ? entries
-        : selectedRole === EXCUSED_ROLE_FILTER
-          ? entries.filter((e) => isMemberExcused(excusedMap, isoDateKey, e.member, slot))
-          : entries.filter((e) => e.member.role === selectedRole);
+        ? filteredByConfidence
+        : filteredByConfidence.filter((e) => e.member.role === selectedRole);
 
     const query = searchQuery.trim().toLowerCase();
     const filteredEntries = query
@@ -117,21 +141,37 @@ export function SelectedDateDetails({
         )
       : filteredByRole;
 
+    const forecast = calculateSlotConfidenceForecast(
+      entries,
+      excusedMap,
+      isoDateKey,
+      slot,
+      attendanceScoreMap,
+    );
+
     return (
       <div className="flex flex-col gap-4">
+        <SlotConfidenceForecastBanner
+          forecast={forecast}
+          selectedTier={selectedConfidence}
+          onSelectTier={setSelectedConfidence}
+        />
+
         <SearchInputField
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
           placeholder="Search by name or nickname..."
         />
 
-        {(uniqueRoles.length > 1 || hasExcusedMembers) && (
-          <div className="flex flex-wrap gap-2">
+        {/* Filter Pills */}
+        <div className="flex flex-col gap-2">
+          {/* First line: Status / Confidence Tiers */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onRoleChange(null)}
-              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedRole === null
+              onClick={() => setSelectedConfidence(null)}
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === null
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -141,39 +181,98 @@ export function SelectedDateDetails({
             <button
               type="button"
               onClick={() =>
-                onRoleChange(selectedRole === EXCUSED_ROLE_FILTER ? null : EXCUSED_ROLE_FILTER)
+                setSelectedConfidence(selectedConfidence === 'excused' ? null : 'excused')
               }
-              className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedRole === EXCUSED_ROLE_FILTER
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'excused'
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
             >
               Excused
             </button>
-            {uniqueRoles.map((role) => (
+            <button
+              type="button"
+              onClick={() => setSelectedConfidence(selectedConfidence === 'solid' ? null : 'solid')}
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'solid'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              Solid
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedConfidence(selectedConfidence === 'moderate' ? null : 'moderate')
+              }
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'moderate'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              Moderate
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedConfidence(selectedConfidence === 'at_risk' ? null : 'at_risk')
+              }
+              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedConfidence === 'at_risk'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-border text-muted hover:text-text'
+              }`}
+            >
+              At Risk
+            </button>
+          </div>
+
+          {/* Second line+: Role Filters */}
+          {uniqueRoles.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                key={role}
                 type="button"
-                onClick={() => onRoleChange(role === selectedRole ? null : role)}
-                className={`min-w-24 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  selectedRole === role
+                onClick={() => onRoleChange(null)}
+                className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  selectedRole === null
                     ? 'bg-primary text-white'
                     : 'bg-surface border border-border text-muted hover:text-text'
                 }`}
               >
-                {role}
+                All
               </button>
-            ))}
-          </div>
-        )}
+              {uniqueRoles.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => onRoleChange(role === selectedRole ? null : role)}
+                  className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    selectedRole === role
+                      ? 'bg-primary text-white'
+                      : 'bg-surface border border-border text-muted hover:text-text'
+                  }`}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {filteredEntries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted">
             {searchQuery
               ? 'No members match your search criteria.'
-              : selectedRole === EXCUSED_ROLE_FILTER
-                ? 'No excused members for this service.'
-                : 'No members for this role.'}
+              : selectedConfidence && selectedRole
+                ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers found for role "${selectedRole}".`
+                : selectedConfidence
+                  ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers for this service.`
+                  : selectedRole
+                    ? `No members found for role "${selectedRole}".`
+                    : 'No members match the selected filters.'}
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -192,6 +291,7 @@ export function SelectedDateDetails({
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
                   excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
+                  turnupRate={attendanceScoreMap?.get(entry.member.id)?.turnupRate}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>
@@ -298,6 +398,7 @@ export function SelectedDateDetails({
                     monthIndex={viewMonthIndex}
                     dayNumber={selectedDayNumber}
                     excusedMap={excusedMap}
+                    attendanceScoreMap={attendanceScoreMap}
                   />
                 </div>
               )}
@@ -321,7 +422,7 @@ export function SelectedDateDetails({
                         <button
                           key={slot}
                           type="button"
-                          onClick={() => onTabChange(slot)}
+                          onClick={() => handleTabChange(slot)}
                           className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
                             isActive
                               ? 'text-primary border-b-2 border-primary -mb-px font-semibold'

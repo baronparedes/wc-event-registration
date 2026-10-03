@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui';
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import { type ExcusedMemberMap, buildSundaySchedulesCsvExport } from '@/lib/domain/hub-calendar';
+import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 type ExportSundaySchedulesButtonProps = {
   selectedEntries: MemberScheduleEntry[];
@@ -12,6 +13,7 @@ type ExportSundaySchedulesButtonProps = {
   monthIndex: number;
   dayNumber: number;
   excusedMap?: ExcusedMemberMap;
+  attendanceScoreMap?: Map<string, MemberAttendanceStats>;
 };
 
 export function ExportSundaySchedulesButton({
@@ -20,6 +22,7 @@ export function ExportSundaySchedulesButton({
   monthIndex,
   dayNumber,
   excusedMap,
+  attendanceScoreMap,
 }: ExportSundaySchedulesButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const isDisabled = selectedEntries.length === 0 || isExporting;
@@ -40,6 +43,7 @@ export function ExportSundaySchedulesButton({
         monthIndex,
         dayNumber,
         excusedMap,
+        attendanceScoreMap,
       });
       const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
       url = URL.createObjectURL(blob);

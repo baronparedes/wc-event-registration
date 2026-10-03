@@ -213,3 +213,106 @@ export async function setMemberActiveStatus(
   if (error) throw error;
   return (data ?? null) as { id: string } | null;
 }
+
+export type MemberAttendanceStats = {
+  attendanceScore: number;
+  committed: number;
+  attended: number;
+  turnupRate: number;
+};
+
+export async function fetchMembersAttendanceScores(
+  weeks = 12,
+  excuseEventId?: string | null,
+): Promise<Map<string, MemberAttendanceStats>> {
+  const endDate = new Date().toISOString().split('T')[0];
+  const pastDate = new Date();
+  pastDate.setDate(pastDate.getDate() - weeks * 7);
+  const startDate = pastDate.toISOString().split('T')[0];
+
+  const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_excuse_event_id: excuseEventId || null,
+    p_search_query: null,
+    p_role: null,
+    p_category: null,
+    p_page: 1,
+    p_page_size: 500,
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch attendance scores: ${error.message}`);
+  }
+
+  const rawRows = (data ?? []) as Array<{
+    user_id: string;
+    attendance_score: number;
+    committed?: number;
+    attended?: number;
+    total_count: number;
+  }>;
+  const totalCount = rawRows.length > 0 ? Number(rawRows[0].total_count) : 0;
+  const statsMap = new Map<string, MemberAttendanceStats>();
+
+  const processRow = (row: {
+    user_id: string;
+    attendance_score: number;
+    committed?: number;
+    attended?: number;
+  }) => {
+    if (!row.user_id) return;
+    const committed = Number(row.committed ?? 0);
+    const attended = Number(row.attended ?? 0);
+    const turnupRate =
+      committed > 0 ? Math.min(1, Math.max(0, attended / committed)) : attended > 0 ? 1 : 0.8;
+
+    statsMap.set(row.user_id, {
+      attendanceScore: Number(row.attendance_score),
+      committed,
+      attended,
+      turnupRate,
+    });
+  };
+
+  for (const row of rawRows) {
+    processRow(row);
+  }
+
+  const totalPages = Math.ceil(totalCount / 500);
+  if (totalPages > 1) {
+    const remainingPagePromises = [];
+    for (let page = 2; page <= totalPages; page++) {
+      remainingPagePromises.push(
+        supabase.rpc('get_commitment_dashboard_stats', {
+          p_start_date: startDate,
+          p_end_date: endDate,
+          p_excuse_event_id: excuseEventId || null,
+          p_search_query: null,
+          p_role: null,
+          p_category: null,
+          p_page: page,
+          p_page_size: 500,
+        }),
+      );
+    }
+
+    const remainingResults = await Promise.all(remainingPagePromises);
+    for (const res of remainingResults) {
+      if (res.error) {
+        throw new Error(`Failed to fetch attendance scores page: ${res.error.message}`);
+      }
+      const pageRows = (res.data ?? []) as Array<{
+        user_id: string;
+        attendance_score: number;
+        committed?: number;
+        attended?: number;
+      }>;
+      for (const row of pageRows) {
+        processRow(row);
+      }
+    }
+  }
+
+  return statsMap;
+}

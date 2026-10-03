@@ -15,6 +15,7 @@ export type BadgeProps = {
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
+  title?: string;
 };
 
 const variantClassName: Record<BadgeVariant, string> = {
@@ -42,13 +43,13 @@ const variantClassName: Record<BadgeVariant, string> = {
  * - link           → text link
  * - destructive    → red alert      (error, archived, missed)
  */
-export function Badge({ variant = 'default', icon, children, className }: BadgeProps) {
+export function Badge({ variant = 'default', icon, children, className, title }: BadgeProps) {
   const baseClasses =
     'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap';
   const variantClasses = variantClassName[variant];
 
   return (
-    <span className={`${baseClasses} ${variantClasses} ${className ?? ''}`}>
+    <span title={title} className={`${baseClasses} ${variantClasses} ${className ?? ''}`}>
       {icon && <span className="flex h-4 w-4 items-center justify-center">{icon}</span>}
       {children}
     </span>

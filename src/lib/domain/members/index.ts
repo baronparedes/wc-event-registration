@@ -35,6 +35,7 @@ export type {
   MemberMetadataRow,
   MemberUpdatePayload,
   MemberStatusFilter,
+  MemberAttendanceStats,
 } from './api';
 export {
   fetchAdminMembersPage,
@@ -47,4 +48,5 @@ export {
   fetchMemberMetadata,
   updateMember,
   setMemberActiveStatus,
+  fetchMembersAttendanceScores,
 } from './api';
