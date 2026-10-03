@@ -448,11 +448,7 @@ export function isLocalBroadcastEnabled(): boolean {
   }
 
   // Local Supabase CLI instances
-  if (
-    supabaseHost === 'localhost' ||
-    supabaseHost === '127.0.0.1' ||
-    supabaseHost === 'kong'
-  ) {
+  if (supabaseHost === 'localhost' || supabaseHost === '127.0.0.1' || supabaseHost === 'kong') {
     return true;
   }
 
