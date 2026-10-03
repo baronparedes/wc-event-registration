@@ -17,13 +17,13 @@ describe('BroadcastChannelSelect', () => {
     expect(handleChange).toHaveBeenCalledWith(['email']);
   });
 
-  it('prevents deselecting the only remaining channel', () => {
+  it('allows deselecting all channels', () => {
     const handleChange = vi.fn();
     render(<BroadcastChannelSelect value={['push']} onChange={handleChange} />);
 
-    // Clicking push when it's the only one selected doesn't remove it
+    // Clicking push when it's the only one selected removes it to empty array
     fireEvent.click(screen.getByText('Push Notification'));
-    expect(handleChange).not.toHaveBeenCalled();
+    expect(handleChange).toHaveBeenCalledWith([]);
 
     // Clicking email adds email
     fireEvent.click(screen.getByText('Email Announcement'));

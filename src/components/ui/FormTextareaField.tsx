@@ -18,6 +18,7 @@ type FormTextareaFieldBaseProps = {
   rows?: number;
   readOnly?: boolean;
   disabled?: boolean;
+  maxLength?: number;
   helperText?: string;
   labelAdornment?: ReactNode;
   textareaClassName?: string;
@@ -58,6 +59,7 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
     rows = 4,
     readOnly,
     disabled,
+    maxLength,
     helperText,
     labelAdornment,
     textareaClassName,
@@ -76,10 +78,9 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
       };
 
   const hasCustomMinHeight = textareaClassName?.includes('min-h-');
-  const hasLabelOrError = Boolean(label || error || helperText);
 
   return (
-    <div className={`${hasLabelOrError ? 'space-y-1.5 ' : ''}${className ?? ''}`}>
+    <div className={`space-y-1.5 ${className ?? ''}`}>
       {label && (
         <label className="block text-sm font-semibold text-text" htmlFor={id}>
           {label}
@@ -102,6 +103,7 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
           } ${textareaClassName ?? ''}`}
           disabled={disabled}
           id={id}
+          maxLength={maxLength}
           placeholder={placeholder}
           readOnly={readOnly}
           rows={rows}
@@ -109,8 +111,12 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
           onScroll={onScroll}
         />
       </div>
-      {helperText && <p className="text-xs text-muted">{helperText}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {(error || helperText) && (
+        <div className="flex items-center justify-between gap-2 text-xs">
+          {error ? <p className="text-red-600 min-w-0 flex-1">{error}</p> : <span />}
+          {helperText && <p className="text-muted text-right shrink-0 ml-auto">{helperText}</p>}
+        </div>
+      )}
     </div>
   );
 }

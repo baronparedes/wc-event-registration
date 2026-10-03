@@ -13,6 +13,7 @@ type FormInputFieldBaseProps = {
   autoComplete?: string;
   readOnly?: boolean;
   disabled?: boolean;
+  maxLength?: number;
   helperText?: string;
   labelAdornment?: ReactNode;
   inputClassName?: string;
@@ -53,6 +54,7 @@ export function FormInputField(props: FormInputFieldProps) {
     autoComplete,
     readOnly,
     disabled,
+    maxLength,
     helperText,
     labelAdornment,
     inputClassName,
@@ -95,6 +97,7 @@ export function FormInputField(props: FormInputFieldProps) {
           autoComplete={autoComplete}
           disabled={disabled}
           id={id}
+          maxLength={maxLength}
           placeholder={placeholder}
           readOnly={readOnly}
           type={type}
@@ -102,8 +105,12 @@ export function FormInputField(props: FormInputFieldProps) {
           onScroll={onScroll}
         />
       </div>
-      {helperText && <p className="text-xs text-muted">{helperText}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {(error || helperText) && (
+        <div className="flex items-center justify-between gap-2 text-xs">
+          {error ? <p className="text-red-600 min-w-0 flex-1">{error}</p> : <span />}
+          {helperText && <p className="text-muted text-right shrink-0 ml-auto">{helperText}</p>}
+        </div>
+      )}
     </div>
   );
 }

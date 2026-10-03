@@ -487,4 +487,39 @@ describe('AdminNotificationsPage', () => {
     });
     expect(screen.queryByText('Confirm Broadcast')).not.toBeInTheDocument();
   });
+
+  it('disables Send Broadcast button when no delivery channels are selected', () => {
+    renderPage();
+
+    const sendButton = screen.getByRole('button', { name: /Send Broadcast/i });
+    expect(sendButton).not.toBeDisabled();
+
+    // Deselect both push and email
+    fireEvent.click(screen.getByText('Push Notification'));
+    fireEvent.click(screen.getByText('Email Announcement'));
+
+    expect(sendButton).toBeDisabled();
+  });
+
+  it('enforces max length constraints on title and message fields with character counters', () => {
+    renderPage();
+
+    const titleInput = screen.getByLabelText(/^Title/i);
+    const messageInput = screen.getByLabelText(/^Message/i);
+
+    expect(titleInput).toHaveAttribute('maxlength', '100');
+    expect(messageInput).toHaveAttribute('maxlength', '500');
+
+    expect(
+      screen.getByText('0/100 characters (max 100 for push notifications)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('0/500 characters (max 500 for push notifications)'),
+    ).toBeInTheDocument();
+
+    fireEvent.change(titleInput, { target: { value: 'Sunday Alert' } });
+    expect(
+      screen.getByText('12/100 characters (max 100 for push notifications)'),
+    ).toBeInTheDocument();
+  });
 });

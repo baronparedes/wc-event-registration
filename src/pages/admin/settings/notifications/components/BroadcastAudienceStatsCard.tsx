@@ -60,7 +60,7 @@ export function BroadcastAudienceStatsCard({
       </div>
 
       {isError ? (
-        <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2.5 rounded-lg">
+        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-500/10 p-2.5 rounded-lg">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>Failed to evaluate recipient audience reach.</span>
         </div>

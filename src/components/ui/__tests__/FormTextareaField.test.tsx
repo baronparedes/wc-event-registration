@@ -58,4 +58,19 @@ describe('FormTextareaField', () => {
     expect(textarea.className).toContain('border-red-400');
     expect(screen.getByText('Description is required')).toBeInTheDocument();
   });
+
+  it('passes through maxLength attribute', () => {
+    render(
+      <FormTextareaField
+        id="description"
+        label="Description"
+        value="test"
+        onChange={vi.fn()}
+        maxLength={500}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox', { name: 'Description' });
+    expect(textarea).toHaveAttribute('maxlength', '500');
+  });
 });

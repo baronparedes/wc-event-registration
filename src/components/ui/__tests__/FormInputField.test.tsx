@@ -98,4 +98,13 @@ describe('FormInputField', () => {
     expect(wrapper?.className).toContain('flex-1');
     expect(wrapper?.className).toContain('custom-wrapper');
   });
+
+  it('passes through maxLength attribute', () => {
+    render(
+      <FormInputField id="title" label="Title" value="test" onChange={vi.fn()} maxLength={100} />,
+    );
+
+    const input = screen.getByRole('textbox', { name: 'Title' });
+    expect(input).toHaveAttribute('maxlength', '100');
+  });
 });

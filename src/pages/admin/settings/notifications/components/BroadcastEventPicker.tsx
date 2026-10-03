@@ -51,7 +51,7 @@ export function BroadcastEventPicker({
         htmlFor={id}
         className="block text-xs font-semibold uppercase tracking-wider text-muted"
       >
-        Target Event <span className="text-destructive">*</span>
+        Target Event <span className="text-red-500">*</span>
       </label>
 
       <div className="relative">
@@ -61,7 +61,7 @@ export function BroadcastEventPicker({
           onClick={() => setIsOpen(!isOpen)}
           className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border bg-background text-left transition-all ${
             error
-              ? 'border-destructive ring-1 ring-destructive/30'
+              ? 'border-red-500 ring-1 ring-red-500/30'
               : isOpen
                 ? 'border-primary ring-1 ring-primary/30'
                 : 'border-border hover:border-border/80'
@@ -145,7 +145,7 @@ export function BroadcastEventPicker({
         )}
       </div>
 
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   );
 }

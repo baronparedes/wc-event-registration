@@ -34,8 +34,11 @@ import { BroadcastUserPicker } from './components/BroadcastUserPicker';
 
 const broadcastSchema = z
   .object({
-    title: z.string().min(1, 'Title is required').max(255),
-    message: z.string().min(1, 'Message is required'),
+    title: z.string().min(1, 'Title is required').max(100, 'Title cannot exceed 100 characters'),
+    message: z
+      .string()
+      .min(1, 'Message is required')
+      .max(500, 'Message cannot exceed 500 characters'),
     channels: z
       .array(z.enum(['push', 'email']))
       .min(1, 'Please select at least one delivery channel'),
@@ -221,6 +224,8 @@ export function AdminNotificationsPage() {
                     id="title"
                     label="Title / Subject"
                     placeholder="e.g. Sunday Service Reminder"
+                    maxLength={100}
+                    helperText={`${(field.value ?? '').length}/100 characters (max 100 for push notifications)`}
                     error={form.formState.errors.title?.message}
                     {...field}
                     value={field.value ?? ''}
@@ -237,6 +242,8 @@ export function AdminNotificationsPage() {
                     label="Message"
                     rows={3}
                     placeholder="Enter announcement or reminder details..."
+                    maxLength={500}
+                    helperText={`${(field.value ?? '').length}/500 characters (max 500 for push notifications)`}
                     error={form.formState.errors.message?.message}
                     {...field}
                     value={field.value ?? ''}
@@ -342,7 +349,10 @@ export function AdminNotificationsPage() {
               />
 
               <div className="flex justify-end pt-2">
-                <Button type="submit" disabled={broadcastMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={broadcastMutation.isPending || channels.length === 0}
+                >
                   Send Broadcast
                 </Button>
               </div>
