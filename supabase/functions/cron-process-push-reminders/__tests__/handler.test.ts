@@ -157,7 +157,7 @@ Deno.test(
               message: {
                 user_id: USER_ID,
                 message: 'Your Sunday service is coming up.',
-                target_url: '/profile?tab=commitments',
+                target_url: '/profile?tab=commitment',
               },
             },
           ],
@@ -189,7 +189,7 @@ Deno.test(
             payload: JSON.stringify({
               title: 'Service Reminder',
               body: 'Your Sunday service is coming up.',
-              url: '/profile?tab=commitments',
+              url: '/profile?tab=commitment',
             }),
           },
         ]);
