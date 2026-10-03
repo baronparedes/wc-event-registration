@@ -19,6 +19,7 @@ type PushReminderMessage = {
   message: {
     user_id?: string;
     message?: string;
+    target_date?: string;
     target_url?: string;
     url?: string;
   };
@@ -72,6 +73,15 @@ export async function handleCronProcessPushReminders(
   try {
     let totalProcessed = 0;
     const subscriptionsToDelete = new Set<string>();
+    const statsByDate = new Map<string, { succeeded: number; failed: number }>();
+
+    const recordStats = (targetDate: string | undefined, status: 'succeeded' | 'failed') => {
+      if (!targetDate) return;
+      const current = statsByDate.get(targetDate) ?? { succeeded: 0, failed: 0 };
+      if (status === 'succeeded') current.succeeded += 1;
+      else current.failed += 1;
+      statsByDate.set(targetDate, current);
+    };
 
     const archiveAfterRetryLimit = async (message: PushReminderMessage, error: unknown) => {
       if (message.read_ct < MAX_PUSH_DELIVERY_ATTEMPTS) {
@@ -83,6 +93,7 @@ export async function handleCronProcessPushReminders(
         attempts: message.read_ct,
         error,
       });
+      recordStats(message.message.target_date, 'failed');
       const { error: archiveError } = await client.rpc('archive_push_reminder', {
         message_id: message.msg_id,
       });
@@ -122,6 +133,7 @@ export async function handleCronProcessPushReminders(
 
           if (!userId || !notificationMessage) {
             console.warn('[cron-process-push-reminders] Invalid payload structure', payload);
+            recordStats(payload.target_date, 'failed');
             await client.rpc('archive_push_reminder', { message_id: messageId });
             return;
           }
@@ -151,6 +163,7 @@ export async function handleCronProcessPushReminders(
                 body: notificationMessage,
                 url: payload.target_url || payload.url || '/profile?tab=commitments',
               });
+              recordStats(payload.target_date, 'succeeded');
               await client.rpc('archive_push_reminder', { message_id: messageId });
               return;
             }
@@ -192,6 +205,7 @@ export async function handleCronProcessPushReminders(
               }
             }
 
+            recordStats(payload.target_date, 'succeeded');
             await client.rpc('archive_push_reminder', { message_id: messageId });
           } catch (innerError) {
             console.error(
@@ -218,6 +232,26 @@ export async function handleCronProcessPushReminders(
           '[cron-process-push-reminders] Failed to delete stale subscriptions',
           deleteError,
         );
+      }
+    }
+
+    for (const [sundayDate, stats] of statsByDate.entries()) {
+      try {
+        await (
+          client as unknown as {
+            rpc: (name: string, params: Record<string, unknown>) => Promise<{ error: unknown }>;
+          }
+        ).rpc('update_push_reminder_delivery_stats', {
+          p_sunday_date: sundayDate,
+          p_succeeded_count: stats.succeeded,
+          p_failed_count: stats.failed,
+        });
+      } catch (statError) {
+        console.warn('[cron-process-push-reminders] Failed to update delivery stats', {
+          sundayDate,
+          stats,
+          statError,
+        });
       }
     }
 

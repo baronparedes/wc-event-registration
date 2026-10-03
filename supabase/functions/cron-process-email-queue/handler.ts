@@ -36,6 +36,10 @@ type EmailQueueClient = {
     functionName: 'archive_email_notification',
     args: { message_id: number },
   ): Promise<RpcResult<boolean>>;
+  rpc(
+    functionName: 'update_email_reminder_delivery_stats',
+    args: { p_sunday_date: string; p_succeeded_count: number; p_failed_count: number },
+  ): Promise<RpcResult<void>>;
   from(table: 'email_templates'): {
     select(columns: 'resend_template_id'): {
       eq(
@@ -84,6 +88,16 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
 
   try {
     let processedCount = 0;
+    const statsByDate = new Map<string, { succeeded: number; failed: number }>();
+
+    const recordEmailStats = (sundayDate: unknown, status: 'succeeded' | 'failed') => {
+      if (typeof sundayDate !== 'string' || !sundayDate) return;
+      const current = statsByDate.get(sundayDate) ?? { succeeded: 0, failed: 0 };
+      if (status === 'succeeded') current.succeeded += 1;
+      else current.failed += 1;
+      statsByDate.set(sundayDate, current);
+    };
+
     const archiveAfterRetryLimit = async (message: EmailQueueMessage, error: unknown) => {
       if (message.read_ct < MAX_EMAIL_DELIVERY_ATTEMPTS) {
         return;
@@ -94,6 +108,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         attempts: message.read_ct,
         error,
       });
+      recordEmailStats(message.message.metadata?.sunday_date, 'failed');
       const { error: archiveError } = await queueClient.rpc('archive_email_notification', {
         message_id: message.msg_id,
       });
@@ -108,6 +123,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
     const processMessage = async (msg: EmailQueueMessage) => {
       const payload = msg.message;
       const messageId = msg.msg_id;
+      const sundayDate = payload.metadata?.sunday_date;
 
       try {
         if (payload.event_type !== 'email_notification') {
@@ -128,6 +144,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             body: payload.text ?? '',
             metadata: payload.metadata,
           });
+          recordEmailStats(sundayDate, 'succeeded');
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
           processedCount++;
           return;
@@ -164,6 +181,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           resendBody.text = payload.text;
         } else {
           console.error(`[cron-process-email-queue] Invalid message ${messageId}: no email body`);
+          recordEmailStats(sundayDate, 'failed');
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
           return;
         }
@@ -187,6 +205,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           return;
         }
 
+        recordEmailStats(sundayDate, 'succeeded');
         await queueClient.rpc('archive_email_notification', { message_id: messageId });
         processedCount++;
       } catch (innerError) {
@@ -218,6 +237,22 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
       for (let offset = 0; offset < messages.length; offset += EMAIL_SEND_CONCURRENCY) {
         const concurrentMessages = messages.slice(offset, offset + EMAIL_SEND_CONCURRENCY);
         await Promise.allSettled(concurrentMessages.map(processMessage));
+      }
+    }
+
+    for (const [sundayDate, stats] of statsByDate.entries()) {
+      try {
+        await queueClient.rpc('update_email_reminder_delivery_stats', {
+          p_sunday_date: sundayDate,
+          p_succeeded_count: stats.succeeded,
+          p_failed_count: stats.failed,
+        });
+      } catch (statError) {
+        console.warn('[cron-process-email-queue] Failed to update email delivery stats', {
+          sundayDate,
+          stats,
+          statError,
+        });
       }
     }
 

@@ -183,8 +183,10 @@ export function AdminSundayRemindersPage() {
             <SundayDeliveryStatusCard
               alreadySentPush={preview.already_sent_push}
               pushSentAt={preview.push_sent_at}
+              pushDelivery={preview.push_delivery}
               alreadySentEmail={preview.already_sent_email}
               emailSentAt={preview.email_sent_at}
+              emailDelivery={preview.email_delivery}
               totalVolunteers={preview.total_volunteers}
               pushEligibleCount={preview.push_eligible_count}
               emailEligibleCount={preview.email_eligible_count}

@@ -174,4 +174,40 @@ describe('AdminSundayRemindersPage', () => {
       });
     });
   });
+
+  it('displays delivery breakdown counts when delivery stats exist', async () => {
+    vi.mocked(domainNotifications.getSundaySchedulePreview).mockResolvedValueOnce({
+      ...mockPreviewData,
+      already_sent_push: true,
+      push_sent_at: '2026-10-02T22:00:00Z',
+      push_delivery: {
+        already_sent: true,
+        sent_at: '2026-10-02T22:00:00Z',
+        total_queued: 10,
+        succeeded_count: 9,
+        failed_count: 1,
+        status: 'partial_failure',
+      },
+      already_sent_email: true,
+      email_sent_at: '2026-10-02T22:00:00Z',
+      email_delivery: {
+        already_sent: true,
+        sent_at: '2026-10-02T22:00:00Z',
+        total_queued: 25,
+        succeeded_count: 25,
+        failed_count: 0,
+        status: 'completed',
+      },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Alice')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('9')).toBeInTheDocument();
+    expect(screen.getAllByText('25').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Partial Failure/i).length).toBeGreaterThan(0);
+  });
 });

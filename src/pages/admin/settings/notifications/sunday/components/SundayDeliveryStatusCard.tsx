@@ -1,29 +1,122 @@
-import { AlertCircle, Bell, CheckCircle2, Clock, Mail, Users } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Mail,
+  Users,
+  XCircle,
+} from 'lucide-react';
 
 import { Badge } from '@/components/ui';
+import type { SundayChannelDeliveryStats, SundayDeliveryStatus } from '@/lib/domain/notifications';
 import { formatDateTime } from '@/lib/infrastructure/dateFormat';
 
 interface SundayDeliveryStatusCardProps {
   alreadySentPush: boolean;
   pushSentAt: string | null;
+  pushDelivery?: SundayChannelDeliveryStats | null;
   alreadySentEmail: boolean;
   emailSentAt: string | null;
+  emailDelivery?: SundayChannelDeliveryStats | null;
   totalVolunteers: number;
   pushEligibleCount: number;
   emailEligibleCount: number;
 }
 
+function renderStatusBadge(status?: SundayDeliveryStatus, alreadySent?: boolean) {
+  if (status === 'completed') {
+    return (
+      <Badge variant="default" className="gap-1 text-xs">
+        <CheckCircle2 className="h-3 w-3" /> Succeeded
+      </Badge>
+    );
+  }
+  if (status === 'partial_failure') {
+    return (
+      <Badge variant="destructive" className="gap-1 text-xs">
+        <AlertTriangle className="h-3 w-3" /> Partial Failure
+      </Badge>
+    );
+  }
+  if (status === 'failed') {
+    return (
+      <Badge variant="destructive" className="gap-1 text-xs">
+        <XCircle className="h-3 w-3" /> Failed
+      </Badge>
+    );
+  }
+  if (status === 'queued') {
+    return (
+      <Badge variant="accent" className="gap-1 text-xs">
+        <Loader2 className="h-3 w-3 animate-spin" /> In Queue
+      </Badge>
+    );
+  }
+  if (alreadySent) {
+    return (
+      <Badge variant="default" className="gap-1 text-xs">
+        <CheckCircle2 className="h-3 w-3" /> Dispatched
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="gap-1 text-xs text-muted">
+      <Clock className="h-3 w-3" /> Not Sent
+    </Badge>
+  );
+}
+
+function DeliveryBreakdown({ stats }: { stats: SundayChannelDeliveryStats }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 rounded-lg border border-border/70 bg-surface-muted/40 p-2 text-center text-xs">
+      <div>
+        <p className="text-[11px] text-muted">Queued</p>
+        <p className="font-semibold text-text">{stats.total_queued}</p>
+      </div>
+      <div>
+        <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Succeeded</p>
+        <p className="font-semibold text-emerald-700 dark:text-emerald-300">
+          {stats.succeeded_count}
+        </p>
+      </div>
+      <div>
+        <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">Failed</p>
+        <p
+          className={`font-semibold ${
+            stats.failed_count > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-text'
+          }`}
+        >
+          {stats.failed_count}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function SundayDeliveryStatusCard({
   alreadySentPush,
   pushSentAt,
+  pushDelivery,
   alreadySentEmail,
   emailSentAt,
+  emailDelivery,
   totalVolunteers,
   pushEligibleCount,
   emailEligibleCount,
 }: SundayDeliveryStatusCardProps) {
-  const isFullySent = alreadySentPush && alreadySentEmail;
-  const isPartiallySent = (alreadySentPush || alreadySentEmail) && !isFullySent;
+  const isPushSent = alreadySentPush || !!pushDelivery;
+  const isEmailSent = alreadySentEmail || !!emailDelivery;
+  const isFullySent = isPushSent && isEmailSent;
+  const isPartiallySent = (isPushSent || isEmailSent) && !isFullySent;
+
+  const hasAnyFailure =
+    pushDelivery?.status === 'partial_failure' ||
+    pushDelivery?.status === 'failed' ||
+    emailDelivery?.status === 'partial_failure' ||
+    emailDelivery?.status === 'failed';
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -36,23 +129,19 @@ export function SundayDeliveryStatusCard({
             </div>
             <span className="text-sm font-semibold text-text">Push Reminders</span>
           </div>
-          {alreadySentPush ? (
-            <Badge variant="default" className="gap-1 text-xs">
-              <CheckCircle2 className="h-3 w-3" /> Dispatched
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1 text-xs text-muted">
-              <Clock className="h-3 w-3" /> Not Sent
-            </Badge>
-          )}
+          {renderStatusBadge(pushDelivery?.status, alreadySentPush)}
         </div>
+
         <div className="text-xs text-muted">
-          {alreadySentPush ? (
-            <p>Sent: {formatDateTime(pushSentAt)}</p>
+          {isPushSent ? (
+            <p>Sent: {formatDateTime(pushDelivery?.sent_at ?? pushSentAt)}</p>
           ) : (
             <p>Scheduled for automatic Friday 6:00 AM dispatch</p>
           )}
         </div>
+
+        {pushDelivery && <DeliveryBreakdown stats={pushDelivery} />}
+
         <div className="flex items-center justify-between border-t border-border pt-2 text-xs">
           <span className="text-muted">Reachable Subscribers</span>
           <span className="font-semibold text-text">
@@ -70,23 +159,19 @@ export function SundayDeliveryStatusCard({
             </div>
             <span className="text-sm font-semibold text-text">Email Reminders</span>
           </div>
-          {alreadySentEmail ? (
-            <Badge variant="default" className="gap-1 text-xs">
-              <CheckCircle2 className="h-3 w-3" /> Dispatched
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1 text-xs text-muted">
-              <Clock className="h-3 w-3" /> Not Sent
-            </Badge>
-          )}
+          {renderStatusBadge(emailDelivery?.status, alreadySentEmail)}
         </div>
+
         <div className="text-xs text-muted">
-          {alreadySentEmail ? (
-            <p>Sent: {formatDateTime(emailSentAt)}</p>
+          {isEmailSent ? (
+            <p>Sent: {formatDateTime(emailDelivery?.sent_at ?? emailSentAt)}</p>
           ) : (
             <p>Scheduled for automatic Friday 6:00 AM dispatch</p>
           )}
         </div>
+
+        {emailDelivery && <DeliveryBreakdown stats={emailDelivery} />}
+
         <div className="flex items-center justify-between border-t border-border pt-2 text-xs">
           <span className="text-muted">Email Reachable</span>
           <span className="font-semibold text-text">
@@ -104,7 +189,11 @@ export function SundayDeliveryStatusCard({
             </div>
             <span className="text-sm font-semibold text-text">Scheduled Audience</span>
           </div>
-          {isFullySent ? (
+          {hasAnyFailure ? (
+            <Badge variant="destructive" className="text-xs">
+              Partial Failure
+            </Badge>
+          ) : isFullySent ? (
             <Badge variant="default" className="text-xs">
               Complete
             </Badge>

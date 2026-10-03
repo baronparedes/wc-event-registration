@@ -83,6 +83,9 @@ function mockFetch(options: { batches: QueueMessage[][]; subscriptions?: unknown
       archivedIds.push(body.message_id);
       return Promise.resolve(Response.json(true));
     }
+    if (requestUrl.pathname === '/rest/v1/rpc/update_push_reminder_delivery_stats') {
+      return Promise.resolve(Response.json(null));
+    }
     if (requestUrl.pathname === '/rest/v1/user_push_subscriptions' && init?.method === 'DELETE') {
       const ids = requestUrl.searchParams.get('id') ?? '';
       deletedSubscriptionIds.push(
