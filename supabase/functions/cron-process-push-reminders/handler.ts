@@ -52,14 +52,6 @@ export async function handleCronProcessPushReminders(
   }
 
   const { client, corsHeaders, requestId } = hookResult;
-  const isLocal = Deno.env.get('LOCAL_BROADCAST') === 'true';
-  const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
-  const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
-
-  if (!isLocal && (!vapidPublicKey || !vapidPrivateKey)) {
-    console.error('[cron-process-push-reminders] VAPID keys not configured');
-    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'VAPID keys not configured');
-  }
 
   try {
     let totalProcessed = 0;
@@ -162,8 +154,6 @@ export async function handleCronProcessPushReminders(
                     body: notificationMessage,
                     url: payload.target_url || payload.url || '/profile?tab=commitments',
                   },
-                  vapidPublicKey,
-                  vapidPrivateKey,
                   recipientId: userId,
                   targetType: 'sunday-schedule-reminder',
                   customSender: sendPushNotification,

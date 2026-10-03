@@ -137,3 +137,38 @@ Deno.test(
     },
   ),
 );
+
+Deno.test(
+  'sendWebPushNotification - returns error when VAPID keys missing in production',
+  withEnv(
+    {
+      LOCAL_BROADCAST: 'false',
+      NODE_ENV: 'production',
+      ENVIRONMENT: 'production',
+      SUPABASE_URL: 'https://live.supabase.co',
+      VAPID_PUBLIC_KEY: undefined,
+      VAPID_PRIVATE_KEY: undefined,
+    },
+    async () => {
+      const result = await sendWebPushNotification({
+        subscription: {
+          endpoint: 'https://push.example.com/sub/123',
+          keys: {
+            auth: 'mock-auth',
+            p256dh: 'mock-p256dh',
+          },
+        },
+        payload: {
+          title: 'Prod Test',
+          body: 'Missing keys',
+        },
+      });
+
+      assertEquals(result.ok, false);
+      if (!result.ok) {
+        assertEquals(result.error, 'VAPID keys not configured');
+        assertEquals(result.status, 500);
+      }
+    },
+  ),
+);
