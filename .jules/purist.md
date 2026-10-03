@@ -15,7 +15,9 @@
 **Deviation:** `useForm` initialization in `_event-form` used a `useEffect` block with `reset()` to sync asynchronously loaded React Query data.
 **Learning:** React Hook Form's newer versions support natively reacting to external asynchronous data changes via the `values` prop, entirely replacing the imperative `useEffect` pattern.
 **Standard:** Compute the initial default structure during render (with `useMemo` if computationally heavy or requiring transformations) and feed it directly into the `values` prop of `useForm()`, avoiding state duplication and synchronization bugs.
+
 ## 2024-10-24 - Do not duplicate prop data to local UI state
+
 **Deviation:** Modal component duplicated prop conditionally passed into it into an internal `useState` that toggled the modal visibility to be updated with an `useEffect`.
 **Learning:** React state variables derived purely from props create a source of truth duplication. `useEffect` used to sync props to states creates lag.
 **Standard:** Conditionally render components entirely without `useState` variables if it can be directly deduced from their props. In the specific scenario, render null to hide early if prop missing, then if prop exists pass `isOpen={true}` prop downward to child generic modal element.
