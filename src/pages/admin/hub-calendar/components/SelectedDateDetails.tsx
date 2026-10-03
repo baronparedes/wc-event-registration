@@ -43,7 +43,7 @@ type SelectedDateDetailsProps = {
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   isCurrentSelectedSunday: boolean;
   excusedMap?: ExcusedMemberMap;
-  loginCountMap?: Map<string, number>;
+  attendanceScoreMap?: Map<string, number>;
   activeTab: TimeSlot;
   selectedRole: string | null;
   searchQuery: string;
@@ -61,7 +61,7 @@ export function SelectedDateDetails({
   entriesByTimeSlot,
   isCurrentSelectedSunday,
   excusedMap,
-  loginCountMap,
+  attendanceScoreMap,
   activeTab,
   selectedRole,
   searchQuery,
@@ -194,7 +194,7 @@ export function SelectedDateDetails({
                   avatarObjectKey={entry.member.avatar_object_key}
                   className="border-2 border-surface shadow-sm"
                   excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
-                  loginCount={loginCountMap?.get(entry.member.id)}
+                  attendanceScore={attendanceScoreMap?.get(entry.member.id)}
                 />
                 <div className="min-w-0 w-full">
                   <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>

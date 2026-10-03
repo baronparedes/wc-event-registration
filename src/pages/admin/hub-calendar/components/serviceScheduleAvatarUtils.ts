@@ -1,10 +1,8 @@
-export function getLoginCountBorderVariant(
-  loginCount?: number,
-  totalWeeks = 12,
+export function getAttendanceScoreBorderVariant(
+  score?: number | null,
 ): 'primary' | 'secondary' | 'destructive' | 'accent' | 'none' {
-  if (loginCount === undefined) return 'none';
-  const percentage = (loginCount / totalWeeks) * 100;
-  if (percentage >= 75) return 'primary';
-  if (percentage >= 50) return 'accent';
+  if (score === undefined || score === null) return 'none';
+  if (score >= 5) return 'primary';
+  if (score >= 0) return 'accent';
   return 'destructive';
 }

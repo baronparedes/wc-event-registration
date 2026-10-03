@@ -38,28 +38,28 @@ describe('ServiceScheduleAvatar', () => {
     expect(container.querySelector('.custom-schedule-avatar')).toBeInTheDocument();
   });
 
-  describe('loginCount and ring indicators', () => {
-    it('applies primary ring when attendance >= 75% (e.g. 9/12)', () => {
-      render(<ServiceScheduleAvatar name="High Attender" loginCount={9} size="sm" />);
-      const avatarEl = screen.getByTitle('High Attender');
+  describe('attendanceScore and ring indicators', () => {
+    it('applies primary ring when attendance score >= 5', () => {
+      render(<ServiceScheduleAvatar name="High Scorer" attendanceScore={8.5} size="sm" />);
+      const avatarEl = screen.getByTitle('High Scorer');
       expect(avatarEl).toHaveClass('ring-primary');
     });
 
-    it('applies accent ring when attendance >= 50% and < 75% (e.g. 6/12)', () => {
-      render(<ServiceScheduleAvatar name="Mid Attender" loginCount={6} size="sm" />);
-      const avatarEl = screen.getByTitle('Mid Attender');
+    it('applies accent ring when attendance score is between 0 and 4.5', () => {
+      render(<ServiceScheduleAvatar name="Mid Scorer" attendanceScore={3.5} size="sm" />);
+      const avatarEl = screen.getByTitle('Mid Scorer');
       expect(avatarEl).toHaveClass('ring-accent');
     });
 
-    it('applies destructive ring when attendance < 50% (e.g. 3/12 or 0/12)', () => {
-      render(<ServiceScheduleAvatar name="Low Attender" loginCount={3} size="sm" />);
-      const avatarEl = screen.getByTitle('Low Attender');
+    it('applies destructive ring when attendance score is negative (< 0)', () => {
+      render(<ServiceScheduleAvatar name="Negative Scorer" attendanceScore={-1.5} size="sm" />);
+      const avatarEl = screen.getByTitle('Negative Scorer');
       expect(avatarEl).toHaveClass('ring-red-600');
     });
 
-    it('applies no ring when loginCount is undefined and border is none', () => {
-      render(<ServiceScheduleAvatar name="No Count" size="sm" />);
-      const avatarEl = screen.getByTitle('No Count');
+    it('applies no ring when attendanceScore is undefined and border is none', () => {
+      render(<ServiceScheduleAvatar name="No Score" size="sm" />);
+      const avatarEl = screen.getByTitle('No Score');
       expect(avatarEl).not.toHaveClass('ring-2');
     });
 
@@ -67,7 +67,7 @@ describe('ServiceScheduleAvatar', () => {
       render(
         <ServiceScheduleAvatar
           name="Explicit Border"
-          loginCount={12}
+          attendanceScore={10}
           border="secondary"
           size="sm"
         />,

@@ -19,7 +19,7 @@ export {
 export { useGetExcusedMembers } from './queries/useGetExcusedMembers';
 export type { ExcusedMemberRecord } from './queries/useGetExcusedMembers';
 export { useGetMemberExcusedSchedule } from './queries/useGetMemberExcusedSchedule';
-export { useMembersLoginCountQuery } from './queries/useMembersLoginCountQuery';
+export { useMembersAttendanceScoresQuery } from './queries/useMembersAttendanceScoresQuery';
 
 // Mutations
 export { useUpdateMemberMutation } from './mutations/useUpdateMemberMutation';

@@ -13,7 +13,7 @@ type DesktopScheduleCalendarProps = {
   scheduleMap: Map<string, MemberScheduleEntry[]>;
   milestoneMap: Map<string, MilestoneEntry[]>;
   excusedMap?: ExcusedMemberMap;
-  loginCountMap?: Map<string, number>;
+  attendanceScoreMap?: Map<string, number>;
   selectedDayNumber: number;
   onSelectDay: (dayNumber: number) => void;
 };
@@ -23,7 +23,7 @@ export function DesktopScheduleCalendar({
   scheduleMap,
   milestoneMap,
   excusedMap,
-  loginCountMap,
+  attendanceScoreMap,
   selectedDayNumber,
   onSelectDay,
 }: DesktopScheduleCalendarProps) {
@@ -140,7 +140,7 @@ export function DesktopScheduleCalendar({
                             name={entry.member.full_name}
                             avatarObjectKey={entry.member.avatar_object_key}
                             excused={isMemberExcused(excusedMap, cell.isoDate, entry.member)}
-                            loginCount={loginCountMap?.get(entry.member.id)}
+                            attendanceScore={attendanceScoreMap?.get(entry.member.id)}
                           />
                         ))}
                         {excessCount > 0 && (

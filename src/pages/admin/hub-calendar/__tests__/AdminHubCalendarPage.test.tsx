@@ -13,19 +13,19 @@ import { AdminHubCalendarPage } from '../index';
 const {
   mockUseAdminMembersSchedulesQuery,
   mockUseAdminMembersMilestonesQuery,
-  mockUseMembersLoginCountQuery,
+  mockUseMembersAttendanceScoresQuery,
   mockUseIsMobileViewport,
 } = vi.hoisted(() => ({
   mockUseAdminMembersSchedulesQuery: vi.fn(),
   mockUseAdminMembersMilestonesQuery: vi.fn(),
-  mockUseMembersLoginCountQuery: vi.fn(),
+  mockUseMembersAttendanceScoresQuery: vi.fn(),
   mockUseIsMobileViewport: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
   useAdminMembersMilestonesQuery: () => mockUseAdminMembersMilestonesQuery(),
-  useMembersLoginCountQuery: () => mockUseMembersLoginCountQuery(),
+  useMembersAttendanceScoresQuery: () => mockUseMembersAttendanceScoresQuery(),
   useMemberAvatarQuery: () => ({ data: null }),
   useGetExcusedMembers: () => ({ data: [] }),
 }));
@@ -87,7 +87,7 @@ describe('AdminHubCalendarPage', () => {
     localStorage.clear();
     sessionStorage.clear();
     mockUseIsMobileViewport.mockReturnValue(false);
-    mockUseMembersLoginCountQuery.mockReturnValue({
+    mockUseMembersAttendanceScoresQuery.mockReturnValue({
       data: new Map(),
       isLoading: false,
       error: null,
@@ -334,9 +334,9 @@ describe('AdminHubCalendarPage', () => {
     }
   });
 
-  it('renders login count ring indicator on member avatar in selected date details', () => {
-    mockUseMembersLoginCountQuery.mockReturnValue({
-      data: new Map([[sampleMember.id, 10]]),
+  it('renders attendance score ring indicator on member avatar in selected date details', () => {
+    mockUseMembersAttendanceScoresQuery.mockReturnValue({
+      data: new Map([[sampleMember.id, 8.5]]),
       isLoading: false,
       error: null,
     });

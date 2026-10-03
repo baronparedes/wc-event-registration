@@ -7,7 +7,7 @@ import { AlertBanner, Button, SectionCard } from '@/components/ui';
 import {
   useAdminMembersMilestonesQuery,
   useAdminMembersSchedulesQuery,
-  useMembersLoginCountQuery,
+  useMembersAttendanceScoresQuery,
 } from '@/hooks/domain/members';
 import { useIsMobileViewport } from '@/hooks/utils';
 
@@ -25,15 +25,15 @@ export function AdminHubCalendarPage() {
 
   const schedulesQuery = useAdminMembersSchedulesQuery();
   const milestonesQuery = useAdminMembersMilestonesQuery();
-  const loginCountsQuery = useMembersLoginCountQuery();
+  const attendanceScoresQuery = useMembersAttendanceScoresQuery();
 
   const scheduleEntries = useMemo(() => schedulesQuery.data ?? [], [schedulesQuery.data]);
   const members = useMemo(() => milestonesQuery.data ?? [], [milestonesQuery.data]);
-  const loginCountMap = loginCountsQuery.data;
+  const attendanceScoreMap = attendanceScoresQuery.data;
 
   const isLoading =
-    schedulesQuery.isLoading || milestonesQuery.isLoading || loginCountsQuery.isLoading;
-  const error = schedulesQuery.error || milestonesQuery.error || loginCountsQuery.error;
+    schedulesQuery.isLoading || milestonesQuery.isLoading || attendanceScoresQuery.isLoading;
+  const error = schedulesQuery.error || milestonesQuery.error || attendanceScoresQuery.error;
 
   const {
     viewDate,
@@ -143,7 +143,7 @@ export function AdminHubCalendarPage() {
                 currentWeekNumber={currentWeekNumber}
                 weekOptions={weekOptions}
                 excusedMap={excusedMap}
-                loginCountMap={loginCountMap}
+                attendanceScoreMap={attendanceScoreMap}
                 onSelectWeek={(week) => handleSelectWeek(week, monthWeeks)}
                 onSelectDay={handleSelectDay}
               />
@@ -153,7 +153,7 @@ export function AdminHubCalendarPage() {
                 scheduleMap={scheduleMap}
                 excusedMap={excusedMap}
                 milestoneMap={milestoneMap}
-                loginCountMap={loginCountMap}
+                attendanceScoreMap={attendanceScoreMap}
                 selectedDayNumber={selectedDayNumber}
                 onSelectDay={handleSelectDay}
               />
@@ -175,7 +175,7 @@ export function AdminHubCalendarPage() {
           selectedEntries={selectedEntries}
           entriesByTimeSlot={entriesByTimeSlot}
           excusedMap={excusedMap}
-          loginCountMap={loginCountMap}
+          attendanceScoreMap={attendanceScoreMap}
           isCurrentSelectedSunday={isCurrentSelectedSunday}
           activeTab={activeTab}
           selectedRole={selectedRole}

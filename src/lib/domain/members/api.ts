@@ -214,28 +214,78 @@ export async function setMemberActiveStatus(
   return (data ?? null) as { id: string } | null;
 }
 
-export async function fetchMembersLoginCounts(weeks = 12): Promise<Map<string, number>> {
+export async function fetchMembersAttendanceScores(
+  weeks = 12,
+  excuseEventId?: string | null,
+): Promise<Map<string, number>> {
+  const endDate = new Date().toISOString().split('T')[0];
   const pastDate = new Date();
   pastDate.setDate(pastDate.getDate() - weeks * 7);
   const startDate = pastDate.toISOString().split('T')[0];
 
-  const { data, error } = await supabase
-    .from('service_attendance')
-    .select('user_id')
-    .gte('service_date', startDate)
-    .eq('is_walk_in', false);
+  const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_excuse_event_id: excuseEventId || null,
+    p_search_query: null,
+    p_role: null,
+    p_category: null,
+    p_page: 1,
+    p_page_size: 500,
+  });
 
   if (error) {
-    throw new Error(`Failed to fetch login counts: ${error.message}`);
+    throw new Error(`Failed to fetch attendance scores: ${error.message}`);
   }
 
-  const countMap = new Map<string, number>();
-  for (const record of data ?? []) {
-    if (record.user_id) {
-      const count = countMap.get(record.user_id) || 0;
-      countMap.set(record.user_id, count + 1);
+  const rawRows = (data ?? []) as Array<{
+    user_id: string;
+    attendance_score: number;
+    total_count: number;
+  }>;
+  const totalCount = rawRows.length > 0 ? Number(rawRows[0].total_count) : 0;
+  const scoreMap = new Map<string, number>();
+
+  for (const row of rawRows) {
+    if (row.user_id) {
+      scoreMap.set(row.user_id, Number(row.attendance_score));
     }
   }
 
-  return countMap;
+  const totalPages = Math.ceil(totalCount / 500);
+  if (totalPages > 1) {
+    const remainingPagePromises = [];
+    for (let page = 2; page <= totalPages; page++) {
+      remainingPagePromises.push(
+        supabase.rpc('get_commitment_dashboard_stats', {
+          p_start_date: startDate,
+          p_end_date: endDate,
+          p_excuse_event_id: excuseEventId || null,
+          p_search_query: null,
+          p_role: null,
+          p_category: null,
+          p_page: page,
+          p_page_size: 500,
+        }),
+      );
+    }
+
+    const remainingResults = await Promise.all(remainingPagePromises);
+    for (const res of remainingResults) {
+      if (res.error) {
+        throw new Error(`Failed to fetch attendance scores page: ${res.error.message}`);
+      }
+      const pageRows = (res.data ?? []) as Array<{
+        user_id: string;
+        attendance_score: number;
+      }>;
+      for (const row of pageRows) {
+        if (row.user_id) {
+          scoreMap.set(row.user_id, Number(row.attendance_score));
+        }
+      }
+    }
+  }
+
+  return scoreMap;
 }
