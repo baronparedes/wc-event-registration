@@ -6,7 +6,7 @@ interface AvatarProps {
   name: string;
   avatarObjectKey?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-  border?: 'default' | 'primary' | 'destructive' | 'accent';
+  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'none';
   className?: string;
 }
 
@@ -14,7 +14,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   name,
   avatarObjectKey,
   size = 'md',
-  border = 'default',
+  border = 'none',
   className = '',
 }) => {
   const { data: avatarUrl } = useMemberAvatarQuery(avatarObjectKey);
@@ -37,9 +37,10 @@ export const Avatar: React.FC<AvatarProps> = ({
   };
 
   const borderClasses = {
-    default: '',
+    none: '',
     primary: 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-    destructive: 'ring-2 ring-danger ring-offset-2 ring-offset-background',
+    secondary: 'ring-2 ring-secondary ring-offset-2 ring-offset-background',
+    destructive: 'ring-2 ring-red-600 ring-offset-2 ring-offset-background',
     accent: 'ring-2 ring-accent ring-offset-2 ring-offset-background',
   };
 

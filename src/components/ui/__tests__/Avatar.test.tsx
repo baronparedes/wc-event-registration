@@ -90,7 +90,7 @@ describe('Avatar', () => {
       const container = screen.getByTitle('Test Member');
       expect(container).toHaveClass(
         'ring-2',
-        'ring-danger',
+        'ring-red-600',
         'ring-offset-2',
         'ring-offset-background',
       );
