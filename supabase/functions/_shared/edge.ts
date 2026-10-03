@@ -426,8 +426,14 @@ export function isLocalBroadcastEnabled(): boolean {
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  let supabaseHost = '';
+  try {
+    supabaseHost = new URL(supabaseUrl).hostname.toLowerCase();
+  } catch {
+    // Ignore invalid/missing URL and continue with other environment signals.
+  }
   // Skip during unit test mocks
-  if (supabaseUrl.includes('example.supabase.co')) {
+  if (supabaseHost === 'example.supabase.co') {
     return false;
   }
 
@@ -443,17 +449,17 @@ export function isLocalBroadcastEnabled(): boolean {
 
   // Local Supabase CLI instances
   if (
-    supabaseUrl.includes('localhost') ||
-    supabaseUrl.includes('127.0.0.1') ||
-    supabaseUrl.includes('kong')
+    supabaseHost === 'localhost' ||
+    supabaseHost === '127.0.0.1' ||
+    supabaseHost === 'kong'
   ) {
     return true;
   }
 
   // Supabase Cloud hosted edge functions
   if (
-    supabaseUrl.includes('.supabase.co') ||
-    supabaseUrl.includes('.supabase.net') ||
+    supabaseHost.endsWith('.supabase.co') ||
+    supabaseHost.endsWith('.supabase.net') ||
     Boolean(Deno.env.get('DENO_REGION')) ||
     Boolean(Deno.env.get('DENO_DEPLOYMENT_ID'))
   ) {
