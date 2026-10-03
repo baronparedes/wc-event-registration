@@ -17,6 +17,16 @@ export function useSundaySchedulePreviewQuery({
     queryKey: [...SUNDAY_SCHEDULE_PREVIEW_QUERY_KEY, targetSundayDate ?? 'nearest'],
     queryFn: () => getSundaySchedulePreview(targetSundayDate),
     enabled,
-    staleTime: 15_000,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (
+        data &&
+        (data.push_delivery?.status === 'queued' || data.email_delivery?.status === 'queued')
+      ) {
+        return 2500;
+      }
+      return false;
+    },
+    staleTime: 5_000,
   });
 }

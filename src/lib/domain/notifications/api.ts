@@ -131,6 +131,16 @@ export async function markAllNotificationsAsRead(): Promise<void> {
   if (error) throw error;
 }
 
+const callTriggerEmailWorker = createEdgeFunctionCaller<
+  Record<string, never>,
+  { success: boolean; processed: number }
+>('cron-process-email-queue');
+
+const callTriggerPushWorker = createEdgeFunctionCaller<
+  Record<string, never>,
+  { success: boolean; processed: number }
+>('cron-process-push-reminders');
+
 export async function getSundaySchedulePreview(
   targetSundayDate?: string,
 ): Promise<SundaySchedulePreview> {
@@ -142,7 +152,21 @@ export async function getSundaySchedulePreview(
     throw new Error(`Failed to fetch Sunday schedule preview: ${error.message}`);
   }
 
-  return data as unknown as SundaySchedulePreview;
+  const preview = data as unknown as SundaySchedulePreview;
+
+  // If there are still items queued (e.g. from an asynchronous dispatch or page reload), trigger workers to drain the queue
+  if (preview.email_delivery?.status === 'queued' || preview.push_delivery?.status === 'queued') {
+    const drainPromises: Promise<unknown>[] = [];
+    if (preview.email_delivery?.status === 'queued') {
+      drainPromises.push(callTriggerEmailWorker({}));
+    }
+    if (preview.push_delivery?.status === 'queued') {
+      drainPromises.push(callTriggerPushWorker({}));
+    }
+    Promise.allSettled(drainPromises).catch(() => {});
+  }
+
+  return preview;
 }
 
 export async function dispatchSundayReminders(
@@ -156,6 +180,20 @@ export async function dispatchSundayReminders(
 
   if (error) {
     throw new Error(`Failed to dispatch Sunday schedule reminders: ${error.message}`);
+  }
+
+  // Trigger background workers immediately to drain the queue without waiting for cron
+  try {
+    const workerPromises: Promise<unknown>[] = [];
+    if (payload.channels.includes('email')) {
+      workerPromises.push(callTriggerEmailWorker({}));
+    }
+    if (payload.channels.includes('push')) {
+      workerPromises.push(callTriggerPushWorker({}));
+    }
+    await Promise.allSettled(workerPromises);
+  } catch (workerError) {
+    console.warn('[dispatchSundayReminders] Worker trigger warning:', workerError);
   }
 
   return data as unknown as DispatchSundayRemindersResponse;
