@@ -93,18 +93,18 @@ describe('hub-calendar export functions', () => {
     expect(filename).toBe('service-schedules-2026-09-06.csv');
     const lines = csvText.split('\n');
     expect(lines[0]).toBe(
-      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rate,Attendance Score,Email,Phone,Excused,Excused Reason',
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rate,Email,Phone,Excused,Excused Reason',
     );
     // 9AM slot: Test Alpha first, then Test Zulu
     expect(lines[1]).toContain(
-      '9:00 AM,MEM-001,Test Alpha,Test Nick,Usher,adult,Solid,80%,-,member@example.com,123-456,No,',
+      '9:00 AM,MEM-001,Test Alpha,Test Nick,Usher,adult,Solid,80%,member@example.com,123-456,No,',
     );
     expect(lines[2]).toContain(
-      '9:00 AM,MEM-001,Test Zulu,Test Nick,Usher,adult,Solid,80%,-,member@example.com,123-456,No,',
+      '9:00 AM,MEM-001,Test Zulu,Test Nick,Usher,adult,Solid,80%,member@example.com,123-456,No,',
     );
     // 12NN slot: Test Zulu
     expect(lines[3]).toContain(
-      '12:00 NN,MEM-001,Test Zulu,Test Nick,Usher,adult,Solid,80%,-,member@example.com,123-456,No,',
+      '12:00 NN,MEM-001,Test Zulu,Test Nick,Usher,adult,Solid,80%,member@example.com,123-456,No,',
     );
   });
 
@@ -165,19 +165,19 @@ describe('hub-calendar export functions', () => {
     const lines = csvText.split('\n');
     // Header
     expect(lines[0]).toBe(
-      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rate,Attendance Score,Email,Phone,Excused,Excused Reason',
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rate,Email,Phone,Excused,Excused Reason',
     );
     // 9AM: Test Alpha (not excused, turnup 100%, Solid)
     expect(lines[1]).toContain('9:00 AM,MEM-NORM,Test Alpha');
-    expect(lines[1]).toContain(',Solid,100%,10,');
+    expect(lines[1]).toContain(',Solid,100%,');
     expect(lines[1]).toContain(',No,');
     // 9AM: Test Bravo (excused with reason, quoted for comma, Excused, 0%)
     expect(lines[2]).toContain('9:00 AM,MEM-EXC,Test Bravo');
-    expect(lines[2]).toContain(',Excused,0%,5,');
+    expect(lines[2]).toContain(',Excused,0%,');
     expect(lines[2]).toContain(',Yes,"Medical rest, doctor advise"');
     // 12NN: Test Bravo (not excused for 12NN, Moderate, 50%)
     expect(lines[3]).toContain('12:00 NN,MEM-EXC,Test Bravo');
-    expect(lines[3]).toContain(',Moderate,50%,5,');
+    expect(lines[3]).toContain(',Moderate,50%,');
     expect(lines[3]).toContain(',No,');
   });
 });

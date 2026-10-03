@@ -145,7 +145,6 @@ export function buildSundaySchedulesCsvExport(params: {
       'Category',
       'Confidence Level',
       'Turnup Rate',
-      'Attendance Score',
       'Email',
       'Phone',
       'Excused',
@@ -158,12 +157,8 @@ export function buildSundaySchedulesCsvExport(params: {
 
       let confidenceLevel: string;
       let turnupRateStr: string;
-      let attendanceScoreStr = '-';
 
       const stat = item.member.id ? attendanceScoreMap?.get(item.member.id) : undefined;
-      if (stat) {
-        attendanceScoreStr = String(stat.attendanceScore);
-      }
 
       if (isExcused) {
         confidenceLevel = 'Excused';
@@ -189,7 +184,6 @@ export function buildSundaySchedulesCsvExport(params: {
         item.member.category,
         confidenceLevel,
         turnupRateStr,
-        attendanceScoreStr,
         item.member.email ?? '',
         item.member.phone ?? '',
         isExcused ? 'Yes' : 'No',
