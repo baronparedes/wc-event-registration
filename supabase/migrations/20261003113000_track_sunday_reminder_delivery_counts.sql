@@ -322,6 +322,8 @@ declare
   v_total_volunteers int := 0;
   v_push_eligible_count int := 0;
   v_email_eligible_count int := 0;
+  v_pending_queue_count int := 0;
+  v_archived_queue_count int := 0;
 begin
   if not (public.is_admin_viewer() or auth.role() = 'service_role' or current_user = 'service_role') then
     raise exception 'Unauthorized to view Sunday schedule reminders preview';
@@ -339,6 +341,56 @@ begin
 
   select * into v_push_log from public.push_reminder_logs where sunday_date = v_target_sunday limit 1;
   select * into v_email_log from public.email_reminder_logs where sunday_date = v_target_sunday limit 1;
+
+  -- Auto-resolve push delivery status if in 'queued' state and queue is drained
+  if v_push_log.sunday_date is not null and v_push_log.status = 'queued' then
+    begin
+      execute $dyn$
+        select
+          coalesce((select count(*) from pgmq.q_push_reminders where (message->>'target_date') = $1::text), 0),
+          coalesce((select count(*) from pgmq.a_push_reminders where (message->>'target_date') = $1::text), 0)
+      $dyn$
+      into v_pending_queue_count, v_archived_queue_count
+      using v_target_sunday;
+
+      if v_pending_queue_count = 0 then
+        update public.push_reminder_logs
+        set
+          succeeded_count = case when v_archived_queue_count > 0 then v_archived_queue_count else total_queued end,
+          status = 'completed',
+          updated_at = now()
+        where sunday_date = v_target_sunday
+        returning * into v_push_log;
+      end if;
+    exception when others then
+      null;
+    end;
+  end if;
+
+  -- Auto-resolve email delivery status if in 'queued' state and queue is drained
+  if v_email_log.sunday_date is not null and v_email_log.status = 'queued' then
+    begin
+      execute $dyn$
+        select
+          coalesce((select count(*) from pgmq.q_email_notifications where (message->'metadata'->>'sunday_date') = $1::text), 0),
+          coalesce((select count(*) from pgmq.a_email_notifications where (message->'metadata'->>'sunday_date') = $1::text), 0)
+      $dyn$
+      into v_pending_queue_count, v_archived_queue_count
+      using v_target_sunday;
+
+      if v_pending_queue_count = 0 then
+        update public.email_reminder_logs
+        set
+          succeeded_count = case when v_archived_queue_count > 0 then v_archived_queue_count else total_queued end,
+          status = 'completed',
+          updated_at = now()
+        where sunday_date = v_target_sunday
+        returning * into v_email_log;
+      end if;
+    exception when others then
+      null;
+    end;
+  end if;
 
   with scheduled_users as (
     select
