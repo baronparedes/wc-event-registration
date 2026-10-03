@@ -13,19 +13,16 @@ import { AdminHubCalendarPage } from '../index';
 const {
   mockUseAdminMembersSchedulesQuery,
   mockUseAdminMembersMilestonesQuery,
-  mockUseMembersLoginCountQuery,
   mockUseIsMobileViewport,
 } = vi.hoisted(() => ({
   mockUseAdminMembersSchedulesQuery: vi.fn(),
   mockUseAdminMembersMilestonesQuery: vi.fn(),
-  mockUseMembersLoginCountQuery: vi.fn(),
   mockUseIsMobileViewport: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
   useAdminMembersMilestonesQuery: () => mockUseAdminMembersMilestonesQuery(),
-  useMembersLoginCountQuery: () => mockUseMembersLoginCountQuery(),
   useMemberAvatarQuery: () => ({ data: null }),
   useGetExcusedMembers: () => ({ data: [] }),
 }));
@@ -87,11 +84,6 @@ describe('AdminHubCalendarPage', () => {
     localStorage.clear();
     sessionStorage.clear();
     mockUseIsMobileViewport.mockReturnValue(false);
-    mockUseMembersLoginCountQuery.mockReturnValue({
-      data: new Map(),
-      isLoading: false,
-      error: null,
-    });
   });
 
   it('renders loading state and error state correctly', () => {
