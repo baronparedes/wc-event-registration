@@ -35,7 +35,7 @@ const PUSH_MESSAGE_CONCURRENCY = 5;
 
 export async function handleCronProcessPushReminders(
   req: Request,
-  sendPushNotification: PushSender,
+  sendPushNotification?: PushSender,
 ): Promise<Response> {
   const hookResult = await useEdgeHook({
     req,
@@ -52,10 +52,11 @@ export async function handleCronProcessPushReminders(
   }
 
   const { client, corsHeaders, requestId } = hookResult;
+  const isLocal = Deno.env.get('LOCAL_BROADCAST') === 'true';
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
 
-  if (!vapidPublicKey || !vapidPrivateKey) {
+  if (!isLocal && (!vapidPublicKey || !vapidPrivateKey)) {
     console.error('[cron-process-push-reminders] VAPID keys not configured');
     return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'VAPID keys not configured');
   }
@@ -141,18 +142,6 @@ export async function handleCronProcessPushReminders(
                 subError,
               );
               await archiveAfterRetryLimit(msg, subError);
-              return;
-            }
-
-            if (!vapidPublicKey || !vapidPrivateKey) {
-              console.log('[cron-process-push-reminders] [LOCAL/SIMULATION] Push notification:', {
-                recipient: userId,
-                title: 'Service Reminder',
-                message: notificationMessage,
-              });
-              recordStats(payload.target_date, 'succeeded');
-              await client.rpc('archive_push_reminder', { message_id: messageId });
-              totalProcessed++;
               return;
             }
 
