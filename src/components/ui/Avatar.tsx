@@ -6,6 +6,7 @@ interface AvatarProps {
   name: string;
   avatarObjectKey?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'none';
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   name,
   avatarObjectKey,
   size = 'md',
+  border = 'none',
   className = '',
 }) => {
   const { data: avatarUrl } = useMemberAvatarQuery(avatarObjectKey);
@@ -34,6 +36,14 @@ export const Avatar: React.FC<AvatarProps> = ({
     '3xl': 'w-128 h-128 text-3xl',
   };
 
+  const borderClasses = {
+    none: '',
+    primary: 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+    secondary: 'ring-2 ring-secondary ring-offset-2 ring-offset-background',
+    destructive: 'ring-2 ring-red-600 ring-offset-2 ring-offset-background',
+    accent: 'ring-2 ring-accent ring-offset-2 ring-offset-background',
+  };
+
   const colors = [
     'bg-red-500',
     'bg-blue-500',
@@ -53,7 +63,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div
-      className={`${sizeClasses[size]} ${bgColor} relative rounded-full flex items-center justify-center overflow-hidden font-semibold text-white ${className}`}
+      className={`${sizeClasses[size]} ${bgColor} ${borderClasses[border]} relative rounded-full flex items-center justify-center overflow-hidden font-semibold text-white ${className}`}
       title={name}
     >
       {initials}
