@@ -59,15 +59,15 @@ export function buildMonthMilestoneCsvExport(params: {
   const sortedEntries = [...milestoneEntries].sort((left, right) => {
     const leftDate = getMilestoneDate(left.member, left.type);
     const rightDate = getMilestoneDate(right.member, right.type);
-    const dateSort = toMonthDayKeyFromDateString(leftDate).localeCompare(
-      toMonthDayKeyFromDateString(rightDate),
-    );
+    const leftDateKey = toMonthDayKeyFromDateString(leftDate);
+    const rightDateKey = toMonthDayKeyFromDateString(rightDate);
+    const dateSort = leftDateKey < rightDateKey ? -1 : leftDateKey > rightDateKey ? 1 : 0;
 
     if (dateSort !== 0) {
       return dateSort;
     }
 
-    const typeSort = left.type.localeCompare(right.type);
+    const typeSort = left.type < right.type ? -1 : left.type > right.type ? 1 : 0;
     if (typeSort !== 0) {
       return typeSort;
     }
