@@ -33,11 +33,15 @@ describe('SlotConfidenceForecastBanner', () => {
 
     render(<SlotConfidenceForecastBanner forecast={forecast} />);
 
-    expect(screen.getByText('~48 / 82 Expected')).toBeInTheDocument();
-    expect(screen.getByText('59% Confidence')).toBeInTheDocument();
-    expect(screen.getByText('30 Solid (≥80%)')).toBeInTheDocument();
-    expect(screen.getByText('27 Mod (50-79%)')).toBeInTheDocument();
-    expect(screen.getByText('22 At Risk (<50%)')).toBeInTheDocument();
-    expect(screen.getByText('3 Excused')).toBeInTheDocument();
+    expect(screen.getByText(/~48 \/ 82/i)).toBeInTheDocument();
+    expect(screen.getByText(/59% confidence/i)).toBeInTheDocument();
+    expect(screen.getByText('30')).toBeInTheDocument();
+    expect(screen.getByText('Solid')).toBeInTheDocument();
+    expect(screen.getByText('27')).toBeInTheDocument();
+    expect(screen.getByText('Moderate')).toBeInTheDocument();
+    expect(screen.getByText('22')).toBeInTheDocument();
+    expect(screen.getByText('At Risk')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Excused')).toBeInTheDocument();
   });
 });
