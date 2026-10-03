@@ -81,8 +81,8 @@ export function SundayDispatchConfirmDialog({
               <div className="space-y-1.5 text-xs">
                 <p className="font-semibold text-text">Duplicate Dispatch Warning</p>
                 <p className="leading-relaxed text-muted">
-                  Reminders for this Sunday (
-                  <span className="font-medium text-text">{formatDateOnly(sundayDate)}</span>) have
+                  Reminders on{' '}
+                  <span className="font-medium text-text">{formatDateOnly(sundayDate)}</span> have
                   already been dispatched previously. Sending again will re-deliver notifications to
                   scheduled volunteers.
                 </p>

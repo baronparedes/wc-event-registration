@@ -111,7 +111,30 @@ describe('AdminSundayRemindersPage', () => {
     expect(screen.getByText('MEM-001')).toBeInTheDocument();
   });
 
+  it('hides the dispatch button if target Sunday is in the past', async () => {
+    const pastSunday = '2023-01-01'; // Ensure this is definitely in the past
+    vi.mocked(domainNotifications.getSundaySchedulePreview).mockResolvedValueOnce({
+      ...mockPreviewData,
+      sunday_date: pastSunday,
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Alice')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('button', { name: /Dispatch Reminders/i })).not.toBeInTheDocument();
+  });
+
   it('opens confirmation modal and dispatches reminders when confirmed', async () => {
+    // We must use a future date so the dispatch button is visible.
+    const futureSunday = '2030-01-06';
+    vi.mocked(domainNotifications.getSundaySchedulePreview).mockResolvedValueOnce({
+      ...mockPreviewData,
+      sunday_date: futureSunday,
+    });
+
     renderComponent();
 
     await waitFor(() => {
@@ -130,7 +153,7 @@ describe('AdminSundayRemindersPage', () => {
 
     await waitFor(() => {
       expect(domainNotifications.dispatchSundayReminders).toHaveBeenCalledWith({
-        targetSundayDate: '2026-10-04',
+        targetSundayDate: futureSunday,
         channels: ['push', 'email'],
         force: false,
       });
@@ -138,8 +161,10 @@ describe('AdminSundayRemindersPage', () => {
   });
 
   it('displays warning and requires force confirmation checkbox when already sent', async () => {
+    const futureSunday = '2030-01-06';
     vi.mocked(domainNotifications.getSundaySchedulePreview).mockResolvedValueOnce({
       ...mockPreviewData,
+      sunday_date: futureSunday,
       already_sent_push: true,
       push_sent_at: '2026-10-02T22:00:00Z',
       already_sent_email: true,
@@ -168,7 +193,7 @@ describe('AdminSundayRemindersPage', () => {
 
     await waitFor(() => {
       expect(domainNotifications.dispatchSundayReminders).toHaveBeenCalledWith({
-        targetSundayDate: '2026-10-04',
+        targetSundayDate: futureSunday,
         channels: ['push', 'email'],
         force: true,
       });

@@ -82,6 +82,9 @@ export function AdminSundayRemindersPage() {
   const isNearest = !selectedDate;
   const activeSundayDate = preview?.sunday_date ?? selectedDate ?? '';
 
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  const isPastSunday = activeSundayDate ? activeSundayDate < today : false;
+
   return (
     <AdminPageShell wide>
       <AdminPageShell.Header
@@ -158,22 +161,24 @@ export function AdminSundayRemindersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end pt-2 sm:pt-0">
-                  <Button
-                    variant="default"
-                    onClick={() => setIsConfirmOpen(true)}
-                    disabled={
-                      isLoading ||
-                      !preview ||
-                      channels.length === 0 ||
-                      preview.total_volunteers === 0
-                    }
-                    className="gap-2"
-                  >
-                    <Send className="h-4 w-4" />
-                    <span>Dispatch Reminders</span>
-                  </Button>
-                </div>
+                {!isPastSunday && (
+                  <div className="flex items-center justify-end pt-2 sm:pt-0">
+                    <Button
+                      variant="default"
+                      onClick={() => setIsConfirmOpen(true)}
+                      disabled={
+                        isLoading ||
+                        !preview ||
+                        channels.length === 0 ||
+                        preview.total_volunteers === 0
+                      }
+                      className="gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span>Dispatch Reminders</span>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </SectionCard>
@@ -190,16 +195,21 @@ export function AdminSundayRemindersPage() {
               totalVolunteers={preview.total_volunteers}
               pushEligibleCount={preview.push_eligible_count}
               emailEligibleCount={preview.email_eligible_count}
+              sundayDate={preview.sunday_date}
             />
           )}
 
           {/* Volunteer Commitment Roster */}
           <SectionCard
             title="Scheduled Volunteer Roster"
-            subtitle={`Volunteers configured in the system for this Sunday (${preview?.sunday_key || 'upcoming'}).`}
+            subtitle={`Volunteers configured in the system on ${formatDateOnly(preview?.sunday_date || null)} (${preview?.sunday_key || 'upcoming'}).`}
           >
             <div className="pt-2">
-              <SundayVolunteersTable volunteers={preview?.volunteers ?? []} isLoading={isLoading} />
+              <SundayVolunteersTable
+                volunteers={preview?.volunteers ?? []}
+                isLoading={isLoading}
+                sundayDate={preview?.sunday_date}
+              />
             </div>
           </SectionCard>
         </div>
