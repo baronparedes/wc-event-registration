@@ -3,9 +3,12 @@ import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 import type {
   AppNotificationRecipient,
   BroadcastAudienceStats,
+  DispatchSundayRemindersPayload,
+  DispatchSundayRemindersResponse,
   ManagePushSubscriptionPayload,
   SendAppNotificationPayload,
   SendAppNotificationResponse,
+  SundaySchedulePreview,
 } from './types';
 
 const callSendAppNotification = createEdgeFunctionCaller<
@@ -126,4 +129,72 @@ export async function markAllNotificationsAsRead(): Promise<void> {
     .eq('is_read', false);
 
   if (error) throw error;
+}
+
+const callTriggerEmailWorker = createEdgeFunctionCaller<
+  Record<string, never>,
+  { success: boolean; processed: number }
+>('cron-process-email-queue');
+
+const callTriggerPushWorker = createEdgeFunctionCaller<
+  Record<string, never>,
+  { success: boolean; processed: number }
+>('cron-process-push-reminders');
+
+export async function getSundaySchedulePreview(
+  targetSundayDate?: string,
+): Promise<SundaySchedulePreview> {
+  const { data, error } = await supabase.rpc('get_sunday_schedule_reminders_preview', {
+    p_sunday_date: targetSundayDate || undefined,
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch Sunday schedule preview: ${error.message}`);
+  }
+
+  const preview = data as unknown as SundaySchedulePreview;
+
+  // If there are still items queued (e.g. from an asynchronous dispatch or page reload), trigger workers to drain the queue
+  if (preview.email_delivery?.status === 'queued' || preview.push_delivery?.status === 'queued') {
+    const drainPromises: Promise<unknown>[] = [];
+    if (preview.email_delivery?.status === 'queued') {
+      drainPromises.push(callTriggerEmailWorker({}));
+    }
+    if (preview.push_delivery?.status === 'queued') {
+      drainPromises.push(callTriggerPushWorker({}));
+    }
+    Promise.allSettled(drainPromises).catch(() => {});
+  }
+
+  return preview;
+}
+
+export async function dispatchSundayReminders(
+  payload: DispatchSundayRemindersPayload,
+): Promise<DispatchSundayRemindersResponse> {
+  const { data, error } = await supabase.rpc('dispatch_sunday_schedule_reminders', {
+    p_target_date: payload.targetSundayDate || undefined,
+    p_channels: payload.channels,
+    p_force: payload.force ?? false,
+  });
+
+  if (error) {
+    throw new Error(`Failed to dispatch Sunday schedule reminders: ${error.message}`);
+  }
+
+  // Trigger background workers immediately to drain the queue without waiting for cron
+  try {
+    const workerPromises: Promise<unknown>[] = [];
+    if (payload.channels.includes('email')) {
+      workerPromises.push(callTriggerEmailWorker({}));
+    }
+    if (payload.channels.includes('push')) {
+      workerPromises.push(callTriggerPushWorker({}));
+    }
+    await Promise.allSettled(workerPromises);
+  } catch (workerError) {
+    console.warn('[dispatchSundayReminders] Worker trigger warning:', workerError);
+  }
+
+  return data as unknown as DispatchSundayRemindersResponse;
 }

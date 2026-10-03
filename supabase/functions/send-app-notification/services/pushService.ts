@@ -1,18 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import webpush from 'web-push';
 
 import type { Database } from '@/shared/database.types.ts';
-import { isLocalBroadcastEnabled } from '@/shared/localBroadcast.ts';
+import { sendWebPushNotification } from '@/shared/push.ts';
 
 import type { SendAppNotificationPayload } from '../types.ts';
-
-const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
-const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
-const subject = 'mailto:admin@welcomehub.app';
-
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(subject, vapidPublicKey, vapidPrivateKey);
-}
 
 export interface SendPushNotificationsParams {
   supabase: SupabaseClient<Database>;
@@ -66,11 +57,10 @@ export async function sendPushNotifications({
   const userIds = recipients?.map((r) => r.user_id) ?? [];
   const pushCount = userIds.length;
 
-  // Send Web Push to subscribed devices (skipped when local broadcast is active)
-  if (!isLocalBroadcastEnabled() && vapidPublicKey && vapidPrivateKey && userIds.length > 0) {
+  if (userIds.length > 0) {
     const { data: subscriptions } = await supabase
       .from('user_push_subscriptions')
-      .select('user_id, endpoint, auth_key, p256dh_key')
+      .select('id, user_id, endpoint, auth_key, p256dh_key')
       .in('user_id', userIds);
 
     if (subscriptions && subscriptions.length > 0) {
@@ -91,35 +81,55 @@ export async function sendPushNotifications({
         unreadCountByUser.set(row.user_id, (unreadCountByUser.get(row.user_id) ?? 0) + 1);
       });
 
-      const pushPromises = subscriptions.map((sub) => {
+      const subscriptionsToDelete = new Set<string>();
+
+      const pushPromises = subscriptions.map(async (sub) => {
         const unreadCount = unreadCountByUser.get(sub.user_id) ?? 1;
-        const pushPayload = JSON.stringify({
-          title: payload.title,
-          body: payload.message,
-          url: payload.url || (payload.targetType === 'role' ? '/admin/notifications' : '/'),
-          unreadCount,
+        const result = await sendWebPushNotification({
+          subscription: {
+            id: sub.id,
+            endpoint: sub.endpoint,
+            keys: {
+              auth: sub.auth_key,
+              p256dh: sub.p256dh_key,
+            },
+          },
+          payload: {
+            title: payload.title,
+            body: payload.message,
+            url: payload.url || (payload.targetType === 'role' ? '/admin/notifications' : '/'),
+            unreadCount,
+          },
+          recipientId: sub.user_id,
+          targetType: payload.targetType,
         });
 
-        const pushSubscription = {
-          endpoint: sub.endpoint,
-          keys: {
-            auth: sub.auth_key,
-            p256dh: sub.p256dh_key,
-          },
-        };
-        return webpush.sendNotification(pushSubscription, pushPayload).catch((err: unknown) => {
-          console.error(`Failed to push to user ${sub.user_id}:`, err);
-        });
+        if (!result.ok) {
+          if (result.isExpiredSubscription) {
+            subscriptionsToDelete.add(sub.id);
+          } else {
+            console.error(`Failed to push to user ${sub.user_id}:`, result.error);
+          }
+        }
       });
 
       await Promise.allSettled(pushPromises);
-    }
-  } else if (!vapidPublicKey || !vapidPrivateKey) {
-    console.warn('VAPID keys not configured, skipping web push.');
-  }
 
-  // Log aggregated summary
-  if (isLocalBroadcastEnabled() && userIds.length > 0) {
+      if (subscriptionsToDelete.size > 0) {
+        const { error: deleteError } = await supabase
+          .from('user_push_subscriptions')
+          .delete()
+          .in('id', Array.from(subscriptionsToDelete));
+
+        if (deleteError) {
+          console.error(
+            '[send-app-notification] Failed to delete stale push subscriptions:',
+            deleteError,
+          );
+        }
+      }
+    }
+
     console.log('[send-app-notification] [push] Broadcast push summary:', {
       notificationId,
       targetType: payload.targetType,

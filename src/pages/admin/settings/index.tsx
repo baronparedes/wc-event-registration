@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { BarChart3, Bell, Mail, Shield } from 'lucide-react';
+import { BarChart3, Bell, Calendar, Mail, Shield } from 'lucide-react';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, SearchInputField } from '@/components/ui';
@@ -38,6 +38,18 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
     requiredPermission: 'canWriteAdminData',
   },
   {
+    id: 'sunday-reminders',
+    category: 'Communications & Messaging',
+    title: 'Sunday Service Reminders',
+    description:
+      'Inspect upcoming volunteer commitments, monitor push and email dispatch logs, and manually trigger schedule reminder batches.',
+    to: ROUTE_PATHS.adminSundayReminders,
+    icon: Calendar,
+    tag: 'Automated & Manual',
+    actionLabel: 'Manage Reminders',
+    requiredPermission: 'canWriteAdminData',
+  },
+  {
     id: 'broadcast-dashboard',
     category: 'Communications & Messaging',
     title: 'Broadcast Dashboard',
@@ -60,6 +72,7 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
     actionLabel: 'Manage Templates',
     requiredPermission: 'canWriteAdminData',
   },
+
   {
     id: 'user-roles',
     category: 'Access & Security',

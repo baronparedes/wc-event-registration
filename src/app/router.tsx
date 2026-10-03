@@ -115,6 +115,11 @@ const AdminNotificationsDashboardPage = lazy(() =>
     default: module.AdminNotificationsDashboardPage,
   })),
 );
+const AdminSundayRemindersPage = lazy(() =>
+  import('../pages/admin/settings/notifications/sunday').then((module) => ({
+    default: module.AdminSundayRemindersPage,
+  })),
+);
 const AdminSettingsPage = lazy(() =>
   import('../pages/admin/settings').then((module) => ({
     default: module.AdminSettingsPage,
@@ -331,6 +336,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
   adminNotifications: AdminNotificationsPage,
   adminNotificationsDashboard: AdminNotificationsDashboardPage,
+  adminSundayReminders: AdminSundayRemindersPage,
   adminSettings: AdminSettingsPage,
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
 };

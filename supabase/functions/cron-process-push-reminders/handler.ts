@@ -1,13 +1,11 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
+import { type PushSubscriptionKeys, sendWebPushNotification } from '../_shared/push.ts';
 
 type PushSubscription = {
   endpoint: string;
-  keys: {
-    auth: string;
-    p256dh: string;
-  };
+  keys: PushSubscriptionKeys;
 };
 
 type PushSender = (subscription: PushSubscription, payload: string) => Promise<void>;
@@ -18,6 +16,7 @@ type PushReminderMessage = {
   message: {
     user_id?: string;
     message?: string;
+    target_date?: string;
     target_url?: string;
     url?: string;
   };
@@ -36,7 +35,7 @@ const PUSH_MESSAGE_CONCURRENCY = 5;
 
 export async function handleCronProcessPushReminders(
   req: Request,
-  sendPushNotification: PushSender,
+  sendPushNotification?: PushSender,
 ): Promise<Response> {
   const hookResult = await useEdgeHook({
     req,
@@ -53,17 +52,19 @@ export async function handleCronProcessPushReminders(
   }
 
   const { client, corsHeaders, requestId } = hookResult;
-  const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
-  const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
-
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    console.error('[cron-process-push-reminders] VAPID keys not configured');
-    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'VAPID keys not configured');
-  }
 
   try {
     let totalProcessed = 0;
     const subscriptionsToDelete = new Set<string>();
+    const statsByDate = new Map<string, { succeeded: number; failed: number }>();
+
+    const recordStats = (targetDate: string | undefined, status: 'succeeded' | 'failed') => {
+      if (!targetDate) return;
+      const current = statsByDate.get(targetDate) ?? { succeeded: 0, failed: 0 };
+      if (status === 'succeeded') current.succeeded += 1;
+      else current.failed += 1;
+      statsByDate.set(targetDate, current);
+    };
 
     const archiveAfterRetryLimit = async (message: PushReminderMessage, error: unknown) => {
       if (message.read_ct < MAX_PUSH_DELIVERY_ATTEMPTS) {
@@ -75,6 +76,7 @@ export async function handleCronProcessPushReminders(
         attempts: message.read_ct,
         error,
       });
+      recordStats(message.message.target_date, 'failed');
       const { error: archiveError } = await client.rpc('archive_push_reminder', {
         message_id: message.msg_id,
       });
@@ -114,6 +116,7 @@ export async function handleCronProcessPushReminders(
 
           if (!userId || !notificationMessage) {
             console.warn('[cron-process-push-reminders] Invalid payload structure', payload);
+            recordStats(payload.target_date, 'failed');
             await client.rpc('archive_push_reminder', { message_id: messageId });
             return;
           }
@@ -135,30 +138,33 @@ export async function handleCronProcessPushReminders(
             }
 
             if (subscriptions && subscriptions.length > 0) {
-              const pushPayload = JSON.stringify({
-                title: 'Service Reminder',
-                body: notificationMessage,
-                url: payload.target_url || payload.url || '/profile?tab=commitments',
-              });
-
               let deliveryFailed = false;
               for (const sub of subscriptions) {
-                const pushSubscription = {
-                  endpoint: sub.endpoint,
-                  keys: {
-                    auth: sub.auth_key,
-                    p256dh: sub.p256dh_key,
+                const sendResult = await sendWebPushNotification({
+                  subscription: {
+                    id: sub.id,
+                    endpoint: sub.endpoint,
+                    keys: {
+                      auth: sub.auth_key,
+                      p256dh: sub.p256dh_key,
+                    },
                   },
-                };
-                try {
-                  await sendPushNotification(pushSubscription, pushPayload);
-                } catch (err: unknown) {
-                  const pushError = err as { statusCode?: number };
-                  if (pushError.statusCode === 404 || pushError.statusCode === 410) {
+                  payload: {
+                    title: 'Service Reminder',
+                    body: notificationMessage,
+                    url: payload.target_url || payload.url || '/profile?tab=commitments',
+                  },
+                  recipientId: userId,
+                  targetType: 'sunday-schedule-reminder',
+                  customSender: sendPushNotification,
+                });
+
+                if (!sendResult.ok) {
+                  if (sendResult.isExpiredSubscription) {
                     subscriptionsToDelete.add(sub.id);
                   } else {
                     deliveryFailed = true;
-                    console.error(`Failed to push to sub ${sub.id}:`, err);
+                    console.error(`Failed to push to sub ${sub.id}:`, sendResult.error);
                   }
                 }
               }
@@ -171,6 +177,7 @@ export async function handleCronProcessPushReminders(
               }
             }
 
+            recordStats(payload.target_date, 'succeeded');
             await client.rpc('archive_push_reminder', { message_id: messageId });
           } catch (innerError) {
             console.error(
@@ -197,6 +204,26 @@ export async function handleCronProcessPushReminders(
           '[cron-process-push-reminders] Failed to delete stale subscriptions',
           deleteError,
         );
+      }
+    }
+
+    for (const [sundayDate, stats] of statsByDate.entries()) {
+      try {
+        await (
+          client as unknown as {
+            rpc: (name: string, params: Record<string, unknown>) => Promise<{ error: unknown }>;
+          }
+        ).rpc('update_push_reminder_delivery_stats', {
+          p_sunday_date: sundayDate,
+          p_succeeded_count: stats.succeeded,
+          p_failed_count: stats.failed,
+        });
+      } catch (statError) {
+        console.warn('[cron-process-push-reminders] Failed to update delivery stats', {
+          sundayDate,
+          stats,
+          statError,
+        });
       }
     }
 

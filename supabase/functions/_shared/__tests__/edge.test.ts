@@ -1,7 +1,7 @@
 import { assert, assertEquals } from '@std/assert';
 
 import { HTTP_STATUS } from '../constants.ts';
-import { useEdgeHook } from '../edge.ts';
+import { isLocalBroadcastEnabled, useEdgeHook } from '../edge.ts';
 import { z } from '../validation.ts';
 
 const TEST_ORIGIN = 'https://app.example.com';
@@ -288,3 +288,77 @@ Deno.test(
     });
   },
 );
+
+Deno.test('isLocalBroadcastEnabled detects environments accurately', () => {
+  const originalEnv = {
+    LOCAL_BROADCAST: Deno.env.get('LOCAL_BROADCAST'),
+    NODE_ENV: Deno.env.get('NODE_ENV'),
+    RUNTIME_ENV: Deno.env.get('RUNTIME_ENV'),
+    ENVIRONMENT: Deno.env.get('ENVIRONMENT'),
+    SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
+    DENO_REGION: Deno.env.get('DENO_REGION'),
+    DENO_DEPLOYMENT_ID: Deno.env.get('DENO_DEPLOYMENT_ID'),
+  };
+
+  const setEnv = (vars: Record<string, string | undefined>) => {
+    for (const [k, v] of Object.entries(vars)) {
+      if (v === undefined) Deno.env.delete(k);
+      else Deno.env.set(k, v);
+    }
+  };
+
+  try {
+    // 1. Explicit true flag
+    setEnv({
+      LOCAL_BROADCAST: 'true',
+      NODE_ENV: undefined,
+      SUPABASE_URL: 'http://localhost:54321',
+    });
+    assertEquals(isLocalBroadcastEnabled(), true);
+
+    // 2. Explicit false flag
+    setEnv({
+      LOCAL_BROADCAST: 'false',
+      NODE_ENV: undefined,
+      SUPABASE_URL: 'http://localhost:54321',
+    });
+    assertEquals(isLocalBroadcastEnabled(), false);
+
+    // 3. Supabase Cloud URL detection (.supabase.co)
+    setEnv({
+      LOCAL_BROADCAST: undefined,
+      NODE_ENV: undefined,
+      ENVIRONMENT: undefined,
+      RUNTIME_ENV: undefined,
+      SUPABASE_URL: 'https://xyzprod.supabase.co',
+      DENO_REGION: undefined,
+      DENO_DEPLOYMENT_ID: undefined,
+    });
+    assertEquals(isLocalBroadcastEnabled(), false);
+
+    // 4. Supabase Cloud runtime detection (DENO_REGION)
+    setEnv({
+      LOCAL_BROADCAST: undefined,
+      NODE_ENV: undefined,
+      ENVIRONMENT: undefined,
+      RUNTIME_ENV: undefined,
+      SUPABASE_URL: 'https://custom-gateway.app',
+      DENO_REGION: 'ap-southeast-1',
+    });
+    assertEquals(isLocalBroadcastEnabled(), false);
+
+    // 5. Localhost / Local CLI
+    setEnv({
+      LOCAL_BROADCAST: undefined,
+      NODE_ENV: undefined,
+      ENVIRONMENT: undefined,
+      RUNTIME_ENV: undefined,
+      SUPABASE_URL: 'http://127.0.0.1:54321',
+      DENO_REGION: undefined,
+      DENO_DEPLOYMENT_ID: undefined,
+    });
+    assertEquals(isLocalBroadcastEnabled(), true);
+  } finally {
+    setEnv(originalEnv);
+  }
+});

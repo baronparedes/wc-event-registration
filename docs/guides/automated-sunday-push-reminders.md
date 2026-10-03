@@ -240,3 +240,13 @@ supabase functions deploy cron-process-push-reminders --no-verify-jwt
 # Deploy Email Queue Cron Edge Function
 supabase functions deploy cron-process-email-queue --no-verify-jwt
 ```
+
+---
+
+## 8. Admin UI Manual Trigger & Preview
+
+Administrators can inspect upcoming volunteer rosters and trigger on-demand push/email reminders from the Admin UI at [`/admin/settings/notifications/sunday-reminders`](/admin/settings/notifications/sunday-reminders):
+
+- **Target Sunday Selection**: Defaults to the nearest upcoming Sunday with quick previous/next Sunday navigation.
+- **Live Preview RPC (`get_sunday_schedule_reminders_preview`)**: Retrieves scheduled volunteers, resolved commitment slots, push subscription presence, and delivery status logs.
+- **On-Demand Dispatch RPC (`dispatch_sunday_schedule_reminders`)**: Allows administrators to enqueue and trigger immediate processing for Push and/or Email channels, with explicit force-resend confirmation protection when targeting an already-sent Sunday.

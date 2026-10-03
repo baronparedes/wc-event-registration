@@ -89,7 +89,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Edge Functions & Multi-Channel Delivery**:
   - **`send-app-notification`**: Modularized with dedicated services (`pushService.ts`, `emailService.ts`) and target resolvers in `targets/` (`eventTarget.ts`, `roleTarget.ts`, `allTarget.ts`, `userTarget.ts`).
   - **`cron-process-email-queue`**: Consumes `email_queue` messages and dispatches via Resend API (`/emails`).
-  - **Local Broadcast Safety Harness (`_shared/localBroadcast.ts`)**: When running in local development (`LOCAL_BROADCAST=true` or non-production environment without Resend API keys), all push and email broadcasts are safely appended to `./local-broadcasts.log` instead of reaching external devices or real email addresses. Output files are gitignored.
+  - **Local Broadcast Safety Harness (`_shared/resend.ts`)**: When running in local development (`LOCAL_BROADCAST=true` or non-production environment without Resend API keys), all email dispatches through `sendResendEmail` are safely simulated and logged locally (`./local-broadcasts.log`) instead of reaching real email addresses. Output files are gitignored.
 
 ## 9. Testing
 

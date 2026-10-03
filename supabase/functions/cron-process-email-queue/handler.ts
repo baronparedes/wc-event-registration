@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
-import { isLocalBroadcastEnabled } from '../_shared/localBroadcast.ts';
+import { sendResendEmail } from '../_shared/resend.ts';
 
 type RpcResult<T> = {
   data: T | null;
@@ -36,6 +36,10 @@ type EmailQueueClient = {
     functionName: 'archive_email_notification',
     args: { message_id: number },
   ): Promise<RpcResult<boolean>>;
+  rpc(
+    functionName: 'update_email_reminder_delivery_stats',
+    args: { p_sunday_date: string; p_succeeded_count: number; p_failed_count: number },
+  ): Promise<RpcResult<void>>;
   from(table: 'email_templates'): {
     select(columns: 'resend_template_id'): {
       eq(
@@ -69,21 +73,19 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
 
   const { client, corsHeaders, requestId } = hookResult;
   const queueClient = client as unknown as EmailQueueClient;
-  const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@welcomechurch.ph';
-  const isLocalBroadcast = isLocalBroadcastEnabled();
-
-  if (!resendApiKey && !isLocalBroadcast) {
-    console.error('[cron-process-email-queue] RESEND_API_KEY is not configured');
-    return errorResponse(
-      corsHeaders,
-      HTTP_STATUS.internalServerError,
-      'Email provider not configured',
-    );
-  }
 
   try {
     let processedCount = 0;
+    const statsByDate = new Map<string, { succeeded: number; failed: number }>();
+
+    const recordEmailStats = (sundayDate: unknown, status: 'succeeded' | 'failed') => {
+      if (typeof sundayDate !== 'string' || !sundayDate) return;
+      const current = statsByDate.get(sundayDate) ?? { succeeded: 0, failed: 0 };
+      if (status === 'succeeded') current.succeeded += 1;
+      else current.failed += 1;
+      statsByDate.set(sundayDate, current);
+    };
+
     const archiveAfterRetryLimit = async (message: EmailQueueMessage, error: unknown) => {
       if (message.read_ct < MAX_EMAIL_DELIVERY_ATTEMPTS) {
         return;
@@ -94,6 +96,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         attempts: message.read_ct,
         error,
       });
+      recordEmailStats(message.message.metadata?.sunday_date, 'failed');
       const { error: archiveError } = await queueClient.rpc('archive_email_notification', {
         message_id: message.msg_id,
       });
@@ -108,6 +111,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
     const processMessage = async (msg: EmailQueueMessage) => {
       const payload = msg.message;
       const messageId = msg.msg_id;
+      const sundayDate = payload.metadata?.sunday_date;
 
       try {
         if (payload.event_type !== 'email_notification') {
@@ -118,17 +122,9 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           return;
         }
 
-        // Local simulation when no real Resend key is available
-        if (isLocalBroadcast && !resendApiKey) {
-          await queueClient.rpc('archive_email_notification', { message_id: messageId });
-          processedCount++;
-          return;
-        }
-
-        const resendBody: Record<string, unknown> = {
-          from: resendFromEmail,
-          to: payload.recipient,
-        };
+        let templateId: string | undefined;
+        const emailText = payload.text;
+        let emailSubject = payload.subject;
 
         if (payload.template_slug) {
           const { data: template, error: templateError } = await queueClient
@@ -137,7 +133,14 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             .eq('slug', payload.template_slug)
             .single();
 
-          if (templateError || !template) {
+          if (template && !templateError) {
+            templateId = template.resend_template_id;
+          } else if (payload.text) {
+            console.warn(
+              `[cron-process-email-queue] Template not found for slug ${payload.template_slug}; falling back to plain text email`,
+            );
+            emailSubject = payload.subject || 'Service Reminder';
+          } else {
             console.error(
               `[cron-process-email-queue] Template not found for slug: ${payload.template_slug}`,
               { error: templateError },
@@ -145,40 +148,34 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
             await archiveAfterRetryLimit(msg, templateError ?? 'template not found');
             return;
           }
-
-          resendBody.template_id = template.resend_template_id;
-          if (payload.metadata && typeof payload.metadata === 'object') {
-            resendBody.variables = payload.metadata;
-            resendBody.data = payload.metadata;
-          }
-        } else if (payload.text) {
-          resendBody.subject = payload.subject || 'Email notification';
-          resendBody.text = payload.text;
-        } else {
+        } else if (!emailText) {
           console.error(`[cron-process-email-queue] Invalid message ${messageId}: no email body`);
+          recordEmailStats(sundayDate, 'failed');
           await queueClient.rpc('archive_email_notification', { message_id: messageId });
           return;
         }
 
-        const resendResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${resendApiKey}`,
-          },
-          body: JSON.stringify(resendBody),
+        const sendResult = await sendResendEmail({
+          to: payload.recipient,
+          subject: emailSubject,
+          text: emailText,
+          template_id: templateId,
+          variables: payload.metadata,
+          data: payload.metadata,
+          metadata: payload.metadata,
+          targetType: 'sunday-schedule-reminder',
         });
 
-        if (!resendResponse.ok) {
-          const errorBody = await resendResponse.text();
+        if (!sendResult.ok) {
           console.error(
-            `[cron-process-email-queue] Resend API error for msg ${messageId}:`,
-            errorBody,
+            `[cron-process-email-queue] Resend delivery failed for msg ${messageId}:`,
+            sendResult.error,
           );
-          await archiveAfterRetryLimit(msg, errorBody);
+          await archiveAfterRetryLimit(msg, sendResult.error);
           return;
         }
 
+        recordEmailStats(sundayDate, 'succeeded');
         await queueClient.rpc('archive_email_notification', { message_id: messageId });
         processedCount++;
       } catch (innerError) {
@@ -210,6 +207,22 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
       for (let offset = 0; offset < messages.length; offset += EMAIL_SEND_CONCURRENCY) {
         const concurrentMessages = messages.slice(offset, offset + EMAIL_SEND_CONCURRENCY);
         await Promise.allSettled(concurrentMessages.map(processMessage));
+      }
+    }
+
+    for (const [sundayDate, stats] of statsByDate.entries()) {
+      try {
+        await queueClient.rpc('update_email_reminder_delivery_stats', {
+          p_sunday_date: sundayDate,
+          p_succeeded_count: stats.succeeded,
+          p_failed_count: stats.failed,
+        });
+      } catch (statError) {
+        console.warn('[cron-process-email-queue] Failed to update email delivery stats', {
+          sundayDate,
+          stats,
+          statError,
+        });
       }
     }
 

@@ -16,7 +16,7 @@ const SERVICE_ROLE_KEY = 'test-service-role-key';
 const TEST_ORIGIN = 'https://app.example.com';
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 
-async function withFunctionEnv(run: () => Promise<void>, configureVapid = true) {
+async function withFunctionEnv(run: () => Promise<void>) {
   const previousValues = new Map<string, string | undefined>(
     [
       'SUPABASE_URL',
@@ -32,13 +32,8 @@ async function withFunctionEnv(run: () => Promise<void>, configureVapid = true) 
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', SERVICE_ROLE_KEY);
   Deno.env.set('CRON_ROLE_KEY', 'test-cron-role-key');
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
-  if (configureVapid) {
-    Deno.env.set('VAPID_PUBLIC_KEY', 'test-public-key');
-    Deno.env.set('VAPID_PRIVATE_KEY', 'test-private-key');
-  } else {
-    Deno.env.delete('VAPID_PUBLIC_KEY');
-    Deno.env.delete('VAPID_PRIVATE_KEY');
-  }
+  Deno.env.set('VAPID_PUBLIC_KEY', 'test-public-key');
+  Deno.env.set('VAPID_PRIVATE_KEY', 'test-private-key');
 
   try {
     await run();
@@ -82,6 +77,9 @@ function mockFetch(options: { batches: QueueMessage[][]; subscriptions?: unknown
       const body = JSON.parse(String(init?.body)) as { message_id: number };
       archivedIds.push(body.message_id);
       return Promise.resolve(Response.json(true));
+    }
+    if (requestUrl.pathname === '/rest/v1/rpc/update_push_reminder_delivery_stats') {
+      return Promise.resolve(Response.json(null));
     }
     if (requestUrl.pathname === '/rest/v1/user_push_subscriptions' && init?.method === 'DELETE') {
       const ids = requestUrl.searchParams.get('id') ?? '';
@@ -145,14 +143,6 @@ Deno.test(
     });
   },
 );
-
-Deno.test('cron-process-push-reminders requires both VAPID keys', async () => {
-  await withFunctionEnv(async () => {
-    const response = await handleCronProcessPushReminders(buildRequest(), () => Promise.resolve());
-    assertEquals(response.status, 500);
-    assertEquals((await response.json()).error, 'VAPID keys not configured');
-  }, false);
-});
 
 Deno.test(
   'cron-process-push-reminders sends queued notifications without generating reminders',

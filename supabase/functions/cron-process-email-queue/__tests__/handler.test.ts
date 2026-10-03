@@ -85,6 +85,9 @@ function mockFetch(options: {
       archivedIds.push(body.message_id);
       return Promise.resolve(Response.json(true));
     }
+    if (requestUrl.pathname === '/rest/v1/rpc/update_email_reminder_delivery_stats') {
+      return Promise.resolve(Response.json(null));
+    }
     if (requestUrl.hostname === 'api.resend.com') {
       sentEmails.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
       activeResendCalls++;

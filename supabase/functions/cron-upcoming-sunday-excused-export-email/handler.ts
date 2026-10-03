@@ -1,5 +1,6 @@
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import { sendResendEmail } from '@/shared/resend.ts';
 import { z } from '@/shared/validation.ts';
 
 const CRON_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000; // Asia/Manila (UTC+8)
@@ -205,36 +206,31 @@ async function sendEmailWithAttachment(options: {
   filename: string;
   content: string;
 }): Promise<{ ok: true } | { ok: false; status: number; body: string }> {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${options.resendApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: options.fromEmail,
-      to: [options.toEmail],
-      subject: options.subject,
-      html: options.html,
-      attachments: [
-        {
-          filename: options.filename,
-          content: encodeBase64Utf8(options.content),
-          type: 'application/json',
-        },
-      ],
-    }),
+  const result = await sendResendEmail({
+    apiKey: options.resendApiKey,
+    from: options.fromEmail,
+    to: [options.toEmail],
+    subject: options.subject,
+    html: options.html,
+    targetType: 'excused-export-email',
+    attachments: [
+      {
+        filename: options.filename,
+        content: encodeBase64Utf8(options.content),
+        type: 'application/json',
+      },
+    ],
   });
 
-  if (!response.ok) {
+  if (!result.ok) {
     console.error('[cron-upcoming-sunday-excused-export-email] Resend API request failed', {
-      status: response.status,
-      body: await response.text(),
+      status: result.status,
+      body: result.error,
     });
     return {
       ok: false,
-      status: response.status,
-      body: await response.text(),
+      status: result.status,
+      body: result.error,
     };
   }
 
