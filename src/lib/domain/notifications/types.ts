@@ -60,6 +60,7 @@ export type SundayVolunteerRecipient = {
   member_id: string | null;
   full_name: string;
   email: string | null;
+  avatar_object_key?: string | null;
   formatted_slots: string;
   has_push: boolean;
   has_email: boolean;

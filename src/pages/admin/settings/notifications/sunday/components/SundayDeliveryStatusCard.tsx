@@ -12,7 +12,7 @@ import {
 
 import { Badge } from '@/components/ui';
 import type { SundayChannelDeliveryStats, SundayDeliveryStatus } from '@/lib/domain/notifications';
-import { formatDateTime } from '@/lib/infrastructure/dateFormat';
+import { formatDateOnly, formatDateTime } from '@/lib/infrastructure/dateFormat';
 
 interface SundayDeliveryStatusCardProps {
   alreadySentPush: boolean;
@@ -24,6 +24,7 @@ interface SundayDeliveryStatusCardProps {
   totalVolunteers: number;
   pushEligibleCount: number;
   emailEligibleCount: number;
+  sundayDate?: string;
 }
 
 function renderStatusBadge(status?: SundayDeliveryStatus, alreadySent?: boolean) {
@@ -106,6 +107,7 @@ export function SundayDeliveryStatusCard({
   totalVolunteers,
   pushEligibleCount,
   emailEligibleCount,
+  sundayDate,
 }: SundayDeliveryStatusCardProps) {
   const isPushSent = alreadySentPush || !!pushDelivery;
   const isEmailSent = alreadySentEmail || !!emailDelivery;
@@ -209,12 +211,14 @@ export function SundayDeliveryStatusCard({
         </div>
         <div>
           <p className="text-2xl font-bold text-text">{totalVolunteers}</p>
-          <p className="text-xs text-muted">Total volunteers scheduled for this Sunday</p>
+          <p className="text-xs text-muted">
+            Total volunteers scheduled on {formatDateOnly(sundayDate || null)}
+          </p>
         </div>
         {totalVolunteers === 0 && (
           <div className="flex items-center gap-1.5 text-xs text-amber-500">
             <AlertCircle className="h-3.5 w-3.5" />
-            <span>No commitments configured for this Sunday</span>
+            <span>No commitments configured on {formatDateOnly(sundayDate || null)}</span>
           </div>
         )}
       </div>

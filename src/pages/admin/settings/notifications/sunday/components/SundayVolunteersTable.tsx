@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, Search, XCircle } from 'lucide-react';
 
 import {
+  Avatar,
   Badge,
   EmptyState,
   ListTable,
@@ -15,15 +16,18 @@ import {
   SearchInputField,
 } from '@/components/ui';
 import type { SundayVolunteerRecipient } from '@/lib/domain/notifications';
+import { formatDateOnly } from '@/lib/infrastructure/dateFormat';
 
 interface SundayVolunteersTableProps {
   volunteers: SundayVolunteerRecipient[];
   isLoading?: boolean;
+  sundayDate?: string;
 }
 
 export function SundayVolunteersTable({
   volunteers,
   isLoading = false,
+  sundayDate,
 }: SundayVolunteersTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -65,7 +69,7 @@ export function SundayVolunteersTable({
           <EmptyState
             icon={<Search className="h-8 w-8 text-muted" />}
             title="No scheduled volunteers found"
-            description="No volunteers have commitments configured for this specific Sunday."
+            description={`No volunteers have commitments configured on ${formatDateOnly(sundayDate || null)}.`}
           />
         </div>
       ) : filteredVolunteers.length === 0 ? (
@@ -92,11 +96,18 @@ export function SundayVolunteersTable({
               {filteredVolunteers.map((volunteer) => (
                 <ListTableRow key={volunteer.user_id}>
                   <ListTableCell>
-                    <div>
-                      <p className="font-medium text-text">{volunteer.full_name}</p>
-                      {volunteer.member_id && (
-                        <p className="text-xs text-muted font-mono">{volunteer.member_id}</p>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={volunteer.full_name}
+                        avatarObjectKey={volunteer.avatar_object_key}
+                        size="sm"
+                      />
+                      <div>
+                        <p className="font-medium text-text">{volunteer.full_name}</p>
+                        {volunteer.member_id && (
+                          <p className="text-xs text-muted font-mono">{volunteer.member_id}</p>
+                        )}
+                      </div>
                     </div>
                   </ListTableCell>
                   <ListTableCell>
