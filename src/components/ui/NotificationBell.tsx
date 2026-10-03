@@ -65,6 +65,7 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
         } ${isRinging ? 'notification-bell is-ringing' : 'notification-bell'} p-2.5 transition focus-visible:ring-2 focus-visible:ring-primary select-none`}
         onClick={handleBellClick}
         aria-label={`Notifications (${unreadCount} unread)`}
+        title={`Notifications (${unreadCount} unread)`}
         aria-expanded={isOpen}
       >
         <Bell className={`notification-bell-icon h-6 w-6 ${compact ? '' : 'text-black'}`} />

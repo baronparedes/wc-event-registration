@@ -90,6 +90,7 @@ export function AppDrawerNavigation({
         <button
           type="button"
           aria-label="Close navigation drawer overlay"
+          title="Close navigation drawer overlay"
           className="fixed inset-0 z-40 bg-text/25 backdrop-blur-[1px]"
           onClick={onClose}
         />
@@ -107,6 +108,7 @@ export function AppDrawerNavigation({
             <button
               type="button"
               aria-label="Close navigation drawer"
+              title="Close navigation drawer"
               className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={onClose}
             >

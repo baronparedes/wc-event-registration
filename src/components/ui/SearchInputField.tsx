@@ -72,6 +72,7 @@ export function SearchInputField({
         <button
           type="button"
           aria-label="Clear search"
+          title="Clear search"
           onClick={onClear}
           className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30 z-10"
         >

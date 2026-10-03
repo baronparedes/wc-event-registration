@@ -218,6 +218,7 @@ function DialogCloseButton({
     <button
       type="button"
       aria-label={ariaLabel}
+      title={ariaLabel}
       className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30 ${className}`}
       onClick={handleClick}
     >

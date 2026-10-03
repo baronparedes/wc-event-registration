@@ -31,6 +31,7 @@ export function AppShellHeader({
           <button
             type="button"
             aria-label="Open app navigation drawer"
+            title="Open app navigation drawer"
             className="inline-flex items-center gap-1 rounded-full border-0 bg-transparent px-1.5 py-1.5 text-[11px] font-semibold text-text shadow-none transition hover:bg-primary/10"
             onClick={onOpenDrawer}
           >
@@ -64,6 +65,7 @@ export function AppShellHeader({
           <Button
             type="button"
             aria-label="Open app navigation drawer"
+            title="Open app navigation drawer"
             className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2.5 text-base font-semibold text-text shadow-xs transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
             onClick={onOpenDrawer}
           >
