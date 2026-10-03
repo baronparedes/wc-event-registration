@@ -55,6 +55,10 @@ This file contains the core principles, architecture rules, and domain logic con
   - Displays as `Contact Number: {phone}` in the modal header and is available as a selectable/searchable dynamic member field (`member:phone`).
 - **Field Visibility Rules**: Field visibility dependency rules are stored inside `validation_rules.visibility_rule` (`depends_on_field_key`, `equals_value`) for both Event Fields and Attendance Fields.
 - **Attendance Export**: Attendance CSV export filenames must follow the `event-{eventId}-{type}-{timestamp}.csv` naming convention.
+- **Hub Calendar & Sunday Schedules (`/admin/hub-calendar`)**:
+  - Displays avatar border rings mapped to Member Attendance Rating scores (`ring-emerald-500` for $\ge 8$, `ring-indigo-500` for $\ge 4$, `ring-amber-500` for $\ge 0$, `ring-rose-500` for $< 0$).
+  - Calculates expected turnup statistical forecasts and segments volunteers into `Solid`, `Moderate`, `At Risk`, or `Excused` tiers with interactive filtering.
+  - Sunday schedule CSV export (`service-schedules-YYYY-MM-DD.csv`) includes `Confidence Level` and `Turnup Rate` but strictly excludes internal numerical attendance scores. See [`docs/guides/hub-calendar-forecast-and-attendance-rating.md`](docs/guides/hub-calendar-forecast-and-attendance-rating.md).
 
 ## 6. Domain Logic: Forms Entity
 
