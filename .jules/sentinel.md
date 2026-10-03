@@ -9,3 +9,9 @@
 **Vulnerability:** Leaking internal `error.message` (e.g. from database query errors) directly to the client in HTTP responses via the `errorResponse` function.
 **Learning:** Returning raw database error messages or internal error details to the client exposes the database schema, query structures, or internal state, which malicious actors can use to further exploit the system.
 **Prevention:** Always log the detailed error using `console.error` on the server and return a generic, user-safe error message (e.g., `'Internal server error'`) to the client.
+
+## 2026-10-03 - Added Security Headers to Supabase Edge Functions
+
+**Vulnerability:** Missing standard security headers (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, X-XSS-Protection) in Edge Function responses.
+**Learning:** By default, Supabase edge functions do not enforce these headers. A central place to manage these is required to prevent widespread vulnerability.
+**Prevention:** Added standard security headers to `buildCorsHeaders` utility function inside `_shared/security.ts`, guaranteeing they are present across all standard API responses.

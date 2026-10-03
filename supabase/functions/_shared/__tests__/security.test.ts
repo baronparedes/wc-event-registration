@@ -182,6 +182,10 @@ Deno.test(
       'Access-Control-Expose-Headers': 'Content-Disposition',
       'Access-Control-Allow-Origin': 'https://app.example.com',
       Vary: 'Origin',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     });
 
     const response = createObscuredDenyResponse(CORS_HEADERS);
