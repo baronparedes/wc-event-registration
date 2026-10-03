@@ -5,7 +5,6 @@ import {
   type MilestoneEntry,
   isMemberExcused,
 } from '@/lib/domain/hub-calendar';
-import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import { MilestoneAvatar, MilestoneBadge, ServiceScheduleAvatar } from './';
 
@@ -14,7 +13,6 @@ type DesktopScheduleCalendarProps = {
   scheduleMap: Map<string, MemberScheduleEntry[]>;
   milestoneMap: Map<string, MilestoneEntry[]>;
   excusedMap?: ExcusedMemberMap;
-  attendanceScoreMap?: Map<string, MemberAttendanceStats>;
   selectedDayNumber: number;
   onSelectDay: (dayNumber: number) => void;
 };
@@ -24,7 +22,6 @@ export function DesktopScheduleCalendar({
   scheduleMap,
   milestoneMap,
   excusedMap,
-  attendanceScoreMap,
   selectedDayNumber,
   onSelectDay,
 }: DesktopScheduleCalendarProps) {
@@ -141,9 +138,6 @@ export function DesktopScheduleCalendar({
                             name={entry.member.full_name}
                             avatarObjectKey={entry.member.avatar_object_key}
                             excused={isMemberExcused(excusedMap, cell.isoDate, entry.member)}
-                            attendanceScore={
-                              attendanceScoreMap?.get(entry.member.id)?.attendanceScore
-                            }
                           />
                         ))}
                         {excessCount > 0 && (

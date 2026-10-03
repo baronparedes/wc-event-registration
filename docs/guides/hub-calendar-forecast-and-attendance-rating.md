@@ -114,15 +114,17 @@ Every volunteer scheduled in the slot is classified into one of four mutually ex
 
 In the Hub Calendar's `SelectedDateDetails` view and `SlotConfidenceForecastBanner`:
 
-1. **Slot Forecast Banner**:
+1. **Clean Calendar Grid Cells**:
+   - Monthly and weekly calendar date cells render clean, uncluttered volunteer avatars without rating rings to keep the month overview readable.
+2. **Slot Forecast Banner**:
    - Renders a prominent card for the selected time slot showing:
      - Projected turnup: `~X of Y expected (Z%)`
      - Interactive filter pills: `All (Y)`, `Solid (S)`, `Moderate (M)`, `At Risk (R)`, `Excused (E)`
-2. **Interactive Tier Filtering**:
+3. **Interactive Tier Filtering**:
    - Clicking any confidence tier pill filters the volunteer schedule list to inspect specific volunteer cohorts.
    - Re-clicking the active pill or clicking `All` resets the filter.
-3. **Volunteer Rows**:
-   - Each volunteer row displays their avatar with the attendance rating ring, role, category, and an inline confidence badge (`Solid`, `Moderate`, `At Risk`, or `Excused`).
+4. **Selected Date Volunteer Cards**:
+   - In the selected date details drawer/panel, each volunteer card displays their avatar with the attendance rating ring, role, category, and an inline confidence badge (`Solid`, `Moderate`, `At Risk`, or `Excused`).
 
 ---
 

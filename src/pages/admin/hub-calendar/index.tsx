@@ -143,7 +143,6 @@ export function AdminHubCalendarPage() {
                 currentWeekNumber={currentWeekNumber}
                 weekOptions={weekOptions}
                 excusedMap={excusedMap}
-                attendanceScoreMap={attendanceScoreMap}
                 onSelectWeek={(week) => handleSelectWeek(week, monthWeeks)}
                 onSelectDay={handleSelectDay}
               />
@@ -153,7 +152,6 @@ export function AdminHubCalendarPage() {
                 scheduleMap={scheduleMap}
                 excusedMap={excusedMap}
                 milestoneMap={milestoneMap}
-                attendanceScoreMap={attendanceScoreMap}
                 selectedDayNumber={selectedDayNumber}
                 onSelectDay={handleSelectDay}
               />

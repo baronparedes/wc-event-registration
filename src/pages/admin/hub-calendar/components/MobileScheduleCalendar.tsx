@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui';
 import { type ExcusedMemberMap, type WeekCell, isMemberExcused } from '@/lib/domain/hub-calendar';
-import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import { MilestoneAvatar, MilestoneBadge, ServiceScheduleAvatar } from './';
 
@@ -12,7 +11,6 @@ type MobileScheduleCalendarProps = {
   currentWeekNumber: number;
   weekOptions: Array<{ weekNumber: number; isAvailable: boolean }>;
   excusedMap?: ExcusedMemberMap;
-  attendanceScoreMap?: Map<string, MemberAttendanceStats>;
   onSelectWeek: (weekNumber: number) => void;
   onSelectDay: (dayNumber: number, date?: Date) => void;
 };
@@ -25,7 +23,6 @@ export function MobileScheduleCalendar({
   currentWeekNumber,
   weekOptions,
   excusedMap,
-  attendanceScoreMap,
   onSelectWeek,
   onSelectDay,
 }: MobileScheduleCalendarProps) {
@@ -162,7 +159,6 @@ export function MobileScheduleCalendar({
                         name={entry.member.full_name}
                         avatarObjectKey={entry.member.avatar_object_key}
                         excused={isMemberExcused(excusedMap, cell.isoDate, entry.member)}
-                        attendanceScore={attendanceScoreMap?.get(entry.member.id)?.attendanceScore}
                       />
                     ))}
                     {excessCount > 0 && (
