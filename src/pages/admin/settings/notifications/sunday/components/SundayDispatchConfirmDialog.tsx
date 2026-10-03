@@ -73,24 +73,25 @@ export function SundayDispatchConfirmDialog({
       <Dialog.Body className="space-y-4 pt-1">
         {/* Warning if already sent */}
         {isAlreadyDispatched && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
-            <div className="flex gap-3">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="space-y-2 text-xs">
-                <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  Duplicate Dispatch Warning
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+              <div className="space-y-1.5 text-xs">
+                <p className="font-semibold text-text">Duplicate Dispatch Warning</p>
+                <p className="leading-relaxed text-muted">
+                  Reminders for this Sunday (
+                  <span className="font-medium text-text">{formatDateOnly(sundayDate)}</span>) have
+                  already been dispatched previously. Sending again will re-deliver notifications to
+                  scheduled volunteers.
                 </p>
-                <p className="text-amber-800 dark:text-amber-300 leading-relaxed">
-                  Reminders for this Sunday ({formatDateOnly(sundayDate)}) have already been
-                  dispatched previously. Sending again will re-deliver notifications to scheduled
-                  volunteers.
-                </p>
-                <label className="flex items-center gap-2 font-medium text-amber-950 dark:text-amber-100 cursor-pointer pt-1">
+                <label className="flex cursor-pointer items-center gap-2 pt-1 font-medium text-text">
                   <input
                     type="checkbox"
                     checked={forceConfirmed}
                     onChange={(e) => setForceConfirmed(e.target.checked)}
-                    className="h-4 w-4 rounded border-amber-400 text-primary focus:ring-primary"
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                   />
                   <span>Yes, I want to force re-dispatch this batch</span>
                 </label>
