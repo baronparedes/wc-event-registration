@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
 import type { Database } from '@/shared/database.types.ts';
-import { isLocalBroadcastEnabled } from '@/shared/localBroadcast.ts';
 
 import type { SendAppNotificationPayload } from '../types.ts';
 
@@ -66,8 +65,8 @@ export async function sendPushNotifications({
   const userIds = recipients?.map((r) => r.user_id) ?? [];
   const pushCount = userIds.length;
 
-  // Send Web Push to subscribed devices (skipped when local broadcast is active)
-  if (!isLocalBroadcastEnabled() && vapidPublicKey && vapidPrivateKey && userIds.length > 0) {
+  // Send Web Push to subscribed devices when VAPID keys are configured
+  if (vapidPublicKey && vapidPrivateKey && userIds.length > 0) {
     const { data: subscriptions } = await supabase
       .from('user_push_subscriptions')
       .select('user_id, endpoint, auth_key, p256dh_key')
@@ -115,11 +114,11 @@ export async function sendPushNotifications({
       await Promise.allSettled(pushPromises);
     }
   } else if (!vapidPublicKey || !vapidPrivateKey) {
-    console.warn('VAPID keys not configured, skipping web push.');
+    console.warn('VAPID keys not configured, skipping web push delivery.');
   }
 
-  // Log aggregated summary
-  if (isLocalBroadcastEnabled() && userIds.length > 0) {
+  // Log summary
+  if (userIds.length > 0) {
     console.log('[send-app-notification] [push] Broadcast push summary:', {
       notificationId,
       targetType: payload.targetType,

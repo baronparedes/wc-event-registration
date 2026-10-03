@@ -1,5 +1,3 @@
-import { isLocalBroadcastEnabled, logLocalBroadcast } from './localBroadcast.ts';
-
 export interface SendResendEmailOptions {
   to: string | string[];
   from?: string;
@@ -23,16 +21,102 @@ export type SendResendEmailResult =
   | { ok: true; id?: string; status: number }
   | { ok: false; error: string; status: number };
 
+interface LocalBroadcastEmailEntry {
+  recipient: string;
+  subject?: string;
+  body: string;
+  targetType?: string;
+  metadata?: Record<string, unknown>;
+}
+
+function isLocalBroadcastEnabled(): boolean {
+  const envFlag = Deno.env.get('LOCAL_BROADCAST')?.trim().toLowerCase();
+  if (envFlag === 'false' || envFlag === '0') return false;
+
+  const nodeEnv = Deno.env.get('NODE_ENV')?.trim().toLowerCase();
+  if (nodeEnv === 'test') {
+    return false;
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  // Skip during unit test mocks
+  if (supabaseUrl.includes('example.supabase.co')) {
+    return false;
+  }
+
+  if (envFlag === 'true' || envFlag === '1') return true;
+
+  const runtimeEnv = Deno.env.get('RUNTIME_ENV')?.trim().toLowerCase();
+  if (runtimeEnv === 'local' || runtimeEnv === 'development') {
+    return true;
+  }
+  if (runtimeEnv === 'production' || runtimeEnv === 'prod') {
+    return false;
+  }
+
+  if (
+    supabaseUrl.includes('localhost') ||
+    supabaseUrl.includes('127.0.0.1') ||
+    supabaseUrl.includes('kong')
+  ) {
+    return true;
+  }
+
+  const isProd =
+    Deno.env.get('ENVIRONMENT') === 'production' || Deno.env.get('NODE_ENV') === 'production';
+  return !isProd;
+}
+
+async function logLocalBroadcastEmail(entry: LocalBroadcastEmailEntry): Promise<void> {
+  const timestamp = new Date().toISOString();
+  const divider = '='.repeat(80);
+  const formatted = [
+    divider,
+    `[LOCAL BROADCAST - EMAIL]`,
+    `Timestamp: ${timestamp}`,
+    `Target Type: ${entry.targetType ?? 'email-notification'}`,
+    `Recipient: ${entry.recipient}`,
+    entry.subject ? `Subject: ${entry.subject}` : null,
+    `Content:`,
+    entry.body,
+    divider,
+    '',
+  ]
+    .filter((line): line is string => line !== null)
+    .join('\n');
+
+  // 1. Output to stdout/console (visible in Docker / CLI logs)
+  console.log(formatted);
+
+  // 2. Best-effort write to local-broadcasts.log
+  const targetPaths: string[] = [];
+  try {
+    targetPaths.push(new URL('../local-broadcasts.log', import.meta.url).pathname);
+  } catch {
+    // Ignore URL parsing errors
+  }
+  targetPaths.push('./local-broadcasts.log', './supabase/functions/local-broadcasts.log');
+
+  for (const logPath of targetPaths) {
+    try {
+      await Deno.writeTextFile(logPath, formatted, { append: true, create: true });
+      break;
+    } catch {
+      // Best-effort in sandboxed environments like Docker Edge Runtime
+    }
+  }
+}
+
 /**
  * Unified helper for sending emails via Resend.
- * Encapsulates the local broadcast test/dev harness so callers do not need
- * environment-specific branching across the codebase.
+ * Encapsulates the local broadcast test/dev harness privately so callers
+ * interact with a single, clean API interface.
  */
 export async function sendResendEmail(
   options: SendResendEmailOptions,
 ): Promise<SendResendEmailResult> {
   const apiKey = options.apiKey || Deno.env.get('RESEND_API_KEY');
-  const fromEmail = options.from || Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@welcomechurch.ph';
+  const fromEmail = options.from || Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@welcomehub.app';
   const isLocal = isLocalBroadcastEnabled();
 
   const recipients = Array.isArray(options.to) ? options.to : [options.to];
@@ -49,9 +133,8 @@ export async function sendResendEmail(
       };
     }
 
-    await logLocalBroadcast({
-      type: 'email',
-      targetType: options.targetType || 'email-notification',
+    await logLocalBroadcastEmail({
+      targetType: options.targetType,
       recipient: primaryRecipient,
       subject: options.subject,
       body:

@@ -1,7 +1,6 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
-import { isLocalBroadcastEnabled, logLocalBroadcast } from '../_shared/localBroadcast.ts';
 
 type PushSubscription = {
   endpoint: string;
@@ -57,17 +56,10 @@ export async function handleCronProcessPushReminders(
   const { client, corsHeaders, requestId } = hookResult;
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
-  const isLocalBroadcast = isLocalBroadcastEnabled();
 
   if (!vapidPublicKey || !vapidPrivateKey) {
-    if (!isLocalBroadcast) {
-      console.error('[cron-process-push-reminders] VAPID keys not configured');
-      return errorResponse(
-        corsHeaders,
-        HTTP_STATUS.internalServerError,
-        'VAPID keys not configured',
-      );
-    }
+    console.error('[cron-process-push-reminders] VAPID keys not configured');
+    return errorResponse(corsHeaders, HTTP_STATUS.internalServerError, 'VAPID keys not configured');
   }
 
   try {
@@ -154,17 +146,15 @@ export async function handleCronProcessPushReminders(
               return;
             }
 
-            if (isLocalBroadcast) {
-              await logLocalBroadcast({
-                type: 'push',
-                targetType: 'sunday-schedule-reminder',
+            if (!vapidPublicKey || !vapidPrivateKey) {
+              console.log('[cron-process-push-reminders] [LOCAL/SIMULATION] Push notification:', {
                 recipient: userId,
                 title: 'Service Reminder',
-                body: notificationMessage,
-                url: payload.target_url || payload.url || '/profile?tab=commitments',
+                message: notificationMessage,
               });
               recordStats(payload.target_date, 'succeeded');
               await client.rpc('archive_push_reminder', { message_id: messageId });
+              totalProcessed++;
               return;
             }
 
