@@ -291,4 +291,52 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText(/Solid/i)).toBeInTheDocument();
     expect(screen.getByText(/At Risk/i)).toBeInTheDocument();
   });
+
+  it('filters member list by confidence tier when clicking confidence filter button', () => {
+    const statsMap = new Map([
+      ['m1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }], // Solid
+      ['m2', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At Risk
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          attendanceScoreMap={statsMap}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Both members initially visible
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
+    expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
+
+    // Click Solid filter button
+    const solidBtn = screen.getByRole('button', { name: /Solid/i });
+    fireEvent.click(solidBtn);
+
+    // Only Solid member (m1) visible
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
+    expect(screen.queryByText(mockMember2.full_name)).not.toBeInTheDocument();
+
+    // Clear filter
+    const clearBtn = screen.getByLabelText('Clear confidence filter');
+    fireEvent.click(clearBtn);
+
+    // Both members visible again
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
+    expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
+  });
 });

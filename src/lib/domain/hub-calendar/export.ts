@@ -1,5 +1,9 @@
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
-import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
+import {
+  type AdminMember,
+  MEMBER_EXTRA_METADATA_KEYS,
+  type MemberAttendanceStats,
+} from '@/lib/domain/members';
 
 import { getMemberExcusedDetails, toIsoDateKey } from './calendar';
 import type { ExcusedMemberMap, MilestoneEntry } from './types';
@@ -48,6 +52,7 @@ export function buildMonthMilestoneCsvExport(params: {
   milestoneEntries: MilestoneEntry[];
   year: number;
   monthIndex: number;
+  dayNumber?: number;
 }): { csvText: string; filename: string } {
   const { milestoneEntries, year, monthIndex } = params;
 
@@ -107,8 +112,9 @@ export function buildSundaySchedulesCsvExport(params: {
   monthIndex: number;
   dayNumber: number;
   excusedMap?: ExcusedMemberMap;
+  attendanceScoreMap?: Map<string, MemberAttendanceStats>;
 }): { csvText: string; filename: string } {
-  const { selectedEntries, year, monthIndex, dayNumber, excusedMap } = params;
+  const { selectedEntries, year, monthIndex, dayNumber, excusedMap, attendanceScoreMap } = params;
 
   const assignments: ScheduleAssignment[] = [];
   for (const entry of selectedEntries) {
@@ -137,6 +143,9 @@ export function buildSundaySchedulesCsvExport(params: {
       'Nickname',
       'Role',
       'Category',
+      'Confidence Level',
+      'Turnup Rate',
+      'Attendance Score',
       'Email',
       'Phone',
       'Excused',
@@ -147,6 +156,30 @@ export function buildSundaySchedulesCsvExport(params: {
       const isExcused = details.isExcused;
       const excusedReason = isExcused ? (details.reason ?? '') : '';
 
+      let confidenceLevel: string;
+      let turnupRateStr: string;
+      let attendanceScoreStr = '-';
+
+      const stat = item.member.id ? attendanceScoreMap?.get(item.member.id) : undefined;
+      if (stat) {
+        attendanceScoreStr = String(stat.attendanceScore);
+      }
+
+      if (isExcused) {
+        confidenceLevel = 'Excused';
+        turnupRateStr = '0%';
+      } else {
+        const turnupRate = stat !== undefined ? stat.turnupRate : 0.8;
+        turnupRateStr = `${Math.round(turnupRate * 100)}%`;
+        if (turnupRate >= 0.8) {
+          confidenceLevel = 'Solid';
+        } else if (turnupRate >= 0.5) {
+          confidenceLevel = 'Moderate';
+        } else {
+          confidenceLevel = 'At Risk';
+        }
+      }
+
       return [
         TIME_SLOT_CONFIG[item.slot]?.label ?? item.slot,
         item.member.member_id,
@@ -154,6 +187,9 @@ export function buildSundaySchedulesCsvExport(params: {
         item.member.nickname ?? '',
         item.member.role,
         item.member.category,
+        confidenceLevel,
+        turnupRateStr,
+        attendanceScoreStr,
         item.member.email ?? '',
         item.member.phone ?? '',
         isExcused ? 'Yes' : 'No',

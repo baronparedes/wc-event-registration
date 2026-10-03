@@ -73,3 +73,41 @@ export function calculateSlotConfidenceForecast(
     excusedCount,
   };
 }
+
+export type ConfidenceTier = 'solid' | 'moderate' | 'at_risk' | 'excused';
+
+export function getMemberConfidenceTier(
+  member: { id?: string | null; member_id?: string | null },
+  isoDateKey: string,
+  slot: TimeSlot,
+  excusedMap?: ExcusedMemberMap,
+  statsMap?: Map<string, MemberAttendanceStats>,
+): ConfidenceTier {
+  if (isMemberExcused(excusedMap, isoDateKey, member, slot)) {
+    return 'excused';
+  }
+
+  const stat = member.id ? statsMap?.get(member.id) : undefined;
+  const turnupRate = stat !== undefined ? stat.turnupRate : 0.8;
+
+  if (turnupRate >= 0.8) {
+    return 'solid';
+  }
+  if (turnupRate >= 0.5) {
+    return 'moderate';
+  }
+  return 'at_risk';
+}
+
+export function getConfidenceTierLabel(tier: ConfidenceTier): string {
+  switch (tier) {
+    case 'solid':
+      return 'Solid';
+    case 'moderate':
+      return 'Moderate';
+    case 'at_risk':
+      return 'At Risk';
+    case 'excused':
+      return 'Excused';
+  }
+}

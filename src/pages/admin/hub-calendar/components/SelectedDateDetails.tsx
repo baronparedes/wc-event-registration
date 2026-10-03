@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CalendarDays } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -19,7 +19,12 @@ import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
 import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
-import { calculateSlotConfidenceForecast } from './hubCalendarForecastUtils';
+import {
+  type ConfidenceTier,
+  calculateSlotConfidenceForecast,
+  getConfidenceTierLabel,
+  getMemberConfidenceTier,
+} from './hubCalendarForecastUtils';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -75,6 +80,7 @@ export function SelectedDateDetails({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceTier | null>(null);
 
   useEffect(() => {
     // Only scroll if there is an explicit ?date parameter in the URL on mount
@@ -84,6 +90,11 @@ export function SelectedDateDetails({
     // Intentionally empty dependency array to run only once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleTabChange = (slot: TimeSlot) => {
+    setSelectedConfidence(null);
+    onTabChange(slot);
+  };
 
   function renderMemberList(slot: TimeSlot) {
     const entries = entriesByTimeSlot[slot];
@@ -105,12 +116,28 @@ export function SelectedDateDetails({
       .filter((role) => role !== EXCUSED_ROLE_FILTER)
       .sort();
 
+    const filteredByConfidence =
+      selectedConfidence === null
+        ? entries
+        : entries.filter(
+            (e) =>
+              getMemberConfidenceTier(
+                e.member,
+                isoDateKey,
+                slot,
+                excusedMap,
+                attendanceScoreMap,
+              ) === selectedConfidence,
+          );
+
     const filteredByRole =
       selectedRole === null
-        ? entries
+        ? filteredByConfidence
         : selectedRole === EXCUSED_ROLE_FILTER
-          ? entries.filter((e) => isMemberExcused(excusedMap, isoDateKey, e.member, slot))
-          : entries.filter((e) => e.member.role === selectedRole);
+          ? filteredByConfidence.filter((e) =>
+              isMemberExcused(excusedMap, isoDateKey, e.member, slot),
+            )
+          : filteredByConfidence.filter((e) => e.member.role === selectedRole);
 
     const query = searchQuery.trim().toLowerCase();
     const filteredEntries = query
@@ -132,13 +159,37 @@ export function SelectedDateDetails({
 
     return (
       <div className="flex flex-col gap-4">
-        <SlotConfidenceForecastBanner forecast={forecast} />
+        <SlotConfidenceForecastBanner
+          forecast={forecast}
+          selectedTier={selectedConfidence}
+          onSelectTier={setSelectedConfidence}
+        />
 
         <SearchInputField
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
           placeholder="Search by name or nickname..."
         />
+
+        {selectedConfidence && (
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <span>Filtered by reliability:</span>
+            <Badge
+              variant="outline"
+              className="gap-1 border-primary/40 bg-primary/10 text-primary font-semibold"
+            >
+              <span>{getConfidenceTierLabel(selectedConfidence)}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedConfidence(null)}
+                className="ml-1 text-primary hover:text-text cursor-pointer"
+                aria-label="Clear confidence filter"
+              >
+                ×
+              </button>
+            </Badge>
+          </div>
+        )}
 
         {(uniqueRoles.length > 1 || hasExcusedMembers) && (
           <div className="flex flex-wrap gap-2">
@@ -186,9 +237,11 @@ export function SelectedDateDetails({
           <p className="py-6 text-center text-sm text-muted">
             {searchQuery
               ? 'No members match your search criteria.'
-              : selectedRole === EXCUSED_ROLE_FILTER
-                ? 'No excused members for this service.'
-                : 'No members for this role.'}
+              : selectedConfidence
+                ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers for this service.`
+                : selectedRole === EXCUSED_ROLE_FILTER
+                  ? 'No excused members for this service.'
+                  : 'No members for this role.'}
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -314,6 +367,7 @@ export function SelectedDateDetails({
                     monthIndex={viewMonthIndex}
                     dayNumber={selectedDayNumber}
                     excusedMap={excusedMap}
+                    attendanceScoreMap={attendanceScoreMap}
                   />
                 </div>
               )}
@@ -337,7 +391,7 @@ export function SelectedDateDetails({
                         <button
                           key={slot}
                           type="button"
-                          onClick={() => onTabChange(slot)}
+                          onClick={() => handleTabChange(slot)}
                           className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
                             isActive
                               ? 'text-primary border-b-2 border-primary -mb-px font-semibold'

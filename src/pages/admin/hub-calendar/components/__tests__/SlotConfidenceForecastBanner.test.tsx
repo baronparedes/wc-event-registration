@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { SlotConfidenceForecastBanner } from '../SlotConfidenceForecastBanner';
@@ -43,5 +43,42 @@ describe('SlotConfidenceForecastBanner', () => {
     expect(screen.getByText('At Risk')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('Excused')).toBeInTheDocument();
+  });
+
+  it('calls onSelectTier when clicking on tier buttons', () => {
+    const forecast: SlotConfidenceForecast = {
+      totalCommitted: 82,
+      expectedTurnup: 48,
+      confidencePercentage: 59,
+      highCount: 30,
+      moderateCount: 27,
+      atRiskCount: 22,
+      excusedCount: 3,
+    };
+    const handleSelectTier = vi.fn();
+
+    const { rerender } = render(
+      <SlotConfidenceForecastBanner
+        forecast={forecast}
+        selectedTier={null}
+        onSelectTier={handleSelectTier}
+      />,
+    );
+
+    const solidBtn = screen.getByRole('button', { name: /Solid/i });
+    fireEvent.click(solidBtn);
+    expect(handleSelectTier).toHaveBeenCalledWith('solid');
+
+    rerender(
+      <SlotConfidenceForecastBanner
+        forecast={forecast}
+        selectedTier="solid"
+        onSelectTier={handleSelectTier}
+      />,
+    );
+
+    // Clicking solid again should toggle off (pass null)
+    fireEvent.click(solidBtn);
+    expect(handleSelectTier).toHaveBeenCalledWith(null);
   });
 });

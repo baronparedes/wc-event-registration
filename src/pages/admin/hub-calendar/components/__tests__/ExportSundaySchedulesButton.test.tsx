@@ -110,7 +110,7 @@ describe('ExportSundaySchedulesButton', () => {
     const lines = csvText.split('\n');
 
     expect(lines[0]).toBe(
-      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rate,Attendance Score,Email,Phone,Excused,Excused Reason',
     );
     // 9AM slot: Test Alpha first, then Test Zulu
     expect(lines[1]).toContain('9:00 AM,MEM-002,Test Alpha,Test Nick,Usher,adult');
@@ -238,7 +238,7 @@ describe('ExportSundaySchedulesButton', () => {
     const lines = csvText.split('\n');
 
     expect(lines[0]).toBe(
-      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Email,Phone,Excused,Excused Reason',
+      'Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rate,Attendance Score,Email,Phone,Excused,Excused Reason',
     );
     expect(lines[1]).toContain('9:00 AM,MEM-001,Test Excused Volunteer');
     expect(lines[1]).toContain(',Yes,Vacation leave');

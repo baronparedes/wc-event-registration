@@ -4,7 +4,11 @@ import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
 import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
-import { calculateSlotConfidenceForecast } from '../hubCalendarForecastUtils';
+import {
+  calculateSlotConfidenceForecast,
+  getConfidenceTierLabel,
+  getMemberConfidenceTier,
+} from '../hubCalendarForecastUtils';
 
 function createMockMember(id: string, name: string): AdminMember {
   return {
@@ -118,5 +122,44 @@ describe('calculateSlotConfidenceForecast', () => {
     expect(result.highCount).toBe(1);
     // Confidence % = (1.0 / 2) * 100 = 50%
     expect(result.confidencePercentage).toBe(50);
+  });
+});
+
+describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
+  it('identifies excused member as excused tier', () => {
+    const m = createMockMember('m1', 'Excused');
+    const excusedMap: ExcusedMemberMap = new Map([
+      ['2026-10-04', new Map([['mem-m1', new Set(['9AM'])]])],
+    ]);
+
+    expect(getMemberConfidenceTier(m, '2026-10-04', '9AM', excusedMap)).toBe('excused');
+    expect(getConfidenceTierLabel('excused')).toBe('Excused');
+  });
+
+  it('evaluates solid, moderate, and at risk tiers based on turnup rate', () => {
+    const mSolid = createMockMember('m-solid', 'Solid');
+    const mMod = createMockMember('m-mod', 'Mod');
+    const mRisk = createMockMember('m-risk', 'Risk');
+    const mNew = createMockMember('m-new', 'New');
+
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['m-solid', { attendanceScore: 10, committed: 10, attended: 9, turnupRate: 0.9 }],
+      ['m-mod', { attendanceScore: 5, committed: 10, attended: 6, turnupRate: 0.6 }],
+      ['m-risk', { attendanceScore: -2, committed: 10, attended: 3, turnupRate: 0.3 }],
+    ]);
+
+    expect(getMemberConfidenceTier(mSolid, '2026-10-04', '9AM', undefined, statsMap)).toBe('solid');
+    expect(getMemberConfidenceTier(mMod, '2026-10-04', '9AM', undefined, statsMap)).toBe(
+      'moderate',
+    );
+    expect(getMemberConfidenceTier(mRisk, '2026-10-04', '9AM', undefined, statsMap)).toBe(
+      'at_risk',
+    );
+    // New member defaults to 0.8 -> solid
+    expect(getMemberConfidenceTier(mNew, '2026-10-04', '9AM', undefined, statsMap)).toBe('solid');
+
+    expect(getConfidenceTierLabel('solid')).toBe('Solid');
+    expect(getConfidenceTierLabel('moderate')).toBe('Moderate');
+    expect(getConfidenceTierLabel('at_risk')).toBe('At Risk');
   });
 });
