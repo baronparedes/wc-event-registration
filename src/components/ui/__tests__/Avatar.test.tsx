@@ -66,4 +66,45 @@ describe('Avatar', () => {
     expect(image).toHaveAttribute('src', 'https://example.com/avatar-2.jpg');
     expect(image).toHaveClass('opacity-0');
   });
+
+  describe('border prop', () => {
+    it('applies no border classes by default', () => {
+      render(<Avatar name="Test Member" />);
+      const container = screen.getByTitle('Test Member');
+      expect(container).not.toHaveClass('ring-2');
+    });
+
+    it('applies primary border classes when border="primary"', () => {
+      render(<Avatar name="Test Member" border="primary" />);
+      const container = screen.getByTitle('Test Member');
+      expect(container).toHaveClass(
+        'ring-2',
+        'ring-primary',
+        'ring-offset-2',
+        'ring-offset-background',
+      );
+    });
+
+    it('applies destructive border classes when border="destructive"', () => {
+      render(<Avatar name="Test Member" border="destructive" />);
+      const container = screen.getByTitle('Test Member');
+      expect(container).toHaveClass(
+        'ring-2',
+        'ring-danger',
+        'ring-offset-2',
+        'ring-offset-background',
+      );
+    });
+
+    it('applies accent border classes when border="accent"', () => {
+      render(<Avatar name="Test Member" border="accent" />);
+      const container = screen.getByTitle('Test Member');
+      expect(container).toHaveClass(
+        'ring-2',
+        'ring-accent',
+        'ring-offset-2',
+        'ring-offset-background',
+      );
+    });
+  });
 });
