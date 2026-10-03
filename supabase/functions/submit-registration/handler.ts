@@ -120,7 +120,7 @@ export async function handleSubmitRegistration(req: Request): Promise<Response> 
     const { data: eventData, error: eventError } = await supabase
       .from('events')
       .select(
-        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at',
+        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at, allow_public_registrations, require_id_lookup, metadata',
       )
       .eq('slug', event_slug)
       .eq('status', 'published')
@@ -161,6 +161,28 @@ export async function handleSubmitRegistration(req: Request): Promise<Response> 
           success: false,
           error: 'Registration is currently closed for this event',
           error_code: 'REGISTRATION_CLOSED',
+        } as SubmitRegistrationError),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    const eventMetadata = (eventData.metadata ?? {}) as Record<string, unknown>;
+    const publicAccess = eventMetadata.public_registration_access;
+    const isPublicOnly =
+      publicAccess === 'public' ||
+      (!publicAccess &&
+        eventData.allow_public_registrations &&
+        eventData.require_id_lookup === false);
+
+    if (isPublicOnly) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Member registration is not allowed for this event',
+          error_code: 'MEMBER_REGISTRATION_NOT_ALLOWED',
         } as SubmitRegistrationError),
         {
           status: 200,

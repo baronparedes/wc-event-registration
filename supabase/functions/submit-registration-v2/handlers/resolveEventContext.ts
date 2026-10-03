@@ -9,6 +9,9 @@ interface EventRow {
   registration_mode: 'open' | 'closed';
   registration_opens_at: string | null;
   registration_closes_at: string | null;
+  allow_public_registrations?: boolean;
+  require_id_lookup?: boolean;
+  metadata?: unknown;
 }
 
 interface UserRow {
@@ -43,7 +46,7 @@ export async function resolveEventContext(
     supabase
       .from('events')
       .select(
-        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at',
+        'id, duplicate_policy, registration_mode, registration_opens_at, registration_closes_at, allow_public_registrations, require_id_lookup, metadata',
       )
       .eq('slug', eventSlug)
       .eq('status', 'published')
@@ -69,6 +72,24 @@ export async function resolveEventContext(
       ok: false,
       errorCode: 'REGISTRATION_CLOSED',
       message: 'Registration is currently closed for this event',
+      httpStatus: 200,
+    };
+  }
+
+  const eventData = eventResult.data as EventRow;
+  const eventMetadata = (eventData.metadata ?? {}) as Record<string, unknown>;
+  const publicAccess = eventMetadata.public_registration_access;
+  const isPublicOnly =
+    publicAccess === 'public' ||
+    (!publicAccess &&
+      eventData.allow_public_registrations &&
+      eventData.require_id_lookup === false);
+
+  if (isPublicOnly) {
+    return {
+      ok: false,
+      errorCode: 'MEMBER_REGISTRATION_NOT_ALLOWED',
+      message: 'Member registration is not allowed for this event',
       httpStatus: 200,
     };
   }

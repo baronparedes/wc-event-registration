@@ -259,3 +259,26 @@ Deno.test('submit-registration reports registration and answer insertion failure
     }
   });
 });
+
+Deno.test('submit-registration rejects registration when event is public-only', async () => {
+  await withEnv(async () => {
+    const fetchMock = mockFetch({
+      event: {
+        ...EVENT,
+        allow_public_registrations: true,
+        require_id_lookup: false,
+        metadata: { public_registration_access: 'public' },
+      } as unknown as Event,
+    });
+    try {
+      const response = await handleSubmitRegistration(request(payload()));
+      assertEquals(response.status, 200);
+      const json = await response.json();
+      assertEquals(json.success, false);
+      assertEquals(json.error_code, 'MEMBER_REGISTRATION_NOT_ALLOWED');
+      assertEquals(json.error, 'Member registration is not allowed for this event');
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});

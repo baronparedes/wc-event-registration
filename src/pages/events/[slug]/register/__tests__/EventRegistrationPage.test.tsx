@@ -872,4 +872,47 @@ describe('EventRegistrationPage', () => {
 
     expect(screen.getByRole('button', { name: 'Back to Events' })).toBeInTheDocument();
   });
+
+  it('renders public registration only banner when event public_registration_access is public and navigates to register-public on button click', () => {
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'public-event',
+          title: 'Public Only Event',
+          description: null,
+          location: null,
+          starts_at: null,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+          allow_public_registrations: true,
+          require_id_lookup: false,
+          metadata: {
+            public_registration_access: 'public',
+          },
+        },
+        registration_count: 0,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<EventRegistrationPage />);
+
+    expect(screen.getByText('Public Registration Only')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'This event is only open for guest and public registrations. Member registration is not available for this event.',
+      ),
+    ).toBeInTheDocument();
+
+    const guestButton = screen.getByRole('button', { name: 'Continue as Guest' });
+    expect(guestButton).toBeInTheDocument();
+    fireEvent.click(guestButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/sample-event/register-public');
+  });
 });

@@ -69,6 +69,8 @@ type UserLookupRow = {
 type EventLookupRow = {
   id: string;
   duplicate_policy: string;
+  allow_public_registrations?: boolean;
+  require_id_lookup?: boolean;
   metadata: unknown;
 };
 
@@ -372,7 +374,7 @@ async function getEventBySlug(
 ): Promise<{ data: EventLookupRow | null; error: string | null }> {
   const { data, error } = await supabase
     .from('events')
-    .select('id, duplicate_policy, metadata')
+    .select('id, duplicate_policy, allow_public_registrations, require_id_lookup, metadata')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -552,6 +554,25 @@ export async function handleMemberLookup(req: Request): Promise<Response> {
       }
 
       eventData = eventResult.data;
+
+      if (eventData) {
+        const eventMetadata = (eventData.metadata ?? {}) as Record<string, unknown>;
+        const publicAccess = eventMetadata.public_registration_access;
+        const isPublicOnly =
+          publicAccess === 'public' ||
+          (!publicAccess &&
+            eventData.allow_public_registrations &&
+            eventData.require_id_lookup === false);
+
+        if (isPublicOnly) {
+          return sharedErrorResponse(
+            corsHeaders,
+            400,
+            'Member registration is not allowed for this event',
+            'member_registration_not_allowed',
+          );
+        }
+      }
     }
 
     if (normalizedFormSlug) {

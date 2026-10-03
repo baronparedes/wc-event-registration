@@ -872,4 +872,75 @@ describe('useEventRegistrationPageState', () => {
     });
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });
+
+  it('does not auto-lookup signed in member and sets isPublicOnly to true when event is public-only', () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-001', full_name: memberFullName },
+      isLoading: false,
+    });
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          registration_opens_at: null,
+          registration_closes_at: null,
+          allow_public_registrations: true,
+          require_id_lookup: false,
+          metadata: {
+            public_registration_access: 'public',
+          },
+        },
+        registration_count: 0,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    expect(result.current.isPublicOnly).toBe(true);
+    expect(result.current.publicRegistrationAccess).toBe('public');
+    expect(result.current.isVerifyingSignedInMember).toBe(false);
+    expect(memberLookupState.handleLookupSubmit).not.toHaveBeenCalled();
+  });
+
+  it('ignores handleScan and handleLookupSubmit when event is public-only', async () => {
+    mockUsePublicEventQuery.mockReturnValue({
+      data: {
+        status: 'available',
+        event: {
+          id: 'event-1',
+          slug: 'sample-event',
+          title: 'Sample Event',
+          registration_opens_at: null,
+          registration_closes_at: null,
+          allow_public_registrations: true,
+          require_id_lookup: false,
+          metadata: {
+            public_registration_access: 'public',
+          },
+        },
+        registration_count: 0,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    if (mockScanHandler.current) {
+      await act(async () => {
+        mockScanHandler.current!('MEM-999');
+      });
+    }
+
+    await act(async () => {
+      await result.current.handleLookupSubmit({ memberId: 'MEM-999' });
+    });
+
+    expect(memberLookupState.handleLookupSubmit).not.toHaveBeenCalled();
+  });
 });

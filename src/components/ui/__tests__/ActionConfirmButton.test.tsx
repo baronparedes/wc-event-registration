@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ActionConfirmButton } from '../ActionConfirmButton';
@@ -20,14 +19,13 @@ describe('ActionConfirmButton', () => {
   });
 
   it('opens the confirmation dialog when clicked', async () => {
-    const user = userEvent.setup();
     render(<ActionConfirmButton {...defaultProps}>Trigger Action</ActionConfirmButton>);
 
     // Dialog should not be visible initially
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
 
     // Click the trigger button
-    await user.click(screen.getByRole('button', { name: 'Trigger Action' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Action' }));
 
     // Dialog should now be visible
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
@@ -36,7 +34,6 @@ describe('ActionConfirmButton', () => {
   });
 
   it('calls onConfirm and closes dialog when confirm button is clicked', async () => {
-    const user = userEvent.setup();
     const onConfirmMock = vi.fn().mockResolvedValue(undefined);
     render(
       <ActionConfirmButton {...defaultProps} onConfirm={onConfirmMock}>
@@ -45,10 +42,10 @@ describe('ActionConfirmButton', () => {
     );
 
     // Open dialog
-    await user.click(screen.getByRole('button', { name: 'Trigger Action' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Action' }));
 
     // Click confirm inside dialog
-    await user.click(screen.getByRole('button', { name: 'Yes, do it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, do it' }));
 
     expect(onConfirmMock).toHaveBeenCalledTimes(1);
 
@@ -59,7 +56,6 @@ describe('ActionConfirmButton', () => {
   });
 
   it('closes dialog without calling onConfirm when cancel is clicked', async () => {
-    const user = userEvent.setup();
     const onConfirmMock = vi.fn();
     render(
       <ActionConfirmButton {...defaultProps} onConfirm={onConfirmMock}>
@@ -68,10 +64,10 @@ describe('ActionConfirmButton', () => {
     );
 
     // Open dialog
-    await user.click(screen.getByRole('button', { name: 'Trigger Action' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Action' }));
 
     // Click cancel inside dialog
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onConfirmMock).not.toHaveBeenCalled();
 
@@ -99,10 +95,8 @@ describe('ActionConfirmButton', () => {
       </ActionConfirmButton>,
     );
 
-    const user = userEvent.setup();
-
     // Open dialog
-    await user.click(screen.getByRole('button', { name: 'Trigger Action' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger Action' }));
 
     // Rerender with isPending=true
     rerender(

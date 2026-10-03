@@ -120,6 +120,7 @@ export default defineConfig({
       manifest: false,
       devOptions: {
         enabled: true,
+        suppressWarnings: true,
       },
       workbox: {
         cleanupOutdatedCaches: true,

@@ -359,3 +359,28 @@ Deno.test('member-lookup maps event, name, registration and answer lookup failur
     }
   });
 });
+
+Deno.test('member-lookup rejects lookup when event is public-only', async () => {
+  await withFunctionEnv(async () => {
+    const fetchMock = mockFetch({
+      event: {
+        id: EVENT_ID,
+        duplicate_policy: 'block',
+        allow_public_registrations: true,
+        require_id_lookup: false,
+        metadata: { public_registration_access: 'public' },
+      },
+    });
+    try {
+      const response = await handleMemberLookup(
+        buildRequest({ memberId: 'M-123', eventSlug: 'public-event' }),
+      );
+      assertEquals(response.status, 400);
+      const json = await response.json();
+      assertEquals(json.success, false);
+      assertEquals(json.error, 'Member registration is not allowed for this event');
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});

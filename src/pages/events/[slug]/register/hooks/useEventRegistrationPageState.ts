@@ -20,6 +20,7 @@ import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
 } from '@/lib/domain/event-fields';
+import { type PublicRegistrationAccess, derivePublicRegistrationAccess } from '@/lib/domain/events';
 import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
 import { logger, parseErrorToJsonOrString } from '@/lib/infrastructure';
 
@@ -176,8 +177,24 @@ export function useEventRegistrationPageState() {
 
   const availability = eventQuery.data;
   const isGateReady = availability?.status === 'available';
+  const publicRegistrationAccess = useMemo<PublicRegistrationAccess>(() => {
+    if (!availability || availability.status !== 'available' || !availability.event) {
+      return 'members';
+    }
+
+    return derivePublicRegistrationAccess({
+      public_registration_access: availability.event.metadata?.public_registration_access,
+      allow_public_registrations: availability.event.allow_public_registrations,
+      require_id_lookup: availability.event.require_id_lookup,
+    });
+  }, [availability]);
+  const isPublicOnly = publicRegistrationAccess === 'public';
+
   const isDynamicFieldGateReady =
-    isGateReady && Boolean(memberLookup.matchedMember) && !memberLookup.isRegistrationBlocked;
+    isGateReady &&
+    !isPublicOnly &&
+    Boolean(memberLookup.matchedMember) &&
+    !memberLookup.isRegistrationBlocked;
 
   const eventWindowText = useMemo(() => {
     if (!availability || availability.status !== 'available') {
@@ -192,11 +209,12 @@ export function useEventRegistrationPageState() {
 
   const isRfidCaptureActive =
     isGateReady &&
+    !isPublicOnly &&
     activeWizardStep === 1 &&
     memberLookup.matchedMember === null &&
     !memberLookup.isLookupPending;
   const isConfirmedStepScanCaptureActive =
-    isGateReady && activeWizardStep === 3 && isRegistrationConfirmed;
+    isGateReady && !isPublicOnly && activeWizardStep === 3 && isRegistrationConfirmed;
   const isScanCaptureActive = isRfidCaptureActive || isConfirmedStepScanCaptureActive;
   const focusMemberIdInput = useRfidAutoFocus(memberIdInputRef, isRfidCaptureActive);
 
@@ -299,6 +317,7 @@ export function useEventRegistrationPageState() {
   useEffect(() => {
     if (
       !isGateReady ||
+      isPublicOnly ||
       profileQuery.isLoading ||
       !currentProfile?.member_id ||
       memberLookup.matchedMember ||
@@ -343,6 +362,7 @@ export function useEventRegistrationPageState() {
     };
   }, [
     isGateReady,
+    isPublicOnly,
     profileQuery.isLoading,
     currentProfile?.member_id,
     memberLookup.matchedMember,
@@ -356,6 +376,7 @@ export function useEventRegistrationPageState() {
 
   const isVerifyingSignedInMember =
     isGateReady &&
+    !isPublicOnly &&
     !memberLookup.matchedMember &&
     !lookupErrorMessage &&
     (profileQuery.isLoading ||
@@ -363,6 +384,7 @@ export function useEventRegistrationPageState() {
 
   const handleScan = useCallback(
     async (scannedMemberId: string) => {
+      if (isPublicOnly) return;
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
       setIsRegistrationConfirmed(false);
@@ -380,7 +402,13 @@ export function useEventRegistrationPageState() {
 
       handleLookupSuccess(result.mode);
     },
-    [clearLookupError, runMemberLookupSubmit, handleLookupFailure, handleLookupSuccess],
+    [
+      isPublicOnly,
+      clearLookupError,
+      runMemberLookupSubmit,
+      handleLookupFailure,
+      handleLookupSuccess,
+    ],
   );
   useScanBuffer(handleScan, isScanCaptureActive, memberIdInputRef);
 
@@ -471,6 +499,7 @@ export function useEventRegistrationPageState() {
 
   const handleLookupSubmit = useCallback(
     async (values: Parameters<typeof runMemberLookupSubmit>[0]) => {
+      if (isPublicOnly) return;
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
       setIsRegistrationConfirmed(false);
@@ -488,7 +517,13 @@ export function useEventRegistrationPageState() {
 
       handleLookupSuccess(result.mode);
     },
-    [clearLookupError, runMemberLookupSubmit, handleLookupFailure, handleLookupSuccess],
+    [
+      isPublicOnly,
+      clearLookupError,
+      runMemberLookupSubmit,
+      handleLookupFailure,
+      handleLookupSuccess,
+    ],
   );
 
   const handleSubmitRegistration = useCallback(
@@ -731,5 +766,7 @@ export function useEventRegistrationPageState() {
     isSignedIn,
     currentProfile,
     isVerifyingSignedInMember,
+    publicRegistrationAccess,
+    isPublicOnly,
   };
 }

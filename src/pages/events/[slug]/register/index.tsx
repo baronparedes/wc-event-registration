@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { ROUTE_PATHS, TIMING } from '@/config/constants';
 import { useWizardStepScroll } from '@/hooks/utils';
-import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 
 import { DynamicFieldsStepCard, MemberLookupStepCard, ProfileStepCard } from './components';
 import { useEventRegistrationPageState } from './hooks';
@@ -53,16 +52,9 @@ export function EventRegistrationPage() {
     shouldBypassDynamicFieldsStepCard,
     isSignedIn,
     isVerifyingSignedInMember,
+    publicRegistrationAccess,
+    isPublicOnly,
   } = useEventRegistrationPageState();
-
-  const publicRegistrationAccess =
-    availability?.status === 'available'
-      ? derivePublicRegistrationAccess({
-          public_registration_access: availability!.event!.metadata?.public_registration_access,
-          allow_public_registrations: availability!.event!.allow_public_registrations,
-          require_id_lookup: availability!.event!.require_id_lookup,
-        })
-      : 'members';
 
   useWizardStepScroll(activeWizardStep, [stepOneRef, stepTwoRef, dynamicFieldsStepRef]);
 
@@ -128,7 +120,30 @@ export function EventRegistrationPage() {
         </SectionCard>
       )}
 
-      {isGateReady && (
+      {isGateReady && isPublicOnly && (
+        <SectionCard
+          title="Public Registration Only"
+          wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-muted">
+              This event is only open for guest and public registrations. Member registration is not
+              available for this event.
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => navigate(`/events/${slug}/register-public`)}
+              size="lg"
+              type="button"
+              variant="default"
+            >
+              Continue as Guest
+            </Button>
+          </div>
+        </SectionCard>
+      )}
+
+      {isGateReady && !isPublicOnly && (
         <div className="space-y-6">
           <StepIndicator
             currentStep={activeWizardStep}
