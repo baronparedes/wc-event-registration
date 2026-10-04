@@ -6,7 +6,7 @@ import { LEGAL_CONFIG } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import { type ExcusedMemberMap, isMemberExcused } from '@/lib/domain/hub-calendar';
 
-import { groupEntriesByPrimaryRole } from './sundayScheduleShareCardUtils';
+import { groupEntriesByPrimaryRole } from '../utils';
 
 export type SundayScheduleShareCardProps = {
   slot: TimeSlot;

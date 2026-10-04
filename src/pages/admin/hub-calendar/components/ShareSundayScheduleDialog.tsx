@@ -8,8 +8,8 @@ import { Button, Dialog } from '@/components/ui';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import { type ExcusedMemberMap, toIsoDateKey } from '@/lib/domain/hub-calendar';
 
+import { groupEntriesByPrimaryRole } from '../utils';
 import { SundayScheduleShareCard } from './SundayScheduleShareCard';
-import { groupEntriesByPrimaryRole } from './sundayScheduleShareCardUtils';
 
 const TIME_SLOTS: { slot: TimeSlot; label: string; fileSuffix: string }[] = [
   { slot: '9AM', label: '9:00 AM', fileSuffix: '9am' },

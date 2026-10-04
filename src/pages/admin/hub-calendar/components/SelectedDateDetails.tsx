@@ -14,18 +14,18 @@ import {
 } from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
+import {
+  type ConfidenceTier,
+  calculateSlotConfidenceForecast,
+  getConfidenceTierLabel,
+  getMemberConfidenceTier,
+} from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
 import { ShareSundayScheduleDialog } from './ShareSundayScheduleDialog';
 import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
-import {
-  type ConfidenceTier,
-  calculateSlotConfidenceForecast,
-  getConfidenceTierLabel,
-  getMemberConfidenceTier,
-} from './hubCalendarForecastUtils';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);

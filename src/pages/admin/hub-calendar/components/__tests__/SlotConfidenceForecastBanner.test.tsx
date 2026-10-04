@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import type { SlotConfidenceForecast } from '@/pages/admin/hub-calendar/utils';
+
 import { SlotConfidenceForecastBanner } from '../SlotConfidenceForecastBanner';
-import type { SlotConfidenceForecast } from '../hubCalendarForecastUtils';
 
 describe('SlotConfidenceForecastBanner', () => {
   it('returns null when totalCommitted is 0', () => {

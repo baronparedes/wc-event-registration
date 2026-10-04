@@ -5,7 +5,7 @@ import { Cake, HeartIcon } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { MilestoneType } from '@/lib/domain/hub-calendar';
 
-import { getMilestoneTypeBadgeClass } from './milestoneBadgeUtils';
+import { getMilestoneTypeBadgeClass } from '../utils';
 
 export type MilestoneBadgeProps = {
   type: MilestoneType;

@@ -2,7 +2,7 @@ import { CalendarOff } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
-import { getConfidenceBorderVariant } from './serviceScheduleAvatarUtils';
+import { getConfidenceBorderVariant } from '../utils';
 
 export type ServiceScheduleAvatarProps = {
   name: string;

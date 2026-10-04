@@ -1,12 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { MilestoneBadge } from '../MilestoneBadge';
 import {
   getMilestoneTypeBadgeClass,
   getMilestoneTypeIcon,
   getMilestoneTypeLabel,
-} from '../milestoneBadgeUtils';
+} from '@/pages/admin/hub-calendar/utils';
+
+import { MilestoneBadge } from '../MilestoneBadge';
 
 describe('MilestoneBadge', () => {
   it('renders default birthday badge with label and icon', () => {
