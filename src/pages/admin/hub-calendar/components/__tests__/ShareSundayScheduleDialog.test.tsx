@@ -213,7 +213,7 @@ describe('ShareSundayScheduleDialog', () => {
     expect(screen.getAllByText(compoundFullName)[0]).toBeInTheDocument();
   });
 
-  it('calls navigator.share with all 3 service images when Share Images is clicked', async () => {
+  it('calls navigator.share with all 3 service images when Share All is clicked', async () => {
     const shareMock = vi.fn().mockResolvedValue(undefined);
     const canShareMock = vi.fn().mockReturnValue(true);
     Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
@@ -230,7 +230,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -238,6 +238,36 @@ describe('ShareSundayScheduleDialog', () => {
       expect(shareMock).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('Sunday Service Schedules'),
+          files: expect.arrayContaining([expect.any(File)]),
+        }),
+      );
+    });
+  });
+
+  it('shares single service image when row Share button is clicked', async () => {
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    const canShareMock = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: canShareMock, configurable: true });
+
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    const singleShareButton = screen.getByTitle('Share 9:00 AM image');
+    fireEvent.click(singleShareButton);
+
+    await waitFor(() => {
+      expect(shareMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('9:00 AM Service Schedule'),
           files: expect.arrayContaining([expect.any(File)]),
         }),
       );
@@ -262,7 +292,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -286,7 +316,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -311,7 +341,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -336,7 +366,7 @@ describe('ShareSundayScheduleDialog', () => {
     expect(onCloseMock).toHaveBeenCalled();
   });
 
-  it('downloads all 3 service images when Save is clicked', async () => {
+  it('downloads all 3 service images when Save All is clicked', async () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     render(
@@ -350,7 +380,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const saveButton = screen.getByRole('button', { name: /^Save$/i });
+    const saveButton = screen.getByRole('button', { name: /^Save All$/i });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -370,7 +400,7 @@ describe('ShareSundayScheduleDialog', () => {
     clickSpy.mockRestore();
   });
 
-  it('triggers native navigator.share on iOS when Save is clicked', async () => {
+  it('triggers native navigator.share on iOS when Save All is clicked', async () => {
     const originalUserAgent = navigator.userAgent;
     Object.defineProperty(navigator, 'userAgent', {
       value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
@@ -393,7 +423,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const saveButton = screen.getByRole('button', { name: /^Save$/i });
+    const saveButton = screen.getByRole('button', { name: /^Save All$/i });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
