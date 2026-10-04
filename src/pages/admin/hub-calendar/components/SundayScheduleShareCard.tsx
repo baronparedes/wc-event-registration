@@ -28,41 +28,34 @@ export function SundayScheduleShareCard({
 
   return (
     <div
-      style={{ width: '1920px', minWidth: '1920px', maxWidth: '1920px' }}
-      className="w-[1920px] min-w-[1920px] max-w-[1920px] shrink-0 box-border rounded-3xl bg-surface p-10 shadow-xl text-text border border-border"
+      style={{ width: '960px', minWidth: '960px', maxWidth: '960px' }}
+      className="w-[960px] min-w-[960px] max-w-[960px] shrink-0 box-border bg-surface p-10 text-text"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-6">
-        <div className="flex items-center gap-4">
-          <BrandAvatar
-            size="md"
-            alt={LEGAL_CONFIG.appName}
-            className="border border-border shadow-2xs shrink-0"
-          />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold uppercase tracking-wider text-primary">
-                {LEGAL_CONFIG.appName}
-              </span>
-              <span className="text-muted">•</span>
-              <span className="text-sm font-medium text-muted">Sunday Service</span>
-            </div>
-            <h2 className="text-2xl font-bold text-text">{formattedDate}</h2>
-          </div>
+      <div className="flex flex-col border-b border-border pb-6">
+        <h2 className="text-4xl font-bold uppercase tracking-tight text-text mb-2">
+          {formattedDate}
+        </h2>
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-xl font-bold uppercase tracking-wider text-text">
+            {LEGAL_CONFIG.appName}
+          </span>
+          <span className="text-xl font-bold text-text">•</span>
+          <span className="text-xl font-medium text-text uppercase">Sunday Service</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
           <Badge
-            variant="primaryOutline"
-            className="px-3.5 py-1.5 text-sm"
-            icon={<Clock className="h-4 w-4" />}
+            variant="outline"
+            className="px-4 py-2 text-base rounded-full"
+            icon={<Clock className="h-5 w-5" />}
           >
             {slotLabel} Service
           </Badge>
           <Badge
             variant="outline"
-            className="px-3.5 py-1.5 text-sm"
-            icon={<Users className="h-4 w-4" />}
+            className="px-4 py-2 text-base rounded-full"
+            icon={<Users className="h-5 w-5" />}
           >
             {entries.length} volunteer{entries.length === 1 ? '' : 's'}
           </Badge>
@@ -70,53 +63,61 @@ export function SundayScheduleShareCard({
       </div>
 
       {/* Roles List */}
-      <div className="mt-6">
+      <div className="mt-8">
         {entries.length === 0 ? (
           <div className="py-16 text-center text-base text-muted italic">
             No volunteers scheduled for this service
           </div>
         ) : (
-          <div className="divide-y divide-border rounded-2xl border border-border bg-background/50">
+          <div className="flex flex-col gap-6">
             {roleSections.map((section) => (
-              <div key={section.primaryRole} className="flex flex-row items-center gap-6 p-5">
-                {/* Role Header (Left Column) */}
-                <div className="w-64 shrink-0 flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold uppercase tracking-wider text-primary">
+              <div
+                key={section.primaryRole}
+                className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6"
+              >
+                {/* Role Header */}
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-bold uppercase tracking-wider text-text">
                     {section.primaryRole}
                   </span>
-                  <Badge variant="primaryOutline" className="px-2.5 py-0.5 text-xs font-bold">
+                  <Badge
+                    variant="secondary"
+                    className="px-3 py-0.5 text-sm font-bold rounded-full bg-slate-100 text-slate-500 border border-slate-200"
+                  >
                     {section.totalCount}
                   </Badge>
                 </div>
 
-                {/* Volunteers Wrap (Right Column) */}
-                <div className="flex-1 flex flex-wrap gap-2.5 items-center">
+                {/* Volunteers Wrap */}
+                <div className="flex flex-wrap gap-3 items-center">
                   {section.members.map(({ entry, secondaryRole }) => {
                     const excused = isMemberExcused(excusedMap, isoDateKey, entry.member, slot);
                     return (
                       <div
                         key={entry.member.id}
-                        className="inline-flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text shadow-2xs"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface pr-4 pl-1 py-1 text-base font-medium text-text shadow-sm"
                       >
                         <Avatar
                           name={entry.member.full_name}
                           avatarObjectKey={entry.member.avatar_object_key}
-                          size="xs"
+                          size="sm"
                           className="shrink-0"
                         />
-                        <span className="font-medium">{entry.member.full_name}</span>
+                        <span className="font-medium whitespace-nowrap">
+                          {entry.member.full_name}
+                        </span>
                         {secondaryRole && (
                           <Badge
                             variant="primaryOutline"
-                            className="px-2 py-0.5 text-xs font-semibold"
+                            className="ml-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-50"
                           >
-                            + {secondaryRole}
+                            +{secondaryRole}
                           </Badge>
                         )}
                         {excused && (
                           <Badge
                             variant="destructive"
-                            className="ml-0.5 px-2 py-0.5 text-xs font-bold"
+                            className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full"
                           >
                             Excused
                           </Badge>
