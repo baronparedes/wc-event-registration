@@ -1,3 +1,4 @@
+import { DEFAULT_MEMBER_TURNUP_RATE } from '@/lib/domain/hub-calendar/constants';
 import { supabase } from '@/lib/infrastructure';
 
 export type MemberUserRow = {
@@ -250,6 +251,7 @@ export async function fetchMembersAttendanceScores(
     attendance_score: number;
     committed?: number;
     attended?: number;
+    excused?: number;
     total_count: number;
   }>;
   const totalCount = rawRows.length > 0 ? Number(rawRows[0].total_count) : 0;
@@ -260,12 +262,19 @@ export async function fetchMembersAttendanceScores(
     attendance_score: number;
     committed?: number;
     attended?: number;
+    excused?: number;
   }) => {
     if (!row.user_id) return;
     const committed = Number(row.committed ?? 0);
     const attended = Number(row.attended ?? 0);
+    const excused = Number(row.excused ?? 0);
+    const effectiveCommitted = Math.max(0, committed - excused);
     const turnupRate =
-      committed > 0 ? Math.min(1, Math.max(0, attended / committed)) : attended > 0 ? 1 : 0.8;
+      effectiveCommitted > 0
+        ? Math.min(1, Math.max(0, attended / effectiveCommitted))
+        : attended > 0
+          ? 1
+          : DEFAULT_MEMBER_TURNUP_RATE;
 
     statsMap.set(row.user_id, {
       attendanceScore: Number(row.attendance_score),
@@ -307,6 +316,7 @@ export async function fetchMembersAttendanceScores(
         attendance_score: number;
         committed?: number;
         attended?: number;
+        excused?: number;
       }>;
       for (const row of pageRows) {
         processRow(row);

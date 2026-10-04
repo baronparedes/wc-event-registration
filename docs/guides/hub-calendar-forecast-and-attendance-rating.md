@@ -68,8 +68,8 @@ The avatar rings in the volunteer schedule view map directly to the volunteer's 
 
 | Turnup Rate Range                        | Confidence Tier    | Ring Class                       | Visual Indication                                |
 | :--------------------------------------- | :----------------- | :------------------------------- | :----------------------------------------------- |
-| **$\text{Turnup Rate} \ge 80\%$**        | **Solid**          | `ring-emerald-500`               | High reliability volunteer ($\ge 80\%$ turnup)   |
-| **$40\% \le \text{Turnup Rate} < 80\%$** | **Moderate**       | `ring-amber-500`                 | Fairly regular attendance ($40\% - 79\%$ turnup) |
+| **$\text{Turnup Rate} \ge 70\%$**        | **Solid**          | `ring-emerald-500`               | High reliability volunteer ($\ge 70\%$ turnup)   |
+| **$40\% \le \text{Turnup Rate} < 70\%$** | **Moderate**       | `ring-amber-500`                 | Fairly regular attendance ($40\% - 69\%$ turnup) |
 | **$\text{Turnup Rate} < 40\%$**          | **At Risk**        | `ring-rose-500` / `ring-red-600` | Low attendance frequency ($< 40\%$ turnup)       |
 | _Excused / No history_                   | **Default / None** | `ring-none`                      | Neutral baseline                                 |
 
@@ -86,7 +86,7 @@ For a given time slot ($S \in \{\text{9AM}, \text{12NN}, \text{3PM}\}$):
 - $N_{\text{total}}$: Total number of volunteers scheduled for slot $S$.
 - $N_{\text{excused}}$: Number of volunteers with confirmed excused requests for slot $S$.
 - $N_{\text{active}} = N_{\text{total}} - N_{\text{excused}}$: Active volunteer pool expected to serve.
-- $\text{TurnupRate}_i$: Historical attendance fidelity ratio of volunteer $i$ ($\text{attended} / \text{committed}$, default $0.80$ if no prior history).
+- $\text{TurnupRate}_i$: Historical attendance fidelity ratio of volunteer $i$ ($\text{attended} / \max(1, \text{committed} - \text{excused})$, default $0.80$ if no prior history).
 
 ### Expected Turnup Computation
 
@@ -102,8 +102,8 @@ Every volunteer scheduled in the slot is classified into one of four mutually ex
 
 | Tier         | Criteria                                            | Meaning & Action                                                                      |
 | :----------- | :-------------------------------------------------- | :------------------------------------------------------------------------------------ |
-| **Solid**    | Non-excused AND $\text{TurnupRate} \ge 80\%$        | Highly reliable volunteer; very likely to turn up.                                    |
-| **Moderate** | Non-excused AND $40\% \le \text{TurnupRate} < 80\%$ | Fairly reliable; may occasionally miss.                                               |
+| **Solid**    | Non-excused AND $\text{TurnupRate} \ge 70\%$        | Highly reliable volunteer; very likely to turn up.                                    |
+| **Moderate** | Non-excused AND $40\% \le \text{TurnupRate} < 70\%$ | Fairly reliable; may occasionally miss.                                               |
 | **At Risk**  | Non-excused AND $\text{TurnupRate} < 40\%$          | Low historical attendance; high chance of absence. Coordinator should prepare backup. |
 | **Excused**  | Formally excused for that date & time slot          | Not expected to serve; excluded from turnup expectation calculations.                 |
 

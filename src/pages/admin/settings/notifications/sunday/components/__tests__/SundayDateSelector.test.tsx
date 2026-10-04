@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SundayDateSelector } from '../SundayDateSelector';
@@ -27,22 +26,20 @@ describe('SundayDateSelector', () => {
     expect(screen.getByText('Oct 15, 2023')).toBeInTheDocument();
   });
 
-  it('calls onDateChange when previous button is clicked', async () => {
-    const user = userEvent.setup();
+  it('calls onDateChange when previous button is clicked', () => {
     render(<SundayDateSelector {...defaultProps} />);
 
     const prevButton = screen.getByRole('button', { name: /previous sunday/i });
-    await user.click(prevButton);
+    fireEvent.click(prevButton);
 
     expect(mockOnDateChange).toHaveBeenCalledWith('2023-10-08');
   });
 
-  it('calls onDateChange when next button is clicked', async () => {
-    const user = userEvent.setup();
+  it('calls onDateChange when next button is clicked', () => {
     render(<SundayDateSelector {...defaultProps} />);
 
     const nextButton = screen.getByRole('button', { name: /next sunday/i });
-    await user.click(nextButton);
+    fireEvent.click(nextButton);
 
     expect(mockOnDateChange).toHaveBeenCalledWith('2023-10-22');
   });
@@ -56,12 +53,11 @@ describe('SundayDateSelector', () => {
     expect(mockOnDateChange).toHaveBeenCalledWith('2023-10-29');
   });
 
-  it('calls onResetToNearest when reset button is clicked', async () => {
-    const user = userEvent.setup();
+  it('calls onResetToNearest when reset button is clicked', () => {
     render(<SundayDateSelector {...defaultProps} />);
 
     const resetButton = screen.getByRole('button', { name: /reset/i });
-    await user.click(resetButton);
+    fireEvent.click(resetButton);
 
     expect(mockOnResetToNearest).toHaveBeenCalled();
   });
@@ -73,14 +69,13 @@ describe('SundayDateSelector', () => {
     expect(screen.queryByRole('button', { name: /reset/i })).not.toBeInTheDocument();
   });
 
-  it('handles empty selectedDate correctly', async () => {
-    const user = userEvent.setup();
+  it('handles empty selectedDate correctly', () => {
     render(<SundayDateSelector {...defaultProps} selectedDate="" />);
 
     expect(screen.getByText('Select a Sunday to inspect and dispatch')).toBeInTheDocument();
 
     const prevButton = screen.getByRole('button', { name: /previous sunday/i });
-    await user.click(prevButton);
+    fireEvent.click(prevButton);
 
     expect(mockOnDateChange).not.toHaveBeenCalled();
   });

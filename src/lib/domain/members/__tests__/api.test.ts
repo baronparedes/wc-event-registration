@@ -54,6 +54,38 @@ describe('fetchMembersAttendanceScores', () => {
     expect(result.has('user-3')).toBe(false);
   });
 
+  it('calculates turnupRate by deducting excused dates from committed denominator', async () => {
+    const mockMocks = (
+      supabase as unknown as {
+        _mocks: {
+          rpcMock: ReturnType<typeof vi.fn>;
+        };
+      }
+    )._mocks;
+
+    mockMocks.rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          user_id: 'user-excused',
+          attendance_score: 4.5,
+          committed: 12,
+          attended: 8,
+          excused: 1,
+          total_count: 1,
+        },
+      ],
+      error: null,
+    });
+
+    const result = await fetchMembersAttendanceScores(12);
+    const stats = result.get('user-excused');
+    expect(stats).toBeDefined();
+    // 8 attended / (12 committed - 1 excused = 11 effective) = 8 / 11 ~= 0.72727
+    expect(stats?.turnupRate).toBeCloseTo(8 / 11, 4);
+    expect(stats?.committed).toBe(12);
+    expect(stats?.attended).toBe(8);
+  });
+
   it('handles multi-page results properly', async () => {
     const mockMocks = (
       supabase as unknown as {

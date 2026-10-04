@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { CONFIDENCE_THRESHOLDS } from '@/lib/domain/hub-calendar';
+
 import { ServiceScheduleAvatar } from '../ServiceScheduleAvatar';
 
 vi.mock('@/hooks/domain/members', () => ({
@@ -39,20 +41,38 @@ describe('ServiceScheduleAvatar', () => {
   });
 
   describe('turnupRate and confidence ring indicators', () => {
-    it('applies emerald success ring when turnup rate >= 0.8 (Solid)', () => {
-      render(<ServiceScheduleAvatar name="Solid Volunteer" turnupRate={0.85} size="sm" />);
+    it(`applies emerald success ring when turnup rate >= ${CONFIDENCE_THRESHOLDS.SOLID} (Solid)`, () => {
+      render(
+        <ServiceScheduleAvatar
+          name="Solid Volunteer"
+          turnupRate={CONFIDENCE_THRESHOLDS.SOLID + 0.02}
+          size="sm"
+        />,
+      );
       const avatarEl = screen.getByTitle('Solid Volunteer');
       expect(avatarEl).toHaveClass('ring-emerald-500');
     });
 
-    it('applies accent amber ring when turnup rate is between 0.4 and 0.79 (Moderate)', () => {
-      render(<ServiceScheduleAvatar name="Moderate Volunteer" turnupRate={0.46} size="sm" />);
+    it(`applies accent amber ring when turnup rate is between ${CONFIDENCE_THRESHOLDS.MODERATE} and ${CONFIDENCE_THRESHOLDS.SOLID - 0.01} (Moderate)`, () => {
+      render(
+        <ServiceScheduleAvatar
+          name="Moderate Volunteer"
+          turnupRate={CONFIDENCE_THRESHOLDS.MODERATE + 0.06}
+          size="sm"
+        />,
+      );
       const avatarEl = screen.getByTitle('Moderate Volunteer');
       expect(avatarEl).toHaveClass('ring-accent');
     });
 
-    it('applies destructive red ring when turnup rate is < 0.4 (At Risk)', () => {
-      render(<ServiceScheduleAvatar name="At Risk Volunteer" turnupRate={0.35} size="sm" />);
+    it(`applies destructive red ring when turnup rate is < ${CONFIDENCE_THRESHOLDS.MODERATE} (At Risk)`, () => {
+      render(
+        <ServiceScheduleAvatar
+          name="At Risk Volunteer"
+          turnupRate={CONFIDENCE_THRESHOLDS.MODERATE - 0.05}
+          size="sm"
+        />,
+      );
       const avatarEl = screen.getByTitle('At Risk Volunteer');
       expect(avatarEl).toHaveClass('ring-red-600');
     });

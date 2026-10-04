@@ -6,6 +6,7 @@ import {
 } from '@/lib/domain/members';
 
 import { getMemberExcusedDetails, toIsoDateKey } from './calendar';
+import { DEFAULT_MEMBER_TURNUP_RATE, getConfidenceTierFromRate } from './constants';
 import type { ExcusedMemberMap, MilestoneEntry } from './types';
 
 const TIME_SLOT_CONFIG: Record<TimeSlot, { label: string; order: number }> = {
@@ -164,11 +165,12 @@ export function buildSundaySchedulesCsvExport(params: {
         confidenceLevel = 'Excused';
         turnupRateStr = '0%';
       } else {
-        const turnupRate = stat !== undefined ? stat.turnupRate : 0.8;
+        const turnupRate = stat !== undefined ? stat.turnupRate : DEFAULT_MEMBER_TURNUP_RATE;
         turnupRateStr = `${Math.round(turnupRate * 100)}%`;
-        if (turnupRate >= 0.8) {
+        const tier = getConfidenceTierFromRate(turnupRate);
+        if (tier === 'solid') {
           confidenceLevel = 'Solid';
-        } else if (turnupRate >= 0.4) {
+        } else if (tier === 'moderate') {
           confidenceLevel = 'Moderate';
         } else {
           confidenceLevel = 'At Risk';

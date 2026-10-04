@@ -1,6 +1,11 @@
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
-import { isMemberExcused } from '@/lib/domain/hub-calendar';
+import {
+  CONFIDENCE_THRESHOLDS,
+  DEFAULT_MEMBER_TURNUP_RATE,
+  getConfidenceTierFromRate,
+  isMemberExcused,
+} from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 export interface SlotConfidenceForecast {
@@ -47,12 +52,12 @@ export function calculateSlotConfidenceForecast(
     }
 
     const stat = statsMap?.get(entry.member.id);
-    const turnupRate = stat !== undefined ? stat.turnupRate : 0.8;
+    const turnupRate = stat !== undefined ? stat.turnupRate : DEFAULT_MEMBER_TURNUP_RATE;
     probabilitySum += turnupRate;
 
-    if (turnupRate >= 0.8) {
+    if (turnupRate >= CONFIDENCE_THRESHOLDS.SOLID) {
       highCount++;
-    } else if (turnupRate >= 0.4) {
+    } else if (turnupRate >= CONFIDENCE_THRESHOLDS.MODERATE) {
       moderateCount++;
     } else {
       atRiskCount++;
@@ -88,15 +93,9 @@ export function getMemberConfidenceTier(
   }
 
   const stat = member.id ? statsMap?.get(member.id) : undefined;
-  const turnupRate = stat !== undefined ? stat.turnupRate : 0.8;
+  const turnupRate = stat !== undefined ? stat.turnupRate : DEFAULT_MEMBER_TURNUP_RATE;
 
-  if (turnupRate >= 0.8) {
-    return 'solid';
-  }
-  if (turnupRate >= 0.4) {
-    return 'moderate';
-  }
-  return 'at_risk';
+  return getConfidenceTierFromRate(turnupRate);
 }
 
 export function getConfidenceTierLabel(tier: ConfidenceTier): string {

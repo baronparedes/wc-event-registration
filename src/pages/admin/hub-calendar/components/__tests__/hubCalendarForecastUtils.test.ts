@@ -67,9 +67,9 @@ describe('calculateSlotConfidenceForecast', () => {
     ];
 
     const statsMap = new Map<string, MemberAttendanceStats>([
-      ['m1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }], // Solid (>=0.8)
-      ['m2', { attendanceScore: 3, committed: 10, attended: 6, turnupRate: 0.6 }], // Moderate (0.5-0.79)
-      ['m3', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At risk (<0.5)
+      ['m1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }], // Solid (>=0.7)
+      ['m2', { attendanceScore: 3, committed: 10, attended: 6, turnupRate: 0.6 }], // Moderate (0.4-0.69)
+      ['m3', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At risk (<0.4)
       // m4 has no historical stats -> defaults to 0.8 (Solid)
     ]);
 
@@ -136,8 +136,9 @@ describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
     expect(getConfidenceTierLabel('excused')).toBe('Excused');
   });
 
-  it('evaluates solid, moderate, and at risk tiers based on turnup rate with 40% threshold', () => {
+  it('evaluates solid, moderate, and at risk tiers based on turnup rate with 70% solid threshold', () => {
     const mSolid = createMockMember('m-solid', 'Solid');
+    const mSolidThreshold = createMockMember('m-solid-72', 'Solid72');
     const mMod = createMockMember('m-mod', 'Mod');
     const mModLow = createMockMember('m-mod-low', 'ModLow');
     const mRisk = createMockMember('m-risk', 'Risk');
@@ -145,12 +146,16 @@ describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
 
     const statsMap = new Map<string, MemberAttendanceStats>([
       ['m-solid', { attendanceScore: 10, committed: 10, attended: 9, turnupRate: 0.9 }],
+      ['m-solid-72', { attendanceScore: 4.5, committed: 12, attended: 8, turnupRate: 8 / 11 }], // 72.7% -> Solid (>=0.7)
       ['m-mod', { attendanceScore: 5, committed: 10, attended: 6, turnupRate: 0.6 }],
       ['m-mod-low', { attendanceScore: 1, committed: 13, attended: 6, turnupRate: 0.46 }], // 46% -> Moderate
       ['m-risk', { attendanceScore: -2, committed: 10, attended: 3, turnupRate: 0.35 }], // 35% -> At risk
     ]);
 
     expect(getMemberConfidenceTier(mSolid, '2026-10-04', '9AM', undefined, statsMap)).toBe('solid');
+    expect(getMemberConfidenceTier(mSolidThreshold, '2026-10-04', '9AM', undefined, statsMap)).toBe(
+      'solid',
+    );
     expect(getMemberConfidenceTier(mMod, '2026-10-04', '9AM', undefined, statsMap)).toBe(
       'moderate',
     );
