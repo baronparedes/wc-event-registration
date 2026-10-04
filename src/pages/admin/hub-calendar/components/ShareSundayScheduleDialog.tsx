@@ -237,16 +237,16 @@ export function ShareSundayScheduleDialog({
 
           {/* Offscreen mounted elements for multi-export */}
           <div
-            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[1920px]"
-            style={{ position: 'fixed', left: '-9999px', top: 0, width: '1920px' }}
+            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[960px]"
+            style={{ position: 'fixed', left: '-9999px', top: 0, width: '960px' }}
             aria-hidden="true"
           >
             {TIME_SLOTS.map(({ slot, label }) => (
               <div
                 key={slot}
                 ref={hiddenCardRefs[slot]}
-                style={{ width: '1920px' }}
-                className="w-[1920px] bg-white"
+                style={{ width: '960px' }}
+                className="w-[960px] bg-white"
               >
                 <SundayScheduleShareCard
                   slot={slot}

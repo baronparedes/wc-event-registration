@@ -89,7 +89,7 @@ describe('SundayScheduleShareCard', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('IMT Support')).toBeInTheDocument();
-    expect(screen.getByText('+ Usher')).toBeInTheDocument();
+    expect(screen.getByText('+Usher')).toBeInTheDocument();
     expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
     expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
   });
