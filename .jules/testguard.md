@@ -21,3 +21,7 @@ act(() => {
 });
 expect(result.current).toBe(false);
 ```
+## 2026-10-04 - Provider Requirements for UI Components
+**Challenge:** Components like `SundayVolunteersTable` that use nested UI components (e.g., `<Avatar>`) fail in tests with 'No QueryClient set' because child components fetch data using React Query.
+**Learning:** UI components cannot be tested in isolation if they use data-fetching children; they require the full application provider context.
+**Pattern:** Always wrap components in a `QueryClientProvider` with a fresh `QueryClient` instance in tests to satisfy deep data dependencies.
