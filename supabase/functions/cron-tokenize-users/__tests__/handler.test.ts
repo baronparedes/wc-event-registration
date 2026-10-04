@@ -109,7 +109,9 @@ Deno.test('cron-tokenize-users returns an error when the RPC fails', async () =>
     try {
       const response = await handleCronTokenizeUsers(buildRequest());
       assertEquals(response.status, 500);
-      assertEquals((await response.json()).detail, 'RPC unavailable');
+      const data = await response.json();
+      assertEquals(data.error, 'Failed to tokenize users');
+      assertEquals(data.detail, undefined);
     } finally {
       fetchMock.restore();
     }
