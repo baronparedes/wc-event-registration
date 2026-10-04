@@ -356,8 +356,58 @@ describe('ShareSundayScheduleDialog', () => {
     await waitFor(() => {
       expect(clickSpy).toHaveBeenCalledTimes(3);
       expect(toast.success).toHaveBeenCalledWith('All 3 schedule images saved');
+      expect(toJpeg).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          skipFonts: true,
+          fontEmbedCSS: '',
+          cacheBust: true,
+          pixelRatio: 2,
+        }),
+      );
     });
 
     clickSpy.mockRestore();
+  });
+
+  it('triggers native navigator.share on iOS when Save is clicked', async () => {
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
+      configurable: true,
+    });
+
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    const canShareMock = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: canShareMock, configurable: true });
+
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    const saveButton = screen.getByRole('button', { name: /^Save$/i });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(shareMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('Sunday Service Schedules'),
+          files: expect.arrayContaining([expect.any(File)]),
+        }),
+      );
+    });
+
+    Object.defineProperty(navigator, 'userAgent', {
+      value: originalUserAgent,
+      configurable: true,
+    });
   });
 });

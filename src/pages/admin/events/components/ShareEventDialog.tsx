@@ -27,6 +27,9 @@ export function ShareEventDialog({ isOpen, onClose, event }: ShareEventDialogPro
       quality: 0.95,
       backgroundColor: '#ffffff',
       pixelRatio: 2,
+      cacheBust: true,
+      skipFonts: true,
+      fontEmbedCSS: '',
     });
   };
 

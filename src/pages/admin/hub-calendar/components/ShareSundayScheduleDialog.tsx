@@ -37,6 +37,26 @@ type ShareSundayScheduleDialogProps = {
   excusedMap?: ExcusedMemberMap;
 };
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const parts = dataUrl.split(';base64,');
+  const contentType = parts[0]?.split(':')[1] || 'image/jpeg';
+  const raw = window.atob(parts[1] || '');
+  const rawLength = raw.length;
+  const uInt8Array = new Uint8Array(rawLength);
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+  return new Blob([uInt8Array], { type: contentType });
+}
+
+function isIOSDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 export function ShareSundayScheduleDialog({
   isOpen,
   onClose,
@@ -70,27 +90,66 @@ export function ShareSundayScheduleDialog({
       quality: 0.95,
       backgroundColor: '#ffffff',
       pixelRatio: 2,
+      cacheBust: true,
+      skipFonts: true,
+      fontEmbedCSS: '',
     });
+  };
+
+  const generateFilesAndDataUrls = async (): Promise<{
+    files: File[];
+    dataUrls: { url: string; suffix: string }[];
+  }> => {
+    const files: File[] = [];
+    const dataUrls: { url: string; suffix: string }[] = [];
+
+    for (const { slot, fileSuffix } of TIME_SLOTS) {
+      const el = hiddenCardRefs[slot].current;
+      const dataUrl = await generateDataUrlFromRef(el);
+      if (!dataUrl) continue;
+
+      dataUrls.push({ url: dataUrl, suffix: fileSuffix });
+      const blob = dataUrlToBlob(dataUrl);
+      const file = new File([blob], `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`, {
+        type: 'image/jpeg',
+      });
+      files.push(file);
+    }
+
+    return { files, dataUrls };
   };
 
   const handleSaveImages = async () => {
     try {
       setIsGenerating(true);
+      const { files, dataUrls } = await generateFilesAndDataUrls();
+      if (files.length === 0) return;
+
+      // iOS WebKit / PWA does not support <a download>. Use Web Share API so iOS shows "Save Image / Photos".
+      if (isIOSDevice() && navigator.canShare && navigator.canShare({ files })) {
+        try {
+          await navigator.share({
+            files,
+            title: `Sunday Service Schedules - ${formattedDate}`,
+          });
+          return;
+        } catch (shareError) {
+          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
+            return;
+          }
+        }
+      }
+
+      // Standard browser download
       let count = 0;
-
-      for (const { slot, fileSuffix } of TIME_SLOTS) {
-        const el = hiddenCardRefs[slot].current;
-        const dataUrl = await generateDataUrlFromRef(el);
-        if (!dataUrl) continue;
-
+      for (const { url, suffix } of dataUrls) {
         const link = document.createElement('a');
-        link.download = `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`;
-        link.href = dataUrl;
+        link.download = `sunday-schedule-${isoDateKey}-${suffix}.jpg`;
+        link.href = url;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         count++;
-        // Small delay to allow browser download manager to process consecutive downloads
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
@@ -108,23 +167,7 @@ export function ShareSundayScheduleDialog({
   const handleShareImages = async () => {
     try {
       setIsGenerating(true);
-      const files: File[] = [];
-      const dataUrls: { url: string; suffix: string }[] = [];
-
-      for (const { slot, fileSuffix } of TIME_SLOTS) {
-        const el = hiddenCardRefs[slot].current;
-        const dataUrl = await generateDataUrlFromRef(el);
-        if (!dataUrl) continue;
-
-        dataUrls.push({ url: dataUrl, suffix: fileSuffix });
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`, {
-          type: 'image/jpeg',
-        });
-        files.push(file);
-      }
-
+      const { files, dataUrls } = await generateFilesAndDataUrls();
       if (files.length === 0) return;
 
       if (navigator.canShare && navigator.canShare({ files })) {
@@ -139,7 +182,6 @@ export function ShareSundayScheduleDialog({
           if (shareError instanceof DOMException && shareError.name === 'AbortError') {
             return;
           }
-          // Non-abort errors fall through to download fallback
         }
       }
 
@@ -229,11 +271,12 @@ export function ShareSundayScheduleDialog({
 
           {/* Offscreen mounted elements for multi-export */}
           <div
-            className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 -z-50 w-[80rem]"
+            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[720px]"
+            style={{ position: 'fixed', left: '-9999px', top: 0 }}
             aria-hidden="true"
           >
             {TIME_SLOTS.map(({ slot, label }) => (
-              <div key={slot} ref={hiddenCardRefs[slot]} className="w-[80rem]">
+              <div key={slot} ref={hiddenCardRefs[slot]} className="w-[720px] bg-white">
                 <SundayScheduleShareCard
                   slot={slot}
                   slotLabel={label}
