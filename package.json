@@ -7,6 +7,10 @@
   "engines": {
     "npm": ">=10.9.2 <12"
   },
+  "allowScripts": {
+    "fsevents": true,
+    "unrs-resolver": true
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -53,6 +57,7 @@
     "dompurify": "^3.4.11",
     "easymde": "^2.21.0",
     "framer-motion": "^12.40.0",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^1.21.0",
     "react": "^19.2.6",
     "react-day-picker": "^10.0.1",

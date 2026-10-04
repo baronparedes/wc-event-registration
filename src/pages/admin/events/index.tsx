@@ -19,7 +19,12 @@ import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminEvent } from '@/lib/domain/events';
 
-import { AdminEventsTable, DuplicateEventDialog, MobileEventCard } from './components';
+import {
+  AdminEventsTable,
+  DuplicateEventDialog,
+  MobileEventCard,
+  ShareEventDialog,
+} from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
@@ -52,6 +57,7 @@ export function AdminEventsPage() {
   });
 
   const [duplicateEvent, setDuplicateEvent] = useState<AdminEvent | null>(null);
+  const [shareEvent, setShareEvent] = useState<AdminEvent | null>(null);
   const duplicateMutation = useDuplicateEventMutation();
 
   const handleDuplicateEvent = async (sourceEventId: string, newTitle: string, newSlug: string) => {
@@ -147,6 +153,7 @@ export function AdminEventsPage() {
                     canRead={canRead}
                     canAccessCheckIn={canAccessCheckIn}
                     onDuplicateClick={setDuplicateEvent}
+                    onShareClick={setShareEvent}
                   />
                 ))}
               </div>
@@ -158,6 +165,7 @@ export function AdminEventsPage() {
                 canAccessCheckIn={canAccessCheckIn}
                 onEventSelect={(eventId) => navigate(toRoute('adminEventDetail', { id: eventId }))}
                 onDuplicateClick={setDuplicateEvent}
+                onShareClick={setShareEvent}
               />
             )}
 
@@ -167,6 +175,12 @@ export function AdminEventsPage() {
               event={duplicateEvent}
               isPending={duplicateMutation.isPending}
               onDuplicate={handleDuplicateEvent}
+            />
+
+            <ShareEventDialog
+              isOpen={Boolean(shareEvent)}
+              onClose={() => setShareEvent(null)}
+              event={shareEvent}
             />
 
             <AdminInfiniteScrollFooter

@@ -3,12 +3,11 @@ import { describe, expect, it } from 'vitest';
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
 import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
-
 import {
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
-} from '../hubCalendarForecastUtils';
+} from '@/pages/admin/hub-calendar/utils';
 
 function createMockMember(id: string, name: string): AdminMember {
   return {

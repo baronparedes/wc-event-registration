@@ -62,6 +62,7 @@ const setup = (props: Partial<React.ComponentProps<typeof AdminEventsTable>> = {
     canAccessCheckIn: true,
     onEventSelect: vi.fn(),
     onDuplicateClick: vi.fn(),
+    onShareClick: vi.fn(),
   };
 
   const finalProps = { ...defaultProps, ...props };
@@ -117,6 +118,9 @@ describe('AdminEventsTable', () => {
       const duplicateButtons = screen.getAllByRole('button', { name: /Duplicate/i });
       expect(duplicateButtons).toHaveLength(2);
 
+      const shareButtons = screen.getAllByRole('button', { name: /Share Schedule/i });
+      expect(shareButtons).toHaveLength(2);
+
       const attendanceButtons = screen.getAllByRole('link', { name: /Attendance/i });
       expect(attendanceButtons).toHaveLength(2);
 
@@ -141,7 +145,8 @@ describe('AdminEventsTable', () => {
       expect(screen.queryByRole('link', { name: /Attendance/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /Fields/i })).not.toBeInTheDocument();
 
-      // Read and check-in actions should still be visible
+      // Read, share, and check-in actions should still be visible
+      expect(screen.getAllByRole('button', { name: /Share Schedule/i })).toHaveLength(2);
       expect(screen.getAllByRole('link', { name: /Attendee Details/i })).toHaveLength(2);
       expect(screen.getAllByRole('link', { name: /Check-In/i })).toHaveLength(2);
     });
@@ -149,6 +154,7 @@ describe('AdminEventsTable', () => {
     it('hides read actions when canRead is false', () => {
       setup({ canRead: false });
 
+      expect(screen.queryByRole('button', { name: /Share Schedule/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /Attendee Details/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /Registrations/i })).not.toBeInTheDocument();
 
@@ -164,6 +170,7 @@ describe('AdminEventsTable', () => {
 
       // Write and read actions should still be visible
       expect(screen.getAllByRole('link', { name: /Edit/i })).toHaveLength(2);
+      expect(screen.getAllByRole('button', { name: /Share Schedule/i })).toHaveLength(2);
       expect(screen.getAllByRole('link', { name: /Attendee Details/i })).toHaveLength(2);
     });
   });
@@ -194,6 +201,16 @@ describe('AdminEventsTable', () => {
       fireEvent.click(duplicateButtons[0]);
 
       expect(props.onDuplicateClick).toHaveBeenCalledWith(mockEvent);
+      expect(props.onEventSelect).not.toHaveBeenCalled();
+    });
+
+    it('calls onShareClick when share schedule button is clicked', () => {
+      const { props } = setup();
+
+      const shareButtons = screen.getAllByRole('button', { name: /Share Schedule/i });
+      fireEvent.click(shareButtons[0]);
+
+      expect(props.onShareClick).toHaveBeenCalledWith(mockEvent);
       expect(props.onEventSelect).not.toHaveBeenCalled();
     });
   });

@@ -9,6 +9,7 @@ import {
   MapPin,
   MoreHorizontal,
   QrCode,
+  Share2,
   UserCheck,
   Users,
 } from 'lucide-react';
@@ -39,6 +40,7 @@ type MobileEventCardProps = {
   canRead: boolean;
   canAccessCheckIn: boolean;
   onDuplicateClick?: (event: AdminEvent) => void;
+  onShareClick?: (event: AdminEvent) => void;
 };
 
 export function MobileEventCard({
@@ -47,6 +49,7 @@ export function MobileEventCard({
   canRead,
   canAccessCheckIn,
   onDuplicateClick,
+  onShareClick,
 }: MobileEventCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hasActions = canWrite || canRead || canAccessCheckIn;
@@ -143,6 +146,19 @@ export function MobileEventCard({
                 <span className="flex items-center gap-2">
                   <Copy className="h-4 w-4" />
                   Duplicate
+                </span>
+              </DropdownMenuItem>
+            )}
+            {canRead && onShareClick && (
+              <DropdownMenuItem
+                onClick={() => {
+                  onShareClick(event);
+                  setIsMenuOpen(false);
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share schedule
                 </span>
               </DropdownMenuItem>
             )}

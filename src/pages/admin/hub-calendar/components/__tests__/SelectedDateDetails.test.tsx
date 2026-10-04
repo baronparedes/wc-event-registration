@@ -342,4 +342,32 @@ describe('SelectedDateDetails', () => {
     expect(screen.queryByText(mockMember1.full_name)).not.toBeInTheDocument();
     expect(screen.queryByText(mockMember2.full_name)).not.toBeInTheDocument();
   });
+
+  it('renders Share Schedule button on scheduled Sunday and opens dialog when clicked', () => {
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const shareButton = screen.getByRole('button', { name: /Share Schedule/i });
+    expect(shareButton).toBeInTheDocument();
+
+    fireEvent.click(shareButton);
+    expect(screen.getByRole('heading', { name: 'Share Sunday Schedule' })).toBeInTheDocument();
+  });
 });

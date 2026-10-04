@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui';
 
-import type { ConfidenceTier, SlotConfidenceForecast } from './hubCalendarForecastUtils';
+import type { ConfidenceTier, SlotConfidenceForecast } from '../utils';
 
 export type SlotConfidenceForecastBannerProps = {
   forecast: SlotConfidenceForecast;

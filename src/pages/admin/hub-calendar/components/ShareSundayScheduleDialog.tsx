@@ -1,0 +1,266 @@
+import { useRef, useState } from 'react';
+
+import { toJpeg } from 'html-to-image';
+import { Clock, Download, Share2, Users } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button, Dialog } from '@/components/ui';
+import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
+import { type ExcusedMemberMap, toIsoDateKey } from '@/lib/domain/hub-calendar';
+
+import { groupEntriesByPrimaryRole } from '../utils';
+import { SundayScheduleShareCard } from './SundayScheduleShareCard';
+
+const TIME_SLOTS: { slot: TimeSlot; label: string; fileSuffix: string }[] = [
+  { slot: '9AM', label: '9:00 AM', fileSuffix: '9am' },
+  { slot: '12NN', label: '12:00 NN', fileSuffix: '12nn' },
+  { slot: '3PM', label: '3:00 PM', fileSuffix: '3pm' },
+];
+
+function formatScheduleDate(year: number, monthIndex: number, day: number): string {
+  const date = new Date(year, monthIndex, day);
+  return date.toLocaleDateString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+type ShareSundayScheduleDialogProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  year: number;
+  monthIndex: number;
+  dayNumber: number;
+  entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
+  excusedMap?: ExcusedMemberMap;
+};
+
+export function ShareSundayScheduleDialog({
+  isOpen,
+  onClose,
+  year,
+  monthIndex,
+  dayNumber,
+  entriesByTimeSlot,
+  excusedMap,
+}: ShareSundayScheduleDialogProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const hiddenCardRefs = {
+    '9AM': useRef<HTMLDivElement>(null),
+    '12NN': useRef<HTMLDivElement>(null),
+    '3PM': useRef<HTMLDivElement>(null),
+  };
+
+  if (!isOpen) return null;
+
+  const isoDateKey = toIsoDateKey(year, monthIndex + 1, dayNumber);
+  const formattedDate = formatScheduleDate(year, monthIndex, dayNumber);
+
+  const totalVolunteers =
+    (entriesByTimeSlot['9AM']?.length || 0) +
+    (entriesByTimeSlot['12NN']?.length || 0) +
+    (entriesByTimeSlot['3PM']?.length || 0);
+
+  const generateDataUrlFromRef = async (element: HTMLDivElement | null): Promise<string | null> => {
+    if (!element) return null;
+    return toJpeg(element, {
+      quality: 0.95,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2,
+    });
+  };
+
+  const handleSaveImages = async () => {
+    try {
+      setIsGenerating(true);
+      let count = 0;
+
+      for (const { slot, fileSuffix } of TIME_SLOTS) {
+        const el = hiddenCardRefs[slot].current;
+        const dataUrl = await generateDataUrlFromRef(el);
+        if (!dataUrl) continue;
+
+        const link = document.createElement('a');
+        link.download = `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        count++;
+        // Small delay to allow browser download manager to process consecutive downloads
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      if (count > 0) {
+        toast.success(`All ${count} schedule images saved`);
+      }
+    } catch (error) {
+      console.error('Error saving schedule images:', error);
+      toast.error('Failed to save schedule images');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleShareImages = async () => {
+    try {
+      setIsGenerating(true);
+      const files: File[] = [];
+      const dataUrls: { url: string; suffix: string }[] = [];
+
+      for (const { slot, fileSuffix } of TIME_SLOTS) {
+        const el = hiddenCardRefs[slot].current;
+        const dataUrl = await generateDataUrlFromRef(el);
+        if (!dataUrl) continue;
+
+        dataUrls.push({ url: dataUrl, suffix: fileSuffix });
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`, {
+          type: 'image/jpeg',
+        });
+        files.push(file);
+      }
+
+      if (files.length === 0) return;
+
+      if (navigator.canShare && navigator.canShare({ files })) {
+        try {
+          await navigator.share({
+            files,
+            title: `Sunday Service Schedules - ${formattedDate}`,
+            text: `Sunday Service Schedules for ${formattedDate} (${TIME_SLOTS.map((t) => t.label).join(', ')})`,
+          });
+          return;
+        } catch (shareError) {
+          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
+            return;
+          }
+          // Non-abort errors fall through to download fallback
+        }
+      }
+
+      // Fallback download for all images
+      for (const { url, suffix } of dataUrls) {
+        const link = document.createElement('a');
+        link.download = `sunday-schedule-${isoDateKey}-${suffix}.jpg`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      toast.success('Schedule images downloaded');
+    } catch (error) {
+      console.error('Error generating schedule images:', error);
+      toast.error('Failed to generate schedule images');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Dialog isOpen={isOpen} onClose={onClose} size="lg">
+      <Dialog.Header showCloseButton>
+        <Dialog.Title>Share Sunday Schedule</Dialog.Title>
+        <Dialog.Description>
+          Download or share high-resolution schedule images for all Sunday services
+        </Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Body>
+        <div className="space-y-4">
+          {/* Summary Card */}
+          <div className="rounded-xl border border-border bg-slate-50/60 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Schedule Date
+                </span>
+                <h3 className="text-base font-bold text-text">{formattedDate}</h3>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">
+                <Users className="h-4 w-4" />
+                {totalVolunteers} Total Volunteer{totalVolunteers === 1 ? '' : 's'}
+              </span>
+            </div>
+          </div>
+
+          {/* Service Breakdown */}
+          <div className="space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted px-0.5">
+              Service Breakdown
+            </span>
+            <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+              {TIME_SLOTS.map(({ slot, label }) => {
+                const entries = entriesByTimeSlot[slot] || [];
+                const roleSections = groupEntriesByPrimaryRole(entries);
+                return (
+                  <div key={slot} className="flex items-center justify-between p-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Clock className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-text">{label} Service</div>
+                        <div className="text-xs text-muted">
+                          {entries.length === 0
+                            ? 'No volunteers scheduled'
+                            : `${roleSections.length} role group${roleSections.length === 1 ? '' : 's'}`}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                      {entries.length} volunteer{entries.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="text-xs text-muted">
+            Saving or sharing will generate 3 high-resolution images (9:00 AM, 12:00 NN, and 3:00
+            PM).
+          </p>
+
+          {/* Offscreen mounted elements for multi-export */}
+          <div
+            className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 -z-50 w-[80rem]"
+            aria-hidden="true"
+          >
+            {TIME_SLOTS.map(({ slot, label }) => (
+              <div key={slot} ref={hiddenCardRefs[slot]} className="w-[80rem]">
+                <SundayScheduleShareCard
+                  slot={slot}
+                  slotLabel={label}
+                  formattedDate={formattedDate}
+                  isoDateKey={isoDateKey}
+                  entries={entriesByTimeSlot[slot] || []}
+                  excusedMap={excusedMap}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </Dialog.Body>
+
+      <Dialog.Footer>
+        <Button variant="primaryOutline" onClick={onClose} disabled={isGenerating}>
+          Cancel
+        </Button>
+        <Button variant="outline" onClick={handleSaveImages} disabled={isGenerating}>
+          <Download className="mr-2 h-4 w-4" />
+          Save
+        </Button>
+        <Button onClick={handleShareImages} disabled={isGenerating}>
+          <Share2 className="mr-2 h-4 w-4" />
+          {isGenerating ? 'Generating...' : 'Share'}
+        </Button>
+      </Dialog.Footer>
+    </Dialog>
+  );
+}

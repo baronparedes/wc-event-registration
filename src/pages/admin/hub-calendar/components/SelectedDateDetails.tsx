@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Share2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Badge, EmptyState, SearchInputField, SectionCard } from '@/components/ui';
+import { Badge, Button, EmptyState, SearchInputField, SectionCard } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import {
@@ -14,17 +14,18 @@ import {
 } from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
-import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
-import { MilestoneAvatar } from './MilestoneAvatar';
-import { MilestoneBadge } from './MilestoneBadge';
-import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
-import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
 import {
   type ConfidenceTier,
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
-} from './hubCalendarForecastUtils';
+} from '../utils';
+import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
+import { MilestoneAvatar } from './MilestoneAvatar';
+import { MilestoneBadge } from './MilestoneBadge';
+import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
+import { ShareSundayScheduleDialog } from './ShareSundayScheduleDialog';
+import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -81,6 +82,7 @@ export function SelectedDateDetails({
   const [searchParams] = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceTier | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     // Only scroll if there is an explicit ?date parameter in the URL on mount
@@ -378,20 +380,36 @@ export function SelectedDateDetails({
 
           {/* Section 2: Service Schedules */}
           <div className="pt-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3 mb-4 gap-2">
+            <div className="flex flex-col gap-3 border-b border-border pb-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="font-heading text-lg font-semibold text-text">Service Schedules</h3>
-                <p className="text-xs text-muted">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-heading text-lg font-semibold text-text">
+                    Service Schedules
+                  </h3>
+                  {isCurrentSelectedSunday && selectedEntries.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {selectedEntries.length} scheduled
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted mt-0.5">
                   {isCurrentSelectedSunday
                     ? 'Scheduled service volunteers and teams for this Sunday'
                     : 'Service schedules are held on Sundays'}
                 </p>
               </div>
               {isCurrentSelectedSunday && selectedEntries.length > 0 && (
-                <div className="flex items-center gap-2 justify-end">
-                  <Badge variant="outline" className="text-xs">
-                    {selectedEntries.length} scheduled
-                  </Badge>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="primaryOutline"
+                    className="w-full sm:w-auto justify-center"
+                    onClick={() => setIsShareOpen(true)}
+                  >
+                    <Share2 className="mr-1.5 h-4 w-4" />
+                    Share Schedule
+                  </Button>
                   <ExportSundaySchedulesButton
                     selectedEntries={selectedEntries}
                     year={viewYear}
@@ -399,6 +417,7 @@ export function SelectedDateDetails({
                     dayNumber={selectedDayNumber}
                     excusedMap={excusedMap}
                     attendanceScoreMap={attendanceScoreMap}
+                    className="w-full sm:w-auto justify-center"
                   />
                 </div>
               )}
@@ -455,6 +474,16 @@ export function SelectedDateDetails({
           </div>
         </div>
       </SectionCard>
+
+      <ShareSundayScheduleDialog
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        year={viewYear}
+        monthIndex={viewMonthIndex}
+        dayNumber={selectedDayNumber}
+        entriesByTimeSlot={entriesByTimeSlot}
+        excusedMap={excusedMap}
+      />
     </div>
   );
 }
