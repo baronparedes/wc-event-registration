@@ -73,10 +73,10 @@ export async function handleDuplicateForm(req: Request): Promise<Response> {
       }
 
       if (code === 'P0002' || message.includes('SOURCE_FORM_NOT_FOUND')) {
-        return errorResponse(corsHeaders, 404, 'Source form not found', message);
+        return errorResponse(corsHeaders, 404, 'Source form not found');
       }
 
-      return errorResponse(corsHeaders, 500, 'Failed to duplicate form', message);
+      return errorResponse(corsHeaders, 500, 'Failed to duplicate form');
     }
 
     if (!newFormId) {

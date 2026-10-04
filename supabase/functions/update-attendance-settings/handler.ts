@@ -249,15 +249,9 @@ export async function handleUpdateAttendanceSettings(req: Request): Promise<Resp
       .single();
 
     if (upsertError) {
-      return errorResponse(
-        corsHeaders,
-        500,
-        'Failed to save attendance settings',
-        upsertError.message,
-        {
-          error_code: 'UPSERT_FAILED',
-        },
-      );
+      return errorResponse(corsHeaders, 500, 'Failed to save attendance settings', undefined, {
+        error_code: 'UPSERT_FAILED',
+      });
     }
 
     return jsonResponse(
