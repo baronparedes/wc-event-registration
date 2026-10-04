@@ -178,7 +178,21 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
               filteredNotifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`group relative flex items-start gap-3.5 px-5 py-4 transition-colors cursor-pointer select-none ${
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (!n.is_read) {
+                        markRead.mutate(n.id);
+                      }
+                      if (n.notification.target_url) {
+                        navigate(n.notification.target_url);
+                        onClose();
+                      }
+                    }
+                  }}
+                  className={`group relative flex items-start gap-3.5 px-5 py-4 transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 ${
                     !n.is_read
                       ? 'bg-primary/[0.04] hover:bg-primary/[0.08]'
                       : 'hover:bg-background/80'
