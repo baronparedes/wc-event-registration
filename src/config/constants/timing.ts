@@ -14,4 +14,6 @@ export const TIMING = {
   rfidBlurRefocusDelayMs: 150,
   scanDeleteBufferAutoCompleteMs: 800,
   scanAutoCompleteMs: 300,
+  pushNotificationPromptDelayMs: 3500,
+  pushNotificationPromptSnoozeDays: 14,
 } as const;

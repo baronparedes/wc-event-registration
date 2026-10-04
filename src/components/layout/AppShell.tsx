@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { NotificationBell } from '@/components/ui';
+import { NotificationBell, PushNotificationPromptBanner } from '@/components/ui';
 import { ROUTE_PATHS, TOAST_MESSAGES, isMinimizedAppShellRoute } from '@/config/constants';
 import { useAdminAuthQuery, useAdminLogoutMutation } from '@/hooks/domain/auth';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
@@ -82,6 +82,7 @@ export function AppShell() {
         <Outlet />
       </main>
 
+      <PushNotificationPromptBanner />
       <AppFooter />
     </div>
   );

@@ -90,3 +90,7 @@ export { FormMarkdownField } from './FormMarkdownField';
 export { MarkdownRenderer } from './MarkdownRenderer';
 export { NotificationBell } from './NotificationBell';
 export { NotificationDrawer, type NotificationDrawerProps } from './NotificationDrawer';
+export {
+  PushNotificationPromptBanner,
+  PUSH_PROMPT_SNOOZE_STORAGE_KEY,
+} from './PushNotificationPromptBanner';
