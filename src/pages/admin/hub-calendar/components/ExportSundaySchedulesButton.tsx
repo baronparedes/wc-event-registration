@@ -14,6 +14,7 @@ type ExportSundaySchedulesButtonProps = {
   dayNumber: number;
   excusedMap?: ExcusedMemberMap;
   attendanceScoreMap?: Map<string, MemberAttendanceStats>;
+  className?: string;
 };
 
 export function ExportSundaySchedulesButton({
@@ -23,6 +24,7 @@ export function ExportSundaySchedulesButton({
   dayNumber,
   excusedMap,
   attendanceScoreMap,
+  className,
 }: ExportSundaySchedulesButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const isDisabled = selectedEntries.length === 0 || isExporting;
@@ -72,7 +74,13 @@ export function ExportSundaySchedulesButton({
   }
 
   return (
-    <Button type="button" size="sm" onClick={handleExport} disabled={isDisabled}>
+    <Button
+      type="button"
+      size="sm"
+      onClick={handleExport}
+      disabled={isDisabled}
+      className={className}
+    >
       {isExporting ? 'Exporting...' : 'Export Schedules CSV'}
     </Button>
   );

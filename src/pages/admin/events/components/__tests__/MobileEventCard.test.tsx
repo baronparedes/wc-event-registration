@@ -96,7 +96,8 @@ describe('MobileEventCard', () => {
   });
 
   it('shows read actions without write-only menu actions', () => {
-    renderCard({ canRead: true });
+    const onShareClick = vi.fn();
+    renderCard({ canRead: true, onShareClick });
 
     expect(
       screen.getByRole('link', { name: 'View attendees for Summer Gathering' }),
@@ -105,11 +106,15 @@ describe('MobileEventCard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
 
+    expect(screen.getByRole('button', { name: 'Share schedule' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Registrations' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Attendance dashboard' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Attendance settings' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registration fields' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Check-in' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share schedule' }));
+    expect(onShareClick).toHaveBeenCalledWith(event);
   });
 
   it('shows write actions without read-only menu actions', () => {
@@ -124,6 +129,7 @@ describe('MobileEventCard', () => {
 
     expect(screen.getByRole('link', { name: 'Attendance settings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Registration fields' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Share schedule' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registrations' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Attendance dashboard' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Check-in' })).not.toBeInTheDocument();
@@ -140,6 +146,7 @@ describe('MobileEventCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
 
     expect(screen.getByRole('link', { name: 'Check-in' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Share schedule' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Attendance settings' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registration fields' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registrations' })).not.toBeInTheDocument();

@@ -1,4 +1,13 @@
-import { ClipboardList, Copy, FormInput, QrCode, Settings, UserCheck, Users } from 'lucide-react';
+import {
+  ClipboardList,
+  Copy,
+  FormInput,
+  QrCode,
+  Settings,
+  Share2,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 
 import { ActionButton, ActionLink } from '@/components/ui/ActionLink';
 import {
@@ -24,6 +33,7 @@ type AdminEventsTableProps = {
   canAccessCheckIn: boolean;
   onEventSelect: (eventId: string) => void;
   onDuplicateClick?: (event: AdminEvent) => void;
+  onShareClick?: (event: AdminEvent) => void;
 };
 
 export function AdminEventsTable({
@@ -33,6 +43,7 @@ export function AdminEventsTable({
   canAccessCheckIn,
   onEventSelect,
   onDuplicateClick,
+  onShareClick,
 }: AdminEventsTableProps) {
   return (
     <div>
@@ -112,6 +123,18 @@ export function AdminEventsTable({
                       }}
                     >
                       <Copy className="h-5 w-5" />
+                    </ActionButton>
+                  )}
+                  {canRead && onShareClick && (
+                    <ActionButton
+                      title="Share Schedule"
+                      aria-label={`Share schedule for ${event.title}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShareClick(event);
+                      }}
+                    >
+                      <Share2 className="h-5 w-5" />
                     </ActionButton>
                   )}
                   {canWrite && (

@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 
 import { toJpeg } from 'html-to-image';
-import { Share2 } from 'lucide-react';
+import { Download, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button, Dialog } from '@/components/ui';
+import { LEGAL_CONFIG } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -20,31 +21,72 @@ export function ShareEventDialog({ isOpen, onClose, event }: ShareEventDialogPro
 
   if (!event) return null;
 
+  const generateDataUrl = async () => {
+    if (!cardRef.current) return null;
+    return toJpeg(cardRef.current, {
+      quality: 0.95,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2,
+    });
+  };
+
+  const handleSave = async () => {
+    if (!cardRef.current) return;
+
+    try {
+      setIsGenerating(true);
+      const dataUrl = await generateDataUrl();
+      if (!dataUrl) return;
+
+      const link = document.createElement('a');
+      link.download = `${event.slug || 'event'}-schedule.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success('Schedule image saved');
+    } catch (error) {
+      console.error('Error saving image:', error);
+      toast.error('Failed to save schedule image');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleShare = async () => {
     if (!cardRef.current) return;
 
     try {
       setIsGenerating(true);
-      const dataUrl = await toJpeg(cardRef.current, { quality: 0.95, backgroundColor: '#ffffff' });
+      const dataUrl = await generateDataUrl();
+      if (!dataUrl) return;
 
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      const file = new File([blob], `${event.slug}-schedule.jpg`, { type: 'image/jpeg' });
+      const file = new File([blob], `${event.slug || 'event'}-schedule.jpg`, {
+        type: 'image/jpeg',
+      });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: event.title,
-          text: `Join us for ${event.title}!`,
-        });
-      } else {
-        // Fallback: download the image
-        const link = document.createElement('a');
-        link.download = `${event.slug}-schedule.jpg`;
-        link.href = dataUrl;
-        link.click();
-        toast.success('Schedule image downloaded');
+        try {
+          await navigator.share({
+            files: [file],
+            title: event.title,
+            text: `Join us for ${event.title}!`,
+          });
+          return;
+        } catch (shareError) {
+          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
+            return;
+          }
+          // Non-abort errors fall through to download fallback
+        }
       }
+
+      // Fallback: download the image
+      const link = document.createElement('a');
+      link.download = `${event.slug || 'event'}-schedule.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success('Schedule image downloaded');
     } catch (error) {
       console.error('Error generating image:', error);
       toast.error('Failed to generate schedule image');
@@ -62,11 +104,7 @@ export function ShareEventDialog({ isOpen, onClose, event }: ShareEventDialogPro
 
       <Dialog.Body>
         <div className="flex justify-center rounded-xl border border-border bg-slate-50 p-4 sm:p-8">
-          <div
-            ref={cardRef}
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-            style={{ padding: '32px' }}
-          >
+          <div ref={cardRef} className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl">
             <div className="mb-4 space-y-1 text-center">
               <h2 className="text-2xl font-bold text-slate-900">{event.title}</h2>
               {event.location && (
@@ -78,25 +116,33 @@ export function ShareEventDialog({ isOpen, onClose, event }: ShareEventDialogPro
               <div className="space-y-3 text-sm">
                 <div>
                   <p className="font-semibold text-slate-700">Starts</p>
-                  <p className="text-slate-600">{formatDateTime(event.starts_at)}</p>
+                  <p className="text-slate-600">
+                    {event.starts_at ? formatDateTime(event.starts_at) : 'TBA'}
+                  </p>
                 </div>
                 <div>
                   <p className="font-semibold text-slate-700">Ends</p>
-                  <p className="text-slate-600">{formatDateTime(event.ends_at)}</p>
+                  <p className="text-slate-600">
+                    {event.ends_at ? formatDateTime(event.ends_at) : 'TBA'}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="mt-8 text-center text-xs text-slate-400">
-              <p>Generated via WelcomeHub</p>
+              <p>Generated via {LEGAL_CONFIG.appName}</p>
             </div>
           </div>
         </div>
       </Dialog.Body>
 
       <Dialog.Footer>
-        <Button variant="primaryOutline" onClick={onClose}>
+        <Button variant="primaryOutline" onClick={onClose} disabled={isGenerating}>
           Cancel
+        </Button>
+        <Button variant="outline" onClick={handleSave} disabled={isGenerating}>
+          <Download className="mr-2 h-4 w-4" />
+          Save Image
         </Button>
         <Button onClick={handleShare} disabled={isGenerating}>
           <Share2 className="mr-2 h-4 w-4" />

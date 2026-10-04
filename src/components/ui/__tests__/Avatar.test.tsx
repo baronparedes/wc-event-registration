@@ -107,4 +107,12 @@ describe('Avatar', () => {
       );
     });
   });
+
+  describe('size prop', () => {
+    it('applies xs size classes when size="xs"', () => {
+      render(<Avatar name="Test Member" size="xs" />);
+      const container = screen.getByTitle('Test Member');
+      expect(container).toHaveClass('w-6', 'h-6', 'text-[10px]');
+    });
+  });
 });
