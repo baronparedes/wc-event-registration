@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 
-import { toJpeg } from 'html-to-image';
-import { Clock, Share2, Users } from 'lucide-react';
+import { toBlob, toJpeg } from 'html-to-image';
+import { Check, Clock, Copy, Download, Share2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button, Dialog } from '@/components/ui';
@@ -16,6 +16,15 @@ const TIME_SLOTS: { slot: TimeSlot; label: string; fileSuffix: string }[] = [
   { slot: '12NN', label: '12:00 NN', fileSuffix: '12nn' },
   { slot: '3PM', label: '3:00 PM', fileSuffix: '3pm' },
 ];
+
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
 
 function formatScheduleDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -71,7 +80,7 @@ async function ensureResourcesReady(element: HTMLElement): Promise<void> {
     images.map(async (img) => {
       if (img.complete && img.naturalWidth > 0) return;
       try {
-        if ('decode' in img) {
+        if ('decode' in img && typeof img.decode === 'function') {
           await img.decode();
         }
       } catch {
@@ -91,13 +100,23 @@ export function ShareSundayScheduleDialog({
   excusedMap,
 }: ShareSundayScheduleDialogProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedSlot, setCopiedSlot] = useState<TimeSlot | null>(null);
 
-  const hiddenCardRefs = {
-    '9AM': useRef<HTMLDivElement>(null),
-    '12NN': useRef<HTMLDivElement>(null),
-    '3PM': useRef<HTMLDivElement>(null),
+  const defaultSlot =
+    TIME_SLOTS.find((s) => (entriesByTimeSlot[s.slot]?.length || 0) > 0)?.slot || '9AM';
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot>(defaultSlot);
+
+  const ref9AM = useRef<HTMLDivElement>(null);
+  const ref12NN = useRef<HTMLDivElement>(null);
+  const ref3PM = useRef<HTMLDivElement>(null);
+
+  const hiddenCardRefs: Record<TimeSlot, React.RefObject<HTMLDivElement | null>> = {
+    '9AM': ref9AM,
+    '12NN': ref12NN,
+    '3PM': ref3PM,
   };
 
+  const isMobile = isMobileDevice();
   const isoDateKey = toIsoDateKey(year, monthIndex + 1, dayNumber);
   const formattedDate = formatScheduleDate(year, monthIndex, dayNumber);
 
@@ -112,6 +131,19 @@ export function ShareSundayScheduleDialog({
 
     return toJpeg(element, {
       quality: 0.95,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2,
+      cacheBust: true,
+      skipFonts: true,
+      fontEmbedCSS: '',
+    });
+  };
+
+  const generatePngBlobFromRef = async (element: HTMLDivElement | null): Promise<Blob | null> => {
+    if (!element) return null;
+    await ensureResourcesReady(element);
+
+    return toBlob(element, {
       backgroundColor: '#ffffff',
       pixelRatio: 2,
       cacheBust: true,
@@ -146,6 +178,65 @@ export function ShareSundayScheduleDialog({
       files: valid.map((r) => r.file),
       dataUrls: valid.map((r) => ({ url: r.dataUrl, suffix: r.suffix })),
     };
+  };
+
+  const handleCopySlotImage = async (slot: TimeSlot) => {
+    const slotConfig = TIME_SLOTS.find((s) => s.slot === slot);
+    const label = slotConfig?.label || slot;
+
+    try {
+      setIsGenerating(true);
+      const el = hiddenCardRefs[slot].current;
+      const blob = await generatePngBlobFromRef(el);
+
+      if (!blob) {
+        toast.error(`Failed to generate ${label} schedule image`);
+        return;
+      }
+
+      if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+        toast.error('Clipboard image copy is not supported in this browser');
+        return;
+      }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob,
+        }),
+      ]);
+      setCopiedSlot(slot);
+      setTimeout(() => setCopiedSlot(null), 2500);
+      toast.success(`${label} schedule image copied to clipboard`);
+    } catch (error) {
+      console.error('Error copying schedule image to clipboard:', error);
+      toast.error('Failed to copy image to clipboard');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    try {
+      setIsGenerating(true);
+      const { dataUrls } = await generateFilesAndDataUrls();
+      if (dataUrls.length === 0) return;
+
+      for (const { url, suffix } of dataUrls) {
+        const link = document.createElement('a');
+        link.download = `sunday-schedule-${isoDateKey}-${suffix}.jpg`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      toast.success('Schedule images downloaded');
+    } catch (error) {
+      console.error('Error downloading schedule images:', error);
+      toast.error('Failed to download schedule images');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleShareImages = async () => {
@@ -202,12 +293,17 @@ export function ShareSundayScheduleDialog({
 
   if (!isOpen) return null;
 
+  const selectedSlotConfig = TIME_SLOTS.find((s) => s.slot === selectedSlot);
+  const selectedSlotLabel = selectedSlotConfig?.label || selectedSlot;
+
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="lg">
       <Dialog.Header showCloseButton>
         <Dialog.Title>Share Sunday Schedule</Dialog.Title>
         <Dialog.Description>
-          Share high-resolution schedule images for all Sunday services
+          {isMobile
+            ? 'Share high-resolution schedule images for all Sunday services'
+            : 'Copy schedule images to clipboard or download high-resolution graphics'}
         </Dialog.Description>
       </Dialog.Header>
 
@@ -234,18 +330,42 @@ export function ShareSundayScheduleDialog({
             <span className="text-xs font-semibold uppercase tracking-wider text-muted px-0.5">
               Service Breakdown
             </span>
-            <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+            <div className="divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
               {TIME_SLOTS.map(({ slot, label }) => {
                 const entries = entriesByTimeSlot[slot] || [];
                 const roleSections = groupEntriesByPrimaryRole(entries);
+                const isSelected = !isMobile && selectedSlot === slot;
+                const isCopied = copiedSlot === slot;
+
                 return (
-                  <div key={slot} className="flex items-center justify-between p-3.5">
+                  <div
+                    key={slot}
+                    onClick={() => {
+                      if (!isMobile) setSelectedSlot(slot);
+                    }}
+                    className={`flex items-center justify-between p-3.5 transition-colors ${
+                      isSelected ? 'bg-primary/5' : 'hover:bg-slate-50/70'
+                    } ${!isMobile ? 'cursor-pointer' : ''}`}
+                  >
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                          isSelected
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-primary/10 text-primary'
+                        }`}
+                      >
                         <Clock className="h-4 w-4" />
                       </span>
                       <div>
-                        <div className="text-sm font-semibold text-text">{label} Service</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-text">{label} Service</span>
+                          {isSelected && (
+                            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                              Selected
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-muted">
                           {entries.length === 0
                             ? 'No volunteers scheduled'
@@ -253,9 +373,38 @@ export function ShareSundayScheduleDialog({
                         </div>
                       </div>
                     </div>
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                      {entries.length} volunteer{entries.length === 1 ? '' : 's'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                        {entries.length} volunteer{entries.length === 1 ? '' : 's'}
+                      </span>
+                      {!isMobile && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isCopied ? 'secondary' : 'outline'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSlot(slot);
+                            handleCopySlotImage(slot);
+                          }}
+                          disabled={isGenerating}
+                          className="h-8 text-xs font-medium"
+                          title={`Copy ${label} image to clipboard`}
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="mr-1 h-3.5 w-3.5 text-emerald-600" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="mr-1 h-3.5 w-3.5" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -263,7 +412,9 @@ export function ShareSundayScheduleDialog({
           </div>
 
           <p className="text-xs text-muted">
-            Sharing will generate 3 high-resolution images (9:00 AM, 12:00 NN, and 3:00 PM).
+            {isMobile
+              ? 'Sharing will generate 3 high-resolution images (9:00 AM, 12:00 NN, and 3:00 PM).'
+              : 'Click any service to select it, or use the Copy buttons to paste directly into Slack or messaging apps.'}
           </p>
 
           {/* Offscreen mounted elements for multi-export */}
@@ -297,10 +448,32 @@ export function ShareSundayScheduleDialog({
         <Button variant="primaryOutline" onClick={onClose} disabled={isGenerating}>
           Cancel
         </Button>
-        <Button onClick={handleShareImages} disabled={isGenerating}>
-          <Share2 className="mr-2 h-4 w-4" />
-          {isGenerating ? 'Generating...' : 'Share'}
-        </Button>
+        {isMobile ? (
+          <Button onClick={handleShareImages} disabled={isGenerating}>
+            <Share2 className="mr-2 h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'Share'}
+          </Button>
+        ) : (
+          <>
+            <Button variant="outline" onClick={handleDownloadAll} disabled={isGenerating}>
+              <Download className="mr-2 h-4 w-4" />
+              Download All
+            </Button>
+            <Button onClick={() => handleCopySlotImage(selectedSlot)} disabled={isGenerating}>
+              {copiedSlot === selectedSlot ? (
+                <>
+                  <Check className="mr-2 h-4 w-4 text-emerald-300" />
+                  Copied {selectedSlotLabel}
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  {isGenerating ? 'Copying...' : `Copy ${selectedSlotLabel} Image`}
+                </>
+              )}
+            </Button>
+          </>
+        )}
       </Dialog.Footer>
     </Dialog>
   );

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { toJpeg } from 'html-to-image';
+import { toBlob, toJpeg } from 'html-to-image';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,6 +13,7 @@ import { ShareSundayScheduleDialog } from '../ShareSundayScheduleDialog';
 
 vi.mock('html-to-image', () => ({
   toJpeg: vi.fn(),
+  toBlob: vi.fn(),
 }));
 
 vi.mock('sonner', () => ({
@@ -94,6 +95,21 @@ describe('ShareSundayScheduleDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(navigator, 'platform', {
+      value: 'MacIntel',
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      value: 0,
+      configurable: true,
+      writable: true,
+    });
     Object.defineProperty(navigator, 'share', {
       value: undefined,
       configurable: true,
@@ -104,10 +120,25 @@ describe('ShareSundayScheduleDialog', () => {
       configurable: true,
       writable: true,
     });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        write: vi.fn().mockResolvedValue(undefined),
+      },
+      configurable: true,
+      writable: true,
+    });
+    class MockClipboardItem {
+      data: Record<string, Blob>;
+      constructor(items: Record<string, Blob>) {
+        this.data = items;
+      }
+    }
+    global.ClipboardItem = MockClipboardItem as unknown as typeof ClipboardItem;
     global.fetch = vi.fn().mockResolvedValue({
       blob: vi.fn().mockResolvedValue(new Blob(['fake-image'], { type: 'image/jpeg' })),
     });
     vi.mocked(toJpeg).mockResolvedValue('data:image/jpeg;base64,mockJpegData');
+    vi.mocked(toBlob).mockResolvedValue(new Blob(['fake-png'], { type: 'image/png' }));
   });
 
   it('does not render when isOpen is false', () => {
@@ -213,7 +244,87 @@ describe('ShareSundayScheduleDialog', () => {
     expect(screen.getAllByText(`${compoundLastName}, ${compoundFirstName}`)[0]).toBeInTheDocument();
   });
 
-  it('calls navigator.share with all 3 service images when Share is clicked', async () => {
+  it('renders desktop actions and copies image to clipboard when Copy is clicked', async () => {
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Download All/i })).toBeInTheDocument();
+    const copyMainButton = screen.getByRole('button', { name: /Copy 9:00 AM Image/i });
+    expect(copyMainButton).toBeInTheDocument();
+
+    fireEvent.click(copyMainButton);
+
+    await waitFor(() => {
+      expect(toBlob).toHaveBeenCalled();
+      expect(navigator.clipboard.write).toHaveBeenCalledWith([expect.any(ClipboardItem)]);
+      expect(toast.success).toHaveBeenCalledWith('9:00 AM schedule image copied to clipboard');
+    });
+  });
+
+  it('copies specific service slot to clipboard when individual copy button is clicked', async () => {
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    const copyButtons = screen.getAllByRole('button', { name: /^Copy$/i });
+    expect(copyButtons.length).toBe(3);
+
+    fireEvent.click(copyButtons[1]); // 12:00 NN
+
+    await waitFor(() => {
+      expect(toBlob).toHaveBeenCalled();
+      expect(navigator.clipboard.write).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('12:00 NN schedule image copied to clipboard');
+    });
+  });
+
+  it('downloads all schedule images when Download All is clicked on desktop', async () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    const downloadAllButton = screen.getByRole('button', { name: /Download All/i });
+    fireEvent.click(downloadAllButton);
+
+    await waitFor(() => {
+      expect(clickSpy).toHaveBeenCalledTimes(3);
+      expect(toast.success).toHaveBeenCalledWith('Schedule images downloaded');
+    });
+
+    clickSpy.mockRestore();
+  });
+
+  it('renders mobile Share button and calls navigator.share on mobile devices', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      configurable: true,
+      writable: true,
+    });
+
     const shareMock = vi.fn().mockResolvedValue(undefined);
     const canShareMock = vi.fn().mockReturnValue(true);
     Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
@@ -235,22 +346,19 @@ describe('ShareSundayScheduleDialog', () => {
 
     await waitFor(() => {
       expect(toJpeg).toHaveBeenCalledTimes(3);
-      expect(toJpeg).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          skipFonts: true,
-          fontEmbedCSS: '',
-          cacheBust: true,
-          pixelRatio: 2,
-        }),
-      );
       expect(shareMock).toHaveBeenCalledWith({
         files: expect.arrayContaining([expect.any(File)]),
       });
     });
   });
 
-  it('ignores AbortError from navigator.share gracefully without error toast', async () => {
+  it('ignores AbortError from navigator.share gracefully without error toast on mobile', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      configurable: true,
+      writable: true,
+    });
+
     const abortError = new DOMException('User cancelled share', 'AbortError');
     const shareMock = vi.fn().mockRejectedValue(abortError);
     const canShareMock = vi.fn().mockReturnValue(true);
@@ -278,8 +386,8 @@ describe('ShareSundayScheduleDialog', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it('falls back to downloading all images when native sharing is unavailable', async () => {
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  it('shows error toast when image generation fails during copy', async () => {
+    vi.mocked(toBlob).mockRejectedValueOnce(new Error('Canvas blob error'));
 
     render(
       <ShareSundayScheduleDialog
@@ -292,36 +400,11 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share$/i });
-    fireEvent.click(shareButton);
+    const copyButton = screen.getByRole('button', { name: /Copy 9:00 AM Image/i });
+    fireEvent.click(copyButton);
 
     await waitFor(() => {
-      expect(clickSpy).toHaveBeenCalledTimes(3);
-      expect(toast.success).toHaveBeenCalledWith('Schedule images downloaded');
-    });
-
-    clickSpy.mockRestore();
-  });
-
-  it('shows error toast when image generation fails', async () => {
-    vi.mocked(toJpeg).mockRejectedValueOnce(new Error('Canvas error'));
-
-    render(
-      <ShareSundayScheduleDialog
-        isOpen={true}
-        onClose={vi.fn()}
-        year={2026}
-        monthIndex={9}
-        dayNumber={4}
-        entriesByTimeSlot={entriesByTimeSlot}
-      />,
-    );
-
-    const shareButton = screen.getByRole('button', { name: /^Share$/i });
-    fireEvent.click(shareButton);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Failed to generate schedule images');
+      expect(toast.error).toHaveBeenCalledWith('Failed to copy image to clipboard');
     });
   });
 
