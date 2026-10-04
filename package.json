@@ -7,6 +7,10 @@
   "engines": {
     "npm": ">=10.9.2 <12"
   },
+  "allowScripts": {
+    "fsevents": true,
+    "unrs-resolver": true
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
