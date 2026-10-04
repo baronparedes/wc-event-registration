@@ -1,6 +1,6 @@
 import { Clock, Users } from 'lucide-react';
 
-import { Avatar, Badge, BrandAvatar } from '@/components/ui';
+import { Avatar, Badge } from '@/components/ui';
 import { LEGAL_CONFIG } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import { type ExcusedMemberMap, isMemberExcused } from '@/lib/domain/hub-calendar';
