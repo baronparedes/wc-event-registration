@@ -399,12 +399,12 @@ export function SelectedDateDetails({
                 </p>
               </div>
               {isCurrentSelectedSunday && selectedEntries.length > 0 && (
-                <div className="flex items-center gap-2 w-full sm:w-auto sm:justify-end">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:justify-end">
                   <Button
                     type="button"
                     size="sm"
                     variant="primaryOutline"
-                    className="flex-1 sm:flex-none justify-center"
+                    className="w-full sm:w-auto justify-center"
                     onClick={() => setIsShareOpen(true)}
                   >
                     <Share2 className="mr-1.5 h-4 w-4" />
@@ -417,7 +417,7 @@ export function SelectedDateDetails({
                     dayNumber={selectedDayNumber}
                     excusedMap={excusedMap}
                     attendanceScoreMap={attendanceScoreMap}
-                    className="flex-1 sm:flex-none justify-center"
+                    className="w-full sm:w-auto justify-center"
                   />
                 </div>
               )}
