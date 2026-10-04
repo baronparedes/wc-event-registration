@@ -5,3 +5,4 @@ export { DuplicatePolicyLabel } from './DuplicatePolicyLabel';
 export { EventNavigationLinks } from './EventNavigationLinks';
 export { MobileEventCard } from './MobileEventCard';
 export { DuplicateEventDialog } from './DuplicateEventDialog';
+export { ShareEventDialog } from './ShareEventDialog';
