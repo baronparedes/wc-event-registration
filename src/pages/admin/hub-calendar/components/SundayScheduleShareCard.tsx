@@ -1,7 +1,6 @@
 import { Clock, Users } from 'lucide-react';
 
-import brandLogo from '@/assets/wc-hub-brand.png';
-import { Avatar } from '@/components/ui';
+import { Avatar, Badge, BrandAvatar } from '@/components/ui';
 import { LEGAL_CONFIG } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import { type ExcusedMemberMap, isMemberExcused } from '@/lib/domain/hub-calendar';
@@ -28,47 +27,45 @@ export function SundayScheduleShareCard({
   const roleSections = groupEntriesByPrimaryRole(entries);
 
   return (
-    <div className="w-full rounded-2xl bg-white p-6 sm:p-8 shadow-xl text-slate-900 border border-slate-200">
+    <div className="w-full rounded-2xl bg-surface p-6 sm:p-8 shadow-xl text-text border border-border">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
-          <img
-            src={brandLogo}
+          <BrandAvatar
+            size="sm"
             alt={LEGAL_CONFIG.appName}
-            className="h-11 w-11 rounded-full object-cover border border-slate-200 shadow-2xs shrink-0"
+            className="border border-border shadow-2xs shrink-0"
           />
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">
                 {LEGAL_CONFIG.appName}
               </span>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs font-medium text-slate-500">Sunday Service</span>
+              <span className="text-muted">•</span>
+              <span className="text-xs font-medium text-muted">Sunday Service</span>
             </div>
-            <h2 className="text-lg font-bold text-slate-900">{formattedDate}</h2>
+            <h2 className="text-lg font-bold text-text">{formattedDate}</h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1 text-sm font-bold text-indigo-700">
-            <Clock className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          <Badge variant="primaryOutline" icon={<Clock className="h-3.5 w-3.5" />}>
             {slotLabel} Service
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-            <Users className="h-3.5 w-3.5 text-slate-500" />
+          </Badge>
+          <Badge variant="outline" icon={<Users className="h-3.5 w-3.5" />}>
             {entries.length} volunteer{entries.length === 1 ? '' : 's'}
-          </span>
+          </Badge>
         </div>
       </div>
 
       {/* Roles List */}
       <div className="mt-5">
         {entries.length === 0 ? (
-          <div className="py-12 text-center text-sm text-slate-400 italic">
+          <div className="py-12 text-center text-sm text-muted italic">
             No volunteers scheduled for this service
           </div>
         ) : (
-          <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-slate-50/50">
+          <div className="divide-y divide-border rounded-xl border border-border bg-background/50">
             {roleSections.map((section) => (
               <div
                 key={section.primaryRole}
@@ -76,12 +73,12 @@ export function SundayScheduleShareCard({
               >
                 {/* Role Header (Left Column) */}
                 <div className="sm:w-52 shrink-0 flex items-center justify-between sm:justify-start gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">
                     {section.primaryRole}
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 text-[11px] font-bold text-indigo-700">
+                  <Badge variant="primaryOutline" className="px-2 py-0.5 text-[11px] font-bold">
                     {section.totalCount}
-                  </span>
+                  </Badge>
                 </div>
 
                 {/* Volunteers Wrap (Right Column) */}
@@ -91,7 +88,7 @@ export function SundayScheduleShareCard({
                     return (
                       <div
                         key={entry.member.id}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs"
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text shadow-2xs"
                       >
                         <Avatar
                           name={entry.member.full_name}
@@ -101,14 +98,20 @@ export function SundayScheduleShareCard({
                         />
                         <span>{entry.member.full_name}</span>
                         {secondaryRole && (
-                          <span className="rounded bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+                          <Badge
+                            variant="primaryOutline"
+                            className="px-1.5 py-0.5 text-[10px] font-semibold"
+                          >
                             + {secondaryRole}
-                          </span>
+                          </Badge>
                         )}
                         {excused && (
-                          <span className="ml-0.5 rounded bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold text-rose-700">
+                          <Badge
+                            variant="destructive"
+                            className="ml-0.5 px-1.5 py-0.5 text-[9px] font-bold"
+                          >
                             Excused
-                          </span>
+                          </Badge>
                         )}
                       </div>
                     );
@@ -121,7 +124,7 @@ export function SundayScheduleShareCard({
       </div>
 
       {/* Footer */}
-      <div className="mt-6 border-t border-slate-100 pt-3 flex items-center justify-between text-xs text-slate-400">
+      <div className="mt-6 border-t border-border/60 pt-3 flex items-center justify-between text-xs text-muted">
         <span>Generated via {LEGAL_CONFIG.appName}</span>
         <span>
           {isoDateKey} • {slotLabel} Service
