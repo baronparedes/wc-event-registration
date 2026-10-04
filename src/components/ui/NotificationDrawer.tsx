@@ -206,19 +206,6 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                       onClose();
                     }
                   }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      if (!n.is_read) {
-                        markRead.mutate(n.id);
-                      }
-                      if (n.notification.target_url) {
-                        navigate(n.notification.target_url);
-                        onClose();
-                      }
-                    }
-                  }}
                 >
                   {/* Left Accent Bar for unread */}
                   {!n.is_read && <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
