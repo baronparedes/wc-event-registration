@@ -213,7 +213,7 @@ describe('ShareSundayScheduleDialog', () => {
     expect(screen.getAllByText(compoundFullName)[0]).toBeInTheDocument();
   });
 
-  it('calls navigator.share with all 3 service images when Share All is clicked', async () => {
+  it('calls navigator.share with all 3 service images when Share is clicked', async () => {
     const shareMock = vi.fn().mockResolvedValue(undefined);
     const canShareMock = vi.fn().mockReturnValue(true);
     Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
@@ -230,47 +230,23 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
       expect(toJpeg).toHaveBeenCalledTimes(3);
-      expect(shareMock).toHaveBeenCalledWith(
+      expect(toJpeg).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
-          title: expect.stringContaining('Sunday Service Schedules'),
-          files: expect.arrayContaining([expect.any(File)]),
+          skipFonts: true,
+          fontEmbedCSS: '',
+          cacheBust: true,
+          pixelRatio: 2,
         }),
       );
-    });
-  });
-
-  it('shares single service image when row Share button is clicked', async () => {
-    const shareMock = vi.fn().mockResolvedValue(undefined);
-    const canShareMock = vi.fn().mockReturnValue(true);
-    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
-    Object.defineProperty(navigator, 'canShare', { value: canShareMock, configurable: true });
-
-    render(
-      <ShareSundayScheduleDialog
-        isOpen={true}
-        onClose={vi.fn()}
-        year={2026}
-        monthIndex={9}
-        dayNumber={4}
-        entriesByTimeSlot={entriesByTimeSlot}
-      />,
-    );
-
-    const singleShareButton = screen.getByTitle('Share 9:00 AM image');
-    fireEvent.click(singleShareButton);
-
-    await waitFor(() => {
-      expect(shareMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: expect.stringContaining('9:00 AM Service Schedule'),
-          files: expect.arrayContaining([expect.any(File)]),
-        }),
-      );
+      expect(shareMock).toHaveBeenCalledWith({
+        files: expect.arrayContaining([expect.any(File)]),
+      });
     });
   });
 
@@ -292,7 +268,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -316,7 +292,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -341,7 +317,7 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    const shareButton = screen.getByRole('button', { name: /^Share All$/i });
+    const shareButton = screen.getByRole('button', { name: /^Share$/i });
     fireEvent.click(shareButton);
 
     await waitFor(() => {
@@ -364,80 +340,5 @@ describe('ShareSundayScheduleDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onCloseMock).toHaveBeenCalled();
-  });
-
-  it('downloads all 3 service images when Save All is clicked', async () => {
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-
-    render(
-      <ShareSundayScheduleDialog
-        isOpen={true}
-        onClose={vi.fn()}
-        year={2026}
-        monthIndex={9}
-        dayNumber={4}
-        entriesByTimeSlot={entriesByTimeSlot}
-      />,
-    );
-
-    const saveButton = screen.getByRole('button', { name: /^Save All$/i });
-    fireEvent.click(saveButton);
-
-    await waitFor(() => {
-      expect(clickSpy).toHaveBeenCalledTimes(3);
-      expect(toast.success).toHaveBeenCalledWith('All 3 schedule images saved');
-      expect(toJpeg).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          skipFonts: true,
-          fontEmbedCSS: '',
-          cacheBust: true,
-          pixelRatio: 2,
-        }),
-      );
-    });
-
-    clickSpy.mockRestore();
-  });
-
-  it('triggers native navigator.share on iOS when Save All is clicked', async () => {
-    const originalUserAgent = navigator.userAgent;
-    Object.defineProperty(navigator, 'userAgent', {
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
-      configurable: true,
-    });
-
-    const shareMock = vi.fn().mockResolvedValue(undefined);
-    const canShareMock = vi.fn().mockReturnValue(true);
-    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
-    Object.defineProperty(navigator, 'canShare', { value: canShareMock, configurable: true });
-
-    render(
-      <ShareSundayScheduleDialog
-        isOpen={true}
-        onClose={vi.fn()}
-        year={2026}
-        monthIndex={9}
-        dayNumber={4}
-        entriesByTimeSlot={entriesByTimeSlot}
-      />,
-    );
-
-    const saveButton = screen.getByRole('button', { name: /^Save All$/i });
-    fireEvent.click(saveButton);
-
-    await waitFor(() => {
-      expect(shareMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: expect.stringContaining('Sunday Service Schedules'),
-          files: expect.arrayContaining([expect.any(File)]),
-        }),
-      );
-    });
-
-    Object.defineProperty(navigator, 'userAgent', {
-      value: originalUserAgent,
-      configurable: true,
-    });
   });
 });

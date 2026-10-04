@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
 
 import { toJpeg } from 'html-to-image';
-import { Clock, Download, Share2, Users } from 'lucide-react';
+import { Clock, Share2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button, Dialog } from '@/components/ui';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
-import { useIsMobileViewport } from '@/hooks/utils';
 import { type ExcusedMemberMap, toIsoDateKey } from '@/lib/domain/hub-calendar';
 
 import { groupEntriesByPrimaryRole } from '../utils';
@@ -67,7 +66,6 @@ export function ShareSundayScheduleDialog({
   entriesByTimeSlot,
   excusedMap,
 }: ShareSundayScheduleDialogProps) {
-  const isMobile = useIsMobileViewport();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const hiddenCardRefs = {
@@ -98,101 +96,6 @@ export function ShareSundayScheduleDialog({
     });
   };
 
-  const exportSingleService = async (
-    slot: TimeSlot,
-  ): Promise<{ file: File; dataUrl: string } | null> => {
-    const el = hiddenCardRefs[slot].current;
-    const dataUrl = await generateDataUrlFromRef(el);
-    if (!dataUrl) return null;
-
-    const fileSuffix = TIME_SLOTS.find((t) => t.slot === slot)?.fileSuffix || slot.toLowerCase();
-    const blob = dataUrlToBlob(dataUrl);
-    const file = new File([blob], `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`, {
-      type: 'image/jpeg',
-    });
-    return { file, dataUrl };
-  };
-
-  const handleSaveSingleService = async (slot: TimeSlot) => {
-    try {
-      setIsGenerating(true);
-      const result = await exportSingleService(slot);
-      if (!result) return;
-
-      const slotObj = TIME_SLOTS.find((t) => t.slot === slot);
-      const label = slotObj?.label || slot;
-
-      // iOS WebKit / PWA native share sheet allows saving to Photos or Files
-      if (navigator.canShare && navigator.canShare({ files: [result.file] })) {
-        try {
-          await navigator.share({
-            files: [result.file],
-            title: `${label} Service Schedule - ${formattedDate}`,
-          });
-          return;
-        } catch (shareError) {
-          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
-            return;
-          }
-        }
-      }
-
-      // Desktop browser download fallback
-      const link = document.createElement('a');
-      link.download = result.file.name;
-      link.href = result.dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success(`${label} schedule image saved`);
-    } catch (error) {
-      console.error('Error saving service image:', error);
-      toast.error('Failed to save service image');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleShareSingleService = async (slot: TimeSlot) => {
-    try {
-      setIsGenerating(true);
-      const result = await exportSingleService(slot);
-      if (!result) return;
-
-      const slotObj = TIME_SLOTS.find((t) => t.slot === slot);
-      const label = slotObj?.label || slot;
-
-      if (navigator.canShare && navigator.canShare({ files: [result.file] })) {
-        try {
-          await navigator.share({
-            files: [result.file],
-            title: `${label} Service Schedule - ${formattedDate}`,
-            text: `${label} Service Schedule for ${formattedDate}`,
-          });
-          return;
-        } catch (shareError) {
-          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
-            return;
-          }
-        }
-      }
-
-      // Fallback download
-      const link = document.createElement('a');
-      link.download = result.file.name;
-      link.href = result.dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success(`${label} schedule image downloaded`);
-    } catch (error) {
-      console.error('Error sharing service image:', error);
-      toast.error('Failed to share service image');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const generateFilesAndDataUrls = async (): Promise<{
     files: File[];
     dataUrls: { url: string; suffix: string }[];
@@ -216,72 +119,6 @@ export function ShareSundayScheduleDialog({
     return { files, dataUrls };
   };
 
-  const handleSaveImages = async () => {
-    try {
-      setIsGenerating(true);
-      const { files, dataUrls } = await generateFilesAndDataUrls();
-      if (files.length === 0) return;
-
-      // Check if browser supports multi-file sharing
-      if (navigator.canShare && navigator.canShare({ files })) {
-        try {
-          await navigator.share({
-            files,
-            title: `Sunday Service Schedules - ${formattedDate}`,
-          });
-          return;
-        } catch (shareError) {
-          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
-            return;
-          }
-        }
-      }
-
-      // If on mobile / iOS where multi-file share fails, share files sequentially
-      if (isIOSDevice() && navigator.canShare) {
-        let anyShared = false;
-        for (const file of files) {
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: file.name,
-              });
-              anyShared = true;
-            } catch (shareError) {
-              if (shareError instanceof DOMException && shareError.name === 'AbortError') {
-                return;
-              }
-            }
-          }
-        }
-        if (anyShared) return;
-      }
-
-      // Standard browser download
-      let count = 0;
-      for (const { url, suffix } of dataUrls) {
-        const link = document.createElement('a');
-        link.download = `sunday-schedule-${isoDateKey}-${suffix}.jpg`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        count++;
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-
-      if (count > 0) {
-        toast.success(`All ${count} schedule images saved`);
-      }
-    } catch (error) {
-      console.error('Error saving schedule images:', error);
-      toast.error('Failed to save schedule images');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleShareImages = async () => {
     try {
       setIsGenerating(true);
@@ -290,11 +127,7 @@ export function ShareSundayScheduleDialog({
 
       if (navigator.canShare && navigator.canShare({ files })) {
         try {
-          await navigator.share({
-            files,
-            title: `Sunday Service Schedules - ${formattedDate}`,
-            text: `Sunday Service Schedules for ${formattedDate} (${TIME_SLOTS.map((t) => t.label).join(', ')})`,
-          });
+          await navigator.share({ files });
           return;
         } catch (shareError) {
           if (shareError instanceof DOMException && shareError.name === 'AbortError') {
@@ -308,10 +141,7 @@ export function ShareSundayScheduleDialog({
         for (const file of files) {
           if (navigator.canShare({ files: [file] })) {
             try {
-              await navigator.share({
-                files: [file],
-                title: `Sunday Service Schedules - ${formattedDate}`,
-              });
+              await navigator.share({ files: [file] });
             } catch (shareError) {
               if (shareError instanceof DOMException && shareError.name === 'AbortError') {
                 return;
@@ -346,7 +176,7 @@ export function ShareSundayScheduleDialog({
       <Dialog.Header showCloseButton>
         <Dialog.Title>Share Sunday Schedule</Dialog.Title>
         <Dialog.Description>
-          Download or share high-resolution schedule images for all Sunday services
+          Share high-resolution schedule images for all Sunday services
         </Dialog.Description>
       </Dialog.Header>
 
@@ -392,33 +222,9 @@ export function ShareSundayScheduleDialog({
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="hidden sm:inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                        {entries.length} volunteer{entries.length === 1 ? '' : 's'}
-                      </span>
-                      {!isMobile && (
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          onClick={() => handleSaveSingleService(slot)}
-                          disabled={isGenerating}
-                          title={`Save ${label} image`}
-                        >
-                          <Download className="h-3.5 w-3.5 mr-1" />
-                          Save
-                        </Button>
-                      )}
-                      <Button
-                        size="xs"
-                        variant={isMobile ? 'outline' : 'primaryOutline'}
-                        onClick={() => handleShareSingleService(slot)}
-                        disabled={isGenerating}
-                        title={`Share ${label} image`}
-                      >
-                        <Share2 className="h-3.5 w-3.5 mr-1" />
-                        Share
-                      </Button>
-                    </div>
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                      {entries.length} volunteer{entries.length === 1 ? '' : 's'}
+                    </span>
                   </div>
                 );
               })}
@@ -426,18 +232,22 @@ export function ShareSundayScheduleDialog({
           </div>
 
           <p className="text-xs text-muted">
-            Saving or sharing will generate 3 high-resolution images (9:00 AM, 12:00 NN, and 3:00
-            PM).
+            Sharing will generate 3 high-resolution images (9:00 AM, 12:00 NN, and 3:00 PM).
           </p>
 
           {/* Offscreen mounted elements for multi-export */}
           <div
-            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[720px]"
-            style={{ position: 'fixed', left: '-9999px', top: 0 }}
+            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[1920px]"
+            style={{ position: 'fixed', left: '-9999px', top: 0, width: '1920px' }}
             aria-hidden="true"
           >
             {TIME_SLOTS.map(({ slot, label }) => (
-              <div key={slot} ref={hiddenCardRefs[slot]} className="w-[720px] bg-white">
+              <div
+                key={slot}
+                ref={hiddenCardRefs[slot]}
+                style={{ width: '1920px' }}
+                className="w-[1920px] bg-white"
+              >
                 <SundayScheduleShareCard
                   slot={slot}
                   slotLabel={label}
@@ -456,15 +266,9 @@ export function ShareSundayScheduleDialog({
         <Button variant="primaryOutline" onClick={onClose} disabled={isGenerating}>
           Cancel
         </Button>
-        {!isMobile && (
-          <Button variant="outline" onClick={handleSaveImages} disabled={isGenerating}>
-            <Download className="mr-2 h-4 w-4" />
-            Save All
-          </Button>
-        )}
         <Button onClick={handleShareImages} disabled={isGenerating}>
           <Share2 className="mr-2 h-4 w-4" />
-          {isGenerating ? 'Generating...' : 'Share All'}
+          {isGenerating ? 'Generating...' : 'Share'}
         </Button>
       </Dialog.Footer>
     </Dialog>
