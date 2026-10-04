@@ -57,6 +57,30 @@ function isIOSDevice(): boolean {
   );
 }
 
+async function ensureResourcesReady(element: HTMLElement): Promise<void> {
+  if (typeof document !== 'undefined' && document.fonts?.ready) {
+    try {
+      await document.fonts.ready;
+    } catch {
+      // Ignore font readiness errors
+    }
+  }
+
+  const images = Array.from(element.querySelectorAll('img'));
+  await Promise.all(
+    images.map(async (img) => {
+      if (img.complete && img.naturalWidth > 0) return;
+      try {
+        if ('decode' in img) {
+          await img.decode();
+        }
+      } catch {
+        // Ignore individual image decode errors
+      }
+    }),
+  );
+}
+
 export function ShareSundayScheduleDialog({
   isOpen,
   onClose,
@@ -74,8 +98,6 @@ export function ShareSundayScheduleDialog({
     '3PM': useRef<HTMLDivElement>(null),
   };
 
-  if (!isOpen) return null;
-
   const isoDateKey = toIsoDateKey(year, monthIndex + 1, dayNumber);
   const formattedDate = formatScheduleDate(year, monthIndex, dayNumber);
 
@@ -86,6 +108,8 @@ export function ShareSundayScheduleDialog({
 
   const generateDataUrlFromRef = async (element: HTMLDivElement | null): Promise<string | null> => {
     if (!element) return null;
+    await ensureResourcesReady(element);
+
     return toJpeg(element, {
       quality: 0.95,
       backgroundColor: '#ffffff',
@@ -100,23 +124,28 @@ export function ShareSundayScheduleDialog({
     files: File[];
     dataUrls: { url: string; suffix: string }[];
   }> => {
-    const files: File[] = [];
-    const dataUrls: { url: string; suffix: string }[] = [];
+    const results = await Promise.all(
+      TIME_SLOTS.map(async ({ slot, fileSuffix }) => {
+        const el = hiddenCardRefs[slot].current;
+        const dataUrl = await generateDataUrlFromRef(el);
+        if (!dataUrl) return null;
 
-    for (const { slot, fileSuffix } of TIME_SLOTS) {
-      const el = hiddenCardRefs[slot].current;
-      const dataUrl = await generateDataUrlFromRef(el);
-      if (!dataUrl) continue;
+        const blob = dataUrlToBlob(dataUrl);
+        const file = new File([blob], `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`, {
+          type: 'image/jpeg',
+        });
+        return { file, dataUrl, suffix: fileSuffix };
+      }),
+    );
 
-      dataUrls.push({ url: dataUrl, suffix: fileSuffix });
-      const blob = dataUrlToBlob(dataUrl);
-      const file = new File([blob], `sunday-schedule-${isoDateKey}-${fileSuffix}.jpg`, {
-        type: 'image/jpeg',
-      });
-      files.push(file);
-    }
+    const valid = results.filter(
+      (r): r is { file: File; dataUrl: string; suffix: string } => r !== null,
+    );
 
-    return { files, dataUrls };
+    return {
+      files: valid.map((r) => r.file),
+      dataUrls: valid.map((r) => ({ url: r.dataUrl, suffix: r.suffix })),
+    };
   };
 
   const handleShareImages = async () => {
@@ -170,6 +199,8 @@ export function ShareSundayScheduleDialog({
       setIsGenerating(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="lg">

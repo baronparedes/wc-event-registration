@@ -9,18 +9,10 @@ import type { AdminMember } from '@/lib/domain/members';
 
 import { SundayScheduleShareCard } from '../SundayScheduleShareCard';
 
-vi.mock('@/hooks/domain/members', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/hooks/domain/members')>();
-  return {
-    ...actual,
-    useMemberAvatarQuery: vi.fn(() => ({ data: null })),
-  };
-});
-
-const firstName1 = faker.person.firstName();
-const lastName1 = faker.person.lastName();
-const firstName2 = faker.person.firstName();
-const lastName2 = faker.person.lastName();
+const firstName1 = 'Alice';
+const lastName1 = 'Zimmerman';
+const firstName2 = 'Bob';
+const lastName2 = 'Adams';
 
 describe('SundayScheduleShareCard', () => {
   const mockMember1: AdminMember = {
@@ -70,7 +62,7 @@ describe('SundayScheduleShareCard', () => {
     vi.clearAllMocks();
   });
 
-  it('renders card with date, service label, branding, and role groups', () => {
+  it('renders card with date, service label, branding, and names formatted as Lastname, Firstname sorted alphabetically', () => {
     render(
       <SundayScheduleShareCard
         slot="9AM"
@@ -87,11 +79,14 @@ describe('SundayScheduleShareCard', () => {
     expect(
       screen.getByText(new RegExp(`Generated via ${LEGAL_CONFIG.appName}`, 'i')),
     ).toBeInTheDocument();
+
+    // Primary role section titles
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('IMT Support')).toBeInTheDocument();
-    expect(screen.getByText('+Usher')).toBeInTheDocument();
-    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
-    expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
+
+    // Names formatted as "Lastname, Firstname"
+    expect(screen.getByText('Adams, Bob')).toBeInTheDocument();
+    expect(screen.getByText('Zimmerman, Alice')).toBeInTheDocument();
   });
 
   it('renders empty state when no volunteers are scheduled', () => {
@@ -109,7 +104,7 @@ describe('SundayScheduleShareCard', () => {
     expect(screen.getByText('0 volunteers')).toBeInTheDocument();
   });
 
-  it('renders excused tag when member is marked as excused', () => {
+  it('renders excused members in a dedicated Excused section', () => {
     const excusedMap: ExcusedMemberMap = new Map([
       ['2026-10-04', new Map([['mem-001', new Set(['9AM'])]])],
     ]);
@@ -125,6 +120,10 @@ describe('SundayScheduleShareCard', () => {
       />,
     );
 
+    expect(screen.getByText('1 volunteer')).toBeInTheDocument();
+    expect(screen.getByText('1 excused')).toBeInTheDocument();
     expect(screen.getByText('Excused')).toBeInTheDocument();
+    expect(screen.getByText('Adams, Bob')).toBeInTheDocument();
+    expect(screen.getByText('Zimmerman, Alice')).toBeInTheDocument();
   });
 });

@@ -145,7 +145,7 @@ describe('ShareSundayScheduleDialog', () => {
     expect(
       screen.getAllByText(new RegExp(`Generated via ${LEGAL_CONFIG.appName}`, 'i'))[0],
     ).toBeInTheDocument();
-    expect(screen.getAllByText(mockMember1.full_name)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(`${lastName1}, ${firstName1}`)[0]).toBeInTheDocument();
   });
 
   it('tags excused members in the schedule roster', () => {
@@ -166,9 +166,10 @@ describe('ShareSundayScheduleDialog', () => {
     );
 
     expect(screen.getAllByText('Excused')[0]).toBeInTheDocument();
+    expect(screen.getAllByText(`${lastName1}, ${firstName1}`)[0]).toBeInTheDocument();
   });
 
-  it('groups volunteers by primary role and renders secondary role subgroups', () => {
+  it('renders all scheduled volunteers in alphabetical order', () => {
     const compoundFirstName = faker.person.firstName();
     const compoundLastName = faker.person.lastName();
     const compoundFullName = `${compoundFirstName} ${compoundLastName}`;
@@ -208,9 +209,8 @@ describe('ShareSundayScheduleDialog', () => {
       />,
     );
 
-    expect(screen.getAllByText('IMT Support')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('+ Usher')[0]).toBeInTheDocument();
-    expect(screen.getAllByText(compoundFullName)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(`${lastName1}, ${firstName1}`)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(`${compoundLastName}, ${compoundFirstName}`)[0]).toBeInTheDocument();
   });
 
   it('calls navigator.share with all 3 service images when Share is clicked', async () => {
