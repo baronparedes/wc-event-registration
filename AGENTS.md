@@ -121,6 +121,7 @@ The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/
   - [`background-jobs`](.agent/skills/background-jobs/skill.md): Asynchronous database job queues, email queues, retry patterns, and worker logic.
   - [`database-migrations`](.agent/skills/database-migrations/SKILL.md): Supabase SQL migration authoring rules, timestamp naming conventions, single responsibility decomposition, idempotent DDL/RLS patterns, and RPC signature preservation.
 - **Data Transformation, Formatting & Testing**:
+  - [`dynamic-fields`](.agent/skills/dynamic-fields/SKILL.md): Centralized Dynamic Field registry, schema validation, parsing, admin controls, and modular renderers across Events, Forms, and Attendance.
   - [`csv-timezone`](.agent/skills/csv-timezone/skill.md): CSV parsing/export conventions and timezone conversions (UTC vs Asia/Manila).
   - [`attendance-json-filter-translator`](.agent/skills/attendance-json-filter-translator/skill.md): Translating plain-language filter criteria into structured JSON query filter trees.
   - [`testing-vitest`](.agent/skills/testing-vitest/skill.md): Vitest mocking patterns, factory utilities, and React Testing Library standards.
