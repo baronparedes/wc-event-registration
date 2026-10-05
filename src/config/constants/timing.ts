@@ -16,4 +16,6 @@ export const TIMING = {
   scanAutoCompleteMs: 300,
   pushNotificationPromptDelayMs: 3500,
   pushNotificationPromptSnoozeDays: 14,
+  pwaInstallPromptDelayMs: 2500,
+  pwaInstallPromptSnoozeDays: 14,
 } as const;

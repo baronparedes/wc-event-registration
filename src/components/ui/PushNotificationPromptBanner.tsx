@@ -6,16 +6,19 @@ import { toast } from 'sonner';
 import { TIMING } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { usePushSubscription } from '@/hooks/domain/notifications';
-import { useLocalStorage } from '@/hooks/utils';
+import { useLocalStorage, usePwaInstallPrompt } from '@/hooks/utils';
 
 import { Button } from './Button';
+import { PWA_PROMPT_SNOOZE_STORAGE_KEY } from './PWAInstallPromptBanner';
 
 export const PUSH_PROMPT_SNOOZE_STORAGE_KEY = 'wc:push-prompt:snoozed-until';
 
 export function PushNotificationPromptBanner() {
   const { data: adminAuth } = useAdminAuthQuery();
   const push = usePushSubscription();
+  const pwa = usePwaInstallPrompt();
   const snoozeStorage = useLocalStorage<string>(PUSH_PROMPT_SNOOZE_STORAGE_KEY);
+  const pwaSnoozeStorage = useLocalStorage<string>(PWA_PROMPT_SNOOZE_STORAGE_KEY);
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -27,6 +30,18 @@ export function PushNotificationPromptBanner() {
     // If not authenticated, push unsupported, already subscribed, or dismissed: do not show
     if (!hasSession || !isSupported || isSubscribed || isDismissed) {
       return;
+    }
+
+    // Prioritize PWA Install prompt: If PWA is installable and not snoozed, defer push prompt
+    if (pwa.canInstall) {
+      const pwaSnoozedUntil = pwaSnoozeStorage.get();
+      const isPwaSnoozed =
+        pwaSnoozedUntil &&
+        !Number.isNaN(Number(pwaSnoozedUntil)) &&
+        Date.now() < Number(pwaSnoozedUntil);
+      if (!isPwaSnoozed) {
+        return;
+      }
     }
 
     // Check if user blocked notifications in browser settings
@@ -53,7 +68,15 @@ export function PushNotificationPromptBanner() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [hasSession, isSupported, isSubscribed, isDismissed, snoozeStorage]);
+  }, [
+    hasSession,
+    isSupported,
+    isSubscribed,
+    isDismissed,
+    snoozeStorage,
+    pwa.canInstall,
+    pwaSnoozeStorage,
+  ]);
 
   const handleDismiss = () => {
     const nextSnoozeTime =

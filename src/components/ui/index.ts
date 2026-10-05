@@ -94,5 +94,7 @@ export {
   PushNotificationPromptBanner,
   PUSH_PROMPT_SNOOZE_STORAGE_KEY,
 } from './PushNotificationPromptBanner';
+export { PWAInstallPromptBanner, PWA_PROMPT_SNOOZE_STORAGE_KEY } from './PWAInstallPromptBanner';
+export { PWAInstallGuideModal, type PWAInstallGuideModalProps } from './PWAInstallGuideModal';
 export { FieldTypeBadge, type FieldTypeBadgeProps } from './FieldTypeBadge';
 export { FieldOrderControl, type FieldOrderControlProps } from './FieldOrderControl';
