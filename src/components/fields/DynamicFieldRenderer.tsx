@@ -1,6 +1,7 @@
-import { type UseFormReturn } from 'react-hook-form';
+import type { UseFormReturn } from 'react-hook-form';
 
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { DynamicFieldLike } from '@/lib/domain/dynamic-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 
 import { CheckboxFieldRenderer } from './CheckboxFieldRenderer';
 import { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer';
@@ -21,7 +22,7 @@ import {
 } from './TextFieldRenderer';
 
 export interface DynamicFieldRendererProps {
-  field: PublicEventField;
+  field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
   memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;

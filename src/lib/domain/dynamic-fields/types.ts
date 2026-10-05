@@ -91,3 +91,5 @@ export interface DynamicFieldLike {
   validation_rules?: DynamicFieldValidationRules | Record<string, unknown>;
   display_order?: number;
 }
+
+export type DynamicFieldResponseValues = Record<string, unknown>;

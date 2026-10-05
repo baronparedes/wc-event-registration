@@ -459,3 +459,27 @@ export function buildDynamicFieldResponseSchema<T extends DynamicFieldLike>(
 
   return z.object(shape);
 }
+
+export function createDynamicFieldDefaultValues<T extends DynamicFieldLike>(
+  fields: T[],
+): Record<string, unknown> {
+  return fields.reduce<Record<string, unknown>>((defaults, field) => {
+    if (field.field_type === 'checkbox' || field.field_type === 'boolean') {
+      defaults[field.field_key] = false;
+      return defaults;
+    }
+
+    if (field.field_type === 'multi_select') {
+      defaults[field.field_key] = [];
+      return defaults;
+    }
+
+    if (field.field_type === 'multi_select_toggle') {
+      defaults[field.field_key] = {};
+      return defaults;
+    }
+
+    defaults[field.field_key] = '';
+    return defaults;
+  }, {});
+}

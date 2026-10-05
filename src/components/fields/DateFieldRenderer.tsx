@@ -5,7 +5,8 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { DynamicFieldLike } from '@/lib/domain/dynamic-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 
 const baseInputClassName =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary';
@@ -17,7 +18,7 @@ const calendarDayPickerClassName =
   '[--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
 
 type DateFieldRendererProps = {
-  field: PublicEventField;
+  field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
 };
 
@@ -31,8 +32,9 @@ const WEEKDAY_LABELS = [
   'Saturday',
 ];
 
-function parseAllowedWeekdays(field: PublicEventField): number[] {
-  const raw = field.validation_rules.allowed_weekdays;
+function parseAllowedWeekdays(field: DynamicFieldLike): number[] {
+  const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
+  const raw = rules.allowed_weekdays;
   if (!Array.isArray(raw)) {
     return [];
   }
@@ -143,20 +145,15 @@ export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps
     | undefined;
 
   const selectedDate = parseDateOnly(value);
+  const rules = (field.validation_rules ?? {}) as {
+    min_date?: string;
+    max_date?: string;
+    max_past_days?: number;
+  };
+
   const disabledDays = useMemo(
-    () =>
-      buildDisabledDays(
-        allowedWeekdays,
-        field.validation_rules.min_date,
-        field.validation_rules.max_date,
-        field.validation_rules.max_past_days,
-      ),
-    [
-      allowedWeekdays,
-      field.validation_rules.max_date,
-      field.validation_rules.max_past_days,
-      field.validation_rules.min_date,
-    ],
+    () => buildDisabledDays(allowedWeekdays, rules.min_date, rules.max_date, rules.max_past_days),
+    [allowedWeekdays, rules.max_date, rules.max_past_days, rules.min_date],
   );
 
   return (
@@ -226,20 +223,15 @@ export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererP
   const { datePart, timePart } = splitDatetimeValue(value);
 
   const selectedDate = parseDateOnly(datePart);
+  const rules = (field.validation_rules ?? {}) as {
+    min_date?: string;
+    max_date?: string;
+    max_past_days?: number;
+  };
+
   const disabledDays = useMemo(
-    () =>
-      buildDisabledDays(
-        allowedWeekdays,
-        field.validation_rules.min_date,
-        field.validation_rules.max_date,
-        field.validation_rules.max_past_days,
-      ),
-    [
-      allowedWeekdays,
-      field.validation_rules.max_date,
-      field.validation_rules.max_past_days,
-      field.validation_rules.min_date,
-    ],
+    () => buildDisabledDays(allowedWeekdays, rules.min_date, rules.max_date, rules.max_past_days),
+    [allowedWeekdays, rules.max_date, rules.max_past_days, rules.min_date],
   );
 
   return (

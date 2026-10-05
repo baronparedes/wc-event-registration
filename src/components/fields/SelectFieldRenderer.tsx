@@ -1,10 +1,11 @@
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 
 import { FormSelectField } from '@/components/ui/FormSelectField';
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { DynamicFieldLike } from '@/lib/domain/dynamic-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 
 type SelectFieldRendererProps = {
-  field: PublicEventField;
+  field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
   memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
@@ -17,18 +18,22 @@ function normalizeRole(role: string | undefined): string | null {
   return normalizedRole ? normalizedRole : null;
 }
 
-function getConfiguredRoleAllotments(field: PublicEventField, optionValue: string) {
-  return field.validation_rules.max_slots_role_allotments?.[optionValue] ?? [];
+function getConfiguredRoleAllotments(field: DynamicFieldLike, optionValue: string) {
+  const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
+  const allotmentsMap = rules.max_slots_role_allotments as
+    | Record<string, Array<{ role: string; alloted_slots: number }>>
+    | undefined;
+  return allotmentsMap?.[optionValue] ?? [];
 }
 
-function hasWildcardRoleAllotment(field: PublicEventField, optionValue: string): boolean {
+function hasWildcardRoleAllotment(field: DynamicFieldLike, optionValue: string): boolean {
   return getConfiguredRoleAllotments(field, optionValue).some(
     (entry) => entry.role.trim().toLowerCase() === '*',
   );
 }
 
 function isOptionUnavailableForRole(
-  field: PublicEventField,
+  field: DynamicFieldLike,
   optionValue: string,
   memberRole: string | undefined,
   remainingSlotsByOption?: Record<string, number>,
@@ -96,7 +101,7 @@ function getOptionRemainingLabel(
 }
 
 function getOptionRoleRemainingLabel(
-  field: PublicEventField,
+  field: DynamicFieldLike,
   option: { value: string; label: string },
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
 ): string | null {
@@ -122,7 +127,7 @@ function getOptionRoleRemainingLabel(
 }
 
 function getOptionSlotMetadata(
-  field: PublicEventField,
+  field: DynamicFieldLike,
   option: { value: string; label: string },
   remainingSlotsByOption?: Record<string, number>,
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>,
@@ -203,6 +208,7 @@ export function SelectFieldRenderer({
 }: SelectFieldRendererProps) {
   const selectedValue = useWatch({ control: dynamicForm.control, name: field.field_key });
   const currentValue = typeof selectedValue === 'string' ? selectedValue : '';
+  const options = field.options ?? [];
 
   return (
     <FormSelectField
@@ -210,8 +216,8 @@ export function SelectFieldRenderer({
       registration={dynamicForm.register(field.field_key)}
       value={currentValue}
       placeholder="Select an option"
-      searchable={field.options.length > 10}
-      options={field.options.map((option: { value: string; label: string }) => {
+      searchable={options.length > 10}
+      options={options.map((option) => {
         const isUnavailable = isOptionUnavailableForRole(
           field,
           option.value,
@@ -243,10 +249,11 @@ export function RadioFieldRenderer({
   remainingSlotsByRoleByOption,
 }: SelectFieldRendererProps) {
   const selectedValue = useWatch({ control: dynamicForm.control, name: field.field_key });
+  const options = field.options ?? [];
 
   return (
     <div className="space-y-2">
-      {field.options.map((option: { value: string; label: string }) => {
+      {options.map((option) => {
         const isUnavailable = isOptionUnavailableForRole(
           field,
           option.value,
@@ -306,10 +313,11 @@ export function MultiSelectFieldRenderer({
 }: SelectFieldRendererProps) {
   const selectedValues = useWatch({ control: dynamicForm.control, name: field.field_key });
   const normalizedSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
+  const options = field.options ?? [];
 
   return (
     <div className="space-y-2">
-      {field.options.map((option: { value: string; label: string }) => {
+      {options.map((option) => {
         const isUnavailable = isOptionUnavailableForRole(
           field,
           option.value,
@@ -376,6 +384,7 @@ export function MultiSelectToggleFieldRenderer({
 }: SelectFieldRendererProps) {
   const rawValue = useWatch({ control: dynamicForm.control, name: field.field_key });
   const selectedValues = isBooleanOrNullRecord(rawValue) ? rawValue : {};
+  const options = field.options ?? [];
 
   function handleSelectionChange(optionValue: string, checked: boolean, defaultValue?: boolean) {
     const nextValues = { ...selectedValues };
@@ -414,162 +423,153 @@ export function MultiSelectToggleFieldRenderer({
 
   return (
     <div className="space-y-1.5">
-      {field.options.map(
-        (option: {
-          value: string;
-          label: string;
-          toggle_label?: string;
-          toggle_default?: boolean;
-        }) => {
-          const isSelected = option.value in selectedValues;
-          const isUnavailable = isOptionUnavailableForRole(
-            field,
-            option.value,
-            memberRole,
-            remainingSlotsByOption,
-            remainingSlotsByRoleByOption,
-          );
-          const isDisabled = isUnavailable && !isSelected;
-          const configuredDefault = option.toggle_default;
-          const toggleValue = selectedValues[option.value];
-          const isToggleChoicePending = isSelected && toggleValue === null;
-          const isYesSelected = toggleValue === true;
-          const isNoSelected = toggleValue === false;
-          const {
-            remainingLabel: optionRemainingLabel,
-            roleRemainingLabel: optionRoleRemainingLabel,
-          } = getOptionSlotMetadata(
-            field,
-            option,
-            remainingSlotsByOption,
-            remainingSlotsByRoleByOption,
-          );
-          const { primary: optionPrimaryLabel, secondary: optionSecondaryLabel } = splitOptionLabel(
-            option.label,
-          );
-          const compactRoleRemainingLabel = optionRoleRemainingLabel?.replace(/,\s+/g, ' | ');
+      {options.map((option) => {
+        const isSelected = option.value in selectedValues;
+        const isUnavailable = isOptionUnavailableForRole(
+          field,
+          option.value,
+          memberRole,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+        const isDisabled = isUnavailable && !isSelected;
+        const configuredDefault = option.toggle_default;
+        const toggleValue = selectedValues[option.value];
+        const isToggleChoicePending = isSelected && toggleValue === null;
+        const isYesSelected = toggleValue === true;
+        const isNoSelected = toggleValue === false;
+        const {
+          remainingLabel: optionRemainingLabel,
+          roleRemainingLabel: optionRoleRemainingLabel,
+        } = getOptionSlotMetadata(
+          field,
+          option,
+          remainingSlotsByOption,
+          remainingSlotsByRoleByOption,
+        );
+        const { primary: optionPrimaryLabel, secondary: optionSecondaryLabel } = splitOptionLabel(
+          option.label,
+        );
+        const compactRoleRemainingLabel = optionRoleRemainingLabel?.replace(/,\s+/g, ' | ');
 
-          return (
-            <div
-              key={`${field.id}-${option.value}`}
-              data-slot-option-card="true"
-              className={`rounded-xl border px-3 py-2 text-sm text-text transition-all ${
-                isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-              } ${
-                isSelected
-                  ? 'border-primary/50 bg-primary/5 shadow-xs'
-                  : isToggleChoicePending
-                    ? 'border-accent/60 bg-accent/5'
-                    : 'border-border/70 bg-transparent'
-              }`}
-              onClick={(event) => {
-                const target = event.target as HTMLElement;
+        return (
+          <div
+            key={`${field.id}-${option.value}`}
+            data-slot-option-card="true"
+            className={`rounded-xl border px-3 py-2 text-sm text-text transition-all ${
+              isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+            } ${
+              isSelected
+                ? 'border-primary/50 bg-primary/5 shadow-xs'
+                : isToggleChoicePending
+                  ? 'border-accent/60 bg-accent/5'
+                  : 'border-border/70 bg-transparent'
+            }`}
+            onClick={(event) => {
+              const target = event.target as HTMLElement;
 
-                if (
-                  isDisabled ||
-                  target.closest('button') ||
-                  target.closest('label') ||
-                  target.closest('input')
-                ) {
-                  return;
-                }
+              if (
+                isDisabled ||
+                target.closest('button') ||
+                target.closest('label') ||
+                target.closest('input')
+              ) {
+                return;
+              }
 
-                handleSelectionChange(option.value, !isSelected, configuredDefault);
-              }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <label className="flex min-w-0 flex-1 items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    disabled={isDisabled}
-                    aria-label={option.label}
-                    className="h-5 w-5 accent-primary"
-                    onChange={(event) =>
-                      handleSelectionChange(option.value, event.target.checked, configuredDefault)
-                    }
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-base leading-tight">
-                      {optionPrimaryLabel}
+              handleSelectionChange(option.value, !isSelected, configuredDefault);
+            }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <label className="flex min-w-0 flex-1 items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  disabled={isDisabled}
+                  aria-label={option.label}
+                  className="h-5 w-5 accent-primary"
+                  onChange={(event) =>
+                    handleSelectionChange(option.value, event.target.checked, configuredDefault)
+                  }
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-base leading-tight">
+                    {optionPrimaryLabel}
+                  </span>
+                  {optionSecondaryLabel && (
+                    <span className="block truncate text-xs font-medium text-muted leading-tight">
+                      {optionSecondaryLabel}
                     </span>
-                    {optionSecondaryLabel && (
-                      <span className="block truncate text-xs font-medium text-muted leading-tight">
-                        {optionSecondaryLabel}
-                      </span>
-                    )}
-                  </span>
-                </label>
+                  )}
+                </span>
+              </label>
 
-                <div className="flex items-center gap-1.5">
-                  <span className="hidden text-xs font-medium text-muted sm:inline">
-                    {option.toggle_label && option.toggle_label.length > 0
-                      ? option.toggle_label
-                      : 'Snack?'}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      aria-label={`${option.label} - Yes`}
-                      disabled={!isSelected}
-                      onClick={() => handleToggleChange(option.value, true)}
-                      className={`min-w-[58px] rounded-md border px-2.5 py-1.5 text-sm font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                        isYesSelected
-                          ? 'border-2 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
-                          : 'border-border bg-background text-text hover:bg-primary/5'
-                      } disabled:cursor-not-allowed disabled:opacity-50`}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`${option.label} - No`}
-                      disabled={!isSelected}
-                      onClick={() => handleToggleChange(option.value, false)}
-                      className={`min-w-[58px] rounded-md border px-2.5 py-1.5 text-sm font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                        isNoSelected
-                          ? 'border-2 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
-                          : 'border-border bg-background text-text hover:bg-primary/5'
-                      } disabled:cursor-not-allowed disabled:opacity-50`}
-                    >
-                      No
-                    </button>
-                  </div>
+              <div className="flex items-center gap-1.5">
+                <span className="hidden text-xs font-medium text-muted sm:inline">
+                  {option.toggle_label && option.toggle_label.length > 0
+                    ? option.toggle_label
+                    : 'Snack?'}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label={`${option.label} - Yes`}
+                    disabled={!isSelected}
+                    onClick={() => handleToggleChange(option.value, true)}
+                    className={`min-w-[58px] rounded-md border px-2.5 py-1.5 text-sm font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                      isYesSelected
+                        ? 'border-2 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
+                        : 'border-border bg-background text-text hover:bg-primary/5'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`${option.label} - No`}
+                    disabled={!isSelected}
+                    onClick={() => handleToggleChange(option.value, false)}
+                    className={`min-w-[58px] rounded-md border px-2.5 py-1.5 text-sm font-medium text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                      isNoSelected
+                        ? 'border-2 border-primary bg-background text-primary shadow-sm ring-1 ring-primary/20'
+                        : 'border-border bg-background text-text hover:bg-primary/5'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    No
+                  </button>
                 </div>
               </div>
-
-              {isToggleChoicePending && (
-                <p className="mt-1 text-xs font-medium text-accent">
-                  Choose Yes or No to continue.
-                </p>
-              )}
-
-              {(optionRemainingLabel || optionRoleRemainingLabel) && (
-                <div className="mt-2 border-t border-border/50 pt-1.5">
-                  {compactRoleRemainingLabel && optionRemainingLabel ? (
-                    <div className="flex flex-col gap-0.5 text-xs leading-tight sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-                      <span
-                        className={`text-base ${isZeroLeftLabel(optionRemainingLabel) ? 'text-danger' : 'text-text'}`}
-                      >
-                        {optionRemainingLabel}
-                      </span>
-                      <span className="min-w-0 flex-1 text-left sm:text-right">
-                        {renderCompactRoleBreakdown(compactRoleRemainingLabel)}
-                      </span>
-                    </div>
-                  ) : (
-                    <p
-                      className={`text-base leading-tight ${isZeroLeftLabel(optionRemainingLabel) ? 'text-danger' : 'text-text'}`}
-                    >
-                      {optionRemainingLabel ?? compactRoleRemainingLabel ?? ''}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
-          );
-        },
-      )}
+
+            {isToggleChoicePending && (
+              <p className="mt-1 text-xs font-medium text-accent">Choose Yes or No to continue.</p>
+            )}
+
+            {(optionRemainingLabel || optionRoleRemainingLabel) && (
+              <div className="mt-2 border-t border-border/50 pt-1.5">
+                {compactRoleRemainingLabel && optionRemainingLabel ? (
+                  <div className="flex flex-col gap-0.5 text-xs leading-tight sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                    <span
+                      className={`text-base ${isZeroLeftLabel(optionRemainingLabel) ? 'text-danger' : 'text-text'}`}
+                    >
+                      {optionRemainingLabel}
+                    </span>
+                    <span className="min-w-0 flex-1 text-left sm:text-right">
+                      {renderCompactRoleBreakdown(compactRoleRemainingLabel)}
+                    </span>
+                  </div>
+                ) : (
+                  <p
+                    className={`text-base leading-tight ${isZeroLeftLabel(optionRemainingLabel) ? 'text-danger' : 'text-text'}`}
+                  >
+                    {optionRemainingLabel ?? compactRoleRemainingLabel ?? ''}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

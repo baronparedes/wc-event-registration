@@ -339,26 +339,4 @@ export function normalizeDynamicFieldAnswersForPreview(
   }));
 }
 
-export function createDynamicFieldDefaultValues(
-  fields: PublicEventField[],
-): DynamicFieldResponseValues {
-  return fields.reduce<DynamicFieldResponseValues>((defaults, field) => {
-    if (field.field_type === 'checkbox' || field.field_type === 'boolean') {
-      defaults[field.field_key] = false;
-      return defaults;
-    }
-
-    if (field.field_type === 'multi_select') {
-      defaults[field.field_key] = [];
-      return defaults;
-    }
-
-    if (field.field_type === 'multi_select_toggle') {
-      defaults[field.field_key] = {};
-      return defaults;
-    }
-
-    defaults[field.field_key] = '';
-    return defaults;
-  }, {});
-}
+export { createDynamicFieldDefaultValues } from '@/lib/domain/dynamic-fields';

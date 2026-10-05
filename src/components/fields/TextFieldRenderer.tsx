@@ -1,12 +1,13 @@
-import { type UseFormReturn } from 'react-hook-form';
+import type { UseFormReturn } from 'react-hook-form';
 
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { DynamicFieldLike } from '@/lib/domain/dynamic-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 
 const baseInputClassName =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary';
 
 type TextFieldRendererProps = {
-  field: PublicEventField;
+  field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
 };
 

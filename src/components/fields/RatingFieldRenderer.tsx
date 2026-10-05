@@ -2,19 +2,19 @@ import { useState } from 'react';
 
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 
-import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
+import type { DynamicFieldLike } from '@/lib/domain/dynamic-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 
 type RatingFieldRendererProps = {
-  field: PublicEventField;
+  field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
 };
 
 export function RatingFieldRenderer({ field, dynamicForm }: RatingFieldRendererProps) {
   // Extract max value from validation rules, default to 5 if not provided (capped between 1 and 10)
-  const maxRating = Math.min(
-    Math.max(1, field.validation_rules?.max !== undefined ? field.validation_rules.max : 5),
-    10,
-  );
+  const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
+  const rawMax = typeof rules.max === 'number' ? rules.max : 5;
+  const maxRating = Math.min(Math.max(1, rawMax), 10);
 
   const ratingOptions = Array.from({ length: maxRating }, (_, i) => i + 1);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);

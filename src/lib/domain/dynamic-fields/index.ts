@@ -9,6 +9,7 @@ export type {
   DynamicAnswerLike,
   DynamicFieldLike,
   DynamicFieldValidationRules,
+  DynamicFieldResponseValues,
 } from './types';
 
 export {
@@ -27,7 +28,11 @@ export {
   dynamicFieldHasDateValidation,
 } from './registry';
 
-export { buildSchemaForField, buildDynamicFieldResponseSchema } from './validation';
+export {
+  buildSchemaForField,
+  buildDynamicFieldResponseSchema,
+  createDynamicFieldDefaultValues,
+} from './validation';
 
 export {
   extractAnswerRawValue,
