@@ -1,4 +1,4 @@
-import type { EventFieldType } from '@/lib/domain/event-fields';
+import type { DynamicFieldType } from '@/lib/domain/dynamic-fields';
 
 export type FormStatus = 'draft' | 'published' | 'archived';
 export type FormAudience = 'members' | 'public' | 'members_and_public';
@@ -29,7 +29,7 @@ export type FormField = {
   form_id: string;
   field_key: string;
   label: string;
-  field_type: EventFieldType;
+  field_type: DynamicFieldType;
   is_required: boolean;
   is_active: boolean;
   placeholder: string | null;
@@ -58,7 +58,7 @@ export type FormSubmissionAnswer = {
   form_fields?: {
     field_key: string;
     label: string;
-    field_type: EventFieldType;
+    field_type: DynamicFieldType;
   };
 };
 

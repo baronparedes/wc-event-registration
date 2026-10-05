@@ -1,55 +1,40 @@
+import {
+  DYNAMIC_FIELD_TYPE_LABELS,
+  dynamicFieldHasDateValidation,
+  dynamicFieldHasMultiSelectValidation,
+  dynamicFieldHasNumberValidation,
+  dynamicFieldHasOptions,
+  dynamicFieldHasRatingValidation,
+  dynamicFieldHasTextValidation,
+} from '@/lib/domain/dynamic-fields';
+
 import type { AttendanceFieldType } from './types';
 
-export const ATTENDANCE_FIELD_TYPE_LABELS: Record<AttendanceFieldType, string> = {
-  text: 'Single Line Text',
-  textarea: 'Multi-line Text',
-  number: 'Number',
-  email: 'Email Address',
-  phone: 'Phone Number',
-  select: 'Dropdown List',
-  radio: 'Radio Buttons',
-  checkbox: 'Checkbox',
-  multi_select: 'Checkboxes (Multiple)',
-  multi_select_toggle: 'Checkboxes + Yes/No',
-  date: 'Date',
-  datetime: 'Date & Time',
-  boolean: 'Yes / No Toggle',
-  color_picker: 'Color Picker',
-  rating: 'Rating',
-};
+export const ATTENDANCE_FIELD_TYPE_LABELS: Record<AttendanceFieldType, string> =
+  DYNAMIC_FIELD_TYPE_LABELS;
 
 export function attendanceFieldTypeHasOptions(fieldType: AttendanceFieldType): boolean {
-  return (
-    fieldType === 'select' ||
-    fieldType === 'radio' ||
-    fieldType === 'multi_select' ||
-    fieldType === 'multi_select_toggle'
-  );
+  return dynamicFieldHasOptions(fieldType);
 }
 
 export function attendanceFieldTypeHasTextValidation(fieldType: AttendanceFieldType): boolean {
-  return (
-    fieldType === 'text' ||
-    fieldType === 'textarea' ||
-    fieldType === 'email' ||
-    fieldType === 'phone'
-  );
+  return dynamicFieldHasTextValidation(fieldType);
 }
 
 export function attendanceFieldTypeHasNumberValidation(fieldType: AttendanceFieldType): boolean {
-  return fieldType === 'number';
+  return dynamicFieldHasNumberValidation(fieldType);
 }
 
 export function attendanceFieldTypeHasRatingValidation(fieldType: AttendanceFieldType): boolean {
-  return fieldType === 'rating';
+  return dynamicFieldHasRatingValidation(fieldType);
 }
 
 export function attendanceFieldTypeHasMultiSelectValidation(
   fieldType: AttendanceFieldType,
 ): boolean {
-  return fieldType === 'multi_select' || fieldType === 'multi_select_toggle';
+  return dynamicFieldHasMultiSelectValidation(fieldType);
 }
 
 export function attendanceFieldTypeHasDateValidation(fieldType: AttendanceFieldType): boolean {
-  return fieldType === 'date' || fieldType === 'datetime';
+  return dynamicFieldHasDateValidation(fieldType);
 }
