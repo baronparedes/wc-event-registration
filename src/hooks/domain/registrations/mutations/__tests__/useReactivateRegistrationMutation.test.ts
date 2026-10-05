@@ -90,4 +90,20 @@ describe('useReactivateRegistrationMutation', () => {
       }),
     ).rejects.toThrow('Registration not cancelled');
   });
+
+  it('throws a default error when edge function returns success false and error is empty', async () => {
+    mockEdgeCaller.mockResolvedValueOnce({
+      success: false,
+    });
+
+    const { result } = renderHookWithClient(() =>
+      useReactivateRegistrationMutation(faker.string.uuid()),
+    );
+
+    await expect(
+      result.current.mutateAsync({
+        registration_id: faker.string.uuid(),
+      }),
+    ).rejects.toThrow('Failed to reactivate registration');
+  });
 });
