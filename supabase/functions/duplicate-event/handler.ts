@@ -73,10 +73,10 @@ export async function handleDuplicateEvent(req: Request): Promise<Response> {
       }
 
       if (code === 'P0002' || message.includes('SOURCE_EVENT_NOT_FOUND')) {
-        return errorResponse(corsHeaders, 404, 'Source event not found', message);
+        return errorResponse(corsHeaders, 404, 'Source event not found');
       }
 
-      return errorResponse(corsHeaders, 500, 'Failed to duplicate event', message);
+      return errorResponse(corsHeaders, 500, 'Failed to duplicate event');
     }
 
     if (!newEventId) {

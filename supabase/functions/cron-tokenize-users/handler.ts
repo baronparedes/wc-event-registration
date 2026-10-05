@@ -42,7 +42,6 @@ export async function handleCronTokenizeUsers(req: Request): Promise<Response> {
         guard.corsHeaders,
         HTTP_STATUS.internalServerError,
         'Failed to tokenize users',
-        error.message,
       );
     }
 
