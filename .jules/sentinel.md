@@ -15,3 +15,9 @@
 **Vulnerability:** Missing standard security headers (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, X-XSS-Protection) in Edge Function responses.
 **Learning:** By default, Supabase edge functions do not enforce these headers. A central place to manage these is required to prevent widespread vulnerability.
 **Prevention:** Added standard security headers to `buildCorsHeaders` utility function inside `_shared/security.ts`, guaranteeing they are present across all standard API responses.
+
+## 2025-02-14 - Replace Math.random with crypto.randomUUID for Secure Queue IDs
+
+**Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
+**Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
+**Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
