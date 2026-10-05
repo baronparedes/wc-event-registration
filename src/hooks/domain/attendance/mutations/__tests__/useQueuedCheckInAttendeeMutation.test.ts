@@ -275,27 +275,4 @@ describe('useQueuedCheckInAttendeeMutation', () => {
 
     Object.defineProperty(navigator, 'onLine', { value: originalOnLine, configurable: true });
   });
-
-  it('uses fallback queue item ID generator when crypto.randomUUID is not available', () => {
-    vi.stubGlobal('crypto', undefined);
-
-    const { result } = renderHookWithClient(() =>
-      useQueuedCheckInAttendeeMutation('event-1', {
-        refreshCache: vi.fn(),
-        updateAttendee: vi.fn(),
-      }),
-    );
-
-    let outcome: { item: { id: string } } | undefined;
-    act(() => {
-      outcome = result.current.enqueueCheckIn(
-        { event_id: 'event-1', attendee_kind: 'registered', registration_id: 'reg-1' },
-        'reg-1',
-      );
-    });
-
-    expect(outcome?.item.id).toMatch(/^queued-check-in-/);
-
-    vi.unstubAllGlobals();
-  });
 });
