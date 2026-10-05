@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type SubmitHandler, useForm, useWatch } from 'react-hook-form';
@@ -34,11 +34,23 @@ export function FormEditorPage() {
     handleSubmit,
     setValue,
     watch,
-    reset,
     control,
     formState: { errors },
   } = useForm<AdminFormInput>({
     resolver: zodResolver(adminFormInputSchema),
+    values: existingForm
+      ? {
+          title: existingForm.title,
+          slug: existingForm.slug,
+          description: existingForm.description ?? '',
+          status: existingForm.status,
+          duplicate_policy: existingForm.duplicate_policy,
+          audience: existingForm.audience,
+          metadata: {
+            ...((existingForm.metadata as Record<string, unknown> | null) ?? {}),
+          },
+        }
+      : undefined,
     defaultValues: {
       title: '',
       slug: '',
@@ -51,22 +63,6 @@ export function FormEditorPage() {
   });
 
   const { slugValue, onSlugChange } = useSlugGeneration(isEditing, watch, setValue);
-
-  useEffect(() => {
-    if (existingForm) {
-      reset({
-        title: existingForm.title,
-        slug: existingForm.slug,
-        description: existingForm.description ?? '',
-        status: existingForm.status,
-        duplicate_policy: existingForm.duplicate_policy,
-        audience: existingForm.audience,
-        metadata: {
-          ...((existingForm.metadata as Record<string, unknown> | null) ?? {}),
-        },
-      });
-    }
-  }, [existingForm, reset]);
 
   const onSubmit: SubmitHandler<AdminFormInput> = async (data) => {
     let form: Awaited<ReturnType<typeof saveFormMutation.mutateAsync>> | undefined;
