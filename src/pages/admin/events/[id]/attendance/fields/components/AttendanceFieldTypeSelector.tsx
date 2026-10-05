@@ -16,6 +16,7 @@ const FIELD_TYPES_ORDERED: AttendanceFieldTypeEnum[] = [
   'datetime',
   'boolean',
   'color_picker',
+  'rating',
 ];
 
 type AttendanceFieldTypeSelectorProps = {

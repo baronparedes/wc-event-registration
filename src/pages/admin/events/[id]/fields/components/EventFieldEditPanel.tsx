@@ -16,6 +16,7 @@ import {
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasNumberValidation,
   fieldTypeHasOptions,
+  fieldTypeHasRatingValidation,
   fieldTypeHasTextValidation,
   fieldTypeHasValidation,
   toValidationRules,
@@ -90,6 +91,7 @@ export function EventFieldEditPanel({
   const showOptions = fieldTypeHasOptions(selectedFieldType);
   const showTextValidation = fieldTypeHasTextValidation(selectedFieldType);
   const showNumberValidation = fieldTypeHasNumberValidation(selectedFieldType);
+  const showRatingValidation = fieldTypeHasRatingValidation(selectedFieldType);
   const showMultiSelectValidation = fieldTypeHasMultiSelectValidation(selectedFieldType);
   const showDateValidation = fieldTypeHasDateValidation(selectedFieldType);
   const showValidationSection = fieldTypeHasValidation(selectedFieldType);
@@ -270,6 +272,7 @@ export function EventFieldEditPanel({
               isStructurallyLocked={isStructurallyLocked}
               showTextValidation={showTextValidation}
               showNumberValidation={showNumberValidation}
+              showRatingValidation={showRatingValidation}
               showMultiSelectValidation={showMultiSelectValidation}
               showDateValidation={showDateValidation}
               register={register}

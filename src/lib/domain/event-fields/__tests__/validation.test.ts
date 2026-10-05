@@ -346,4 +346,29 @@ describe('validatePublicEventFieldConfig', () => {
       equals_value: 'Others',
     });
   });
+
+  it('validates rating field config and parses min/max bounds', () => {
+    const result = validatePublicEventFieldConfig([
+      buildRow({
+        field_key: 'session_rating',
+        field_type: 'rating',
+        label: 'Session Rating',
+        validation_rules: {
+          min: 1,
+          max: 10,
+        },
+      }),
+    ]);
+
+    expect(result.issues).toEqual([]);
+    expect(result.validFields).toHaveLength(1);
+    expect(result.validFields[0]).toMatchObject({
+      field_key: 'session_rating',
+      field_type: 'rating',
+      validation_rules: {
+        min: 1,
+        max: 10,
+      },
+    });
+  });
 });

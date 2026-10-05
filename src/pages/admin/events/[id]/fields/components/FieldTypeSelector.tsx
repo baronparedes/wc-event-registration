@@ -23,6 +23,7 @@ const FIELD_TYPES_ORDERED: EventFieldTypeEnum[] = [
   'datetime',
   'boolean',
   'color_picker',
+  'rating',
 ];
 
 /** Grid of all 12 field types. Used in create mode to select a field type. */

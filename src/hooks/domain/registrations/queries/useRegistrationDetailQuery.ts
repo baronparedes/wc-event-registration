@@ -65,7 +65,7 @@ export function useRegistrationDetailQuery(registrationId: string) {
               // If not valid JSON, treat as string
               answerValue = rawAnswer;
             }
-          } else if (fieldType === 'number') {
+          } else if (fieldType === 'number' || fieldType === 'rating') {
             // Try to parse as number
             const num = Number(rawAnswer);
             answerValue = Number.isNaN(num) ? rawAnswer : num;

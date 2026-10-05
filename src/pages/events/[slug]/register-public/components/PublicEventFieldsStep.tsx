@@ -34,7 +34,7 @@ function normalizeHydratedValueForField(
     return value === null ? '' : String(value);
   }
 
-  if (fieldType === 'number') {
+  if (fieldType === 'number' || fieldType === 'rating') {
     if (value === null || value === '') {
       return undefined;
     }

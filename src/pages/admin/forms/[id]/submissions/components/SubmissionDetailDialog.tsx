@@ -24,6 +24,13 @@ function formatDate(dateString: string): string {
 }
 
 function formatAnswerValue(ans: FormSubmissionAnswer): string {
+  if (
+    ans.form_fields?.field_type === 'rating' &&
+    ans.answer_number !== null &&
+    ans.answer_number !== undefined
+  ) {
+    return `★ ${ans.answer_number}`;
+  }
   if (ans.answer_text !== null && ans.answer_text !== undefined) {
     return ans.answer_text;
   }

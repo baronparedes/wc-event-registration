@@ -221,6 +221,18 @@ describe('event-fields transforms', () => {
     expect(rules.max_past_days).toBe(14);
   });
 
+  it('maps rating max scale without min in toValidationRules', () => {
+    const rules = toValidationRules({
+      ...BASE_FORM_VALUES,
+      field_type: 'rating',
+      val_min: '2',
+      val_max: '5',
+    });
+
+    expect(rules.max).toBe(5);
+    expect(rules.min).toBeUndefined();
+  });
+
   it('maps option toggle fields with explicit and default toggle values', () => {
     const values = fieldToFormValues(
       makeAdminField({

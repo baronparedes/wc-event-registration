@@ -36,3 +36,10 @@ export function getFormPublishRequirements(
 export function areAllFormRequirementsMet(data: FormPublishRequirementsData): boolean {
   return getFormPublishRequirements(data).every((req) => req.filled);
 }
+
+/** User-facing labels for form field audience applicability. */
+export const FORM_FIELD_APPLICABILITY_LABELS: Record<string, string> = {
+  all: 'All Respondents',
+  member_only: 'Members only',
+  public_only: 'Public only',
+};

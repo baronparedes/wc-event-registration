@@ -226,8 +226,17 @@ export function toValidationRules(values: EventFieldFormValues): Record<string, 
   if (values.val_min_length !== '') rules.min_length = parseInt(values.val_min_length, 10);
   if (values.val_max_length !== '') rules.max_length = parseInt(values.val_max_length, 10);
   if (values.val_pattern !== '') rules.pattern = values.val_pattern;
-  if (values.val_min !== '') rules.min = parseFloat(values.val_min);
-  if (values.val_max !== '') rules.max = parseFloat(values.val_max);
+  if (values.field_type === 'rating') {
+    if (values.val_max !== '') {
+      const parsedMax = parseInt(values.val_max, 10);
+      if (Number.isFinite(parsedMax)) {
+        rules.max = parsedMax;
+      }
+    }
+  } else {
+    if (values.val_min !== '') rules.min = parseFloat(values.val_min);
+    if (values.val_max !== '') rules.max = parseFloat(values.val_max);
+  }
   if (values.val_min_selections !== '') {
     rules.min_selections = parseInt(values.val_min_selections, 10);
   }

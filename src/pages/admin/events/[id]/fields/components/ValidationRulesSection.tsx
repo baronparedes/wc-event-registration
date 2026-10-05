@@ -9,6 +9,7 @@ type ValidationRulesSectionProps = {
   isStructurallyLocked: boolean;
   showTextValidation: boolean;
   showNumberValidation: boolean;
+  showRatingValidation: boolean;
   showMultiSelectValidation: boolean;
   showDateValidation: boolean;
   register: UseFormRegister<EventFieldFormValues>;
@@ -30,6 +31,7 @@ export function ValidationRulesSection({
   isStructurallyLocked,
   showTextValidation,
   showNumberValidation,
+  showRatingValidation,
   showMultiSelectValidation,
   showDateValidation,
   register,
@@ -118,6 +120,22 @@ export function ValidationRulesSection({
               placeholder="e.g., 10"
             />
           </>
+        )}
+        {showRatingValidation && (
+          <div className="sm:col-span-2">
+            <RuleInput
+              id="val_max"
+              label="Max Stars / Rating Scale"
+              type="number"
+              registration={register('val_max')}
+              disabled={isStructurallyLocked}
+              min={1}
+              max={10}
+              step={1}
+              placeholder="5"
+              helperText="Number of stars to display (1–10, default 5)."
+            />
+          </div>
         )}
         {showMultiSelectValidation && (
           <>

@@ -78,6 +78,7 @@ const eventFieldSchema = z.object({
       'datetime',
       'boolean',
       'color_picker',
+      'rating',
     ])
     .default('text')
     .describe('Type of input field.'),

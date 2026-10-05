@@ -5,6 +5,7 @@ import {
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasNumberValidation,
   fieldTypeHasOptions,
+  fieldTypeHasRatingValidation,
   fieldTypeHasTextValidation,
   fieldTypeHasValidation,
 } from '@/lib/domain/event-fields';
@@ -26,9 +27,13 @@ describe('event-fields metadata helpers', () => {
     expect(fieldTypeHasTextValidation('number')).toBe(false);
   });
 
-  it('reports number and multi-select validation support correctly', () => {
+  it('reports number, rating, and multi-select validation support correctly', () => {
     expect(fieldTypeHasNumberValidation('number')).toBe(true);
+    expect(fieldTypeHasNumberValidation('rating')).toBe(false);
     expect(fieldTypeHasNumberValidation('text')).toBe(false);
+
+    expect(fieldTypeHasRatingValidation('rating')).toBe(true);
+    expect(fieldTypeHasRatingValidation('number')).toBe(false);
 
     expect(fieldTypeHasMultiSelectValidation('multi_select')).toBe(true);
     expect(fieldTypeHasMultiSelectValidation('multi_select_toggle')).toBe(true);

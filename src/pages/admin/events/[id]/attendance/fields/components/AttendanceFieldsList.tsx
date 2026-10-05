@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 
 import { ActionButton } from '@/components/ui/ActionLink';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FieldOrderControl } from '@/components/ui/FieldOrderControl';
+import { FieldTypeBadge } from '@/components/ui/FieldTypeBadge';
 import {
   ListTable,
   ListTableBody,
@@ -21,22 +23,6 @@ import {
 } from '@/hooks/domain/attendance-fields';
 import { ATTENDANCE_FIELD_TYPE_LABELS } from '@/lib/domain/attendance-fields';
 import type { AttendanceField } from '@/lib/domain/attendance-fields';
-
-const FIELD_TYPE_COLORS: Record<string, string> = {
-  text: 'bg-blue-100 text-blue-800',
-  textarea: 'bg-blue-100 text-blue-800',
-  number: 'bg-purple-100 text-purple-800',
-  email: 'bg-indigo-100 text-indigo-800',
-  phone: 'bg-indigo-100 text-indigo-800',
-  select: 'bg-green-100 text-green-800',
-  radio: 'bg-green-100 text-green-800',
-  checkbox: 'bg-amber-100 text-amber-800',
-  multi_select: 'bg-green-100 text-green-800',
-  multi_select_toggle: 'bg-green-100 text-green-800',
-  date: 'bg-rose-100 text-rose-800',
-  datetime: 'bg-rose-100 text-rose-800',
-  boolean: 'bg-amber-100 text-amber-800',
-};
 
 type AttendanceFieldsListProps = {
   fields: AttendanceField[];
@@ -129,42 +115,24 @@ export function AttendanceFieldsList({ fields, eventId, onEdit }: AttendanceFiel
             {fields.map((field, index) => (
               <ListTableRow key={field.id} hover="muted">
                 <ListTableCell>
-                  <div className="flex items-center gap-1">
-                    <div className="flex gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => void handleMove(index, 'up')}
-                        disabled={index === 0 || reorderMutation.isPending}
-                        aria-label={`Move "${field.label}" up`}
-                        title="Move up"
-                        className="rounded p-0.5 text-muted hover:bg-muted/20 hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleMove(index, 'down')}
-                        disabled={index === fields.length - 1 || reorderMutation.isPending}
-                        aria-label={`Move "${field.label}" down`}
-                        title="Move down"
-                        className="rounded p-0.5 text-muted hover:bg-muted/20 hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
-                      >
-                        ↓
-                      </button>
-                    </div>
-                    <span className="ml-1 text-xs text-muted">{index + 1}</span>
-                  </div>
+                  <FieldOrderControl
+                    index={index}
+                    total={fields.length}
+                    isReorderable={true}
+                    disabled={reorderMutation.isPending}
+                    onMove={handleMove}
+                    itemLabel={field.label}
+                  />
                 </ListTableCell>
                 <ListTableCell>
                   <p className="font-medium text-text">{field.label}</p>
                   <p className="text-xs text-muted">{field.field_key}</p>
                 </ListTableCell>
                 <ListTableCell>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${FIELD_TYPE_COLORS[field.field_type] ?? 'bg-muted text-text'}`}
-                  >
-                    {ATTENDANCE_FIELD_TYPE_LABELS[field.field_type] ?? field.field_type}
-                  </span>
+                  <FieldTypeBadge
+                    fieldType={field.field_type}
+                    customLabel={ATTENDANCE_FIELD_TYPE_LABELS[field.field_type] ?? field.field_type}
+                  />
                 </ListTableCell>
                 <ListTableCell>
                   <span

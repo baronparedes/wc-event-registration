@@ -40,6 +40,10 @@ export function attendanceFieldTypeHasNumberValidation(fieldType: AttendanceFiel
   return fieldType === 'number';
 }
 
+export function attendanceFieldTypeHasRatingValidation(fieldType: AttendanceFieldType): boolean {
+  return fieldType === 'rating';
+}
+
 export function attendanceFieldTypeHasMultiSelectValidation(
   fieldType: AttendanceFieldType,
 ): boolean {

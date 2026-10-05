@@ -159,6 +159,17 @@ export const eventFieldFormSchema = z
       }
     }
 
+    if (values.field_type === 'rating' && values.val_max.trim() !== '') {
+      const parsedMax = Number(values.val_max.trim());
+      if (!Number.isInteger(parsedMax) || parsedMax < 1 || parsedMax > 10) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Rating scale must be a whole number between 1 and 10.',
+          path: ['val_max'],
+        });
+      }
+    }
+
     if (values.val_unique_key_component && !values.is_required) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -294,6 +305,40 @@ function buildNumberSchema(field: PublicEventField): z.ZodType<number | undefine
   if (rules.max !== undefined) {
     schema = schema.max(rules.max, `${field.label} must be at most ${rules.max}.`);
   }
+
+  const preprocessed = z.preprocess(
+    (value) => {
+      if (value === null || value === undefined || value === '') {
+        return undefined;
+      }
+
+      if (typeof value === 'number') {
+        return value;
+      }
+
+      if (typeof value === 'string') {
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? value : parsed;
+      }
+
+      return value;
+    },
+    field.is_required ? schema : schema.optional(),
+  );
+
+  return preprocessed as z.ZodType<number | undefined>;
+}
+
+function buildRatingSchema(field: PublicEventField): z.ZodType<number | undefined> {
+  const rules = field.validation_rules;
+  const maxRating = Math.min(Math.max(1, rules?.max !== undefined ? rules.max : 5), 10);
+  const minRating = rules?.min !== undefined ? Math.max(1, rules.min) : 1;
+
+  const schema = z
+    .number({ message: `${field.label} is required.` })
+    .int(`${field.label} must be a whole number.`)
+    .min(minRating, `${field.label} must be at least ${minRating}.`)
+    .max(maxRating, `${field.label} must be at most ${maxRating}.`);
 
   const preprocessed = z.preprocess(
     (value) => {
@@ -586,6 +631,10 @@ function buildBooleanSchema(field: PublicEventField): z.ZodType<boolean | undefi
 function buildSchemaForField(field: PublicEventField): z.ZodType<unknown> {
   if (field.field_type === 'number') {
     return buildNumberSchema(field);
+  }
+
+  if (field.field_type === 'rating') {
+    return buildRatingSchema(field);
   }
 
   if (field.field_type === 'email') {

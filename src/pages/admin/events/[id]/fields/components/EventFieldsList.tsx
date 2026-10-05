@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 
 import { ActionButton } from '@/components/ui/ActionLink';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FieldOrderControl } from '@/components/ui/FieldOrderControl';
+import { FieldTypeBadge } from '@/components/ui/FieldTypeBadge';
 import {
   ListTable,
   ListTableBody,
@@ -17,8 +19,8 @@ import {
   useDeleteEventFieldMutation,
   useReorderEventFieldsMutation,
 } from '@/hooks/domain/event-fields';
-import type { AdminEventField, EventFieldTypeEnum } from '@/lib/domain/event-fields';
-import { FIELD_TYPE_LABELS } from '@/lib/domain/event-fields';
+import type { AdminEventField } from '@/lib/domain/event-fields';
+import { EVENT_FIELD_APPLICABILITY_LABELS } from '@/lib/domain/event-fields';
 import type { EventStatus } from '@/lib/domain/events';
 
 type EventFieldsListProps = {
@@ -26,28 +28,6 @@ type EventFieldsListProps = {
   eventId: string;
   eventStatus: EventStatus;
   onEdit: (field: AdminEventField) => void;
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  text: 'bg-blue-100 text-blue-800',
-  textarea: 'bg-blue-100 text-blue-800',
-  number: 'bg-purple-100 text-purple-800',
-  email: 'bg-indigo-100 text-indigo-800',
-  phone: 'bg-indigo-100 text-indigo-800',
-  select: 'bg-green-100 text-green-800',
-  radio: 'bg-green-100 text-green-800',
-  checkbox: 'bg-amber-100 text-amber-800',
-  multi_select: 'bg-green-100 text-green-800',
-  multi_select_toggle: 'bg-green-100 text-green-800',
-  date: 'bg-rose-100 text-rose-800',
-  datetime: 'bg-rose-100 text-rose-800',
-  boolean: 'bg-amber-100 text-amber-800',
-};
-
-const APPLICABILITY_LABELS: Record<AdminEventField['applicability'], string> = {
-  both: 'Members + Guests',
-  members: 'Members only',
-  guests: 'Guests only',
 };
 
 /** List of registration form fields with reorder, edit, and delete actions. */
@@ -126,55 +106,26 @@ export function EventFieldsList({ fields, eventId, eventStatus, onEdit }: EventF
             {fields.map((field, index) => (
               <ListTableRow key={field.id} hover="muted">
                 <ListTableCell>
-                  <div className="flex items-center gap-1">
-                    {isDraft ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleMove(index, 'up')}
-                          disabled={index === 0 || reorderMutation.isPending}
-                          aria-label={`Move "${field.label}" up`}
-                          title="Move up"
-                          className="rounded p-0.5 text-muted hover:bg-muted/20 hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMove(index, 'down')}
-                          disabled={index === fields.length - 1 || reorderMutation.isPending}
-                          aria-label={`Move "${field.label}" down`}
-                          title="Move down"
-                          className="rounded p-0.5 text-muted hover:bg-muted/20 hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                          ↓
-                        </button>
-                      </>
-                    ) : (
-                      <span
-                        className="cursor-not-allowed text-muted/40"
-                        title="Reordering is not available on published or archived events"
-                      >
-                        ↑↓
-                      </span>
-                    )}
-                    <span className="ml-1 text-xs text-muted">{index + 1}</span>
-                  </div>
+                  <FieldOrderControl
+                    index={index}
+                    total={fields.length}
+                    isReorderable={isDraft}
+                    disabled={reorderMutation.isPending}
+                    onMove={handleMove}
+                    disabledTooltip="Reordering is not available on published or archived events"
+                    itemLabel={field.label}
+                  />
                 </ListTableCell>
                 <ListTableCell>
                   <p className="font-medium text-text">{field.label}</p>
                   <p className="text-xs text-muted">{field.field_key}</p>
                 </ListTableCell>
                 <ListTableCell>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[field.field_type] ?? 'bg-muted text-text'}`}
-                  >
-                    {FIELD_TYPE_LABELS[field.field_type as EventFieldTypeEnum] ?? field.field_type}
-                  </span>
+                  <FieldTypeBadge fieldType={field.field_type} />
                 </ListTableCell>
                 <ListTableCell>
                   <span className="text-xs font-medium text-text">
-                    {APPLICABILITY_LABELS[field.applicability]}
+                    {EVENT_FIELD_APPLICABILITY_LABELS[field.applicability]}
                   </span>
                 </ListTableCell>
                 <ListTableCell>

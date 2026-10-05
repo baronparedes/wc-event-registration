@@ -573,6 +573,20 @@ function buildFieldSchema(field: EventFieldWithValidation, label: string): z.Zod
 
     schema = numberSchema;
   }
+  // Rating field
+  else if (type === 'rating') {
+    const rawMax = rules.max as number | undefined;
+    const max =
+      typeof rawMax === 'number' && Number.isFinite(rawMax) ? Math.min(Math.max(1, rawMax), 10) : 5;
+    const rawMin = rules.min as number | undefined;
+    const min = typeof rawMin === 'number' && Number.isFinite(rawMin) ? Math.max(1, rawMin) : 1;
+
+    schema = z.coerce
+      .number()
+      .int(`${label} must be a whole number.`)
+      .min(min, `${label} must be at least ${min}.`)
+      .max(max, `${label} must be at most ${max}.`);
+  }
   // Single choice fields
   else if (type === 'select' || type === 'radio') {
     const allowedValues = field.options.map((opt) => opt.value);

@@ -12,6 +12,7 @@ import {
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasNumberValidation,
   fieldTypeHasOptions,
+  fieldTypeHasRatingValidation,
   fieldTypeHasTextValidation,
   fieldTypeHasValidation,
 } from '@/lib/domain/event-fields';
@@ -39,6 +40,7 @@ type FormFieldEditPanelProps = {
 };
 
 function fieldToFormValues(field: FormField): FormFieldFormValues {
+  const rules = (field.validation_rules as Record<string, unknown> | undefined) ?? {};
   return {
     field_key: field.field_key,
     label: field.label,
@@ -51,7 +53,39 @@ function fieldToFormValues(field: FormField): FormFieldFormValues {
       ? field.options.map((o) => ({ label: o.label, value: o.value }))
       : [],
     field_applicability: field.field_applicability,
+    val_min_length: rules.min_length != null ? String(rules.min_length) : '',
+    val_max_length: rules.max_length != null ? String(rules.max_length) : '',
+    val_pattern: typeof rules.pattern === 'string' ? rules.pattern : '',
+    val_min: rules.min != null ? String(rules.min) : '',
+    val_max: rules.max != null ? String(rules.max) : '',
+    val_min_selections: rules.min_selections != null ? String(rules.min_selections) : '',
+    val_max_selections: rules.max_selections != null ? String(rules.max_selections) : '',
+    val_min_date: typeof rules.min_date === 'string' ? rules.min_date : '',
+    val_max_date: typeof rules.max_date === 'string' ? rules.max_date : '',
   };
+}
+
+function toFormValidationRules(values: FormFieldFormValues): Record<string, unknown> {
+  const rules: Record<string, unknown> = {};
+  if (values.val_min_length) rules.min_length = parseInt(values.val_min_length, 10);
+  if (values.val_max_length) rules.max_length = parseInt(values.val_max_length, 10);
+  if (values.val_pattern) rules.pattern = values.val_pattern;
+  if (values.field_type === 'rating') {
+    if (values.val_max) {
+      const parsedMax = parseInt(values.val_max, 10);
+      if (Number.isFinite(parsedMax)) {
+        rules.max = parsedMax;
+      }
+    }
+  } else {
+    if (values.val_min) rules.min = parseFloat(values.val_min);
+    if (values.val_max) rules.max = parseFloat(values.val_max);
+  }
+  if (values.val_min_selections) rules.min_selections = parseInt(values.val_min_selections, 10);
+  if (values.val_max_selections) rules.max_selections = parseInt(values.val_max_selections, 10);
+  if (values.val_min_date) rules.min_date = values.val_min_date;
+  if (values.val_max_date) rules.max_date = values.val_max_date;
+  return rules;
 }
 
 /** Modal panel for creating or editing a form field. */
@@ -97,6 +131,9 @@ export function FormFieldEditPanel({
   const showNumberValidation = fieldTypeHasNumberValidation(
     selectedFieldType as EventFieldTypeEnum,
   );
+  const showRatingValidation = fieldTypeHasRatingValidation(
+    selectedFieldType as EventFieldTypeEnum,
+  );
   const showMultiSelectValidation = fieldTypeHasMultiSelectValidation(
     selectedFieldType as EventFieldTypeEnum,
   );
@@ -110,6 +147,15 @@ export function FormFieldEditPanel({
     });
     // Reset type-specific fields when field type changes
     setValue('options', []);
+    setValue('val_min_length', '');
+    setValue('val_max_length', '');
+    setValue('val_pattern', '');
+    setValue('val_min', '');
+    setValue('val_max', '');
+    setValue('val_min_selections', '');
+    setValue('val_max_selections', '');
+    setValue('val_min_date', '');
+    setValue('val_max_date', '');
   }
 
   async function onSubmit(values: FormFieldFormValues) {
@@ -129,7 +175,7 @@ export function FormFieldEditPanel({
           placeholder: values.placeholder || null,
           help_text: values.help_text || null,
           options: normalizedOptions,
-          validation_rules: {},
+          validation_rules: toFormValidationRules(values),
           field_applicability: values.field_applicability,
           display_order: field?.display_order ?? 0,
         },
@@ -237,8 +283,10 @@ export function FormFieldEditPanel({
               <FormFieldValidationSection
                 showTextValidation={showTextValidation}
                 showNumberValidation={showNumberValidation}
+                showRatingValidation={showRatingValidation}
                 showMultiSelectValidation={showMultiSelectValidation}
                 showDateValidation={showDateValidation}
+                register={register}
               />
             )}
           </Dialog.Body>

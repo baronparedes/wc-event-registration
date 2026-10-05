@@ -15,6 +15,7 @@ const FORM_FIELD_TYPES_ORDERED: EventFieldTypeEnum[] = [
   'multi_select',
   'date',
   'boolean',
+  'rating',
 ];
 
 type FormFieldTypeSectionProps = {

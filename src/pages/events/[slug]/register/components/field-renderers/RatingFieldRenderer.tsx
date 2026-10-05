@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 
 import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/event-fields';
@@ -8,34 +10,54 @@ type RatingFieldRendererProps = {
 };
 
 export function RatingFieldRenderer({ field, dynamicForm }: RatingFieldRendererProps) {
-  // Extract max value from validation rules, default to 5 if not provided
+  // Extract max value from validation rules, default to 5 if not provided (capped between 1 and 10)
   const maxRating = Math.min(
     Math.max(1, field.validation_rules?.max !== undefined ? field.validation_rules.max : 5),
     10,
   );
 
   const ratingOptions = Array.from({ length: maxRating }, (_, i) => i + 1);
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
 
   const currentValue = useWatch({
     control: dynamicForm.control,
     name: field.field_key,
   });
 
+  const numericValue = typeof currentValue === 'number' ? currentValue : Number(currentValue) || 0;
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div
+      role="radiogroup"
+      aria-label={field.label}
+      className="flex flex-wrap items-center gap-1.5"
+      onMouseLeave={() => setHoveredRating(null)}
+    >
       {ratingOptions.map((rating) => {
-        const isSelected = Number(currentValue) >= rating;
+        const isFilled = hoveredRating !== null ? rating <= hoveredRating : rating <= numericValue;
+
         return (
           <label
             key={`${field.field_key}-${rating}`}
-            className="cursor-pointer"
-            aria-label={`Rate ${rating} stars`}
-            title={`Rate ${rating} stars`}
+            className="group relative cursor-pointer rounded-md p-0.5 transition-transform hover:scale-110 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2"
+            aria-label={`${rating} of ${maxRating} stars`}
+            title={`${rating} of ${maxRating} stars`}
+            onMouseEnter={() => setHoveredRating(rating)}
+            onClick={(e) => {
+              if (numericValue === rating) {
+                e.preventDefault();
+                dynamicForm.setValue(field.field_key, undefined, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }
+            }}
           >
             <input
               type="radio"
               className="sr-only"
               value={rating}
+              checked={numericValue === rating}
               {...dynamicForm.register(field.field_key, {
                 setValueAs: (value) => {
                   if (value === '' || value === null || value === undefined) return undefined;
@@ -45,9 +67,9 @@ export function RatingFieldRenderer({ field, dynamicForm }: RatingFieldRendererP
             />
             <svg
               className={`h-8 w-8 transition-colors ${
-                isSelected
-                  ? 'fill-primary text-primary'
-                  : 'fill-transparent text-gray-300 hover:text-primary/50'
+                isFilled
+                  ? 'fill-amber-400 text-amber-400'
+                  : 'fill-transparent text-gray-300 hover:text-amber-300'
               }`}
               viewBox="0 0 24 24"
               stroke="currentColor"

@@ -46,10 +46,13 @@ export {
 } from './schemas';
 export {
   FIELD_TYPE_LABELS,
+  FIELD_TYPE_COLORS,
+  EVENT_FIELD_APPLICABILITY_LABELS,
   PUBLISHED_EDITABLE_FIELDS,
   fieldTypeHasOptions,
   fieldTypeHasTextValidation,
   fieldTypeHasNumberValidation,
+  fieldTypeHasRatingValidation,
   fieldTypeHasMultiSelectValidation,
   fieldTypeHasDateValidation,
   fieldTypeHasValidation,
