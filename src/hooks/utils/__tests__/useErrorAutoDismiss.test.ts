@@ -1,7 +1,8 @@
-import { renderHook, act } from '@testing-library/react';
-import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TIMING } from '@/config/constants';
+
 import { useErrorAutoDismiss } from '../useErrorAutoDismiss';
 
 describe('useErrorAutoDismiss', () => {
@@ -70,10 +71,9 @@ describe('useErrorAutoDismiss', () => {
   });
 
   it('resets state when a new message arrives', () => {
-    const { result, rerender } = renderHook(
-      ({ message }) => useErrorAutoDismiss(message),
-      { initialProps: { message: 'First error' } }
-    );
+    const { result, rerender } = renderHook(({ message }) => useErrorAutoDismiss(message), {
+      initialProps: { message: 'First error' },
+    });
 
     const initialCountdown = TIMING.errorClearDelayMs / 1000;
 
