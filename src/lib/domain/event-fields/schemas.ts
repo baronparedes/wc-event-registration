@@ -19,6 +19,7 @@ export const FIELD_TYPES = [
   'datetime',
   'boolean',
   'color_picker',
+  'rating',
 ] as const;
 
 export const FIELD_APPLICABILITY = ['members', 'guests', 'both'] as const;

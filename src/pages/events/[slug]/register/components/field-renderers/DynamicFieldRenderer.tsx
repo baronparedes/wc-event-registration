@@ -4,6 +4,7 @@ import type { DynamicFieldResponseValues, PublicEventField } from '@/lib/domain/
 
 import { CheckboxFieldRenderer } from './CheckboxFieldRenderer';
 import { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer';
+import { RatingFieldRenderer } from './RatingFieldRenderer';
 import {
   MultiSelectFieldRenderer,
   MultiSelectToggleFieldRenderer,
@@ -47,6 +48,8 @@ export function DynamicFieldRenderer({
       return <PhoneFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'number':
       return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />;
+    case 'rating':
+      return <RatingFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'textarea':
       return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'date':

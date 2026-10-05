@@ -14,7 +14,8 @@ export type AttendanceFieldType =
   | 'date'
   | 'datetime'
   | 'boolean'
-  | 'color_picker';
+  | 'color_picker'
+  | 'rating';
 
 export type AttendanceFieldOption = {
   label: string;
