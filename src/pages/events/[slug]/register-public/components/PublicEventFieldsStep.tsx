@@ -4,6 +4,7 @@ import { Info, Loader2 } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
+import { DynamicFieldRenderer } from '@/components/fields';
 import { Button } from '@/components/ui/Button';
 import { WizardStep } from '@/components/ui/WizardStep';
 import {
@@ -12,7 +13,6 @@ import {
   buildDynamicFieldResponseSchema,
 } from '@/lib/domain/event-fields';
 import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
-import { DynamicFieldRenderer } from '@/pages/events/[slug]/register/components/field-renderers';
 
 function normalizeHydratedValueForField(
   value: unknown,

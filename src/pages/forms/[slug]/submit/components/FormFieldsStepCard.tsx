@@ -1,11 +1,11 @@
 import type { UseFormReturn } from 'react-hook-form';
 
+import { DynamicFieldRenderer } from '@/components/fields';
 import { AlertBanner, Button } from '@/components/ui';
 import { WizardStep } from '@/components/ui/WizardStep';
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 import { isFieldVisible } from '@/lib/domain/field-visibility';
 import type { FormField } from '@/lib/domain/forms';
-import { DynamicFieldRenderer } from '@/pages/events/[slug]/register/components/field-renderers';
 
 import { toPublicField } from './field-helpers';
 
