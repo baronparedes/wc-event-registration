@@ -17,11 +17,11 @@ import {
   type DynamicFieldResponseValues,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
-} from '@/lib/domain/event-fields';
+} from '@/lib/domain/dynamic-fields';
 import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
 import { logger } from '@/lib/infrastructure';
 
-import { type GuestInfoValues, toPublicField } from '../components';
+import { type GuestInfoValues } from '../components';
 
 export type RespondentType = 'member' | 'guest';
 
@@ -87,7 +87,6 @@ export function useFormSubmissionPageState() {
   const audienceFilter = respondentType === 'member' ? 'members' : 'public';
   const formFieldsQuery = usePublicFormFieldsQuery(form?.id, audienceFilter);
   const fields = useMemo(() => formFieldsQuery.data ?? [], [formFieldsQuery.data]);
-  const publicFields = useMemo(() => fields.map(toPublicField), [fields]);
 
   // Dynamic field responses form
   const dynamicForm = useForm<DynamicFieldResponseValues>({
@@ -107,11 +106,11 @@ export function useFormSubmissionPageState() {
 
   // Reset form fields when fields change or prefill arrives
   useEffect(() => {
-    const defaults = createDynamicFieldDefaultValues(publicFields);
+    const defaults = createDynamicFieldDefaultValues(fields);
     const prefill = prefillResponses ?? {};
     dynamicForm.reset({ ...defaults, ...prefill });
     dynamicForm.clearErrors();
-  }, [publicFields, prefillResponses, dynamicForm]);
+  }, [fields, prefillResponses, dynamicForm]);
 
   // Handle member lookup submit
   const handleLookupSubmit = useCallback(
@@ -232,9 +231,7 @@ export function useFormSubmissionPageState() {
 
       // Filter visible fields and validate against schema
       const formValues = dynamicForm.getValues();
-      const visibleFields = publicFields.filter((field) =>
-        isFieldVisible(field, publicFields, formValues),
-      );
+      const visibleFields = fields.filter((field) => isFieldVisible(field, fields, formValues));
       const visibleSchema = buildDynamicFieldResponseSchema(visibleFields);
 
       const parsed = visibleSchema.safeParse(values);
@@ -251,7 +248,7 @@ export function useFormSubmissionPageState() {
         return;
       }
 
-      const cleanedResponses = filterVisibleFieldValues(publicFields, parsed.data);
+      const cleanedResponses = filterVisibleFieldValues(fields, parsed.data);
       const idempotencyKey = crypto.randomUUID();
 
       let memberIdToSubmit: string | undefined;
@@ -339,7 +336,7 @@ export function useFormSubmissionPageState() {
       slug,
       form,
       dynamicForm,
-      publicFields,
+      fields,
       respondentType,
       verifiedMemberCredential,
       currentProfile?.member_id,
@@ -358,11 +355,11 @@ export function useFormSubmissionPageState() {
     setSubmissionResult(null);
     setSubmitErrorMessage(null);
     setSubmitSuccessMessage(null);
-    dynamicForm.reset(createDynamicFieldDefaultValues(publicFields));
+    dynamicForm.reset(createDynamicFieldDefaultValues(fields));
     autoLookupAttemptedRef.current = false;
     setAutoLookupStatus('idle');
     setActiveWizardStep(1);
-  }, [clearLookupError, dynamicForm, publicFields, resetMemberLookup]);
+  }, [clearLookupError, dynamicForm, fields, resetMemberLookup]);
 
   const fieldErrorMessage = useCallback(
     (fieldKey: string): string | undefined => {

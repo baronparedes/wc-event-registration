@@ -111,12 +111,8 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
           onScroll={onScroll}
         />
       </div>
-      {(error || helperText) && (
-        <div className="flex items-center justify-between gap-2 text-xs">
-          {error ? <p className="text-red-600 min-w-0 flex-1">{error}</p> : <span />}
-          {helperText && <p className="text-muted text-right shrink-0 ml-auto">{helperText}</p>}
-        </div>
-      )}
+      {helperText && <p className="text-xs text-muted leading-relaxed">{helperText}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

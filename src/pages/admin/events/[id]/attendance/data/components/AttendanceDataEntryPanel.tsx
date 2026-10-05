@@ -430,8 +430,9 @@ export function AttendanceDataEntryPanel({
               );
             }
 
+            const isRating = field.field_type === 'rating';
             const htmlType =
-              field.field_type === 'number'
+              field.field_type === 'number' || isRating
                 ? 'number'
                 : field.field_type === 'email'
                   ? 'email'
@@ -448,10 +449,18 @@ export function AttendanceDataEntryPanel({
                 <label htmlFor={inputId} className="text-xs font-medium text-text">
                   {field.label}
                   {isRequired && <span className="ml-1 text-danger">*</span>}
+                  {isRating && (
+                    <span className="ml-1 text-xs text-muted">
+                      ({field.validation_rules?.min ?? 1}-{field.validation_rules?.max ?? 5} stars)
+                    </span>
+                  )}
                 </label>
                 <input
                   id={inputId}
                   type={htmlType}
+                  min={isRating ? (field.validation_rules?.min ?? 1) : undefined}
+                  max={isRating ? (field.validation_rules?.max ?? 5) : undefined}
+                  step={isRating ? 1 : undefined}
                   {...register(field.id)}
                   required={isRequired}
                   className={`w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30 ${

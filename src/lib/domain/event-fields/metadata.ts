@@ -1,21 +1,28 @@
+import {
+  DYNAMIC_FIELD_TYPE_COLORS,
+  DYNAMIC_FIELD_TYPE_LABELS,
+  dynamicFieldHasDateValidation,
+  dynamicFieldHasMultiSelectValidation,
+  dynamicFieldHasNumberValidation,
+  dynamicFieldHasOptions,
+  dynamicFieldHasRatingValidation,
+  dynamicFieldHasTextValidation,
+  dynamicFieldHasValidation,
+} from '@/lib/domain/dynamic-fields';
+
 import type { EventFieldTypeEnum } from './schemas';
 
 /** User-facing labels for each field type. */
-export const FIELD_TYPE_LABELS: Record<EventFieldTypeEnum, string> = {
-  text: 'Single Line Text',
-  textarea: 'Multi-line Text',
-  number: 'Number',
-  email: 'Email Address',
-  phone: 'Phone Number',
-  select: 'Dropdown List',
-  radio: 'Radio Buttons',
-  checkbox: 'Checkbox',
-  multi_select: 'Checkboxes (Multiple)',
-  multi_select_toggle: 'Checkboxes + Yes/No',
-  date: 'Date',
-  datetime: 'Date & Time',
-  boolean: 'Yes / No Toggle',
-  color_picker: 'Color Picker',
+export const FIELD_TYPE_LABELS: Record<EventFieldTypeEnum, string> = DYNAMIC_FIELD_TYPE_LABELS;
+
+/** Badge color classes for each field type across admin lists. */
+export const FIELD_TYPE_COLORS: Record<string, string> = DYNAMIC_FIELD_TYPE_COLORS;
+
+/** User-facing labels for each field applicability scope. */
+export const EVENT_FIELD_APPLICABILITY_LABELS: Record<'both' | 'members' | 'guests', string> = {
+  both: 'Members + Guests',
+  members: 'Members only',
+  guests: 'Guests only',
 };
 
 /**
@@ -27,35 +34,35 @@ export type PublishedEditableField = (typeof PUBLISHED_EDITABLE_FIELDS)[number];
 
 /** Whether a field type uses an options list (select/radio/multi_select). */
 export function fieldTypeHasOptions(ft: EventFieldTypeEnum): boolean {
-  return ft === 'select' || ft === 'radio' || ft === 'multi_select' || ft === 'multi_select_toggle';
+  return dynamicFieldHasOptions(ft);
 }
 
 /** Whether a field type supports text-based validation rules. */
 export function fieldTypeHasTextValidation(ft: EventFieldTypeEnum): boolean {
-  return ft === 'text' || ft === 'textarea' || ft === 'email' || ft === 'phone';
+  return dynamicFieldHasTextValidation(ft);
 }
 
 /** Whether a field type supports numeric validation rules. */
 export function fieldTypeHasNumberValidation(ft: EventFieldTypeEnum): boolean {
-  return ft === 'number';
+  return dynamicFieldHasNumberValidation(ft);
+}
+
+/** Whether a field type supports rating scale validation rules. */
+export function fieldTypeHasRatingValidation(ft: EventFieldTypeEnum): boolean {
+  return dynamicFieldHasRatingValidation(ft);
 }
 
 /** Whether a field type supports selection count validation. */
 export function fieldTypeHasMultiSelectValidation(ft: EventFieldTypeEnum): boolean {
-  return ft === 'multi_select' || ft === 'multi_select_toggle';
+  return dynamicFieldHasMultiSelectValidation(ft);
 }
 
 /** Whether a field type supports date range validation. */
 export function fieldTypeHasDateValidation(ft: EventFieldTypeEnum): boolean {
-  return ft === 'date' || ft === 'datetime';
+  return dynamicFieldHasDateValidation(ft);
 }
 
 /** Whether a field type has any configurable validation rules. */
 export function fieldTypeHasValidation(ft: EventFieldTypeEnum): boolean {
-  return (
-    fieldTypeHasTextValidation(ft) ||
-    fieldTypeHasNumberValidation(ft) ||
-    fieldTypeHasMultiSelectValidation(ft) ||
-    fieldTypeHasDateValidation(ft)
-  );
+  return dynamicFieldHasValidation(ft);
 }

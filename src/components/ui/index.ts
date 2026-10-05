@@ -94,3 +94,5 @@ export {
   PushNotificationPromptBanner,
   PUSH_PROMPT_SNOOZE_STORAGE_KEY,
 } from './PushNotificationPromptBanner';
+export { FieldTypeBadge, type FieldTypeBadgeProps } from './FieldTypeBadge';
+export { FieldOrderControl, type FieldOrderControlProps } from './FieldOrderControl';

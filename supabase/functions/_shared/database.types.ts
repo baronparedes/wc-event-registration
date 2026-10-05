@@ -1679,7 +1679,8 @@ export type Database = {
         | 'date'
         | 'datetime'
         | 'boolean'
-        | 'color_picker';
+        | 'color_picker'
+        | 'rating';
       attendee_kind: 'registered' | 'public';
       duplicate_policy: 'block' | 'allow_update' | 'allow_multiple' | 'allow_multiple_update';
       event_field_type:
@@ -1696,7 +1697,8 @@ export type Database = {
         | 'datetime'
         | 'boolean'
         | 'multi_select_toggle'
-        | 'color_picker';
+        | 'color_picker'
+        | 'rating';
       event_status: 'draft' | 'published' | 'archived';
       registration_mode: 'open' | 'closed';
       registration_status: 'submitted' | 'updated' | 'cancelled';
@@ -1833,6 +1835,7 @@ export const Constants = {
         'datetime',
         'boolean',
         'color_picker',
+        'rating',
       ],
       attendee_kind: ['registered', 'public'],
       duplicate_policy: ['block', 'allow_update', 'allow_multiple', 'allow_multiple_update'],
@@ -1851,6 +1854,7 @@ export const Constants = {
         'boolean',
         'multi_select_toggle',
         'color_picker',
+        'rating',
       ],
       event_status: ['draft', 'published', 'archived'],
       registration_mode: ['open', 'closed'],

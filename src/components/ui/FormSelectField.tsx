@@ -225,7 +225,7 @@ export function FormSelectField(props: FormSelectFieldProps) {
           </ul>
         )}
       </div>
-      {helperText && <p className="text-xs text-muted">{helperText}</p>}
+      {helperText && <p className="text-xs text-muted leading-relaxed">{helperText}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );

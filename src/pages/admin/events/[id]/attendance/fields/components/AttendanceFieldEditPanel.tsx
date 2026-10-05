@@ -17,6 +17,7 @@ import {
   attendanceFieldTypeHasMultiSelectValidation,
   attendanceFieldTypeHasNumberValidation,
   attendanceFieldTypeHasOptions,
+  attendanceFieldTypeHasRatingValidation,
   attendanceFieldTypeHasTextValidation,
 } from '@/lib/domain/attendance-fields';
 import type { AttendanceField, AttendanceFieldTypeEnum } from '@/lib/domain/attendance-fields';
@@ -37,49 +38,61 @@ function normalizeOptionalNumberInput(value: unknown): unknown {
   return value;
 }
 
-const attendanceFieldPanelSchema = z.object({
-  field_key: z
-    .string()
-    .min(1, 'Field key is required')
-    .max(100, 'Field key must be 100 characters or less')
-    .regex(
-      VALIDATION_PATTERNS.fieldKey,
-      'Field key must use only lowercase letters, numbers, and underscores (e.g., table_name)',
+const attendanceFieldPanelSchema = z
+  .object({
+    field_key: z
+      .string()
+      .min(1, 'Field key is required')
+      .max(100, 'Field key must be 100 characters or less')
+      .regex(
+        VALIDATION_PATTERNS.fieldKey,
+        'Field key must use only lowercase letters, numbers, and underscores (e.g., table_name)',
+      ),
+    label: z.string().min(1, 'Field label is required').max(200, 'Field label is too long'),
+    field_type: z.enum(ATTENDANCE_FIELD_TYPES),
+    is_required: z.boolean(),
+    is_active: z.boolean(),
+    options: z.array(
+      z.object({
+        label: z.string().min(1, 'Option label is required'),
+        value: z.string().min(1, 'Option value is required'),
+      }),
     ),
-  label: z.string().min(1, 'Field label is required').max(200, 'Field label is too long'),
-  field_type: z.enum(ATTENDANCE_FIELD_TYPES),
-  is_required: z.boolean(),
-  is_active: z.boolean(),
-  options: z.array(
-    z.object({
-      label: z.string().min(1, 'Option label is required'),
-      value: z.string().min(1, 'Option value is required'),
-    }),
-  ),
-  val_min_length: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
-  val_max_length: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
-  val_pattern: z.string().optional().or(z.literal('')),
-  val_min: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
-  val_max: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
-  val_min_selections: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
-  val_max_selections: z.preprocess(
-    normalizeOptionalNumberInput,
-    z.number().int().nonnegative().optional(),
-  ),
-  val_min_date: z.string().optional().or(z.literal('')),
-  val_max_date: z.string().optional().or(z.literal('')),
-  val_visibility_depends_on_field_key: z.string().optional().or(z.literal('')),
-  val_visibility_equals_value: z.string().optional().or(z.literal('')),
-});
+    val_min_length: z.preprocess(
+      normalizeOptionalNumberInput,
+      z.number().int().nonnegative().optional(),
+    ),
+    val_max_length: z.preprocess(
+      normalizeOptionalNumberInput,
+      z.number().int().nonnegative().optional(),
+    ),
+    val_pattern: z.string().optional().or(z.literal('')),
+    val_min: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
+    val_max: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
+    val_min_selections: z.preprocess(
+      normalizeOptionalNumberInput,
+      z.number().int().nonnegative().optional(),
+    ),
+    val_max_selections: z.preprocess(
+      normalizeOptionalNumberInput,
+      z.number().int().nonnegative().optional(),
+    ),
+    val_min_date: z.string().optional().or(z.literal('')),
+    val_max_date: z.string().optional().or(z.literal('')),
+    val_visibility_depends_on_field_key: z.string().optional().or(z.literal('')),
+    val_visibility_equals_value: z.string().optional().or(z.literal('')),
+  })
+  .superRefine((values, context) => {
+    if (values.field_type === 'rating' && values.val_max !== undefined) {
+      if (!Number.isInteger(values.val_max) || values.val_max < 1 || values.val_max > 10) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Rating scale must be a whole number between 1 and 10.',
+          path: ['val_max'],
+        });
+      }
+    }
+  });
 
 type AttendanceFieldPanelValues = z.infer<typeof attendanceFieldPanelSchema>;
 
@@ -179,11 +192,13 @@ export function AttendanceFieldEditPanel({
         }
       : undefined;
 
+    const isRating = attendanceFieldTypeHasRatingValidation(selectedFieldType);
+
     const validationRules = {
       ...(values.val_min_length !== undefined && { min_length: values.val_min_length }),
       ...(values.val_max_length !== undefined && { max_length: values.val_max_length }),
       ...(values.val_pattern && { pattern: values.val_pattern }),
-      ...(values.val_min !== undefined && { min: values.val_min }),
+      ...(!isRating && values.val_min !== undefined && { min: values.val_min }),
       ...(values.val_max !== undefined && { max: values.val_max }),
       ...(values.val_min_selections !== undefined && {
         min_selections: values.val_min_selections,
@@ -449,6 +464,21 @@ export function AttendanceFieldEditPanel({
                       placeholder="e.g., 10"
                     />
                   </>
+                )}
+                {attendanceFieldTypeHasRatingValidation(selectedFieldType) && (
+                  <div className="sm:col-span-2">
+                    <RuleInput
+                      id="val_max"
+                      label="Max Stars / Rating Scale"
+                      type="number"
+                      registration={register('val_max', { valueAsNumber: true })}
+                      min={1}
+                      max={10}
+                      step={1}
+                      placeholder="5"
+                      helperText="Number of stars to display (1–10, default 5)."
+                    />
+                  </div>
                 )}
                 {attendanceFieldTypeHasMultiSelectValidation(selectedFieldType) && (
                   <>

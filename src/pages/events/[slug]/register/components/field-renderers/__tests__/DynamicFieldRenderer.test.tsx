@@ -66,6 +66,11 @@ describe('DynamicFieldRenderer', () => {
     expect(screen.getByPlaceholderText('Enter age')).toHaveAttribute('type', 'number');
   });
 
+  it('renders rating field', () => {
+    render(<TestHarness field={buildField('rating' as EventFieldType, 'user_rating')} />);
+    expect(screen.getAllByRole('radio', { hidden: true })).toHaveLength(5);
+  });
+
   it('renders textarea field', () => {
     const { container } = render(<TestHarness field={buildField('textarea', 'comments')} />);
     expect(container.querySelector('textarea')).toBeInTheDocument();

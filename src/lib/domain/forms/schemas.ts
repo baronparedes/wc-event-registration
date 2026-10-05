@@ -52,6 +52,7 @@ export const formFieldInputSchema = z.object({
     'date',
     'datetime',
     'boolean',
+    'rating',
   ]),
   is_required: z.boolean().default(false),
   is_active: z.boolean().default(true),
@@ -71,34 +72,57 @@ export const formFieldFormOptionSchema = z.object({
   value: z.string().trim().min(1, 'Option value is required'),
 });
 
-export const formFieldFormSchema = z.object({
-  field_key: z
-    .string()
-    .trim()
-    .min(1, 'Field key is required')
-    .regex(/^[a-z0-9_]+$/, 'Field key must be lowercase letters, numbers, and underscores'),
-  label: z.string().trim().min(1, 'Label is required'),
-  field_type: z.enum([
-    'text',
-    'textarea',
-    'number',
-    'email',
-    'phone',
-    'select',
-    'radio',
-    'checkbox',
-    'multi_select',
-    'date',
-    'datetime',
-    'boolean',
-  ]),
-  is_required: z.boolean().catch(false),
-  is_active: z.boolean().catch(true),
-  placeholder: z.string().trim().nullable().optional().catch(''),
-  help_text: z.string().trim().nullable().optional().catch(''),
-  options: z.array(formFieldFormOptionSchema).catch([]),
-  field_applicability: formFieldApplicabilitySchema.catch('all'),
-});
+export const formFieldFormSchema = z
+  .object({
+    field_key: z
+      .string()
+      .trim()
+      .min(1, 'Field key is required')
+      .regex(/^[a-z0-9_]+$/, 'Field key must be lowercase letters, numbers, and underscores'),
+    label: z.string().trim().min(1, 'Label is required'),
+    field_type: z.enum([
+      'text',
+      'textarea',
+      'number',
+      'email',
+      'phone',
+      'select',
+      'radio',
+      'checkbox',
+      'multi_select',
+      'date',
+      'datetime',
+      'boolean',
+      'rating',
+    ]),
+    is_required: z.boolean().catch(false),
+    is_active: z.boolean().catch(true),
+    placeholder: z.string().trim().nullable().optional().catch(''),
+    help_text: z.string().trim().nullable().optional().catch(''),
+    options: z.array(formFieldFormOptionSchema).catch([]),
+    field_applicability: formFieldApplicabilitySchema.catch('all'),
+    val_min_length: z.string().optional().catch(''),
+    val_max_length: z.string().optional().catch(''),
+    val_pattern: z.string().optional().catch(''),
+    val_min: z.string().optional().catch(''),
+    val_max: z.string().optional().catch(''),
+    val_min_selections: z.string().optional().catch(''),
+    val_max_selections: z.string().optional().catch(''),
+    val_min_date: z.string().optional().catch(''),
+    val_max_date: z.string().optional().catch(''),
+  })
+  .superRefine((values, context) => {
+    if (values.field_type === 'rating' && values.val_max && values.val_max.trim() !== '') {
+      const parsedMax = Number(values.val_max.trim());
+      if (!Number.isInteger(parsedMax) || parsedMax < 1 || parsedMax > 10) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Rating scale must be a whole number between 1 and 10.',
+          path: ['val_max'],
+        });
+      }
+    }
+  });
 
 export type FormFieldFormValues = z.infer<typeof formFieldFormSchema>;
 
@@ -112,4 +136,13 @@ export const DEFAULT_FORM_FIELD_VALUES: FormFieldFormValues = {
   help_text: '',
   options: [],
   field_applicability: 'all',
+  val_min_length: '',
+  val_max_length: '',
+  val_pattern: '',
+  val_min: '',
+  val_max: '',
+  val_min_selections: '',
+  val_max_selections: '',
+  val_min_date: '',
+  val_max_date: '',
 };

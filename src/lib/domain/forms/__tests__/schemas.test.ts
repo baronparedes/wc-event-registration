@@ -1,9 +1,8 @@
-import { describe, expect, it } from 'vitest';
-
 import {
   adminFormInputSchema,
   formAudienceSchema,
   formDuplicatePolicySchema,
+  formFieldFormSchema,
   formFieldInputSchema,
   formStatusSchema,
 } from '../schemas';
@@ -68,5 +67,53 @@ describe('forms schemas', () => {
 
     expect(formDuplicatePolicySchema.safeParse('block').success).toBe(true);
     expect(formDuplicatePolicySchema.safeParse('allow_update').success).toBe(true);
+  });
+
+  it('validates rating field in formFieldInputSchema', () => {
+    const validRatingField = {
+      field_key: 'session_rating',
+      label: 'Session Rating',
+      field_type: 'rating',
+      is_required: false,
+      is_active: true,
+      options: [],
+      validation_rules: {},
+      field_applicability: 'all',
+      display_order: 0,
+    };
+
+    const result = formFieldInputSchema.safeParse(validRatingField);
+    expect(result.success).toBe(true);
+  });
+
+  it('validates rating scale in formFieldFormSchema', () => {
+    const validForm = formFieldFormSchema.safeParse({
+      field_key: 'session_rating',
+      label: 'Session Rating',
+      field_type: 'rating',
+      is_required: false,
+      is_active: true,
+      options: [],
+      field_applicability: 'all',
+      val_max: '8',
+    });
+    expect(validForm.success).toBe(true);
+
+    const invalidForm = formFieldFormSchema.safeParse({
+      field_key: 'session_rating',
+      label: 'Session Rating',
+      field_type: 'rating',
+      is_required: false,
+      is_active: true,
+      options: [],
+      field_applicability: 'all',
+      val_max: '20',
+    });
+    expect(invalidForm.success).toBe(false);
+    if (!invalidForm.success) {
+      expect(invalidForm.error.issues[0]?.message).toBe(
+        'Rating scale must be a whole number between 1 and 10.',
+      );
+    }
   });
 });

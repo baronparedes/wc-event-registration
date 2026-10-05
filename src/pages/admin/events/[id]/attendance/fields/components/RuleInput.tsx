@@ -11,6 +11,9 @@ type RuleInputProps = {
   disabled?: boolean;
   placeholder?: string;
   helperText?: string;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
 };
 
 /** Input for validation rule fields. */
@@ -22,6 +25,9 @@ export function RuleInput({
   disabled = false,
   placeholder,
   helperText,
+  min,
+  max,
+  step,
 }: RuleInputProps) {
   return (
     <div className="space-y-1">
@@ -34,6 +40,9 @@ export function RuleInput({
         type={type}
         disabled={disabled}
         placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
         className={`${inputClass} ${type === 'date' ? 'min-w-0 appearance-none' : ''}`}
       />
       {helperText && <p className="text-xs text-muted">{helperText}</p>}

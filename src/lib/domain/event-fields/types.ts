@@ -14,7 +14,8 @@ export type EventFieldType =
   | 'date'
   | 'datetime'
   | 'boolean'
-  | 'color_picker';
+  | 'color_picker'
+  | 'rating';
 
 export type EventFieldApplicability = 'members' | 'guests' | 'both';
 

@@ -882,4 +882,90 @@ describe('event-fields schemas', () => {
     expect(schema.safeParse({ terms_accepted: false, newsletter: true }).success).toBe(false);
     expect(schema.parse({ terms_accepted: true }).newsletter).toBeUndefined();
   });
+
+  it('validates rating fields correctly with default and custom max ratings', () => {
+    const schema = buildDynamicFieldResponseSchema([
+      createField({
+        field_key: 'overall_rating',
+        label: 'Overall Rating',
+        field_type: 'rating',
+        is_required: true,
+      }),
+      createField({
+        id: '2e777438-0042-4ebc-b526-8e8f4b518d59',
+        field_key: 'nps_score',
+        label: 'NPS Score',
+        field_type: 'rating',
+        is_required: false,
+        validation_rules: { min: 1, max: 10 },
+      }),
+    ]);
+
+    // Valid inputs (number and numeric strings)
+    expect(schema.safeParse({ overall_rating: 5, nps_score: 10 }).success).toBe(true);
+    expect(schema.safeParse({ overall_rating: '3', nps_score: '8' }).success).toBe(true);
+    expect(schema.safeParse({ overall_rating: 1 }).success).toBe(true);
+
+    // Missing required rating
+    expect(schema.safeParse({ nps_score: 5 }).success).toBe(false);
+    expect(schema.safeParse({ overall_rating: '' }).success).toBe(false);
+
+    // Out of bounds
+    expect(schema.safeParse({ overall_rating: 0 }).success).toBe(false);
+    expect(schema.safeParse({ overall_rating: 6 }).success).toBe(false); // default max is 5
+    expect(schema.safeParse({ overall_rating: 4, nps_score: 11 }).success).toBe(false); // max is 10
+  });
+
+  it('validates rating scale in eventFieldFormSchema', () => {
+    const validForm = eventFieldFormSchema.safeParse({
+      field_key: 'service_rating',
+      label: 'Service Rating',
+      field_type: 'rating',
+      applicability: 'both',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '5',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '',
+    });
+    expect(validForm.success).toBe(true);
+
+    const invalidForm = eventFieldFormSchema.safeParse({
+      field_key: 'service_rating',
+      label: 'Service Rating',
+      field_type: 'rating',
+      applicability: 'both',
+      is_required: true,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '15',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '',
+    });
+    expect(invalidForm.success).toBe(false);
+    if (!invalidForm.success) {
+      expect(invalidForm.error.issues[0]?.message).toBe(
+        'Rating scale must be a whole number between 1 and 10.',
+      );
+    }
+  });
 });

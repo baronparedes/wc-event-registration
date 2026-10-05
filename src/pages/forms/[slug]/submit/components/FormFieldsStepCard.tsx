@@ -1,13 +1,11 @@
 import type { UseFormReturn } from 'react-hook-form';
 
+import { DynamicFieldRenderer } from '@/components/fields';
 import { AlertBanner, Button } from '@/components/ui';
 import { WizardStep } from '@/components/ui/WizardStep';
-import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/dynamic-fields';
 import { isFieldVisible } from '@/lib/domain/field-visibility';
 import type { FormField } from '@/lib/domain/forms';
-import { DynamicFieldRenderer } from '@/pages/events/[slug]/register/components/field-renderers';
-
-import { toPublicField } from './field-helpers';
 
 type FormFieldsStepCardProps = {
   fields: FormField[];
@@ -33,11 +31,7 @@ export function FormFieldsStepCard({
   onInactivityTimeout,
 }: FormFieldsStepCardProps) {
   const formValues = dynamicForm.watch();
-  const publicFields = fields.map(toPublicField);
-
-  const visibleFields = publicFields.filter((field) =>
-    isFieldVisible(field, publicFields, formValues),
-  );
+  const visibleFields = fields.filter((field) => isFieldVisible(field, fields, formValues));
 
   return (
     <WizardStep

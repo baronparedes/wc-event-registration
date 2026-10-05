@@ -48,6 +48,10 @@ function formatAnswer(answer: unknown, fieldType: string): string {
     return String(answer);
   }
 
+  if (fieldType === 'rating') {
+    return `★ ${String(answer)}`;
+  }
+
   if (fieldType === 'boolean') {
     return answer === true ? 'Yes' : answer === false ? 'No' : String(answer);
   }
