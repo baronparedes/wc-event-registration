@@ -48,7 +48,11 @@ export function ActionButton({
   ...props
 }: ActionButtonProps) {
   return (
-    <button className={cx(baseClassName, variantClassName[variant], className)} {...props}>
+    <button
+      type="button"
+      className={cx(baseClassName, variantClassName[variant], className)}
+      {...props}
+    >
       {children}
     </button>
   );
