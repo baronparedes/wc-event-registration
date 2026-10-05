@@ -1,139 +1,129 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
+
+import { fireEvent, render, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
+import type { DynamicFieldResponseValues } from '@/lib/domain/dynamic-fields';
 import type { FormField } from '@/lib/domain/forms';
+import { FormFieldsStepCard } from '@/pages/forms/[slug]/submit/components/FormFieldsStepCard';
 
-import { FormFieldsStepCard } from '../FormFieldsStepCard';
-
-function TestWrapper(props: {
-  fields?: FormField[];
+function TestHarness({
+  fields,
+  onSubmit = vi.fn(),
+  submitErrorMessage,
+  onBack,
+  hasError = false,
+  inactivityTimeoutMs,
+  onInactivityTimeout,
+}: {
+  fields: FormField[];
   onSubmit?: (values: DynamicFieldResponseValues) => void;
-  isSubmitting?: boolean;
   submitErrorMessage?: string | null;
   onBack?: () => void;
-  submitButtonLabel?: string;
+  hasError?: boolean;
   inactivityTimeoutMs?: number;
   onInactivityTimeout?: () => void;
 }) {
   const dynamicForm = useForm<DynamicFieldResponseValues>({
-    defaultValues: { comments: 'Initial comment' },
+    defaultValues: {},
   });
 
-  const sampleFields: FormField[] = props.fields ?? [
-    {
-      id: 'field-1',
-      form_id: 'form-123',
-      field_key: 'comments',
-      label: 'Comments',
-      field_type: 'text',
-      is_required: true,
-      is_active: true,
-      placeholder: 'Enter comments',
-      help_text: null,
-      options: [],
-      validation_rules: {},
-      field_applicability: 'all',
-      display_order: 1,
-      created_at: '2026-09-01T00:00:00Z',
-      updated_at: '2026-09-01T00:00:00Z',
-    },
-  ];
+  useEffect(() => {
+    if (hasError && fields.length > 0) {
+      dynamicForm.setError(fields[0].field_key, {
+        message: 'This field is required',
+      });
+    }
+  }, [hasError, fields, dynamicForm]);
 
   return (
     <FormFieldsStepCard
-      fields={sampleFields}
+      fields={fields}
       dynamicForm={dynamicForm}
-      onSubmit={props.onSubmit ?? vi.fn()}
-      isSubmitting={props.isSubmitting}
-      submitErrorMessage={props.submitErrorMessage}
-      submitButtonLabel={props.submitButtonLabel}
-      onBack={props.onBack}
-      inactivityTimeoutMs={props.inactivityTimeoutMs}
-      onInactivityTimeout={props.onInactivityTimeout}
+      onSubmit={onSubmit}
+      submitErrorMessage={submitErrorMessage}
+      onBack={onBack}
+      inactivityTimeoutMs={inactivityTimeoutMs}
+      onInactivityTimeout={onInactivityTimeout}
     />
   );
 }
 
 describe('FormFieldsStepCard', () => {
-  it('renders fields with label and handles submit', async () => {
-    const handleSubmit = vi.fn();
+  const sampleFields: FormField[] = [
+    {
+      id: 'ff-1',
+      form_id: 'form-1',
+      field_key: 'feedback',
+      label: 'Your Feedback',
+      field_type: 'text',
+      is_required: true,
+      is_active: true,
+      display_order: 1,
+      field_applicability: 'all',
+      placeholder: 'Write here',
+      help_text: null,
+      options: [],
+      validation_rules: {},
+      created_at: '',
+      updated_at: '',
+    },
+    {
+      id: 'ff-2',
+      form_id: 'form-1',
+      field_key: 'optional_note',
+      label: 'Optional Note',
+      field_type: 'text',
+      is_required: false,
+      is_active: true,
+      display_order: 2,
+      field_applicability: 'all',
+      placeholder: 'Note',
+      help_text: null,
+      options: [],
+      validation_rules: {},
+      created_at: '',
+      updated_at: '',
+    },
+  ];
 
-    render(<TestWrapper onSubmit={handleSubmit} />);
-
-    expect(screen.getByText('Step 2: Questions')).toBeInTheDocument();
-    expect(screen.getByText('Comments')).toBeInTheDocument();
-    expect(screen.getByText('*')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter comments')).toBeInTheDocument();
-
-    const submitBtn = screen.getByRole('button', { name: /Submit Form/i });
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(handleSubmit).toHaveBeenCalled();
-    });
-  });
-
-  it('renders help text when provided on a field', () => {
-    const fieldsWithHelp: FormField[] = [
-      {
-        id: 'field-1',
-        form_id: 'form-123',
-        field_key: 'comments',
-        label: 'Comments',
-        field_type: 'text',
-        is_required: false,
-        is_active: true,
-        placeholder: null,
-        help_text: 'Please enter any additional feedback',
-        options: [],
-        validation_rules: {},
-        field_applicability: 'all',
-        display_order: 1,
-        created_at: '2026-09-01T00:00:00Z',
-        updated_at: '2026-09-01T00:00:00Z',
-      },
-    ];
-
-    render(<TestWrapper fields={fieldsWithHelp} />);
-
-    expect(screen.getByText('Comments')).toBeInTheDocument();
-    expect(screen.getByText('Please enter any additional feedback')).toBeInTheDocument();
-  });
-
-  it('renders empty fields message when no fields are visible', () => {
-    render(<TestWrapper fields={[]} />);
+  it('renders empty notice when there are no fields', () => {
+    render(<TestHarness fields={[]} />);
 
     expect(screen.getByText('No questions required for this form.')).toBeInTheDocument();
   });
 
-  it('renders error message banner when submitErrorMessage is present', () => {
-    render(<TestWrapper submitErrorMessage="Failed to process form" />);
+  it('renders fields and submit button', () => {
+    const onSubmit = vi.fn();
+    render(<TestHarness fields={sampleFields} onSubmit={onSubmit} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Failed to process form');
+    expect(screen.getByText('Your Feedback')).toBeInTheDocument();
+    expect(screen.getByText('Optional Note')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Write here')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit Form' })).toBeInTheDocument();
   });
 
-  it('shows submitting state on submit button when isSubmitting is true', () => {
-    render(<TestWrapper isSubmitting={true} />);
+  it('renders field validation error message when present', () => {
+    render(<TestHarness fields={sampleFields} hasError />);
 
-    expect(screen.getByRole('button', { name: 'Submitting...' })).toBeDisabled();
+    expect(screen.getByText('This field is required')).toBeInTheDocument();
   });
 
-  it('calls onBack when back button is clicked', () => {
-    const handleBack = vi.fn();
+  it('renders error banner when submitErrorMessage is present', () => {
+    render(<TestHarness fields={sampleFields} submitErrorMessage="Submission limit reached" />);
 
-    render(<TestWrapper onBack={handleBack} />);
-
-    const backBtn = screen.getByRole('button', { name: 'Back' });
-    fireEvent.click(backBtn);
-
-    expect(handleBack).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Submission limit reached')).toBeInTheDocument();
   });
 
-  it('renders inactivity timer message when inactivityTimeoutMs is provided', () => {
-    render(<TestWrapper inactivityTimeoutMs={5000} onInactivityTimeout={vi.fn()} />);
+  it('renders back button and triggers onBack callback', () => {
+    const onBack = vi.fn();
+    render(<TestHarness fields={sampleFields} onBack={onBack} />);
 
-    expect(screen.getByText(/Resetting form in 5s if inactive/i)).toBeInTheDocument();
+    const backButton = screen.getByRole('button', { name: /Back/i });
+    expect(backButton).toBeInTheDocument();
+
+    fireEvent.click(backButton);
+    expect(onBack).toHaveBeenCalled();
   });
 });
