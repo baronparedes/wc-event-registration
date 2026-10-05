@@ -1,4 +1,4 @@
-## 2025-02-18 - Added `title` to icon-only buttons globally
+## 2026-10-04 - Keyboard Accessibility on Custom Buttons
 
-**Learning:** While most icon-only buttons successfully leverage `aria-label` for screen-reader accessibility, they consistently lacked the native `title` attribute. Sighted users relying on a mouse/pointer didn't have a reliable visual indicator (tooltip) of what the icons did, which is a common UX gap for purely iconic interfaces.
-**Action:** Always inject `title={ariaLabel}` directly beside `aria-label={ariaLabel}` in custom UI buttons and navigation icons to ensure parity between visual tooltips and screen reader descriptions.
+**Learning:** When making a generic element like a `<div>` interactive in this codebase, adding focus styles (like `focus-visible:ring-2`) is not enough for keyboard accessibility. The element must also explicitly receive `role="button"`, `tabIndex={0}`, and an `onKeyDown` handler to respond to 'Enter' and 'Space' keys natively. Without these, focus indicators are ignored by the browser.
+**Action:** Next time I make a custom element clickable, I should prefer converting it to a native `<button>` element if possible. If sticking to a `<div>` is required by the design context, I must include all semantic ARIA and keyboard interaction attributes in addition to the focus styling.
