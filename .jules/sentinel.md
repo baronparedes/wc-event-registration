@@ -21,6 +21,7 @@
 **Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
 **Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
 **Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
+
 ## 2026-10-06 - Open Redirect bypass using backslash
 
 **Vulnerability:** Open redirect where users could be redirected to an external domain. The application checked for protocol relative url by looking out for `//`.
