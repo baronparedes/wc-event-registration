@@ -70,20 +70,35 @@ export async function seedTestMember(memberId: string, overrides?: Record<string
   return data;
 }
 
+export type TestEventRecord = {
+  id: string;
+  slug: string;
+  title?: string;
+  duplicate_policy?: string;
+  registration_mode?: string;
+  status?: string;
+  event_fields?: Array<{ id: string; field_key?: string; label?: string }>;
+  [key: string]: unknown;
+};
+
 /**
  * Get a test event fixture
  * Uses existing seed event or creates one for testing
  */
-export async function getTestEvent(slug: string) {
+export async function getTestEvent(slug: string): Promise<TestEventRecord | null> {
   const client = createTestAdminClient();
 
-  const { data, error } = await client.from('events').select('*').eq('slug', slug).single();
+  const { data, error } = await client
+    .from('events')
+    .select('*, event_fields(*)')
+    .eq('slug', slug)
+    .single();
 
   if (error && error.code !== 'PGRST116') {
     throw new Error(`Failed to fetch test event: ${error.message}`);
   }
 
-  return data || null;
+  return (data as TestEventRecord) || null;
 }
 
 /**

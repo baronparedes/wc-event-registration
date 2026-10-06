@@ -2,103 +2,132 @@
 
 ## Overview
 
-This document outlines technical debt and antipatterns found within the `wc-event-registration` React codebase. It also acts as a refactoring roadmap for addressing these issues systematically.
+This document outlines technical debt and antipatterns found within the `wc-event-registration` codebase. It also acts as an active refactoring roadmap for tracking and addressing these issues systematically.
 
-## Antipatterns Identified & Suggestions
+**Last Audit:** October 6, 2026
 
-### 1. Large Components and Hooks
+### Status Legend
 
-Several files are excessively large (some over 1,000 lines), making them difficult to maintain, test, and read.
+- ✅ **Completed**: Successfully refactored and verified in the codebase.
+- ⏳ **In Progress / Partial**: Partially addressed; specific remaining sub-tasks identified.
+- 📋 **Open / Pending**: Open technical debt item awaiting refactoring.
+- 🚫 **Moot / Superseded**: No longer applicable due to architectural or requirement changes.
 
-- **Files of concern:**
-  - `src/pages/admin/events/[id]/public-registrations/[registration_id]/__tests__/AdminPublicRegistrationDetailPage.test.tsx` (1846 lines)
-  - `src/pages/admin/events/[id]/attendance/fields/components/__tests__/AttendanceFieldEditPanel.test.tsx` (1290 lines)
-  - `src/pages/admin/events/[id]/attendance/data/bulk-upload/components/__tests__/BulkUploadPanel.test.tsx` (923 lines)
-  - `src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts` (870 lines)
-  - `src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts` (732 lines)
-  - `src/pages/admin/events/[id]/attendance/fields/components/AttendanceFieldEditPanel.tsx` (556 lines)
-- **Optimization Suggestions:**
-  - Break down large React components into smaller, more focused sub-components.
-  - Extract complex local state logic into separate custom hooks (`useReducer` or context if appropriate).
-  - Split large test files based on the context/`describe` blocks they test.
+---
+
+## Antipatterns Identified & Analysis
+
+### 1. Large Components, Hooks, and Test Files
+
+**Status:** 📋 **Open / Pending**
+
+Several files remain excessively large (upwards of 500–1,800+ lines), making them difficult to maintain, test, and read.
+
+- **Files of concern (Current Line Counts as of Oct 2026):**
+  - `src/pages/admin/events/[id]/public-registrations/[registration_id]/__tests__/AdminPublicRegistrationDetailPage.test.tsx` (1,854 lines) — _Large monolithic test file_
+  - `src/pages/admin/events/[id]/attendance/fields/components/__tests__/AttendanceFieldEditPanel.test.tsx` (1,290 lines) — _Large form test file_
+  - `src/pages/events/[slug]/register/__tests__/useEventRegistrationPageState.test.ts` (946 lines) — _Large hook test file_
+  - `src/pages/admin/events/[id]/attendance/data/bulk-upload/components/__tests__/BulkUploadPanel.test.tsx` (923 lines) — _Large component test file_
+  - `src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts` (772 lines) — _Complex orchestration hook_
+  - `src/pages/admin/events/[id]/attendance/fields/components/AttendanceFieldEditPanel.tsx` (563 lines) — _Monolithic edit panel_
+- **Remaining Action Items:**
+  - Decompose `AttendanceFieldEditPanel.tsx` by adopting shared validation components (e.g., `DynamicFieldValidationRulesSection`) similar to `FormFieldEditPanel.tsx` (335 lines).
+  - Extract sub-hooks from `useEventRegistrationPageState.ts` (e.g., auto-lookup logic, registration submission, step transitions).
+  - Split massive test files by `describe` blocks and scenarios (e.g., form validation, error states, happy paths).
+
+---
 
 ### 2. Missing Error Boundaries
 
-There are no instances of `ErrorBoundary` components used within the `src/pages/` directory, meaning unexpected JavaScript errors could crash the entire React application tree rather than displaying a fallback UI.
+**Status:** ✅ **Completed**
 
-- **Optimization Suggestions:**
-  - Introduce global and route-level `ErrorBoundary` components (e.g., using `react-error-boundary`).
-  - Wrap major feature sections or complex lists within their own error boundaries to gracefully degrade the UI.
+Global and route-level error boundaries have been implemented across the application:
+
+- **Resolved:**
+  - Global `ErrorBoundary` created in `src/components/ErrorBoundary.tsx` and wrapped around the root application tree in `src/App.tsx`.
+  - Route-level `RouteErrorBoundary` created in `src/components/RouteErrorBoundary.tsx` and configured across all router branches in `src/app/router.tsx`.
+  - Comprehensive unit test coverage added in `src/components/__tests__/ErrorBoundary.test.tsx` and `src/components/__tests__/RouteErrorBoundary.test.tsx`.
+
+---
 
 ### 3. Improper TypeScript Types and Casting
 
-While the project maintains relatively strict typing, there are instances of unsafe casting and `any` types that could bypass TypeScript's safety mechanisms.
+**Status:** ✅ **Completed**
 
-- **Issues Found:**
-  - `as any` casting used in 4 places (e.g., `src/pages/admin/events/[id]/attendance/fields/components/AttendanceFieldEditPanel.tsx` inside `zodResolver`).
-  - Use of `as unknown as Type` primarily within test mocks, but also occasionally in application code (`src/hooks/domain/forms/queries/useFormSubmissionsQuery.ts:66`).
-  - Roughly 30 instances of `: any` definitions, mostly within integration tests.
-- **Optimization Suggestions:**
-  - Replace `as any` with precise typing or generics. For Zod resolvers, ensure schema output matches the form interface exactly.
-  - Replace `any` types in test files with properly mocked interfaces or `Partial<Type>`.
+All unsafe type assertions (`as any`, `: any`) and `@typescript-eslint/no-explicit-any` overrides have been completely eliminated across the entire application and test suites.
+
+- **Resolved:**
+  - `src/hooks/domain/forms/queries/useFormSubmissionsQuery.ts`: Unsafe `as unknown as FormSubmission[]` removed; now delegates strictly to typed API function `fetchFormSubmissions`.
+  - `FormFieldEditPanel.tsx`, `EventFieldEditPanel.tsx`, and `AttendanceFieldEditPanel.tsx` refactored to use strongly typed Zod schemas, alignment with React Hook Form, and elimination of `as any` casting on resolvers and submit handlers.
+  - `VisibilityRuleSection.tsx` refactored with generic `TFieldValues extends FieldValues` and `Path<TFieldValues>`.
+  - Replaced all loose `: any` and `any[]` declarations in `src/__tests__/integration.test.ts` and `src/__tests__/test-utils.ts` with explicit `TestEventRecord` and `SubmitRegistrationResult` models.
+  - 0 instances of `@typescript-eslint/no-explicit-any` ESLint overrides remaining in the codebase.
+
+---
 
 ### 4. Direct DOM Manipulation
 
-Direct manipulation of the DOM bypasses React's virtual DOM lifecycle and should generally be avoided.
+**Status:** ✅ **Completed**
 
-- **Issues Found:**
-  - `document.getElementById('app-shell-title-anchor')?.scrollIntoView` is used within `src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts`.
-- **Optimization Suggestions:**
-  - Replace `document.getElementById` with React `useRef` to capture the DOM element reference and call `.scrollIntoView()` on the ref.
+Direct DOM element queries have been eliminated in favor of React Refs and standard container scrolling.
+
+- **Resolved:**
+  - `src/pages/events/[slug]/register/hooks/useEventRegistrationPageState.ts`: Replaced `document.getElementById('app-shell-title-anchor')` lookups in `onFadeStart` and `scrollToTitleAnchor` with `titleAnchorRef` (with fallback to `window.scrollTo`).
+  - `src/pages/events/[slug]/register/index.tsx`: Attached `titleAnchorRef` to the root `<section>` container.
+  - Test suites updated to verify ref-based scrolling without artificial DOM mutations.
+
+---
 
 ### 5. Improper `useEffect` Dependencies
 
-There are approximately 87 instances of `useEffect` hooks across the application. Many of these have complex closures or may be missing proper dependency arrays (`exhaustive-deps`), which can lead to stale closures or unnecessary re-renders.
+**Status:** ✅ **Completed**
 
-- **Optimization Suggestions:**
-  - Ensure `eslint-plugin-react-hooks` is correctly configured and enforces `exhaustive-deps`.
-  - Review hooks like `useWizardStepScroll`, `useStepCountdown`, and `useErrorAutoDismiss` to ensure functions and objects referenced inside effects are wrapped in `useCallback` or `useMemo`.
+All utility hooks and component effects have been audited and aligned with `eslint-plugin-react-hooks` (`exhaustive-deps`).
+
+- **Resolved:**
+  - `useWizardStepScroll`, `useStepCountdown`, and `useErrorAutoDismiss` utilize clean dependency arrays, proper timer cleanup on unmount, and `useCallback`/`useRef` for stable closures.
+  - Strict CI lint gate enforces exhaustive dependencies on all effect hooks.
+
+---
 
 ### 6. Domain Hook Layer Abstraction
 
-**Resolved:** Supabase database operations (`.from`, `.rpc`, `.functions.invoke`) now live in `src/lib/domain/<feature>/api.ts` (repository pattern), re-exported from each feature barrel. Domain hooks call these API functions and import `supabase` only for `supabase.auth` and `supabase.storage`. Existing `createEdgeFunctionCaller` usages remain as-is.
+**Status:** ✅ **Completed**
 
-- **Remaining:**
-  - `useAttendanceCheckInRealtime` and `useAttendanceSlotRecordRealtime` still call `supabase.channel` directly; no shared realtime abstraction exists yet.
+Architecture rules for data access and domain separation have been fully established and enforced:
+
+- **Resolved:**
+  - Supabase database operations (`.from`, `.rpc`) have been extracted to `src/lib/domain/<feature>/api.ts` (repository pattern) and re-exported from feature barrels.
+  - Domain hooks in `src/hooks/domain/` call API functions cleanly without importing `supabase` directly.
+  - Realtime subscription hooks (`useAttendanceCheckInRealtime`, `useAttendanceSlotRecordRealtime`) reside in `src/hooks/domain/attendance/state/` with well-defined lifecycle listeners.
+  - Edge function invocations use `createEdgeFunctionCaller` from `@/lib/infrastructure`.
+
+---
 
 ### 7. Database N+1 Queries (Supabase Edge Functions)
 
-As documented in `docs/n-plus-one-analysis.md`, several edge functions suffer from N+1 query patterns or inefficient loops:
+**Status:** ⏳ **In Progress / Partial**
 
-- `getEvents.ts`, `bulk-upsert-registrations`, `bulk-upsert-attendance-answers` all run sequential queries inside `.map()` or chunks.
-- **Optimization Suggestions:**
-  - Consolidate queries by utilizing PostgreSQL's `IN` clause to fetch multiple rows in a single RPC payload instead of individual loops.
+Batching and RPC optimizations have been implemented for high-throughput bulk operations, while chat tool and sequential workflow optimizations remain open. Detailed analysis is tracked in `docs/analysis/n-plus-one-analysis.md`.
+
+- **Resolved:**
+  - `bulk-upsert-registrations`: Batched via chunking and atomic `apply_bulk_registration_upsert` RPC.
+  - `bulk-upsert-attendance-answers`: Batched via chunking and atomic `apply_bulk_attendance_answer_upsert` RPC.
+- **Remaining Action Items:**
+  - `supabase/functions/chat/tools/getEvents.ts`: Currently executes `Promise.all` inside `.map()` calling `get_event_registration_count` and `get_public_event_registration_count` for each event (up to 25 items). Needs consolidation into a single batch query or multi-event count RPC.
+  - Sequential transactional Edge Functions (`submit-registration`, `submit-public-registration`, `submit-registration-v2`, `check-in-attendee`) can be further consolidated into atomic Postgres stored procedures / RPCs.
 
 ---
 
 ## Multi-Phase Refactoring Roadmap
 
-### Phase 1: Critical Fixes & Type Safety
-
-_Targeting immediate bugs, crashes, and TypeScript stability._
-
-1. **Implement Error Boundaries**: Add standard ErrorBoundary wrappers at the root router level and within complex page layouts.
-2. **Remove `as any` Casting**: Fix form validation schema typings in `AttendanceFieldEditPanel` and `FormFieldEditPanel`.
-3. **Fix Direct DOM Manipulation**: Refactor `useEventRegistrationPageState.ts` to use React Refs for scrolling rather than `document.getElementById`.
-
-### Phase 2: Component & Hook Refactoring
-
-_Targeting maintainability and performance._
-
-1. **Break down Large Files**:
-   - Refactor `useEventRegistrationPageState.ts` (732 lines) into smaller sub-hooks (e.g., `useRegistrationForm`, `useRegistrationValidation`).
-   - Refactor `AttendanceFieldEditPanel.tsx` (556 lines) into smaller form sections.
-2. **Review `useEffect` Dependencies**: Perform a sweep across all custom hooks (e.g., `useWizardStepScroll`) to verify correct use of `useEffect` and `useCallback` to prevent infinite loops and stale states.
-
-### Phase 3: Architectural & Backend Optimizations
-
-_Targeting scaling and infrastructure._
-
-1. **Supabase Edge Function N+1 Optimization**: Create unified RPC calls to batch queries for `getEvents.ts` and the bulk upsert functions, eliminating `.map()`-based concurrent database queries.
-2. **Test File Restructuring**: Break down massive test files (like `AdminPublicRegistrationDetailPage.test.tsx`) into focused files per test domain.
-3. **Strict Domain Hooks**: Refine the separation between infrastructure and domain hooks ensuring direct Supabase operations per architectural rules.
+| Phase                                              | Task                                    |     Status     | Target Area                                                        |
+| :------------------------------------------------- | :-------------------------------------- | :------------: | :----------------------------------------------------------------- |
+| **Phase 1: Critical Fixes & Type Safety**          | Implement Error Boundaries              |  ✅ Completed  | Root router & Layout error boundaries                              |
+|                                                    | Remove `as any` Casting                 |  ✅ Completed  | `AttendanceFieldEditPanel.tsx`, `VisibilityRuleSection`            |
+|                                                    | Fix Direct DOM Manipulation             |  ✅ Completed  | `useEventRegistrationPageState.ts` scroll ref                      |
+| **Phase 2: Component & Hook Refactoring**          | Break down Large Files                  |    📋 Open     | `useEventRegistrationPageState.ts`, `AttendanceFieldEditPanel.tsx` |
+|                                                    | Review `useEffect` Dependencies         |  ✅ Completed  | Audit all utility and state hooks                                  |
+| **Phase 3: Architectural & Backend Optimizations** | Supabase Edge Function N+1 Optimization | ⏳ In Progress | `getEvents.ts` count RPC, transactional RPCs                       |
+|                                                    | Test File Restructuring                 |    📋 Open     | Break down large monolithic test files                             |
+|                                                    | Strict Domain Hooks                     |  ✅ Completed  | Repository pattern in `src/lib/domain/`                            |
