@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { EmptyState, RegistrationStatusBadge } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
@@ -20,7 +21,6 @@ import {
   useCancelPublicRegistrationMutation,
   useReactivatePublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 
 interface PublicRegistrationsListProps {
@@ -62,7 +62,6 @@ export function PublicRegistrationsList({
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const cancelMutation = useCancelPublicRegistrationMutation(eventId);
   const reactivateMutation = useReactivatePublicRegistrationMutation(eventId);
-  const { showError } = useErrorWithFadeout();
 
   if (isLoading) {
     return (
@@ -110,7 +109,7 @@ export function PublicRegistrationsList({
       if (error instanceof Error) {
         message = error.message;
       }
-      showError(message);
+      toast.error(message);
     }
     setShowCancelDialog(false);
     setSelectedRegistration(null);
@@ -126,7 +125,7 @@ export function PublicRegistrationsList({
       if (error instanceof Error) {
         message = error.message;
       }
-      showError(message);
+      toast.error(message);
     }
     setShowReactivateDialog(false);
     setSelectedRegistration(null);

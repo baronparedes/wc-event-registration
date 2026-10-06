@@ -5,6 +5,7 @@ import { inject } from '@vercel/analytics';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 
+import '@/components/ui/NotificationPromptToast';
 import { env } from '@/config/env';
 
 import App from './App.tsx';

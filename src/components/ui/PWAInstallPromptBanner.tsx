@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Download, Smartphone, X } from 'lucide-react';
+import { Download, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { TIMING } from '@/config/constants';
@@ -8,6 +8,7 @@ import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useLocalStorage, usePwaInstallPrompt } from '@/hooks/utils';
 
 import { Button } from './Button';
+import { NotificationPrompt } from './NotificationPrompt';
 import { PWAInstallGuideModal } from './PWAInstallGuideModal';
 
 export const PWA_PROMPT_SNOOZE_STORAGE_KEY = 'wc:pwa-prompt:snoozed-until';
@@ -86,59 +87,46 @@ export function PWAInstallPromptBanner() {
 
   return (
     <>
-      <aside
-        role="region"
-        aria-label="App installation prompt"
-        className="fixed bottom-4 left-4 right-4 z-40 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md animate-fadeIn select-none"
-      >
-        <div className="relative flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface/95 p-4 shadow-xl backdrop-blur-md">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              {isIOS ? <Smartphone className="h-5 w-5" /> : <Download className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0 flex-1 pr-6">
-              <h3 className="text-sm font-semibold text-text">Install Welcome Hub</h3>
-              <p className="mt-0.5 text-xs leading-relaxed text-muted">
-                Install as an app on this device for one-tap access, fast offline loading, and a
-                seamless experience.
-              </p>
-            </div>
-            <button
-              type="button"
-              aria-label="Dismiss app install prompt"
-              onClick={handleDismiss}
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+      <NotificationPrompt ariaLabel="App installation prompt" onDismiss={handleDismiss}>
+        <NotificationPrompt.Header>
+          <NotificationPrompt.Icon>
+            {isIOS ? <Smartphone className="h-5 w-5" /> : <Download className="h-5 w-5" />}
+          </NotificationPrompt.Icon>
+          <NotificationPrompt.Content>
+            <NotificationPrompt.Title>Install Welcome Hub</NotificationPrompt.Title>
+            <NotificationPrompt.Description>
+              Install as an app on this device for one-tap access, fast offline loading, and a
+              seamless experience.
+            </NotificationPrompt.Description>
+          </NotificationPrompt.Content>
+          <NotificationPrompt.DismissButton ariaLabel="Dismiss app install prompt" />
+        </NotificationPrompt.Header>
 
-          <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={handleDismiss}
-              className="text-xs text-muted hover:text-text"
-            >
-              Not now
-            </Button>
-            <Button type="button" size="xs" onClick={handleInstallClick} className="gap-1.5">
-              {isIOS ? (
-                <>
-                  <Smartphone className="h-3.5 w-3.5" />
-                  <span>How to install</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Install app</span>
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </aside>
+        <NotificationPrompt.Actions>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={handleDismiss}
+            className="text-xs text-muted hover:text-text"
+          >
+            Not now
+          </Button>
+          <Button type="button" size="xs" onClick={handleInstallClick} className="gap-1.5">
+            {isIOS ? (
+              <>
+                <Smartphone className="h-3.5 w-3.5" />
+                <span>How to install</span>
+              </>
+            ) : (
+              <>
+                <Download className="h-3.5 w-3.5" />
+                <span>Install app</span>
+              </>
+            )}
+          </Button>
+        </NotificationPrompt.Actions>
+      </NotificationPrompt>
 
       <PWAInstallGuideModal isOpen={showIOSGuide} onClose={handleCloseGuide} />
     </>

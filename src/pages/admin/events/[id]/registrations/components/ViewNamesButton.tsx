@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TOAST_MESSAGES, toRouteWithQuery } from '@/config/constants';
 import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 import { type RegistrationShareField } from '@/lib/domain/registrations';
 
 import { RegistrationFieldSelector } from './RegistrationFieldSelector';
@@ -16,7 +17,6 @@ interface ViewNamesButtonProps {
 
 export function ViewNamesButton({ eventId, disabled = false }: ViewNamesButtonProps) {
   const registrationNamesQuery = useRegistrationNamesQuery(eventId, { enabled: false });
-  const { showError } = useErrorWithFadeout();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFields, setSelectedFields] = useState<RegistrationShareField[]>(['full_name']);
@@ -76,7 +76,7 @@ export function ViewNamesButton({ eventId, disabled = false }: ViewNamesButtonPr
     try {
       await loadRegistrationNames();
     } catch (error) {
-      showError(
+      toast.error(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.viewNamesFailed,
       );
     }

@@ -287,3 +287,39 @@ textarea {
   background-color: #f8fafc !important;
   padding: 16px 20px !important;
 }
+
+/* Sonner Toast Container overrides for NotificationPrompt */
+[data-sonner-toaster] [data-sonner-toast] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  will-change: transform, opacity !important;
+  overflow: visible !important;
+}
+
+/* Hide progress bar on background stacked toasts */
+[data-sonner-toaster]
+  [data-sonner-toast]:not([data-front='true'])
+  [data-testid='toast-progress-bar'] {
+  display: none !important;
+}
+
+@keyframes toastProgressCountdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.animate-toast-progress {
+  animation: toastProgressCountdown var(--toast-duration, 5000ms) linear forwards;
+  transform-origin: left;
+}
+
+[data-sonner-toaster]:hover .animate-toast-progress,
+[data-sonner-toast]:hover .animate-toast-progress {
+  animation-play-state: paused;
+}

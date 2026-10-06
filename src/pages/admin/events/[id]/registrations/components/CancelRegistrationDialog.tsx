@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
+import { toast } from 'sonner';
+
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCancelRegistrationMutation } from '@/hooks/domain/registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
 
 interface CancelRegistrationDialogProps {
@@ -20,7 +21,6 @@ export function CancelRegistrationDialog({
 }: CancelRegistrationDialogProps) {
   const [reason, setReason] = useState('');
   const cancelMutation = useCancelRegistrationMutation(eventId);
-  const { showError } = useErrorWithFadeout();
 
   const handleConfirm = async () => {
     const cancellationReason = reason || undefined;
@@ -36,7 +36,7 @@ export function CancelRegistrationDialog({
       if (error instanceof Error) {
         message = error.message;
       }
-      showError(message);
+      toast.error(message);
     }
   };
 

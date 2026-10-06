@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Bell, Loader2, X } from 'lucide-react';
+import { Bell, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { TIMING } from '@/config/constants';
@@ -9,6 +9,7 @@ import { usePushSubscription } from '@/hooks/domain/notifications';
 import { useLocalStorage, usePwaInstallPrompt } from '@/hooks/utils';
 
 import { Button } from './Button';
+import { NotificationPrompt } from './NotificationPrompt';
 import { PWA_PROMPT_SNOOZE_STORAGE_KEY } from './PWAInstallPromptBanner';
 
 export const PUSH_PROMPT_SNOOZE_STORAGE_KEY = 'wc:push-prompt:snoozed-until';
@@ -104,55 +105,44 @@ export function PushNotificationPromptBanner() {
   }
 
   return (
-    <aside
-      role="region"
-      aria-label="Device notification subscription prompt"
-      className="fixed bottom-4 left-4 right-4 z-40 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md animate-fadeIn select-none"
+    <NotificationPrompt
+      ariaLabel="Device notification subscription prompt"
+      onDismiss={handleDismiss}
     >
-      <div className="relative flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface/95 p-4 shadow-xl backdrop-blur-md">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Bell className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1 pr-6">
-            <h3 className="text-sm font-semibold text-text">Enable Device Notifications</h3>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted">
-              Stay updated on Sunday schedules, broadcasts, and announcements directly on this
-              device.
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Dismiss notification prompt"
-            onClick={handleDismiss}
-            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-primary/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+      <NotificationPrompt.Header>
+        <NotificationPrompt.Icon>
+          <Bell className="h-5 w-5" />
+        </NotificationPrompt.Icon>
+        <NotificationPrompt.Content>
+          <NotificationPrompt.Title>Enable Device Notifications</NotificationPrompt.Title>
+          <NotificationPrompt.Description>
+            Stay updated on Sunday schedules, broadcasts, and announcements directly on this device.
+          </NotificationPrompt.Description>
+        </NotificationPrompt.Content>
+        <NotificationPrompt.DismissButton ariaLabel="Dismiss notification prompt" />
+      </NotificationPrompt.Header>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={handleDismiss}
-            className="text-xs text-muted hover:text-text"
-          >
-            Not now
-          </Button>
-          <Button
-            type="button"
-            size="xs"
-            onClick={handleEnable}
-            disabled={push.isLoading}
-            className="gap-1.5"
-          >
-            {push.isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            <span>{push.isLoading ? 'Enabling...' : 'Enable notifications'}</span>
-          </Button>
-        </div>
-      </div>
-    </aside>
+      <NotificationPrompt.Actions>
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          onClick={handleDismiss}
+          className="text-xs text-muted hover:text-text"
+        >
+          Not now
+        </Button>
+        <Button
+          type="button"
+          size="xs"
+          onClick={handleEnable}
+          disabled={push.isLoading}
+          className="gap-1.5"
+        >
+          {push.isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          <span>{push.isLoading ? 'Enabling...' : 'Enable notifications'}</span>
+        </Button>
+      </NotificationPrompt.Actions>
+    </NotificationPrompt>
   );
 }

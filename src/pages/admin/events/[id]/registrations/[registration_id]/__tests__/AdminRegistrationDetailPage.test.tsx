@@ -13,7 +13,7 @@ const {
   mockUseRegistrationDetailQuery,
   mockCancelMutateAsync,
   mockReactivateMutateAsync,
-  mockShowError,
+  mockToastError,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockNavigate: vi.fn(),
@@ -22,7 +22,13 @@ const {
   mockUseRegistrationDetailQuery: vi.fn(),
   mockCancelMutateAsync: vi.fn(),
   mockReactivateMutateAsync: vi.fn(),
-  mockShowError: vi.fn(),
+  mockToastError: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: (...args: unknown[]) => mockToastError(...args),
+  },
 }));
 
 vi.mock('@/hooks/domain/auth', async () => {
@@ -63,14 +69,6 @@ vi.mock('@/hooks/domain/registrations', async () => {
       mutateAsync: mockReactivateMutateAsync,
       isPending: false,
     }),
-  };
-});
-
-vi.mock('@/hooks/utils', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/utils')>('@/hooks/utils');
-  return {
-    ...actual,
-    useErrorWithFadeout: () => ({ showError: mockShowError }),
   };
 });
 
@@ -384,7 +382,7 @@ describe('AdminRegistrationDetailPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Cancel Registration' })[1]);
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('Failed to cancel registration');
+      expect(mockToastError).toHaveBeenCalledWith('Failed to cancel registration');
     });
 
     mockUseRegistrationDetailQuery.mockReturnValue({
@@ -420,7 +418,7 @@ describe('AdminRegistrationDetailPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Reactivate Registration' })[1]);
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('Failed to reactivate registration');
+      expect(mockToastError).toHaveBeenCalledWith('Failed to reactivate registration');
     });
   });
 
@@ -482,7 +480,7 @@ describe('AdminRegistrationDetailPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Cancel Registration' })[1]);
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('cancel message');
+      expect(mockToastError).toHaveBeenCalledWith('cancel message');
     });
 
     mockUseRegistrationDetailQuery.mockReturnValue({
@@ -518,7 +516,7 @@ describe('AdminRegistrationDetailPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Reactivate Registration' })[1]);
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('reactivate message');
+      expect(mockToastError).toHaveBeenCalledWith('reactivate message');
     });
   });
 

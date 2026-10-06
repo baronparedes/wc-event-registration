@@ -6,10 +6,16 @@ import { makePublicRegistrationSummary } from '@/__tests__/factories';
 import type { PublicRegistrationSummary } from '@/lib/domain/public-registrations';
 import { PublicRegistrationsList } from '@/pages/admin/events/[id]/registrations/components/PublicRegistrationsList';
 
-const { mockCancelMutateAsync, mockReactivateMutateAsync, mockShowError } = vi.hoisted(() => ({
+const { mockCancelMutateAsync, mockReactivateMutateAsync, mockToastError } = vi.hoisted(() => ({
   mockCancelMutateAsync: vi.fn(),
   mockReactivateMutateAsync: vi.fn(),
-  mockShowError: vi.fn(),
+  mockToastError: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: (...args: unknown[]) => mockToastError(...args),
+  },
 }));
 
 vi.mock('@/hooks/domain/public-registrations', () => ({
@@ -21,10 +27,6 @@ vi.mock('@/hooks/domain/public-registrations', () => ({
     mutateAsync: mockReactivateMutateAsync,
     isPending: false,
   }),
-}));
-
-vi.mock('@/hooks/utils', () => ({
-  useErrorWithFadeout: () => ({ showError: mockShowError }),
 }));
 
 const baseRegistration: PublicRegistrationSummary = makePublicRegistrationSummary({
@@ -126,7 +128,7 @@ describe('PublicRegistrationsList', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
   });
 
-  it('closes cancel dialog and shows inline error handler when cancel mutation fails', async () => {
+  it('closes cancel dialog and shows error toast when cancel mutation fails', async () => {
     mockCancelMutateAsync.mockRejectedValue(new Error('cancel failed'));
 
     renderList([baseRegistration]);
@@ -137,7 +139,7 @@ describe('PublicRegistrationsList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel Registration' }));
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('cancel failed');
+      expect(mockToastError).toHaveBeenCalledWith('cancel failed');
     });
 
     expect(screen.queryByText('Cancel Public Registration')).not.toBeInTheDocument();
@@ -182,7 +184,7 @@ describe('PublicRegistrationsList', () => {
     });
   });
 
-  it('closes reactivate dialog and shows error handler when mutation fails', async () => {
+  it('closes reactivate dialog and shows error toast when mutation fails', async () => {
     mockReactivateMutateAsync.mockRejectedValue(new Error('reactivate failed'));
 
     renderList([
@@ -199,7 +201,7 @@ describe('PublicRegistrationsList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reactivate Registration' }));
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('reactivate failed');
+      expect(mockToastError).toHaveBeenCalledWith('reactivate failed');
     });
 
     expect(screen.queryByText('Reactivate Public Registration')).not.toBeInTheDocument();

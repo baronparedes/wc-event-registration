@@ -11,8 +11,14 @@ import { ViewNamesButton } from '../ViewNamesButton';
 
 const mocks = vi.hoisted(() => ({
   mockUseRegistrationNamesQuery: vi.fn(),
-  mockShowError: vi.fn(),
+  mockToastError: vi.fn(),
   mockWindowOpen: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: (...args: unknown[]) => mocks.mockToastError(...args),
+  },
 }));
 
 vi.mock('@/hooks/domain/registrations', async () => {
@@ -20,14 +26,6 @@ vi.mock('@/hooks/domain/registrations', async () => {
   return {
     ...actual,
     useRegistrationNamesQuery: (...args: unknown[]) => mocks.mockUseRegistrationNamesQuery(...args),
-  };
-});
-
-vi.mock('@/hooks/utils', async () => {
-  const actual = await vi.importActual('@/hooks/utils');
-  return {
-    ...actual,
-    useErrorWithFadeout: () => ({ showError: mocks.mockShowError }),
   };
 });
 
@@ -209,7 +207,7 @@ describe('ViewNamesButton', () => {
       fireEvent.click(screen.getByRole('button', { name: /view names/i }));
 
       await waitFor(() => {
-        expect(mocks.mockShowError).toHaveBeenCalledWith('Network failure');
+        expect(mocks.mockToastError).toHaveBeenCalledWith('Network failure');
       });
     });
 
@@ -223,7 +221,7 @@ describe('ViewNamesButton', () => {
       fireEvent.click(screen.getByRole('button', { name: /view names/i }));
 
       await waitFor(() => {
-        expect(mocks.mockShowError).toHaveBeenCalledWith('Failed to load registration names');
+        expect(mocks.mockToastError).toHaveBeenCalledWith('Failed to load registration names');
       });
     });
 
@@ -377,7 +375,7 @@ describe('ViewNamesButton', () => {
       fireEvent.click(screen.getByRole('button', { name: /view names/i }));
 
       await waitFor(() => {
-        expect(mocks.mockShowError).toHaveBeenCalledWith('Failed to load registration names');
+        expect(mocks.mockToastError).toHaveBeenCalledWith('Failed to load registration names');
       });
     });
 
@@ -433,7 +431,7 @@ describe('ViewNamesButton', () => {
       fireEvent.click(screen.getByRole('button', { name: /view names/i }));
 
       await waitFor(() => {
-        expect(mocks.mockShowError).toHaveBeenCalledWith('Failed to load registration names');
+        expect(mocks.mockToastError).toHaveBeenCalledWith('Failed to load registration names');
       });
     });
 

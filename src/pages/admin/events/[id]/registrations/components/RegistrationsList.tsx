@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { EmptyState, RegistrationStatusBadge } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui/ListTable';
 import { TOAST_MESSAGES, UI_MESSAGES, toRoute } from '@/config/constants';
 import { useReactivateRegistrationMutation } from '@/hooks/domain/registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 import type { AdminRegistrationWithMember } from '@/lib/domain/registrations';
 
 import { CancelRegistrationDialog } from './CancelRegistrationDialog';
@@ -56,7 +56,6 @@ export function RegistrationsList({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const reactivateMutation = useReactivateRegistrationMutation(eventId);
-  const { showError } = useErrorWithFadeout();
 
   if (isLoading) {
     return (
@@ -102,7 +101,7 @@ export function RegistrationsList({
       setShowReactivateDialog(false);
       setSelectedRegistration(null);
     } catch (error) {
-      showError(
+      toast.error(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.reactivateFailed,
       );
     }

@@ -91,6 +91,33 @@ export { MarkdownRenderer } from './MarkdownRenderer';
 export { NotificationBell } from './NotificationBell';
 export { NotificationDrawer, type NotificationDrawerProps } from './NotificationDrawer';
 export {
+  NotificationPrompt,
+  NotificationPromptHeader,
+  NotificationPromptIcon,
+  NotificationPromptContent,
+  NotificationPromptTitle,
+  NotificationPromptDescription,
+  NotificationPromptDismissButton,
+  NotificationPromptActions,
+  type NotificationPromptProps,
+  type NotificationPromptHeaderProps,
+  type NotificationPromptIconProps,
+  type NotificationPromptContentProps,
+  type NotificationPromptTitleProps,
+  type NotificationPromptDescriptionProps,
+  type NotificationPromptDismissButtonProps,
+  type NotificationPromptActionsProps,
+  type NotificationPromptVariant,
+  type NotificationPromptPosition,
+} from './NotificationPrompt';
+export {
+  promptToast,
+  showPromptToast,
+  type PromptToastOptions,
+  type PromptToastAction,
+  type PromptToastCancel,
+} from './NotificationPromptToast';
+export {
   PushNotificationPromptBanner,
   PUSH_PROMPT_SNOOZE_STORAGE_KEY,
 } from './PushNotificationPromptBanner';

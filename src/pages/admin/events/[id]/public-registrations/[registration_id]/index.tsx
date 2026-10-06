@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
 import { ActionLink, AlertBanner, RegistrationStatusBadge, SectionCard } from '@/components/ui';
@@ -15,7 +16,6 @@ import {
   usePublicRegistrationDetailQuery,
   useReactivatePublicRegistrationMutation,
 } from '@/hooks/domain/public-registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
@@ -70,7 +70,6 @@ export function AdminPublicRegistrationDetailPage() {
     id: string;
     registration_id: string;
   }>();
-  const { showError } = useErrorWithFadeout();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
@@ -156,7 +155,7 @@ export function AdminPublicRegistrationDetailPage() {
       // Refetch to update registration status
       detailQuery.refetch();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to cancel public registration');
+      toast.error(error instanceof Error ? error.message : 'Failed to cancel public registration');
     }
   };
 
@@ -167,7 +166,7 @@ export function AdminPublicRegistrationDetailPage() {
       // Refetch to update registration status
       detailQuery.refetch();
     } catch (error) {
-      showError(
+      toast.error(
         error instanceof Error ? error.message : 'Failed to reactivate public registration',
       );
     }
