@@ -1,8 +1,8 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EventCard } from '@/pages/home/components/EventCard';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockNavigate, mockToastSuccess, mockToastError, mockClipboardWriteText, mockNativeShare } =
   vi.hoisted(() => ({
@@ -54,7 +54,8 @@ const baseEvent = {
   listingStatus: 'open' as const,
 };
 
-const createTestQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const createTestQueryClient = () =>
+  new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 const renderWithQueryClient = (ui: React.ReactElement) => {
   const queryClient = createTestQueryClient();
@@ -191,7 +192,9 @@ describe('EventCard', () => {
     ['missing end', null],
     ['invalid end', 'not-a-date'],
   ])('does not add a time range for %s', (_scenario, endsAt) => {
-    const { container } = renderWithQueryClient(<EventCard event={{ ...baseEvent, ends_at: endsAt }} />);
+    const { container } = renderWithQueryClient(
+      <EventCard event={{ ...baseEvent, ends_at: endsAt }} />,
+    );
 
     expect(container.querySelector('time')).not.toHaveTextContent('to ');
   });
@@ -203,7 +206,9 @@ describe('EventCard', () => {
     ['invalid end date', 'not-a-date'],
     ['end before start', '2026-08-14T12:00:00.000Z'],
   ])('keeps one badge for an event with %s', (_scenario, endsAt) => {
-    const { container } = renderWithQueryClient(<EventCard event={{ ...baseEvent, ends_at: endsAt }} />);
+    const { container } = renderWithQueryClient(
+      <EventCard event={{ ...baseEvent, ends_at: endsAt }} />,
+    );
     expect(container.querySelectorAll('time')).toHaveLength(1);
   });
 
