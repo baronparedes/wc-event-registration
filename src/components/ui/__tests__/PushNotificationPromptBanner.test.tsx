@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TIMING } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { usePushSubscription } from '@/hooks/domain/notifications';
+import { usePwaInstallPrompt } from '@/hooks/utils/usePwaInstallPrompt';
 
 import {
   PUSH_PROMPT_SNOOZE_STORAGE_KEY,
@@ -17,6 +18,10 @@ vi.mock('@/hooks/domain/auth', () => ({
 
 vi.mock('@/hooks/domain/notifications', () => ({
   usePushSubscription: vi.fn(),
+}));
+
+vi.mock('@/hooks/utils/usePwaInstallPrompt', () => ({
+  usePwaInstallPrompt: vi.fn(),
 }));
 
 vi.mock('sonner', () => ({
@@ -55,6 +60,15 @@ describe('PushNotificationPromptBanner', () => {
       unsubscribeAsync: mockUnsubscribeAsync,
       subscribe: vi.fn(),
       unsubscribe: vi.fn(),
+    });
+
+    vi.mocked(usePwaInstallPrompt).mockReturnValue({
+      canInstall: false,
+      isStandalone: false,
+      isAppInstalled: false,
+      isIOS: false,
+      hasNativePrompt: false,
+      promptToInstall: vi.fn(),
     });
 
     Object.defineProperty(window, 'Notification', {
@@ -252,5 +266,48 @@ describe('PushNotificationPromptBanner', () => {
 
     expect(mockSubscribeAsync).toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith('Permission denied');
+  });
+
+  it('defers push notification prompt if PWA is installable and not yet snoozed', () => {
+    vi.mocked(usePwaInstallPrompt).mockReturnValue({
+      canInstall: true,
+      isStandalone: false,
+      isAppInstalled: false,
+      isIOS: false,
+      hasNativePrompt: true,
+      promptToInstall: vi.fn(),
+    });
+
+    render(<PushNotificationPromptBanner />);
+    act(() => {
+      vi.advanceTimersByTime(TIMING.pushNotificationPromptDelayMs + 500);
+    });
+
+    expect(
+      screen.queryByRole('region', { name: /Device notification subscription prompt/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows push notification prompt if PWA is installable but has been snoozed', () => {
+    vi.mocked(usePwaInstallPrompt).mockReturnValue({
+      canInstall: true,
+      isStandalone: false,
+      isAppInstalled: false,
+      isIOS: false,
+      hasNativePrompt: true,
+      promptToInstall: vi.fn(),
+    });
+
+    const futureTime = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    localStorage.setItem('wc:pwa-prompt:snoozed-until', JSON.stringify(String(futureTime)));
+
+    render(<PushNotificationPromptBanner />);
+    act(() => {
+      vi.advanceTimersByTime(TIMING.pushNotificationPromptDelayMs + 500);
+    });
+
+    expect(
+      screen.getByRole('region', { name: /Device notification subscription prompt/i }),
+    ).toBeInTheDocument();
   });
 });
