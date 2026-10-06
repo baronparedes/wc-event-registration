@@ -52,6 +52,7 @@ export function useCreateEventMutation() {
         registration_mode: input.registration_mode,
         allow_public_registrations: publicRegistrationFlags.allow_public_registrations,
         require_id_lookup: publicRegistrationFlags.require_id_lookup,
+        cover_image_key: emptyToNull(input.cover_image_key ?? undefined),
         metadata: {
           allow_name_lookup: input.allow_name_lookup ?? false,
           public_registration_access: input.public_registration_access,

@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, EmptyState, MarkdownRenderer, Skeleton } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { usePublicEventQuery } from '@/hooks/domain/events';
+import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
 export function EventCountdownPage() {
@@ -14,6 +15,7 @@ export function EventCountdownPage() {
   const { data: availability, isLoading, isError } = usePublicEventQuery(slug ?? null);
   const event = availability?.event;
   const isRegistrationOpen = availability?.status === 'available';
+  const coverUrl = getEventCoverPublicUrl(event?.cover_image_key);
 
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -169,6 +171,12 @@ export function EventCountdownPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-5xl space-y-10 py-8">
+        {coverUrl && (
+          <div className="relative mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-surface shadow-md">
+            <img src={coverUrl} alt={event.title} className="h-full w-full object-cover" />
+          </div>
+        )}
+
         <div className="space-y-6 text-center">
           <h1 className="text-balance text-4xl font-extrabold tracking-tight text-text sm:text-5xl md:text-7xl">
             {event.title}

@@ -28,6 +28,7 @@ export type EventInsertPayload = {
   registration_mode: RegistrationMode;
   allow_public_registrations: boolean;
   require_id_lookup: boolean;
+  cover_image_key?: string | null;
   metadata: Record<string, unknown>;
   created_by_admin_id: string | null;
 };
@@ -46,6 +47,7 @@ export type EventUpdateSnapshotRow = Pick<
   | 'registration_mode'
   | 'allow_public_registrations'
   | 'require_id_lookup'
+  | 'cover_image_key'
   | 'metadata'
 >;
 
@@ -124,7 +126,7 @@ export async function fetchEventUpdateSnapshot(id: string): Promise<EventUpdateS
   const { data: previousEvent } = await supabase
     .from('events')
     .select(
-      'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode, allow_public_registrations, require_id_lookup, metadata',
+      'title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, status, duplicate_policy, registration_mode, allow_public_registrations, require_id_lookup, cover_image_key, metadata',
     )
     .eq('id', id)
     .maybeSingle();
@@ -145,4 +147,33 @@ export async function duplicateEvent(input: DuplicateEventInput): Promise<string
   }
 
   return data.new_event_id;
+}
+
+export const EVENT_COVERS_BUCKET = 'event_covers';
+
+export function getEventCoverPublicUrl(coverImageKey: string | null | undefined): string | null {
+  if (!coverImageKey) return null;
+  const { data } = supabase.storage.from(EVENT_COVERS_BUCKET).getPublicUrl(coverImageKey);
+  return data?.publicUrl ?? null;
+}
+
+export async function uploadEventCoverImage(file: File, eventIdOrSlug?: string): Promise<string> {
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const prefix = eventIdOrSlug ? `${eventIdOrSlug.replace(/[^a-zA-Z0-9_-]/g, '_')}-` : '';
+  const fileName = `${prefix}${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+  const filePath = `covers/${fileName}`;
+
+  const { error } = await supabase.storage.from(EVENT_COVERS_BUCKET).upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: true,
+  });
+
+  if (error) throw error;
+  return filePath;
+}
+
+export async function deleteEventCoverImage(coverImageKey: string): Promise<void> {
+  const { error } = await supabase.storage.from(EVENT_COVERS_BUCKET).remove([coverImageKey]);
+
+  if (error) throw error;
 }

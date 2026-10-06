@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import type { EventAvailability } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -22,6 +23,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
     props;
 
   const event = availability?.event;
+  const coverUrl = getEventCoverPublicUrl(event?.cover_image_key);
 
   const title = event?.title ?? 'Register for This Event';
   const statusBadgeVariant =
@@ -82,6 +84,16 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-4 w-2/3" />
           </div>
+        </div>
+      )}
+
+      {coverUrl && (
+        <div className="relative mt-3 aspect-video w-full overflow-hidden rounded-xl border border-border bg-background shadow-xs">
+          <img
+            src={coverUrl}
+            alt={event?.title ?? 'Event cover'}
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
 

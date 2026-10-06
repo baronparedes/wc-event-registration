@@ -40,6 +40,7 @@ export function useUpdateEventMutation() {
         registration_mode: input.registration_mode,
         allow_public_registrations: publicRegistrationFlags.allow_public_registrations,
         require_id_lookup: publicRegistrationFlags.require_id_lookup,
+        cover_image_key: emptyToNull(input.cover_image_key ?? undefined),
       };
 
       const previousMetadata = (previousEvent?.metadata as Record<string, unknown> | null) ?? {};

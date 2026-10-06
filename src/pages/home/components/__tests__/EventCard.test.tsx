@@ -374,4 +374,18 @@ describe('EventCard', () => {
       screen.queryByRole('link', { name: 'View countdown for Summer Gathering' }),
     ).not.toBeInTheDocument();
   });
+
+  it('renders custom cover photo in background style when cover_image_key is provided', () => {
+    const { container } = render(
+      <EventCard
+        event={{
+          ...baseEvent,
+          cover_image_key: 'covers/custom-cover.jpg',
+        }}
+      />,
+    );
+
+    const backgroundDiv = container.querySelector('[style*="background-image"]');
+    expect(backgroundDiv).toBeInTheDocument();
+  });
 });

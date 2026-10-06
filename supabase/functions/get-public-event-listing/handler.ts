@@ -25,7 +25,7 @@ export async function handleGetPublicEventListing(req: Request): Promise<Respons
   const { data: events, error } = await client
     .from('events')
     .select(
-      'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, allow_public_registrations, registration_mode',
+      'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, allow_public_registrations, registration_mode, cover_image_key',
     )
     .eq('status', 'published')
     .order('starts_at', { ascending: true });

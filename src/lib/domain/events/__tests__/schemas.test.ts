@@ -78,6 +78,24 @@ describe('events schemas', () => {
     expect(parsed.duplicate_policy).toBe('allow_multiple_update');
   });
 
+  it('accepts valid cover_image_key in create and update event schemas', () => {
+    const createParsed = createEventSchema.parse({
+      ...validEventInput,
+      cover_image_key: 'covers/summer-2026.png',
+    });
+    expect(createParsed.cover_image_key).toBe('covers/summer-2026.png');
+
+    const updateParsed = updateEventSchema.parse({
+      title: 'Updated Event',
+      status: 'draft',
+      duplicate_policy: 'block',
+      registration_mode: 'open',
+      public_registration_access: 'members',
+      cover_image_key: null,
+    });
+    expect(updateParsed.cover_image_key).toBeNull();
+  });
+
   it('requires publish schema fields needed for publish', () => {
     const parsed = publishEventSchema.safeParse({
       title: 'Publish Ready Event',

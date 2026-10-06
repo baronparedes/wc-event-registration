@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import helloCoverImage from '@/assets/hello/ccf-hello-cover.png';
 import { Badge, Button, MarkdownRenderer } from '@/components/ui';
 import { toRoute } from '@/config/constants';
+import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import type { PublicEventListingItem } from '@/lib/domain/events';
 import { formatDateOnly, formatTimeOnly } from '@/lib/infrastructure';
 
@@ -64,6 +65,7 @@ export function EventCard({ event }: EventCardProps) {
   const countdownPath = toRoute('eventCountdown', { slug: event.slug });
   const shareUrl = new URL(registrationPath, window.location.origin).toString();
   const isOpen = event.listingStatus === 'open';
+  const coverImageUrl = getEventCoverPublicUrl(event.cover_image_key) || helloCoverImage;
   const startDateBadge = getEventDateBadge(event.starts_at);
   const endDateBadge = getEventDateBadge(event.ends_at);
   const showEndTime = Boolean(
@@ -143,12 +145,12 @@ export function EventCard({ event }: EventCardProps) {
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -inset-2 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.04] blur-lg"
-          style={{ backgroundImage: `url("${helloCoverImage}")` }}
+          style={{ backgroundImage: `url("${coverImageUrl}")` }}
         />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-2 -z-10 bg-contain bg-center bg-no-repeat opacity-[0.08] blur-sm"
-          style={{ backgroundImage: `url("${helloCoverImage}")` }}
+          style={{ backgroundImage: `url("${coverImageUrl}")` }}
         />
         <div className="flex items-start justify-between gap-2">
           {dateBadges.length > 0 ? (

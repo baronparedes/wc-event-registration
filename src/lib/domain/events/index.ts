@@ -33,4 +33,8 @@ export {
   fetchEventUpdateSnapshot,
   updateEvent,
   duplicateEvent,
+  EVENT_COVERS_BUCKET,
+  getEventCoverPublicUrl,
+  uploadEventCoverImage,
+  deleteEventCoverImage,
 } from './api';

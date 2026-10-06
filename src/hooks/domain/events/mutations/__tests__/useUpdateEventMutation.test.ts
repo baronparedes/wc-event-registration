@@ -108,6 +108,7 @@ describe('useUpdateEventMutation', () => {
       registration_mode: 'open',
       allow_public_registrations: false,
       require_id_lookup: true,
+      cover_image_key: null,
       metadata: {
         public_registration_access: 'members',
       },

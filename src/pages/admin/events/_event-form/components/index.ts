@@ -5,3 +5,5 @@ export { EventFormActions } from './EventFormActions';
 export { EventStatusWarning } from './EventStatusWarning';
 export { SaveConfirmationDialog } from './SaveConfirmationDialog';
 export { PublishRequirementsChecker } from './PublishRequirementsChecker';
+export { EventCoverPhotoUpload } from './EventCoverPhotoUpload';
+export { CoverPhotoCropDialog } from './CoverPhotoCropDialog';
