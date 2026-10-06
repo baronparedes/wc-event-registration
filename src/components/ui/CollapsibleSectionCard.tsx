@@ -15,6 +15,7 @@ export type CollapsibleSectionCardProps = {
   titleClassName?: string;
   subtitleClassName?: string;
   headerWrapperClassName?: string;
+  backgroundImageSrc?: string;
 };
 
 /**
@@ -31,6 +32,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
     title,
     subtitle,
     headerWrapperClassName,
+    backgroundImageSrc,
     ...sectionCardProps
   } = props;
 
@@ -86,7 +88,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
           aria-controls={contentId}
           aria-expanded={isExpanded}
           aria-label={actionLabel}
-          className="absolute right-0 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 print:hidden"
+          className="absolute right-0 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-surface/90 text-text shadow-xs backdrop-blur-md transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 print:hidden"
           onClick={toggleExpanded}
           title={actionLabel}
           type="button"
@@ -101,8 +103,24 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
     ) : null;
 
   return (
-    <div className={wrapperClassName}>
-      <div className={headerWrapperClassName}>
+    <div className={`${wrapperClassName} relative overflow-hidden`}>
+      {backgroundImageSrc && !isExpanded && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
+        >
+          <img
+            src={backgroundImageSrc}
+            alt=""
+            className="h-full w-full object-cover object-center scale-105 opacity-80"
+          />
+          {/* Opaque on the left for title readability, with a frosted barrier on the right protecting badges */}
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/90 via-40% to-surface/50 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/60 to-transparent sm:hidden" />
+        </div>
+      )}
+
+      <div className={`relative z-10 ${headerWrapperClassName ?? ''}`}>
         {headerContent}
         {!headerContent && (
           <button
@@ -128,7 +146,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
           <motion.div
             id={contentId}
             key={contentId}
-            className={isAnimatingContent ? 'overflow-hidden' : 'overflow-visible'}
+            className={`relative z-10 ${isAnimatingContent ? 'overflow-hidden' : 'overflow-visible'}`}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -152,7 +170,11 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
         )}
       </AnimatePresence>
 
-      {isExpanded && !animateContent && <div id={contentId}>{children}</div>}
+      {isExpanded && !animateContent && (
+        <div id={contentId} className="relative z-10">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

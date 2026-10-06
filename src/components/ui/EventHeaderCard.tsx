@@ -45,16 +45,23 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
       </span>
       <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
         {availability?.status === 'available' && (
-          <span className="shrink-0 text-xs font-medium text-muted">
-            Registered: <span className="text-text">{availability.registration_count}</span>
+          <span className="shrink-0 rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text shadow-sm backdrop-blur-md">
+            Registered:{' '}
+            <span className="font-bold text-primary">{availability.registration_count}</span>
           </span>
         )}
         {event.allow_public_registrations && (
-          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
+          <Badge
+            icon={<Users className="h-3.5 w-3.5" />}
+            variant="outline"
+            className="border-border/80 bg-surface/90 shadow-xs backdrop-blur-md"
+          >
             Open to Guests
           </Badge>
         )}
-        <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
+        <Badge variant={statusBadgeVariant} className="shadow-xs backdrop-blur-md">
+          {statusBadgeLabel}
+        </Badge>
       </div>
     </div>
   ) : (
@@ -74,6 +81,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
           </span>
         )
       }
+      backgroundImageSrc={coverUrl ?? undefined}
       wrapperClassName="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-sm"
     >
       {isLoading && (

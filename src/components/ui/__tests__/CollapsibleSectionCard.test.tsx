@@ -36,4 +36,26 @@ describe('CollapsibleSectionCard', () => {
 
     expect(screen.getByText('Headerless Content')).toBeInTheDocument();
   });
+
+  it('renders with backgroundImageSrc overlay when collapsed, and hides when expanded', () => {
+    const { container } = render(
+      <CollapsibleSectionCard
+        title="Cover Title"
+        backgroundImageSrc="https://example.com/cover.jpg"
+        defaultExpanded={false}
+      >
+        <div>Cover Body</div>
+      </CollapsibleSectionCard>,
+    );
+
+    expect(screen.getByText('Cover Title')).toBeInTheDocument();
+    const img = container.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img).toHaveAttribute('src', 'https://example.com/cover.jpg');
+
+    const expandBtn = screen.getByRole('button', { name: 'Expand section' });
+    fireEvent.click(expandBtn);
+
+    expect(container.querySelector('img')).toBeNull();
+  });
 });

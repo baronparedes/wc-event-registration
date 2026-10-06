@@ -65,7 +65,7 @@ export function EventCard({ event }: EventCardProps) {
   const countdownPath = toRoute('eventCountdown', { slug: event.slug });
   const shareUrl = new URL(registrationPath, window.location.origin).toString();
   const isOpen = event.listingStatus === 'open';
-  const coverImageUrl = getEventCoverPublicUrl(event.cover_image_key) || helloCoverImage;
+  const customCoverUrl = getEventCoverPublicUrl(event.cover_image_key);
   const startDateBadge = getEventDateBadge(event.starts_at);
   const endDateBadge = getEventDateBadge(event.ends_at);
   const showEndTime = Boolean(
@@ -141,17 +141,38 @@ export function EventCard({ event }: EventCardProps) {
       role={isOpen ? 'link' : undefined}
       tabIndex={isOpen ? 0 : undefined}
     >
-      <div className="relative isolate flex flex-col gap-4 p-5 sm:min-h-[340px]">
+      {customCoverUrl && !detailsOpen && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-2 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.04] blur-lg"
-          style={{ backgroundImage: `url("${coverImageUrl}")` }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-2 -z-10 bg-contain bg-center bg-no-repeat opacity-[0.08] blur-sm"
-          style={{ backgroundImage: `url("${coverImageUrl}")` }}
-        />
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+        >
+          <img
+            src={customCoverUrl}
+            alt=""
+            className="h-full w-full object-cover object-center scale-105 opacity-80"
+          />
+          {/* Opaque on the left for title readability, with a frosted barrier on the right protecting badges */}
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/90 via-40% to-surface/50 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/60 to-transparent sm:hidden" />
+        </div>
+      )}
+
+      {!customCoverUrl && (
+        <>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-2 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.04] blur-lg"
+            style={{ backgroundImage: `url("${helloCoverImage}")` }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-2 -z-10 bg-contain bg-center bg-no-repeat opacity-[0.08] blur-sm"
+            style={{ backgroundImage: `url("${helloCoverImage}")` }}
+          />
+        </>
+      )}
+
+      <div className="relative z-10 flex flex-col gap-4 p-5 sm:min-h-[340px]">
         <div className="flex items-start justify-between gap-2">
           {dateBadges.length > 0 ? (
             <div className="flex min-w-0 items-start gap-1 sm:gap-2">
@@ -160,7 +181,7 @@ export function EventCard({ event }: EventCardProps) {
                   key={dateBadge.isoDate}
                   dateTime={dateBadge.isoDate}
                   aria-label={`${index === 0 ? 'Starts' : 'Ends'} ${formatDateOnly(dateBadge.isoDate)}, ${formatTimeOnly(dateBadge.isoDate)}${showEndTime ? ` to ${formatTimeOnly(event.ends_at)}` : ''}`}
-                  className={`flex shrink-0 flex-col overflow-hidden rounded-md text-center shadow-sm ${dateBadges.length === 1 ? 'w-[148px] sm:w-[168px]' : 'w-[72px] sm:w-20'}`}
+                  className={`flex shrink-0 flex-col overflow-hidden rounded-md text-center border border-border/80 shadow-xs backdrop-blur-md ${dateBadges.length === 1 ? 'w-[148px] sm:w-[168px]' : 'w-[72px] sm:w-20'}`}
                 >
                   {showEndDate && (
                     <span className="py-0.5 text-[9px] leading-tight text-muted">
@@ -190,7 +211,7 @@ export function EventCard({ event }: EventCardProps) {
           )}
           <div className="flex shrink-0 flex-col items-end gap-2 [@container(min-width:340px)]:flex-row [@container(min-width:340px)]:items-center">
             <Badge
-              className="shadow-sm"
+              className="border-border/80 bg-surface/90 shadow-xs backdrop-blur-md"
               variant={
                 event.listingStatus === 'open'
                   ? 'default'
@@ -215,7 +236,7 @@ export function EventCard({ event }: EventCardProps) {
                 clickEvent.stopPropagation();
                 setDetailsOpen(!detailsOpen);
               }}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-surface/90 text-text shadow-xs backdrop-blur-md transition-colors hover:bg-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               <ChevronDown
                 aria-hidden="true"
@@ -225,12 +246,18 @@ export function EventCard({ event }: EventCardProps) {
           </div>
         </div>
         <div className="mt-auto space-y-4">
-          <div className="space-y-2">
+          <div
+            className={
+              customCoverUrl && !detailsOpen
+                ? 'space-y-2 rounded-xl border border-border bg-white p-3.5 shadow-sm'
+                : 'space-y-2'
+            }
+          >
             {event.location && (
               <Badge
                 icon={<MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />}
                 variant="outline"
-                className="max-w-full !whitespace-normal bg-surface text-sm !font-semibold"
+                className="max-w-full !whitespace-normal border-border bg-surface text-sm !font-semibold shadow-xs"
               >
                 <span className="min-w-0 break-words">{event.location}</span>
               </Badge>
@@ -240,7 +267,11 @@ export function EventCard({ event }: EventCardProps) {
             </h3>
           </div>
           {event.allow_public_registrations && (
-            <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
+            <Badge
+              icon={<Users className="h-3.5 w-3.5" />}
+              variant="outline"
+              className="border-border/80 bg-surface/90 shadow-xs backdrop-blur-md"
+            >
               Open to Guests
             </Badge>
           )}
@@ -310,9 +341,14 @@ export function EventCard({ event }: EventCardProps) {
       <div
         id={detailsId}
         hidden={!detailsOpen}
-        className="space-y-4 border-t border-border p-5 cursor-default"
+        className="relative z-10 space-y-4 border-t border-border bg-surface p-5 cursor-default"
         onClick={(clickEvent) => clickEvent.stopPropagation()}
       >
+        {customCoverUrl && (
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-background shadow-xs">
+            <img src={customCoverUrl} alt={event.title} className="h-full w-full object-cover" />
+          </div>
+        )}
         {event.description && (
           <MarkdownRenderer
             content={event.description}
