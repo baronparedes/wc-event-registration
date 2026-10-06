@@ -2,8 +2,12 @@ import { Calendar, FileText, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { ROUTE_PATHS } from '@/config/constants';
+import { useCurrentProfileQuery } from '@/hooks/domain/members';
 
 export function CommunityWelcome() {
+  const { data: currentProfile } = useCurrentProfileQuery();
+  const isVerifiedMember = Boolean(currentProfile?.member_id);
+
   return (
     <section aria-labelledby="community-welcome-title" className="space-y-7">
       <div className="max-w-2xl space-y-3 border-l-4 border-accent pl-5">
@@ -43,11 +47,13 @@ export function CommunityWelcome() {
               to={ROUTE_PATHS.profile}
               className="shrink-0 rounded-sm text-sm font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
-              Sign In &rarr;
+              {isVerifiedMember ? 'My Profile \u2192' : 'Sign In \u2192'}
             </Link>
           </div>
           <p className="text-sm text-muted">
-            Sign in to see your profile, commitments, attendance, and events joined.
+            {isVerifiedMember
+              ? 'View your profile, commitments, attendance, and events joined.'
+              : 'Sign in to see your profile, commitments, attendance, and events joined.'}
           </p>
         </div>
       </div>

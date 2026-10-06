@@ -15,12 +15,14 @@ function renderHomePage() {
 const {
   mockUsePublicEventListingQuery,
   mockUsePublicFormsQuery,
+  mockUseCurrentProfileQuery,
   mockEventSection,
   mockHubSection,
   mockPastEventList,
 } = vi.hoisted(() => ({
   mockUsePublicEventListingQuery: vi.fn(),
   mockUsePublicFormsQuery: vi.fn(),
+  mockUseCurrentProfileQuery: vi.fn(),
   mockEventSection: vi.fn(),
   mockHubSection: vi.fn(),
   mockPastEventList: vi.fn(),
@@ -37,6 +39,10 @@ vi.mock('@/hooks/domain/events', async () => {
 
 vi.mock('@/hooks/domain/forms', () => ({
   usePublicFormsQuery: () => mockUsePublicFormsQuery(),
+}));
+
+vi.mock('@/hooks/domain/members', () => ({
+  useCurrentProfileQuery: () => mockUseCurrentProfileQuery(),
 }));
 
 vi.mock('@/pages/home/components', () => ({
@@ -58,6 +64,10 @@ vi.mock('@/pages/home/components', () => ({
 describe('HomePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: null,
+      isLoading: false,
+    });
     mockUsePublicFormsQuery.mockReturnValue({
       data: [],
       isLoading: false,
@@ -81,6 +91,32 @@ describe('HomePage', () => {
     expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
     expect(screen.getByText('Past Events List: 1')).toBeInTheDocument();
+  });
+
+  it('renders My Profile link when user is signed in and verified', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: {
+        id: 'member-1',
+        member_id: 'MEM-001',
+        full_name: 'Test User',
+      },
+      isLoading: false,
+    });
+
+    renderHomePage();
+
+    expect(screen.getByRole('link', { name: 'My Profile \u2192' })).toHaveAttribute(
+      'href',
+      '/profile',
+    );
+    expect(
+      screen.getByText('View your profile, commitments, attendance, and events joined.'),
+    ).toBeInTheDocument();
   });
 
   it('renders empty-state text when no events are available', () => {
