@@ -20,7 +20,7 @@ import {
 } from '@/hooks/domain/public-registrations';
 import { useWizardStepScroll } from '@/hooks/utils';
 import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
-import { derivePublicRegistrationAccess, getEventCoverPublicUrl } from '@/lib/domain/events';
+import { derivePublicRegistrationAccess } from '@/lib/domain/events';
 import type { PublicAttendeeInfoInput } from '@/lib/domain/public-registrations';
 import { buildSubmitPublicRegistrationSchema } from '@/lib/domain/public-registrations';
 import { formatDateTime, parseErrorToJsonOrString } from '@/lib/infrastructure';
@@ -347,108 +347,89 @@ export function PublicEventRegistrationPage() {
           closes: formatDateTime(availableEvent.registration_closes_at),
         }
       : null;
-
-  const coverUrl = getEventCoverPublicUrl(availableEvent?.cover_image_key);
-
   return (
-    <div className="relative w-full">
-      {coverUrl && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Full-bleed high-vibrancy cover photo background */}
-          <img
-            src={coverUrl}
-            alt=""
-            className="h-full w-full object-cover opacity-70 sm:opacity-80 dark:opacity-65 saturate-150 contrast-105 scale-105"
-          />
-          {/* Subtle soft gradient wash to maintain comfortable readability behind opaque cards */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/15 to-background/75" />
-          <div className="absolute inset-0 bg-radial from-transparent via-background/10 to-background/60" />
-        </div>
-      )}
+    <section className="mx-auto max-w-5xl space-y-6">
+      <EventHeaderCard
+        defaultExpanded={false}
+        slug={slug}
+        isLoading={eventQuery.isLoading}
+        isError={eventQuery.isError}
+        availability={eventQuery.data}
+        isGateReady={!!availableEvent.registration_opens_at}
+        eventWindowText={eventWindowText}
+      />
 
-      <section className="relative z-10 mx-auto max-w-5xl space-y-6">
-        <EventHeaderCard
-          defaultExpanded={false}
-          slug={slug}
-          isLoading={eventQuery.isLoading}
-          isError={eventQuery.isError}
-          availability={eventQuery.data}
-          isGateReady={!!availableEvent.registration_opens_at}
-          eventWindowText={eventWindowText}
+      <div className="space-y-6">
+        <StepIndicator
+          currentStep={getStepNumber()}
+          totalSteps={3}
+          labels={['Info', 'Details', 'Confirm']}
+          categoryLabel="Registration steps"
         />
 
-        <div className="space-y-6">
-          <StepIndicator
-            currentStep={getStepNumber()}
-            totalSteps={3}
-            labels={['Info', 'Details', 'Confirm']}
-            categoryLabel="Registration steps"
-          />
+        {currentStep === 'attendee-info' && (
+          <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
+            <PublicAttendeeInfoStep
+              onSubmit={handleAttendeeInfoSubmit}
+              isSubmitting={isCheckingAttendee}
+              emailErrorMessage={attendeeEmailErrorMessage || undefined}
+              defaultValues={effectiveAttendeeInfo || undefined}
+              inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
+              onInactivityTimeout={handleInactivityReset}
+            />
+            {canReturnToMemberRegistration && (
+              <Button
+                type="button"
+                onClick={() => slug && navigate(`/events/${slug}/register`)}
+                variant="accent"
+                size="lg"
+                className="w-full"
+              >
+                ← Back to member registration
+              </Button>
+            )}
+          </div>
+        )}
 
-          {currentStep === 'attendee-info' && (
-            <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
-              <PublicAttendeeInfoStep
-                onSubmit={handleAttendeeInfoSubmit}
-                isSubmitting={isCheckingAttendee}
-                emailErrorMessage={attendeeEmailErrorMessage || undefined}
-                defaultValues={effectiveAttendeeInfo || undefined}
+        {currentStep === 'event-fields' && (
+          <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
+            {fieldsQuery.isLoading && (
+              <SectionCard title="Step 2: Event Details">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-8 w-3/4 rounded bg-muted" />
+                  <div className="h-4 w-full rounded bg-muted" />
+                  <div className="h-4 w-full rounded bg-muted" />
+                </div>
+              </SectionCard>
+            )}
+
+            {!fieldsQuery.isLoading && !fieldsQuery.isError && fieldsQuery.data?.validFields && (
+              <PublicEventFieldsStep
+                fields={fieldsQuery.data.validFields}
+                onSubmit={handleFieldsSubmit}
+                onBack={handleBackToAttendeeInfo}
+                isSubmitting={submitMutation.isPending}
+                defaultValues={effectiveFieldResponses}
                 inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
                 onInactivityTimeout={handleInactivityReset}
               />
-              {canReturnToMemberRegistration && (
-                <Button
-                  type="button"
-                  onClick={() => slug && navigate(`/events/${slug}/register`)}
-                  variant="accent"
-                  size="lg"
-                  className="w-full"
-                >
-                  ← Back to member registration
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {currentStep === 'event-fields' && (
-            <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
-              {fieldsQuery.isLoading && (
-                <SectionCard title="Step 2: Event Details">
-                  <div className="animate-pulse space-y-4">
-                    <div className="h-8 w-3/4 rounded bg-muted" />
-                    <div className="h-4 w-full rounded bg-muted" />
-                    <div className="h-4 w-full rounded bg-muted" />
-                  </div>
-                </SectionCard>
-              )}
-
-              {!fieldsQuery.isLoading && !fieldsQuery.isError && fieldsQuery.data?.validFields && (
-                <PublicEventFieldsStep
-                  fields={fieldsQuery.data.validFields}
-                  onSubmit={handleFieldsSubmit}
-                  onBack={handleBackToAttendeeInfo}
-                  isSubmitting={submitMutation.isPending}
-                  defaultValues={effectiveFieldResponses}
-                  inactivityTimeoutMs={TIMING.kioskInactivityResetMs}
-                  onInactivityTimeout={handleInactivityReset}
-                />
-              )}
-            </div>
-          )}
-
-          {currentStep === 'confirmation' && confirmationData && (
-            <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
-              <PublicRegistrationConfirmationStep
-                registrationId={confirmationData.registrationId}
-                email={confirmationData.email}
-                eventSlug={slug}
-                canUpdate={canUpdatePublicRegistration}
-                inactivityTimeoutMs={TIMING.publicRegistrationConfirmationTimeoutMs}
-                onInactivityTimeout={handleInactivityReset}
-              />
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
+        {currentStep === 'confirmation' && confirmationData && (
+          <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
+            <PublicRegistrationConfirmationStep
+              registrationId={confirmationData.registrationId}
+              email={confirmationData.email}
+              eventSlug={slug}
+              canUpdate={canUpdatePublicRegistration}
+              inactivityTimeoutMs={TIMING.publicRegistrationConfirmationTimeoutMs}
+              onInactivityTimeout={handleInactivityReset}
+            />
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

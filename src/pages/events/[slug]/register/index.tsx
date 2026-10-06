@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { ROUTE_PATHS, TIMING } from '@/config/constants';
 import { useWizardStepScroll } from '@/hooks/utils';
-import { getEventCoverPublicUrl } from '@/lib/domain/events';
 
 import { DynamicFieldsStepCard, MemberLookupStepCard, ProfileStepCard } from './components';
 import { useEventRegistrationPageState } from './hooks';
@@ -97,202 +96,183 @@ export function EventRegistrationPage() {
       </section>
     );
   }
-
-  const coverUrl = getEventCoverPublicUrl(availability?.event?.cover_image_key);
-
   return (
-    <div className="relative w-full">
-      {coverUrl && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Full-bleed high-vibrancy cover photo background */}
-          <img
-            src={coverUrl}
-            alt=""
-            className="h-full w-full object-cover opacity-70 sm:opacity-80 dark:opacity-65 saturate-150 contrast-105 scale-105"
-          />
-          {/* Subtle soft gradient wash to maintain comfortable readability behind opaque cards */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/15 to-background/75" />
-          <div className="absolute inset-0 bg-radial from-transparent via-background/10 to-background/60" />
-        </div>
+    <section className="mx-auto max-w-5xl space-y-6">
+      <EventHeaderCard
+        slug={slug}
+        isLoading={eventQuery.isLoading}
+        isError={eventQuery.isError}
+        availability={availability}
+        isGateReady={isGateReady}
+        eventWindowText={eventWindowText}
+        defaultExpanded={false}
+      />
+
+      {!isGateReady && (
+        <SectionCard
+          title="Registration Is Not Open Yet"
+          wrapperClassName="rounded-2xl border border-dashed border-primary/35 bg-primary/5 p-6"
+        >
+          <p className="text-sm text-muted">
+            This event is not accepting registrations right now. Please check back later.
+          </p>
+        </SectionCard>
       )}
 
-      <section className="relative z-10 mx-auto max-w-5xl space-y-6">
-        <EventHeaderCard
-          slug={slug}
-          isLoading={eventQuery.isLoading}
-          isError={eventQuery.isError}
-          availability={availability}
-          isGateReady={isGateReady}
-          eventWindowText={eventWindowText}
-          defaultExpanded={false}
-        />
-
-        {!isGateReady && (
-          <SectionCard
-            title="Registration Is Not Open Yet"
-            wrapperClassName="rounded-2xl border border-dashed border-primary/35 bg-primary/5 p-6"
-          >
+      {isGateReady && isPublicOnly && (
+        <SectionCard
+          title="Public Registration Only"
+          wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
+        >
+          <div className="space-y-4">
             <p className="text-sm text-muted">
-              This event is not accepting registrations right now. Please check back later.
+              This event is only open for guest and public registrations. Member registration is not
+              available for this event.
             </p>
-          </SectionCard>
-        )}
-
-        {isGateReady && isPublicOnly && (
-          <SectionCard
-            title="Public Registration Only"
-            wrapperClassName="rounded-2xl border border-border bg-surface p-6 shadow-sm"
-          >
-            <div className="space-y-4">
-              <p className="text-sm text-muted">
-                This event is only open for guest and public registrations. Member registration is
-                not available for this event.
-              </p>
-              <Button
-                className="w-full"
-                onClick={() => navigate(`/events/${slug}/register-public`)}
-                size="lg"
-                type="button"
-                variant="default"
-              >
-                Continue as Guest
-              </Button>
-            </div>
-          </SectionCard>
-        )}
-
-        {isGateReady && !isPublicOnly && (
-          <div className="space-y-6">
-            <StepIndicator
-              currentStep={activeWizardStep}
-              totalSteps={3}
-              labels={['Scan', 'Confirm', 'Complete']}
-              categoryLabel="Registration steps"
-            />
-
-            {activeWizardStep === 1 && (
-              <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
-                {isVerifyingSignedInMember ? (
-                  <SectionCard title="Verifying Registration Details">
-                    <div className="flex items-center space-x-3 py-4">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      <p className="text-sm text-muted">Checking your member profile...</p>
-                    </div>
-                  </SectionCard>
-                ) : (
-                  <MemberLookupStepCard
-                    slug={slug}
-                    lookupForm={memberLookup.lookupForm}
-                    onLookupSubmit={handleLookupSubmit}
-                    isLookupPending={memberLookup.isLookupPending}
-                    lookupErrorMessage={lookupErrorMessage}
-                    suppressLookupWarning={memberLookup.isRegistrationBlocked}
-                    memberIdInputRef={memberIdInputRef}
-                    shouldHighlightInput={memberLookup.memberIdHighlight}
-                    onDismissLookupError={clearLookupError}
-                    allowNameLookup={
-                      availability?.status === 'available' && availability.event
-                        ? Boolean(availability.event.metadata?.allow_name_lookup)
-                        : false
-                    }
-                    allowMemberRegistration={publicRegistrationAccess !== 'public'}
-                    allowPublicRegistration={publicRegistrationAccess !== 'members'}
-                  />
-                )}
-              </div>
-            )}
-
-            {activeWizardStep === 2 && (
-              <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
-                <ProfileStepCard
-                  matchedMember={memberLookup.matchedMember}
-                  isUpdateMode={memberLookup.isUpdateMode}
-                  isRegistrationBlocked={isEffectiveRegistrationBlocked}
-                  shouldFadeDetails={false}
-                  countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmTimeoutMs}
-                  onTimeout={isSignedIn ? undefined : resetToStepOne}
-                  onContinueToStepThree={
-                    isEffectiveRegistrationBlocked ? undefined : enterWizardCompleteStep
-                  }
-                />
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    className="w-full"
-                    onClick={isSignedIn ? handleCancelUpdate : resetToStepOne}
-                    size="lg"
-                    type="button"
-                    variant="accent"
-                  >
-                    {isSignedIn ? 'Back to Events' : 'Scan Another Member'}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {activeWizardStep === 3 && (
-              <div ref={dynamicFieldsStepRef} className="space-y-4 scroll-mt-24">
-                {shouldBypassDynamicFieldsStepCard ? (
-                  <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-                    <p className="text-lg font-semibold text-text">Submitting registration...</p>
-                    <p className="mt-1 text-sm text-muted">
-                      No additional questions are required for this event.
-                    </p>
-                  </div>
-                ) : (
-                  <DynamicFieldsStepCard
-                    matchedMember={memberLookup.matchedMember}
-                    isLocked={memberLookup.isRegistrationBlocked}
-                    shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
-                    lockedMessage={memberLookup.lockedStepMessage}
-                    onCancelUpdate={handleCancelUpdate}
-                    isLoadingFields={eventFieldsQuery.isLoading}
-                    isFieldsError={eventFieldsQuery.isError}
-                    fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
-                    activeFields={activeFields}
-                    remainingSlotsByFieldOption={remainingSlotsByFieldOption}
-                    remainingSlotsByRoleByFieldOption={remainingSlotsByRoleByFieldOption}
-                    dynamicForm={dynamicForm}
-                    onSubmit={handleSubmitRegistration}
-                    fieldErrorMessage={fieldErrorMessage}
-                    isSubmitPending={submitMutation.isPending}
-                    submitButtonLabel={
-                      memberLookup.isUpdateMode
-                        ? 'Update'
-                        : activeFields.length === 0
-                          ? 'Confirm Registration'
-                          : 'Submit Registration'
-                    }
-                    submitErrorMessage={submitErrorMessage}
-                    submitSuccessMessage={submitSuccessMessage}
-                    isRegistrationConfirmed={isRegistrationConfirmed}
-                    onConfirmAcknowledged={handleConfirmAcknowledged}
-                    confirmAcknowledgedLabel={
-                      isSignedIn ? 'Back to Events' : 'Ready for Next Attendee'
-                    }
-                    countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmedResetMs}
-                    onCountdownTimeout={isSignedIn ? undefined : resetToStepOne}
-                    inactivityTimeoutMs={isSignedIn ? undefined : TIMING.kioskInactivityResetMs}
-                    onInactivityTimeout={isSignedIn ? undefined : resetToStepOne}
-                  />
-                )}
-
-                {!isRegistrationConfirmed && !isSignedIn && (
-                  <Button
-                    className="hover:bg-surface"
-                    onClick={enterWizardConfirmStep}
-                    size="lg"
-                    type="button"
-                    variant="primaryOutline"
-                  >
-                    Back to Step 2
-                  </Button>
-                )}
-              </div>
-            )}
+            <Button
+              className="w-full"
+              onClick={() => navigate(`/events/${slug}/register-public`)}
+              size="lg"
+              type="button"
+              variant="default"
+            >
+              Continue as Guest
+            </Button>
           </div>
-        )}
-      </section>
-    </div>
+        </SectionCard>
+      )}
+
+      {isGateReady && !isPublicOnly && (
+        <div className="space-y-6">
+          <StepIndicator
+            currentStep={activeWizardStep}
+            totalSteps={3}
+            labels={['Scan', 'Confirm', 'Complete']}
+            categoryLabel="Registration steps"
+          />
+
+          {activeWizardStep === 1 && (
+            <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
+              {isVerifyingSignedInMember ? (
+                <SectionCard title="Verifying Registration Details">
+                  <div className="flex items-center space-x-3 py-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="text-sm text-muted">Checking your member profile...</p>
+                  </div>
+                </SectionCard>
+              ) : (
+                <MemberLookupStepCard
+                  slug={slug}
+                  lookupForm={memberLookup.lookupForm}
+                  onLookupSubmit={handleLookupSubmit}
+                  isLookupPending={memberLookup.isLookupPending}
+                  lookupErrorMessage={lookupErrorMessage}
+                  suppressLookupWarning={memberLookup.isRegistrationBlocked}
+                  memberIdInputRef={memberIdInputRef}
+                  shouldHighlightInput={memberLookup.memberIdHighlight}
+                  onDismissLookupError={clearLookupError}
+                  allowNameLookup={
+                    availability?.status === 'available' && availability.event
+                      ? Boolean(availability.event.metadata?.allow_name_lookup)
+                      : false
+                  }
+                  allowMemberRegistration={publicRegistrationAccess !== 'public'}
+                  allowPublicRegistration={publicRegistrationAccess !== 'members'}
+                />
+              )}
+            </div>
+          )}
+
+          {activeWizardStep === 2 && (
+            <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
+              <ProfileStepCard
+                matchedMember={memberLookup.matchedMember}
+                isUpdateMode={memberLookup.isUpdateMode}
+                isRegistrationBlocked={isEffectiveRegistrationBlocked}
+                shouldFadeDetails={false}
+                countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmTimeoutMs}
+                onTimeout={isSignedIn ? undefined : resetToStepOne}
+                onContinueToStepThree={
+                  isEffectiveRegistrationBlocked ? undefined : enterWizardCompleteStep
+                }
+              />
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  className="w-full"
+                  onClick={isSignedIn ? handleCancelUpdate : resetToStepOne}
+                  size="lg"
+                  type="button"
+                  variant="accent"
+                >
+                  {isSignedIn ? 'Back to Events' : 'Scan Another Member'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeWizardStep === 3 && (
+            <div ref={dynamicFieldsStepRef} className="space-y-4 scroll-mt-24">
+              {shouldBypassDynamicFieldsStepCard ? (
+                <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+                  <p className="text-lg font-semibold text-text">Submitting registration...</p>
+                  <p className="mt-1 text-sm text-muted">
+                    No additional questions are required for this event.
+                  </p>
+                </div>
+              ) : (
+                <DynamicFieldsStepCard
+                  matchedMember={memberLookup.matchedMember}
+                  isLocked={memberLookup.isRegistrationBlocked}
+                  shouldFadeLockedState={memberLookup.isRegistrationBlocked && lookupErrorFadeOut}
+                  lockedMessage={memberLookup.lockedStepMessage}
+                  onCancelUpdate={handleCancelUpdate}
+                  isLoadingFields={eventFieldsQuery.isLoading}
+                  isFieldsError={eventFieldsQuery.isError}
+                  fieldConfigIssues={eventFieldsQuery.data?.issues ?? []}
+                  activeFields={activeFields}
+                  remainingSlotsByFieldOption={remainingSlotsByFieldOption}
+                  remainingSlotsByRoleByFieldOption={remainingSlotsByRoleByFieldOption}
+                  dynamicForm={dynamicForm}
+                  onSubmit={handleSubmitRegistration}
+                  fieldErrorMessage={fieldErrorMessage}
+                  isSubmitPending={submitMutation.isPending}
+                  submitButtonLabel={
+                    memberLookup.isUpdateMode
+                      ? 'Update'
+                      : activeFields.length === 0
+                        ? 'Confirm Registration'
+                        : 'Submit Registration'
+                  }
+                  submitErrorMessage={submitErrorMessage}
+                  submitSuccessMessage={submitSuccessMessage}
+                  isRegistrationConfirmed={isRegistrationConfirmed}
+                  onConfirmAcknowledged={handleConfirmAcknowledged}
+                  confirmAcknowledgedLabel={
+                    isSignedIn ? 'Back to Events' : 'Ready for Next Attendee'
+                  }
+                  countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmedResetMs}
+                  onCountdownTimeout={isSignedIn ? undefined : resetToStepOne}
+                  inactivityTimeoutMs={isSignedIn ? undefined : TIMING.kioskInactivityResetMs}
+                  onInactivityTimeout={isSignedIn ? undefined : resetToStepOne}
+                />
+              )}
+
+              {!isRegistrationConfirmed && !isSignedIn && (
+                <Button
+                  className="hover:bg-surface"
+                  onClick={enterWizardConfirmStep}
+                  size="lg"
+                  type="button"
+                  variant="primaryOutline"
+                >
+                  Back to Step 2
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
