@@ -88,19 +88,30 @@ describe('EventCard', () => {
     expect(screen.getByText('Registration closes')).toBeInTheDocument();
   });
 
-  it('navigates when an open card is clicked or activated with the keyboard', () => {
-    render(<EventCard event={baseEvent} />);
+  it('toggles details when card is clicked or activated with the keyboard', () => {
+    const { container } = render(<EventCard event={baseEvent} />);
 
-    const card = screen.getAllByRole('link')[0];
+    const card = container.firstElementChild as HTMLElement;
+    expect(screen.getByText('Community event')).not.toBeVisible();
+
+    // Click card heading to expand
     fireEvent.click(screen.getByRole('heading', { name: 'Summer Gathering' }));
-    fireEvent.keyDown(card, { key: 'Enter' });
-    fireEvent.keyDown(card, { key: ' ' });
+    expect(screen.getByText('Community event')).toBeVisible();
 
-    expect(mockNavigate).toHaveBeenCalledTimes(3);
-    expect(mockNavigate).toHaveBeenCalledWith('/events/summer-2026/register');
+    // Click card container to collapse
+    fireEvent.click(card);
+    expect(screen.getByText('Community event')).not.toBeVisible();
+
+    // KeyDown Enter to expand
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(screen.getByText('Community event')).toBeVisible();
+
+    // KeyDown Space to collapse
+    fireEvent.keyDown(card, { key: ' ' });
+    expect(screen.getByText('Community event')).not.toBeVisible();
   });
 
-  it('toggles details without navigating to registration', () => {
+  it('toggles details when chevron button is clicked', () => {
     render(<EventCard event={baseEvent} />);
 
     const detailsButton = screen.getByRole('button', { name: 'Show details for Summer Gathering' });
@@ -108,11 +119,9 @@ describe('EventCard', () => {
     expect(screen.getByText('Community event')).not.toBeVisible();
 
     fireEvent.click(detailsButton);
-    fireEvent.keyDown(detailsButton, { key: 'Enter' });
     expect(detailsButton).toHaveAttribute('aria-expanded', 'true');
     expect(detailsButton).toHaveAccessibleName('Hide details for Summer Gathering');
     expect(screen.getByText('Community event')).toBeVisible();
-    expect(mockNavigate).not.toHaveBeenCalled();
 
     fireEvent.click(detailsButton);
     expect(screen.getByText('Community event')).not.toBeVisible();
@@ -322,7 +331,7 @@ describe('EventCard', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('does not navigate when a past card is clicked or activated with the keyboard', () => {
+  it('toggles details when a past card is clicked or activated with the keyboard', () => {
     const { container } = render(
       <EventCard
         event={{
@@ -333,12 +342,14 @@ describe('EventCard', () => {
     );
 
     const card = container.firstElementChild as HTMLElement;
-    fireEvent.click(screen.getByRole('heading', { name: 'Summer Gathering' }));
-    fireEvent.keyDown(card, { key: 'Enter' });
-    fireEvent.keyDown(card, { key: ' ' });
-
     expect(screen.getByText('Past')).toBeInTheDocument();
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByText('Community event')).not.toBeVisible();
+
+    fireEvent.click(screen.getByRole('heading', { name: 'Summer Gathering' }));
+    expect(screen.getByText('Community event')).toBeVisible();
+
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(screen.getByText('Community event')).not.toBeVisible();
   });
 
   it('renders countdown button for open and upcoming events and links to countdown page', () => {

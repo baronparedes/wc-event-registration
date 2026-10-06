@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 
 import { Calendar, ChevronDown, Clock, MapPin, Share, Users } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Badge, Button, MarkdownRenderer } from '@/components/ui';
@@ -59,7 +59,6 @@ function getEventDateBadge(isoDate: string | null) {
 export function EventCard({ event }: EventCardProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
-  const navigate = useNavigate();
   const registrationPath = toRoute('eventRegister', { slug: event.slug });
   const countdownPath = toRoute('eventCountdown', { slug: event.slug });
   const shareUrl = new URL(registrationPath, window.location.origin).toString();
@@ -83,21 +82,17 @@ export function EventCard({ event }: EventCardProps) {
     : [];
 
   const handleCardClick = () => {
-    if (!isOpen) {
-      return;
-    }
-
-    navigate(registrationPath);
+    setDetailsOpen((prev) => !prev);
   };
 
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!isOpen || e.target !== e.currentTarget) {
+    if (e.target !== e.currentTarget) {
       return;
     }
 
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      navigate(registrationPath);
+      setDetailsOpen((prev) => !prev);
     }
   };
 
@@ -134,11 +129,9 @@ export function EventCard({ event }: EventCardProps) {
 
   return (
     <div
-      className={`group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary [container-type:inline-size] ${isOpen ? 'cursor-pointer' : ''}`}
+      className="group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md [container-type:inline-size] cursor-pointer"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
-      role={isOpen ? 'link' : undefined}
-      tabIndex={isOpen ? 0 : undefined}
     >
       {customCoverUrl && !detailsOpen && (
         <div
@@ -274,6 +267,7 @@ export function EventCard({ event }: EventCardProps) {
                   asChild
                   className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold shadow-xs"
                   size="md"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Link to={registrationPath}>Register Now</Link>
                 </Button>
@@ -283,6 +277,7 @@ export function EventCard({ event }: EventCardProps) {
                   className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold shadow-xs"
                   size="md"
                   variant="primaryOutline"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Link
                     to={countdownPath}
@@ -302,6 +297,7 @@ export function EventCard({ event }: EventCardProps) {
                   size="md"
                   variant="primaryOutline"
                   className="min-h-[44px] min-w-[44px] p-0 flex items-center justify-center shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Link
                     to={countdownPath}
