@@ -27,3 +27,15 @@ expect(result.current).toBe(false);
 **Challenge:** Components like `SundayVolunteersTable` that use nested UI components (e.g., `<Avatar>`) fail in tests with 'No QueryClient set' because child components fetch data using React Query.
 **Learning:** UI components cannot be tested in isolation if they use data-fetching children; they require the full application provider context.
 **Pattern:** Always wrap components in a `QueryClientProvider` with a fresh `QueryClient` instance in tests to satisfy deep data dependencies.
+
+## 2026-10-06 - Attendance Advanced Filters Card Tests
+
+**Challenge:** Testing the dynamic fields required selecting dynamically populated UI dropdowns built with custom elements that abstract typical semantic HTML.
+**Learning:** For FormSelectField dropdowns, we need to query by role 'button' since headless UI libraries often implement them that way. We can look for the option in the dom and click it.
+**Pattern:** For , use `screen.getByRole('button', { name: 'Label' })` to click and open it, then `screen.getAllByText('Option Text')` and filter for elements mimicking the 'option' role to execute selection interactions.
+
+## 2026-10-05 - Attendance Advanced Filters Card Tests
+
+**Challenge:** Testing the dynamic fields required selecting dynamically populated UI dropdowns built with custom elements that abstract typical semantic HTML.
+**Learning:** For FormSelectField dropdowns, we need to query by role 'button' since headless UI libraries often implement them that way. We can look for the option in the dom and click it.
+**Pattern:** For `FormSelectField`, use `screen.getByRole('button', { name: 'Label' })` to click and open it, then `screen.getAllByText('Option Text')` and filter for elements mimicking the 'option' role to execute selection interactions.
