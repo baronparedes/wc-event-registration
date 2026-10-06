@@ -157,7 +157,7 @@ export function EventCard({ event }: EventCardProps) {
       )}
 
       <div className="relative isolate z-10 flex flex-col gap-4 p-5 sm:min-h-[340px]">
-        {!customCoverUrl && (
+        {(!customCoverUrl || detailsOpen) && (
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -right-6 -bottom-6 -z-10 text-primary opacity-[0.04] dark:opacity-[0.06] select-none"
