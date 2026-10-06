@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
 import { useRegistrationNamesQuery } from '@/hooks/domain/registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 import {
   type RegistrationShareField,
   formatRegistrationShareText,
@@ -44,7 +43,6 @@ function copyTextToClipboard(text: string): Promise<void> {
 
 export function CopyNamesButton({ eventId, eventTitle, disabled = false }: CopyNamesButtonProps) {
   const registrationNamesQuery = useRegistrationNamesQuery(eventId, { enabled: false });
-  const { showError } = useErrorWithFadeout();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFields, setSelectedFields] = useState<RegistrationShareField[]>(['full_name']);
@@ -111,7 +109,7 @@ export function CopyNamesButton({ eventId, eventTitle, disabled = false }: CopyN
     try {
       await loadRegistrationNames();
     } catch (error) {
-      showError(
+      toast.error(
         error instanceof Error ? error.message : TOAST_MESSAGES.registration.copyNamesFailed,
       );
     }
@@ -126,12 +124,12 @@ export function CopyNamesButton({ eventId, eventTitle, disabled = false }: CopyN
       if (error instanceof Error) {
         message = error.message;
       }
-      showError(message);
+      toast.error(message);
       return;
     }
 
     if (payload.rows.length === 0) {
-      showError(UI_MESSAGES.empty.noRegistrationsYet);
+      toast.error(UI_MESSAGES.empty.noRegistrationsYet);
       return;
     }
 
@@ -152,7 +150,7 @@ export function CopyNamesButton({ eventId, eventTitle, disabled = false }: CopyN
       if (error instanceof Error) {
         message = error.message;
       }
-      showError(message);
+      toast.error(message);
     }
   };
 

@@ -12,7 +12,7 @@ const {
   mockUsePublicRegistrationDetailQuery,
   mockUseCancelPublicRegistrationMutation,
   mockUseReactivatePublicRegistrationMutation,
-  mockUseErrorWithFadeout,
+  mockToastError,
 } = vi.hoisted(() => ({
   mockUseParams: vi.fn(),
   mockUseAdminAuthQuery: vi.fn(),
@@ -20,7 +20,13 @@ const {
   mockUsePublicRegistrationDetailQuery: vi.fn(),
   mockUseCancelPublicRegistrationMutation: vi.fn(),
   mockUseReactivatePublicRegistrationMutation: vi.fn(),
-  mockUseErrorWithFadeout: vi.fn(),
+  mockToastError: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: (...args: unknown[]) => mockToastError(...args),
+  },
 }));
 
 vi.mock('@/hooks/domain/auth', async () => {
@@ -63,14 +69,6 @@ vi.mock('@/hooks/domain/public-registrations', async () => {
   };
 });
 
-vi.mock('@/hooks/utils', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/utils')>('@/hooks/utils');
-  return {
-    ...actual,
-    useErrorWithFadeout: () => mockUseErrorWithFadeout(),
-  };
-});
-
 describe('AdminPublicRegistrationDetailPage', () => {
   let testEventId: string;
   let testRegistrationId: string;
@@ -78,7 +76,6 @@ describe('AdminPublicRegistrationDetailPage', () => {
   let attendeeLastName: string;
   let attendeeEmail: string;
   let attendeeNickname: string;
-  const mockShowError = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -101,8 +98,6 @@ describe('AdminPublicRegistrationDetailPage', () => {
       data: { isAuthenticated: true, session: null, adminRole: 'admin' },
       isLoading: false,
     });
-
-    mockUseErrorWithFadeout.mockReturnValue({ showError: mockShowError });
   });
 
   function renderWithRouter() {
@@ -1449,11 +1444,11 @@ describe('AdminPublicRegistrationDetailPage', () => {
       fireEvent.click(allCancelBtns[allCancelBtns.length - 1]);
 
       await waitFor(() => {
-        expect(mockShowError).toHaveBeenCalledWith('Cancel failed');
+        expect(mockToastError).toHaveBeenCalledWith('Cancel failed');
       });
     });
 
-    it('calls showError with fallback message when cancel mutation throws a non-Error', async () => {
+    it('calls toast.error with fallback message when cancel mutation throws a non-Error', async () => {
       const registrationData = {
         registration: {
           id: testRegistrationId,
@@ -1507,11 +1502,11 @@ describe('AdminPublicRegistrationDetailPage', () => {
       fireEvent.click(allCancelBtns[allCancelBtns.length - 1]);
 
       await waitFor(() => {
-        expect(mockShowError).toHaveBeenCalledWith('Failed to cancel public registration');
+        expect(mockToastError).toHaveBeenCalledWith('Failed to cancel public registration');
       });
     });
 
-    it('calls showError when reactivate mutation throws an Error', async () => {
+    it('calls toast.error when reactivate mutation throws an Error', async () => {
       const registrationData = {
         registration: {
           id: testRegistrationId,
@@ -1569,11 +1564,11 @@ describe('AdminPublicRegistrationDetailPage', () => {
       fireEvent.click(allReactivateBtns[allReactivateBtns.length - 1]);
 
       await waitFor(() => {
-        expect(mockShowError).toHaveBeenCalledWith('Reactivate failed');
+        expect(mockToastError).toHaveBeenCalledWith('Reactivate failed');
       });
     });
 
-    it('calls showError with fallback message when reactivate mutation throws a non-Error', async () => {
+    it('calls toast.error with fallback message when reactivate mutation throws a non-Error', async () => {
       const registrationData = {
         registration: {
           id: testRegistrationId,
@@ -1629,7 +1624,7 @@ describe('AdminPublicRegistrationDetailPage', () => {
       fireEvent.click(allReactivateBtns[allReactivateBtns.length - 1]);
 
       await waitFor(() => {
-        expect(mockShowError).toHaveBeenCalledWith('Failed to reactivate public registration');
+        expect(mockToastError).toHaveBeenCalledWith('Failed to reactivate public registration');
       });
     });
 

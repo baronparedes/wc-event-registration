@@ -1,6 +1,7 @@
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/Button';
 import { useExportRegistrationsCSVMutation } from '@/hooks/domain/registrations';
-import { useErrorWithFadeout } from '@/hooks/utils';
 
 interface ExportButtonProps {
   eventId: string;
@@ -22,7 +23,6 @@ function downloadCsv(text: string, filename: string) {
 
 export function ExportButton({ eventId, disabled = false }: ExportButtonProps) {
   const exportMutation = useExportRegistrationsCSVMutation(eventId);
-  const { showError } = useErrorWithFadeout();
 
   const handleExport = async () => {
     if (disabled) {
@@ -38,7 +38,7 @@ export function ExportButton({ eventId, disabled = false }: ExportButtonProps) {
       if (error instanceof Error) {
         message = error.message;
       }
-      showError(message);
+      toast.error(message);
     }
   };
 

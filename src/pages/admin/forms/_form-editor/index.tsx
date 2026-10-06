@@ -97,9 +97,9 @@ export function FormEditorPage() {
           metadata,
         },
       });
-      toast.success(`Form marked as ${newStatus}`);
+      toast.success(`${existingForm.title} status is now ${newStatus}`);
     } catch {
-      toast.error(`Failed to mark form as ${newStatus}`);
+      toast.error(`Failed to mark ${existingForm.title} as ${newStatus}`);
     }
   }
 
