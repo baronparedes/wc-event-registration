@@ -1,10 +1,9 @@
 import { useId, useState } from 'react';
 
-import { ChevronDown, Clock, MapPin, Share, Users } from 'lucide-react';
+import { Calendar, ChevronDown, Clock, MapPin, Share, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import helloCoverImage from '@/assets/hello/ccf-hello-cover.png';
 import { Badge, Button, MarkdownRenderer } from '@/components/ui';
 import { toRoute } from '@/config/constants';
 import { getEventCoverPublicUrl } from '@/lib/domain/events';
@@ -157,22 +156,15 @@ export function EventCard({ event }: EventCardProps) {
         </div>
       )}
 
-      {!customCoverUrl && (
-        <>
+      <div className="relative isolate z-10 flex flex-col gap-4 p-5 sm:min-h-[340px]">
+        {!customCoverUrl && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -inset-2 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.04] blur-lg"
-            style={{ backgroundImage: `url("${helloCoverImage}")` }}
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-2 -z-10 bg-contain bg-center bg-no-repeat opacity-[0.08] blur-sm"
-            style={{ backgroundImage: `url("${helloCoverImage}")` }}
-          />
-        </>
-      )}
-
-      <div className="relative z-10 flex flex-col gap-4 p-5 sm:min-h-[340px]">
+            className="pointer-events-none absolute -right-6 -bottom-6 -z-10 text-primary opacity-[0.04] dark:opacity-[0.06] select-none"
+          >
+            <Calendar className="h-44 w-44 stroke-[0.75] -rotate-12 transform" />
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2">
           {dateBadges.length > 0 ? (
             <div className="flex min-w-0 items-start gap-1 sm:gap-2">
@@ -341,7 +333,7 @@ export function EventCard({ event }: EventCardProps) {
       <div
         id={detailsId}
         hidden={!detailsOpen}
-        className="relative z-10 space-y-4 border-t border-border bg-surface p-5 cursor-default"
+        className="relative z-10 space-y-4 border-t border-border p-5 cursor-default"
         onClick={(clickEvent) => clickEvent.stopPropagation()}
       >
         {customCoverUrl && (

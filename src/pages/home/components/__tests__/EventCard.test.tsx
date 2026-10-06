@@ -72,7 +72,6 @@ describe('EventCard', () => {
     const { container } = render(<EventCard event={baseEvent} />);
 
     expect(container.querySelector('img')).not.toBeInTheDocument();
-    expect(container.querySelector('[style*="background-image"]')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Summer Gathering' })).toBeInTheDocument();
     expect(screen.getByText('Open')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Show details for Summer Gathering' }));
