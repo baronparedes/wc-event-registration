@@ -52,9 +52,17 @@ export function EventCoverPhotoUpload({
     }
 
     setIsUploading(true);
+    const previousKey = coverImageKey;
     try {
       const uploadedPath = await uploadEventCoverImage(file, eventIdOrSlug);
       onCoverImageKeyChange(uploadedPath);
+      if (previousKey && previousKey !== uploadedPath) {
+        try {
+          await deleteEventCoverImage(previousKey);
+        } catch {
+          // Silently ignore cleanup error
+        }
+      }
       toast.success('Cover photo uploaded successfully');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to upload cover photo';
@@ -69,10 +77,18 @@ export function EventCoverPhotoUpload({
 
   async function handleApplyCroppedFile(croppedFile: File) {
     setIsUploading(true);
+    const previousKey = coverImageKey;
     try {
       const uploadedPath = await uploadEventCoverImage(croppedFile, eventIdOrSlug);
       onCoverImageKeyChange(uploadedPath);
       setIsCropOpen(false);
+      if (previousKey && previousKey !== uploadedPath) {
+        try {
+          await deleteEventCoverImage(previousKey);
+        } catch {
+          // Silently ignore cleanup error
+        }
+      }
       toast.success('Adjusted cover photo saved successfully');
     } catch (error) {
       const message =
