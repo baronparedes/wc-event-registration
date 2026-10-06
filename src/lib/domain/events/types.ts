@@ -21,6 +21,7 @@ export type AdminEvent = {
   registration_mode: RegistrationMode;
   allow_public_registrations: boolean;
   metadata: Record<string, unknown>;
+  cover_image_key?: string | null;
   created_by_admin_id: string | null;
   created_at: string;
   updated_at: string;
@@ -47,6 +48,7 @@ export type PublicEventListingItem = {
   registration_closes_at: string | null;
   allow_public_registrations: boolean;
   registration_mode?: RegistrationMode;
+  cover_image_key?: string | null;
   listingStatus: 'open' | 'upcoming' | 'past';
 };
 

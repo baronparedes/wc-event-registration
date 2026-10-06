@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { UpdateEventInput } from '@/lib/domain/events';
 import {
+  deleteEventCoverImage,
   fetchEventUpdateSnapshot,
   mapPublicRegistrationAccessToEventFlags,
   updateEvent,
@@ -26,6 +27,7 @@ export function useUpdateEventMutation() {
       );
 
       const previousEvent = await fetchEventUpdateSnapshot(id);
+      const nextCoverKey = emptyToNull(input.cover_image_key ?? undefined);
 
       const nextValues: Record<string, unknown> = {
         title: input.title,
@@ -40,6 +42,7 @@ export function useUpdateEventMutation() {
         registration_mode: input.registration_mode,
         allow_public_registrations: publicRegistrationFlags.allow_public_registrations,
         require_id_lookup: publicRegistrationFlags.require_id_lookup,
+        cover_image_key: nextCoverKey,
       };
 
       const previousMetadata = (previousEvent?.metadata as Record<string, unknown> | null) ?? {};
@@ -64,6 +67,16 @@ export function useUpdateEventMutation() {
       }
 
       await updateEvent(id, nextValues);
+
+      // Clean up superseded cover image from storage
+      const previousCoverKey = previousEvent?.cover_image_key;
+      if (previousCoverKey && previousCoverKey !== nextCoverKey) {
+        try {
+          await deleteEventCoverImage(previousCoverKey);
+        } catch {
+          // Silently ignore cleanup error
+        }
+      }
     },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ADMIN_EVENTS_QUERY_KEY });

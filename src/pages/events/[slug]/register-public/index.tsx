@@ -347,7 +347,6 @@ export function PublicEventRegistrationPage() {
           closes: formatDateTime(availableEvent.registration_closes_at),
         }
       : null;
-
   return (
     <section className="mx-auto max-w-5xl space-y-6">
       <EventHeaderCard

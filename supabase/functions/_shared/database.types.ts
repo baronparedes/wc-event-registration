@@ -507,6 +507,7 @@ export type Database = {
       events: {
         Row: {
           allow_public_registrations: boolean;
+          cover_image_key: string | null;
           created_at: string;
           created_by_admin_id: string | null;
           description: string | null;
@@ -529,6 +530,7 @@ export type Database = {
         };
         Insert: {
           allow_public_registrations?: boolean;
+          cover_image_key?: string | null;
           created_at?: string;
           created_by_admin_id?: string | null;
           description?: string | null;
@@ -549,6 +551,7 @@ export type Database = {
         };
         Update: {
           allow_public_registrations?: boolean;
+          cover_image_key?: string | null;
           created_at?: string;
           created_by_admin_id?: string | null;
           description?: string | null;

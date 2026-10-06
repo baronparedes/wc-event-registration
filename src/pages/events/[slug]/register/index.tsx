@@ -97,7 +97,6 @@ export function EventRegistrationPage() {
       </section>
     );
   }
-
   return (
     <section ref={titleAnchorRef} className="mx-auto max-w-5xl space-y-6">
       <EventHeaderCard

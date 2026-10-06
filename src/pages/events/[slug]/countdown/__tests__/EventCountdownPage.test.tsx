@@ -302,4 +302,41 @@ describe('EventCountdownPage', () => {
     expect(screen.queryByRole('button', { name: /Go to Registration/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Go Home/i })).toBeInTheDocument();
   });
+
+  it('renders cover photo when cover_image_key is present', () => {
+    const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString();
+
+    mockUsePublicEventQuery.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      data: {
+        status: 'available',
+        event: {
+          id: 'evt-cover',
+          slug: 'tech-summit-2026',
+          title: 'Tech Summit 2026',
+          description: 'Annual developer conference.',
+          location: 'Grand Ballroom',
+          starts_at: futureDate,
+          ends_at: null,
+          registration_opens_at: null,
+          registration_closes_at: null,
+          registration_mode: 'open',
+          status: 'published',
+          duplicate_policy: 'allow_multiple',
+          require_id_lookup: true,
+          allow_public_registrations: true,
+          cover_image_key: 'covers/tech-summit.jpg',
+          metadata: {},
+          created_by_admin_id: 'admin-1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      },
+    });
+
+    render(<EventCountdownPage />);
+    const img = screen.getByAltText('Tech Summit 2026');
+    expect(img).toBeInTheDocument();
+  });
 });

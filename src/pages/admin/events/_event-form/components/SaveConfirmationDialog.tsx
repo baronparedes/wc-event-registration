@@ -39,6 +39,7 @@ export function SaveConfirmationDialog({
     public_registration_access: 'Allow Public Registrations',
     allow_name_lookup: 'Allow Name Lookup',
     send_email_after_completion: 'Send Email Confirmation',
+    cover_image_key: 'Cover Photo',
   };
 
   return (

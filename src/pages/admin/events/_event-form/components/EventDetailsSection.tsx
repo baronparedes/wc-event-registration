@@ -6,6 +6,8 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { SlugField } from '@/components/ui/SlugField';
 import type { CreateEventInput } from '@/lib/domain/events';
 
+import { EventCoverPhotoUpload } from './EventCoverPhotoUpload';
+
 type EventDetailsSectionProps = {
   isEditMode: boolean;
   slugValue: string;
@@ -14,14 +16,37 @@ type EventDetailsSectionProps = {
   control: Control<CreateEventInput>;
   onSlugChange: (value: string) => void;
   disabled?: boolean;
+  coverImageKey?: string | null;
+  onCoverImageKeyChange?: (key: string | null) => void;
+  eventIdOrSlug?: string;
 };
 
 export function EventDetailsSection(props: EventDetailsSectionProps) {
-  const { isEditMode, slugValue, errors, register, control, onSlugChange, disabled } = props;
+  const {
+    isEditMode,
+    slugValue,
+    errors,
+    register,
+    control,
+    onSlugChange,
+    disabled,
+    coverImageKey,
+    onCoverImageKeyChange,
+    eventIdOrSlug,
+  } = props;
 
   return (
     <SectionCard title="Event Details">
       <div className="space-y-4">
+        {onCoverImageKeyChange && (
+          <EventCoverPhotoUpload
+            coverImageKey={coverImageKey}
+            onCoverImageKeyChange={onCoverImageKeyChange}
+            eventIdOrSlug={eventIdOrSlug}
+            disabled={disabled}
+          />
+        )}
+
         <FormInputField
           disabled={disabled}
           error={typeof errors.title?.message === 'string' ? errors.title.message : undefined}

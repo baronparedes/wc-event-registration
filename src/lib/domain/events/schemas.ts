@@ -59,6 +59,7 @@ export const createEventSchema = z
     public_registration_access: z.enum(['members', 'members_and_public', 'public']),
     allow_name_lookup: z.boolean().optional(),
     send_email_after_completion: z.boolean().optional(),
+    cover_image_key: z.string().nullable().optional(),
   })
   .superRefine(applyDateRangeChecks);
 
@@ -79,6 +80,7 @@ export const updateEventSchema = z
     public_registration_access: z.enum(['members', 'members_and_public', 'public']),
     allow_name_lookup: z.boolean().optional(),
     send_email_after_completion: z.boolean().optional(),
+    cover_image_key: z.string().nullable().optional(),
   })
   .superRefine(applyDateRangeChecks);
 
@@ -110,6 +112,7 @@ export const publishEventSchema = z
     duplicate_policy: duplicatePolicySchema,
     registration_mode: z.enum(['open', 'closed']),
     send_email_after_completion: z.boolean().optional(),
+    cover_image_key: z.string().nullable().optional(),
   })
   .superRefine(applyDateRangeChecks);
 

@@ -75,6 +75,7 @@ describe('EventCard', () => {
     expect(screen.getByRole('heading', { name: 'Summer Gathering' })).toBeInTheDocument();
     expect(screen.getByText('Open')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Show details for Summer Gathering' }));
+    expect(screen.queryByRole('img', { name: 'Summer Gathering' })).not.toBeInTheDocument();
     expect(screen.getByText('Community event')).toBeInTheDocument();
     expect(screen.getByText('Main Hall')).toBeInTheDocument();
     expect(screen.getByText('Open to Guests')).toBeInTheDocument();
@@ -373,5 +374,25 @@ describe('EventCard', () => {
     expect(
       screen.queryByRole('link', { name: 'View countdown for Summer Gathering' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders custom cover photo when cover_image_key is provided, and shows in details when opened', () => {
+    const { container } = render(
+      <EventCard
+        event={{
+          ...baseEvent,
+          cover_image_key: 'covers/custom-cover.jpg',
+        }}
+      />,
+    );
+
+    const bgImg = container.querySelector('img');
+    expect(bgImg).toBeInTheDocument();
+
+    const detailsButton = screen.getByRole('button', { name: 'Show details for Summer Gathering' });
+    fireEvent.click(detailsButton);
+
+    const detailsImg = screen.getByRole('img', { name: 'Summer Gathering' });
+    expect(detailsImg).toBeInTheDocument();
   });
 });

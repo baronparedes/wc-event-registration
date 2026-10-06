@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import type { EventAvailability } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -22,6 +23,7 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
     props;
 
   const event = availability?.event;
+  const coverUrl = getEventCoverPublicUrl(event?.cover_image_key);
 
   const title = event?.title ?? 'Register for This Event';
   const statusBadgeVariant =
@@ -37,20 +39,29 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
         ? 'Opens Soon'
         : 'Closed';
   const titleContent = event ? (
-    <div className="flex min-w-0 flex-col items-stretch gap-2 pr-10 sm:flex-row sm:items-center sm:justify-between">
-      <span className="min-w-0 truncate">{title}</span>
-      <div className="flex min-w-0 max-w-full flex-wrap items-center justify-start gap-2 sm:justify-end">
+    <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <span className="min-w-0 flex-1 break-words font-heading text-lg font-semibold text-text sm:text-xl">
+        {title}
+      </span>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
         {availability?.status === 'available' && (
-          <span className="max-w-full break-words text-right text-xs font-medium text-muted">
-            Registered: <span className="text-text">{availability.registration_count}</span>
+          <span className="shrink-0 rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text shadow-sm backdrop-blur-md">
+            Registered:{' '}
+            <span className="font-bold text-primary">{availability.registration_count}</span>
           </span>
         )}
         {event.allow_public_registrations && (
-          <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
+          <Badge
+            icon={<Users className="h-3.5 w-3.5" />}
+            variant="outline"
+            className="border-border/80 bg-surface/90 shadow-xs backdrop-blur-md"
+          >
             Open to Guests
           </Badge>
         )}
-        <Badge variant={statusBadgeVariant}>{statusBadgeLabel}</Badge>
+        <Badge variant={statusBadgeVariant} className="shadow-xs backdrop-blur-md">
+          {statusBadgeLabel}
+        </Badge>
       </div>
     </div>
   ) : (
@@ -70,7 +81,8 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
           </span>
         )
       }
-      wrapperClassName="rounded-2xl border border-border bg-surface p-3 shadow-sm"
+      backgroundImageSrc={coverUrl ?? undefined}
+      wrapperClassName="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-sm"
     >
       {isLoading && (
         <div className="mt-4 space-y-3" aria-hidden="true">
@@ -82,6 +94,16 @@ export function EventHeaderCard(props: EventHeaderCardProps) {
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-4 w-2/3" />
           </div>
+        </div>
+      )}
+
+      {coverUrl && (
+        <div className="relative mt-3 aspect-video w-full overflow-hidden rounded-xl border border-border bg-background shadow-xs">
+          <img
+            src={coverUrl}
+            alt={event?.title ?? 'Event cover'}
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
 

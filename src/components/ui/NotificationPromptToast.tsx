@@ -260,8 +260,11 @@ export const promptToast = Object.assign(showPromptToast, {
     promise: Promise<ToastData> | (() => Promise<ToastData>),
     data?: {
       loading?: ReactNode | PromptToastOptions;
-      success?: ReactNode | ((data: ToastData) => ReactNode | PromptToastOptions);
-      error?: ReactNode | ((err: unknown) => ReactNode | PromptToastOptions);
+      success?:
+        | ReactNode
+        | PromptToastOptions
+        | ((data: ToastData) => ReactNode | PromptToastOptions);
+      error?: ReactNode | PromptToastOptions | ((err: unknown) => ReactNode | PromptToastOptions);
       finally?: () => void | Promise<void>;
     },
   ) => {

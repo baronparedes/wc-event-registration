@@ -28,7 +28,7 @@ export async function handleGetPublicEvent(req: Request): Promise<Response> {
   const { data: event, error } = await client
     .from('events')
     .select(
-      'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, require_id_lookup, registration_mode, allow_public_registrations, metadata',
+      'id, slug, title, description, location, starts_at, ends_at, registration_opens_at, registration_closes_at, require_id_lookup, registration_mode, allow_public_registrations, cover_image_key, metadata',
     )
     .eq('slug', slug)
     .eq('status', 'published')

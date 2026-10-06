@@ -60,6 +60,7 @@ const DEFAULT_VALUES: CreateEventInput = {
   public_registration_access: 'members',
   allow_name_lookup: false,
   send_email_after_completion: false,
+  cover_image_key: null,
 };
 
 export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
@@ -105,6 +106,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
         }),
         allow_name_lookup: eventMetadata.allow_name_lookup === true,
         send_email_after_completion: eventMetadata.send_email_after_completion === true,
+        cover_image_key: existingEvent.cover_image_key ?? null,
       };
     }
     return undefined;
@@ -187,6 +189,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   }
 
   const watchedValues = useWatch({ control }) as CreateEventInput;
+  const coverImageKey = useWatch({ control, name: 'cover_image_key' });
 
   if (isEditMode && isLoadingEvent) {
     return (
@@ -331,6 +334,11 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             control={control}
             slugValue={slugValue}
             disabled={isArchivedEvent}
+            coverImageKey={coverImageKey}
+            onCoverImageKeyChange={(key) =>
+              setValue('cover_image_key', key, { shouldDirty: true, shouldValidate: true })
+            }
+            eventIdOrSlug={existingEvent?.slug || slugValue || undefined}
           />
 
           <EventDateRangeSection

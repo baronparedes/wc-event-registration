@@ -39,6 +39,8 @@ const { mockSelectBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
   };
 });
 
+const mockStorageRemove = vi.fn().mockResolvedValue({ error: null });
+
 vi.mock('@/lib/infrastructure', async () => {
   const actual =
     await vi.importActual<typeof import('@/lib/infrastructure')>('@/lib/infrastructure');
@@ -46,6 +48,11 @@ vi.mock('@/lib/infrastructure', async () => {
     ...actual,
     supabase: {
       from: mockFrom,
+      storage: {
+        from: vi.fn(() => ({
+          remove: mockStorageRemove,
+        })),
+      },
     },
   };
 });
@@ -108,6 +115,7 @@ describe('useUpdateEventMutation', () => {
       registration_mode: 'open',
       allow_public_registrations: false,
       require_id_lookup: true,
+      cover_image_key: null,
       metadata: {
         public_registration_access: 'members',
       },
@@ -229,5 +237,47 @@ describe('useUpdateEventMutation', () => {
         },
       }),
     );
+  });
+
+  it('cleans up previous cover image from storage when cover_image_key changes', async () => {
+    mockSelectBuilder.maybeSingle.mockResolvedValueOnce({
+      data: {
+        title: 'Event With Cover',
+        description: null,
+        location: null,
+        starts_at: null,
+        ends_at: null,
+        registration_opens_at: null,
+        registration_closes_at: null,
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+        allow_public_registrations: false,
+        require_id_lookup: true,
+        cover_image_key: 'covers/old-cover.jpg',
+      },
+    });
+
+    const { result } = renderHookWithClient(() => useUpdateEventMutation());
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        id: faker.string.uuid(),
+        title: 'Event With Cover',
+        description: undefined,
+        location: undefined,
+        starts_at: undefined,
+        ends_at: undefined,
+        registration_opens_at: undefined,
+        registration_closes_at: undefined,
+        status: 'draft',
+        duplicate_policy: 'block',
+        registration_mode: 'closed',
+        public_registration_access: 'members',
+        cover_image_key: 'covers/new-cover.jpg',
+      });
+    });
+
+    expect(mockStorageRemove).toHaveBeenCalledWith(['covers/old-cover.jpg']);
   });
 });

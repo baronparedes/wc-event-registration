@@ -74,13 +74,20 @@ export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCar
 
   return (
     <div
-      className={`group flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${isOpen ? 'cursor-pointer' : ''}`}
+      className={`group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${isOpen ? 'cursor-pointer' : ''}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       role={isOpen ? 'link' : undefined}
       tabIndex={isOpen ? 0 : undefined}
     >
-      <div className="flex flex-col gap-4 p-5 sm:min-h-[340px]">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-6 -bottom-6 -z-10 text-primary opacity-[0.04] dark:opacity-[0.06] select-none"
+      >
+        <FileText className="h-44 w-44 stroke-[0.75] -rotate-12 transform" />
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-4 p-5 sm:min-h-[340px]">
         <div className="flex items-start justify-between gap-3">
           <FileText className="h-8 w-8 shrink-0 text-primary" aria-hidden="true" />
           <div className="flex flex-wrap items-center justify-end gap-2">
