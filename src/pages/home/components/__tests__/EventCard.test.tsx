@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EventCard } from '@/pages/home/components/EventCard';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { mockNavigate, mockToastSuccess, mockToastError, mockClipboardWriteText, mockNativeShare } =
   vi.hoisted(() => ({
@@ -53,6 +54,13 @@ const baseEvent = {
   listingStatus: 'open' as const,
 };
 
+const createTestQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+const renderWithQueryClient = (ui: React.ReactElement) => {
+  const queryClient = createTestQueryClient();
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+};
+
 describe('EventCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,7 +77,7 @@ describe('EventCard', () => {
   });
 
   it('renders event details and registration actions for an open event', () => {
-    const { container } = render(<EventCard event={baseEvent} />);
+    const { container } = renderWithQueryClient(<EventCard event={baseEvent} />);
 
     expect(container.querySelector('img')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Summer Gathering' })).toBeInTheDocument();
@@ -88,7 +96,7 @@ describe('EventCard', () => {
   });
 
   it('navigates when an open card is clicked or activated with the keyboard', () => {
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     const card = screen.getAllByRole('link')[0];
     fireEvent.click(screen.getByRole('heading', { name: 'Summer Gathering' }));
@@ -100,7 +108,7 @@ describe('EventCard', () => {
   });
 
   it('toggles details without navigating to registration', () => {
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     const detailsButton = screen.getByRole('button', { name: 'Show details for Summer Gathering' });
     expect(detailsButton).toHaveAttribute('aria-expanded', 'false');
@@ -153,7 +161,7 @@ describe('EventCard', () => {
   });
 
   it('shows both times within one badge for a single-day event', () => {
-    const { container } = render(<EventCard event={baseEvent} />);
+    const { container } = renderWithQueryClient(<EventCard event={baseEvent} />);
 
     const badges = container.querySelectorAll('time');
     expect(badges).toHaveLength(1);
@@ -183,7 +191,7 @@ describe('EventCard', () => {
     ['missing end', null],
     ['invalid end', 'not-a-date'],
   ])('does not add a time range for %s', (_scenario, endsAt) => {
-    const { container } = render(<EventCard event={{ ...baseEvent, ends_at: endsAt }} />);
+    const { container } = renderWithQueryClient(<EventCard event={{ ...baseEvent, ends_at: endsAt }} />);
 
     expect(container.querySelector('time')).not.toHaveTextContent('to ');
   });
@@ -195,7 +203,7 @@ describe('EventCard', () => {
     ['invalid end date', 'not-a-date'],
     ['end before start', '2026-08-14T12:00:00.000Z'],
   ])('keeps one badge for an event with %s', (_scenario, endsAt) => {
-    const { container } = render(<EventCard event={{ ...baseEvent, ends_at: endsAt }} />);
+    const { container } = renderWithQueryClient(<EventCard event={{ ...baseEvent, ends_at: endsAt }} />);
     expect(container.querySelectorAll('time')).toHaveLength(1);
   });
 
@@ -224,7 +232,7 @@ describe('EventCard', () => {
   it('copies the event link and does not trigger card navigation when share is clicked', async () => {
     mockClipboardWriteText.mockResolvedValueOnce(undefined);
 
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Share Summer Gathering' }));
 
@@ -241,7 +249,7 @@ describe('EventCard', () => {
   it('shows an error toast when clipboard fallback fails', async () => {
     mockClipboardWriteText.mockRejectedValueOnce(new Error('clipboard failed'));
 
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Share Summer Gathering' }));
 
@@ -257,7 +265,7 @@ describe('EventCard', () => {
       value: mockNativeShare,
     });
 
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Share Summer Gathering' }));
 
@@ -277,7 +285,7 @@ describe('EventCard', () => {
       value: mockNativeShare,
     });
 
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Share Summer Gathering' }));
 
@@ -294,7 +302,7 @@ describe('EventCard', () => {
       value: mockNativeShare,
     });
 
-    render(<EventCard event={baseEvent} />);
+    renderWithQueryClient(<EventCard event={baseEvent} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Share Summer Gathering' }));
 
@@ -341,7 +349,7 @@ describe('EventCard', () => {
   });
 
   it('renders countdown button for open and upcoming events and links to countdown page', () => {
-    const { rerender } = render(<EventCard event={baseEvent} />);
+    const { rerender } = renderWithQueryClient(<EventCard event={baseEvent} />);
 
     const countdownLink = screen.getByRole('link', {
       name: 'View countdown for Summer Gathering',
