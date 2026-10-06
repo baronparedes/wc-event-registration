@@ -137,6 +137,7 @@ export function useEventRegistrationPageState() {
   const navigate = useNavigate();
   const memberIdInputRef = useRef<HTMLInputElement | null>(null);
   const dynamicFieldsStepRef = useRef<HTMLDivElement | null>(null);
+  const titleAnchorRef = useRef<HTMLElement | null>(null);
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null);
   const [isRegistrationConfirmed, setIsRegistrationConfirmed] = useState(false);
@@ -232,10 +233,14 @@ export function useEventRegistrationPageState() {
         .matches
         ? 'auto'
         : 'auto';
-      document.getElementById('app-shell-title-anchor')?.scrollIntoView({
-        behavior: scrollBehavior,
-        block: 'start',
-      });
+      if (titleAnchorRef.current) {
+        titleAnchorRef.current.scrollIntoView({
+          behavior: scrollBehavior,
+          block: 'start',
+        });
+      } else {
+        window.scrollTo({ top: 0, behavior: scrollBehavior });
+      }
     },
     onClear: () => {
       clearMember();
@@ -245,10 +250,14 @@ export function useEventRegistrationPageState() {
     const scrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
       : 'smooth';
-    document.getElementById('app-shell-title-anchor')?.scrollIntoView({
-      behavior: scrollBehavior,
-      block: 'start',
-    });
+    if (titleAnchorRef.current) {
+      titleAnchorRef.current.scrollIntoView({
+        behavior: scrollBehavior,
+        block: 'start',
+      });
+    } else {
+      window.scrollTo({ top: 0, behavior: scrollBehavior });
+    }
   }, []);
 
   const scrollToDynamicFieldsStep = useCallback(() => {
@@ -738,6 +747,7 @@ export function useEventRegistrationPageState() {
     memberLookup,
     memberIdInputRef,
     dynamicFieldsStepRef,
+    titleAnchorRef,
     lookupErrorMessage,
     lookupErrorFadeOut,
     clearLookupError,

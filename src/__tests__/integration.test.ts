@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  type TestEventRecord,
   callSubmitRegistrationFunction,
   cleanupTestRegistrations,
   createTestAdminClient,
@@ -19,12 +20,9 @@ describeIntegration('Edge Function: submit-registration', () => {
   const BLOCK_POLICY_EVENT = 'sample-event';
   const ALLOW_UPDATE_POLICY_EVENT = 'future-event';
   const ALLOW_MULTIPLE_POLICY_EVENT = 'multi-event';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sampleEventData: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let futureEventData: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let multiEventData: any;
+  let sampleEventData: TestEventRecord | null = null;
+  let futureEventData: TestEventRecord | null = null;
+  let multiEventData: TestEventRecord | null = null;
 
   beforeAll(async () => {
     // Verify test events exist
@@ -242,7 +240,7 @@ describeIntegration('Edge Function: submit-registration', () => {
     const { data: registrations, error } = await client
       .from('registrations')
       .select('id, status, registration_scope_key')
-      .eq('event_id', multiEventData.id)
+      .eq('event_id', multiEventData?.id ?? '')
       .in('id', [firstResult.registration_id, secondResult.registration_id]);
 
     expect(error).toBeNull();
@@ -626,8 +624,7 @@ describeIntegration('Edge Function: submit-registration', () => {
     await seedTestMember(memberId);
 
     const attemptCount = 6; // Assuming 5 attempts per minute limit
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: any[] = [];
+    const results: Awaited<ReturnType<typeof callSubmitRegistrationFunction>>[] = [];
 
     for (let i = 0; i < attemptCount; i++) {
       const result = await callSubmitRegistrationFunction({

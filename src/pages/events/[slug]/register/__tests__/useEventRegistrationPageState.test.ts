@@ -426,12 +426,11 @@ describe('useEventRegistrationPageState', () => {
         registration_id: 'reg-1',
       });
 
-    const titleAnchor = document.createElement('div');
-    titleAnchor.id = 'app-shell-title-anchor';
-    titleAnchor.scrollIntoView = vi.fn();
-    document.body.appendChild(titleAnchor);
-
     const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+    const mockScrollIntoView = vi.fn();
+    (result.current.titleAnchorRef as { current: unknown }).current = {
+      scrollIntoView: mockScrollIntoView,
+    };
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});
@@ -453,8 +452,6 @@ describe('useEventRegistrationPageState', () => {
     });
     expect(memberLookupState.reset).toHaveBeenCalled();
     expect(mockClearLookupError).toHaveBeenCalled();
-
-    titleAnchor.remove();
   });
 
   it('maps duplicate blocked submission errors to the dedicated user message', async () => {
@@ -594,12 +591,11 @@ describe('useEventRegistrationPageState', () => {
       registration_id: 'reg-2',
     });
 
-    const titleAnchor = document.createElement('div');
-    titleAnchor.id = 'app-shell-title-anchor';
-    titleAnchor.scrollIntoView = vi.fn();
-    document.body.appendChild(titleAnchor);
-
     const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+    const mockScrollIntoView = vi.fn();
+    (result.current.titleAnchorRef as { current: unknown }).current = {
+      scrollIntoView: mockScrollIntoView,
+    };
 
     await act(async () => {
       await result.current.handleSubmitRegistration({});
@@ -607,10 +603,8 @@ describe('useEventRegistrationPageState', () => {
 
     expect(result.current.isRegistrationConfirmed).toBe(true);
     expect(result.current.activeWizardStep).toBe(3);
-    expect(titleAnchor.scrollIntoView).not.toHaveBeenCalled();
+    expect(mockScrollIntoView).not.toHaveBeenCalled();
     expect(mockFocusMemberIdInput).not.toHaveBeenCalled();
-
-    titleAnchor.remove();
   });
 
   it('does not bypass dynamic step when user has not explicitly entered step 3', () => {

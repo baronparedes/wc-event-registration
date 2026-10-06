@@ -26,17 +26,9 @@ import { VisibilityRuleSection } from '@/pages/admin/events/[id]/fields/componen
 import { AttendanceFieldTypeSelector } from './AttendanceFieldTypeSelector';
 import { RuleInput } from './RuleInput';
 
-function normalizeOptionalNumberInput(value: unknown): unknown {
-  if (value === '' || value === null || value === undefined) {
-    return undefined;
-  }
-
-  if (typeof value === 'number' && Number.isNaN(value)) {
-    return undefined;
-  }
-
-  return value;
-}
+const optionalNumber = z
+  .union([z.number(), z.nan(), z.undefined()])
+  .transform((v) => (typeof v === 'number' && !Number.isNaN(v) ? v : undefined));
 
 const attendanceFieldPanelSchema = z
   .object({
@@ -58,25 +50,13 @@ const attendanceFieldPanelSchema = z
         value: z.string().min(1, 'Option value is required'),
       }),
     ),
-    val_min_length: z.preprocess(
-      normalizeOptionalNumberInput,
-      z.number().int().nonnegative().optional(),
-    ),
-    val_max_length: z.preprocess(
-      normalizeOptionalNumberInput,
-      z.number().int().nonnegative().optional(),
-    ),
+    val_min_length: optionalNumber,
+    val_max_length: optionalNumber,
     val_pattern: z.string().optional().or(z.literal('')),
-    val_min: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
-    val_max: z.preprocess(normalizeOptionalNumberInput, z.number().optional()),
-    val_min_selections: z.preprocess(
-      normalizeOptionalNumberInput,
-      z.number().int().nonnegative().optional(),
-    ),
-    val_max_selections: z.preprocess(
-      normalizeOptionalNumberInput,
-      z.number().int().nonnegative().optional(),
-    ),
+    val_min: optionalNumber,
+    val_max: optionalNumber,
+    val_min_selections: optionalNumber,
+    val_max_selections: optionalNumber,
     val_min_date: z.string().optional().or(z.literal('')),
     val_max_date: z.string().optional().or(z.literal('')),
     val_visibility_depends_on_field_key: z.string().optional().or(z.literal('')),
@@ -126,8 +106,7 @@ export function AttendanceFieldEditPanel({
     setValue,
     formState: { errors, isDirty, isValid },
   } = useForm<AttendanceFieldPanelValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(attendanceFieldPanelSchema) as any,
+    resolver: zodResolver(attendanceFieldPanelSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues: isEditing
@@ -267,8 +246,7 @@ export function AttendanceFieldEditPanel({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          handleSubmit(onSubmit as any)(e).catch(console.error);
+          handleSubmit(onSubmit)(e).catch(console.error);
         }}
       >
         <Dialog.Body scrollable className="space-y-5">

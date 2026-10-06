@@ -34,6 +34,7 @@ export function EventRegistrationPage() {
     enterWizardCompleteStep,
     resetToStepOne,
     dynamicFieldsStepRef,
+    titleAnchorRef,
     eventFieldsQuery,
     activeFields,
     remainingSlotsByFieldOption,
@@ -98,7 +99,7 @@ export function EventRegistrationPage() {
   }
 
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
+    <section ref={titleAnchorRef} className="mx-auto max-w-5xl space-y-6">
       <EventHeaderCard
         slug={slug}
         isLoading={eventQuery.isLoading}
