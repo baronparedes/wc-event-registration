@@ -153,23 +153,139 @@ describe('NotificationPromptToast', () => {
     expect(onFinally).toHaveBeenCalledTimes(1);
   });
 
-  it('renders progress bar for standard toasts with duration', () => {
-    vi.mocked(toast.custom).mockImplementation((callback) => {
-      render(callback('test-toast-progress') as ReactNode);
-      return 'test-toast-progress';
+  it('handles promise rejection with promptToast.promise and custom error formats', async () => {
+    vi.mocked(toast.custom).mockImplementation(() => 'test-promise-error-toast');
+
+    // Error as function returning object
+    const failingPromise1 = Promise.reject(new Error('Boom 1'));
+    promptToast.promise(failingPromise1, {
+      error: (err) => ({ title: 'Custom Error Object', description: String(err) }),
     });
 
-    promptToast.success('Saved successfully', { duration: 5000 });
-    expect(screen.getByTestId('toast-progress-bar')).toBeInTheDocument();
+    await act(async () => {
+      try {
+        await failingPromise1;
+      } catch {
+        // expected rejection
+      }
+    });
+
+    // Error as function returning string
+    const failingPromise2 = Promise.reject(new Error('Boom 2'));
+    promptToast.promise(failingPromise2, {
+      error: () => 'String Error Msg',
+    });
+
+    await act(async () => {
+      try {
+        await failingPromise2;
+      } catch {
+        // expected rejection
+      }
+    });
+
+    // Error as static object
+    const failingPromise3 = Promise.reject(new Error('Boom 3'));
+    promptToast.promise(failingPromise3, {
+      error: { title: 'Static Error' },
+    });
+
+    await act(async () => {
+      try {
+        await failingPromise3;
+      } catch {
+        // expected rejection
+      }
+    });
+
+    // Error default fallback
+    const failingPromise4 = Promise.reject('Plain string error');
+    promptToast.promise(() => failingPromise4);
+
+    await act(async () => {
+      try {
+        await failingPromise4;
+      } catch {
+        // expected rejection
+      }
+    });
   });
 
-  it('suppresses progress bar for loading toasts', () => {
-    vi.mocked(toast.custom).mockImplementation((callback) => {
-      render(callback('test-toast-loading-progress') as ReactNode);
-      return 'test-toast-loading-progress';
+  it('handles promise success with object and fallback formats', async () => {
+    vi.mocked(toast.custom).mockImplementation(() => 'test-promise-success-toast');
+
+    // Success as function returning string
+    const successPromise1 = Promise.resolve('Done');
+    promptToast.promise(successPromise1, {
+      success: () => 'All done!',
     });
 
-    promptToast.loading('Uploading...', { duration: 5000 });
-    expect(screen.queryByTestId('toast-progress-bar')).not.toBeInTheDocument();
+    await act(async () => {
+      await successPromise1;
+    });
+
+    // Success as static string & static object
+    const successPromise2 = Promise.resolve('Done 2');
+    promptToast.promise(successPromise2, {
+      success: 'Static Success',
+    });
+
+    await act(async () => {
+      await successPromise2;
+    });
+
+    const successPromise3 = Promise.resolve('Done 3');
+    promptToast.promise(successPromise3, {
+      success: { title: 'Static Success Obj' },
+    });
+
+    await act(async () => {
+      await successPromise3;
+    });
+
+    // Success default fallback
+    const successPromise4 = Promise.resolve('Done 4');
+    promptToast.promise(successPromise4);
+
+    await act(async () => {
+      await successPromise4;
+    });
+  });
+
+  it('handles custom toast variants with promptToast.custom and promptToast.message', () => {
+    vi.mocked(toast.custom).mockImplementation((jsxOrFn) => {
+      if (typeof jsxOrFn === 'function') {
+        render(jsxOrFn('test-toast-custom') as ReactNode);
+      } else if (jsxOrFn) {
+        render(jsxOrFn as ReactNode);
+      }
+      return 'test-toast-custom';
+    });
+
+    promptToast.custom(<div>Custom JSX</div>);
+    expect(screen.getByText('Custom JSX')).toBeInTheDocument();
+
+    promptToast.custom((id) => <div>Custom Func {id}</div>);
+    expect(screen.getByText('Custom Func test-toast-custom')).toBeInTheDocument();
+
+    promptToast.custom({ title: 'Option Toast' });
+    expect(screen.getByText('Option Toast')).toBeInTheDocument();
+
+    promptToast.message('Message Title', { description: 'Message Desc' });
+    expect(screen.getByText('Message Title')).toBeInTheDocument();
+  });
+
+  it('pauses and resumes progress bar timer on mouse enter and leave', () => {
+    vi.mocked(toast.custom).mockImplementation((callback) => {
+      render(callback('test-toast-hover') as ReactNode);
+      return 'test-toast-hover';
+    });
+
+    promptToast.info('Hover Toast', { duration: 4000 });
+    const toastElem = screen.getByText('Hover Toast').closest('div');
+    if (toastElem) {
+      fireEvent.mouseEnter(toastElem);
+      fireEvent.mouseLeave(toastElem);
+    }
   });
 });

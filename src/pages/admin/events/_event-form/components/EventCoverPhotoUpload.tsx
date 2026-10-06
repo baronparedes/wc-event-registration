@@ -160,13 +160,14 @@ export function EventCoverPhotoUpload({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-surface/90 p-3">
+          <div className="flex flex-col gap-2.5 border-t border-border bg-surface/90 p-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-xs text-muted">16:9 widescreen format</span>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
+                className="w-full justify-center sm:w-auto"
                 disabled={disabled || isUploading}
                 onClick={handleAdjustCrop}
               >
@@ -177,6 +178,7 @@ export function EventCoverPhotoUpload({
                 type="button"
                 size="sm"
                 variant="outline"
+                className="w-full justify-center sm:w-auto"
                 disabled={disabled || isUploading}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -187,6 +189,7 @@ export function EventCoverPhotoUpload({
                 type="button"
                 size="sm"
                 variant="destructive"
+                className="w-full justify-center sm:w-auto"
                 disabled={disabled || isUploading}
                 onClick={() => void handleRemove()}
               >

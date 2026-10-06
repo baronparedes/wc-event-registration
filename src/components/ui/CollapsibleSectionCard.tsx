@@ -50,12 +50,12 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
   const headerContent =
     title || subtitle ? (
       <div className="relative">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 pr-10">
           {title ? (
             <button
               aria-controls={contentId}
               aria-expanded={isExpanded}
-              className="flex-1 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="min-w-0 flex-1 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               onClick={toggleExpanded}
               type="button"
             >
@@ -73,7 +73,7 @@ export function CollapsibleSectionCard(props: CollapsibleSectionCardProps) {
               )}
             </button>
           ) : (
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               {subtitle && (
                 <div className={sectionCardProps.subtitleClassName ?? 'mt-2 text-sm text-muted'}>
                   {subtitle}

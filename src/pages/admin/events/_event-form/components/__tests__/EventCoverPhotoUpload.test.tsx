@@ -154,4 +154,47 @@ describe('EventCoverPhotoUpload', () => {
     });
     expect(mockToastInfo).toHaveBeenCalledWith('Cover photo removed');
   });
+
+  it('handles drag and drop events on upload zone', async () => {
+    mockUploadEventCoverImage.mockResolvedValueOnce('covers/dropped.png');
+    const onCoverImageKeyChange = vi.fn();
+
+    render(
+      <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
+    );
+
+    const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
+    if (dropZone) {
+      fireEvent.dragOver(dropZone);
+      fireEvent.dragLeave(dropZone);
+
+      const file = new File(['dropped-content'], 'dropped.png', { type: 'image/png' });
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [file] },
+      });
+
+      await waitFor(() => {
+        expect(mockUploadEventCoverImage).toHaveBeenCalled();
+        expect(onCoverImageKeyChange).toHaveBeenCalledWith('covers/dropped.png');
+      });
+    }
+  });
+
+  it('handles upload errors gracefully with toast error', async () => {
+    mockUploadEventCoverImage.mockRejectedValueOnce(new Error('Upload failed'));
+    const onCoverImageKeyChange = vi.fn();
+
+    render(
+      <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
+    );
+
+    const input = screen.getByLabelText('Upload event cover photo');
+    const validFile = new File(['image-bytes'], 'banner.png', { type: 'image/png' });
+
+    fireEvent.change(input, { target: { files: [validFile] } });
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Upload failed');
+    });
+  });
 });

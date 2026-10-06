@@ -30,9 +30,11 @@ export function FormHeaderCard({
         : 'Public';
 
   const titleContent = form ? (
-    <div className="flex min-w-0 flex-col items-stretch gap-2 pr-10 sm:flex-row sm:items-center sm:justify-between">
-      <span className="min-w-0 truncate font-semibold text-text">{title}</span>
-      <div className="flex min-w-0 max-w-full flex-wrap items-center justify-start gap-2 sm:justify-end">
+    <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <span className="min-w-0 flex-1 break-words font-heading text-lg font-semibold text-text sm:text-xl">
+        {title}
+      </span>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
         {form.audience === 'members_and_public' && (
           <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
             {audienceLabel}
@@ -59,7 +61,7 @@ export function FormHeaderCard({
           </span>
         )
       }
-      wrapperClassName="rounded-2xl border border-border bg-surface p-3 shadow-sm"
+      wrapperClassName="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-sm"
     >
       {isLoading && (
         <div className="mt-4 space-y-3" aria-hidden="true">
