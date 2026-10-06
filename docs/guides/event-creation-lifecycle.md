@@ -52,11 +52,12 @@ graph TD
 
 The form is split into dedicated, reusable subcomponents:
 
-| Section Component                  | Inputs / Fields                                                                                                                     | Description                                                                     |
-| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| `EventDetailsSection`              | `title`, `slug`, `description`, `location`                                                                                          | Core metadata and identifiers.                                                  |
-| `EventDateRangeSection`            | `starts_at`, `ends_at`, `registration_opens_at`, `registration_closes_at`                                                           | Event runtime schedule and registration window.                                 |
-| `EventRegistrationSettingsSection` | `status`, `duplicate_policy`, `registration_mode`, `public_registration_access`, `allow_name_lookup`, `send_email_after_completion` | Access policies, duplicate submission handling, and post-registration behavior. |
+| Section Component                  | Inputs / Fields                                                                                                                     | Description                                                                                                                                              |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EventDetailsSection`              | `title`, `slug`, `description`, `location`                                                                                          | Core metadata and identifiers.                                                                                                                           |
+| `EventCoverPhotoUpload`            | `cover_image_key`                                                                                                                   | 16:9 banner upload, interactive cropping, and Supabase storage lifecycle. See [Event Cover Photos Guide](./event-cover-photos-and-storage-lifecycle.md). |
+| `EventDateRangeSection`            | `starts_at`, `ends_at`, `registration_opens_at`, `registration_closes_at`                                                           | Event runtime schedule and registration window.                                                                                                          |
+| `EventRegistrationSettingsSection` | `status`, `duplicate_policy`, `registration_mode`, `public_registration_access`, `allow_name_lookup`, `send_email_after_completion` | Access policies, duplicate submission handling, and post-registration behavior.                                                                          |
 
 ---
 
