@@ -1,6 +1,50 @@
 {
   "rewrites": [
     {
+      "source": "/events/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+        }
+      ],
+      "destination": "/api/og?route=/events/:slug"
+    },
+    {
+      "source": "/events/:slug/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+        }
+      ],
+      "destination": "/api/og?route=/events/:slug/:path*"
+    },
+    {
+      "source": "/forms/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+        }
+      ],
+      "destination": "/api/og?route=/forms/:slug"
+    },
+    {
+      "source": "/forms/:slug/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+        }
+      ],
+      "destination": "/api/og?route=/forms/:slug/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
