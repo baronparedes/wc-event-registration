@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Users } from 'lucide-react';
 
@@ -75,35 +75,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
   ) => {
     const [sortBy, setSortBy] = useState<VolunteerSortField>('attendance_score');
     const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-    const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-    const roleDropdownRef = useRef<HTMLDivElement | null>(null);
     const isMobileViewport = useIsMobileViewport();
-
-    useEffect(() => {
-      if (!isRoleDropdownOpen) return;
-
-      function handleDocumentMouseDown(event: MouseEvent) {
-        const target = event.target;
-        if (!(target instanceof Node)) return;
-        if (!roleDropdownRef.current?.contains(target)) {
-          setIsRoleDropdownOpen(false);
-        }
-      }
-
-      function handleDocumentKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-          setIsRoleDropdownOpen(false);
-        }
-      }
-
-      document.addEventListener('mousedown', handleDocumentMouseDown);
-      document.addEventListener('keydown', handleDocumentKeyDown);
-
-      return () => {
-        document.removeEventListener('mousedown', handleDocumentMouseDown);
-        document.removeEventListener('keydown', handleDocumentKeyDown);
-      };
-    }, [isRoleDropdownOpen]);
 
     const handleToggleRole = (roleToToggle: string) => {
       const isSelected = selectedRoles.includes(roleToToggle);
@@ -249,13 +221,9 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
               selectedLabel={selectedRoleLabel}
               options={allRoleOptions}
               selectedValues={selectedRoles}
-              isOpen={isRoleDropdownOpen}
-              containerRef={roleDropdownRef}
               clearButtonLabel="All Roles"
               buttonClassName="rounded-xl px-3 py-2 text-sm leading-6"
               className="w-full sm:w-[180px]"
-              onToggleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
-              onCloseDropdown={() => setIsRoleDropdownOpen(false)}
               onClearSelection={() => onSelectedRolesChange([])}
               onToggleSelection={handleToggleRole}
             />

@@ -16,16 +16,12 @@ export interface AttendanceFiltersProps {
   searchTerm: string;
   selectedRoles: string[];
   selectedRoleLabel: string;
-  isRoleDropdownOpen: boolean;
-  roleDropdownRef: React.RefObject<HTMLDivElement | null>;
   hasActiveFilters: boolean;
   fallbackDate: string;
   onUpdateSearchParam: (key: string, value: string) => void;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClearSearch: () => void;
   onClearFilters: () => void;
-  onToggleRoleDropdown: () => void;
-  onCloseRoleDropdown: () => void;
   onToggleRole: (role: string) => void;
   onClearStartDate: () => void;
 }
@@ -39,16 +35,12 @@ export function AttendanceFilters({
   searchTerm,
   selectedRoles,
   selectedRoleLabel,
-  isRoleDropdownOpen,
-  roleDropdownRef,
   hasActiveFilters,
   fallbackDate,
   onUpdateSearchParam,
   onSearchChange,
   onClearSearch,
   onClearFilters,
-  onToggleRoleDropdown,
-  onCloseRoleDropdown,
   onToggleRole,
   onClearStartDate,
 }: AttendanceFiltersProps) {
@@ -100,12 +92,8 @@ export function AttendanceFilters({
           selectedLabel={selectedRoleLabel}
           options={SERVICE_ROLES.map((r) => ({ value: r, label: r }))}
           selectedValues={selectedRoles}
-          isOpen={isRoleDropdownOpen}
-          containerRef={roleDropdownRef}
           clearButtonLabel="All roles"
           buttonClassName="rounded-md px-3.5 py-2.5 leading-6"
-          onToggleDropdown={onToggleRoleDropdown}
-          onCloseDropdown={onCloseRoleDropdown}
           onClearSelection={() => onUpdateSearchParam('role', '')}
           onToggleSelection={onToggleRole}
         />
