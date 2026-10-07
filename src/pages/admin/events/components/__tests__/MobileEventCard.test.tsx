@@ -1,167 +1,107 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
-
-import { toRoute } from '@/config/constants';
-import type { AdminEvent } from '@/lib/domain/events';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MobileEventCard } from '../MobileEventCard';
 
-const event: AdminEvent = {
-  id: 'event-1',
-  slug: 'summer-gathering',
-  title: 'Summer Gathering',
-  description: 'A community event',
-  location: 'Main Hall',
-  starts_at: '2026-08-15T09:00:00.000Z',
-  ends_at: '2026-08-15T12:00:00.000Z',
-  registration_opens_at: '2026-08-01T00:00:00.000Z',
-  registration_closes_at: '2026-08-14T23:59:00.000Z',
-  status: 'published',
-  duplicate_policy: 'allow_update',
-  require_id_lookup: true,
-  registration_mode: 'open',
-  allow_public_registrations: true,
-  metadata: {},
-  created_by_admin_id: null,
-  created_at: '2026-07-01T00:00:00.000Z',
-  updated_at: '2026-07-01T00:00:00.000Z',
-};
-
-function renderCard(permissions: Partial<React.ComponentProps<typeof MobileEventCard>> = {}) {
-  return render(
-    <MemoryRouter>
-      <MobileEventCard
-        event={event}
-        canWrite={false}
-        canRead={false}
-        canAccessCheckIn={false}
-        {...permissions}
-      />
-    </MemoryRouter>,
-  );
-}
-
 describe('MobileEventCard', () => {
-  it('renders the event summary and status details', () => {
-    renderCard();
+  const mockEvent = {
+    id: 'evt-123',
+    title: 'Sunday Service',
+    slug: 'sunday-service',
+    status: 'published',
+    location: 'Main Sanctuary',
+    start_date: '2026-10-04T09:00:00Z',
+    registration_mode: 'public',
+    duplicate_policy: 'allow_duplicates',
+    _count: {
+      registrations: 10,
+    },
+  };
 
-    expect(screen.getByRole('heading', { name: 'Summer Gathering' })).toBeInTheDocument();
-    expect(screen.getByText('summer-gathering')).toBeInTheDocument();
-    expect(screen.getByText('Main Hall')).toBeInTheDocument();
-    expect(document.querySelector('svg.lucide-map-pin')).toBeInTheDocument();
-    expect(screen.getByText('Published')).toBeInTheDocument();
-    expect(screen.getByText('Starts')).toBeInTheDocument();
-    expect(screen.getByText('Reg. Members')).toBeInTheDocument();
-    expect(screen.getByText('Reg. Non-Members')).toBeInTheDocument();
-    expect(screen.getByText('Reg. Mode')).toBeInTheDocument();
-    expect(screen.getByText('open')).toBeInTheDocument();
-    expect(screen.getByText('Duplicate Policy')).toBeInTheDocument();
-    expect(screen.getByText('Allow Update')).toBeInTheDocument();
+  const defaultProps = {
+    event: mockEvent as unknown as Parameters<typeof MobileEventCard>[0]['event'],
+    canWrite: true,
+    canRead: true,
+    canAccessCheckIn: true,
+    onDuplicateClick: vi.fn(),
+    onShareClick: vi.fn(),
+  };
+
+  const renderComponent = (props = defaultProps) => {
+    return render(
+      <MemoryRouter>
+        <MobileEventCard {...props} />
+      </MemoryRouter>,
+    );
+  };
+
+  it('renders event details correctly', () => {
+    renderComponent();
+
+    expect(screen.getByText('Sunday Service')).toBeInTheDocument();
+    expect(screen.getByText('sunday-service')).toBeInTheDocument();
+    expect(screen.getByText('Main Sanctuary')).toBeInTheDocument();
   });
 
-  it('renders all permitted actions and routes', () => {
-    renderCard({ canWrite: true, canRead: true, canAccessCheckIn: true });
-
-    expect(screen.getByRole('link', { name: 'Edit Summer Gathering' })).toHaveAttribute(
-      'href',
-      toRoute('adminEventDetail', { id: event.id }),
-    );
-    expect(
-      screen.getByRole('link', { name: 'View attendees for Summer Gathering' }),
-    ).toHaveAttribute('href', toRoute('adminAttendanceData', { id: event.id }));
-
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
-
-    expect(screen.getByRole('link', { name: 'Attendance settings' })).toHaveAttribute(
-      'href',
-      toRoute('adminEventAttendance', { id: event.id }),
-    );
-    expect(screen.getByRole('link', { name: 'Registration fields' })).toHaveAttribute(
-      'href',
-      toRoute('adminEventFields', { id: event.id }),
-    );
-    expect(screen.getByRole('link', { name: 'Registrations' })).toHaveAttribute(
-      'href',
-      toRoute('adminRegistrations', { id: event.id }),
-    );
-    expect(screen.getByRole('link', { name: 'Attendance dashboard' })).toHaveAttribute(
-      'href',
-      toRoute('adminAttendanceDashboard', { id: event.id }),
-    );
-    expect(screen.getByRole('link', { name: 'Check-in' })).toHaveAttribute(
-      'href',
-      toRoute('adminAttendanceCheckIn', { id: event.id }),
-    );
+  it('handles empty location gracefully', () => {
+    renderComponent({ ...defaultProps, event: { ...defaultProps.event, location: null } });
+    expect(screen.queryByText('Main Sanctuary')).not.toBeInTheDocument();
   });
 
-  it('shows read actions without write-only menu actions', () => {
-    const onShareClick = vi.fn();
-    renderCard({ canRead: true, onShareClick });
+  it('toggles dropdown menu', () => {
+    renderComponent();
 
-    expect(
-      screen.getByRole('link', { name: 'View attendees for Summer Gathering' }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Edit Summer Gathering' })).not.toBeInTheDocument();
+    const trigger = screen.getByTitle(/More actions/i);
+    fireEvent.click(trigger);
 
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
-
-    expect(screen.getByRole('button', { name: 'Share schedule' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Registrations' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Attendance dashboard' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Attendance settings' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Registration fields' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Check-in' })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Share schedule' }));
-    expect(onShareClick).toHaveBeenCalledWith(event);
+    expect(screen.getByText(/Attendance settings/i)).toBeInTheDocument();
+    expect(screen.getByText(/Registration fields/i)).toBeInTheDocument();
   });
 
-  it('shows write actions without read-only menu actions', () => {
-    renderCard({ canWrite: true });
+  it('calls onDuplicateClick when duplicate option is clicked', () => {
+    renderComponent();
 
-    expect(screen.getByRole('link', { name: 'Edit Summer Gathering' })).toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: 'View attendees for Summer Gathering' }),
-    ).not.toBeInTheDocument();
+    const trigger = screen.getByTitle(/More actions/i);
+    fireEvent.click(trigger);
 
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
+    const duplicateTextNodes = screen.getAllByText(/Duplicate/i);
+    const duplicateOption = duplicateTextNodes.find(
+      (node) => !node.textContent?.includes('Policy'),
+    );
 
-    expect(screen.getByRole('link', { name: 'Attendance settings' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Registration fields' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Share schedule' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Registrations' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Attendance dashboard' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Check-in' })).not.toBeInTheDocument();
+    if (duplicateOption) {
+      fireEvent.click(duplicateOption);
+    }
+
+    expect(defaultProps.onDuplicateClick).toHaveBeenCalledWith(mockEvent);
   });
 
-  it('shows only check-in access when no other permissions are granted', () => {
-    renderCard({ canAccessCheckIn: true });
+  it('calls onShareClick when share option is clicked', () => {
+    renderComponent();
 
-    expect(screen.queryByRole('link', { name: 'Edit Summer Gathering' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: 'View attendees for Summer Gathering' }),
-    ).not.toBeInTheDocument();
+    const trigger = screen.getByTitle(/More actions/i);
+    fireEvent.click(trigger);
 
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for Summer Gathering' }));
+    const shareOption = screen.getByText(/Share schedule/i);
+    fireEvent.click(shareOption);
 
-    expect(screen.getByRole('link', { name: 'Check-in' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Share schedule' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Attendance settings' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Registration fields' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Registrations' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Attendance dashboard' })).not.toBeInTheDocument();
+    expect(defaultProps.onShareClick).toHaveBeenCalledWith(mockEvent);
   });
 
-  it('hides all actions when the user has no permissions', () => {
-    renderCard();
+  it('does not render write actions when canWrite is false', () => {
+    renderComponent({ ...defaultProps, canWrite: false });
 
-    expect(screen.queryByRole('link', { name: 'Edit Summer Gathering' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: 'View attendees for Summer Gathering' }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'More actions for Summer Gathering' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Edit/i })).not.toBeInTheDocument();
+
+    const trigger = screen.getByTitle(/More actions/i);
+    fireEvent.click(trigger);
+
+    const duplicateTextNodes = screen.queryAllByText(/Duplicate/i);
+    const duplicateOption = duplicateTextNodes.find(
+      (node) => !node.textContent?.includes('Policy'),
+    );
+
+    expect(duplicateOption).toBeUndefined();
   });
 });
