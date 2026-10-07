@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -50,35 +50,6 @@ export function AdminServiceAttendanceDataPage() {
           .filter(Boolean)
       : [];
   }, [roleParam]);
-
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-  const roleDropdownRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isRoleDropdownOpen) return;
-
-    function handleDocumentMouseDown(event: MouseEvent) {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (!roleDropdownRef.current?.contains(target)) {
-        setIsRoleDropdownOpen(false);
-      }
-    }
-
-    function handleDocumentKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsRoleDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleDocumentMouseDown);
-    document.addEventListener('keydown', handleDocumentKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleDocumentMouseDown);
-      document.removeEventListener('keydown', handleDocumentKeyDown);
-    };
-  }, [isRoleDropdownOpen]);
 
   const handleToggleRole = (roleToToggle: string) => {
     const isSelected = selectedRoles.includes(roleToToggle);
@@ -285,16 +256,12 @@ export function AdminServiceAttendanceDataPage() {
         searchTerm={searchTerm}
         selectedRoles={selectedRoles}
         selectedRoleLabel={selectedRoleLabel}
-        isRoleDropdownOpen={isRoleDropdownOpen}
-        roleDropdownRef={roleDropdownRef}
         hasActiveFilters={hasActiveFilters}
         fallbackDate={fallbackDate}
         onUpdateSearchParam={updateSearchParam}
         onSearchChange={(e) => setSearchTerm(e.target.value)}
         onClearSearch={clearSearch}
         onClearFilters={handleClearFilters}
-        onToggleRoleDropdown={() => setIsRoleDropdownOpen((prev) => !prev)}
-        onCloseRoleDropdown={() => setIsRoleDropdownOpen(false)}
         onToggleRole={handleToggleRole}
         onClearStartDate={handleClearStartDate}
       />

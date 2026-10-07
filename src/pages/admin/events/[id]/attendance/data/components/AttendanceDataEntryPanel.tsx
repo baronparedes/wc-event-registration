@@ -169,7 +169,6 @@ export function AttendanceDataEntryPanel({
   onSaveSuccess,
 }: AttendanceDataEntryPanelProps) {
   const upsertMutation = useUpsertAttendanceAnswersMutation();
-  const [openMultiSelectFieldId, setOpenMultiSelectFieldId] = useState<string | null>(null);
   const [requiredMultiSelectErrors, setRequiredMultiSelectErrors] = useState<Record<string, true>>(
     {},
   );
@@ -383,15 +382,8 @@ export function AttendanceDataEntryPanel({
                       label: opt.label,
                     }))}
                     selectedValues={selectedValues}
-                    isOpen={openMultiSelectFieldId === field.id}
                     clearButtonLabel="Clear selections"
                     emptyStateLabel="No options available"
-                    onToggleDropdown={() =>
-                      setOpenMultiSelectFieldId((current) =>
-                        current === field.id ? null : field.id,
-                      )
-                    }
-                    onCloseDropdown={() => setOpenMultiSelectFieldId(null)}
                     onClearSelection={() => {
                       setValue(field.id, [], { shouldDirty: true, shouldValidate: true });
                       setRequiredMultiSelectErrors((current) => {

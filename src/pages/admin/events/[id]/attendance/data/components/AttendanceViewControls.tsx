@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { SlidersHorizontal } from 'lucide-react';
 
@@ -80,41 +80,8 @@ export function AttendanceViewControls({
   onRemoveDynamicFilter,
   onToggleVisibleField,
 }: AttendanceViewControlsProps) {
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [customFilterJson, setCustomFilterJson] = useState('');
   const [customFilterJsonError, setCustomFilterJsonError] = useState<string | null>(null);
-  const roleDropdownRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isRoleDropdownOpen) {
-      return;
-    }
-
-    function handleDocumentMouseDown(event: MouseEvent) {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (!roleDropdownRef.current?.contains(target)) {
-        setIsRoleDropdownOpen(false);
-      }
-    }
-
-    function handleDocumentKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsRoleDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleDocumentMouseDown);
-    document.addEventListener('keydown', handleDocumentKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleDocumentMouseDown);
-      document.removeEventListener('keydown', handleDocumentKeyDown);
-    };
-  }, [isRoleDropdownOpen]);
 
   const selectedRoleCount = viewConfig.role.length;
   const selectedRoleLabel =
@@ -196,10 +163,6 @@ export function AttendanceViewControls({
               roleOptions={roleOptions}
               categoryOptions={categoryOptions}
               selectedRoleLabel={selectedRoleLabel}
-              isRoleDropdownOpen={isRoleDropdownOpen}
-              roleDropdownRef={roleDropdownRef}
-              onToggleRoleDropdown={() => setIsRoleDropdownOpen((current) => !current)}
-              onCloseRoleDropdown={() => setIsRoleDropdownOpen(false)}
               onRoleChange={onRoleChange}
               onToggleRoleSelection={toggleRoleSelection}
               onCategoryChange={onCategoryChange}
