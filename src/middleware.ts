@@ -1,3 +1,5 @@
+import { next } from '@vercel/functions';
+
 import {
   DEFAULT_OG_METADATA,
   type OgMetadata,
@@ -50,55 +52,59 @@ const FALLBACK_HTML_TEMPLATE = `<!doctype html>
   </body>
 </html>`;
 
-export default async function middleware(request: Request): Promise<Response | undefined> {
+export default async function middleware(request: Request): Promise<Response> {
   const userAgent = request.headers.get('user-agent');
 
   // Let regular end-user traffic pass directly to the client-side SPA
   if (!isCrawlerUserAgent(userAgent)) {
-    return undefined;
+    return next();
   }
 
-  const url = new URL(request.url);
-  const eventSlug = extractEventSlug(url.pathname);
-  const formSlug = extractFormSlug(url.pathname);
-
-  // Fetch the base HTML template from the origin
-  let baseHtml = FALLBACK_HTML_TEMPLATE;
   try {
-    const originIndexUrl = new URL('/index.html', url.origin);
-    const htmlResponse = await fetch(originIndexUrl.toString());
-    if (htmlResponse.ok) {
-      baseHtml = await htmlResponse.text();
+    const url = new URL(request.url);
+    const eventSlug = extractEventSlug(url.pathname);
+    const formSlug = extractFormSlug(url.pathname);
+
+    // Fetch the base HTML template from the origin
+    let baseHtml = FALLBACK_HTML_TEMPLATE;
+    try {
+      const originIndexUrl = new URL('/index.html', url.origin);
+      const htmlResponse = await fetch(originIndexUrl.toString());
+      if (htmlResponse.ok) {
+        baseHtml = await htmlResponse.text();
+      }
+    } catch {
+      // Fall back to inline minimal template
     }
+
+    let ogMetadata: OgMetadata = {
+      title: DEFAULT_OG_METADATA.title,
+      description: DEFAULT_OG_METADATA.description,
+      imageUrl: `${url.origin}${DEFAULT_OG_METADATA.fallbackImageRelativePath}`,
+      url: url.toString(),
+      type: DEFAULT_OG_METADATA.type,
+      siteName: DEFAULT_OG_METADATA.siteName,
+      twitterCard: DEFAULT_OG_METADATA.twitterCard,
+    };
+
+    if (eventSlug) {
+      const event = await fetchEventMetadataForOg(eventSlug);
+      ogMetadata = buildEventOgMetadata(event, url.toString());
+    } else if (formSlug) {
+      const form = await fetchFormMetadataForOg(formSlug);
+      ogMetadata = buildFormOgMetadata(form, url.toString());
+    }
+
+    const modifiedHtml = injectMetaTags(baseHtml, ogMetadata);
+
+    return new Response(modifiedHtml, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=60, s-maxage=300',
+      },
+    });
   } catch {
-    // Fall back to inline minimal template
+    return next();
   }
-
-  let ogMetadata: OgMetadata = {
-    title: DEFAULT_OG_METADATA.title,
-    description: DEFAULT_OG_METADATA.description,
-    imageUrl: `${url.origin}${DEFAULT_OG_METADATA.fallbackImageRelativePath}`,
-    url: url.toString(),
-    type: DEFAULT_OG_METADATA.type,
-    siteName: DEFAULT_OG_METADATA.siteName,
-    twitterCard: DEFAULT_OG_METADATA.twitterCard,
-  };
-
-  if (eventSlug) {
-    const event = await fetchEventMetadataForOg(eventSlug);
-    ogMetadata = buildEventOgMetadata(event, url.toString());
-  } else if (formSlug) {
-    const form = await fetchFormMetadataForOg(formSlug);
-    ogMetadata = buildFormOgMetadata(form, url.toString());
-  }
-
-  const modifiedHtml = injectMetaTags(baseHtml, ogMetadata);
-
-  return new Response(modifiedHtml, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=60, s-maxage=300',
-    },
-  });
 }

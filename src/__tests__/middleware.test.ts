@@ -24,7 +24,8 @@ describe('Vercel Edge Middleware', () => {
     });
 
     const response = await middleware(request);
-    expect(response).toBeUndefined();
+    expect(response).toBeInstanceOf(Response);
+    expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
   it('intercepts facebook crawler and serves dynamic event meta tags with proper caching headers', async () => {
