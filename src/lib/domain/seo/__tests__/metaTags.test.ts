@@ -4,8 +4,10 @@ import {
   DEFAULT_OG_METADATA,
   buildAbsoluteImageUrl,
   buildEventOgMetadata,
+  buildFormOgMetadata,
   escapeHtmlAttribute,
   extractEventSlug,
+  extractFormSlug,
   generateOgMetaTagString,
   injectMetaTags,
   isCrawlerUserAgent,
@@ -69,6 +71,25 @@ describe('SEO & Open Graph Helpers', () => {
       expect(extractEventSlug('/admin/events/123')).toBeNull();
       expect(extractEventSlug('/events')).toBeNull();
       expect(extractEventSlug('/forms/sample/submit')).toBeNull();
+    });
+  });
+
+  describe('extractFormSlug', () => {
+    it('extracts slugs from form submission routes', () => {
+      expect(extractFormSlug('/forms/volunteer-registration/submit')).toBe(
+        'volunteer-registration',
+      );
+      expect(extractFormSlug('/forms/volunteer-registration/submit/')).toBe(
+        'volunteer-registration',
+      );
+      expect(extractFormSlug('/forms/retreat%20form/submit')).toBe('retreat form');
+    });
+
+    it('returns null for non-matching routes', () => {
+      expect(extractFormSlug('/')).toBeNull();
+      expect(extractFormSlug('/events/tech-summit/register')).toBeNull();
+      expect(extractFormSlug('/admin/forms/123')).toBeNull();
+      expect(extractFormSlug('/forms')).toBeNull();
     });
   });
 
@@ -159,6 +180,31 @@ describe('SEO & Open Graph Helpers', () => {
       expect(meta.title).toBe(DEFAULT_OG_METADATA.title);
       expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
       expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-192x192.png');
+    });
+  });
+
+  describe('buildFormOgMetadata', () => {
+    it('creates rich metadata for published form record', () => {
+      const meta = buildFormOgMetadata(
+        {
+          title: 'Volunteer Application',
+          description: 'Sign up to serve in Sunday service teams.',
+        },
+        'https://welcomehub.com/forms/volunteer-app/submit',
+      );
+
+      expect(meta.title).toBe('Volunteer Application | Welcome Hub');
+      expect(meta.description).toBe('Sign up to serve in Sunday service teams.');
+      expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-192x192.png');
+      expect(meta.url).toBe('https://welcomehub.com/forms/volunteer-app/submit');
+      expect(meta.type).toBe('website');
+      expect(meta.twitterCard).toBe('summary_large_image');
+    });
+
+    it('falls back to site defaults when form is null', () => {
+      const meta = buildFormOgMetadata(null, 'https://welcomehub.com/forms/missing/submit');
+      expect(meta.title).toBe(DEFAULT_OG_METADATA.title);
+      expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
     });
   });
 

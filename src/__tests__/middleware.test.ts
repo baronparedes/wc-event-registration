@@ -91,4 +91,37 @@ describe('Vercel Edge Middleware', () => {
       '<meta property="og:image" content="https://welcomehub.com/android-chrome-192x192.png" />',
     );
   });
+
+  it('intercepts crawler requests for dynamic form routes and serves form metadata', async () => {
+    vi.spyOn(seoApi, 'fetchFormMetadataForOg').mockResolvedValue({
+      title: 'Volunteer Application',
+      description: 'Sign up for Sunday teams.',
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        '<!doctype html><html><head><title>Welcome Hub</title></head><body><div id="root"></div></body></html>',
+    });
+
+    const request = new Request('https://welcomehub.com/forms/volunteer-app/submit', {
+      headers: {
+        'user-agent': 'Viber/6.5.5.1372',
+      },
+    });
+
+    const response = await middleware(request);
+    expect(response).toBeInstanceOf(Response);
+    const html = await response!.text();
+    expect(html).toContain('<title>Volunteer Application | Welcome Hub</title>');
+    expect(html).toContain(
+      '<meta property="og:title" content="Volunteer Application | Welcome Hub" />',
+    );
+    expect(html).toContain(
+      '<meta property="og:description" content="Sign up for Sunday teams." />',
+    );
+    expect(html).toContain(
+      '<meta property="og:url" content="https://welcomehub.com/forms/volunteer-app/submit" />',
+    );
+  });
 });

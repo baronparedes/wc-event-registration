@@ -12,3 +12,5 @@ export const CRAWLER_USER_AGENTS_REGEX =
 
 export const EVENT_DYNAMIC_ROUTE_REGEX =
   /^\/events\/([^/]+)\/(?:register|register-public|countdown)\/?$/;
+
+export const FORM_DYNAMIC_ROUTE_REGEX = /^\/forms\/([^/]+)\/submit\/?$/;

@@ -2,8 +2,11 @@ import {
   DEFAULT_OG_METADATA,
   type OgMetadata,
   buildEventOgMetadata,
+  buildFormOgMetadata,
   extractEventSlug,
+  extractFormSlug,
   fetchEventMetadataForOg,
+  fetchFormMetadataForOg,
   injectMetaTags,
   isCrawlerUserAgent,
 } from './lib/domain/seo';
@@ -56,7 +59,8 @@ export default async function middleware(request: Request): Promise<Response | u
   }
 
   const url = new URL(request.url);
-  const slug = extractEventSlug(url.pathname);
+  const eventSlug = extractEventSlug(url.pathname);
+  const formSlug = extractFormSlug(url.pathname);
 
   // Fetch the base HTML template from the origin
   let baseHtml = FALLBACK_HTML_TEMPLATE;
@@ -80,9 +84,12 @@ export default async function middleware(request: Request): Promise<Response | u
     twitterCard: DEFAULT_OG_METADATA.twitterCard,
   };
 
-  if (slug) {
-    const event = await fetchEventMetadataForOg(slug);
+  if (eventSlug) {
+    const event = await fetchEventMetadataForOg(eventSlug);
     ogMetadata = buildEventOgMetadata(event, url.toString());
+  } else if (formSlug) {
+    const form = await fetchFormMetadataForOg(formSlug);
+    ogMetadata = buildFormOgMetadata(form, url.toString());
   }
 
   const modifiedHtml = injectMetaTags(baseHtml, ogMetadata);

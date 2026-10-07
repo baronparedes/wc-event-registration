@@ -1,6 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { fetchEventMetadataForOg } from '../api';
+import { fetchEventMetadataForOg, fetchFormMetadataForOg } from '../api';
 
 describe('fetchEventMetadataForOg', () => {
   const originalFetch = global.fetch;
@@ -77,6 +75,65 @@ describe('fetchEventMetadataForOg', () => {
     const result = await fetchEventMetadataForOg('timeout-event', {
       supabaseUrl: 'https://test.supabase.co',
       timeoutMs: 10,
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('fetchFormMetadataForOg', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('fetches form metadata successfully', async () => {
+    const mockForm = {
+      id: 'form-123',
+      title: 'Volunteer Application',
+      description: 'Sunday service team registration',
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, form: mockForm }),
+    });
+
+    const result = await fetchFormMetadataForOg('volunteer-app', {
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseAnonKey: 'test-anon-key',
+    });
+
+    expect(result).toEqual({
+      title: 'Volunteer Application',
+      description: 'Sunday service team registration',
+    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://test.supabase.co/functions/v1/get-public-form',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          apikey: 'test-anon-key',
+          Authorization: 'Bearer test-anon-key',
+        }),
+        body: JSON.stringify({ slug: 'volunteer-app' }),
+      }),
+    );
+  });
+
+  it('returns null on fetch error', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+    });
+
+    const result = await fetchFormMetadataForOg('missing-form', {
+      supabaseUrl: 'https://test.supabase.co',
     });
 
     expect(result).toBeNull();

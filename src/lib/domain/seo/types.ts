@@ -13,3 +13,8 @@ export interface EventOgRecord {
   description?: string | null;
   cover_image_key?: string | null;
 }
+
+export interface FormOgRecord {
+  title: string;
+  description?: string | null;
+}
