@@ -7,6 +7,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Deep Planning Mode**: Before making changes or creating an execution plan, you must ALWAYS enter a deep planning mode by asking clarifying questions to confirm the user's expectations and assumptions. Never assume requirements.
 - **Verification & Fast Pre-Commit**: Validate changes using `npm run precommit`. This fast check validates formatting, linting, TypeScript types, related Vitest tests, and Deno Edge Function tests for all staged, unstaged, and untracked changed files in ~2-6s.
 - **CI Gate**: `npm run ci:gate` runs the full repository test suite and coverage reports for CI pipeline validation. Agents must use `npm run precommit` (or targeted test commands) for validating work instead of running the full `ci:gate`.
+- **PR Management & Merging**: AI Agents must **NEVER** approve, auto-merge, or merge Pull Requests into `main` (or any branch). Agents may only create feature branches, commit changes, and open PRs (`gh pr create`). All PR approvals and merges are strictly reserved for the USER.
 - **Formatting**: If formatting fails, run `npm run format`.
 
 ## 2. Core Coding Standards & TypeScript Rules
