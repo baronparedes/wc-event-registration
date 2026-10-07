@@ -25,7 +25,7 @@ export const DEFAULT_OG_METADATA = {
   siteName: 'Welcome Hub',
   type: 'website' as const,
   twitterCard: 'summary_large_image' as const,
-  fallbackImageRelativePath: '/android-chrome-192x192.png',
+  fallbackImageRelativePath: '/android-chrome-512x512.png',
 };
 
 export const CRAWLER_USER_AGENTS_REGEX =
@@ -198,7 +198,7 @@ export function generateOgMetaTagString(meta: OgMetadata): string {
   const image = meta.imageUrl ? escapeHtmlAttribute(meta.imageUrl) : '';
 
   const tags = [
-    `    <!-- Open Graph / Social Meta Tags -->`,
+    `    <!-- Open Graph / Facebook / WhatsApp / Viber -->`,
     `    <meta name="description" content="${description}" />`,
     `    <meta property="og:type" content="${type}" />`,
     `    <meta property="og:site_name" content="${siteName}" />`,
@@ -209,6 +209,11 @@ export function generateOgMetaTagString(meta: OgMetadata): string {
 
   if (image) {
     tags.push(`    <meta property="og:image" content="${image}" />`);
+    if (image.startsWith('https://')) {
+      tags.push(`    <meta property="og:image:secure_url" content="${image}" />`);
+    }
+    const imageType = image.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    tags.push(`    <meta property="og:image:type" content="${imageType}" />`);
     tags.push(`    <meta property="og:image:alt" content="${title}" />`);
   }
 
@@ -228,10 +233,6 @@ export function injectMetaTags(html: string, meta: OgMetadata): string {
   let modifiedHtml = html;
 
   const escapedTitle = escapeHtmlAttribute(meta.title);
-  if (/<title>.*?<\/title>/i.test(modifiedHtml)) {
-    modifiedHtml = modifiedHtml.replace(/<title>.*?<\/title>/i, `<title>${escapedTitle}</title>`);
-  }
-
   modifiedHtml = modifiedHtml
     .replace(/\s*<meta\s+name=["']description["'][^>]*>/gi, '')
     .replace(/\s*<meta\s+property=["']og:[^"']+["'][^>]*>/gi, '')
@@ -239,8 +240,18 @@ export function injectMetaTags(html: string, meta: OgMetadata): string {
 
   const generatedTags = generateOgMetaTagString(meta);
 
-  if (/<\/head>/i.test(modifiedHtml)) {
-    return modifiedHtml.replace(/<\/head>/i, `${generatedTags}\n  </head>`);
+  if (/<title>.*?<\/title>/i.test(modifiedHtml)) {
+    return modifiedHtml.replace(
+      /<title>.*?<\/title>/i,
+      `<title>${escapedTitle}</title>\n${generatedTags}`,
+    );
+  }
+
+  if (/<head>/i.test(modifiedHtml)) {
+    return modifiedHtml.replace(
+      /<head>/i,
+      `<head>\n    <title>${escapedTitle}</title>\n${generatedTags}`,
+    );
   }
 
   return `${modifiedHtml}\n${generatedTags}`;

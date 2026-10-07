@@ -192,7 +192,7 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       const meta = buildEventOgMetadata(null, 'https://welcomehub.com/events/unknown/register');
       expect(meta.title).toBe(DEFAULT_OG_METADATA.title);
       expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
-      expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-192x192.png');
+      expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-512x512.png');
     });
   });
 
@@ -208,7 +208,7 @@ describe('api/og Serverless Function & SEO Helpers', () => {
 
       expect(meta.title).toBe('Volunteer Application | Welcome Hub');
       expect(meta.description).toBe('Sign up to serve in Sunday service teams.');
-      expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-192x192.png');
+      expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-512x512.png');
       expect(meta.url).toBe('https://welcomehub.com/forms/volunteer-app/submit');
       expect(meta.type).toBe('website');
       expect(meta.twitterCard).toBe('summary_large_image');
@@ -396,7 +396,7 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       const html = await response.text();
       expect(html).toContain('<title>Music Workshop | Welcome Hub</title>');
       expect(html).toContain(
-        '<meta property="og:image" content="https://www.welcomehub.app/android-chrome-192x192.png" />',
+        '<meta property="og:image" content="https://www.welcomehub.app/android-chrome-512x512.png" />',
       );
     });
 
