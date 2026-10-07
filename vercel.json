@@ -1,4 +1,8 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "proxy": {
+    "entrypoint": "src/middleware.ts"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
