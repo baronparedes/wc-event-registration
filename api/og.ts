@@ -28,10 +28,18 @@ export const DEFAULT_OG_METADATA = {
   fallbackImageRelativePath: '/android-chrome-192x192.png',
 };
 
+export const CRAWLER_USER_AGENTS_REGEX =
+  /facebookexternalhit|facebot|twitterbot|viber|whatsapp|telegrambot|discordbot|linkedinbot|slackbot|applebot|pinterestbot|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|skypeuripreview|quora|redditbot/i;
+
 export const EVENT_DYNAMIC_ROUTE_REGEX =
   /^\/events\/([^/]+)\/(?:register|register-public|countdown)\/?$/;
 
 export const FORM_DYNAMIC_ROUTE_REGEX = /^\/forms\/([^/]+)\/submit\/?$/;
+
+export function isCrawlerUserAgent(userAgent: string | null | undefined): boolean {
+  if (!userAgent) return false;
+  return CRAWLER_USER_AGENTS_REGEX.test(userAgent);
+}
 
 export function extractEventSlug(pathname: string): string | null {
   const match = pathname.match(EVENT_DYNAMIC_ROUTE_REGEX);
@@ -238,7 +246,10 @@ export function injectMetaTags(html: string, meta: OgMetadata): string {
   return `${modifiedHtml}\n${generatedTags}`;
 }
 
-export async function fetchEventMetadataForOg(slug: string): Promise<EventOgRecord | null> {
+export async function fetchEventMetadataForOg(
+  slug: string,
+  options?: { origin?: string },
+): Promise<EventOgRecord | null> {
   const supabaseUrl =
     process.env.VITE_SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -254,6 +265,11 @@ export async function fetchEventMetadataForOg(slug: string): Promise<EventOgReco
   if (!supabaseUrl || !slug) return null;
 
   const endpoint = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/get-public-event`;
+  const requestOrigin =
+    options?.origin ||
+    (typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://www.welcomehub.app');
 
   try {
     const controller = new AbortController();
@@ -263,6 +279,7 @@ export async function fetchEventMetadataForOg(slug: string): Promise<EventOgReco
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Origin: requestOrigin,
         ...(supabaseAnonKey
           ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` }
           : {}),
@@ -294,7 +311,10 @@ export async function fetchEventMetadataForOg(slug: string): Promise<EventOgReco
   }
 }
 
-export async function fetchFormMetadataForOg(slug: string): Promise<FormOgRecord | null> {
+export async function fetchFormMetadataForOg(
+  slug: string,
+  options?: { origin?: string },
+): Promise<FormOgRecord | null> {
   const supabaseUrl =
     process.env.VITE_SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -310,6 +330,11 @@ export async function fetchFormMetadataForOg(slug: string): Promise<FormOgRecord
   if (!supabaseUrl || !slug) return null;
 
   const endpoint = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/get-public-form`;
+  const requestOrigin =
+    options?.origin ||
+    (typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://www.welcomehub.app');
 
   try {
     const controller = new AbortController();
@@ -319,6 +344,7 @@ export async function fetchFormMetadataForOg(slug: string): Promise<FormOgRecord
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Origin: requestOrigin,
         ...(supabaseAnonKey
           ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` }
           : {}),
@@ -422,10 +448,10 @@ export async function handleOgRequest(
   };
 
   if (eventSlug) {
-    const event = await fetchEventMetadataForOg(eventSlug);
+    const event = await fetchEventMetadataForOg(eventSlug, { origin: url.origin });
     ogMetadata = buildEventOgMetadata(event, ogMetadata.url);
   } else if (formSlug) {
-    const form = await fetchFormMetadataForOg(formSlug);
+    const form = await fetchFormMetadataForOg(formSlug, { origin: url.origin });
     ogMetadata = buildFormOgMetadata(form, ogMetadata.url);
   }
 

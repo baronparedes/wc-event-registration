@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
+import handler, {
   DEFAULT_OG_METADATA,
   buildAbsoluteImageUrl,
   buildEventOgMetadata,
@@ -8,13 +8,26 @@ import {
   escapeHtmlAttribute,
   extractEventSlug,
   extractFormSlug,
+  fetchEventMetadataForOg,
+  fetchFormMetadataForOg,
   generateOgMetaTagString,
+  handleOgRequest,
   injectMetaTags,
   isCrawlerUserAgent,
   stripHtmlAndTruncate,
-} from '../index';
+} from '../og';
 
-describe('SEO & Open Graph Helpers', () => {
+describe('api/og Serverless Function & SEO Helpers', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
   describe('isCrawlerUserAgent', () => {
     it('detects popular social and messaging crawlers', () => {
       expect(
@@ -267,6 +280,235 @@ describe('SEO & Open Graph Helpers', () => {
       );
       expect(result).toContain('<meta name="twitter:card" content="summary_large_image" />');
       expect(result).toContain('</head>');
+    });
+  });
+
+  describe('Serverless Handler & API Fetching', () => {
+    it('generates dynamic open graph HTML for public events', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-event')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              event: {
+                title: 'Dev Summit 2026',
+                description: 'Annual developers gathering.',
+                cover_image_key: 'covers/devsummit.png',
+              },
+            }),
+          };
+        }
+        return {
+          ok: true,
+          text: async () =>
+            '<!doctype html><html><head><title>Welcome Hub</title></head><body><div id="root"></div></body></html>',
+        };
+      });
+
+      const html = await handleOgRequest(
+        'https://www.welcomehub.app/api/og?route=/events/dev-summit-2026/register',
+      );
+
+      expect(html).toContain('<title>Dev Summit 2026 | Welcome Hub</title>');
+      expect(html).toContain(
+        '<meta property="og:title" content="Dev Summit 2026 | Welcome Hub" />',
+      );
+      expect(html).toContain(
+        '<meta property="og:description" content="Annual developers gathering." />',
+      );
+      expect(html).toContain(
+        '<meta property="og:image" content="http://127.0.0.1:54321/storage/v1/object/public/event_covers/covers/devsummit.png" />',
+      );
+      expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+    });
+
+    it('generates dynamic open graph HTML for public forms', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-form')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              form: {
+                title: 'Volunteer Signup',
+                description: 'Join Sunday team.',
+              },
+            }),
+          };
+        }
+        return {
+          ok: true,
+          text: async () =>
+            '<!doctype html><html><head><title>Welcome Hub</title></head><body><div id="root"></div></body></html>',
+        };
+      });
+
+      const html = await handleOgRequest(
+        'https://www.welcomehub.app/api/og?route=/forms/volunteer-signup/submit',
+      );
+
+      expect(html).toContain('<title>Volunteer Signup | Welcome Hub</title>');
+      expect(html).toContain(
+        '<meta property="og:title" content="Volunteer Signup | Welcome Hub" />',
+      );
+      expect(html).toContain('<meta property="og:description" content="Join Sunday team." />');
+      expect(html).toContain(
+        '<meta property="og:url" content="https://www.welcomehub.app/forms/volunteer-signup/submit" />',
+      );
+    });
+
+    it('handles Web standard Request object in default handler', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-event')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              event: {
+                title: 'Music Workshop',
+                description: 'Learn acoustic guitar.',
+                cover_image_key: null,
+              },
+            }),
+          };
+        }
+        return {
+          ok: true,
+          text: async () =>
+            '<!doctype html><html><head><title>Welcome Hub</title></head><body><div id="root"></div></body></html>',
+        };
+      });
+
+      const request = new Request(
+        'https://www.welcomehub.app/api/og?route=/events/music-workshop/countdown',
+      );
+
+      const response = (await handler(request)) as Response;
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
+      expect(response.headers.get('Cache-Control')).toBe('public, max-age=60, s-maxage=300');
+
+      const html = await response.text();
+      expect(html).toContain('<title>Music Workshop | Welcome Hub</title>');
+      expect(html).toContain(
+        '<meta property="og:image" content="https://www.welcomehub.app/android-chrome-192x192.png" />',
+      );
+    });
+
+    it('handles Node-like request and response objects in default handler', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-event')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              event: {
+                title: 'Tech Fest',
+                description: 'Annual gathering.',
+                cover_image_key: null,
+              },
+            }),
+          };
+        }
+        return {
+          ok: true,
+          text: async () =>
+            '<!doctype html><html><head><title>Welcome Hub</title></head><body><div id="root"></div></body></html>',
+        };
+      });
+
+      const headers: Record<string, string> = {};
+      let statusSet = 0;
+      let sentBody = '';
+
+      const fakeReq = {
+        query: { route: '/events/tech-fest/register' },
+        url: '/api/og?route=/events/tech-fest/register',
+        headers: { host: 'www.welcomehub.app' },
+      };
+
+      const fakeRes = {
+        status(code: number) {
+          statusSet = code;
+          return this;
+        },
+        setHeader(key: string, value: string) {
+          headers[key] = value;
+          return this;
+        },
+        send(body: string) {
+          sentBody = body;
+        },
+      };
+
+      await handler(fakeReq, fakeRes);
+
+      expect(statusSet).toBe(200);
+      expect(headers['Content-Type']).toBe('text/html; charset=utf-8');
+      expect(headers['Cache-Control']).toBe('public, max-age=60, s-maxage=300');
+      expect(sentBody).toContain('<title>Tech Fest | Welcome Hub</title>');
+    });
+
+    it('falls back to default template when fetching fails', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
+
+      const request = new Request(
+        'https://www.welcomehub.app/api/og?route=/events/failing-event/register',
+      );
+
+      const response = (await handler(request)) as Response;
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(200);
+
+      const html = await response.text();
+      expect(html).toContain('<title>Welcome Hub</title>');
+    });
+
+    it('includes Origin header when calling get-public-event and get-public-form', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          event: {
+            title: 'Sunday Service',
+            description: 'Weekly service.',
+            cover_image_key: null,
+          },
+        }),
+      });
+      global.fetch = fetchMock;
+
+      await fetchEventMetadataForOg('sunday-service', {
+        origin: 'https://www.welcomehub.app',
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/functions/v1/get-public-event'),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Origin: 'https://www.welcomehub.app',
+          }),
+        }),
+      );
+
+      await fetchFormMetadataForOg('volunteer-form', {
+        origin: 'https://www.welcomehub.app',
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/functions/v1/get-public-form'),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Origin: 'https://www.welcomehub.app',
+          }),
+        }),
+      );
     });
   });
 });
