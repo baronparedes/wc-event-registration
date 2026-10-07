@@ -239,10 +239,16 @@ export function injectMetaTags(html: string, meta: OgMetadata): string {
 }
 
 export async function fetchEventMetadataForOg(slug: string): Promise<EventOgRecord | null> {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseUrl =
+    process.env.VITE_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    '';
   const supabaseAnonKey =
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
     '';
 
   if (!supabaseUrl || !slug) return null;
@@ -289,10 +295,16 @@ export async function fetchEventMetadataForOg(slug: string): Promise<EventOgReco
 }
 
 export async function fetchFormMetadataForOg(slug: string): Promise<FormOgRecord | null> {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseUrl =
+    process.env.VITE_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    '';
   const supabaseAnonKey =
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
     '';
 
   if (!supabaseUrl || !slug) return null;
