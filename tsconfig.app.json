@@ -5,7 +5,8 @@
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@api/*": ["./api/*"]
     },
     "strict": true,
     "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"],
@@ -25,5 +26,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "vitest.setup.ts"]
+  "include": ["src", "api", "vitest.setup.ts"]
 }

@@ -1,6 +1,28 @@
 {
   "rewrites": [
     {
+      "source": "/events/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|facebot|twitterbot|viber|whatsapp|telegrambot|discordbot|linkedinbot|slackbot|applebot|pinterestbot|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|skypeuripreview|quora|redditbot).*"
+        }
+      ],
+      "destination": "/api/og"
+    },
+    {
+      "source": "/forms/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|facebot|twitterbot|viber|whatsapp|telegrambot|discordbot|linkedinbot|slackbot|applebot|pinterestbot|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|skypeuripreview|quora|redditbot).*"
+        }
+      ],
+      "destination": "/api/og"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
