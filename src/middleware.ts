@@ -6,9 +6,10 @@ import {
   fetchEventMetadataForOg,
   injectMetaTags,
   isCrawlerUserAgent,
-} from '@/lib/domain/seo';
+} from './lib/domain/seo';
 
 export const config = {
+  runtime: 'nodejs',
   matcher: [
     /*
      * Match all paths except static files, assets, and service workers
