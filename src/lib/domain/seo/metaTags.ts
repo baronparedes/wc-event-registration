@@ -81,9 +81,13 @@ export function buildAbsoluteImageUrl(
     return `${origin}${imageKeyOrUrl}`;
   }
 
-  if (supabaseUrl) {
-    const cleanSupabaseUrl = supabaseUrl.replace(/\/+$/, '');
-    return `${cleanSupabaseUrl}/storage/v1/object/public/event_covers/${imageKeyOrUrl}`;
+  const resolvedSupabaseUrl =
+    supabaseUrl || process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+  if (resolvedSupabaseUrl) {
+    const cleanSupabaseUrl = resolvedSupabaseUrl.replace(/\/+$/, '');
+    const cleanKey = imageKeyOrUrl.replace(/^\/+/, '');
+    return `${cleanSupabaseUrl}/storage/v1/object/public/event_covers/${cleanKey}`;
   }
 
   return `${origin}/${imageKeyOrUrl}`;

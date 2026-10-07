@@ -58,6 +58,12 @@ describe('Vercel Edge Middleware', () => {
     expect(html).toContain(
       '<meta property="og:description" content="Annual developers gathering." />',
     );
+    expect(html).toContain(
+      '<meta property="og:image" content="http://127.0.0.1:54321/storage/v1/object/public/event_covers/covers/devsummit.png" />',
+    );
+    expect(html).toContain(
+      '<meta name="twitter:image" content="http://127.0.0.1:54321/storage/v1/object/public/event_covers/covers/devsummit.png" />',
+    );
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
   });
 
