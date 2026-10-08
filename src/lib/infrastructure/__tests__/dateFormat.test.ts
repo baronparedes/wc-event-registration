@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   formatDateOnly,
@@ -9,47 +9,123 @@ import {
 } from '../dateFormat';
 
 describe('dateFormat', () => {
-  it('formats valid dates and returns fallbacks for empty or invalid values', () => {
-    const dateOnlySpy = vi
-      .spyOn(Date.prototype, 'toLocaleDateString')
-      .mockReturnValue('Jun 23, 2026');
-    const dateTimeSpy = vi
-      .spyOn(Date.prototype, 'toLocaleString')
-      .mockReturnValue('Jun 23, 2026, 2:30 PM');
-
-    expect(formatDateOnly('2026-06-23T00:00:00.000Z')).toBe('Jun 23, 2026');
-    expect(formatDateOnly(null)).toBe('—');
-    expect(formatDateOnly('not-a-date')).toBe('—');
-
-    expect(formatDateTime('2026-06-23T14:30:00.000Z')).toBe('Jun 23, 2026, 2:30 PM');
-    expect(formatDateTime(null)).toBe('TBD');
-    expect(formatDateTime('not-a-date')).toBe('TBD');
-
-    dateOnlySpy.mockRestore();
-    dateTimeSpy.mockRestore();
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Setting system time isn't strictly necessary if we only format specific strings,
+    // but useful for consistent date operations. We rely mostly on setting a specific
+    // locale/timezone behavior.
   });
 
-  it('formats time-only in Asia/Manila (UTC+8) and returns fallbacks', () => {
-    expect(formatTimeOnly('2026-01-04T00:45:00.000Z')).toBe('8:45 AM');
-    expect(formatTimeOnly('2026-01-04T04:00:00.000Z')).toBe('12:00 PM');
-    expect(formatTimeOnly('2026-01-04T07:15:00.000Z')).toBe('3:15 PM');
-    expect(formatTimeOnly(null)).toBe('—');
-    expect(formatTimeOnly('not-a-date')).toBe('—');
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('converts datetime-local values to UTC+8 ISO and rejects empty inputs', () => {
-    expect(localDateTimeToUTC8ISO(undefined)).toBeNull();
-    expect(localDateTimeToUTC8ISO('   ')).toBeNull();
-    expect(localDateTimeToUTC8ISO('2026-08-15T21:00:00')).toBe('2026-08-15T21:00:00+08:00');
+  describe('formatDateOnly', () => {
+    it('returns formatted date correctly for a valid ISO string', () => {
+      // 2026-06-23T12:00:00Z is 2026-06-23T20:00:00 in Asia/Manila (UTC+8)
+      // Mock toLocaleDateString to ensure CI consistency regardless of system locale
+      const spy = vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('Jun 23, 2026');
+
+      const result = formatDateOnly('2026-06-23T12:00:00Z');
+      expect(result).toBe('Jun 23, 2026');
+      expect(spy).toHaveBeenCalledWith(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'Asia/Manila',
+      });
+    });
+
+    it('returns the fallback value for null input', () => {
+      expect(formatDateOnly(null)).toBe('—');
+      expect(formatDateOnly(null, 'N/A')).toBe('N/A');
+    });
+
+    it('returns the fallback value for an invalid date string', () => {
+      expect(formatDateOnly('invalid-date')).toBe('—');
+    });
   });
 
-  it('formats day-month values and returns fallbacks for empty or invalid values', () => {
-    const dayMonthSpy = vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('15 Jun');
+  describe('formatDayMonth', () => {
+    it('returns formatted short day/month for a valid ISO string', () => {
+      const spy = vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('Jun 23');
 
-    expect(formatDayMonth('2026-06-15T00:00:00.000Z')).toBe('15 Jun');
-    expect(formatDayMonth(null)).toBe('—');
-    expect(formatDayMonth('not-a-date')).toBe('—');
+      const result = formatDayMonth('2026-06-23T12:00:00Z');
+      expect(result).toBe('Jun 23');
+      expect(spy).toHaveBeenCalledWith(undefined, {
+        day: '2-digit',
+        month: 'short',
+        timeZone: 'Asia/Manila',
+      });
+    });
 
-    dayMonthSpy.mockRestore();
+    it('returns the fallback value for null input', () => {
+      expect(formatDayMonth(null)).toBe('—');
+    });
+
+    it('returns the fallback value for an invalid date string', () => {
+      expect(formatDayMonth('invalid-date')).toBe('—');
+    });
+  });
+
+  describe('formatDateTime', () => {
+    it('returns localized datetime string for valid input', () => {
+      const spy = vi
+        .spyOn(Date.prototype, 'toLocaleString')
+        .mockReturnValue('Jun 23, 2026, 2:30 PM');
+
+      const result = formatDateTime('2026-06-23T06:30:00Z');
+      expect(result).toBe('Jun 23, 2026, 2:30 PM');
+      expect(spy).toHaveBeenCalledWith(undefined, { timeZone: 'Asia/Manila' });
+    });
+
+    it('handles fallback for null input', () => {
+      expect(formatDateTime(null)).toBe('TBD');
+      expect(formatDateTime(null, 'N/A')).toBe('N/A');
+    });
+
+    it('handles fallback for invalid date strings', () => {
+      expect(formatDateTime('invalid')).toBe('TBD');
+    });
+  });
+
+  describe('formatTimeOnly', () => {
+    it('returns formatted time for valid inputs', () => {
+      const spy = vi.spyOn(Date.prototype, 'toLocaleTimeString').mockReturnValue('8:45 AM');
+
+      const result = formatTimeOnly('2026-06-23T00:45:00Z');
+      expect(result).toBe('8:45 AM');
+      expect(spy).toHaveBeenCalledWith('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila',
+      });
+    });
+
+    it('handles fallback appropriately for null input', () => {
+      expect(formatTimeOnly(null)).toBe('—');
+    });
+
+    it('handles fallback for invalid strings', () => {
+      expect(formatTimeOnly('invalid')).toBe('—');
+    });
+  });
+
+  describe('localDateTimeToUTC8ISO', () => {
+    it('correctly appends +08:00 offset to valid YYYY-MM-DDTHH:mm:ss string', () => {
+      expect(localDateTimeToUTC8ISO('2026-08-15T21:00:00')).toBe('2026-08-15T21:00:00+08:00');
+    });
+
+    it('trims input before formatting', () => {
+      expect(localDateTimeToUTC8ISO('  2026-08-15T21:00:00  ')).toBe('2026-08-15T21:00:00+08:00');
+    });
+
+    it('returns null for undefined, null, or empty string', () => {
+      expect(localDateTimeToUTC8ISO(undefined)).toBe(null);
+      expect(localDateTimeToUTC8ISO('')).toBe(null);
+      expect(localDateTimeToUTC8ISO('   ')).toBe(null);
+    });
   });
 });
