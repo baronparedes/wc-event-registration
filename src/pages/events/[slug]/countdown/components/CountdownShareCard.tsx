@@ -16,9 +16,15 @@ export type CountdownShareCardProps = {
   event: Pick<AdminEvent, 'title' | 'description' | 'starts_at' | 'location' | 'slug'>;
   coverUrl?: string | null;
   timeLeft: TimeLeft;
+  qrCodeDataUrl?: string | null;
 };
 
-export function CountdownShareCard({ event, coverUrl, timeLeft }: CountdownShareCardProps) {
+export function CountdownShareCard({
+  event,
+  coverUrl,
+  timeLeft,
+  qrCodeDataUrl,
+}: CountdownShareCardProps) {
   return (
     <div className="w-full max-w-[560px] box-border rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 text-slate-900 shadow-xl">
       {/* Header with App Branding */}
@@ -88,11 +94,27 @@ export function CountdownShareCard({ event, coverUrl, timeLeft }: CountdownShare
       </div>
 
       {/* Footer */}
-      <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-400">
-        <span>Generated via {LEGAL_CONFIG.appName}</span>
-        <span className="font-mono text-[11px] text-slate-400">
-          /{event.slug ? `events/${event.slug}` : 'countdown'}
-        </span>
+      <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <div className="space-y-1 text-left">
+          <p className="font-semibold text-slate-700">Generated via {LEGAL_CONFIG.appName}</p>
+          <p className="font-mono text-[11px] text-slate-400">
+            /{event.slug ? `events/${event.slug}/countdown` : 'countdown'}
+          </p>
+        </div>
+
+        {qrCodeDataUrl && (
+          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-100 bg-slate-50/90 p-1.5 pr-2.5 shadow-xs">
+            <img
+              src={qrCodeDataUrl}
+              alt="Scan QR code for event countdown"
+              className="h-12 w-12 rounded-lg object-contain"
+            />
+            <div className="text-left leading-tight">
+              <span className="block text-[11px] font-bold text-slate-800">Scan QR</span>
+              <span className="block text-[10px] text-slate-500">To open</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

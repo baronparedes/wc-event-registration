@@ -1,16 +1,18 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { toBlob, toJpeg } from 'html-to-image';
 import { Check, Copy, Download, Link2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button, Dialog } from '@/components/ui';
+import { toRoute } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
 
 import {
   dataUrlToBlob,
   ensureResourcesReady,
   formatCountdownFilename,
+  generateQrCodeDataUrl,
   isMobileDevice,
 } from '../utils';
 import { CountdownShareCard, type TimeLeft } from './CountdownShareCard';
@@ -34,6 +36,26 @@ export function ShareCountdownDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!event?.slug) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const eventUrl = `${origin}${toRoute('eventCountdown', { slug: event.slug })}`;
+
+    let isMounted = true;
+    generateQrCodeDataUrl(eventUrl)
+      .then((url) => {
+        if (isMounted) setQrCodeDataUrl(url);
+      })
+      .catch((err) => {
+        console.error('Failed to generate QR code data URL:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [event?.slug]);
 
   if (!event || !isOpen) return null;
 
@@ -195,7 +217,12 @@ export function ShareCountdownDialog({
           {/* Card Preview Container */}
           <div className="flex w-full justify-center rounded-2xl border border-border bg-slate-50 p-3 sm:p-6">
             <div ref={cardRef} className="w-full max-w-[560px]">
-              <CountdownShareCard event={event} coverUrl={coverUrl} timeLeft={timeLeft} />
+              <CountdownShareCard
+                event={event}
+                coverUrl={coverUrl}
+                timeLeft={timeLeft}
+                qrCodeDataUrl={qrCodeDataUrl}
+              />
             </div>
           </div>
 

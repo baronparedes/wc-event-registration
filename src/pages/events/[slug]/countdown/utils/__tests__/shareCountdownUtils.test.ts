@@ -4,10 +4,19 @@ import {
   dataUrlToBlob,
   ensureResourcesReady,
   formatCountdownFilename,
+  generateQrCodeDataUrl,
   isMobileDevice,
 } from '../shareCountdownUtils';
 
 describe('shareCountdownUtils', () => {
+  describe('generateQrCodeDataUrl', () => {
+    it('generates a valid data URL containing image/png base64 QR code', async () => {
+      const url = 'https://welcomehub.ccf.org.ph/events/tech-summit-2026/countdown';
+      const dataUrl = await generateQrCodeDataUrl(url);
+      expect(dataUrl).toMatch(/^data:image\/png;base64,/);
+      expect(dataUrl.length).toBeGreaterThan(100);
+    });
+  });
   describe('isMobileDevice', () => {
     it('returns false for desktop user agent', () => {
       vi.stubGlobal('navigator', {

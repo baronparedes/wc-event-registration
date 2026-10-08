@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+
 export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent || '';
@@ -62,4 +64,16 @@ export async function ensureResourcesReady(element: HTMLElement): Promise<void> 
 export function formatCountdownFilename(slug?: string | null): string {
   const sanitized = (slug || 'event').replace(/[^a-zA-Z0-9_-]/g, '_');
   return `${sanitized}-countdown.jpg`;
+}
+
+export async function generateQrCodeDataUrl(url: string): Promise<string> {
+  return QRCode.toDataURL(url, {
+    margin: 1,
+    width: 200,
+    errorCorrectionLevel: 'M',
+    color: {
+      dark: '#0f172a',
+      light: '#ffffff',
+    },
+  });
 }

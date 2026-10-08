@@ -94,7 +94,7 @@ describe('ShareCountdownDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('renders countdown details in modal preview', () => {
+  it('renders countdown details in modal preview', async () => {
     render(
       <ShareCountdownDialog
         isOpen={true}
@@ -109,6 +109,10 @@ describe('ShareCountdownDialog', () => {
     expect(screen.getByText('Silicon Arena')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
     expect(screen.getByText('05')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Scan QR code for event countdown')).toBeInTheDocument();
+    });
   });
 
   it('handles copying page link to clipboard', async () => {
