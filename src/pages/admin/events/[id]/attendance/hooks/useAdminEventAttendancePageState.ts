@@ -105,20 +105,6 @@ export function useAdminEventAttendancePageState(eventId: string | undefined) {
   const timeslots = useWatch({ control, name: 'timeslots' });
   const effectiveTimeslots = timeslots ?? [];
 
-  useEffect(() => {
-    if (!settings || !isDirty || attendanceEnabled !== false) return;
-
-    setValue('timeslot_enabled', false, { shouldDirty: false, shouldValidate: true });
-    setValue('enforce_check_in_event_window', true, { shouldDirty: false, shouldValidate: true });
-    setValue('timeslots', [], { shouldDirty: false, shouldValidate: true });
-  }, [attendanceEnabled, isDirty, settings, setValue]);
-
-  useEffect(() => {
-    if (!settings || !isDirty || timeslotEnabled !== false) return;
-
-    setValue('timeslots', [], { shouldDirty: false, shouldValidate: true });
-  }, [timeslotEnabled, isDirty, settings, setValue]);
-
   const isArchived = event?.status === 'archived';
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const eventStartLocal = toDatetimeLocal(event?.starts_at);
