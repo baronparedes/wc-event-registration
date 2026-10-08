@@ -20,6 +20,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "test": "npm run test:ci",
+    "test:og": "node scripts/test-og.mjs",
     "test:ui": "vitest --ui",
     "test:integration": "node scripts/ensure-integration-env.mjs && vitest run src/__tests__/integration.test.ts",
     "test:unit": "vitest run --exclude \"src/__tests__/integration.test.ts\"",

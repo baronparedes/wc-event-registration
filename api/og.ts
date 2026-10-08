@@ -214,6 +214,8 @@ export function generateOgMetaTagString(meta: OgMetadata): string {
     }
     const imageType = image.endsWith('.png') ? 'image/png' : 'image/jpeg';
     tags.push(`    <meta property="og:image:type" content="${imageType}" />`);
+    tags.push(`    <meta property="og:image:width" content="1200" />`);
+    tags.push(`    <meta property="og:image:height" content="630" />`);
     tags.push(`    <meta property="og:image:alt" content="${title}" />`);
   }
 
