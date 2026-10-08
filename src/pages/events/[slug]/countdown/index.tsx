@@ -10,6 +10,7 @@ import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
 import { ShareCountdownDialog } from './components';
+import { formatEventSchedule, generateQrCodeDataUrl } from './utils';
 
 export function EventCountdownPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -29,6 +30,22 @@ export function EventCountdownPage() {
   const [isEventStarted, setIsEventStarted] = useState(false);
   const [isPastDate, setIsPastDate] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+
+  const eventSlug = event?.slug;
+  useEffect(() => {
+    if (!eventSlug) return;
+    const registrationUrl = `${window.location.origin}${toRoute('eventRegister', { slug: eventSlug })}`;
+    let isMounted = true;
+    generateQrCodeDataUrl(registrationUrl)
+      .then((url) => {
+        if (isMounted) setQrCodeDataUrl(url);
+      })
+      .catch((err) => console.error('Failed to generate QR code data URL:', err));
+    return () => {
+      isMounted = false;
+    };
+  }, [eventSlug]);
 
   useEffect(() => {
     if (!event || !event.starts_at) return;
@@ -189,11 +206,17 @@ export function EventCountdownPage() {
               <MarkdownRenderer content={event.description} />
             </div>
           )}
-          <div className="mx-auto max-w-xl pt-2">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-surface px-6 py-3 shadow-xs">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 pt-2">
+            <div className="inline-flex items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-slate-100/90 px-5 py-3 shadow-2xs">
               <Calendar className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-              <p className="font-semibold text-text text-base sm:text-lg">
-                {event.starts_at ? formatDateTime(event.starts_at) : 'Date TBA'}
+              <p className="font-bold text-text text-base sm:text-lg">
+                {formatEventSchedule(event.starts_at, event.ends_at)}
+              </p>
+            </div>
+            <div className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-slate-100/90 px-5 py-3 shadow-2xs">
+              <MapPin className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
+              <p className="min-w-0 break-words font-bold text-text text-base sm:text-lg">
+                {event.location || 'Venue to be announced'}
               </p>
             </div>
           </div>
@@ -207,21 +230,20 @@ export function EventCountdownPage() {
           <CountdownCard label="Seconds" value={timeLeft.seconds} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs transition-shadow hover:shadow-sm">
-            <div className="flex items-center gap-2.5">
-              <div className="flex w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <MapPin className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <h1 className="font-semibold uppercase tracking-wider text-muted">Location</h1>
-              </div>
+        {qrCodeDataUrl && (
+          <div className="flex flex-col items-center justify-center gap-3 text-center">
+            <div className="rounded-3xl border border-border bg-white p-4 shadow-sm">
+              <img
+                src={qrCodeDataUrl}
+                alt="Scan QR code to register for the event"
+                className="h-48 w-48 object-contain sm:h-56 sm:w-56"
+              />
             </div>
-            <div className="mt-4 border-t border-border/60 pt-3">
-              <h2 className="text-text break-words">{event.location || 'Venue to be announced'}</h2>
-            </div>
+            <span className="text-sm font-bold uppercase tracking-wider text-muted">
+              Scan to Register
+            </span>
           </div>
-        </div>
+        )}
 
         {!isRegistrationOpen && (
           <div className="flex justify-center">

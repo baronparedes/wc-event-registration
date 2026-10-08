@@ -103,8 +103,7 @@ describe('EventCountdownPage', () => {
     expect(screen.getByText('Minutes')).toBeInTheDocument();
     expect(screen.getByText('Seconds')).toBeInTheDocument();
 
-    // Location Card
-    expect(screen.getByText('Location')).toBeInTheDocument();
+    // Location badge
     expect(screen.getByText('Grand Ballroom, Level 3')).toBeInTheDocument();
 
     // Share Countdown button

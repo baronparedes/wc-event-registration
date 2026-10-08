@@ -20,6 +20,7 @@ export {
   ListTableHeaderCell,
 } from './ListTable';
 export { Skeleton } from './Skeleton';
+export { ScaleToFit, type ScaleToFitProps } from './ScaleToFit';
 export { ActionLink } from './ActionLink';
 export { SlugField } from './SlugField';
 export { Badge, type BadgeVariant } from './Badge';

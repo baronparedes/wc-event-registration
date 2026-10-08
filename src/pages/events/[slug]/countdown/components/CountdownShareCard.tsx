@@ -66,7 +66,7 @@ export function CountdownShareCard({
           <div className="mx-auto max-w-lg text-sm text-slate-600">
             <MarkdownRenderer
               content={event.description}
-              className="prose-sm text-slate-600 leading-relaxed max-h-24 overflow-hidden text-center"
+              className="prose-sm text-slate-600 leading-relaxed text-center [&_ul]:list-none [&_ul]:pl-0 [&_li]:pl-0"
             />
           </div>
         )}
