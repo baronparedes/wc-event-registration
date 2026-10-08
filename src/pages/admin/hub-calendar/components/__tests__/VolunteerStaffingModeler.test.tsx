@@ -37,11 +37,27 @@ function createScheduleEntry(member: AdminMember, timeSlots = ['9AM']): MemberSc
 
 describe('VolunteerStaffingModeler', () => {
   const defaultTargets = {
-    Usher: 25,
-    'Backroom Support': 10,
-    'Prayer Coach': 50,
-    'IMT Support': 4,
-    'VMT Support': 2,
+    '9AM': {
+      Usher: 25,
+      'Backroom Support': 10,
+      'Prayer Coach': 50,
+      'IMT Support': 4,
+      'VMT Support': 2,
+    },
+    '12NN': {
+      Usher: 25,
+      'Backroom Support': 10,
+      'Prayer Coach': 50,
+      'IMT Support': 4,
+      'VMT Support': 2,
+    },
+    '3PM': {
+      Usher: 25,
+      'Backroom Support': 10,
+      'Prayer Coach': 50,
+      'IMT Support': 4,
+      'VMT Support': 2,
+    },
   };
 
   const onSaveTargetsMock = vi.fn();
@@ -108,7 +124,7 @@ describe('VolunteerStaffingModeler', () => {
       />,
     );
 
-    const allDayBtn = screen.getByRole('button', { name: /All Sunday Slots/i });
+    const allDayBtn = screen.getByRole('tab', { name: /All Sunday Slots/i });
     fireEvent.click(allDayBtn);
 
     // Target across all 3 slots is 91 * 3 = 273
@@ -137,5 +153,24 @@ describe('VolunteerStaffingModeler', () => {
     fireEvent.click(expandBtn);
 
     expect(screen.getByText(/Total Target:/i)).toBeInTheDocument();
+  });
+
+  it('opens target configuration modal from the summary bar', () => {
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={{ '9AM': [], '12NN': [], '3PM': [] }}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+      />,
+    );
+
+    const editTargetsBtn = screen.getByRole('button', { name: /Edit Targets/i });
+    fireEvent.click(editTargetsBtn);
+
+    expect(
+      screen.getByRole('heading', { name: /Configure Volunteer Targets/i }),
+    ).toBeInTheDocument();
   });
 });

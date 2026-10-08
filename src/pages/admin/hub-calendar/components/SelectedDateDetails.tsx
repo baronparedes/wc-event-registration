@@ -16,9 +16,11 @@ import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import {
   type ConfidenceTier,
+  type VolunteerTargetsBySlot,
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
+  getMemberConfidenceTooltip,
   getStoredVolunteerTargets,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
@@ -57,9 +59,11 @@ type SelectedDateDetailsProps = {
   attendanceScoreMap?: Map<string, MemberAttendanceStats>;
   activeTab: TimeSlot;
   selectedRole: string | null;
+  selectedConfidence?: ConfidenceTier | null;
   searchQuery: string;
   onTabChange: (slot: TimeSlot) => void;
   onRoleChange: (role: string | null) => void;
+  onConfidenceChange?: (tier: ConfidenceTier | null) => void;
   onSearchQueryChange: (query: string) => void;
 };
 
@@ -75,17 +79,23 @@ export function SelectedDateDetails({
   attendanceScoreMap,
   activeTab,
   selectedRole,
+  selectedConfidence,
   searchQuery,
   onTabChange,
   onRoleChange,
+  onConfidenceChange,
   onSearchQueryChange,
 }: SelectedDateDetailsProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceTier | null>(null);
+  const [internalConfidence, setInternalConfidence] = useState<ConfidenceTier | null>(null);
+  const effectiveConfidence =
+    selectedConfidence !== undefined ? selectedConfidence : internalConfidence;
+  const handleConfidenceChange = onConfidenceChange ?? setInternalConfidence;
+
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const [volunteerTargets, setVolunteerTargets] = useState<Record<string, number>>(() =>
+  const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
     getStoredVolunteerTargets(),
   );
 
@@ -99,7 +109,6 @@ export function SelectedDateDetails({
   }, []);
 
   const handleTabChange = (slot: TimeSlot) => {
-    setSelectedConfidence(null);
     onTabChange(slot);
   };
 
@@ -120,7 +129,7 @@ export function SelectedDateDetails({
     ).sort();
 
     const filteredByConfidence =
-      selectedConfidence === null
+      effectiveConfidence === null
         ? entries
         : entries.filter(
             (e) =>
@@ -130,7 +139,7 @@ export function SelectedDateDetails({
                 slot,
                 excusedMap,
                 attendanceScoreMap,
-              ) === selectedConfidence,
+              ) === effectiveConfidence,
           );
 
     const filteredByRole =
@@ -160,8 +169,8 @@ export function SelectedDateDetails({
       <div className="flex flex-col gap-4">
         <SlotConfidenceForecastBanner
           forecast={forecast}
-          selectedTier={selectedConfidence}
-          onSelectTier={setSelectedConfidence}
+          selectedTier={effectiveConfidence}
+          onSelectTier={handleConfidenceChange}
         />
 
         <SearchInputField
@@ -176,9 +185,9 @@ export function SelectedDateDetails({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setSelectedConfidence(null)}
+              onClick={() => handleConfidenceChange(null)}
               className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedConfidence === null
+                effectiveConfidence === null
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -188,10 +197,10 @@ export function SelectedDateDetails({
             <button
               type="button"
               onClick={() =>
-                setSelectedConfidence(selectedConfidence === 'excused' ? null : 'excused')
+                handleConfidenceChange(effectiveConfidence === 'excused' ? null : 'excused')
               }
               className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedConfidence === 'excused'
+                effectiveConfidence === 'excused'
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -200,9 +209,11 @@ export function SelectedDateDetails({
             </button>
             <button
               type="button"
-              onClick={() => setSelectedConfidence(selectedConfidence === 'solid' ? null : 'solid')}
+              onClick={() =>
+                handleConfidenceChange(effectiveConfidence === 'solid' ? null : 'solid')
+              }
               className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedConfidence === 'solid'
+                effectiveConfidence === 'solid'
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -212,10 +223,10 @@ export function SelectedDateDetails({
             <button
               type="button"
               onClick={() =>
-                setSelectedConfidence(selectedConfidence === 'moderate' ? null : 'moderate')
+                handleConfidenceChange(effectiveConfidence === 'moderate' ? null : 'moderate')
               }
               className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedConfidence === 'moderate'
+                effectiveConfidence === 'moderate'
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -225,10 +236,10 @@ export function SelectedDateDetails({
             <button
               type="button"
               onClick={() =>
-                setSelectedConfidence(selectedConfidence === 'at_risk' ? null : 'at_risk')
+                handleConfidenceChange(effectiveConfidence === 'at_risk' ? null : 'at_risk')
               }
               className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedConfidence === 'at_risk'
+                effectiveConfidence === 'at_risk'
                   ? 'bg-primary text-white'
                   : 'bg-surface border border-border text-muted hover:text-text'
               }`}
@@ -273,44 +284,54 @@ export function SelectedDateDetails({
           <p className="py-6 text-center text-sm text-muted">
             {searchQuery
               ? 'No members match your search criteria.'
-              : selectedConfidence && selectedRole
-                ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers found for role "${selectedRole}".`
-                : selectedConfidence
-                  ? `No ${getConfidenceTierLabel(selectedConfidence).toLowerCase()} volunteers for this service.`
+              : effectiveConfidence && selectedRole
+                ? `No ${getConfidenceTierLabel(effectiveConfidence).toLowerCase()} volunteers found for role "${selectedRole}".`
+                : effectiveConfidence
+                  ? `No ${getConfidenceTierLabel(effectiveConfidence).toLowerCase()} volunteers for this service.`
                   : selectedRole
                     ? `No members found for role "${selectedRole}".`
                     : 'No members match the selected filters.'}
           </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {filteredEntries.map((entry) => (
-              <button
-                type="button"
-                key={entry.member.id}
-                onClick={() =>
-                  navigate(ROUTE_PATHS.adminMemberDetailPattern.replace(':id', entry.member.id))
-                }
-                className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center"
-              >
-                <ServiceScheduleAvatar
-                  size="md"
-                  name={entry.member.full_name}
-                  avatarObjectKey={entry.member.avatar_object_key}
-                  className="border-2 border-surface shadow-sm"
-                  excused={isMemberExcused(excusedMap, isoDateKey, entry.member, slot)}
-                  turnupRate={attendanceScoreMap?.get(entry.member.id)?.turnupRate}
-                />
-                <div className="min-w-0 w-full">
-                  <p className="truncate text-sm font-medium text-text">{entry.member.full_name}</p>
-                  <p className="truncate text-xs text-muted">{entry.member.member_id}</p>
-                  {entry.member.role && (
-                    <p className="mt-1 truncate text-xs font-medium text-primary/70">
-                      {entry.member.role}
+            {filteredEntries.map((entry) => {
+              const isExcused = isMemberExcused(excusedMap, isoDateKey, entry.member, slot);
+              const stats = attendanceScoreMap?.get(entry.member.id);
+              const tooltip = getMemberConfidenceTooltip(isExcused, stats);
+
+              return (
+                <button
+                  type="button"
+                  key={entry.member.id}
+                  onClick={() =>
+                    navigate(ROUTE_PATHS.adminMemberDetailPattern.replace(':id', entry.member.id))
+                  }
+                  title={tooltip}
+                  aria-label={`${entry.member.full_name} - ${tooltip}`}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center cursor-pointer"
+                >
+                  <ServiceScheduleAvatar
+                    size="md"
+                    name={entry.member.full_name}
+                    avatarObjectKey={entry.member.avatar_object_key}
+                    className="border-2 border-surface shadow-sm"
+                    excused={isExcused}
+                    turnupRate={stats?.turnupRate}
+                  />
+                  <div className="min-w-0 w-full">
+                    <p className="truncate text-sm font-medium text-text">
+                      {entry.member.full_name}
                     </p>
-                  )}
-                </div>
-              </button>
-            ))}
+                    <p className="truncate text-xs text-muted">{entry.member.member_id}</p>
+                    {entry.member.role && (
+                      <p className="mt-1 truncate text-xs font-medium text-primary/70">
+                        {entry.member.role}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

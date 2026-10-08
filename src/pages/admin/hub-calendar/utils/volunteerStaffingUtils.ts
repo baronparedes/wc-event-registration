@@ -3,12 +3,21 @@ import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
 import { DEFAULT_MEMBER_TURNUP_RATE, isMemberExcused } from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
-export const DEFAULT_VOLUNTEER_ROLE_TARGETS: Record<string, number> = {
+export type SlotRoleTargets = Record<string, number>;
+export type VolunteerTargetsBySlot = Record<TimeSlot, SlotRoleTargets>;
+
+export const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
   Usher: 25,
   'Backroom Support': 10,
   'Prayer Coach': 50,
   'IMT Support': 4,
   'VMT Support': 2,
+};
+
+export const DEFAULT_VOLUNTEER_TARGETS_BY_SLOT: VolunteerTargetsBySlot = {
+  '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+  '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
 };
 
 export const ORDERED_STANDARD_ROLES = [
@@ -38,31 +47,67 @@ export function normalizeStaffingRole(rawRole?: string | null): string {
   return firstPart || 'General Volunteer';
 }
 
-export function getStoredVolunteerTargets(): Record<string, number> {
+function sanitizeSlotTargets(slotData: unknown): SlotRoleTargets {
+  const sanitized: SlotRoleTargets = { ...DEFAULT_VOLUNTEER_ROLE_TARGETS };
+  if (slotData && typeof slotData === 'object' && !Array.isArray(slotData)) {
+    for (const [key, value] of Object.entries(slotData as Record<string, unknown>)) {
+      if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+        sanitized[key] = Math.round(value);
+      }
+    }
+  }
+  return sanitized;
+}
+
+export function getStoredVolunteerTargets(): VolunteerTargetsBySlot {
   try {
     if (typeof localStorage === 'undefined') {
-      return { ...DEFAULT_VOLUNTEER_ROLE_TARGETS };
+      return {
+        '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+        '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+        '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+      };
     }
     const raw = localStorage.getItem(HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_VOLUNTEER_ROLE_TARGETS };
+    if (!raw) {
+      return {
+        '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+        '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+        '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+      };
+    }
 
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const sanitized: Record<string, number> = { ...DEFAULT_VOLUNTEER_ROLE_TARGETS };
-      for (const [key, value] of Object.entries(parsed)) {
-        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-          sanitized[key] = Math.round(value);
-        }
+      // Check if stored in new per-slot format
+      const hasSlotKeys = '9AM' in parsed || '12NN' in parsed || '3PM' in parsed;
+      if (hasSlotKeys) {
+        return {
+          '9AM': sanitizeSlotTargets(parsed['9AM']),
+          '12NN': sanitizeSlotTargets(parsed['12NN']),
+          '3PM': sanitizeSlotTargets(parsed['3PM']),
+        };
       }
-      return sanitized;
+
+      // Legacy flat format: replicate across all slots
+      const legacy = sanitizeSlotTargets(parsed);
+      return {
+        '9AM': { ...legacy },
+        '12NN': { ...legacy },
+        '3PM': { ...legacy },
+      };
     }
   } catch {
     // Ignore storage parse or access errors
   }
-  return { ...DEFAULT_VOLUNTEER_ROLE_TARGETS };
+  return {
+    '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+    '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+    '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+  };
 }
 
-export function saveStoredVolunteerTargets(targets: Record<string, number>): void {
+export function saveStoredVolunteerTargets(targets: VolunteerTargetsBySlot): void {
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY, JSON.stringify(targets));
@@ -198,9 +243,18 @@ export function calculateAllSundayStaffingNeeds(
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>,
   excusedMap: ExcusedMemberMap | undefined,
   isoDateKey: string,
-  targets: Record<string, number> = DEFAULT_VOLUNTEER_ROLE_TARGETS,
+  targets: VolunteerTargetsBySlot | SlotRoleTargets = DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   statsMap?: Map<string, MemberAttendanceStats>,
 ): SlotStaffingForecast {
+  const isPerSlotTargets = '9AM' in targets || '12NN' in targets || '3PM' in targets;
+  const targetsBySlot: VolunteerTargetsBySlot = isPerSlotTargets
+    ? (targets as VolunteerTargetsBySlot)
+    : {
+        '9AM': targets as SlotRoleTargets,
+        '12NN': targets as SlotRoleTargets,
+        '3PM': targets as SlotRoleTargets,
+      };
+
   const slots: TimeSlot[] = ['9AM', '12NN', '3PM'];
   const slotForecasts = slots.map((slot) =>
     calculateSlotStaffingNeeds(
@@ -208,7 +262,7 @@ export function calculateAllSundayStaffingNeeds(
       excusedMap,
       isoDateKey,
       slot,
-      targets,
+      targetsBySlot[slot] ?? DEFAULT_VOLUNTEER_ROLE_TARGETS,
       statsMap,
     ),
   );

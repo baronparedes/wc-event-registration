@@ -123,17 +123,17 @@ Standard default target quantities are defined per service slot (`9AM`, `12NN`, 
 - **IMT Support**: `4`
 - **VMT Support**: `2`
 
-Coordinators can customize target quotas via the **Targets** configuration modal, persisted across browser sessions in local storage (`wc:hub-calendar:volunteer-targets`).
+Coordinators can customize target quotas individually per service slot (`9:00 AM`, `12:00 NN`, `3:00 PM`) or copy active quotas across slots via the **Targets** configuration modal. Configurations are persisted in local storage (`wc:hub-calendar:volunteer-targets`). In the **All Sunday Slots** view, targets and expectations are automatically aggregated across all three slots.
 
 ### Realistic Deficit Formula
 
 For each volunteer role $R$ and slot $S$:
 
-$$\text{Expected Turnup}_R = \sum_{i \in \text{Role } R \text{ Active Pool}} \text{TurnupRate}_i$$
+$$\text{Expected Turnup}_{R, S} = \sum_{i \in \text{Role } R \text{ Active Pool for Slot } S} \text{TurnupRate}_i$$
 
-$$\text{Volunteers Still Needed}_R = \max(0, \text{Target Quota}_R - \mathrm{round}(\text{Expected Turnup}_R))$$
+$$\text{Volunteers Still Needed}_{R, S} = \max(0, \text{Target Quota}_{R, S} - \mathrm{round}(\text{Expected Turnup}_{R, S}))$$
 
-$$\text{Fulfillment \%}_R = \min\left(100\%, \mathrm{round}\left(\frac{\text{Expected Turnup}_R}{\text{Target Quota}_R} \times 100\right)\right)$$
+$$\text{Fulfillment \%}_{R, S} = \min\left(100\%, \mathrm{round}\left(\frac{\text{Expected Turnup}_{R, S}}{\text{Target Quota}_{R, S}} \times 100\right)\right)$$
 
 Coordinators can toggle between viewing the **Active Slot** breakdown or the aggregated **All Sunday Slots** view.
 

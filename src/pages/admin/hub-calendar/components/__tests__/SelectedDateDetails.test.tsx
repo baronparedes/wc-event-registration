@@ -104,7 +104,9 @@ describe('SelectedDateDetails', () => {
     );
 
     // On 9AM tab: member 1 (entry1) is excused; member 2 (entry2) is not excused
-    expect(screen.getAllByTitle('Excused')).toHaveLength(1);
+    expect(
+      screen.getByTitle('Excused: Submitted an approved excuse request for this service slot.'),
+    ).toBeInTheDocument();
     expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
 
     // Rerender with activeTab="12NN" where member 1 is scheduled but NOT excused for 12NN
@@ -130,7 +132,9 @@ describe('SelectedDateDetails', () => {
     );
 
     // Member 1 is present in 12NN but should NOT be marked excused!
-    expect(screen.queryByTitle('Excused')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTitle('Excused: Submitted an approved excuse request for this service slot.'),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
   });
 
@@ -161,7 +165,9 @@ describe('SelectedDateDetails', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.queryByTitle('Excused')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTitle('Excused: Submitted an approved excuse request for this service slot.'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders status/confidence pill filters on first line and role filters on second line', () => {

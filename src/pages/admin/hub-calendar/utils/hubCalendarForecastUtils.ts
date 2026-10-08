@@ -110,3 +110,36 @@ export function getConfidenceTierLabel(tier: ConfidenceTier): string {
       return 'Excused';
   }
 }
+
+export function getMemberConfidenceTooltip(
+  isExcused: boolean,
+  stats?: MemberAttendanceStats,
+): string {
+  if (isExcused) {
+    return 'Excused: Submitted an approved excuse request for this service slot.';
+  }
+
+  const turnupRate = stats !== undefined ? stats.turnupRate : DEFAULT_MEMBER_TURNUP_RATE;
+  const percentage = Math.round(turnupRate * 100);
+  const tier = getConfidenceTierFromRate(turnupRate);
+
+  if (tier === 'at_risk') {
+    if (stats && stats.committed > 0) {
+      return `At Risk (${percentage}% turnup): Attended ${stats.attended} of ${stats.committed} scheduled commitments in recent weeks (<40% threshold).`;
+    }
+    return `At Risk (${percentage}% turnup): Low historical attendance turnup rate (<40% threshold).`;
+  }
+
+  if (tier === 'moderate') {
+    if (stats && stats.committed > 0) {
+      return `Moderate (${percentage}% turnup): Attended ${stats.attended} of ${stats.committed} scheduled commitments in recent weeks (40%–69% range).`;
+    }
+    return `Moderate (${percentage}% turnup): Fair attendance fidelity (40%–69% range).`;
+  }
+
+  // Solid
+  if (stats && stats.committed > 0) {
+    return `Solid (${percentage}% turnup): Attended ${stats.attended} of ${stats.committed} scheduled commitments in recent weeks (≥70% threshold).`;
+  }
+  return `Solid (${percentage}% turnup): High reliability volunteer (default baseline rate).`;
+}

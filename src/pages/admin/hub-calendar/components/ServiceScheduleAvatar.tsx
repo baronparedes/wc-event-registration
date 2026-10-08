@@ -13,6 +13,7 @@ export type ServiceScheduleAvatarProps = {
   border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'success' | 'none';
   turnupRate?: number | null;
   attendanceScore?: number | null;
+  tooltip?: string;
 };
 
 export function ServiceScheduleAvatar({
@@ -24,11 +25,26 @@ export function ServiceScheduleAvatar({
   border,
   turnupRate,
   attendanceScore,
+  tooltip,
 }: ServiceScheduleAvatarProps) {
   const rate = turnupRate ?? attendanceScore;
   const calculatedBorder = border ?? getConfidenceBorderVariant(rate);
 
   if (!excused) {
+    if (tooltip) {
+      return (
+        <div className="inline-flex shrink-0" title={tooltip}>
+          <Avatar
+            name={name}
+            avatarObjectKey={avatarObjectKey}
+            size={size}
+            border={calculatedBorder}
+            className={className}
+          />
+        </div>
+      );
+    }
+
     return (
       <Avatar
         name={name}
@@ -53,7 +69,7 @@ export function ServiceScheduleAvatar({
   }[size];
 
   return (
-    <div className="relative inline-flex shrink-0">
+    <div className="relative inline-flex shrink-0" title={tooltip}>
       <Avatar
         name={name}
         avatarObjectKey={avatarObjectKey}
@@ -62,7 +78,7 @@ export function ServiceScheduleAvatar({
         className={className}
       />
       <span
-        title="Excused"
+        title={tooltip ? undefined : 'Excused'}
         className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-danger text-white ${badgeSizeClasses}`}
       >
         <CalendarOff className={`${iconSizeClasses} shrink-0`} />

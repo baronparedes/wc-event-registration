@@ -4,8 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY,
+  HUB_CALENDAR_SUNDAY_FILTERS_STORAGE_KEY,
   getStoredCalendarDate,
+  getStoredSundayFilters,
   saveStoredCalendarDate,
+  saveStoredSundayFilters,
   useHubCalendarState,
 } from '../hooks/useHubCalendarState';
 
@@ -245,6 +248,84 @@ describe('useHubCalendarState & persistence helpers', () => {
 
       expect(replaceStateSpy).toHaveBeenCalled();
       replaceStateSpy.mockRestore();
+    });
+
+    it('initializes Sunday filters from sessionStorage if present', () => {
+      saveStoredSundayFilters({
+        activeTab: '12NN',
+        selectedRole: 'Usher',
+        selectedConfidence: 'solid',
+        searchQuery: 'John',
+      });
+
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
+
+      expect(result.current.activeTab).toBe('12NN');
+      expect(result.current.selectedRole).toBe('Usher');
+      expect(result.current.selectedConfidence).toBe('solid');
+      expect(result.current.searchQuery).toBe('John');
+    });
+
+    it('persists changes in Sunday filters to sessionStorage', () => {
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
+
+      act(() => {
+        result.current.setSelectedRole('Prayer Coach');
+        result.current.setSelectedConfidence('moderate');
+        result.current.setSearchQuery('Jane');
+      });
+
+      expect(getStoredSundayFilters()).toEqual({
+        activeTab: '9AM',
+        selectedRole: 'Prayer Coach',
+        selectedConfidence: 'moderate',
+        searchQuery: 'Jane',
+      });
+    });
+
+    it('preserves role, confidence, and search query when changing active tab', () => {
+      const { result } = renderHook(() => useHubCalendarState(), { wrapper });
+
+      act(() => {
+        result.current.setSelectedRole('Prayer Coach');
+        result.current.setSelectedConfidence('moderate');
+        result.current.setSearchQuery('Jane');
+      });
+
+      act(() => {
+        result.current.handleTabChange('3PM');
+      });
+
+      expect(result.current.activeTab).toBe('3PM');
+      expect(result.current.selectedRole).toBe('Prayer Coach');
+      expect(result.current.selectedConfidence).toBe('moderate');
+      expect(result.current.searchQuery).toBe('Jane');
+      expect(getStoredSundayFilters()).toEqual({
+        activeTab: '3PM',
+        selectedRole: 'Prayer Coach',
+        selectedConfidence: 'moderate',
+        searchQuery: 'Jane',
+      });
+    });
+  });
+
+  describe('getStoredSundayFilters & saveStoredSundayFilters', () => {
+    it('returns null when storage is empty or invalid JSON', () => {
+      expect(getStoredSundayFilters()).toBeNull();
+
+      sessionStorage.setItem(HUB_CALENDAR_SUNDAY_FILTERS_STORAGE_KEY, 'invalid-json');
+      expect(getStoredSundayFilters()).toBeNull();
+    });
+
+    it('saves and retrieves valid Sunday filters', () => {
+      const filters = {
+        activeTab: '3PM' as const,
+        selectedRole: 'Backroom Support',
+        selectedConfidence: 'at_risk' as const,
+        searchQuery: 'Test',
+      };
+      saveStoredSundayFilters(filters);
+      expect(getStoredSundayFilters()).toEqual(filters);
     });
   });
 });

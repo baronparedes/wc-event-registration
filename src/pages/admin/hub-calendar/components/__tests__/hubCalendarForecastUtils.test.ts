@@ -7,6 +7,7 @@ import {
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
+  getMemberConfidenceTooltip,
 } from '@/pages/admin/hub-calendar/utils';
 
 function createMockMember(id: string, name: string): AdminMember {
@@ -170,5 +171,55 @@ describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
     expect(getConfidenceTierLabel('solid')).toBe('Solid');
     expect(getConfidenceTierLabel('moderate')).toBe('Moderate');
     expect(getConfidenceTierLabel('at_risk')).toBe('At Risk');
+  });
+});
+
+describe('getMemberConfidenceTooltip', () => {
+  it('returns appropriate explanation for excused volunteers', () => {
+    expect(getMemberConfidenceTooltip(true)).toBe(
+      'Excused: Submitted an approved excuse request for this service slot.',
+    );
+  });
+
+  it('explains at_risk category with historical commitments and turnup rate', () => {
+    const stats: MemberAttendanceStats = {
+      attendanceScore: -2,
+      committed: 10,
+      attended: 3,
+      turnupRate: 0.3,
+    };
+    expect(getMemberConfidenceTooltip(false, stats)).toBe(
+      'At Risk (30% turnup): Attended 3 of 10 scheduled commitments in recent weeks (<40% threshold).',
+    );
+  });
+
+  it('explains moderate category with historical commitments and turnup rate', () => {
+    const stats: MemberAttendanceStats = {
+      attendanceScore: 5,
+      committed: 8,
+      attended: 4,
+      turnupRate: 0.5,
+    };
+    expect(getMemberConfidenceTooltip(false, stats)).toBe(
+      'Moderate (50% turnup): Attended 4 of 8 scheduled commitments in recent weeks (40%–69% range).',
+    );
+  });
+
+  it('explains solid category with historical commitments', () => {
+    const stats: MemberAttendanceStats = {
+      attendanceScore: 10,
+      committed: 10,
+      attended: 9,
+      turnupRate: 0.9,
+    };
+    expect(getMemberConfidenceTooltip(false, stats)).toBe(
+      'Solid (90% turnup): Attended 9 of 10 scheduled commitments in recent weeks (≥70% threshold).',
+    );
+  });
+
+  it('provides default fallback explanation when no attendance stats are recorded', () => {
+    expect(getMemberConfidenceTooltip(false, undefined)).toBe(
+      'Solid (80% turnup): High reliability volunteer (default baseline rate).',
+    );
   });
 });

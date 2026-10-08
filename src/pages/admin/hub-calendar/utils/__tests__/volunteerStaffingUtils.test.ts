@@ -5,6 +5,7 @@ import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
 import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 import {
   DEFAULT_VOLUNTEER_ROLE_TARGETS,
+  DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY,
   calculateAllSundayStaffingNeeds,
   calculateSlotStaffingNeeds,
@@ -69,25 +70,35 @@ describe('volunteerStaffingUtils', () => {
       localStorage.clear();
     });
 
-    it('returns default targets when nothing is stored', () => {
-      expect(getStoredVolunteerTargets()).toEqual(DEFAULT_VOLUNTEER_ROLE_TARGETS);
+    it('returns default targets by slot when nothing is stored', () => {
+      expect(getStoredVolunteerTargets()).toEqual(DEFAULT_VOLUNTEER_TARGETS_BY_SLOT);
     });
 
-    it('saves and retrieves customized targets', () => {
+    it('saves and retrieves customized per-slot targets', () => {
       const customTargets = {
-        Usher: 30,
-        'Backroom Support': 15,
-        'Prayer Coach': 60,
-        'IMT Support': 6,
-        'VMT Support': 3,
+        '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, Usher: 30 },
+        '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, Usher: 20 },
+        '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, Usher: 15 },
       };
       saveStoredVolunteerTargets(customTargets);
       expect(getStoredVolunteerTargets()).toEqual(customTargets);
     });
 
+    it('migrates legacy flat targets format to all slots', () => {
+      localStorage.setItem(
+        HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY,
+        JSON.stringify({ Usher: 40, 'Backroom Support': 12 }),
+      );
+      const retrieved = getStoredVolunteerTargets();
+      expect(retrieved['9AM'].Usher).toBe(40);
+      expect(retrieved['12NN'].Usher).toBe(40);
+      expect(retrieved['3PM'].Usher).toBe(40);
+      expect(retrieved['9AM']['Backroom Support']).toBe(12);
+    });
+
     it('handles corrupted localStorage gracefully', () => {
       localStorage.setItem(HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY, 'invalid json');
-      expect(getStoredVolunteerTargets()).toEqual(DEFAULT_VOLUNTEER_ROLE_TARGETS);
+      expect(getStoredVolunteerTargets()).toEqual(DEFAULT_VOLUNTEER_TARGETS_BY_SLOT);
     });
   });
 
@@ -192,7 +203,7 @@ describe('volunteerStaffingUtils', () => {
   });
 
   describe('calculateAllSundayStaffingNeeds', () => {
-    it('aggregates all 3 time slots across Sunday', () => {
+    it('aggregates different per-slot targets across Sunday', () => {
       const m1 = createMockMember('1', 'Usher1', 'Usher');
       const m2 = createMockMember('2', 'Usher2', 'Usher');
 
@@ -202,23 +213,25 @@ describe('volunteerStaffingUtils', () => {
         '3PM': [],
       };
 
-      const customTargets = {
-        Usher: 10,
-        'Backroom Support': 5,
+      const perSlotTargets = {
+        '9AM': { Usher: 10, 'Backroom Support': 5 },
+        '12NN': { Usher: 15, 'Backroom Support': 6 },
+        '3PM': { Usher: 20, 'Backroom Support': 7 },
       };
 
       const forecast = calculateAllSundayStaffingNeeds(
         entriesBySlot,
         undefined,
         '2026-10-04',
-        customTargets,
+        perSlotTargets,
       );
 
       expect(forecast.slot).toBe('ALL');
-      // Target across 3 slots: Usher: 10 * 3 = 30, Backroom: 5 * 3 = 15. Total = 45.
-      expect(forecast.totalTarget).toBe(45);
+      // Target across 3 slots: Usher = 10 + 15 + 20 = 45; Backroom = 5 + 6 + 7 = 18. Total = 63.
+      expect(forecast.totalTarget).toBe(63);
       expect(forecast.totalCommitted).toBe(2);
-      expect(forecast.roleBreakdown.find((r) => r.role === 'Usher')?.target).toBe(30);
+      expect(forecast.roleBreakdown.find((r) => r.role === 'Usher')?.target).toBe(45);
+      expect(forecast.roleBreakdown.find((r) => r.role === 'Backroom Support')?.target).toBe(18);
     });
   });
 });

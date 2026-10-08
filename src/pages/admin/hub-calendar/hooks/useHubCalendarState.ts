@@ -5,12 +5,22 @@ import { useSearchParams } from 'react-router-dom';
 import type { TimeSlot } from '@/hooks/domain/members';
 import type { WeekRange } from '@/lib/domain/hub-calendar';
 
+import type { ConfidenceTier } from '../utils';
+
 export const HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY = 'wc:hub-calendar:selected-date';
+export const HUB_CALENDAR_SUNDAY_FILTERS_STORAGE_KEY = 'wc:hub-calendar:sunday-filters';
 
 export interface StoredCalendarDate {
   year: number;
   monthIndex: number;
   dayNumber: number;
+}
+
+export interface StoredSundayFilters {
+  activeTab: TimeSlot;
+  selectedRole: string | null;
+  selectedConfidence: ConfidenceTier | null;
+  searchQuery: string;
 }
 
 export function getStoredCalendarDate(): StoredCalendarDate | null {
@@ -59,6 +69,54 @@ export function saveStoredCalendarDate(date: StoredCalendarDate): void {
     const serialized = JSON.stringify(date);
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(HUB_CALENDAR_SELECTED_DATE_STORAGE_KEY, serialized);
+    }
+  } catch {
+    // Ignore storage quota or disabled storage errors
+  }
+}
+
+export function getStoredSundayFilters(): StoredSundayFilters | null {
+  try {
+    const raw =
+      typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem(HUB_CALENDAR_SUNDAY_FILTERS_STORAGE_KEY)
+        : null;
+
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const activeTab: TimeSlot =
+        parsed.activeTab === '9AM' || parsed.activeTab === '12NN' || parsed.activeTab === '3PM'
+          ? parsed.activeTab
+          : '9AM';
+      const selectedRole = typeof parsed.selectedRole === 'string' ? parsed.selectedRole : null;
+      const selectedConfidence: ConfidenceTier | null =
+        parsed.selectedConfidence === 'solid' ||
+        parsed.selectedConfidence === 'moderate' ||
+        parsed.selectedConfidence === 'at_risk' ||
+        parsed.selectedConfidence === 'excused'
+          ? parsed.selectedConfidence
+          : null;
+      const searchQuery = typeof parsed.searchQuery === 'string' ? parsed.searchQuery : '';
+
+      return {
+        activeTab,
+        selectedRole,
+        selectedConfidence,
+        searchQuery,
+      };
+    }
+  } catch {
+    // Ignore storage parse or access errors
+  }
+  return null;
+}
+
+export function saveStoredSundayFilters(filters: StoredSundayFilters): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(HUB_CALENDAR_SUNDAY_FILTERS_STORAGE_KEY, JSON.stringify(filters));
     }
   } catch {
     // Ignore storage quota or disabled storage errors
@@ -114,9 +172,23 @@ export function useHubCalendarState() {
     }
     return today.getDate();
   });
-  const [activeTab, setActiveTab] = useState<TimeSlot>('9AM');
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [activeTab, setActiveTab] = useState<TimeSlot>(() => {
+    const stored = getStoredSundayFilters();
+    return stored?.activeTab ?? '9AM';
+  });
+  const [selectedRole, setSelectedRole] = useState<string | null>(() => {
+    const stored = getStoredSundayFilters();
+    return stored?.selectedRole ?? null;
+  });
+  const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceTier | null>(() => {
+    const stored = getStoredSundayFilters();
+    return stored?.selectedConfidence ?? null;
+  });
+  const [searchQuery, setSearchQuery] = useState<string>(() => {
+    const stored = getStoredSundayFilters();
+    return stored?.searchQuery ?? '';
+  });
 
   const minViewDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
   const maxViewDate = new Date(today.getFullYear() + 2, today.getMonth(), 1);
@@ -158,10 +230,17 @@ export function useHubCalendarState() {
     );
   }, [viewYear, viewMonthIndex, selectedDayNumber, isAtToday, setSearchParams]);
 
+  useEffect(() => {
+    saveStoredSundayFilters({
+      activeTab,
+      selectedRole,
+      selectedConfidence,
+      searchQuery,
+    });
+  }, [activeTab, selectedRole, selectedConfidence, searchQuery]);
+
   function handleTabChange(slot: TimeSlot) {
     setActiveTab(slot);
-    setSelectedRole(null);
-    setSearchQuery('');
   }
 
   function handlePreviousMonth() {
@@ -216,11 +295,13 @@ export function useHubCalendarState() {
     selectedDayNumber,
     activeTab,
     selectedRole,
+    selectedConfidence,
     searchQuery,
     isAtMinimumMonth,
     isAtMaximumMonth,
     isAtToday,
     setSelectedRole,
+    setSelectedConfidence,
     setSearchQuery,
     handleTabChange,
     handlePreviousMonth,

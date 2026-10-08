@@ -246,16 +246,18 @@ export function TabsTrigger({
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (
-      isSelected &&
-      triggerRef.current &&
-      typeof triggerRef.current.scrollIntoView === 'function'
-    ) {
-      triggerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+    if (isSelected && triggerRef.current) {
+      const parentList = triggerRef.current.closest('[role="tablist"]') as HTMLDivElement | null;
+      if (parentList && parentList.scrollWidth > parentList.clientWidth) {
+        const tabLeft = triggerRef.current.offsetLeft;
+        const tabWidth = triggerRef.current.offsetWidth;
+        const containerWidth = parentList.clientWidth;
+        const targetScrollLeft = tabLeft - containerWidth / 2 + tabWidth / 2;
+        parentList.scrollTo({
+          left: targetScrollLeft,
+          behavior: 'smooth',
+        });
+      }
     }
   }, [isSelected]);
 
