@@ -267,8 +267,9 @@ describe('SelectedDateDetails', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/Expected/i)).toBeInTheDocument();
-    expect(screen.getByText(/Confidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Realistic Expected Turnup:/i)).toBeInTheDocument();
+    expect(screen.getByText(/confidence/i)).toBeInTheDocument();
+    expect(screen.getByText('Volunteer Staffing Forecast')).toBeInTheDocument();
   });
 
   it('combines confidence tier filter from first line and role filter from second line', () => {

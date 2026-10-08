@@ -19,6 +19,7 @@ import {
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
+  getStoredVolunteerTargets,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
@@ -26,6 +27,7 @@ import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
 import { ShareSundayScheduleDialog } from './ShareSundayScheduleDialog';
 import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
+import { VolunteerStaffingModeler } from './VolunteerStaffingModeler';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
   const date = new Date(year, monthIndex, day);
@@ -83,6 +85,9 @@ export function SelectedDateDetails({
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceTier | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [volunteerTargets, setVolunteerTargets] = useState<Record<string, number>>(() =>
+    getStoredVolunteerTargets(),
+  );
 
   useEffect(() => {
     // Only scroll if there is an explicit ?date parameter in the URL on mount
@@ -432,37 +437,49 @@ export function SelectedDateDetails({
                   className="px-4 py-8"
                 />
               ) : (
-                <div>
-                  <div className="flex border-b border-border mb-4">
-                    {TIME_SLOT_TABS.map(({ slot, label }) => {
-                      const count = entriesByTimeSlot[slot].length;
-                      const isActive = activeTab === slot;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => handleTabChange(slot)}
-                          className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
-                            isActive
-                              ? 'text-primary border-b-2 border-primary -mb-px font-semibold'
-                              : 'text-muted hover:text-text'
-                          }`}
-                        >
-                          {label}
-                          {count > 0 && (
-                            <span
-                              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
-                                isActive ? 'bg-primary text-white' : 'bg-muted/20 text-muted'
-                              }`}
-                            >
-                              {count}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                <div className="space-y-5">
+                  <VolunteerStaffingModeler
+                    entriesByTimeSlot={entriesByTimeSlot}
+                    activeSlot={activeTab}
+                    excusedMap={excusedMap}
+                    attendanceScoreMap={attendanceScoreMap}
+                    isoDateKey={toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber)}
+                    targets={volunteerTargets}
+                    onSaveTargets={setVolunteerTargets}
+                  />
+
+                  <div>
+                    <div className="flex border-b border-border mb-4">
+                      {TIME_SLOT_TABS.map(({ slot, label }) => {
+                        const count = entriesByTimeSlot[slot].length;
+                        const isActive = activeTab === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => handleTabChange(slot)}
+                            className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
+                              isActive
+                                ? 'text-primary border-b-2 border-primary -mb-px font-semibold'
+                                : 'text-muted hover:text-text'
+                            }`}
+                          >
+                            {label}
+                            {count > 0 && (
+                              <span
+                                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                                  isActive ? 'bg-primary text-white' : 'bg-muted/20 text-muted'
+                                }`}
+                              >
+                                {count}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {renderMemberList(activeTab)}
                   </div>
-                  {renderMemberList(activeTab)}
                 </div>
               )
             ) : (
