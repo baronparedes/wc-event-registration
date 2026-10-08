@@ -77,17 +77,36 @@ async function ensureResourcesReady(element: HTMLElement): Promise<void> {
 
   const images = Array.from(element.querySelectorAll('img'));
   await Promise.all(
-    images.map(async (img) => {
-      if (img.complete && img.naturalWidth > 0) return;
-      try {
+    images.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        let isResolved = false;
+        const finish = () => {
+          if (!isResolved) {
+            isResolved = true;
+            resolve();
+          }
+        };
+
+        img.onload = finish;
+        img.onerror = finish; // Resolve on error so we don't block forever
+
+        // Also try decode if available as a fallback trigger
         if ('decode' in img && typeof img.decode === 'function') {
-          await img.decode();
+          img
+            .decode()
+            .then(finish)
+            .catch(() => {});
         }
-      } catch {
-        // Ignore individual image decode errors
-      }
+
+        // Safety timeout to prevent hanging if events don't fire
+        setTimeout(finish, 150);
+      });
     }),
   );
+
+  // Add a small delay to ensure the browser has flushed the rendering
+  await new Promise((resolve) => setTimeout(resolve, 150));
 }
 
 export function ShareSundayScheduleDialog({
