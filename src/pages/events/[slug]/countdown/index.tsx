@@ -246,14 +246,9 @@ export function EventCountdownPage() {
             <Home className="h-5 w-5 mr-2" aria-hidden="true" />
             Go Home
           </Button>
-          <Button
-            size="3xl"
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => setIsShareOpen(true)}
-          >
+          <Button size="3xl" className="w-full sm:w-auto" onClick={() => setIsShareOpen(true)}>
             <Share2 className="h-5 w-5 mr-2" aria-hidden="true" />
-            Share Countdown
+            Share
           </Button>
           {isRegistrationOpen && (
             <Button
