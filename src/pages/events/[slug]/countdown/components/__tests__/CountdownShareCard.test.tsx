@@ -10,6 +10,7 @@ describe('CountdownShareCard', () => {
     title: 'Global Dev Summit 2026',
     description: 'Join us for the premier tech conference',
     starts_at: '2026-11-20T10:00:00.000Z',
+    ends_at: '2026-11-20T18:00:00.000Z',
     location: 'Main Convention Hall A',
     slug: 'global-dev-summit-2026',
   };
@@ -62,6 +63,7 @@ describe('CountdownShareCard', () => {
       title: 'Secret Event',
       description: null,
       starts_at: null,
+      ends_at: null,
       location: null,
       slug: 'secret-event',
     };

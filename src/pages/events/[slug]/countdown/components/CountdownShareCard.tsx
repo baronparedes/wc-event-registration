@@ -3,7 +3,8 @@ import { Calendar, MapPin } from 'lucide-react';
 import { BrandAvatar, MarkdownRenderer } from '@/components/ui';
 import { LEGAL_CONFIG } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
-import { formatDateTime } from '@/lib/infrastructure';
+
+import { formatEventSchedule } from '../utils';
 
 export type TimeLeft = {
   days: number;
@@ -13,7 +14,7 @@ export type TimeLeft = {
 };
 
 export type CountdownShareCardProps = {
-  event: Pick<AdminEvent, 'title' | 'description' | 'starts_at' | 'location' | 'slug'>;
+  event: Pick<AdminEvent, 'title' | 'description' | 'starts_at' | 'ends_at' | 'location' | 'slug'>;
   coverUrl?: string | null;
   timeLeft: TimeLeft;
   qrCodeDataUrl?: string | null;
@@ -73,7 +74,7 @@ export function CountdownShareCard({
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200/90 bg-slate-100/90 px-4 py-2.5 text-sm sm:text-base font-bold text-slate-900 shadow-2xs">
             <Calendar className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-            <span>{event.starts_at ? formatDateTime(event.starts_at) : 'Date TBA'}</span>
+            <span>{formatEventSchedule(event.starts_at, event.ends_at)}</span>
           </div>
 
           {event.location && (

@@ -1,5 +1,7 @@
 import QRCode from 'qrcode';
 
+import { formatDateTime, formatTimeOnly } from '@/lib/infrastructure';
+
 export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent || '';
@@ -76,4 +78,42 @@ export async function generateQrCodeDataUrl(url: string): Promise<string> {
       light: '#ffffff',
     },
   });
+}
+
+export function formatEventSchedule(
+  startsAt: string | null | undefined,
+  endsAt: string | null | undefined,
+): string {
+  if (!startsAt) return 'Date TBA';
+
+  const startDate = new Date(startsAt);
+  if (Number.isNaN(startDate.getTime())) return 'Date TBA';
+
+  if (!endsAt) {
+    return formatDateTime(startsAt);
+  }
+
+  const endDate = new Date(endsAt);
+  if (Number.isNaN(endDate.getTime())) {
+    return formatDateTime(startsAt);
+  }
+
+  // Check if same calendar day
+  const isSameDay =
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate();
+
+  if (isSameDay) {
+    const formattedDate = startDate.toLocaleDateString(undefined, {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const startTime = formatTimeOnly(startsAt);
+    const endTime = formatTimeOnly(endsAt);
+    return `${formattedDate}, ${startTime} – ${endTime}`;
+  }
+
+  return `${formatDateTime(startsAt)} – ${formatDateTime(endsAt)}`;
 }
