@@ -128,7 +128,7 @@ describe('VolunteerStaffingModeler', () => {
     expect(screen.getByText('273')).toBeInTheDocument();
   });
 
-  it('allows collapsing and expanding the details', () => {
+  it('opens target configuration modal from the header action', () => {
     render(
       <VolunteerStaffingModeler
         entriesByTimeSlot={{ '9AM': [], '12NN': [], '3PM': [] }}
@@ -139,32 +139,8 @@ describe('VolunteerStaffingModeler', () => {
       />,
     );
 
-    expect(screen.getByText(/Total Target:/i)).toBeInTheDocument();
-
-    const collapseBtn = screen.getByLabelText(/Collapse staffing model/i);
-    fireEvent.click(collapseBtn);
-
-    expect(screen.queryByText(/Total Target:/i)).not.toBeInTheDocument();
-
-    const expandBtn = screen.getByLabelText(/Expand staffing model/i);
-    fireEvent.click(expandBtn);
-
-    expect(screen.getByText(/Total Target:/i)).toBeInTheDocument();
-  });
-
-  it('opens target configuration modal from the summary bar', () => {
-    render(
-      <VolunteerStaffingModeler
-        entriesByTimeSlot={{ '9AM': [], '12NN': [], '3PM': [] }}
-        activeSlot="9AM"
-        isoDateKey="2026-10-04"
-        targets={defaultTargets}
-        onSaveTargets={onSaveTargetsMock}
-      />,
-    );
-
-    const editTargetsBtn = screen.getByRole('button', { name: /Edit Targets/i });
-    fireEvent.click(editTargetsBtn);
+    const configTargetsBtn = screen.getByRole('button', { name: /Configure Targets/i });
+    fireEvent.click(configTargetsBtn);
 
     expect(
       screen.getByRole('heading', { name: /Configure Volunteer Targets & Thresholds/i }),

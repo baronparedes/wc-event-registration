@@ -197,7 +197,7 @@ export function TabsList({
           onScroll={checkScroll}
           role="tablist"
           onKeyDown={handleKeyDown}
-          className="flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
+          className="flex min-w-0 w-full items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
           {...props}
         >
           {children}

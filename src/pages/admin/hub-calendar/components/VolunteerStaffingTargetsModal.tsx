@@ -134,12 +134,12 @@ function VolunteerStaffingTargetsModalContent({
             value={modalTab}
             onValueChange={(val) => setModalTab(val as 'quotas' | 'thresholds')}
           >
-            <TabsList>
-              <TabsTrigger value="quotas" className="text-xs py-1.5 px-4">
+            <TabsList className="w-full">
+              <TabsTrigger value="quotas" className="flex-1 text-xs py-1.5 px-3">
                 <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 inline" />
                 Role Quotas
               </TabsTrigger>
-              <TabsTrigger value="thresholds" className="text-xs py-1.5 px-4">
+              <TabsTrigger value="thresholds" className="flex-1 text-xs py-1.5 px-3">
                 <Settings2 className="mr-1.5 h-3.5 w-3.5 inline" />
                 Turnup Thresholds
               </TabsTrigger>
@@ -150,9 +150,9 @@ function VolunteerStaffingTargetsModalContent({
             <div className="space-y-4 pt-1">
               {/* Slot Tabs */}
               <Tabs value={activeSlot} onValueChange={(val) => setActiveSlot(val as TimeSlot)}>
-                <TabsList>
+                <TabsList className="w-full">
                   {TIME_SLOTS.map(({ slot, label }) => (
-                    <TabsTrigger key={slot} value={slot} className="text-xs py-1.5 px-4">
+                    <TabsTrigger key={slot} value={slot} className="flex-1 text-xs py-1.5 px-3">
                       {label}
                     </TabsTrigger>
                   ))}
@@ -257,23 +257,29 @@ function VolunteerStaffingTargetsModalContent({
         </div>
       </Dialog.Body>
 
-      <Dialog.Footer className="flex items-center justify-between sm:justify-between w-full">
+      <Dialog.Footer className="flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 w-full">
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={handleResetToDefaults}
-          className="text-xs"
+          className="w-full sm:w-auto text-xs"
         >
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
           Reset {modalTab === 'quotas' ? 'Quotas' : 'Thresholds'}
         </Button>
 
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+        <div className="flex flex-col-reverse sm:flex-row items-center gap-2 w-full sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={handleSave}>
+          <Button type="button" size="sm" onClick={handleSave} className="w-full sm:w-auto">
             <Save className="mr-1.5 h-3.5 w-3.5" />
             Save Settings
           </Button>
