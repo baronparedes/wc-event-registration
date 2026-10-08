@@ -3,7 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, Share2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Badge, Button, EmptyState, SearchInputField, SectionCard } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  FormSelectField,
+  SearchInputField,
+  SectionCard,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import {
@@ -197,106 +207,98 @@ export function SelectedDateDetails({
         <SearchInputField
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
+          onClear={() => onSearchQueryChange('')}
           placeholder="Search by name or nickname..."
         />
 
-        {/* Filter Pills */}
-        <div className="flex flex-col gap-2">
-          {/* First line: Status / Confidence Tiers */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleConfidenceChange(null)}
-              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                effectiveConfidence === null
-                  ? 'bg-primary text-white'
-                  : 'bg-surface border border-border text-muted hover:text-text'
-              }`}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                handleConfidenceChange(effectiveConfidence === 'excused' ? null : 'excused')
-              }
-              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                effectiveConfidence === 'excused'
-                  ? 'bg-primary text-white'
-                  : 'bg-surface border border-border text-muted hover:text-text'
-              }`}
-            >
-              Excused
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                handleConfidenceChange(effectiveConfidence === 'solid' ? null : 'solid')
-              }
-              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                effectiveConfidence === 'solid'
-                  ? 'bg-primary text-white'
-                  : 'bg-surface border border-border text-muted hover:text-text'
-              }`}
-            >
-              Solid
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                handleConfidenceChange(effectiveConfidence === 'moderate' ? null : 'moderate')
-              }
-              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                effectiveConfidence === 'moderate'
-                  ? 'bg-primary text-white'
-                  : 'bg-surface border border-border text-muted hover:text-text'
-              }`}
-            >
-              Moderate
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                handleConfidenceChange(effectiveConfidence === 'at_risk' ? null : 'at_risk')
-              }
-              className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                effectiveConfidence === 'at_risk'
-                  ? 'bg-primary text-white'
-                  : 'bg-surface border border-border text-muted hover:text-text'
-              }`}
-            >
-              At Risk
-            </button>
+        {/* Mobile Filter Dropdowns */}
+        <div className="flex flex-col gap-3 sm:hidden">
+          <FormSelectField
+            id="mobile-tier-filter"
+            label="Reliability Tier"
+            value={effectiveConfidence ?? 'all'}
+            onChange={(val) =>
+              handleConfidenceChange(val === 'all' ? null : (val as ConfidenceTier))
+            }
+            options={[
+              { value: 'all', label: 'All Tiers' },
+              { value: 'solid', label: 'Solid' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'at_risk', label: 'At Risk' },
+              { value: 'excused', label: 'Excused' },
+            ]}
+          />
+
+          {uniqueRoles.length > 0 && (
+            <FormSelectField
+              id="mobile-role-filter"
+              label="Role"
+              value={selectedRole ?? 'all'}
+              onChange={(val) => onRoleChange(val === 'all' ? null : val)}
+              options={[
+                { value: 'all', label: 'All Roles' },
+                ...uniqueRoles.map((role) => ({ value: role, label: role })),
+              ]}
+            />
+          )}
+        </div>
+
+        {/* Desktop Filter Tabs */}
+        <div className="hidden sm:flex flex-col gap-2.5 rounded-xl border border-border/60 bg-surface-hover/20 p-3">
+          {/* Status / Confidence Tiers */}
+          <div className="flex flex-row items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <Tabs
+                value={effectiveConfidence ?? 'all'}
+                onValueChange={(val) =>
+                  handleConfidenceChange(val === 'all' ? null : (val as ConfidenceTier))
+                }
+              >
+                <TabsList containerClassName="justify-start" className="w-auto">
+                  <TabsTrigger value="all" className="text-xs py-1 px-3">
+                    All Tiers
+                  </TabsTrigger>
+                  <TabsTrigger value="solid" className="text-xs py-1 px-3">
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                    Solid
+                  </TabsTrigger>
+                  <TabsTrigger value="moderate" className="text-xs py-1 px-3">
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-amber-500" />
+                    Moderate
+                  </TabsTrigger>
+                  <TabsTrigger value="at_risk" className="text-xs py-1 px-3">
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-rose-500" />
+                    At Risk
+                  </TabsTrigger>
+                  <TabsTrigger value="excused" className="text-xs py-1 px-3">
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-muted" />
+                    Excused
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
-          {/* Second line+: Role Filters */}
+          {/* Role Filters */}
           {uniqueRoles.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onRoleChange(null)}
-                className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  selectedRole === null
-                    ? 'bg-primary text-white'
-                    : 'bg-surface border border-border text-muted hover:text-text'
-                }`}
-              >
-                All
-              </button>
-              {uniqueRoles.map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => onRoleChange(role === selectedRole ? null : role)}
-                  className={`min-w-20 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    selectedRole === role
-                      ? 'bg-primary text-white'
-                      : 'bg-surface border border-border text-muted hover:text-text'
-                  }`}
+            <div className="flex flex-row items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <Tabs
+                  value={selectedRole ?? 'all'}
+                  onValueChange={(val) => onRoleChange(val === 'all' ? null : val)}
                 >
-                  {role}
-                </button>
-              ))}
+                  <TabsList containerClassName="justify-start" className="w-auto">
+                    <TabsTrigger value="all" className="text-xs py-1 px-3">
+                      All Roles
+                    </TabsTrigger>
+                    {uniqueRoles.map((role) => (
+                      <TabsTrigger key={role} value={role} className="text-xs py-1 px-3">
+                        {role}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
             </div>
           )}
         </div>

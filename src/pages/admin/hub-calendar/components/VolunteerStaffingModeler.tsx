@@ -93,7 +93,7 @@ export function VolunteerStaffingModeler({
         <div className="flex w-full sm:w-auto items-center gap-2 shrink-0">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => setIsConfigOpen(true)}
             className="w-full sm:w-auto justify-center"
           >

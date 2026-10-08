@@ -197,14 +197,14 @@ describe('SelectedDateDetails', () => {
     );
 
     // Status/Confidence filters (first line)
-    expect(screen.getByRole('button', { name: 'Excused' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Solid' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Moderate' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'At Risk' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Excused/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Solid/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Moderate/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /At Risk/i })).toBeInTheDocument();
 
     // Role filters (second line)
-    expect(screen.getByRole('button', { name: 'Usher' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Greeter' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Usher' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Greeter' })).toBeInTheDocument();
   });
 
   it('filters member list by Excused status when clicking Excused pill on first line', () => {
@@ -238,7 +238,7 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
 
     // Click Excused pill on line 1
-    const excusedBtn = screen.getByRole('button', { name: 'Excused' });
+    const excusedBtn = screen.getByRole('tab', { name: /Excused/i });
     fireEvent.click(excusedBtn);
 
     // Only excused member 1 should be visible
@@ -311,7 +311,7 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
 
     // Click Solid filter pill on line 1
-    const solidBtn = screen.getByRole('button', { name: 'Solid' });
+    const solidBtn = screen.getByRole('tab', { name: /Solid/i });
     fireEvent.click(solidBtn);
 
     // Only Solid member (m1, Usher) visible
@@ -319,7 +319,7 @@ describe('SelectedDateDetails', () => {
     expect(screen.queryByText(mockMember2.full_name)).not.toBeInTheDocument();
 
     // Click Greeter role on line 2
-    const greeterBtn = screen.getByRole('button', { name: 'Greeter' });
+    const greeterBtn = screen.getByRole('tab', { name: 'Greeter' });
     fireEvent.click(greeterBtn);
     expect(handleRoleChange).toHaveBeenCalledWith('Greeter');
 
