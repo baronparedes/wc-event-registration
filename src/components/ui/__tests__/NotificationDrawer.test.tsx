@@ -208,7 +208,7 @@ describe('NotificationDrawer', () => {
 
     renderComponent(true);
 
-    const notifItem = screen.getByText('Unread notif').closest('[role="button"]')!;
+    const notifItem = screen.getByText('Unread notif').closest('button')!;
     fireEvent.click(notifItem);
 
     expect(mockMarkRead.mutate).toHaveBeenCalledWith('rec-1');

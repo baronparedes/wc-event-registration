@@ -115,7 +115,7 @@ describe('NotificationBell', () => {
     expect(screen.getByText('1 New')).toBeInTheDocument();
 
     // Click on unread notification item
-    const unreadItem = screen.getByText('Sunday Service Alert').closest('[role="button"]');
+    const unreadItem = screen.getByText('Sunday Service Alert').closest('button');
     expect(unreadItem).toBeInTheDocument();
     fireEvent.click(unreadItem!);
     expect(mockMarkRead.mutate).toHaveBeenCalledWith('rec-1');
