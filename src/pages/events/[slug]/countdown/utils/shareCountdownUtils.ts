@@ -69,7 +69,7 @@ export function formatCountdownFilename(slug?: string | null): string {
 export async function generateQrCodeDataUrl(url: string): Promise<string> {
   return QRCode.toDataURL(url, {
     margin: 1,
-    width: 200,
+    width: 400,
     errorCorrectionLevel: 'M',
     color: {
       dark: '#0f172a',
