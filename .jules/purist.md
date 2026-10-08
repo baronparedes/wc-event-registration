@@ -21,3 +21,9 @@
 **Deviation:** Modal component duplicated prop conditionally passed into it into an internal `useState` that toggled the modal visibility to be updated with an `useEffect`.
 **Learning:** React state variables derived purely from props create a source of truth duplication. `useEffect` used to sync props to states creates lag.
 **Standard:** Conditionally render components entirely without `useState` variables if it can be directly deduced from their props. In the specific scenario, render null to hide early if prop missing, then if prop exists pass `isOpen={true}` prop downward to child generic modal element.
+
+## 2025-02-09 - Removed Form Sync via useEffect in AdminEventAttendancePageState
+
+**Deviation:** State dependencies (`timeslot_enabled`, `enforce_check_in_event_window`, `timeslots`) were being manually reset via `useEffect` whenever their parent toggle (`attendance_enabled`, `timeslot_enabled`) was disabled.
+**Learning:** This is an anti-pattern (derived state via `useEffect`) and can cause hidden bugs if fields are secretly kept around.
+**Standard:** Removed `useEffect` entirely. Instead, the backend payload generation naturally zeroes out these fields during the `submitAttendanceSettings` handler if the parent toggles are false.
