@@ -377,4 +377,37 @@ describe('SelectedDateDetails', () => {
     fireEvent.click(shareButton);
     expect(screen.getByRole('heading', { name: 'Share Sunday Schedule' })).toBeInTheDocument();
   });
+
+  it('renders and supports clicking the All Sunday slot tab', () => {
+    const handleTabChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          activeTab="ALL"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={handleTabChange}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const allSundayBtn = screen.getByRole('button', { name: /All Sunday/i });
+    expect(allSundayBtn).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /9:00 AM/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('9AM');
+
+    // Both entry1 and entry2 are visible in ALL tab
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
+    expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
+  });
 });

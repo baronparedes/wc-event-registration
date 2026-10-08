@@ -104,7 +104,7 @@ describe('VolunteerStaffingModeler', () => {
     expect(screen.getByText('Need 49')).toBeInTheDocument(); // Prayer Coach (50 - 1)
   });
 
-  it('allows switching between active slot and all Sunday slots', () => {
+  it('renders all Sunday forecast when activeSlot is ALL', () => {
     const m1 = createMockMember('1', 'Alice', 'Usher');
     const m2 = createMockMember('2', 'Bob', 'Usher');
 
@@ -117,15 +117,12 @@ describe('VolunteerStaffingModeler', () => {
     render(
       <VolunteerStaffingModeler
         entriesByTimeSlot={entriesBySlot}
-        activeSlot="9AM"
+        activeSlot="ALL"
         isoDateKey="2026-10-04"
         targets={defaultTargets}
         onSaveTargets={onSaveTargetsMock}
       />,
     );
-
-    const allDayBtn = screen.getByRole('tab', { name: /All Sunday Slots/i });
-    fireEvent.click(allDayBtn);
 
     // Target across all 3 slots is 91 * 3 = 273
     expect(screen.getByText('273')).toBeInTheDocument();
@@ -170,7 +167,34 @@ describe('VolunteerStaffingModeler', () => {
     fireEvent.click(editTargetsBtn);
 
     expect(
-      screen.getByRole('heading', { name: /Configure Volunteer Targets/i }),
+      screen.getByRole('heading', { name: /Configure Volunteer Targets & Thresholds/i }),
     ).toBeInTheDocument();
+  });
+
+  it('uses custom confidence thresholds when provided', () => {
+    // 2 unrated volunteers with default 80% baseline -> round(1.6) = 2 turnup
+    // With custom baseline of 40% (0.4) -> round(0.8) = 1 turnup
+    const m1 = createMockMember('1', 'Alice', 'Usher');
+    const m2 = createMockMember('2', 'Bob', 'Usher');
+
+    const entriesBySlot = {
+      '9AM': [createScheduleEntry(m1, ['9AM']), createScheduleEntry(m2, ['9AM'])],
+      '12NN': [],
+      '3PM': [],
+    };
+
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={entriesBySlot}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+        thresholds={{ solid: 0.7, moderate: 0.4, defaultTurnupRate: 0.4 }}
+      />,
+    );
+
+    // Expected turnup should be ~1
+    expect(screen.getByText('~1')).toBeInTheDocument();
   });
 });

@@ -30,11 +30,13 @@ describe('VolunteerStaffingTargetsModal', () => {
       />,
     );
 
-    expect(screen.getByText('Configure Volunteer Targets')).toBeInTheDocument();
+    expect(screen.getByText(/Configure Volunteer Targets & Thresholds/i)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Role Quotas' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Turnup Thresholds' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '9:00 AM' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '12:00 NN' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '3:00 PM' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Usher')).toHaveValue('25');
+    expect(screen.getByLabelText('Usher')).toHaveValue('15');
     expect(screen.getByLabelText('Backroom Support')).toHaveValue('10');
     expect(screen.getByLabelText('Prayer Coach')).toHaveValue('50');
   });
@@ -58,18 +60,18 @@ describe('VolunteerStaffingTargetsModal', () => {
     const slot12NNTab = screen.getByRole('tab', { name: '12:00 NN' });
     fireEvent.click(slot12NNTab);
 
-    // 12NN Usher should still be 25
+    // 12NN Usher should still be 15
     const usherInput12NN = screen.getByLabelText('Usher');
-    expect(usherInput12NN).toHaveValue('25');
+    expect(usherInput12NN).toHaveValue('15');
     fireEvent.change(usherInput12NN, { target: { value: '40' } });
 
-    const saveBtn = screen.getByRole('button', { name: /Save Targets/i });
+    const saveBtn = screen.getByRole('button', { name: /Save Settings/i });
     fireEvent.click(saveBtn);
 
     expect(onSaveMock).toHaveBeenCalledWith({
       '9AM': expect.objectContaining({ Usher: 30 }),
       '12NN': expect.objectContaining({ Usher: 40 }),
-      '3PM': expect.objectContaining({ Usher: 25 }),
+      '3PM': expect.objectContaining({ Usher: 15 }),
     });
     expect(onCloseMock).toHaveBeenCalledTimes(1);
   });
@@ -112,9 +114,69 @@ describe('VolunteerStaffingTargetsModal', () => {
 
     expect(screen.getByLabelText('Usher')).toHaveValue('100');
 
-    const resetBtn = screen.getByRole('button', { name: /Reset Defaults/i });
+    const resetBtn = screen.getByRole('button', { name: /Reset Quotas/i });
     fireEvent.click(resetBtn);
 
-    expect(screen.getByLabelText('Usher')).toHaveValue('25');
+    expect(screen.getByLabelText('Usher')).toHaveValue('15');
+  });
+
+  it('switches to Turnup Thresholds tab, edits thresholds, and saves them', () => {
+    const onSaveThresholdsMock = vi.fn();
+    render(
+      <VolunteerStaffingTargetsModal
+        isOpen={true}
+        onClose={onCloseMock}
+        targets={defaultTargets}
+        onSaveTargets={onSaveMock}
+        onSaveThresholds={onSaveThresholdsMock}
+      />,
+    );
+
+    // Switch to Turnup Thresholds tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Turnup Thresholds' }));
+
+    expect(screen.getByLabelText(/Solid Tier Minimum Turnup/i)).toHaveValue('70');
+    expect(screen.getByLabelText(/Moderate Tier Minimum Turnup/i)).toHaveValue('40');
+    expect(screen.getByLabelText(/New \/ Unranked Member Baseline Turnup/i)).toHaveValue('80');
+
+    // Change Solid to 75, Moderate to 45, Baseline to 85
+    fireEvent.change(screen.getByLabelText(/Solid Tier Minimum Turnup/i), {
+      target: { value: '75' },
+    });
+    fireEvent.change(screen.getByLabelText(/Moderate Tier Minimum Turnup/i), {
+      target: { value: '45' },
+    });
+    fireEvent.change(screen.getByLabelText(/New \/ Unranked Member Baseline Turnup/i), {
+      target: { value: '85' },
+    });
+
+    const saveBtn = screen.getByRole('button', { name: /Save Settings/i });
+    fireEvent.click(saveBtn);
+
+    expect(onSaveThresholdsMock).toHaveBeenCalledWith({
+      solid: 0.75,
+      moderate: 0.45,
+      defaultTurnupRate: 0.85,
+    });
+  });
+
+  it('resets thresholds to default values when on thresholds tab', () => {
+    render(
+      <VolunteerStaffingTargetsModal
+        isOpen={true}
+        onClose={onCloseMock}
+        targets={defaultTargets}
+        onSaveTargets={onSaveMock}
+        thresholds={{ solid: 0.8, moderate: 0.5, defaultTurnupRate: 0.9 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Turnup Thresholds' }));
+    expect(screen.getByLabelText(/Solid Tier Minimum Turnup/i)).toHaveValue('80');
+
+    fireEvent.click(screen.getByRole('button', { name: /Reset Thresholds/i }));
+    expect(screen.getByLabelText(/Solid Tier Minimum Turnup/i)).toHaveValue('70');
+    expect(screen.getByLabelText(/Moderate Tier Minimum Turnup/i)).toHaveValue('40');
+    expect(screen.getByLabelText(/New \/ Unranked Member Baseline Turnup/i)).toHaveValue('80');
   });
 });

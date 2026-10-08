@@ -4,6 +4,7 @@ import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
 import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 import {
+  calculateAllSundayConfidenceForecast,
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
@@ -219,7 +220,51 @@ describe('getMemberConfidenceTooltip', () => {
 
   it('provides default fallback explanation when no attendance stats are recorded', () => {
     expect(getMemberConfidenceTooltip(false, undefined)).toBe(
-      'Solid (80% turnup): High reliability volunteer (default baseline rate).',
+      'Solid (80% turnup): High reliability volunteer (80% default baseline rate).',
     );
+  });
+
+  it('respects custom confidence thresholds for tooltips', () => {
+    const customThresholds = { solid: 0.85, moderate: 0.5, defaultTurnupRate: 0.6 };
+    expect(getMemberConfidenceTooltip(false, undefined, customThresholds)).toBe(
+      'Moderate (60% turnup): Fair attendance fidelity (50%–84% range).',
+    );
+  });
+});
+
+describe('calculateAllSundayConfidenceForecast', () => {
+  it('correctly aggregates forecasts across all 3 Sunday service slots', () => {
+    const m1 = createMockMember('m1', 'SolidUser');
+    const m2 = createMockMember('m2', 'ModerateUser');
+
+    // m1 serves in 9AM and 12NN (2 slot assignments)
+    const entriesBySlot = {
+      '9AM': [createScheduleEntry(m1)],
+      '12NN': [createScheduleEntry(m1), createScheduleEntry(m2)],
+      '3PM': [createScheduleEntry(m2)],
+    };
+
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['m1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }],
+      ['m2', { attendanceScore: 5, committed: 10, attended: 5, turnupRate: 0.5 }],
+    ]);
+
+    const result = calculateAllSundayConfidenceForecast(
+      entriesBySlot,
+      undefined,
+      '2026-10-04',
+      statsMap,
+    );
+
+    // Total slot assignments = 1 + 2 + 1 = 4
+    expect(result.totalCommitted).toBe(4);
+    // 9AM: m1 (1.0 -> 1)
+    // 12NN: m1 (1.0) + m2 (0.5) = 1.5 -> 2
+    // 3PM: m2 (0.5) -> 1
+    // Total turnup = 1 + 2 + 1 = 4
+    expect(result.expectedTurnup).toBe(4);
+    expect(result.highCount).toBe(2); // m1 across 2 slots
+    expect(result.moderateCount).toBe(2); // m2 across 2 slots
+    expect(result.excusedCount).toBe(0);
   });
 });

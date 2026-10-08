@@ -16,8 +16,10 @@ export interface StoredCalendarDate {
   dayNumber: number;
 }
 
+export type CalendarSlotTab = TimeSlot | 'ALL';
+
 export interface StoredSundayFilters {
-  activeTab: TimeSlot;
+  activeTab: CalendarSlotTab;
   selectedRole: string | null;
   selectedConfidence: ConfidenceTier | null;
   searchQuery: string;
@@ -86,8 +88,11 @@ export function getStoredSundayFilters(): StoredSundayFilters | null {
 
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object') {
-      const activeTab: TimeSlot =
-        parsed.activeTab === '9AM' || parsed.activeTab === '12NN' || parsed.activeTab === '3PM'
+      const activeTab: CalendarSlotTab =
+        parsed.activeTab === '9AM' ||
+        parsed.activeTab === '12NN' ||
+        parsed.activeTab === '3PM' ||
+        parsed.activeTab === 'ALL'
           ? parsed.activeTab
           : '9AM';
       const selectedRole = typeof parsed.selectedRole === 'string' ? parsed.selectedRole : null;
@@ -173,7 +178,7 @@ export function useHubCalendarState() {
     return today.getDate();
   });
 
-  const [activeTab, setActiveTab] = useState<TimeSlot>(() => {
+  const [activeTab, setActiveTab] = useState<CalendarSlotTab>(() => {
     const stored = getStoredSundayFilters();
     return stored?.activeTab ?? '9AM';
   });
@@ -239,7 +244,7 @@ export function useHubCalendarState() {
     });
   }, [activeTab, selectedRole, selectedConfidence, searchQuery]);
 
-  function handleTabChange(slot: TimeSlot) {
+  function handleTabChange(slot: CalendarSlotTab) {
     setActiveTab(slot);
   }
 

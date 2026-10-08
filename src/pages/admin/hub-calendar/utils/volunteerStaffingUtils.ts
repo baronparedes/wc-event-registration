@@ -1,13 +1,18 @@
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
-import { DEFAULT_MEMBER_TURNUP_RATE, isMemberExcused } from '@/lib/domain/hub-calendar';
+import { isMemberExcused } from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
+
+import {
+  type ConfidenceThresholds,
+  DEFAULT_CONFIDENCE_THRESHOLDS,
+} from './hubCalendarForecastUtils';
 
 export type SlotRoleTargets = Record<string, number>;
 export type VolunteerTargetsBySlot = Record<TimeSlot, SlotRoleTargets>;
 
 export const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
-  Usher: 25,
+  Usher: 15,
   'Backroom Support': 10,
   'Prayer Coach': 50,
   'IMT Support': 4,
@@ -16,8 +21,8 @@ export const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
 
 export const DEFAULT_VOLUNTEER_TARGETS_BY_SLOT: VolunteerTargetsBySlot = {
   '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-  '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, 'Prayer Coach': 40 },
+  '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, 'Prayer Coach': 60 },
 };
 
 export const ORDERED_STANDARD_ROLES = [
@@ -47,8 +52,11 @@ export function normalizeStaffingRole(rawRole?: string | null): string {
   return firstPart || 'General Volunteer';
 }
 
-function sanitizeSlotTargets(slotData: unknown): SlotRoleTargets {
-  const sanitized: SlotRoleTargets = { ...DEFAULT_VOLUNTEER_ROLE_TARGETS };
+function sanitizeSlotTargets(
+  slotData: unknown,
+  fallback: SlotRoleTargets = DEFAULT_VOLUNTEER_ROLE_TARGETS,
+): SlotRoleTargets {
+  const sanitized: SlotRoleTargets = { ...fallback };
   if (slotData && typeof slotData === 'object' && !Array.isArray(slotData)) {
     for (const [key, value] of Object.entries(slotData as Record<string, unknown>)) {
       if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
@@ -63,17 +71,17 @@ export function getStoredVolunteerTargets(): VolunteerTargetsBySlot {
   try {
     if (typeof localStorage === 'undefined') {
       return {
-        '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-        '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-        '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+        '9AM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM'] },
+        '12NN': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN'] },
+        '3PM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM'] },
       };
     }
     const raw = localStorage.getItem(HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY);
     if (!raw) {
       return {
-        '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-        '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-        '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+        '9AM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM'] },
+        '12NN': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN'] },
+        '3PM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM'] },
       };
     }
 
@@ -83,9 +91,9 @@ export function getStoredVolunteerTargets(): VolunteerTargetsBySlot {
       const hasSlotKeys = '9AM' in parsed || '12NN' in parsed || '3PM' in parsed;
       if (hasSlotKeys) {
         return {
-          '9AM': sanitizeSlotTargets(parsed['9AM']),
-          '12NN': sanitizeSlotTargets(parsed['12NN']),
-          '3PM': sanitizeSlotTargets(parsed['3PM']),
+          '9AM': sanitizeSlotTargets(parsed['9AM'], DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM']),
+          '12NN': sanitizeSlotTargets(parsed['12NN'], DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN']),
+          '3PM': sanitizeSlotTargets(parsed['3PM'], DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM']),
         };
       }
 
@@ -101,9 +109,9 @@ export function getStoredVolunteerTargets(): VolunteerTargetsBySlot {
     // Ignore storage parse or access errors
   }
   return {
-    '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-    '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-    '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+    '9AM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM'] },
+    '12NN': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN'] },
+    '3PM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM'] },
   };
 }
 
@@ -146,6 +154,7 @@ export function calculateSlotStaffingNeeds(
   slot: TimeSlot,
   targets: Record<string, number> = DEFAULT_VOLUNTEER_ROLE_TARGETS,
   statsMap?: Map<string, MemberAttendanceStats>,
+  thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
 ): SlotStaffingForecast {
   // Map normalized role to entries
   const roleEntriesMap = new Map<
@@ -173,7 +182,7 @@ export function calculateSlotStaffingNeeds(
 
     group.committed.push(entry);
     const stat = statsMap?.get(entry.member.id);
-    const turnupRate = stat !== undefined ? stat.turnupRate : DEFAULT_MEMBER_TURNUP_RATE;
+    const turnupRate = stat !== undefined ? stat.turnupRate : thresholds.defaultTurnupRate;
     group.probabilitySum += turnupRate;
   }
 
@@ -245,6 +254,7 @@ export function calculateAllSundayStaffingNeeds(
   isoDateKey: string,
   targets: VolunteerTargetsBySlot | SlotRoleTargets = DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   statsMap?: Map<string, MemberAttendanceStats>,
+  thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
 ): SlotStaffingForecast {
   const isPerSlotTargets = '9AM' in targets || '12NN' in targets || '3PM' in targets;
   const targetsBySlot: VolunteerTargetsBySlot = isPerSlotTargets
@@ -262,8 +272,9 @@ export function calculateAllSundayStaffingNeeds(
       excusedMap,
       isoDateKey,
       slot,
-      targetsBySlot[slot] ?? DEFAULT_VOLUNTEER_ROLE_TARGETS,
+      targetsBySlot[slot] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT[slot],
       statsMap,
+      thresholds,
     ),
   );
 

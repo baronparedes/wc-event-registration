@@ -105,17 +105,17 @@ describe('volunteerStaffingUtils', () => {
   describe('calculateSlotStaffingNeeds', () => {
     it('calculates full deficit when no members are scheduled', () => {
       const forecast = calculateSlotStaffingNeeds([], undefined, '2026-10-04', '9AM');
-      expect(forecast.totalTarget).toBe(91); // 25 + 10 + 50 + 4 + 2
+      expect(forecast.totalTarget).toBe(81); // 15 + 10 + 50 + 4 + 2
       expect(forecast.totalCommitted).toBe(0);
       expect(forecast.totalExpectedTurnup).toBe(0);
-      expect(forecast.totalNeeded).toBe(91);
+      expect(forecast.totalNeeded).toBe(81);
       expect(forecast.overallFulfillmentPercentage).toBe(0);
 
       const usher = forecast.roleBreakdown.find((r) => r.role === 'Usher');
       expect(usher).toBeDefined();
-      expect(usher?.target).toBe(25);
+      expect(usher?.target).toBe(15);
       expect(usher?.expectedTurnup).toBe(0);
-      expect(usher?.needed).toBe(25);
+      expect(usher?.needed).toBe(15);
     });
 
     it('calculates expected turnup with attendance probabilities and deficits', () => {
@@ -156,11 +156,11 @@ describe('volunteerStaffingUtils', () => {
       expect(forecast.totalCommitted).toBe(4);
       expect(forecast.totalExcused).toBe(1);
 
-      // Ushers: 1.0 + 0.6 = 1.6 -> round(2). Target 25 -> needed 23.
+      // Ushers: 1.0 + 0.6 = 1.6 -> round(2). Target 15 -> needed 13.
       const usher = forecast.roleBreakdown.find((r) => r.role === 'Usher')!;
       expect(usher.committed).toBe(2);
       expect(usher.expectedTurnup).toBe(2);
-      expect(usher.needed).toBe(23);
+      expect(usher.needed).toBe(13);
 
       // Backroom: 0.8 -> round(1). Target 10 -> needed 9.
       const backroom = forecast.roleBreakdown.find((r) => r.role === 'Backroom Support')!;
@@ -174,6 +174,27 @@ describe('volunteerStaffingUtils', () => {
       expect(pc.excused).toBe(1);
       expect(pc.expectedTurnup).toBe(0);
       expect(pc.needed).toBe(50);
+    });
+
+    it('applies custom baseline turnup rate for unranked members from thresholds', () => {
+      const m1 = createMockMember('1', 'Alice', 'Usher');
+      const m2 = createMockMember('2', 'Bob', 'Usher');
+      const entries = [createScheduleEntry(m1), createScheduleEntry(m2)];
+
+      const customThresholds = { solid: 0.7, moderate: 0.4, defaultTurnupRate: 0.5 };
+      const forecast = calculateSlotStaffingNeeds(
+        entries,
+        undefined,
+        '2026-10-04',
+        '9AM',
+        DEFAULT_VOLUNTEER_ROLE_TARGETS,
+        undefined,
+        customThresholds,
+      );
+
+      // 2 unrated volunteers with 0.5 rate -> 1.0 expected turnup
+      const usher = forecast.roleBreakdown.find((r) => r.role === 'Usher')!;
+      expect(usher.expectedTurnup).toBe(1);
     });
 
     it('correctly handles surplus when expected turnup exceeds target', () => {

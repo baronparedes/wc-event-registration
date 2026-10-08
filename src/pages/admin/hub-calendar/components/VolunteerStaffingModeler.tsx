@@ -1,21 +1,18 @@
 import { useState } from 'react';
 
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  SlidersHorizontal,
-  Users,
-} from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp, SlidersHorizontal, Users } from 'lucide-react';
 
-import { Badge, Button, Tabs, TabsList, TabsTrigger } from '@/components/ui';
+import { Badge, Button } from '@/components/ui';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import {
-  DEFAULT_VOLUNTEER_ROLE_TARGETS,
+  type ConfidenceThresholds,
+  DEFAULT_CONFIDENCE_THRESHOLDS,
+} from '../utils/hubCalendarForecastUtils';
+import {
+  DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   type VolunteerTargetsBySlot,
   calculateAllSundayStaffingNeeds,
   calculateSlotStaffingNeeds,
@@ -24,12 +21,14 @@ import { VolunteerStaffingTargetsModal } from './VolunteerStaffingTargetsModal';
 
 export type VolunteerStaffingModelerProps = {
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
-  activeSlot: TimeSlot;
+  activeSlot: TimeSlot | 'ALL';
   excusedMap?: ExcusedMemberMap;
   attendanceScoreMap?: Map<string, MemberAttendanceStats>;
   isoDateKey: string;
   targets: VolunteerTargetsBySlot;
   onSaveTargets: (newTargets: VolunteerTargetsBySlot) => void;
+  thresholds?: ConfidenceThresholds;
+  onSaveThresholds?: (newThresholds: ConfidenceThresholds) => void;
 };
 
 export function VolunteerStaffingModeler({
@@ -40,32 +39,31 @@ export function VolunteerStaffingModeler({
   isoDateKey,
   targets,
   onSaveTargets,
+  thresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
+  onSaveThresholds,
 }: VolunteerStaffingModelerProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [scope, setScope] = useState<'active_slot' | 'all_day'>('active_slot');
 
-  const slotForecast = calculateSlotStaffingNeeds(
-    entriesByTimeSlot[activeSlot] || [],
-    excusedMap,
-    isoDateKey,
-    activeSlot,
-    targets[activeSlot] ?? DEFAULT_VOLUNTEER_ROLE_TARGETS,
-    attendanceScoreMap,
-  );
-
-  const allDayForecast = calculateAllSundayStaffingNeeds(
-    entriesByTimeSlot,
-    excusedMap,
-    isoDateKey,
-    targets,
-    attendanceScoreMap,
-  );
-
-  const currentForecast = scope === 'active_slot' ? slotForecast : allDayForecast;
-
-  const slotLabel =
-    activeSlot === '9AM' ? '9:00 AM' : activeSlot === '12NN' ? '12:00 NN' : '3:00 PM';
+  const currentForecast =
+    activeSlot === 'ALL'
+      ? calculateAllSundayStaffingNeeds(
+          entriesByTimeSlot,
+          excusedMap,
+          isoDateKey,
+          targets,
+          attendanceScoreMap,
+          thresholds,
+        )
+      : calculateSlotStaffingNeeds(
+          entriesByTimeSlot[activeSlot] || [],
+          excusedMap,
+          isoDateKey,
+          activeSlot,
+          targets[activeSlot] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT[activeSlot],
+          attendanceScoreMap,
+          thresholds,
+        );
 
   return (
     <div className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-xs overflow-hidden">
@@ -94,23 +92,6 @@ export function VolunteerStaffingModeler({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Scope switch Tabs */}
-          <Tabs
-            value={scope}
-            onValueChange={(val) => setScope(val as 'active_slot' | 'all_day')}
-            className="w-auto shrink-0"
-          >
-            <TabsList containerClassName="w-auto" className="p-0.5">
-              <TabsTrigger value="active_slot" className="text-xs py-1 px-3">
-                <Clock className="mr-1.5 h-3.5 w-3.5 inline" />
-                {slotLabel}
-              </TabsTrigger>
-              <TabsTrigger value="all_day" className="text-xs py-1 px-3">
-                All Sunday Slots
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           <Button
             type="button"
             variant="ghost"
@@ -137,7 +118,7 @@ export function VolunteerStaffingModeler({
                   type="button"
                   onClick={() => setIsConfigOpen(true)}
                   className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover hover:underline ml-1 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded"
-                  title="Configure Target Quotas"
+                  title="Configure Target Quotas & Thresholds"
                   aria-label="Edit Targets"
                 >
                   <SlidersHorizontal className="h-3 w-3" />
@@ -158,17 +139,11 @@ export function VolunteerStaffingModeler({
                   )
                 </span>
               </div>
-
-              <div className="inline-flex items-center gap-1.5">
-                <span className="text-muted">Fulfillment:</span>
-                <strong className="font-semibold text-text">
-                  {currentForecast.overallFulfillmentPercentage}%
-                </strong>
-              </div>
             </div>
 
-            <div className="w-full lg:w-44 flex items-center gap-2 pt-1 lg:pt-0">
-              <div className="h-2 flex-1 rounded-full bg-border overflow-hidden">
+            <div className="flex items-center gap-2 pt-1 lg:pt-0 shrink-0">
+              <span className="text-muted">Fulfillment:</span>
+              <div className="h-2 w-28 sm:w-36 rounded-full bg-border overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     currentForecast.totalNeeded === 0 ? 'bg-emerald-500' : 'bg-primary'
@@ -178,9 +153,9 @@ export function VolunteerStaffingModeler({
                   }}
                 />
               </div>
-              <span className="text-[11px] font-semibold text-text shrink-0 tabular-nums">
+              <strong className="font-semibold text-text tabular-nums">
                 {currentForecast.overallFulfillmentPercentage}%
-              </span>
+              </strong>
             </div>
           </div>
 
@@ -244,7 +219,9 @@ export function VolunteerStaffingModeler({
         onClose={() => setIsConfigOpen(false)}
         targets={targets}
         onSaveTargets={onSaveTargets}
-        initialSlot={activeSlot}
+        thresholds={thresholds}
+        onSaveThresholds={onSaveThresholds}
+        initialSlot={activeSlot === 'ALL' ? '9AM' : activeSlot}
       />
     </div>
   );

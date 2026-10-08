@@ -15,12 +15,15 @@ import {
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import {
+  type ConfidenceThresholds,
   type ConfidenceTier,
   type VolunteerTargetsBySlot,
+  calculateAllSundayConfidenceForecast,
   calculateSlotConfidenceForecast,
   getConfidenceTierLabel,
   getMemberConfidenceTier,
   getMemberConfidenceTooltip,
+  getStoredConfidenceThresholds,
   getStoredVolunteerTargets,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
@@ -41,10 +44,11 @@ function formatSelectedDate(year: number, monthIndex: number, day: number): stri
   });
 }
 
-const TIME_SLOT_TABS: { slot: TimeSlot; label: string }[] = [
+const TIME_SLOT_TABS: { slot: TimeSlot | 'ALL'; label: string }[] = [
   { slot: '9AM', label: '9:00 AM' },
   { slot: '12NN', label: '12:00 NN' },
   { slot: '3PM', label: '3:00 PM' },
+  { slot: 'ALL', label: 'All Sunday' },
 ];
 
 type SelectedDateDetailsProps = {
@@ -57,11 +61,11 @@ type SelectedDateDetailsProps = {
   isCurrentSelectedSunday: boolean;
   excusedMap?: ExcusedMemberMap;
   attendanceScoreMap?: Map<string, MemberAttendanceStats>;
-  activeTab: TimeSlot;
+  activeTab: TimeSlot | 'ALL';
   selectedRole: string | null;
   selectedConfidence?: ConfidenceTier | null;
   searchQuery: string;
-  onTabChange: (slot: TimeSlot) => void;
+  onTabChange: (slot: TimeSlot | 'ALL') => void;
   onRoleChange: (role: string | null) => void;
   onConfidenceChange?: (tier: ConfidenceTier | null) => void;
   onSearchQueryChange: (query: string) => void;
@@ -98,6 +102,9 @@ export function SelectedDateDetails({
   const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
     getStoredVolunteerTargets(),
   );
+  const [confidenceThresholds, setConfidenceThresholds] = useState<ConfidenceThresholds>(() =>
+    getStoredConfidenceThresholds(),
+  );
 
   useEffect(() => {
     // Only scroll if there is an explicit ?date parameter in the URL on mount
@@ -108,21 +115,24 @@ export function SelectedDateDetails({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTabChange = (slot: TimeSlot) => {
+  const handleTabChange = (slot: TimeSlot | 'ALL') => {
     onTabChange(slot);
   };
 
-  function renderMemberList(slot: TimeSlot) {
-    const entries = entriesByTimeSlot[slot];
+  function renderMemberList(slot: TimeSlot | 'ALL') {
+    const entries = slot === 'ALL' ? selectedEntries : entriesByTimeSlot[slot];
     if (entries.length === 0) {
       return (
         <p className="py-8 text-center text-sm text-muted">
-          No members scheduled for this service.
+          {slot === 'ALL'
+            ? 'No members scheduled for this Sunday.'
+            : 'No members scheduled for this service.'}
         </p>
       );
     }
 
     const isoDateKey = toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber);
+    const targetSlot = slot === 'ALL' ? undefined : slot;
 
     const uniqueRoles = Array.from(
       new Set(entries.map((e) => e.member.role).filter(Boolean)),
@@ -136,9 +146,10 @@ export function SelectedDateDetails({
               getMemberConfidenceTier(
                 e.member,
                 isoDateKey,
-                slot,
+                targetSlot,
                 excusedMap,
                 attendanceScoreMap,
+                confidenceThresholds,
               ) === effectiveConfidence,
           );
 
@@ -157,13 +168,23 @@ export function SelectedDateDetails({
         )
       : filteredByRole;
 
-    const forecast = calculateSlotConfidenceForecast(
-      entries,
-      excusedMap,
-      isoDateKey,
-      slot,
-      attendanceScoreMap,
-    );
+    const forecast =
+      slot === 'ALL'
+        ? calculateAllSundayConfidenceForecast(
+            entriesByTimeSlot,
+            excusedMap,
+            isoDateKey,
+            attendanceScoreMap,
+            confidenceThresholds,
+          )
+        : calculateSlotConfidenceForecast(
+            entries,
+            excusedMap,
+            isoDateKey,
+            targetSlot,
+            attendanceScoreMap,
+            confidenceThresholds,
+          );
 
     return (
       <div className="flex flex-col gap-4">
@@ -295,9 +316,9 @@ export function SelectedDateDetails({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {filteredEntries.map((entry) => {
-              const isExcused = isMemberExcused(excusedMap, isoDateKey, entry.member, slot);
+              const isExcused = isMemberExcused(excusedMap, isoDateKey, entry.member, targetSlot);
               const stats = attendanceScoreMap?.get(entry.member.id);
-              const tooltip = getMemberConfidenceTooltip(isExcused, stats);
+              const tooltip = getMemberConfidenceTooltip(isExcused, stats, confidenceThresholds);
 
               return (
                 <button
@@ -317,6 +338,7 @@ export function SelectedDateDetails({
                     className="border-2 border-surface shadow-sm"
                     excused={isExcused}
                     turnupRate={stats?.turnupRate}
+                    thresholds={confidenceThresholds}
                   />
                   <div className="min-w-0 w-full">
                     <p className="truncate text-sm font-medium text-text">
@@ -327,6 +349,23 @@ export function SelectedDateDetails({
                       <p className="mt-1 truncate text-xs font-medium text-primary/70">
                         {entry.member.role}
                       </p>
+                    )}
+                    {slot === 'ALL' && entry.timeSlots && entry.timeSlots.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                        {entry.timeSlots.map((ts) => {
+                          const label =
+                            ts === '9AM' ? '9:00 AM' : ts === '12NN' ? '12:00 NN' : '3:00 PM';
+                          return (
+                            <Badge
+                              key={ts}
+                              variant="secondary"
+                              className="text-[10px] px-1.5 py-0.5"
+                            >
+                              {label}
+                            </Badge>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </button>
@@ -459,27 +498,23 @@ export function SelectedDateDetails({
                 />
               ) : (
                 <div className="space-y-5">
-                  <VolunteerStaffingModeler
-                    entriesByTimeSlot={entriesByTimeSlot}
-                    activeSlot={activeTab}
-                    excusedMap={excusedMap}
-                    attendanceScoreMap={attendanceScoreMap}
-                    isoDateKey={toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber)}
-                    targets={volunteerTargets}
-                    onSaveTargets={setVolunteerTargets}
-                  />
-
+                  {/* Slot selector tabs: 9:00 AM | 12:00 NN | 3:00 PM | All Sunday */}
                   <div>
-                    <div className="flex border-b border-border mb-4">
+                    <div className="flex border-b border-border mb-4 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                       {TIME_SLOT_TABS.map(({ slot, label }) => {
-                        const count = entriesByTimeSlot[slot].length;
+                        const totalSlotAssignments =
+                          entriesByTimeSlot['9AM'].length +
+                          entriesByTimeSlot['12NN'].length +
+                          entriesByTimeSlot['3PM'].length;
+                        const count =
+                          slot === 'ALL' ? totalSlotAssignments : entriesByTimeSlot[slot].length;
                         const isActive = activeTab === slot;
                         return (
                           <button
                             key={slot}
                             type="button"
                             onClick={() => handleTabChange(slot)}
-                            className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
+                            className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none shrink-0 ${
                               isActive
                                 ? 'text-primary border-b-2 border-primary -mb-px font-semibold'
                                 : 'text-muted hover:text-text'
@@ -499,7 +534,24 @@ export function SelectedDateDetails({
                         );
                       })}
                     </div>
-                    {renderMemberList(activeTab)}
+
+                    <div className="space-y-4">
+                      {/* Staffing forecast below slot selector */}
+                      <VolunteerStaffingModeler
+                        entriesByTimeSlot={entriesByTimeSlot}
+                        activeSlot={activeTab}
+                        excusedMap={excusedMap}
+                        attendanceScoreMap={attendanceScoreMap}
+                        isoDateKey={toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber)}
+                        targets={volunteerTargets}
+                        onSaveTargets={setVolunteerTargets}
+                        thresholds={confidenceThresholds}
+                        onSaveThresholds={setConfidenceThresholds}
+                      />
+
+                      {/* Filterable Member Directory */}
+                      {renderMemberList(activeTab)}
+                    </div>
                   </div>
                 </div>
               )

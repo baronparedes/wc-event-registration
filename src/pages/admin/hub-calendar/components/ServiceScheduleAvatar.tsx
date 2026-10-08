@@ -2,7 +2,7 @@ import { CalendarOff } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
-import { getConfidenceBorderVariant } from '../utils';
+import { type ConfidenceThresholds, getConfidenceBorderVariant } from '../utils';
 
 export type ServiceScheduleAvatarProps = {
   name: string;
@@ -14,6 +14,7 @@ export type ServiceScheduleAvatarProps = {
   turnupRate?: number | null;
   attendanceScore?: number | null;
   tooltip?: string;
+  thresholds?: ConfidenceThresholds;
 };
 
 export function ServiceScheduleAvatar({
@@ -26,9 +27,10 @@ export function ServiceScheduleAvatar({
   turnupRate,
   attendanceScore,
   tooltip,
+  thresholds,
 }: ServiceScheduleAvatarProps) {
   const rate = turnupRate ?? attendanceScore;
-  const calculatedBorder = border ?? getConfidenceBorderVariant(rate);
+  const calculatedBorder = border ?? getConfidenceBorderVariant(rate, thresholds);
 
   if (!excused) {
     if (tooltip) {

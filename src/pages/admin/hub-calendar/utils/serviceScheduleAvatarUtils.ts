@@ -2,10 +2,13 @@ import { CONFIDENCE_THRESHOLDS } from '@/lib/domain/hub-calendar';
 
 export function getConfidenceBorderVariant(
   turnupRate?: number | null,
+  thresholds?: { solid?: number; moderate?: number },
 ): 'success' | 'accent' | 'destructive' | 'none' {
   if (turnupRate === undefined || turnupRate === null) return 'none';
-  if (turnupRate >= CONFIDENCE_THRESHOLDS.SOLID) return 'success';
-  if (turnupRate >= CONFIDENCE_THRESHOLDS.MODERATE) return 'accent';
+  const solid = thresholds?.solid ?? CONFIDENCE_THRESHOLDS.SOLID;
+  const moderate = thresholds?.moderate ?? CONFIDENCE_THRESHOLDS.MODERATE;
+  if (turnupRate >= solid) return 'success';
+  if (turnupRate >= moderate) return 'accent';
   return 'destructive';
 }
 
