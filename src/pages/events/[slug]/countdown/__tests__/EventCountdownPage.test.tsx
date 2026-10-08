@@ -107,6 +107,12 @@ describe('EventCountdownPage', () => {
     expect(screen.getByText('Location')).toBeInTheDocument();
     expect(screen.getByText('Grand Ballroom, Level 3')).toBeInTheDocument();
 
+    // Share Countdown button
+    const shareButton = screen.getByRole('button', { name: /Share/i });
+    expect(shareButton).toBeInTheDocument();
+    fireEvent.click(shareButton);
+    expect(screen.getByRole('heading', { name: 'Share Event Countdown' })).toBeInTheDocument();
+
     // Home buttons
     const homeButtons = screen.getAllByRole('button', { name: /Go Home/i });
     expect(homeButtons.length).toBe(1);
