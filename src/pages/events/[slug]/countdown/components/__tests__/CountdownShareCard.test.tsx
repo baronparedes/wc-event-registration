@@ -29,8 +29,7 @@ describe('CountdownShareCard', () => {
     expect(screen.getByText('Main Convention Hall A')).toBeInTheDocument();
     expect(screen.getByText('Event Countdown')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Event')).toBeInTheDocument();
-    expect(screen.getByText(`Generated via ${LEGAL_CONFIG.appName}`)).toBeInTheDocument();
-    expect(screen.getByText('/events/global-dev-summit-2026/countdown')).toBeInTheDocument();
+    expect(screen.getByText(LEGAL_CONFIG.appName)).toBeInTheDocument();
 
     // Check countdown digits
     expect(screen.getByText('42')).toBeInTheDocument();
@@ -74,13 +73,13 @@ describe('CountdownShareCard', () => {
     expect(screen.queryByText('Main Convention Hall A')).not.toBeInTheDocument();
   });
 
-  it('renders QR code when qrCodeDataUrl is provided', () => {
+  it('renders centered QR code when qrCodeDataUrl is provided', () => {
     const fakeQr = 'data:image/png;base64,mockQrData';
     render(<CountdownShareCard event={mockEvent} timeLeft={mockTimeLeft} qrCodeDataUrl={fakeQr} />);
 
     const qrImg = screen.getByAltText('Scan QR code for event countdown');
     expect(qrImg).toBeInTheDocument();
     expect(qrImg).toHaveAttribute('src', fakeQr);
-    expect(screen.getByText('Scan QR')).toBeInTheDocument();
+    expect(screen.getByText('Scan to Open Countdown')).toBeInTheDocument();
   });
 });

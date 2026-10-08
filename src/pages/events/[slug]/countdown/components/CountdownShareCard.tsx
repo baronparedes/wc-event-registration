@@ -93,36 +93,21 @@ export function CountdownShareCard({
         <CountdownDigitCard label="Secs" value={timeLeft.seconds} />
       </div>
 
-      {/* Footer & QR Code Section */}
-      <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-5 text-xs text-slate-500">
-        <div className="space-y-1.5 text-center sm:text-left">
-          <p className="font-bold text-sm text-slate-800">Generated via {LEGAL_CONFIG.appName}</p>
-          <p className="font-mono text-xs text-slate-500">
-            /{event.slug ? `events/${event.slug}/countdown` : 'countdown'}
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Scan QR code for instant access to event details
-          </p>
-        </div>
-
-        {qrCodeDataUrl && (
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-xs shrink-0">
+      {/* Centered QR Code Section */}
+      {qrCodeDataUrl && (
+        <div className="mt-8 flex flex-col items-center justify-center border-t border-slate-100 pt-6 text-center">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-xs">
             <img
               src={qrCodeDataUrl}
               alt="Scan QR code for event countdown"
-              className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-contain bg-white p-1 border border-slate-100 shadow-2xs"
+              className="h-28 w-28 rounded-xl bg-white p-1 border border-slate-100 object-contain shadow-2xs"
             />
-            <div className="text-left leading-tight pr-1">
-              <span className="block text-xs font-bold uppercase tracking-wider text-slate-900">
-                Scan QR
-              </span>
-              <span className="block text-[11px] font-medium text-slate-500 mt-0.5">
-                To open event
-              </span>
-            </div>
           </div>
-        )}
-      </div>
+          <span className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+            Scan to Open Countdown
+          </span>
+        </div>
+      )}
     </div>
   );
 }

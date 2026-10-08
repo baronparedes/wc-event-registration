@@ -214,9 +214,9 @@ export function ShareCountdownDialog({
 
       <Dialog.Body>
         <div className="flex flex-col items-center gap-4">
-          {/* Card Preview Container */}
+          {/* Responsive Card Preview Container */}
           <div className="flex w-full justify-center rounded-2xl border border-border bg-slate-50 p-3 sm:p-6">
-            <div ref={cardRef} className="w-full max-w-[560px]">
+            <div className="w-full max-w-[560px]">
               <CountdownShareCard
                 event={event}
                 coverUrl={coverUrl}
@@ -247,6 +247,22 @@ export function ShareCountdownDialog({
                 </>
               )}
             </Button>
+          </div>
+
+          {/* Offscreen mounted element for export (fixed 560px width across mobile and desktop) */}
+          <div
+            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[560px]"
+            style={{ position: 'fixed', left: '-9999px', top: 0, width: '560px' }}
+            aria-hidden="true"
+          >
+            <div ref={cardRef} style={{ width: '560px' }} className="w-[560px] bg-white">
+              <CountdownShareCard
+                event={event}
+                coverUrl={coverUrl}
+                timeLeft={timeLeft}
+                qrCodeDataUrl={qrCodeDataUrl}
+              />
+            </div>
           </div>
         </div>
       </Dialog.Body>

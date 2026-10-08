@@ -105,13 +105,15 @@ describe('ShareCountdownDialog', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Share Event Countdown' })).toBeInTheDocument();
-    expect(screen.getByText('Tech Forward 2026')).toBeInTheDocument();
-    expect(screen.getByText('Silicon Arena')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('05')).toBeInTheDocument();
+    expect(screen.getAllByText('Tech Forward 2026').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Silicon Arena').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('10').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('05').length).toBeGreaterThanOrEqual(1);
 
     await waitFor(() => {
-      expect(screen.getByAltText('Scan QR code for event countdown')).toBeInTheDocument();
+      expect(
+        screen.getAllByAltText('Scan QR code for event countdown').length,
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 
