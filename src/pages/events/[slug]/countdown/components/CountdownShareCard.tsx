@@ -1,6 +1,6 @@
 import { Calendar, MapPin } from 'lucide-react';
 
-import { BrandAvatar } from '@/components/ui';
+import { BrandAvatar, MarkdownRenderer } from '@/components/ui';
 import { LEGAL_CONFIG } from '@/config/constants';
 import type { AdminEvent } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
@@ -13,7 +13,7 @@ export type TimeLeft = {
 };
 
 export type CountdownShareCardProps = {
-  event: Pick<AdminEvent, 'title' | 'starts_at' | 'location' | 'slug'>;
+  event: Pick<AdminEvent, 'title' | 'description' | 'starts_at' | 'location' | 'slug'>;
   coverUrl?: string | null;
   timeLeft: TimeLeft;
 };
@@ -54,6 +54,15 @@ export function CountdownShareCard({ event, coverUrl, timeLeft }: CountdownShare
         <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
           {event.title}
         </h2>
+
+        {event.description && (
+          <div className="mx-auto max-w-lg text-sm text-slate-600">
+            <MarkdownRenderer
+              content={event.description}
+              className="prose-sm text-slate-600 leading-relaxed max-h-24 overflow-hidden text-center"
+            />
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700">

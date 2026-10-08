@@ -8,6 +8,7 @@ import { CountdownShareCard } from '../CountdownShareCard';
 describe('CountdownShareCard', () => {
   const mockEvent = {
     title: 'Global Dev Summit 2026',
+    description: 'Join us for the premier tech conference',
     starts_at: '2026-11-20T10:00:00.000Z',
     location: 'Main Convention Hall A',
     slug: 'global-dev-summit-2026',
@@ -24,6 +25,7 @@ describe('CountdownShareCard', () => {
     render(<CountdownShareCard event={mockEvent} timeLeft={mockTimeLeft} />);
 
     expect(screen.getByText('Global Dev Summit 2026')).toBeInTheDocument();
+    expect(screen.getByText('Join us for the premier tech conference')).toBeInTheDocument();
     expect(screen.getByText('Main Convention Hall A')).toBeInTheDocument();
     expect(screen.getByText('Event Countdown')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Event')).toBeInTheDocument();
@@ -59,6 +61,7 @@ describe('CountdownShareCard', () => {
   it('handles missing location and date gracefully', () => {
     const eventWithoutDetails = {
       title: 'Secret Event',
+      description: null,
       starts_at: null,
       location: null,
       slug: 'secret-event',
