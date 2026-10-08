@@ -3,8 +3,9 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
-import { useUpsertAttendanceAnswersMutation } from '../useUpsertAttendanceAnswersMutation';
 import { QUERY_KEYS } from '@/config/constants';
+
+import { useUpsertAttendanceAnswersMutation } from '../useUpsertAttendanceAnswersMutation';
 
 const { mockDeleteAttendanceAnswers, mockUpsertAttendanceAnswers } = vi.hoisted(() => ({
   mockDeleteAttendanceAnswers: vi.fn(),
@@ -12,7 +13,8 @@ const { mockDeleteAttendanceAnswers, mockUpsertAttendanceAnswers } = vi.hoisted(
 }));
 
 vi.mock('@/lib/domain/attendance', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/domain/attendance')>('@/lib/domain/attendance');
+  const actual =
+    await vi.importActual<typeof import('@/lib/domain/attendance')>('@/lib/domain/attendance');
   return {
     ...actual,
     deleteAttendanceAnswers: mockDeleteAttendanceAnswers,
@@ -34,7 +36,9 @@ describe('useUpsertAttendanceAnswersMutation', () => {
     mockDeleteAttendanceAnswers.mockResolvedValueOnce(undefined);
     mockUpsertAttendanceAnswers.mockResolvedValueOnce(undefined);
 
-    const { result, queryClient } = renderHookWithClient(() => useUpsertAttendanceAnswersMutation());
+    const { result, queryClient } = renderHookWithClient(() =>
+      useUpsertAttendanceAnswersMutation(),
+    );
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await act(async () => {
@@ -45,7 +49,7 @@ describe('useUpsertAttendanceAnswersMutation', () => {
         answers: [
           { attendance_field_id: filledFieldId, answer_text: 'Filled text' },
           { attendance_field_id: emptyFieldId, answer_text: '  ' }, // empty
-        ]
+        ],
       });
     });
 
@@ -53,7 +57,7 @@ describe('useUpsertAttendanceAnswersMutation', () => {
       'attendance_answers',
       'registration_id',
       registrationId,
-      [emptyFieldId]
+      [emptyFieldId],
     );
 
     expect(mockUpsertAttendanceAnswers).toHaveBeenCalledWith(
@@ -62,10 +66,10 @@ describe('useUpsertAttendanceAnswersMutation', () => {
         expect.objectContaining({
           attendance_field_id: filledFieldId,
           answer_text: 'Filled text',
-          registration_id: registrationId
-        })
+          registration_id: registrationId,
+        }),
       ]),
-      'registration_id,attendance_field_id'
+      'registration_id,attendance_field_id',
     );
 
     await waitFor(() => {
@@ -90,9 +94,7 @@ describe('useUpsertAttendanceAnswersMutation', () => {
         event_id: eventId,
         attendee_kind: 'public',
         public_registration_id: publicRegId,
-        answers: [
-          { attendance_field_id: filledFieldId, answer_number: 42 },
-        ]
+        answers: [{ attendance_field_id: filledFieldId, answer_number: 42 }],
       });
     });
 
@@ -104,10 +106,10 @@ describe('useUpsertAttendanceAnswersMutation', () => {
         expect.objectContaining({
           attendance_field_id: filledFieldId,
           answer_number: 42,
-          public_registration_id: publicRegId
-        })
+          public_registration_id: publicRegId,
+        }),
       ]),
-      'public_registration_id,attendance_field_id'
+      'public_registration_id,attendance_field_id',
     );
   });
 });

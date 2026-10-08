@@ -3,8 +3,9 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
+import { ADMIN_FORMS_QUERY_KEY } from '@/hooks/domain/forms/queries/useAdminFormsQuery';
+
 import { useDuplicateFormMutation } from '../useDuplicateFormMutation';
-import { ADMIN_FORMS_QUERY_KEY } from '../../queries/useAdminFormsQuery';
 
 const { mockDuplicateForm } = vi.hoisted(() => ({
   mockDuplicateForm: vi.fn(),
@@ -36,17 +37,17 @@ describe('useDuplicateFormMutation', () => {
 
     await act(async () => {
       const returnedId = await result.current.mutateAsync({
-        originalFormId,
-        newTitle,
-        newSlug,
+        source_form_id: originalFormId,
+        new_title: newTitle,
+        new_slug: newSlug,
       });
       expect(returnedId).toBe(newFormId);
     });
 
     expect(mockDuplicateForm).toHaveBeenCalledWith({
-      originalFormId,
-      newTitle,
-      newSlug,
+      source_form_id: originalFormId,
+      new_title: newTitle,
+      new_slug: newSlug,
     });
 
     await waitFor(() => {
@@ -62,10 +63,10 @@ describe('useDuplicateFormMutation', () => {
 
     await expect(
       result.current.mutateAsync({
-        originalFormId: faker.string.uuid(),
-        newTitle: 'Test',
-        newSlug: 'test',
-      })
+        source_form_id: faker.string.uuid(),
+        new_title: 'Test',
+        new_slug: 'test',
+      }),
     ).rejects.toThrow('Duplicate failed');
   });
 });
