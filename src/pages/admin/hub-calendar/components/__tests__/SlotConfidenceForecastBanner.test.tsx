@@ -14,6 +14,7 @@ describe('SlotConfidenceForecastBanner', () => {
       highCount: 0,
       moderateCount: 0,
       atRiskCount: 0,
+      inactiveCount: 0,
       excusedCount: 0,
     };
 
@@ -23,38 +24,42 @@ describe('SlotConfidenceForecastBanner', () => {
 
   it('renders expected turnup, confidence badge, and reliability breakdown badges', () => {
     const forecast: SlotConfidenceForecast = {
-      totalCommitted: 82,
+      totalCommitted: 85,
       expectedTurnup: 48,
-      confidencePercentage: 59,
+      confidencePercentage: 56,
       highCount: 30,
       moderateCount: 27,
       atRiskCount: 22,
-      excusedCount: 3,
+      inactiveCount: 4,
+      excusedCount: 2,
     };
 
     render(<SlotConfidenceForecastBanner forecast={forecast} />);
 
-    expect(screen.getByText(/~48 \/ 82/i)).toBeInTheDocument();
-    expect(screen.getByText(/59% confidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/~48 \/ 85/i)).toBeInTheDocument();
+    expect(screen.getByText(/56% confidence/i)).toBeInTheDocument();
     expect(screen.getByText('30')).toBeInTheDocument();
     expect(screen.getByText('Solid')).toBeInTheDocument();
     expect(screen.getByText('27')).toBeInTheDocument();
     expect(screen.getByText('Moderate')).toBeInTheDocument();
     expect(screen.getByText('22')).toBeInTheDocument();
     expect(screen.getByText('At Risk')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Inactive')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('Excused')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('calls onSelectTier when clicking on tier buttons', () => {
     const forecast: SlotConfidenceForecast = {
-      totalCommitted: 82,
+      totalCommitted: 85,
       expectedTurnup: 48,
-      confidencePercentage: 59,
+      confidencePercentage: 56,
       highCount: 30,
       moderateCount: 27,
       atRiskCount: 22,
-      excusedCount: 3,
+      inactiveCount: 4,
+      excusedCount: 2,
     };
     const handleSelectTier = vi.fn();
 
@@ -69,6 +74,10 @@ describe('SlotConfidenceForecastBanner', () => {
     const solidBtn = screen.getByRole('button', { name: /Solid/i });
     fireEvent.click(solidBtn);
     expect(handleSelectTier).toHaveBeenCalledWith('solid');
+
+    const inactiveBtn = screen.getByRole('button', { name: /Inactive/i });
+    fireEvent.click(inactiveBtn);
+    expect(handleSelectTier).toHaveBeenCalledWith('inactive');
 
     rerender(
       <SlotConfidenceForecastBanner

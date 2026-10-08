@@ -10,4 +10,6 @@ export * from './ServiceScheduleAvatar';
 export * from './SlotConfidenceForecastBanner';
 export * from './SundayScheduleShareCard';
 export * from './ShareSundayScheduleDialog';
+export * from './VolunteerStaffingModeler';
+export * from './VolunteerStaffingTargetsModal';
 export * from '../utils';

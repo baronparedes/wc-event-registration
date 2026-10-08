@@ -30,9 +30,13 @@ vi.mock('@/hooks/domain/members', () => ({
   useGetExcusedMembers: () => ({ data: [] }),
 }));
 
-vi.mock('@/hooks/utils', () => ({
-  useIsMobileViewport: () => mockUseIsMobileViewport(),
-}));
+vi.mock('@/hooks/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/utils')>();
+  return {
+    ...actual,
+    useIsMobileViewport: () => mockUseIsMobileViewport(),
+  };
+});
 
 const now = new Date();
 const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
@@ -227,13 +231,13 @@ describe('AdminHubCalendarPage', () => {
     fireEvent.click(tab9am);
 
     // Role filter
-    const roleFilter = screen.getByRole('button', { name: 'Usher' });
+    const roleFilter = screen.getByRole('tab', { name: 'Usher' });
     fireEvent.click(roleFilter);
     // Toggle role filter off
     fireEvent.click(roleFilter);
 
-    const allFilters = screen.getAllByRole('button', { name: 'All' });
-    fireEvent.click(allFilters[0]);
+    const allRolesFilter = screen.getByRole('tab', { name: 'All Roles' });
+    fireEvent.click(allRolesFilter);
 
     // Click member card
     const memberCard = screen.getByText(sampleMember.full_name);

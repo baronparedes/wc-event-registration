@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
-import type { AdminMember } from '@/lib/domain/members';
+import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
 import { SelectedDateDetails } from '../SelectedDateDetails';
 
@@ -104,7 +104,9 @@ describe('SelectedDateDetails', () => {
     );
 
     // On 9AM tab: member 1 (entry1) is excused; member 2 (entry2) is not excused
-    expect(screen.getAllByTitle('Excused')).toHaveLength(1);
+    expect(
+      screen.getByTitle('Excused: Submitted an approved excuse request for this service slot.'),
+    ).toBeInTheDocument();
     expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
 
     // Rerender with activeTab="12NN" where member 1 is scheduled but NOT excused for 12NN
@@ -130,7 +132,9 @@ describe('SelectedDateDetails', () => {
     );
 
     // Member 1 is present in 12NN but should NOT be marked excused!
-    expect(screen.queryByTitle('Excused')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTitle('Excused: Submitted an approved excuse request for this service slot.'),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
   });
 
@@ -161,7 +165,9 @@ describe('SelectedDateDetails', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.queryByTitle('Excused')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTitle('Excused: Submitted an approved excuse request for this service slot.'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders status/confidence pill filters on first line and role filters on second line', () => {
@@ -191,14 +197,14 @@ describe('SelectedDateDetails', () => {
     );
 
     // Status/Confidence filters (first line)
-    expect(screen.getByRole('button', { name: 'Excused' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Solid' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Moderate' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'At Risk' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Excused/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Solid/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Moderate/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /At Risk/i })).toBeInTheDocument();
 
     // Role filters (second line)
-    expect(screen.getByRole('button', { name: 'Usher' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Greeter' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Usher' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Greeter' })).toBeInTheDocument();
   });
 
   it('filters member list by Excused status when clicking Excused pill on first line', () => {
@@ -232,7 +238,7 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
 
     // Click Excused pill on line 1
-    const excusedBtn = screen.getByRole('button', { name: 'Excused' });
+    const excusedBtn = screen.getByRole('tab', { name: /Excused/i });
     fireEvent.click(excusedBtn);
 
     // Only excused member 1 should be visible
@@ -267,8 +273,9 @@ describe('SelectedDateDetails', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/Expected/i)).toBeInTheDocument();
-    expect(screen.getByText(/Confidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Realistic Expected Turnup:/i)).toBeInTheDocument();
+    expect(screen.getByText(/confidence/i)).toBeInTheDocument();
+    expect(screen.getByText('Volunteer Staffing Forecast')).toBeInTheDocument();
   });
 
   it('combines confidence tier filter from first line and role filter from second line', () => {
@@ -304,7 +311,7 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
 
     // Click Solid filter pill on line 1
-    const solidBtn = screen.getByRole('button', { name: 'Solid' });
+    const solidBtn = screen.getByRole('tab', { name: /Solid/i });
     fireEvent.click(solidBtn);
 
     // Only Solid member (m1, Usher) visible
@@ -312,7 +319,7 @@ describe('SelectedDateDetails', () => {
     expect(screen.queryByText(mockMember2.full_name)).not.toBeInTheDocument();
 
     // Click Greeter role on line 2
-    const greeterBtn = screen.getByRole('button', { name: 'Greeter' });
+    const greeterBtn = screen.getByRole('tab', { name: 'Greeter' });
     fireEvent.click(greeterBtn);
     expect(handleRoleChange).toHaveBeenCalledWith('Greeter');
 
@@ -369,5 +376,230 @@ describe('SelectedDateDetails', () => {
 
     fireEvent.click(shareButton);
     expect(screen.getByRole('heading', { name: 'Share Sunday Schedule' })).toBeInTheDocument();
+  });
+
+  it('renders and supports clicking the All Sunday slot tab', () => {
+    const handleTabChange = vi.fn();
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          activeTab="ALL"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={handleTabChange}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const allSundayBtn = screen.getByRole('button', { name: /All Sunday/i });
+    expect(allSundayBtn).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /9:00 AM/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('9AM');
+
+    // Both entry1 and entry2 are visible in ALL tab
+    expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
+    expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
+  });
+
+  it('renders Inactive badge on member with 0 attendance data joined > 30 days ago', () => {
+    const oldMember: typeof mockMember1 = {
+      ...mockMember1,
+      id: 'old-mem',
+      first_name: 'Test One',
+      last_name: 'Sample Member',
+      full_name: 'Test One Sample Member',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const oldEntry: MemberScheduleEntry = {
+      member: oldMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[oldEntry]}
+          entriesByTimeSlot={{ '9AM': [oldEntry], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Test One Sample Member')).toBeInTheDocument();
+    expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders Inactive badge on member with 0% turnout (attended 0 commitments)', () => {
+    const zeroTurnoutMember: typeof mockMember1 = {
+      ...mockMember1,
+      id: 'zero-mem',
+      first_name: 'Test Zero',
+      last_name: 'Sample Turnout',
+      full_name: 'Test Zero Sample Turnout',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const zeroEntry: MemberScheduleEntry = {
+      member: zeroTurnoutMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+    const zeroStatsMap = new Map<string, MemberAttendanceStats>([
+      ['zero-mem', { attendanceScore: -5, committed: 5, attended: 0, turnupRate: 0 }],
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[zeroEntry]}
+          entriesByTimeSlot={{ '9AM': [zeroEntry], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          attendanceScoreMap={zeroStatsMap}
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Test Zero Sample Turnout')).toBeInTheDocument();
+    expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('separates At Risk and Inactive when filtering by tier tab', () => {
+    const atRiskMember: typeof mockMember1 = {
+      ...mockMember1,
+      id: 'risk-mem',
+      first_name: 'Test Risk',
+      last_name: 'Sample User',
+      full_name: 'Test Risk Sample User',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const inactiveMember: typeof mockMember2 = {
+      ...mockMember2,
+      id: 'inact-mem',
+      first_name: 'Test Inact',
+      last_name: 'Sample User',
+      full_name: 'Test Inact Sample User',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const riskEntry: MemberScheduleEntry = {
+      member: atRiskMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+    const inactEntry: MemberScheduleEntry = {
+      member: inactiveMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['risk-mem', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At Risk (>0 attended)
+      ['inact-mem', { attendanceScore: -5, committed: 5, attended: 0, turnupRate: 0 }], // Inactive (0 attended)
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[riskEntry, inactEntry]}
+          entriesByTimeSlot={{ '9AM': [riskEntry, inactEntry], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          attendanceScoreMap={statsMap}
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Both visible initially
+    expect(screen.getByText('Test Risk Sample User')).toBeInTheDocument();
+    expect(screen.getByText('Test Inact Sample User')).toBeInTheDocument();
+
+    // Click Inactive tab
+    const inactTab = screen.getByRole('tab', { name: /Inactive/i });
+    fireEvent.click(inactTab);
+
+    // Only Inactive member visible
+    expect(screen.queryByText('Test Risk Sample User')).not.toBeInTheDocument();
+    expect(screen.getByText('Test Inact Sample User')).toBeInTheDocument();
+
+    // Click At Risk tab
+    const atRiskTab = screen.getByRole('tab', { name: /At Risk/i });
+    fireEvent.click(atRiskTab);
+
+    // Only At Risk member visible
+    expect(screen.getByText('Test Risk Sample User')).toBeInTheDocument();
+    expect(screen.queryByText('Test Inact Sample User')).not.toBeInTheDocument();
+  });
+
+  it('displays the filtered results count and provides a clear filters button when filtered', () => {
+    const handleRoleChange = vi.fn();
+    const handleSearchChange = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole="Usher"
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={handleRoleChange}
+          onSearchQueryChange={handleSearchChange}
+        />
+      </MemoryRouter>,
+    );
+
+    // Should show filtered count from total
+    expect(screen.getByText(/Showing/i)).toBeInTheDocument();
+    expect(screen.getByText(/filtered from 2/i)).toBeInTheDocument();
+
+    // Click Clear filters
+    const clearBtn = screen.getByRole('button', { name: /Clear filters/i });
+    fireEvent.click(clearBtn);
+
+    expect(handleRoleChange).toHaveBeenCalledWith(null);
+    expect(handleSearchChange).toHaveBeenCalledWith('');
   });
 });

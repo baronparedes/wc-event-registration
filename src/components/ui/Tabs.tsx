@@ -197,7 +197,7 @@ export function TabsList({
           onScroll={checkScroll}
           role="tablist"
           onKeyDown={handleKeyDown}
-          className="flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
+          className="flex min-w-0 w-full items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
           {...props}
         >
           {children}
@@ -246,16 +246,18 @@ export function TabsTrigger({
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (
-      isSelected &&
-      triggerRef.current &&
-      typeof triggerRef.current.scrollIntoView === 'function'
-    ) {
-      triggerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+    if (isSelected && triggerRef.current) {
+      const parentList = triggerRef.current.closest('[role="tablist"]') as HTMLDivElement | null;
+      if (parentList && parentList.scrollWidth > parentList.clientWidth) {
+        const tabLeft = triggerRef.current.offsetLeft;
+        const tabWidth = triggerRef.current.offsetWidth;
+        const containerWidth = parentList.clientWidth;
+        const targetScrollLeft = tabLeft - containerWidth / 2 + tabWidth / 2;
+        parentList.scrollTo({
+          left: targetScrollLeft,
+          behavior: 'smooth',
+        });
+      }
     }
   }, [isSelected]);
 

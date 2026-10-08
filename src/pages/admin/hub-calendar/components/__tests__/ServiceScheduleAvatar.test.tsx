@@ -95,5 +95,19 @@ describe('ServiceScheduleAvatar', () => {
       const avatarEl = screen.getByTitle('Explicit Border');
       expect(avatarEl).toHaveClass('ring-secondary');
     });
+
+    it('renders custom tooltip on avatar wrapper', () => {
+      render(
+        <ServiceScheduleAvatar
+          name="Tooltip Member"
+          turnupRate={0.5}
+          tooltip="Moderate (50% turnup): Attended 4 of 8 scheduled commitments"
+          size="sm"
+        />,
+      );
+      expect(
+        screen.getByTitle('Moderate (50% turnup): Attended 4 of 8 scheduled commitments'),
+      ).toBeInTheDocument();
+    });
   });
 });

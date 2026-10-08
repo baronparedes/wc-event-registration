@@ -109,7 +109,37 @@ Every volunteer scheduled in the slot is classified into one of four mutually ex
 
 ---
 
-## 4. Interactive UI & Filtering
+## 4. Volunteer Staffing Needs & Deficit Modeling
+
+To help ministry coordinators determine if additional volunteers must be recruited or assigned for an upcoming Sunday, the system provides a **Volunteer Staffing Forecast & Deficit Model**.
+
+### Default Role Quotas (Per Time Slot)
+
+Standard default target quantities are defined per service slot (`9AM`, `12NN`, `3PM`):
+
+- **Usher**: `25`
+- **Backroom Support**: `10`
+- **Prayer Coach**: `50`
+- **IMT Support**: `4`
+- **VMT Support**: `2`
+
+Coordinators can customize target quotas individually per service slot (`9:00 AM`, `12:00 NN`, `3:00 PM`) or copy active quotas across slots via the **Targets** configuration modal. Configurations are persisted in local storage (`wc:hub-calendar:volunteer-targets`). In the **All Sunday Slots** view, targets and expectations are automatically aggregated across all three slots.
+
+### Realistic Deficit Formula
+
+For each volunteer role $R$ and slot $S$:
+
+$$\text{Expected Turnup}_{R, S} = \sum_{i \in \text{Role } R \text{ Active Pool for Slot } S} \text{TurnupRate}_i$$
+
+$$\text{Volunteers Still Needed}_{R, S} = \max(0, \text{Target Quota}_{R, S} - \mathrm{round}(\text{Expected Turnup}_{R, S}))$$
+
+$$\text{Fulfillment \%}_{R, S} = \min\left(100\%, \mathrm{round}\left(\frac{\text{Expected Turnup}_{R, S}}{\text{Target Quota}_{R, S}} \times 100\right)\right)$$
+
+Coordinators can toggle between viewing the **Active Slot** breakdown or the aggregated **All Sunday Slots** view.
+
+---
+
+## 5. Interactive UI & Filtering
 
 In the Hub Calendar's `SelectedDateDetails` view and `SlotConfidenceForecastBanner`:
 

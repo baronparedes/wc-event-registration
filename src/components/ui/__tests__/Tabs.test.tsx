@@ -199,9 +199,26 @@ describe('Tabs Component', () => {
     expect(trigger).toHaveClass('shrink-0');
   });
 
-  it('attempts to scroll active tab into view', () => {
-    const scrollIntoViewMock = vi.fn();
-    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+  it('attempts to scroll active tab into view when parent tablist has overflow', () => {
+    const scrollToMock = vi.fn();
+    window.HTMLElement.prototype.scrollTo = scrollToMock;
+
+    const origScrollWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollWidth');
+    const origClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get() {
+        return this.getAttribute('role') === 'tablist' ? 500 : 100;
+      },
+    });
+
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get() {
+        return this.getAttribute('role') === 'tablist' ? 200 : 100;
+      },
+    });
 
     render(
       <Tabs defaultValue="tab1">
@@ -211,11 +228,14 @@ describe('Tabs Component', () => {
       </Tabs>,
     );
 
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    });
+    expect(scrollToMock).toHaveBeenCalled();
+
+    if (origScrollWidth) {
+      Object.defineProperty(HTMLElement.prototype, 'scrollWidth', origScrollWidth);
+    }
+    if (origClientWidth) {
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', origClientWidth);
+    }
   });
 
   it('renders left and right scroll buttons when container has overflow and scrolls on click', () => {

@@ -44,7 +44,7 @@ export function SlotConfidenceForecastBanner({
               ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/40 font-semibold'
               : 'hover:bg-surface hover:text-text cursor-pointer'
           } ${!onSelectTier ? 'cursor-default' : ''}`}
-          title="Filter by Solid (turnup rate ≥ 80%)"
+          title="Filter by Solid (turnup rate ≥ 70%)"
         >
           <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
           <span className="text-text font-semibold">{forecast.highCount}</span> Solid
@@ -60,7 +60,7 @@ export function SlotConfidenceForecastBanner({
                 ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 ring-1 ring-amber-500/40 font-semibold'
                 : 'hover:bg-surface hover:text-text cursor-pointer'
             } ${!onSelectTier ? 'cursor-default' : ''}`}
-            title="Filter by Moderate (turnup rate 40% - 79%)"
+            title="Filter by Moderate (turnup rate 40%–69%)"
           >
             <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
             <span className="text-text font-semibold">{forecast.moderateCount}</span> Moderate
@@ -77,10 +77,27 @@ export function SlotConfidenceForecastBanner({
                 ? 'bg-rose-500/15 text-rose-800 dark:text-rose-300 ring-1 ring-rose-500/40 font-semibold'
                 : 'hover:bg-surface hover:text-text cursor-pointer'
             } ${!onSelectTier ? 'cursor-default' : ''}`}
-            title="Filter by At Risk (turnup rate < 40%)"
+            title="Filter by At Risk (low positive turnup rate)"
           >
             <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
             <span className="text-text font-semibold">{forecast.atRiskCount}</span> At Risk
+          </button>
+        )}
+
+        {forecast.inactiveCount > 0 && (
+          <button
+            type="button"
+            onClick={() => handleToggleTier('inactive')}
+            disabled={!onSelectTier}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium transition-colors ${
+              selectedTier === 'inactive'
+                ? 'bg-zinc-500/15 text-zinc-800 dark:text-zinc-300 ring-1 ring-zinc-500/40 font-semibold'
+                : 'hover:bg-surface hover:text-text cursor-pointer'
+            } ${!onSelectTier ? 'cursor-default' : ''}`}
+            title="Filter by Inactive (0% turnout / no attendance data)"
+          >
+            <span className="h-2 w-2 rounded-full bg-zinc-400 shrink-0" />
+            <span className="text-text font-semibold">{forecast.inactiveCount}</span> Inactive
           </button>
         )}
 
