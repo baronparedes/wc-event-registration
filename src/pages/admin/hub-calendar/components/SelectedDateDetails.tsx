@@ -35,6 +35,7 @@ import {
   getMemberConfidenceTooltip,
   getStoredConfidenceThresholds,
   getStoredVolunteerTargets,
+  isMemberInactiveWithoutAttendance,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MilestoneAvatar } from './MilestoneAvatar';
@@ -225,6 +226,7 @@ export function SelectedDateDetails({
               { value: 'solid', label: 'Solid' },
               { value: 'moderate', label: 'Moderate' },
               { value: 'at_risk', label: 'At Risk' },
+              { value: 'inactive', label: 'Inactive' },
               { value: 'excused', label: 'Excused' },
             ]}
           />
@@ -270,6 +272,10 @@ export function SelectedDateDetails({
                     <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-rose-500" />
                     At Risk
                   </TabsTrigger>
+                  <TabsTrigger value="inactive" className="text-xs py-1 px-3">
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-zinc-400" />
+                    Inactive
+                  </TabsTrigger>
                   <TabsTrigger value="excused" className="text-xs py-1 px-3">
                     <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-muted" />
                     Excused
@@ -303,6 +309,30 @@ export function SelectedDateDetails({
           )}
         </div>
 
+        {/* Filtered Results Count & Clear Action */}
+        <div className="flex items-center justify-between text-xs text-muted px-0.5">
+          <span>
+            Showing <strong className="font-semibold text-text">{filteredEntries.length}</strong>{' '}
+            {filteredEntries.length === 1 ? 'volunteer' : 'volunteers'}
+            {(effectiveConfidence !== null ||
+              selectedRole !== null ||
+              searchQuery.trim() !== '') && <span> (filtered from {entries.length})</span>}
+          </span>
+          {(effectiveConfidence !== null || selectedRole !== null || searchQuery.trim() !== '') && (
+            <button
+              type="button"
+              onClick={() => {
+                handleConfidenceChange(null);
+                onRoleChange(null);
+                onSearchQueryChange('');
+              }}
+              className="text-primary hover:underline font-medium cursor-pointer"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
         {filteredEntries.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted">
             {searchQuery
@@ -320,7 +350,14 @@ export function SelectedDateDetails({
             {filteredEntries.map((entry) => {
               const isExcused = isMemberExcused(excusedMap, isoDateKey, entry.member, targetSlot);
               const stats = attendanceScoreMap?.get(entry.member.id);
-              const tooltip = getMemberConfidenceTooltip(isExcused, stats, confidenceThresholds);
+              const isInactive = isMemberInactiveWithoutAttendance(entry.member, stats);
+              const avatarTurnupRate = isInactive ? undefined : stats?.turnupRate;
+              const tooltip = getMemberConfidenceTooltip(
+                isExcused,
+                stats,
+                confidenceThresholds,
+                entry.member,
+              );
 
               return (
                 <button
@@ -339,7 +376,7 @@ export function SelectedDateDetails({
                     avatarObjectKey={entry.member.avatar_object_key}
                     className="border-2 border-surface shadow-sm"
                     excused={isExcused}
-                    turnupRate={stats?.turnupRate}
+                    turnupRate={avatarTurnupRate}
                     thresholds={confidenceThresholds}
                   />
                   <div className="min-w-0 w-full">
@@ -367,6 +404,16 @@ export function SelectedDateDetails({
                             </Badge>
                           );
                         })}
+                      </div>
+                    )}
+                    {isInactive && (
+                      <div className="mt-1 flex justify-center">
+                        <Badge
+                          variant="destructive"
+                          className="text-[10px] px-2 py-0.5 border-border/80 text-muted bg-surface-hover/60"
+                        >
+                          Inactive
+                        </Badge>
                       </div>
                     )}
                   </div>

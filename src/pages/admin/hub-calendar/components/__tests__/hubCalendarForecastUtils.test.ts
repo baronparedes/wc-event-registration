@@ -9,6 +9,7 @@ import {
   getConfidenceTierLabel,
   getMemberConfidenceTier,
   getMemberConfidenceTooltip,
+  isMemberInactiveWithoutAttendance,
 } from '@/pages/admin/hub-calendar/utils';
 
 function createMockMember(id: string, name: string): AdminMember {
@@ -50,28 +51,34 @@ describe('calculateSlotConfidenceForecast', () => {
       highCount: 0,
       moderateCount: 0,
       atRiskCount: 0,
+      inactiveCount: 0,
       excusedCount: 0,
     });
   });
 
   it('calculates expected turnup and buckets correctly with mixed turnup rates', () => {
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() - 5);
     const m1 = createMockMember('m1', 'Solid');
     const m2 = createMockMember('m2', 'Moderate');
     const m3 = createMockMember('m3', 'AtRisk');
-    const m4 = createMockMember('m4', 'NewMember');
+    const m4 = { ...createMockMember('m4', 'NewMember'), created_at: newDate.toISOString() };
+    const m5 = { ...createMockMember('m5', 'InactiveMember'), created_at: '2020-01-01' };
 
     const entries = [
       createScheduleEntry(m1),
       createScheduleEntry(m2),
       createScheduleEntry(m3),
       createScheduleEntry(m4),
+      createScheduleEntry(m5),
     ];
 
     const statsMap = new Map<string, MemberAttendanceStats>([
       ['m1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }], // Solid (>=0.7)
       ['m2', { attendanceScore: 3, committed: 10, attended: 6, turnupRate: 0.6 }], // Moderate (0.4-0.69)
-      ['m3', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At risk (<0.4)
-      // m4 has no historical stats -> defaults to 0.8 (Solid)
+      ['m3', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At risk (<0.4 with >0 turnout)
+      // m4 has no historical stats but is a new member -> defaults to 0.8 (Solid)
+      ['m5', { attendanceScore: -5, committed: 5, attended: 0, turnupRate: 0 }], // Inactive (0% turnout)
     ]);
 
     const result = calculateSlotConfidenceForecast(
@@ -82,14 +89,15 @@ describe('calculateSlotConfidenceForecast', () => {
       statsMap,
     );
 
-    // Sum of probabilities = 1.0 + 0.6 + 0.2 + 0.8 = 2.6 -> rounds to 3
-    expect(result.totalCommitted).toBe(4);
+    // Sum of probabilities = 1.0 + 0.6 + 0.2 + 0.8 + 0 = 2.6 -> rounds to 3
+    expect(result.totalCommitted).toBe(5);
     expect(result.expectedTurnup).toBe(3);
-    // Confidence % = (2.6 / 4) * 100 = 65%
-    expect(result.confidencePercentage).toBe(65);
+    // Confidence % = (2.6 / 5) * 100 = 52%
+    expect(result.confidencePercentage).toBe(52);
     expect(result.highCount).toBe(2); // m1 and m4
     expect(result.moderateCount).toBe(1); // m2
     expect(result.atRiskCount).toBe(1); // m3
+    expect(result.inactiveCount).toBe(1); // m5
     expect(result.excusedCount).toBe(0);
   });
 
@@ -121,6 +129,7 @@ describe('calculateSlotConfidenceForecast', () => {
     expect(result.expectedTurnup).toBe(1);
     expect(result.excusedCount).toBe(1);
     expect(result.highCount).toBe(1);
+    expect(result.inactiveCount).toBe(0);
     // Confidence % = (1.0 / 2) * 100 = 50%
     expect(result.confidencePercentage).toBe(50);
   });
@@ -137,13 +146,27 @@ describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
     expect(getConfidenceTierLabel('excused')).toBe('Excused');
   });
 
+  it('identifies inactive member with 0% turnout as inactive tier', () => {
+    const mInactive = { ...createMockMember('m-inact', 'Inactive'), created_at: '2020-01-01' };
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['m-inact', { attendanceScore: -3, committed: 3, attended: 0, turnupRate: 0 }],
+    ]);
+
+    expect(getMemberConfidenceTier(mInactive, '2026-10-04', '9AM', undefined, statsMap)).toBe(
+      'inactive',
+    );
+    expect(getConfidenceTierLabel('inactive')).toBe('Inactive');
+  });
+
   it('evaluates solid, moderate, and at risk tiers based on turnup rate with 70% solid threshold', () => {
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() - 5);
     const mSolid = createMockMember('m-solid', 'Solid');
     const mSolidThreshold = createMockMember('m-solid-72', 'Solid72');
     const mMod = createMockMember('m-mod', 'Mod');
     const mModLow = createMockMember('m-mod-low', 'ModLow');
     const mRisk = createMockMember('m-risk', 'Risk');
-    const mNew = createMockMember('m-new', 'New');
+    const mNew = { ...createMockMember('m-new', 'New'), created_at: newDate.toISOString() };
 
     const statsMap = new Map<string, MemberAttendanceStats>([
       ['m-solid', { attendanceScore: 10, committed: 10, attended: 9, turnupRate: 0.9 }],
@@ -172,6 +195,7 @@ describe('getMemberConfidenceTier and getConfidenceTierLabel', () => {
     expect(getConfidenceTierLabel('solid')).toBe('Solid');
     expect(getConfidenceTierLabel('moderate')).toBe('Moderate');
     expect(getConfidenceTierLabel('at_risk')).toBe('At Risk');
+    expect(getConfidenceTierLabel('inactive')).toBe('Inactive');
   });
 });
 
@@ -224,6 +248,26 @@ describe('getMemberConfidenceTooltip', () => {
     );
   });
 
+  it('provides inactive explanation for members with 0 attendance data joined over 30 days ago', () => {
+    const oldMember = { created_at: '2024-01-01T00:00:00Z' };
+    expect(getMemberConfidenceTooltip(false, undefined, undefined, oldMember)).toBe(
+      'Inactive: Member has 0% attendance data recorded over the past 30+ days.',
+    );
+  });
+
+  it('provides inactive explanation with commitment count for members with 0% turnout', () => {
+    const oldMember = { created_at: '2024-01-01T00:00:00Z' };
+    const zeroStats: MemberAttendanceStats = {
+      attendanceScore: -4,
+      committed: 4,
+      attended: 0,
+      turnupRate: 0,
+    };
+    expect(getMemberConfidenceTooltip(false, zeroStats, undefined, oldMember)).toBe(
+      'Inactive (0% turnup): Attended 0 of 4 scheduled commitments.',
+    );
+  });
+
   it('respects custom confidence thresholds for tooltips', () => {
     const customThresholds = { solid: 0.85, moderate: 0.5, defaultTurnupRate: 0.6 };
     expect(getMemberConfidenceTooltip(false, undefined, customThresholds)).toBe(
@@ -232,12 +276,64 @@ describe('getMemberConfidenceTooltip', () => {
   });
 });
 
+describe('isMemberInactiveWithoutAttendance', () => {
+  it('returns false if member has recorded commitments and positive attendance', () => {
+    const stats: MemberAttendanceStats = {
+      attendanceScore: 5,
+      committed: 4,
+      attended: 3,
+      turnupRate: 0.75,
+    };
+    const oldMember = { created_at: '2020-01-01' };
+    expect(isMemberInactiveWithoutAttendance(oldMember, stats)).toBe(false);
+  });
+
+  it('returns true if member has 0% turnout (0 attended commitments) and joined > 30 days ago', () => {
+    const stats: MemberAttendanceStats = {
+      attendanceScore: -3,
+      committed: 3,
+      attended: 0,
+      turnupRate: 0,
+    };
+    const oldMember = { created_at: '2020-01-01' };
+    expect(isMemberInactiveWithoutAttendance(oldMember, stats)).toBe(true);
+  });
+
+  it('returns false if member has 0% turnout but is a new member (<= 30 days ago)', () => {
+    const stats: MemberAttendanceStats = {
+      attendanceScore: -1,
+      committed: 1,
+      attended: 0,
+      turnupRate: 0,
+    };
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() - 10);
+    const newMember = { created_at: newDate.toISOString() };
+    expect(isMemberInactiveWithoutAttendance(newMember, stats)).toBe(false);
+  });
+
+  it('returns true if member has 0 attendance data and joined > 30 days ago', () => {
+    const oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - 45);
+    const oldMember = { created_at: oldDate.toISOString() };
+    expect(isMemberInactiveWithoutAttendance(oldMember, undefined)).toBe(true);
+  });
+
+  it('returns false if member has 0 attendance data but joined recently (<= 30 days ago)', () => {
+    const newDate = new Date();
+    newDate.setDate(newDate.getDate() - 10);
+    const newMember = { created_at: newDate.toISOString() };
+    expect(isMemberInactiveWithoutAttendance(newMember, undefined)).toBe(false);
+  });
+});
+
 describe('calculateAllSundayConfidenceForecast', () => {
-  it('correctly aggregates forecasts across all 3 Sunday service slots', () => {
+  it('correctly aggregates forecasts across unique members for all Sunday service slots', () => {
     const m1 = createMockMember('m1', 'SolidUser');
     const m2 = createMockMember('m2', 'ModerateUser');
 
     // m1 serves in 9AM and 12NN (2 slot assignments)
+    // m2 serves in 12NN and 3PM (2 slot assignments)
     const entriesBySlot = {
       '9AM': [createScheduleEntry(m1)],
       '12NN': [createScheduleEntry(m1), createScheduleEntry(m2)],
@@ -256,15 +352,14 @@ describe('calculateAllSundayConfidenceForecast', () => {
       statsMap,
     );
 
-    // Total slot assignments = 1 + 2 + 1 = 4
-    expect(result.totalCommitted).toBe(4);
-    // 9AM: m1 (1.0 -> 1)
-    // 12NN: m1 (1.0) + m2 (0.5) = 1.5 -> 2
-    // 3PM: m2 (0.5) -> 1
-    // Total turnup = 1 + 2 + 1 = 4
-    expect(result.expectedTurnup).toBe(4);
-    expect(result.highCount).toBe(2); // m1 across 2 slots
-    expect(result.moderateCount).toBe(2); // m2 across 2 slots
+    // Total unique volunteers = 2 (m1 and m2)
+    expect(result.totalCommitted).toBe(2);
+    // Probability sum = 1.0 (m1) + 0.5 (m2) = 1.5 -> Math.round(1.5) = 2
+    expect(result.expectedTurnup).toBe(2);
+    expect(result.highCount).toBe(1); // m1
+    expect(result.moderateCount).toBe(1); // m2
+    expect(result.atRiskCount).toBe(0);
+    expect(result.inactiveCount).toBe(0);
     expect(result.excusedCount).toBe(0);
   });
 });

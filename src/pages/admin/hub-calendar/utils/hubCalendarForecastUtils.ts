@@ -65,6 +65,7 @@ export interface SlotConfidenceForecast {
   highCount: number;
   moderateCount: number;
   atRiskCount: number;
+  inactiveCount: number;
   excusedCount: number;
 }
 
@@ -85,6 +86,7 @@ export function calculateSlotConfidenceForecast(
       highCount: 0,
       moderateCount: 0,
       atRiskCount: 0,
+      inactiveCount: 0,
       excusedCount: 0,
     };
   }
@@ -93,6 +95,7 @@ export function calculateSlotConfidenceForecast(
   let highCount = 0;
   let moderateCount = 0;
   let atRiskCount = 0;
+  let inactiveCount = 0;
   let excusedCount = 0;
 
   for (const entry of entries) {
@@ -103,6 +106,11 @@ export function calculateSlotConfidenceForecast(
     }
 
     const stat = statsMap?.get(entry.member.id);
+    if (isMemberInactiveWithoutAttendance(entry.member, stat)) {
+      inactiveCount++;
+      continue;
+    }
+
     const turnupRate = stat !== undefined ? stat.turnupRate : thresholds.defaultTurnupRate;
     probabilitySum += turnupRate;
 
@@ -126,6 +134,7 @@ export function calculateSlotConfidenceForecast(
     highCount,
     moderateCount,
     atRiskCount,
+    inactiveCount,
     excusedCount,
   };
 }
@@ -137,52 +146,30 @@ export function calculateAllSundayConfidenceForecast(
   statsMap?: Map<string, MemberAttendanceStats>,
   thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
 ): SlotConfidenceForecast {
+  const uniqueMemberMap = new Map<string, MemberScheduleEntry>();
   const slots: TimeSlot[] = ['9AM', '12NN', '3PM'];
-  const forecasts = slots.map((s) =>
-    calculateSlotConfidenceForecast(
-      entriesByTimeSlot[s] || [],
-      excusedMap,
-      isoDateKey,
-      s,
-      statsMap,
-      thresholds,
-    ),
-  );
-
-  let totalCommitted = 0;
-  let expectedTurnup = 0;
-  let highCount = 0;
-  let moderateCount = 0;
-  let atRiskCount = 0;
-  let excusedCount = 0;
-
-  for (const f of forecasts) {
-    totalCommitted += f.totalCommitted;
-    expectedTurnup += f.expectedTurnup;
-    highCount += f.highCount;
-    moderateCount += f.moderateCount;
-    atRiskCount += f.atRiskCount;
-    excusedCount += f.excusedCount;
+  for (const s of slots) {
+    for (const entry of entriesByTimeSlot[s] || []) {
+      if (!uniqueMemberMap.has(entry.member.id)) {
+        uniqueMemberMap.set(entry.member.id, entry);
+      }
+    }
   }
 
-  const confidencePercentage =
-    totalCommitted > 0 ? Math.round((expectedTurnup / totalCommitted) * 100) : 0;
-
-  return {
-    totalCommitted,
-    expectedTurnup,
-    confidencePercentage,
-    highCount,
-    moderateCount,
-    atRiskCount,
-    excusedCount,
-  };
+  return calculateSlotConfidenceForecast(
+    Array.from(uniqueMemberMap.values()),
+    excusedMap,
+    isoDateKey,
+    undefined,
+    statsMap,
+    thresholds,
+  );
 }
 
-export type ConfidenceTier = 'solid' | 'moderate' | 'at_risk' | 'excused';
+export type ConfidenceTier = 'solid' | 'moderate' | 'at_risk' | 'inactive' | 'excused';
 
 export function getMemberConfidenceTier(
-  member: { id?: string | null; member_id?: string | null },
+  member: { id?: string | null; member_id?: string | null; created_at?: string | null },
   isoDateKey: string,
   slot?: TimeSlot,
   excusedMap?: ExcusedMemberMap,
@@ -194,6 +181,10 @@ export function getMemberConfidenceTier(
   }
 
   const stat = member.id ? statsMap?.get(member.id) : undefined;
+  if (isMemberInactiveWithoutAttendance(member, stat)) {
+    return 'inactive';
+  }
+
   const turnupRate = stat !== undefined ? stat.turnupRate : thresholds.defaultTurnupRate;
 
   return getConfidenceTierFromRate(turnupRate, thresholds);
@@ -207,18 +198,54 @@ export function getConfidenceTierLabel(tier: ConfidenceTier): string {
       return 'Moderate';
     case 'at_risk':
       return 'At Risk';
+    case 'inactive':
+      return 'Inactive';
     case 'excused':
       return 'Excused';
   }
+}
+
+export function isMemberInactiveWithoutAttendance(
+  member: { created_at?: string | null },
+  stats?: MemberAttendanceStats,
+  cutoffDays: number = 30,
+): boolean {
+  // If member joined within cutoffDays (new member), they are not inactive
+  if (member?.created_at) {
+    const createdDate = new Date(member.created_at);
+    if (!isNaN(createdDate.getTime())) {
+      const now = new Date();
+      const diffDays = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays >= 0 && diffDays <= cutoffDays) {
+        return false;
+      }
+    }
+  }
+
+  // If member has recorded attendance with positive turnup rate
+  if (stats && stats.turnupRate > 0 && stats.attended > 0) {
+    return false;
+  }
+
+  // Turnout is 0% or no attendance data recorded for existing members
+  return true;
 }
 
 export function getMemberConfidenceTooltip(
   isExcused: boolean,
   stats?: MemberAttendanceStats,
   thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
+  member?: { created_at?: string | null },
 ): string {
   if (isExcused) {
     return 'Excused: Submitted an approved excuse request for this service slot.';
+  }
+
+  if (member && isMemberInactiveWithoutAttendance(member, stats)) {
+    if (stats && stats.committed > 0) {
+      return `Inactive (0% turnup): Attended 0 of ${stats.committed} scheduled commitments.`;
+    }
+    return 'Inactive: Member has 0% attendance data recorded over the past 30+ days.';
   }
 
   const turnupRate = stats !== undefined ? stats.turnupRate : thresholds.defaultTurnupRate;

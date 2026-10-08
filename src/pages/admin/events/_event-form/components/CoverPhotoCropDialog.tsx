@@ -93,7 +93,7 @@ function CoverPhotoCropContent({
         URL.revokeObjectURL(createdBlobUrl);
       }
     };
-  }, [imageSrc]);
+  }, [imageSrc, isRemote]);
 
   function handleMouseDown(e: React.MouseEvent) {
     e.preventDefault();

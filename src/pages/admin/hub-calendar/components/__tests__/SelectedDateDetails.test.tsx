@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
-import type { AdminMember } from '@/lib/domain/members';
+import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
 import { SelectedDateDetails } from '../SelectedDateDetails';
 
@@ -409,5 +409,197 @@ describe('SelectedDateDetails', () => {
     // Both entry1 and entry2 are visible in ALL tab
     expect(screen.getByText(mockMember1.full_name)).toBeInTheDocument();
     expect(screen.getByText(mockMember2.full_name)).toBeInTheDocument();
+  });
+
+  it('renders Inactive badge on member with 0 attendance data joined > 30 days ago', () => {
+    const oldMember: typeof mockMember1 = {
+      ...mockMember1,
+      id: 'old-mem',
+      first_name: 'Test One',
+      last_name: 'Sample Member',
+      full_name: 'Test One Sample Member',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const oldEntry: MemberScheduleEntry = {
+      member: oldMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[oldEntry]}
+          entriesByTimeSlot={{ '9AM': [oldEntry], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Test One Sample Member')).toBeInTheDocument();
+    expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders Inactive badge on member with 0% turnout (attended 0 commitments)', () => {
+    const zeroTurnoutMember: typeof mockMember1 = {
+      ...mockMember1,
+      id: 'zero-mem',
+      first_name: 'Test Zero',
+      last_name: 'Sample Turnout',
+      full_name: 'Test Zero Sample Turnout',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const zeroEntry: MemberScheduleEntry = {
+      member: zeroTurnoutMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+    const zeroStatsMap = new Map<string, MemberAttendanceStats>([
+      ['zero-mem', { attendanceScore: -5, committed: 5, attended: 0, turnupRate: 0 }],
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[zeroEntry]}
+          entriesByTimeSlot={{ '9AM': [zeroEntry], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          attendanceScoreMap={zeroStatsMap}
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Test Zero Sample Turnout')).toBeInTheDocument();
+    expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('separates At Risk and Inactive when filtering by tier tab', () => {
+    const atRiskMember: typeof mockMember1 = {
+      ...mockMember1,
+      id: 'risk-mem',
+      first_name: 'Test Risk',
+      last_name: 'Sample User',
+      full_name: 'Test Risk Sample User',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const inactiveMember: typeof mockMember2 = {
+      ...mockMember2,
+      id: 'inact-mem',
+      first_name: 'Test Inact',
+      last_name: 'Sample User',
+      full_name: 'Test Inact Sample User',
+      created_at: '2023-01-01T00:00:00Z',
+    };
+    const riskEntry: MemberScheduleEntry = {
+      member: atRiskMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+    const inactEntry: MemberScheduleEntry = {
+      member: inactiveMember,
+      sundayKey: 'first_sunday',
+      timeSlots: ['9AM'],
+    };
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['risk-mem', { attendanceScore: -2, committed: 10, attended: 2, turnupRate: 0.2 }], // At Risk (>0 attended)
+      ['inact-mem', { attendanceScore: -5, committed: 5, attended: 0, turnupRate: 0 }], // Inactive (0 attended)
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[riskEntry, inactEntry]}
+          entriesByTimeSlot={{ '9AM': [riskEntry, inactEntry], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          attendanceScoreMap={statsMap}
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Both visible initially
+    expect(screen.getByText('Test Risk Sample User')).toBeInTheDocument();
+    expect(screen.getByText('Test Inact Sample User')).toBeInTheDocument();
+
+    // Click Inactive tab
+    const inactTab = screen.getByRole('tab', { name: /Inactive/i });
+    fireEvent.click(inactTab);
+
+    // Only Inactive member visible
+    expect(screen.queryByText('Test Risk Sample User')).not.toBeInTheDocument();
+    expect(screen.getByText('Test Inact Sample User')).toBeInTheDocument();
+
+    // Click At Risk tab
+    const atRiskTab = screen.getByRole('tab', { name: /At Risk/i });
+    fireEvent.click(atRiskTab);
+
+    // Only At Risk member visible
+    expect(screen.getByText('Test Risk Sample User')).toBeInTheDocument();
+    expect(screen.queryByText('Test Inact Sample User')).not.toBeInTheDocument();
+  });
+
+  it('displays the filtered results count and provides a clear filters button when filtered', () => {
+    const handleRoleChange = vi.fn();
+    const handleSearchChange = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1, entry2]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole="Usher"
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={handleRoleChange}
+          onSearchQueryChange={handleSearchChange}
+        />
+      </MemoryRouter>,
+    );
+
+    // Should show filtered count from total
+    expect(screen.getByText(/Showing/i)).toBeInTheDocument();
+    expect(screen.getByText(/filtered from 2/i)).toBeInTheDocument();
+
+    // Click Clear filters
+    const clearBtn = screen.getByRole('button', { name: /Clear filters/i });
+    fireEvent.click(clearBtn);
+
+    expect(handleRoleChange).toHaveBeenCalledWith(null);
+    expect(handleSearchChange).toHaveBeenCalledWith('');
   });
 });
