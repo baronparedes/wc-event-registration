@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Calendar, Home, MapPin } from 'lucide-react';
+import { Calendar, Home, MapPin, Share2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Badge, Button, EmptyState, MarkdownRenderer, Skeleton } from '@/components/ui';
@@ -8,6 +8,8 @@ import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { usePublicEventQuery } from '@/hooks/domain/events';
 import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
+
+import { ShareCountdownDialog } from './components';
 
 export function EventCountdownPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -26,6 +28,7 @@ export function EventCountdownPage() {
 
   const [isEventStarted, setIsEventStarted] = useState(false);
   const [isPastDate, setIsPastDate] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     if (!event || !event.starts_at) return;
@@ -243,6 +246,15 @@ export function EventCountdownPage() {
             <Home className="h-5 w-5 mr-2" aria-hidden="true" />
             Go Home
           </Button>
+          <Button
+            size="3xl"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => setIsShareOpen(true)}
+          >
+            <Share2 className="h-5 w-5 mr-2" aria-hidden="true" />
+            Share Countdown
+          </Button>
           {isRegistrationOpen && (
             <Button
               size="3xl"
@@ -253,6 +265,14 @@ export function EventCountdownPage() {
             </Button>
           )}
         </div>
+
+        <ShareCountdownDialog
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+          event={event}
+          coverUrl={coverUrl}
+          timeLeft={timeLeft}
+        />
       </div>
     </div>
   );
