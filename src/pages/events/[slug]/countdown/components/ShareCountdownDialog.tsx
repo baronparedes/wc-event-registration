@@ -180,7 +180,7 @@ export function ShareCountdownDialog({
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="lg">
+    <Dialog isOpen={isOpen} onClose={onClose} size="2xl">
       <Dialog.Header showCloseButton>
         <Dialog.Title>Share Event Countdown</Dialog.Title>
         <Dialog.Description>
@@ -193,11 +193,9 @@ export function ShareCountdownDialog({
       <Dialog.Body>
         <div className="flex flex-col items-center gap-4">
           {/* Card Preview Container */}
-          <div className="flex w-full justify-center overflow-x-auto rounded-2xl border border-border bg-slate-50 p-4 sm:p-6">
-            <div className="origin-top scale-90 sm:scale-100 transition-transform">
-              <div ref={cardRef}>
-                <CountdownShareCard event={event} coverUrl={coverUrl} timeLeft={timeLeft} />
-              </div>
+          <div className="flex w-full justify-center rounded-2xl border border-border bg-slate-50 p-3 sm:p-6">
+            <div ref={cardRef} className="w-full max-w-[560px]">
+              <CountdownShareCard event={event} coverUrl={coverUrl} timeLeft={timeLeft} />
             </div>
           </div>
 
@@ -226,25 +224,40 @@ export function ShareCountdownDialog({
         </div>
       </Dialog.Body>
 
-      <Dialog.Footer>
-        <Button variant="primaryOutline" onClick={onClose} disabled={isGenerating}>
+      <Dialog.Footer className="w-full flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3">
+        <Button
+          variant="primaryOutline"
+          onClick={onClose}
+          disabled={isGenerating}
+          className="w-full sm:w-auto"
+        >
           Cancel
         </Button>
 
         {isMobile ? (
           <>
-            <Button variant="outline" onClick={handleDownload} disabled={isGenerating}>
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              disabled={isGenerating}
+              className="w-full sm:w-auto"
+            >
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
-            <Button onClick={handleShare} disabled={isGenerating}>
+            <Button onClick={handleShare} disabled={isGenerating} className="w-full sm:w-auto">
               <Share2 className="mr-2 h-4 w-4" />
               {isGenerating ? 'Generating...' : 'Share Image'}
             </Button>
           </>
         ) : (
           <>
-            <Button variant="outline" onClick={handleCopyImage} disabled={isGenerating}>
+            <Button
+              variant="outline"
+              onClick={handleCopyImage}
+              disabled={isGenerating}
+              className="w-full sm:w-auto"
+            >
               {copiedImage ? (
                 <>
                   <Check className="mr-2 h-4 w-4 text-emerald-600" />
@@ -257,11 +270,16 @@ export function ShareCountdownDialog({
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={handleDownload} disabled={isGenerating}>
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              disabled={isGenerating}
+              className="w-full sm:w-auto"
+            >
               <Download className="mr-2 h-4 w-4" />
               Download Image
             </Button>
-            <Button onClick={handleShare} disabled={isGenerating}>
+            <Button onClick={handleShare} disabled={isGenerating} className="w-full sm:w-auto">
               <Share2 className="mr-2 h-4 w-4" />
               {isGenerating ? 'Generating...' : 'Share'}
             </Button>

@@ -20,10 +20,7 @@ export type CountdownShareCardProps = {
 
 export function CountdownShareCard({ event, coverUrl, timeLeft }: CountdownShareCardProps) {
   return (
-    <div
-      style={{ width: '560px', minWidth: '560px', maxWidth: '560px' }}
-      className="w-[560px] min-w-[560px] max-w-[560px] shrink-0 box-border rounded-3xl border border-slate-200 bg-white p-8 text-slate-900 shadow-xl"
-    >
+    <div className="w-full max-w-[560px] box-border rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 text-slate-900 shadow-xl">
       {/* Header with App Branding */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-5">
         <div className="flex items-center gap-3">
