@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   decodeOffsetCursor,
+  formatPaginationSummary,
   getCurrentPageFromCursor,
   getPageCursor,
   getTotalPages,
-  formatPaginationSummary
 } from '../pagination';
 
 describe('pagination', () => {
@@ -34,7 +34,9 @@ describe('pagination', () => {
 
   it('formats pagination summary string', () => {
     expect(formatPaginationSummary(true, 10, 50, 'user')).toBe('Showing 10 of 50 users');
-    expect(formatPaginationSummary(false, 10, 50, 'user', 'people')).toBe('Showing 10 of 50 people');
+    expect(formatPaginationSummary(false, 10, 50, 'user', 'people')).toBe(
+      'Showing 10 of 50 people',
+    );
     expect(formatPaginationSummary(false, 50, 50, 'user')).toBe('Showing all 50 users');
     expect(formatPaginationSummary(false, 1, 1, 'user')).toBe('Showing all 1 user');
   });
