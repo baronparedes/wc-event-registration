@@ -27,6 +27,13 @@
 **Vulnerability:** Open redirect allowing attackers to bypass validation using backslash protocol-relative URLs (`/\`).
 **Learning:** Browsers normalize backslashes `/\` to double forward slashes `//` inside URLs. Relying solely on `//` blocking is insufficient.
 **Prevention:** Always block both `//` and `/\` when restricting redirects to relative URLs.
+
+## 2025-02-14 - Replace Math.random with crypto.randomUUID for Secure Queue IDs
+
+**Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
+**Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
+**Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
+
 ## 2025-02-14 - Replace Math.random with crypto.randomUUID for Secure Queue IDs
 
 **Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
