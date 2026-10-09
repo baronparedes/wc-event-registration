@@ -160,7 +160,7 @@ export function getEventCoverPublicUrl(coverImageKey: string | null | undefined)
 export async function uploadEventCoverImage(file: File, eventIdOrSlug?: string): Promise<string> {
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const prefix = eventIdOrSlug ? `${eventIdOrSlug.replace(/[^a-zA-Z0-9_-]/g, '_')}-` : '';
-  const fileName = `${prefix}${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+  const fileName = `${prefix}${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
   const filePath = `covers/${fileName}`;
 
   const { error } = await supabase.storage.from(EVENT_COVERS_BUCKET).upload(filePath, file, {
