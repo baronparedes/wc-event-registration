@@ -21,23 +21,30 @@ export function SundayVolunteerMobileCard({ volunteer }: SundayVolunteerMobileCa
     <MobileCard>
       <MobileCardBody>
         <MobileCardHeader>
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-start gap-3 w-full">
             <Avatar
               name={volunteer.full_name}
               avatarObjectKey={volunteer.avatar_object_key}
               size="md"
-              className="shrink-0"
+              className="shrink-0 mt-0.5"
             />
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold text-text">{volunteer.full_name}</h3>
+            <div className="min-w-0 flex-1 space-y-1">
+              <h3 className="text-base font-semibold leading-snug text-text">
+                {volunteer.full_name}
+              </h3>
               {volunteer.member_id && (
-                <p className="truncate text-xs font-mono text-muted">{volunteer.member_id}</p>
+                <p className="text-xs font-mono text-muted">{volunteer.member_id}</p>
               )}
+              <div className="pt-0.5">
+                <Badge
+                  variant="primaryOutline"
+                  className="text-xs font-normal whitespace-normal text-left"
+                >
+                  {volunteer.formatted_slots}
+                </Badge>
+              </div>
             </div>
           </div>
-          <Badge variant="primaryOutline" className="text-xs font-normal shrink-0">
-            {volunteer.formatted_slots}
-          </Badge>
         </MobileCardHeader>
 
         <MobileCardDivider />
