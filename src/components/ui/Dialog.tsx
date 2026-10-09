@@ -134,7 +134,7 @@ export function Dialog({
           aria-label={ariaLabel}
           aria-labelledby={ariaLabel ? undefined : titleId}
           aria-describedby={descriptionId}
-          className={`mx-3 sm:mx-4 w-full ${resolvedMaxWidth} max-w-[calc(100vw-1.5rem)] sm:max-w-[calc(100vw-2rem)] overflow-x-hidden rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
+          className={`mx-3 sm:mx-4 w-full ${resolvedMaxWidth} overflow-x-hidden rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
           style={{ touchAction: 'pan-y' }}
           onClick={(e) => e.stopPropagation()}
         >
