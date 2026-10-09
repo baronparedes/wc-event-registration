@@ -126,3 +126,23 @@ export { PWAInstallPromptBanner, PWA_PROMPT_SNOOZE_STORAGE_KEY } from './PWAInst
 export { PWAInstallGuideModal, type PWAInstallGuideModalProps } from './PWAInstallGuideModal';
 export { FieldTypeBadge, type FieldTypeBadgeProps } from './FieldTypeBadge';
 export { FieldOrderControl, type FieldOrderControlProps } from './FieldOrderControl';
+export {
+  ImageCanvas,
+  ImageCanvasActions,
+  ImageCanvasCancelButton,
+  ImageCanvasProvider,
+  useImageCanvas,
+  useImageCanvasContext,
+  useImageCanvasGroup,
+  type ImageCanvasAction,
+  type ImageCanvasActionLabels,
+  type ImageCanvasActionsProps,
+  type ImageCanvasCancelButtonProps,
+  type ImageCanvasContextValue,
+  type ImageCanvasController,
+  type ImageCanvasMessages,
+  type ImageCanvasProps,
+  type ImageCanvasProviderProps,
+  type UseImageCanvasGroupOptions,
+  type UseImageCanvasOptions,
+} from './ImageCanvas';

@@ -345,10 +345,78 @@ describe('ShareSundayScheduleDialog', () => {
     fireEvent.click(shareButton);
 
     await waitFor(() => {
-      expect(toJpeg).toHaveBeenCalledTimes(3);
+      // 2 calls per slot on Safari/iOS (warm-up + final capture) across 3 slots = 6
+      expect(toJpeg).toHaveBeenCalledTimes(6);
       expect(shareMock).toHaveBeenCalledWith({
         files: expect.arrayContaining([expect.any(File)]),
       });
+    });
+  });
+
+  it('renders mobile Copy and Share buttons and copies selected slot image on mobile', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      configurable: true,
+      writable: true,
+    });
+
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    const copyButton = screen.getByRole('button', { name: /Copy 9:00 AM Image/i });
+    const shareButton = screen.getByRole('button', { name: /^Share$/i });
+
+    expect(copyButton).toBeInTheDocument();
+    expect(shareButton).toBeInTheDocument();
+
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(toBlob).toHaveBeenCalled();
+      expect(navigator.clipboard.write).toHaveBeenCalledWith([expect.any(ClipboardItem)]);
+      expect(toast.success).toHaveBeenCalledWith('9:00 AM schedule image copied to clipboard');
+    });
+  });
+
+  it('allows selecting different service slot on mobile to update copy target', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      configurable: true,
+      writable: true,
+    });
+
+    render(
+      <ShareSundayScheduleDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        year={2026}
+        monthIndex={9}
+        dayNumber={4}
+        entriesByTimeSlot={entriesByTimeSlot}
+      />,
+    );
+
+    // Click on 12:00 NN Service row
+    const service12NN = screen.getAllByText('12:00 NN Service')[0];
+    fireEvent.click(service12NN);
+
+    const copyButton = screen.getByRole('button', { name: /Copy 12:00 NN Image/i });
+    expect(copyButton).toBeInTheDocument();
+
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(toBlob).toHaveBeenCalled();
+      expect(navigator.clipboard.write).toHaveBeenCalledWith([expect.any(ClipboardItem)]);
+      expect(toast.success).toHaveBeenCalledWith('12:00 NN schedule image copied to clipboard');
     });
   });
 

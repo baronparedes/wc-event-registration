@@ -30,3 +30,20 @@ export {
 
 export { parseErrorToJsonOrString } from './errorUtils';
 export { DOMPurify } from './dompurify';
+export {
+  canCopyImageToClipboard,
+  copyPngToClipboard,
+  dataUrlToBlob,
+  dataUrlToFile,
+  delay,
+  downloadDataUrl,
+  ensureResourcesReady,
+  isIOSDevice,
+  isMobileDevice,
+  renderToJpegDataUrl,
+  renderToPngBlob,
+  shareFiles,
+  type RenderOptions,
+  type ShareFilesOptions,
+  type ShareFilesResult,
+} from './share-image';

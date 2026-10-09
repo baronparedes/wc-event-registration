@@ -199,12 +199,9 @@ describe('ShareCountdownDialog', () => {
     fireEvent.click(shareBtn);
 
     await waitFor(() => {
-      expect(shareMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Tech Forward 2026',
-          text: 'Join us for Tech Forward 2026!',
-        }),
-      );
+      expect(shareMock).toHaveBeenCalledWith({
+        files: [expect.any(File)],
+      });
     });
   });
 
@@ -267,5 +264,37 @@ describe('ShareCountdownDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders Copy Image and Share Image on mobile viewport (no download button)', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      configurable: true,
+      writable: true,
+    });
+
+    render(
+      <ShareCountdownDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        event={mockEvent}
+        timeLeft={mockTimeLeft}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Copy Image/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Share Image/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Download/i })).not.toBeInTheDocument();
+  });
+
+  it('auto-calculates timeLeft and derives coverUrl when props are omitted', () => {
+    render(<ShareCountdownDialog isOpen={true} onClose={vi.fn()} event={mockEvent} />);
+
+    expect(screen.getByRole('heading', { name: 'Share Event Countdown' })).toBeInTheDocument();
+    expect(screen.getAllByText(mockEvent.title)[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Days')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Hours')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Mins')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Secs')[0]).toBeInTheDocument();
   });
 });

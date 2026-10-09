@@ -51,6 +51,8 @@ export function CountdownShareCard({
             src={coverUrl}
             alt={event.title}
             crossOrigin="anonymous"
+            loading="eager"
+            decoding="sync"
             className="h-full w-full object-cover"
           />
         </div>
@@ -101,6 +103,8 @@ export function CountdownShareCard({
             <img
               src={qrCodeDataUrl}
               alt="Scan QR code for event countdown"
+              loading="eager"
+              decoding="sync"
               className="h-28 w-28 rounded-xl bg-white p-1 border border-slate-100 object-contain shadow-2xs"
             />
           </div>

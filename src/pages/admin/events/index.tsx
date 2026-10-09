@@ -18,13 +18,9 @@ import { useAdminEventsQuery, useDuplicateEventMutation } from '@/hooks/domain/e
 import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminEvent } from '@/lib/domain/events';
+import { ShareCountdownDialog } from '@/pages/events/[slug]/countdown/components';
 
-import {
-  AdminEventsTable,
-  DuplicateEventDialog,
-  MobileEventCard,
-  ShareEventDialog,
-} from './components';
+import { AdminEventsTable, DuplicateEventDialog, MobileEventCard } from './components';
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
@@ -177,7 +173,7 @@ export function AdminEventsPage() {
               onDuplicate={handleDuplicateEvent}
             />
 
-            <ShareEventDialog
+            <ShareCountdownDialog
               isOpen={Boolean(shareEvent)}
               onClose={() => setShareEvent(null)}
               event={shareEvent}
