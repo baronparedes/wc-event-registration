@@ -96,13 +96,13 @@ export function SundayVolunteersTable({
               {filteredVolunteers.map((volunteer) => (
                 <ListTableRow key={volunteer.user_id}>
                   <ListTableCell>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Avatar
                         name={volunteer.full_name}
                         avatarObjectKey={volunteer.avatar_object_key}
                         size="sm"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium text-text">{volunteer.full_name}</p>
                         {volunteer.member_id && (
                           <p className="text-xs text-muted font-mono">{volunteer.member_id}</p>
