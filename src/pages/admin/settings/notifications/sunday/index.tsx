@@ -162,8 +162,9 @@ export function AdminSundayRemindersPage() {
                 </div>
 
                 {!isPastSunday && (
-                  <div className="flex items-center justify-end pt-2 sm:pt-0">
+                  <div className="flex w-full items-center justify-end pt-2 sm:w-auto sm:pt-0 [&>button]:w-full sm:[&>button]:w-auto">
                     <Button
+                      fullWidthMobile
                       variant="default"
                       onClick={() => setIsConfirmOpen(true)}
                       disabled={
