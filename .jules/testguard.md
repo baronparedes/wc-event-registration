@@ -39,3 +39,9 @@ expect(result.current).toBe(false);
 **Challenge:** Testing the dynamic fields required selecting dynamically populated UI dropdowns built with custom elements that abstract typical semantic HTML.
 **Learning:** For FormSelectField dropdowns, we need to query by role 'button' since headless UI libraries often implement them that way. We can look for the option in the dom and click it.
 **Pattern:** For `FormSelectField`, use `screen.getByRole('button', { name: 'Label' })` to click and open it, then `screen.getAllByText('Option Text')` and filter for elements mimicking the 'option' role to execute selection interactions.
+
+## 2025-02-27 - Locale Mocking in Vitest
+
+**Challenge:** Tests for date formatting utility functions `toLocaleDateString` and `toLocaleString` pass locally but fail in CI environments due to differing default locales and timezones.
+**Learning:** `Date.prototype.toLocaleDateString` and `Date.prototype.toLocaleString` defaults to system settings, causing unpredictable outputs depending on where tests are run (e.g. CI servers).
+**Pattern:** Always use `vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('Expected Value')` or explicitly pass `locale` parameter and `timeZone` in tests to ensure consistency across environments.
