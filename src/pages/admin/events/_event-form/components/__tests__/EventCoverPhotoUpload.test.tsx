@@ -293,212 +293,215 @@ describe('EventCoverPhotoUpload', () => {
 
     expect(screen.queryByTestId('crop-dialog')).not.toBeInTheDocument();
   });
-});
+  it('silently ignores cleanup error if deleteEventCoverImage fails when replacing cover photo', async () => {
+    mockUploadEventCoverImage.mockResolvedValueOnce('covers/uploaded-new.png');
+    mockDeleteEventCoverImage.mockRejectedValueOnce(new Error('Failed to delete old image'));
+    const onCoverImageKeyChange = vi.fn();
 
-it('silently ignores cleanup error if deleteEventCoverImage fails when replacing cover photo', async () => {
-  mockUploadEventCoverImage.mockResolvedValueOnce('covers/uploaded-new.png');
-  mockDeleteEventCoverImage.mockRejectedValueOnce(new Error('Failed to delete old image'));
-  const onCoverImageKeyChange = vi.fn();
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey="covers/old-image.png"
+        onCoverImageKeyChange={onCoverImageKeyChange}
+        eventIdOrSlug="summer-event"
+      />,
+    );
 
-  render(
-    <EventCoverPhotoUpload
-      coverImageKey="covers/old-image.png"
-      onCoverImageKeyChange={onCoverImageKeyChange}
-      eventIdOrSlug="summer-event"
-    />,
-  );
+    const input = screen.getByLabelText('Upload event cover photo');
+    const validFile = new File(['image-bytes'], 'banner.png', { type: 'image/png' });
 
-  const input = screen.getByLabelText('Upload event cover photo');
-  const validFile = new File(['image-bytes'], 'banner.png', { type: 'image/png' });
+    fireEvent.change(input, { target: { files: [validFile] } });
 
-  fireEvent.change(input, { target: { files: [validFile] } });
-
-  await waitFor(() => {
-    expect(mockUploadEventCoverImage).toHaveBeenCalledWith(validFile, 'summer-event');
-    expect(mockDeleteEventCoverImage).toHaveBeenCalledWith('covers/old-image.png');
-    expect(onCoverImageKeyChange).toHaveBeenCalledWith('covers/uploaded-new.png');
-    expect(mockToastSuccess).toHaveBeenCalledWith('Cover photo uploaded successfully');
-    expect(mockToastError).not.toHaveBeenCalled();
-  });
-});
-
-it('ignores click on dropzone if disabled is true', async () => {
-  render(
-    <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={vi.fn()} disabled={true} />,
-  );
-
-  const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
-  const input = screen.getByLabelText('Upload event cover photo') as HTMLInputElement;
-  const clickSpy = vi.spyOn(input, 'click');
-
-  if (dropZone) {
-    fireEvent.click(dropZone);
-  }
-
-  expect(clickSpy).not.toHaveBeenCalled();
-});
-
-it('ignores drag and drop events if disabled is true', async () => {
-  vi.clearAllMocks();
-  const onCoverImageKeyChange = vi.fn();
-
-  render(
-    <EventCoverPhotoUpload
-      coverImageKey={null}
-      onCoverImageKeyChange={onCoverImageKeyChange}
-      disabled={true}
-    />,
-  );
-
-  const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
-  if (dropZone) {
-    fireEvent.dragOver(dropZone);
-    expect(dropZone.className).not.toContain('border-primary bg-primary/5');
-
-    const file = new File(['dropped-content'], 'dropped.png', { type: 'image/png' });
-    fireEvent.drop(dropZone, {
-      dataTransfer: { files: [file] },
+    await waitFor(() => {
+      expect(mockUploadEventCoverImage).toHaveBeenCalledWith(validFile, 'summer-event');
+      expect(mockDeleteEventCoverImage).toHaveBeenCalledWith('covers/old-image.png');
+      expect(onCoverImageKeyChange).toHaveBeenCalledWith('covers/uploaded-new.png');
+      expect(mockToastSuccess).toHaveBeenCalledWith('Cover photo uploaded successfully');
+      expect(mockToastError).not.toHaveBeenCalled();
     });
+  });
+
+  it('ignores click on dropzone if disabled is true', async () => {
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey={null}
+        onCoverImageKeyChange={vi.fn()}
+        disabled={true}
+      />,
+    );
+
+    const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
+    const input = screen.getByLabelText('Upload event cover photo') as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, 'click');
+
+    if (dropZone) {
+      fireEvent.click(dropZone);
+    }
+
+    expect(clickSpy).not.toHaveBeenCalled();
+  });
+
+  it('ignores drag and drop events if disabled is true', async () => {
+    vi.clearAllMocks();
+    const onCoverImageKeyChange = vi.fn();
+
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey={null}
+        onCoverImageKeyChange={onCoverImageKeyChange}
+        disabled={true}
+      />,
+    );
+
+    const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
+    if (dropZone) {
+      fireEvent.dragOver(dropZone);
+      expect(dropZone.className).not.toContain('border-primary bg-primary/5');
+
+      const file = new File(['dropped-content'], 'dropped.png', { type: 'image/png' });
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [file] },
+      });
+
+      expect(mockUploadEventCoverImage).not.toHaveBeenCalled();
+    }
+  });
+
+  it('handles non-Error objects thrown during upload gracefully', async () => {
+    mockUploadEventCoverImage.mockRejectedValueOnce('String error without Error class');
+    const onCoverImageKeyChange = vi.fn();
+
+    render(
+      <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
+    );
+
+    const input = screen.getByLabelText('Upload event cover photo');
+    const validFile = new File(['image-bytes'], 'banner.png', { type: 'image/png' });
+
+    fireEvent.change(input, { target: { files: [validFile] } });
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Failed to upload cover photo');
+    });
+  });
+
+  it('ignores actions if already uploading', async () => {
+    const onCoverImageKeyChange = vi.fn();
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey="covers/sample.jpg"
+        onCoverImageKeyChange={onCoverImageKeyChange}
+      />,
+    );
+
+    const removeButton = screen.getByRole('button', { name: 'Remove' });
+    // We can't directly set isUploading, but we can verify it's disabled or ignored during upload.
+    // However, the button's disabled attribute should be true anyway. Let's just check standard render first.
+    expect(removeButton).not.toBeDisabled();
+  });
+
+  it('handles drag and drop without files', async () => {
+    vi.clearAllMocks();
+    const onCoverImageKeyChange = vi.fn();
+
+    render(
+      <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
+    );
+
+    const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
+    if (dropZone) {
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [] },
+      });
+
+      expect(mockUploadEventCoverImage).not.toHaveBeenCalled();
+    }
+  });
+
+  it('handles file input change without files', async () => {
+    vi.clearAllMocks();
+    const onCoverImageKeyChange = vi.fn();
+
+    render(
+      <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
+    );
+
+    const input = screen.getByLabelText('Upload event cover photo');
+    fireEvent.change(input, { target: { files: [] } });
 
     expect(mockUploadEventCoverImage).not.toHaveBeenCalled();
-  }
-});
-
-it('handles non-Error objects thrown during upload gracefully', async () => {
-  mockUploadEventCoverImage.mockRejectedValueOnce('String error without Error class');
-  const onCoverImageKeyChange = vi.fn();
-
-  render(
-    <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
-  );
-
-  const input = screen.getByLabelText('Upload event cover photo');
-  const validFile = new File(['image-bytes'], 'banner.png', { type: 'image/png' });
-
-  fireEvent.change(input, { target: { files: [validFile] } });
-
-  await waitFor(() => {
-    expect(mockToastError).toHaveBeenCalledWith('Failed to upload cover photo');
   });
-});
 
-it('ignores actions if already uploading', async () => {
-  const onCoverImageKeyChange = vi.fn();
-  render(
-    <EventCoverPhotoUpload
-      coverImageKey="covers/sample.jpg"
-      onCoverImageKeyChange={onCoverImageKeyChange}
-    />,
-  );
+  it('silently ignores cleanup error if deleteEventCoverImage fails when removing cover photo', async () => {
+    mockDeleteEventCoverImage.mockRejectedValueOnce(new Error('Failed to delete old image'));
+    const onCoverImageKeyChange = vi.fn();
 
-  const removeButton = screen.getByRole('button', { name: 'Remove' });
-  // We can't directly set isUploading, but we can verify it's disabled or ignored during upload.
-  // However, the button's disabled attribute should be true anyway. Let's just check standard render first.
-  expect(removeButton).not.toBeDisabled();
-});
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey="covers/to-delete.jpg"
+        onCoverImageKeyChange={onCoverImageKeyChange}
+      />,
+    );
 
-it('handles drag and drop without files', async () => {
-  vi.clearAllMocks();
-  const onCoverImageKeyChange = vi.fn();
+    const removeButton = screen.getByRole('button', { name: 'Remove' });
+    fireEvent.click(removeButton);
 
-  render(
-    <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
-  );
-
-  const dropZone = screen.getByText('Click to upload or drag & drop cover photo').closest('div');
-  if (dropZone) {
-    fireEvent.drop(dropZone, {
-      dataTransfer: { files: [] },
+    expect(onCoverImageKeyChange).toHaveBeenCalledWith(null);
+    await waitFor(() => {
+      expect(mockDeleteEventCoverImage).toHaveBeenCalledWith('covers/to-delete.jpg');
     });
-
-    expect(mockUploadEventCoverImage).not.toHaveBeenCalled();
-  }
-});
-
-it('handles file input change without files', async () => {
-  vi.clearAllMocks();
-  const onCoverImageKeyChange = vi.fn();
-
-  render(
-    <EventCoverPhotoUpload coverImageKey={null} onCoverImageKeyChange={onCoverImageKeyChange} />,
-  );
-
-  const input = screen.getByLabelText('Upload event cover photo');
-  fireEvent.change(input, { target: { files: [] } });
-
-  expect(mockUploadEventCoverImage).not.toHaveBeenCalled();
-});
-
-it('silently ignores cleanup error if deleteEventCoverImage fails when removing cover photo', async () => {
-  mockDeleteEventCoverImage.mockRejectedValueOnce(new Error('Failed to delete old image'));
-  const onCoverImageKeyChange = vi.fn();
-
-  render(
-    <EventCoverPhotoUpload
-      coverImageKey="covers/to-delete.jpg"
-      onCoverImageKeyChange={onCoverImageKeyChange}
-    />,
-  );
-
-  const removeButton = screen.getByRole('button', { name: 'Remove' });
-  fireEvent.click(removeButton);
-
-  expect(onCoverImageKeyChange).toHaveBeenCalledWith(null);
-  await waitFor(() => {
-    expect(mockDeleteEventCoverImage).toHaveBeenCalledWith('covers/to-delete.jpg');
+    expect(mockToastInfo).toHaveBeenCalledWith('Cover photo removed');
   });
-  expect(mockToastInfo).toHaveBeenCalledWith('Cover photo removed');
-});
 
-it('handles non-Error objects thrown during apply cropped file gracefully', async () => {
-  mockUploadEventCoverImage.mockRejectedValueOnce('String error without Error class');
-  const onCoverImageKeyChange = vi.fn();
+  it('handles non-Error objects thrown during apply cropped file gracefully', async () => {
+    mockUploadEventCoverImage.mockRejectedValueOnce('String error without Error class');
+    const onCoverImageKeyChange = vi.fn();
 
-  render(
-    <EventCoverPhotoUpload
-      coverImageKey="covers/sample-123.jpg"
-      onCoverImageKeyChange={onCoverImageKeyChange}
-      eventIdOrSlug="summer-event"
-    />,
-  );
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey="covers/sample-123.jpg"
+        onCoverImageKeyChange={onCoverImageKeyChange}
+        eventIdOrSlug="summer-event"
+      />,
+    );
 
-  const adjustButton = screen.getByRole('button', { name: 'Adjust Crop' });
-  fireEvent.click(adjustButton);
+    const adjustButton = screen.getByRole('button', { name: 'Adjust Crop' });
+    fireEvent.click(adjustButton);
 
-  expect(await screen.findByTestId('crop-dialog')).toBeInTheDocument();
+    expect(await screen.findByTestId('crop-dialog')).toBeInTheDocument();
 
-  const applyCropButton = screen.getByRole('button', { name: 'Apply Crop' });
-  fireEvent.click(applyCropButton);
+    const applyCropButton = screen.getByRole('button', { name: 'Apply Crop' });
+    fireEvent.click(applyCropButton);
 
-  await waitFor(() => {
-    expect(mockToastError).toHaveBeenCalledWith('Failed to save adjusted cover photo');
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Failed to save adjusted cover photo');
+    });
   });
-});
 
-it('silently ignores cleanup error if deleteEventCoverImage fails when applying cropped file', async () => {
-  mockUploadEventCoverImage.mockResolvedValueOnce('covers/cropped-uploaded.jpg');
-  mockDeleteEventCoverImage.mockRejectedValueOnce(new Error('Failed to delete old image'));
-  const onCoverImageKeyChange = vi.fn();
+  it('silently ignores cleanup error if deleteEventCoverImage fails when applying cropped file', async () => {
+    mockUploadEventCoverImage.mockResolvedValueOnce('covers/cropped-uploaded.jpg');
+    mockDeleteEventCoverImage.mockRejectedValueOnce(new Error('Failed to delete old image'));
+    const onCoverImageKeyChange = vi.fn();
 
-  render(
-    <EventCoverPhotoUpload
-      coverImageKey="covers/sample-123.jpg"
-      onCoverImageKeyChange={onCoverImageKeyChange}
-      eventIdOrSlug="summer-event"
-    />,
-  );
+    render(
+      <EventCoverPhotoUpload
+        coverImageKey="covers/sample-123.jpg"
+        onCoverImageKeyChange={onCoverImageKeyChange}
+        eventIdOrSlug="summer-event"
+      />,
+    );
 
-  const adjustButton = screen.getByRole('button', { name: 'Adjust Crop' });
-  fireEvent.click(adjustButton);
+    const adjustButton = screen.getByRole('button', { name: 'Adjust Crop' });
+    fireEvent.click(adjustButton);
 
-  expect(await screen.findByTestId('crop-dialog')).toBeInTheDocument();
+    expect(await screen.findByTestId('crop-dialog')).toBeInTheDocument();
 
-  const applyCropButton = screen.getByRole('button', { name: 'Apply Crop' });
-  fireEvent.click(applyCropButton);
+    const applyCropButton = screen.getByRole('button', { name: 'Apply Crop' });
+    fireEvent.click(applyCropButton);
 
-  await waitFor(() => {
-    expect(mockUploadEventCoverImage).toHaveBeenCalledWith(expect.any(File), 'summer-event');
-    expect(mockDeleteEventCoverImage).toHaveBeenCalledWith('covers/sample-123.jpg');
-    expect(onCoverImageKeyChange).toHaveBeenCalledWith('covers/cropped-uploaded.jpg');
+    await waitFor(() => {
+      expect(mockUploadEventCoverImage).toHaveBeenCalledWith(expect.any(File), 'summer-event');
+      expect(mockDeleteEventCoverImage).toHaveBeenCalledWith('covers/sample-123.jpg');
+      expect(onCoverImageKeyChange).toHaveBeenCalledWith('covers/cropped-uploaded.jpg');
+    });
   });
 });
