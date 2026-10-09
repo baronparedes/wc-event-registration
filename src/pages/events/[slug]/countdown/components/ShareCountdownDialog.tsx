@@ -107,8 +107,8 @@ export function ShareCountdownDialog({
         <Dialog.Body>
           <div className="flex flex-col items-center gap-4">
             {/* Responsive Card Preview Container */}
-            <div className="flex w-full justify-center rounded-2xl border border-border bg-slate-50 p-3 sm:p-6">
-              <div className="w-full max-w-[560px]">
+            <div className="flex w-full max-w-full justify-center overflow-hidden rounded-2xl border border-border bg-slate-50 p-2 sm:p-6">
+              <div className="w-full max-w-[560px] overflow-hidden">
                 <CountdownShareCard
                   event={event}
                   coverUrl={resolvedCoverUrl}

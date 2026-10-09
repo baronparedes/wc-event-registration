@@ -108,9 +108,12 @@ export function Dialog({
     if (!isOpen || !lockScroll) return;
 
     const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
     return () => {
       document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
     };
   }, [isOpen, lockScroll]);
 
@@ -121,7 +124,8 @@ export function Dialog({
   return createPortal(
     <DialogContext.Provider value={{ onClose, titleId, descriptionId }}>
       <div
-        className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-6 sm:py-8 ${containerClassName}`}
+        className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overflow-x-hidden overscroll-contain bg-black/40 py-4 sm:py-8 ${containerClassName}`}
+        style={{ touchAction: 'pan-y' }}
         onClick={closeOnBackdropClick ? onClose : undefined}
       >
         <div
@@ -130,7 +134,8 @@ export function Dialog({
           aria-label={ariaLabel}
           aria-labelledby={ariaLabel ? undefined : titleId}
           aria-describedby={descriptionId}
-          className={`mx-4 w-full ${resolvedMaxWidth} rounded-2xl border border-border bg-surface p-6 shadow-xl transition-all ${className}`}
+          className={`mx-3 sm:mx-4 w-full ${resolvedMaxWidth} max-w-[calc(100vw-1.5rem)] sm:max-w-[calc(100vw-2rem)] overflow-x-hidden rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
+          style={{ touchAction: 'pan-y' }}
           onClick={(e) => e.stopPropagation()}
         >
           {children}
@@ -237,7 +242,7 @@ function DialogBody({ children, className = '', scrollable = false, ...props }: 
   const scrollClasses = scrollable ? 'max-h-[calc(85vh-8rem)] overflow-y-auto pr-1' : '';
 
   return (
-    <div className={`mt-4 ${scrollClasses} ${className}`} {...props}>
+    <div className={`mt-4 overflow-x-hidden ${scrollClasses} ${className}`} {...props}>
       {children}
     </div>
   );

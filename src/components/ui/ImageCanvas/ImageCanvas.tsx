@@ -51,7 +51,9 @@ export function ImageCanvas({
         position: 'fixed',
         left: 0,
         top: 0,
-        width,
+        width: 0,
+        height: 0,
+        overflow: 'hidden',
         pointerEvents: 'none',
         zIndex: -9999,
         opacity: 0.001,
@@ -61,7 +63,7 @@ export function ImageCanvas({
       <div
         ref={effectiveRef}
         className={className ? `bg-white ${className}` : 'bg-white'}
-        style={{ width }}
+        style={{ width, maxWidth: width }}
       >
         {children}
       </div>

@@ -90,11 +90,14 @@ describe('ImageCanvas', () => {
     it('hidden mode renders off-screen, aria-hidden, at a fixed width', () => {
       render(<GroupHarness />);
       const hiddenWrapper = screen.getByText('A').closest('[aria-hidden="true"]') as HTMLElement;
+      const innerCanvas = screen.getByText('A').parentElement as HTMLElement;
 
       expect(hiddenWrapper).toBeInTheDocument();
       expect(hiddenWrapper.style.left).toBe('0px');
       expect(hiddenWrapper.style.zIndex).toBe('-9999');
-      expect(hiddenWrapper.style.width).toBe('400px');
+      expect(hiddenWrapper.style.width).toBe('0px');
+      expect(hiddenWrapper.style.overflow).toBe('hidden');
+      expect(innerCanvas.style.width).toBe('400px');
     });
   });
 

@@ -110,8 +110,10 @@ describe('Dialog', () => {
     );
 
     expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body.style.touchAction).toBe('none');
     unmount();
     expect(document.body.style.overflow).toBe('');
+    expect(document.body.style.touchAction).toBe('');
   });
 
   it('applies custom size and maxWidthClass', () => {
