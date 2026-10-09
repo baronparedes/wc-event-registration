@@ -26,7 +26,13 @@ export const BrandAvatar: FC<BrandAvatarProps> = ({
       className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/80 shadow-xs ${sizeClasses[size]} ${className}`}
       title={alt}
     >
-      <img src={brandLogo} alt={alt} className="h-full w-full object-cover" />
+      <img
+        src={brandLogo}
+        alt={alt}
+        loading="eager"
+        decoding="sync"
+        className="h-full w-full object-cover"
+      />
     </div>
   );
 };

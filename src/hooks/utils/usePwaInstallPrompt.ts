@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { isIOSDevice } from '@/lib/infrastructure';
+
 import { useLocalStorage } from './useLocalStorage';
 
 export interface BeforeInstallPromptChoice {
@@ -27,15 +29,7 @@ export function isStandaloneMode(): boolean {
   return isDisplayStandalone || isDisplayFullscreen || isDisplayMinimalUi || isIosStandalone;
 }
 
-export function isIOSDevice(): boolean {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-
-  const userAgent = navigator.userAgent || navigator.vendor || '';
-  const isIos = /iPad|iPhone|iPod/.test(userAgent);
-  const isIpadOs = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-
-  return isIos || isIpadOs;
-}
+export { isIOSDevice };
 
 export function usePwaInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);

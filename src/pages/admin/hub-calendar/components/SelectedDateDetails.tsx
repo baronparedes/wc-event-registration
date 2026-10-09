@@ -549,39 +549,48 @@ export function SelectedDateDetails({
                 <div className="space-y-5">
                   {/* Slot selector tabs: 9:00 AM | 12:00 NN | 3:00 PM | All Sunday */}
                   <div>
-                    <div className="flex border-b border-border mb-4 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                      {TIME_SLOT_TABS.map(({ slot, label }) => {
-                        const totalSlotAssignments =
-                          entriesByTimeSlot['9AM'].length +
-                          entriesByTimeSlot['12NN'].length +
-                          entriesByTimeSlot['3PM'].length;
-                        const count =
-                          slot === 'ALL' ? totalSlotAssignments : entriesByTimeSlot[slot].length;
-                        const isActive = activeTab === slot;
-                        return (
-                          <button
-                            key={slot}
-                            type="button"
-                            onClick={() => handleTabChange(slot)}
-                            className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none shrink-0 ${
-                              isActive
-                                ? 'text-primary border-b-2 border-primary -mb-px font-semibold'
-                                : 'text-muted hover:text-text'
-                            }`}
-                          >
-                            {label}
-                            {count > 0 && (
-                              <span
-                                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
-                                  isActive ? 'bg-primary text-white' : 'bg-muted/20 text-muted'
+                    <div className="border-b border-border mb-4">
+                      <div
+                        className="overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden overscroll-x-contain"
+                        style={{ touchAction: 'pan-x' }}
+                      >
+                        <div className="-mb-px flex gap-6 min-w-max">
+                          {TIME_SLOT_TABS.map(({ slot, label }) => {
+                            const totalSlotAssignments =
+                              entriesByTimeSlot['9AM'].length +
+                              entriesByTimeSlot['12NN'].length +
+                              entriesByTimeSlot['3PM'].length;
+                            const count =
+                              slot === 'ALL'
+                                ? totalSlotAssignments
+                                : entriesByTimeSlot[slot].length;
+                            const isActive = activeTab === slot;
+                            return (
+                              <button
+                                key={slot}
+                                type="button"
+                                onClick={() => handleTabChange(slot)}
+                                className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus:outline-none flex items-center gap-1.5 shrink-0 ${
+                                  isActive
+                                    ? 'border-primary text-primary font-semibold'
+                                    : 'border-transparent text-muted hover:border-border hover:text-text'
                                 }`}
                               >
-                                {count}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                                {label}
+                                {count > 0 && (
+                                  <span
+                                    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                                      isActive ? 'bg-primary text-white' : 'bg-muted/20 text-muted'
+                                    }`}
+                                  >
+                                    {count}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-4">

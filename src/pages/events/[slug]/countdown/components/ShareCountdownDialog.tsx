@@ -1,20 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { toBlob, toJpeg } from 'html-to-image';
-import { Check, Copy, Download, Link2, Share2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Check, Link2 } from 'lucide-react';
 
-import { Button, Dialog } from '@/components/ui';
+import { Button, Dialog, ImageCanvas } from '@/components/ui';
 import { toRoute } from '@/config/constants';
-import type { AdminEvent } from '@/lib/domain/events';
+import { type AdminEvent, getEventCoverPublicUrl } from '@/lib/domain/events';
+import { isMobileDevice } from '@/lib/infrastructure';
 
-import {
-  dataUrlToBlob,
-  ensureResourcesReady,
-  formatCountdownFilename,
-  generateQrCodeDataUrl,
-  isMobileDevice,
-} from '../utils';
+import { formatCountdownFilename, generateQrCodeDataUrl } from '../utils';
 import { CountdownShareCard, type TimeLeft } from './CountdownShareCard';
 
 export type ShareCountdownDialogProps = {
@@ -22,21 +15,49 @@ export type ShareCountdownDialogProps = {
   onClose: () => void;
   event: AdminEvent | null;
   coverUrl?: string | null;
-  timeLeft: TimeLeft;
+  timeLeft?: TimeLeft;
 };
+
+const EXPORT_WIDTH_PX = 560;
+
+function calculateTimeLeft(startsAt: string | null | undefined, now = Date.now()): TimeLeft {
+  if (!startsAt) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  const timeDifference = new Date(startsAt).getTime() - now;
+  if (timeDifference <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  return {
+    days: Math.floor(timeDifference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((timeDifference / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((timeDifference / 1000 / 60) % 60),
+    seconds: Math.floor((timeDifference / 1000) % 60),
+  };
+}
 
 export function ShareCountdownDialog({
   isOpen,
   onClose,
   event,
   coverUrl,
-  timeLeft,
+  timeLeft: propTimeLeft,
 }: ShareCountdownDialogProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copiedImage, setCopiedImage] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (propTimeLeft || !isOpen || !event?.starts_at) return;
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [propTimeLeft, isOpen, event?.starts_at]);
+
+  const calculatedTimeLeft = useMemo(
+    () => calculateTimeLeft(event?.starts_at, now),
+    [event?.starts_at, now],
+  );
+  const resolvedTimeLeft = propTimeLeft ?? calculatedTimeLeft;
+  const resolvedCoverUrl =
+    coverUrl !== undefined ? coverUrl : getEventCoverPublicUrl(event?.cover_image_key);
 
   useEffect(() => {
     if (!event?.slug) return;
@@ -60,275 +81,104 @@ export function ShareCountdownDialog({
   if (!event || !isOpen) return null;
 
   const isMobile = isMobileDevice();
-  const filename = formatCountdownFilename(event.slug);
-
-  const generateDataUrl = async (): Promise<string | null> => {
-    if (!cardRef.current) return null;
-    await ensureResourcesReady(cardRef.current);
-    return toJpeg(cardRef.current, {
-      quality: 0.95,
-      backgroundColor: '#ffffff',
-      pixelRatio: 2,
-      cacheBust: true,
-      skipFonts: true,
-      fontEmbedCSS: '',
-    });
-  };
-
-  const generatePngBlob = async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
-    await ensureResourcesReady(cardRef.current);
-    return toBlob(cardRef.current, {
-      backgroundColor: '#ffffff',
-      pixelRatio: 2,
-      cacheBust: true,
-      skipFonts: true,
-      fontEmbedCSS: '',
-    });
-  };
-
-  const handleDownload = async () => {
-    if (!cardRef.current) return;
-
-    try {
-      setIsGenerating(true);
-      const dataUrl = await generateDataUrl();
-      if (!dataUrl) return;
-
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('Countdown image saved');
-    } catch (error) {
-      console.error('Error saving countdown image:', error);
-      toast.error('Failed to save countdown image');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCopyImage = async () => {
-    if (!cardRef.current) return;
-
-    try {
-      setIsGenerating(true);
-      const blob = await generatePngBlob();
-      if (!blob) {
-        toast.error('Failed to generate countdown image');
-        return;
-      }
-
-      if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
-        toast.error('Clipboard image copy is not supported in this browser');
-        return;
-      }
-
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'image/png': blob,
-        }),
-      ]);
-      setCopiedImage(true);
-      setTimeout(() => setCopiedImage(false), 2500);
-      toast.success('Countdown image copied to clipboard');
-    } catch (error) {
-      console.error('Error copying image to clipboard:', error);
-      toast.error('Failed to copy image to clipboard');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      const url = typeof window !== 'undefined' ? window.location.href : '';
-      if (!url) return;
-
-      await navigator.clipboard.writeText(url);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2500);
-      toast.success('Countdown link copied to clipboard');
-    } catch (error) {
-      console.error('Error copying link:', error);
-      toast.error('Failed to copy link');
-    }
-  };
-
-  const handleShare = async () => {
-    if (!cardRef.current) return;
-
-    try {
-      setIsGenerating(true);
-      const dataUrl = await generateDataUrl();
-      if (!dataUrl) return;
-
-      const blob = dataUrlToBlob(dataUrl);
-      const file = new File([blob], filename, {
-        type: 'image/jpeg',
-      });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: event.title,
-            text: `Join us for ${event.title}!`,
-          });
-          return;
-        } catch (shareError) {
-          if (shareError instanceof DOMException && shareError.name === 'AbortError') {
-            return;
-          }
-        }
-      }
-
-      // Fallback to direct download
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('Countdown image downloaded');
-    } catch (error) {
-      console.error('Error sharing countdown image:', error);
-      toast.error('Failed to generate shareable image');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="2xl">
-      <Dialog.Header showCloseButton>
-        <Dialog.Title>Share Event Countdown</Dialog.Title>
-        <Dialog.Description>
-          {isMobile
-            ? 'Share high-resolution countdown card directly to your apps'
-            : 'Download or copy the countdown image to share across platforms'}
-        </Dialog.Description>
-      </Dialog.Header>
+    <ImageCanvas.Provider
+      filename={formatCountdownFilename(event.slug)}
+      messages={{
+        downloadSuccess: 'Countdown image saved',
+        downloadError: 'Failed to save countdown image',
+        copySuccess: 'Countdown image copied to clipboard',
+        copyGenerateError: 'Failed to generate countdown image',
+        shareFallbackSuccess: 'Countdown image downloaded',
+        shareError: 'Failed to generate shareable image',
+      }}
+    >
+      <Dialog isOpen={isOpen} onClose={onClose} size="2xl">
+        <Dialog.Header showCloseButton>
+          <Dialog.Title>Share Event Countdown</Dialog.Title>
+          <Dialog.Description>
+            {isMobile
+              ? 'Share high-resolution countdown card directly to your apps'
+              : 'Download or copy the countdown image to share across platforms'}
+          </Dialog.Description>
+        </Dialog.Header>
 
-      <Dialog.Body>
-        <div className="flex flex-col items-center gap-4">
-          {/* Responsive Card Preview Container */}
-          <div className="flex w-full justify-center rounded-2xl border border-border bg-slate-50 p-3 sm:p-6">
-            <div className="w-full max-w-[560px]">
+        <Dialog.Body>
+          <div className="flex flex-col items-center gap-4">
+            {/* Responsive Card Preview Container */}
+            <div className="flex w-full max-w-full justify-center overflow-hidden rounded-2xl border border-border bg-slate-50 p-2 sm:p-6">
+              <div className="w-full max-w-[560px] overflow-hidden">
+                <CountdownShareCard
+                  event={event}
+                  coverUrl={resolvedCoverUrl}
+                  timeLeft={resolvedTimeLeft}
+                  qrCodeDataUrl={qrCodeDataUrl}
+                />
+              </div>
+            </div>
+
+            <div className="flex w-full items-center justify-between px-1 text-xs text-muted">
+              <span>High-resolution card preview</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  const url = typeof window !== 'undefined' ? window.location.href : '';
+                  if (!url) return;
+                  await navigator.clipboard.writeText(url);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2500);
+                  const { toast } = await import('sonner');
+                  toast.success('Countdown link copied to clipboard');
+                }}
+                className="h-7 text-xs text-muted hover:text-text"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                    Link Copied
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                    Copy Page Link
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Offscreen mounted element for export (fixed width across mobile and desktop) */}
+            <ImageCanvas hidden width={EXPORT_WIDTH_PX}>
               <CountdownShareCard
                 event={event}
-                coverUrl={coverUrl}
-                timeLeft={timeLeft}
+                coverUrl={resolvedCoverUrl}
+                timeLeft={resolvedTimeLeft}
                 qrCodeDataUrl={qrCodeDataUrl}
               />
-            </div>
+            </ImageCanvas>
           </div>
+        </Dialog.Body>
 
-          <div className="flex w-full items-center justify-between px-1 text-xs text-muted">
-            <span>High-resolution card preview</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleCopyLink}
-              className="h-7 text-xs text-muted hover:text-text"
-            >
-              {copiedLink ? (
-                <>
-                  <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-                  Link Copied
-                </>
-              ) : (
-                <>
-                  <Link2 className="mr-1.5 h-3.5 w-3.5" />
-                  Copy Page Link
-                </>
-              )}
-            </Button>
-          </div>
+        <Dialog.Footer className="w-full flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3">
+          <ImageCanvas.CancelButton onClick={onClose} className="w-full sm:w-auto" />
 
-          {/* Offscreen mounted element for export (fixed 560px width across mobile and desktop) */}
-          <div
-            className="fixed -left-[9999px] top-0 pointer-events-none -z-50 w-[560px]"
-            style={{ position: 'fixed', left: '-9999px', top: 0, width: '560px' }}
-            aria-hidden="true"
-          >
-            <div ref={cardRef} style={{ width: '560px' }} className="w-[560px] bg-white">
-              <CountdownShareCard
-                event={event}
-                coverUrl={coverUrl}
-                timeLeft={timeLeft}
-                qrCodeDataUrl={qrCodeDataUrl}
-              />
-            </div>
-          </div>
-        </div>
-      </Dialog.Body>
-
-      <Dialog.Footer className="w-full flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3">
-        <Button
-          variant="primaryOutline"
-          onClick={onClose}
-          disabled={isGenerating}
-          className="w-full sm:w-auto"
-        >
-          Cancel
-        </Button>
-
-        {isMobile ? (
-          <>
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              disabled={isGenerating}
-              className="w-full sm:w-auto"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-            <Button onClick={handleShare} disabled={isGenerating} className="w-full sm:w-auto">
-              <Share2 className="mr-2 h-4 w-4" />
-              {isGenerating ? 'Generating...' : 'Share Image'}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              variant="outline"
-              onClick={handleCopyImage}
-              disabled={isGenerating}
-              className="w-full sm:w-auto"
-            >
-              {copiedImage ? (
-                <>
-                  <Check className="mr-2 h-4 w-4 text-emerald-600" />
-                  Image Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Image
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              disabled={isGenerating}
-              className="w-full sm:w-auto"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download Image
-            </Button>
-            <Button onClick={handleShare} disabled={isGenerating} className="w-full sm:w-auto">
-              <Share2 className="mr-2 h-4 w-4" />
-              {isGenerating ? 'Generating...' : 'Share'}
-            </Button>
-          </>
-        )}
-      </Dialog.Footer>
-    </Dialog>
+          {isMobile ? (
+            <ImageCanvas.Actions
+              actions={['copy', 'share']}
+              labels={{ copy: 'Copy Image', share: 'Share Image' }}
+              buttonClassName="w-full sm:w-auto"
+            />
+          ) : (
+            <ImageCanvas.Actions
+              actions={['copy', 'download', 'share']}
+              labels={{ download: 'Download Image', share: 'Share' }}
+              buttonClassName="w-full sm:w-auto"
+            />
+          )}
+        </Dialog.Footer>
+      </Dialog>
+    </ImageCanvas.Provider>
   );
 }

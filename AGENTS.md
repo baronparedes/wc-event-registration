@@ -26,6 +26,7 @@ This file contains the core principles, architecture rules, and domain logic con
   - Each hook must be defined in its own file.
 - **Pagination**: Admin paginated data views (Events, Members, Member Registrations, Public Registrations) must use the `useInfiniteScrollTrigger` custom hook (`src/hooks/utils/useInfiniteScrollTrigger.ts`). It utilizes `IntersectionObserver` for infinite scroll pagination via React Query's `useInfiniteQuery`.
 - **Legal/Org Config**: Application legal and organization configuration details (app name, organization name, privacy contact email) are defined centrally in `src/config/constants/legal.ts`.
+- **HTML-to-Image Sharing**: Any "share as image" feature must use the `ImageCanvas` compound component pattern (`<ImageCanvas.Provider>`, `<ImageCanvas>`, `<ImageCanvas.Actions>`, `<ImageCanvas.CancelButton>`) or `useImageCanvasGroup` (multiple cards, captured sequentially) from `@/components/ui`. Do not call `html-to-image`, `navigator.share`, or `navigator.clipboard.write` directly in dialogs. Non-React helpers (render options, `ensureResourcesReady`, `shareFiles`, device detection) live in `src/lib/infrastructure/share-image/`.
 - **Tech Debt**: The React codebase technical debt audit and multi-phase refactoring roadmap are documented in `docs/analysis/tech-debt-analysis.md`. Refer to this document before embarking on large refactors.
 
 ## 4. Authentication, Roles & Security
