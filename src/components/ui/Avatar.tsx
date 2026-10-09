@@ -65,7 +65,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div
-      className={`${sizeClasses[size]} ${bgColor} ${borderClasses[border]} relative rounded-full flex items-center justify-center overflow-hidden font-semibold text-white ${className}`}
+      className={`${sizeClasses[size]} ${bgColor} ${borderClasses[border]} relative rounded-full flex shrink-0 aspect-square items-center justify-center overflow-hidden font-semibold text-white ${className}`}
       title={name}
     >
       {initials}

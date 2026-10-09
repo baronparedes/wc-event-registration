@@ -15,7 +15,7 @@ export function EventFormActions(props: EventFormActionsProps) {
 
   if (disabled) {
     return (
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 [&>button]:w-full sm:[&>button]:w-auto">
         <Button onClick={onCancel} size="lg" type="button" variant="primaryOutline">
           Back to Events
         </Button>
@@ -24,7 +24,7 @@ export function EventFormActions(props: EventFormActionsProps) {
   }
 
   return (
-    <div className="flex justify-end gap-3">
+    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 [&>button]:w-full sm:[&>button]:w-auto">
       <Button
         disabled={isPending}
         onClick={onCancel}

@@ -15,8 +15,11 @@ import {
   ListTableRow,
   SearchInputField,
 } from '@/components/ui';
+import { useIsMobileViewport } from '@/hooks/utils';
 import type { SundayVolunteerRecipient } from '@/lib/domain/notifications';
 import { formatDateOnly } from '@/lib/infrastructure/dateFormat';
+
+import { SundayVolunteerMobileCard } from './SundayVolunteerMobileCard';
 
 interface SundayVolunteersTableProps {
   volunteers: SundayVolunteerRecipient[];
@@ -29,6 +32,7 @@ export function SundayVolunteersTable({
   isLoading = false,
   sundayDate,
 }: SundayVolunteersTableProps) {
+  const isMobileViewport = useIsMobileViewport();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredVolunteers = useMemo(() => {
@@ -80,6 +84,12 @@ export function SundayVolunteersTable({
             description={`No scheduled volunteers match "${searchTerm}".`}
           />
         </div>
+      ) : isMobileViewport ? (
+        <div className="space-y-3">
+          {filteredVolunteers.map((volunteer) => (
+            <SundayVolunteerMobileCard key={volunteer.user_id} volunteer={volunteer} />
+          ))}
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface">
           <ListTable>
@@ -96,13 +106,13 @@ export function SundayVolunteersTable({
               {filteredVolunteers.map((volunteer) => (
                 <ListTableRow key={volunteer.user_id}>
                   <ListTableCell>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Avatar
                         name={volunteer.full_name}
                         avatarObjectKey={volunteer.avatar_object_key}
                         size="sm"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium text-text">{volunteer.full_name}</p>
                         {volunteer.member_id && (
                           <p className="text-xs text-muted font-mono">{volunteer.member_id}</p>

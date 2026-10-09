@@ -194,15 +194,15 @@ export function AdminNotificationsPage() {
           { label: 'Notifications' },
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center [&>a]:w-full sm:[&>a]:w-auto">
             <Link to={ROUTE_PATHS.adminSundayReminders}>
-              <Button className="gap-1.5">
+              <Button fullWidthMobile className="gap-1.5 w-full sm:w-auto">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>Sunday Reminders</span>
               </Button>
             </Link>
             <Link to={ROUTE_PATHS.adminNotificationsDashboard}>
-              <Button className="gap-1.5">
+              <Button fullWidthMobile className="gap-1.5 w-full sm:w-auto">
                 <BarChart3 className="h-3.5 w-3.5" />
                 <span>Dashboard</span>
               </Button>
@@ -366,8 +366,9 @@ export function AdminNotificationsPage() {
                 )}
               />
 
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-2 [&>button]:w-full sm:[&>button]:w-auto">
                 <Button
+                  fullWidthMobile
                   type="submit"
                   disabled={broadcastMutation.isPending || channels.length === 0}
                 >

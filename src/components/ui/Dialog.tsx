@@ -10,6 +10,7 @@ import {
 import { createPortal } from 'react-dom';
 
 import { X } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 export type DialogSize =
   | 'sm'
@@ -259,7 +260,11 @@ function DialogFooter({ children, className = '', bordered = true, ...props }: D
 
   return (
     <div
-      className={`mt-6 flex items-center justify-end gap-3 ${borderClasses} ${className}`}
+      className={twMerge(
+        'mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end sm:gap-3 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto',
+        borderClasses,
+        className,
+      )}
       {...props}
     >
       {children}

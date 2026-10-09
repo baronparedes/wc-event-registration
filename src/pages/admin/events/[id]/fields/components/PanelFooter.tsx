@@ -28,7 +28,7 @@ export function PanelFooter({
         </p>
       )}
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 [&>button]:w-full sm:[&>button]:w-auto">
         <Button
           type="button"
           variant="primaryOutline"
