@@ -23,7 +23,7 @@ export const BrandAvatar: FC<BrandAvatarProps> = ({
 }) => {
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/80 shadow-xs ${sizeClasses[size]} ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/80 ${sizeClasses[size]} ${className}`}
       title={alt}
     >
       <img
