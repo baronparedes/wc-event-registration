@@ -133,4 +133,39 @@ describe('Dialog', () => {
 
     expect(screen.getByRole('dialog')).toHaveClass('max-w-7xl');
   });
+
+  it('renders Dialog.Footer with responsive mobile stacking and full-width child button classes', () => {
+    render(
+      <Dialog isOpen onClose={vi.fn()}>
+        <Dialog.Title>Test Title</Dialog.Title>
+        <Dialog.Footer data-testid="dialog-footer">
+          <button type="button">Cancel</button>
+          <button type="button">Confirm</button>
+        </Dialog.Footer>
+      </Dialog>,
+    );
+
+    const footer = screen.getByTestId('dialog-footer');
+    expect(footer).toHaveClass('flex-col-reverse');
+    expect(footer).toHaveClass('sm:flex-row');
+    expect(footer).toHaveClass('sm:justify-end');
+    expect(footer).toHaveClass('[&>button]:w-full');
+    expect(footer).toHaveClass('sm:[&>button]:w-auto');
+    expect(footer).toHaveClass('border-t');
+  });
+
+  it('renders Dialog.Footer without border when bordered is false and merges custom className', () => {
+    render(
+      <Dialog isOpen onClose={vi.fn()}>
+        <Dialog.Title>Test Title</Dialog.Title>
+        <Dialog.Footer bordered={false} className="custom-footer" data-testid="dialog-footer">
+          <button type="button">Close</button>
+        </Dialog.Footer>
+      </Dialog>,
+    );
+
+    const footer = screen.getByTestId('dialog-footer');
+    expect(footer).not.toHaveClass('border-t');
+    expect(footer).toHaveClass('custom-footer');
+  });
 });

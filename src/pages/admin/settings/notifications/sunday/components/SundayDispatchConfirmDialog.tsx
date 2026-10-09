@@ -163,7 +163,7 @@ export function SundayDispatchConfirmDialog({
         </div>
       </Dialog.Body>
 
-      <Dialog.Footer className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+      <Dialog.Footer className="px-6 py-4">
         <Button variant="outline" onClick={handleClose} disabled={isPending}>
           Cancel
         </Button>

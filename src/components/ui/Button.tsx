@@ -7,6 +7,8 @@ import {
   isValidElement,
 } from 'react';
 
+import { twMerge } from 'tailwind-merge';
+
 export type ButtonVariant =
   | 'default'
   | 'secondary'
@@ -22,12 +24,13 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
+  fullWidthMobile?: boolean;
   asChild?: boolean;
   children: ReactNode;
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ');
+  return twMerge(classes.filter(Boolean).join(' '));
 }
 
 const variantClassName: Record<ButtonVariant, string> = {
@@ -62,6 +65,7 @@ export function Button(props: ButtonProps) {
     variant = 'default',
     size = 'md',
     fullWidth = false,
+    fullWidthMobile = false,
     asChild = false,
     className,
     type = 'button',
@@ -73,7 +77,7 @@ export function Button(props: ButtonProps) {
     'inline-flex items-center justify-center gap-2 rounded-md font-medium leading-snug transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
     variantClassName[variant],
     sizeClassName[size],
-    fullWidth && 'w-full',
+    fullWidth ? 'w-full' : fullWidthMobile ? 'w-full sm:w-auto' : false,
     className,
   );
 
