@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DuplicateEntityDialog } from '../DuplicateEntityDialog';
@@ -6,7 +7,7 @@ import { DuplicateEntityDialog } from '../DuplicateEntityDialog';
 describe('DuplicateEntityDialog', () => {
   const mockItem = { id: 'evt-123', title: 'Sunday Worship' };
 
-  it('renders modal when open and sets initial copy title and slug', () => {
+  it('renders modal when open and sets initial copy title and slug', async () => {
     render(
       <DuplicateEntityDialog
         isOpen={true}
@@ -18,12 +19,13 @@ describe('DuplicateEntityDialog', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Duplicate Event' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Duplicate Event' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Sunday Worship (Copy)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('sunday-worship-copy')).toBeInTheDocument();
   });
 
   it('auto-generates slug when title is updated', async () => {
+    const user = userEvent.setup();
     render(
       <DuplicateEntityDialog
         isOpen={true}
@@ -35,8 +37,9 @@ describe('DuplicateEntityDialog', () => {
       />,
     );
 
-    const titleInput = screen.getByLabelText(/new form name/i);
-    fireEvent.change(titleInput, { target: { value: 'Annual Volunteer Survey 2026' } });
+    const titleInput = await screen.findByLabelText(/new form name/i);
+    await user.clear(titleInput);
+    await user.type(titleInput, 'Annual Volunteer Survey 2026');
 
     await waitFor(() => {
       expect(screen.getByLabelText(/new form slug/i)).toHaveValue('annual-volunteer-survey-2026');
@@ -44,6 +47,7 @@ describe('DuplicateEntityDialog', () => {
   });
 
   it('submits form with modified values', async () => {
+    const user = userEvent.setup();
     const onDuplicate = vi.fn().mockResolvedValue(undefined);
 
     render(
@@ -57,8 +61,8 @@ describe('DuplicateEntityDialog', () => {
       />,
     );
 
-    const submitBtn = screen.getByRole('button', { name: 'Duplicate Event' });
-    fireEvent.click(submitBtn);
+    const submitBtn = await screen.findByRole('button', { name: 'Duplicate Event' });
+    await user.click(submitBtn);
 
     await waitFor(() => {
       expect(onDuplicate).toHaveBeenCalledWith(
@@ -69,7 +73,8 @@ describe('DuplicateEntityDialog', () => {
     });
   });
 
-  it('calls onClose when cancel button is clicked', () => {
+  it('calls onClose when cancel button is clicked', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
 
     render(
@@ -83,7 +88,8 @@ describe('DuplicateEntityDialog', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    const cancelBtn = await screen.findByRole('button', { name: /cancel/i });
+    await user.click(cancelBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

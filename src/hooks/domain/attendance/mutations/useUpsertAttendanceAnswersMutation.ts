@@ -1,4 +1,3 @@
-/* c8 ignore start */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/config/constants';
@@ -89,4 +88,3 @@ export function useUpsertAttendanceAnswersMutation() {
     },
   });
 }
-/* c8 ignore stop */
