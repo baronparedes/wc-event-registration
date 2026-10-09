@@ -1,11 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useIsMobileViewport } from '@/hooks/utils';
 import type { SundayVolunteerRecipient } from '@/lib/domain/notifications';
 
 import { SundayVolunteersTable } from '../SundayVolunteersTable';
+
+vi.mock('@/hooks/utils', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('@/hooks/utils');
+  return {
+    ...actual,
+    useIsMobileViewport: vi.fn(),
+  };
+});
 
 const mockVolunteers: SundayVolunteerRecipient[] = [
   {
@@ -34,6 +43,10 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 describe('SundayVolunteersTable', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useIsMobileViewport).mockReturnValue(false);
+  });
   it('renders a list of volunteers', () => {
     renderWithProviders(<SundayVolunteersTable volunteers={mockVolunteers} />);
     expect(screen.getByText('Test Alice Smith')).toBeInTheDocument();
@@ -80,5 +93,15 @@ describe('SundayVolunteersTable', () => {
     await user.type(searchInput, 'NonExistent');
 
     expect(screen.getByText('No matches found')).toBeInTheDocument();
+  });
+
+  it('renders mobile cards when in mobile viewport', () => {
+    vi.mocked(useIsMobileViewport).mockReturnValue(true);
+    renderWithProviders(<SundayVolunteersTable volunteers={mockVolunteers} />);
+
+    expect(screen.getByText('Test Alice Smith')).toBeInTheDocument();
+    expect(screen.getByText('Test Bob Jones')).toBeInTheDocument();
+    expect(screen.getAllByText('Push Status').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Email Status').length).toBeGreaterThan(0);
   });
 });

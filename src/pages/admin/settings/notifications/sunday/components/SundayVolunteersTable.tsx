@@ -15,8 +15,11 @@ import {
   ListTableRow,
   SearchInputField,
 } from '@/components/ui';
+import { useIsMobileViewport } from '@/hooks/utils';
 import type { SundayVolunteerRecipient } from '@/lib/domain/notifications';
 import { formatDateOnly } from '@/lib/infrastructure/dateFormat';
+
+import { SundayVolunteerMobileCard } from './SundayVolunteerMobileCard';
 
 interface SundayVolunteersTableProps {
   volunteers: SundayVolunteerRecipient[];
@@ -29,6 +32,7 @@ export function SundayVolunteersTable({
   isLoading = false,
   sundayDate,
 }: SundayVolunteersTableProps) {
+  const isMobileViewport = useIsMobileViewport();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredVolunteers = useMemo(() => {
@@ -79,6 +83,12 @@ export function SundayVolunteersTable({
             title="No matches found"
             description={`No scheduled volunteers match "${searchTerm}".`}
           />
+        </div>
+      ) : isMobileViewport ? (
+        <div className="space-y-3">
+          {filteredVolunteers.map((volunteer) => (
+            <SundayVolunteerMobileCard key={volunteer.user_id} volunteer={volunteer} />
+          ))}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface">
