@@ -45,3 +45,8 @@ expect(result.current).toBe(false);
 **Challenge:** Tests for date formatting utility functions `toLocaleDateString` and `toLocaleString` pass locally but fail in CI environments due to differing default locales and timezones.
 **Learning:** `Date.prototype.toLocaleDateString` and `Date.prototype.toLocaleString` defaults to system settings, causing unpredictable outputs depending on where tests are run (e.g. CI servers).
 **Pattern:** Always use `vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('Expected Value')` or explicitly pass `locale` parameter and `timeZone` in tests to ensure consistency across environments.
+
+## $(date +%Y-%m-%d) - Unit testing component with nested sub-components needing specific props
+**Challenge:** Testing `EventCoverPhotoUpload` required triggering its internal sub-component (`CoverPhotoCropDialog`) to fire the `onApplyCrop` handler.
+**Learning:** React Testing Library is constrained when a sub-component behaves as an uncontrolled overlay if its actual rendering is complex or relies on external APIs (like `html-to-image`).
+**Pattern:** Mock the complex sub-component globally using `vi.mock('../CoverPhotoCropDialog', () => { ... })` to return a simpler inline element that explicitly exposes buttons to trigger the prop functions, allowing easy simulation of complex async child behavior within the parent test.
