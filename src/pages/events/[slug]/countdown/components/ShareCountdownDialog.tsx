@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { Check, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button, Dialog, ImageCanvas } from '@/components/ui';
 import { toRoute } from '@/config/constants';
@@ -127,7 +128,6 @@ export function ShareCountdownDialog({
                   await navigator.clipboard.writeText(url);
                   setCopiedLink(true);
                   setTimeout(() => setCopiedLink(false), 2500);
-                  const { toast } = await import('sonner');
                   toast.success('Countdown link copied to clipboard');
                 }}
                 className="h-7 text-xs text-muted hover:text-text"

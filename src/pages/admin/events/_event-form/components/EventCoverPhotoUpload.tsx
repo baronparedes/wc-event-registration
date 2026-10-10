@@ -53,52 +53,68 @@ export function EventCoverPhotoUpload({
 
     setIsUploading(true);
     const previousKey = coverImageKey;
+
+    let uploadedPath: string | null;
+
     try {
-      const uploadedPath = await uploadEventCoverImage(file, eventIdOrSlug);
+      uploadedPath = await uploadEventCoverImage(file, eventIdOrSlug);
       onCoverImageKeyChange(uploadedPath);
-      if (previousKey && previousKey !== uploadedPath) {
-        try {
-          await deleteEventCoverImage(previousKey);
-        } catch {
-          // Silently ignore cleanup error
-        }
-      }
-      toast.success('Cover photo uploaded successfully');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to upload cover photo';
       toast.error(message);
-    } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      return;
+    }
+
+    const shouldRemovePrevious =
+      previousKey !== null && previousKey !== undefined && previousKey !== uploadedPath;
+
+    if (shouldRemovePrevious) {
+      await deleteEventCoverImage(previousKey).catch(() => undefined);
+    }
+
+    toast.success('Cover photo uploaded successfully');
+    setIsUploading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   }
 
   async function handleApplyCroppedFile(croppedFile: File) {
     setIsUploading(true);
     const previousKey = coverImageKey;
+
+    let uploadedPath: string | null;
+
     try {
-      const uploadedPath = await uploadEventCoverImage(croppedFile, eventIdOrSlug);
+      uploadedPath = await uploadEventCoverImage(croppedFile, eventIdOrSlug);
       onCoverImageKeyChange(uploadedPath);
       setIsCropOpen(false);
-      if (previousKey && previousKey !== uploadedPath) {
-        try {
-          await deleteEventCoverImage(previousKey);
-        } catch {
-          // Silently ignore cleanup error
-        }
-      }
-      toast.success('Adjusted cover photo saved successfully');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to save adjusted cover photo';
       toast.error(message);
-    } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      return;
+    }
+
+    const shouldRemovePrevious =
+      previousKey !== null && previousKey !== undefined && previousKey !== uploadedPath;
+
+    if (shouldRemovePrevious) {
+      await deleteEventCoverImage(previousKey).catch(() => undefined);
+    }
+
+    toast.success('Adjusted cover photo saved successfully');
+    setIsUploading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   }
 
@@ -145,11 +161,7 @@ export function EventCoverPhotoUpload({
     onCoverImageKeyChange(null);
 
     if (currentKey) {
-      try {
-        await deleteEventCoverImage(currentKey);
-      } catch {
-        // Silently ignore storage deletion failure if already detached from event
-      }
+      await deleteEventCoverImage(currentKey).catch(() => undefined);
     }
     toast.info('Cover photo removed');
   }

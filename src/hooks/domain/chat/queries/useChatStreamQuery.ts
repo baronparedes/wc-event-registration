@@ -31,16 +31,16 @@ export function useChatStreamQuery() {
 
       try {
         await callChatStream(payload, onChunk, { signal: controller.signal });
-        setIsLoading(false);
       } catch (err) {
-        setIsLoading(false);
-        // Do not wrap AbortError as an unknown error
         const e = err instanceof Error ? err : new Error('An unknown error occurred');
         setError(e);
-        throw e;
-      } finally {
+        setIsLoading(false);
         setAbortController(null);
+        throw e;
       }
+
+      setIsLoading(false);
+      setAbortController(null);
     },
     [],
   );

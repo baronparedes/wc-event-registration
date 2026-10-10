@@ -38,15 +38,19 @@ export function AttendanceFieldsList({ fields, eventId, onEdit }: AttendanceFiel
   const updateMutation = useUpdateAttendanceFieldMutation();
 
   async function handleDelete(fieldId: string, fieldLabel: string) {
-    try {
-      await deleteMutation.mutateAsync({ id: fieldId, event_id: eventId });
+    const result = await deleteMutation
+      .mutateAsync({ id: fieldId, event_id: eventId })
+      .catch((error: unknown) => {
+        let message = 'Failed to remove field. Please try again.';
+        if (error instanceof Error) {
+          message = error.message;
+        }
+        toast.error(message);
+        return null;
+      });
+
+    if (result !== null) {
       toast.success(`"${fieldLabel}" removed.`);
-    } catch (error) {
-      let message = 'Failed to remove field. Please try again.';
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      toast.error(message);
     }
     setDeletingFieldId(null);
   }
@@ -58,31 +62,38 @@ export function AttendanceFieldsList({ fields, eventId, onEdit }: AttendanceFiel
     const newOrder = [...fields];
     [newOrder[index], newOrder[swapIndex]] = [newOrder[swapIndex], newOrder[index]];
 
-    try {
-      await reorderMutation.mutateAsync({
+    await reorderMutation
+      .mutateAsync({
         event_id: eventId,
         orderedIds: newOrder.map((f) => f.id),
+      })
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error ? error.message : 'Failed to reorder fields. Please try again.';
+        toast.error(message);
+        return null;
       });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to reorder fields. Please try again.';
-      toast.error(message);
-    }
   }
 
   async function handleToggleActive(field: AttendanceField) {
-    try {
-      await updateMutation.mutateAsync({
+    const result = await updateMutation
+      .mutateAsync({
         id: field.id,
         event_id: eventId,
         is_active: !field.is_active,
+      })
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to update field status. Please try again.';
+        toast.error(message);
+        return null;
       });
+
+    if (result !== null) {
       const status = field.is_active ? 'deactivated' : 'activated';
       toast.success(`"${field.label}" ${status}.`);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to update field status. Please try again.';
-      toast.error(message);
     }
   }
 

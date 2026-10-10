@@ -23,6 +23,38 @@ import { MigrationConfirmDialog } from './MigrationConfirmDialog';
 import { MigrationPreviewTable } from './MigrationPreviewTable';
 import { type FileChangeData, MigrationUploadControls } from './MigrationUploadControls';
 
+async function parseServiceAttendanceUpload({ file, targetDate, sheets }: FileChangeData) {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+
+  const isXlsx = file.name.endsWith('.xlsx');
+  let parseResult;
+
+  if (isXlsx) {
+    parseResult = await parseServiceAttendanceXlsx(file, { sheets });
+  } else {
+    const text = await file.text();
+    parseResult = parseServiceAttendanceCsv(text);
+  }
+
+  if (!parseResult.success) {
+    return { kind: 'parse-error' as const, message: parseResult.error };
+  }
+
+  let rows = processParsedCsvData(parseResult.data);
+  if (targetDate) {
+    rows = rows.filter((row) => row.service_date === targetDate);
+  }
+
+  if (rows.length === 0) {
+    return {
+      kind: 'no-records' as const,
+      message: `No records found matching the target date: ${targetDate}`,
+    };
+  }
+
+  return { kind: 'rows' as const, rows };
+}
+
 export function ServiceAttendanceMigrationPanel() {
   const [selectedLayoutId, setSelectedLayoutId] = useState<string>('');
   const [fileInputKey, setFileInputKey] = useState<number>(0);
@@ -55,54 +87,39 @@ export function ServiceAttendanceMigrationPanel() {
     }
 
     setIsParsingCsv(true);
+    let parseOutcome: Awaited<ReturnType<typeof parseServiceAttendanceUpload>> | undefined;
+    let parseFailed = false;
+    let parseError: unknown;
+
     try {
-      // Yield slightly to paint the loading state
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      const isXlsx = file.name.endsWith('.xlsx');
-      let parseResult;
-
-      if (isXlsx) {
-        parseResult = await parseServiceAttendanceXlsx(file, { sheets });
-      } else {
-        const text = await file.text();
-        parseResult = parseServiceAttendanceCsv(text);
-      }
-
-      if (!parseResult.success) {
-        toast.error(parseResult.error);
-        setRawRows([]);
-        return;
-      }
-
-      let initialPreview = processParsedCsvData(parseResult.data);
-
-      // Filter out rows where the mapped date does not match the chosen target Sunday
-      if (targetDate) {
-        initialPreview = initialPreview.filter((r) => r.service_date === targetDate);
-      }
-
-      if (initialPreview.length === 0) {
-        toast.error(`No records found matching the target date: ${targetDate}`);
-        setRawRows([]);
-        return;
-      }
-
-      setRawRows(initialPreview);
-      setStatusFilter('all');
-      setIgnoreFailedRecords(false);
-      setRowOverrides({});
+      parseOutcome = await parseServiceAttendanceUpload({ file, targetDate, sheets });
     } catch (err) {
-      console.error(err);
+      parseFailed = true;
+      parseError = err;
+    }
+
+    if (parseFailed) {
+      console.error(parseError);
       toast.error('Failed to read or parse the file');
       setRawRows([]);
       setStatusFilter('all');
       setIgnoreFailedRecords(false);
       setRowOverrides({});
-    } finally {
-      setIsParsingCsv(false);
-      setFileInputKey((k) => k + 1);
+    } else if (parseOutcome?.kind === 'parse-error') {
+      toast.error(parseOutcome.message);
+      setRawRows([]);
+    } else if (parseOutcome?.kind === 'no-records') {
+      toast.error(parseOutcome.message);
+      setRawRows([]);
+    } else if (parseOutcome?.kind === 'rows') {
+      setRawRows(parseOutcome.rows);
+      setStatusFilter('all');
+      setIgnoreFailedRecords(false);
+      setRowOverrides({});
     }
+
+    setIsParsingCsv(false);
+    setFileInputKey((k) => k + 1);
   };
 
   const handleAssignMember = (
@@ -141,6 +158,9 @@ export function ServiceAttendanceMigrationPanel() {
       return;
     }
 
+    let recordLabel = 'records';
+    if (failedRows.length === 1) recordLabel = 'record';
+
     try {
       const { csvText, filename } = buildFailedServiceAttendanceCsvExport({ failedRows });
       const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
@@ -153,9 +173,7 @@ export function ServiceAttendanceMigrationPanel() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success(
-        `Successfully exported ${failedRows.length} failed record${failedRows.length === 1 ? '' : 's'}.`,
-      );
+      toast.success(`Successfully exported ${failedRows.length} failed ${recordLabel}.`);
     } catch (err) {
       console.error(err);
       toast.error('Failed to export failed records CSV.');
@@ -194,40 +212,54 @@ export function ServiceAttendanceMigrationPanel() {
       return;
     }
 
-    try {
-      const payload = {
-        layout_id: selectedLayoutId,
-        rows: rowsToMigrate.map((r) => ({
-          user_id: r.user_id as string,
-          rfid: r.rfid,
-          service_date: r.service_date,
-          time_slot: r.time_slot,
-          checked_in_at: r.checked_in_at,
-          is_walk_in: r.is_walk_in,
-          is_override: r.is_override,
-          is_manual_entry: r.is_manual_entry,
-          service_seat_id: r.service_seat_id,
-          metadata: r.metadata,
-        })),
-      };
+    const payload = {
+      layout_id: selectedLayoutId,
+      rows: rowsToMigrate.map((r) => ({
+        user_id: r.user_id as string,
+        rfid: r.rfid,
+        service_date: r.service_date,
+        time_slot: r.time_slot,
+        checked_in_at: r.checked_in_at,
+        is_walk_in: r.is_walk_in,
+        is_override: r.is_override,
+        is_manual_entry: r.is_manual_entry,
+        service_seat_id: r.service_seat_id,
+        metadata: r.metadata,
+      })),
+    };
+    let importFailed = false;
+    let importError: unknown;
 
+    try {
       await bulkUpsertMutation.mutateAsync(payload);
-      toast.success(
-        ignoreFailedRecords && invalidRowCount > 0
-          ? `Migration completed successfully (${validRows.length} valid row${validRows.length === 1 ? '' : 's'} imported, ${invalidRowCount} failed row${invalidRowCount === 1 ? '' : 's'} skipped)`
-          : 'Migration completed successfully',
-      );
+    } catch (err) {
+      importFailed = true;
+      importError = err;
+    }
+
+    if (importFailed) {
+      console.error(importError);
+      let message = 'Migration failed';
+      if (importError instanceof Error) message = importError.message;
+      toast.error(message);
+    } else {
+      let successMessage = 'Migration completed successfully';
+      if (ignoreFailedRecords && invalidRowCount > 0) {
+        let validRowLabel = 'rows';
+        let failedRowLabel = 'rows';
+        if (validRows.length === 1) validRowLabel = 'row';
+        if (invalidRowCount === 1) failedRowLabel = 'row';
+        successMessage = `Migration completed successfully (${validRows.length} valid ${validRowLabel} imported, ${invalidRowCount} failed ${failedRowLabel} skipped)`;
+      }
+      toast.success(successMessage);
       setRawRows([]);
       setSelectedLayoutId('');
       setStatusFilter('all');
       setIgnoreFailedRecords(false);
       setRowOverrides({});
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : 'Migration failed');
-    } finally {
-      setIsConfirmOpen(false);
     }
+
+    setIsConfirmOpen(false);
   };
 
   const filteredRows = useMemo(() => {

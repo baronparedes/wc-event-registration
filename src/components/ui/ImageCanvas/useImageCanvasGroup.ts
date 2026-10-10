@@ -103,8 +103,11 @@ export function useImageCanvasGroup<K extends string>(options: UseImageCanvasGro
   };
 
   const downloadCaptures = async (captures: Capture[]) => {
-    for (const [index, { dataUrl, filename }] of captures.entries()) {
-      downloadDataUrl(dataUrl, filename);
+    for (let index = 0; index < captures.length; index += 1) {
+      const capture = captures[index];
+      if (!capture) continue;
+
+      downloadDataUrl(capture.dataUrl, capture.filename);
       if (index < captures.length - 1) {
         await delay(SEQUENTIAL_DOWNLOAD_DELAY_MS);
       }
@@ -116,15 +119,16 @@ export function useImageCanvasGroup<K extends string>(options: UseImageCanvasGro
     errorKey: K,
     operation: () => Promise<void>,
   ) => {
+    setIsGenerating(true);
+
     try {
-      setIsGenerating(true);
       await operation();
     } catch (error) {
       console.error('Image canvas operation failed:', error);
       toast.error(resolveMessage(errorMessage, errorKey));
-    } finally {
-      setIsGenerating(false);
     }
+
+    setIsGenerating(false);
   };
 
   const download = async (keys: K[]) => {

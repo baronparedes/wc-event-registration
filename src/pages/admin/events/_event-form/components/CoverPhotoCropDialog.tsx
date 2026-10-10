@@ -174,46 +174,52 @@ function CoverPhotoCropContent({
   }
 
   async function handleCropAndSave() {
-    if (!imageRef.current || !containerRef.current) return;
+    const img = imageRef.current;
+    const container = containerRef.current;
+
+    if (!img || !container) {
+      toast.error('Failed to crop image');
+      return;
+    }
+
+    const isRotated90or270 = rotation === 90 || rotation === 270;
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
+    const effectiveWidth = isRotated90or270 ? naturalHeight : naturalWidth;
+    const effectiveHeight = isRotated90or270 ? naturalWidth : naturalHeight;
+    const safeEffectiveWidth = effectiveWidth > 0 ? effectiveWidth : 1;
+    const safeEffectiveHeight = effectiveHeight > 0 ? effectiveHeight : 1;
+    const scale = Math.min(OUTPUT_WIDTH / safeEffectiveWidth, OUTPUT_HEIGHT / safeEffectiveHeight);
+    const drawWidth = naturalWidth > 0 ? naturalWidth * scale : OUTPUT_WIDTH;
+    const drawHeight = naturalHeight > 0 ? naturalHeight * scale : OUTPUT_HEIGHT;
+    const cleanBaseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const outputFileName = `${cleanBaseName || 'cover'}.jpg`;
+    let cropFailed = false;
+    let cropError: unknown;
 
     try {
-      const img = imageRef.current;
-      const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
-
       const canvas = document.createElement('canvas');
       canvas.width = OUTPUT_WIDTH;
       canvas.height = OUTPUT_HEIGHT;
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to create canvas context');
+      if (!ctx) {
+        toast.error('Failed to create canvas context');
+        return;
+      }
 
-      // Scale ratio from DOM container to Full HD canvas
       const scaleToOutput = OUTPUT_WIDTH / containerRect.width;
 
       ctx.save();
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-      // Center point in output coordinates
       const centerX = OUTPUT_WIDTH / 2;
       const centerY = OUTPUT_HEIGHT / 2;
 
-      // Move to canvas center + pan offset
       ctx.translate(centerX + pan.x * scaleToOutput, centerY + pan.y * scaleToOutput);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(zoom, zoom);
-
-      const isRotated90or270 = rotation === 90 || rotation === 270;
-      const effectiveWidth = isRotated90or270 ? img.naturalHeight : img.naturalWidth;
-      const effectiveHeight = isRotated90or270 ? img.naturalWidth : img.naturalHeight;
-
-      // Base scale factor at zoom = 1 fits whole image within canvas (matching contain)
-      const scale = Math.min(
-        OUTPUT_WIDTH / (effectiveWidth || 1),
-        OUTPUT_HEIGHT / (effectiveHeight || 1),
-      );
-      const drawWidth = (img.naturalWidth || OUTPUT_WIDTH) * scale;
-      const drawHeight = (img.naturalHeight || OUTPUT_HEIGHT) * scale;
 
       ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
       ctx.restore();
@@ -222,14 +228,23 @@ function CoverPhotoCropContent({
         canvas.toBlob(resolve, 'image/jpeg', 0.9);
       });
 
-      if (!blob) throw new Error('Failed to generate cropped image');
+      if (!blob) {
+        toast.error('Failed to generate cropped image');
+        return;
+      }
 
-      const cleanBaseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const outputFileName = `${cleanBaseName || 'cover'}.jpg`;
       const file = new File([blob], outputFileName, { type: 'image/jpeg' });
       await onApplyCrop(file);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to crop image';
+      cropFailed = true;
+      cropError = error;
+    }
+
+    if (cropFailed) {
+      let message = 'Failed to crop image';
+      if (cropError instanceof Error) {
+        message = cropError.message;
+      }
       toast.error(message);
     }
   }

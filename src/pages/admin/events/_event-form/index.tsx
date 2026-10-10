@@ -140,21 +140,31 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   }
 
   async function performSave(data: CreateEventInput) {
+    const saveOperation =
+      isEditMode && id
+        ? () => updateMutation.mutateAsync({ id, ...data })
+        : () => createMutation.mutateAsync(data);
+    const successMessage =
+      isEditMode && id ? TOAST_MESSAGES.eventSaved.updated : TOAST_MESSAGES.eventSaved.created;
+    let saveFailed = false;
+    let saveError: unknown;
+
     try {
-      if (isEditMode && id) {
-        await updateMutation.mutateAsync({ id, ...data });
-        toast.success(TOAST_MESSAGES.eventSaved.updated);
-      } else {
-        await createMutation.mutateAsync(data);
-        toast.success(TOAST_MESSAGES.eventSaved.created);
-      }
-      navigate(ROUTE_PATHS.adminEvents);
+      await saveOperation();
     } catch (error) {
+      saveFailed = true;
+      saveError = error;
+    }
+
+    if (saveFailed) {
       let message: string = TOAST_MESSAGES.eventSaved.saveFailed;
-      if (error instanceof Error) {
-        message = error.message;
+      if (saveError instanceof Error) {
+        message = saveError.message;
       }
       toast.error(message);
+    } else {
+      toast.success(successMessage);
+      navigate(ROUTE_PATHS.adminEvents);
     }
     cancelSave();
   }

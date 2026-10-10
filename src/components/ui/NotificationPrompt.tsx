@@ -1,5 +1,6 @@
 import {
   type ButtonHTMLAttributes,
+  type CSSProperties,
   type HTMLAttributes,
   type ReactNode,
   createContext,
@@ -106,7 +107,7 @@ export function NotificationPrompt({
             >
               <div
                 className={`h-full w-full animate-toast-progress ${VARIANT_PROGRESS_CLASSES[variant] || 'bg-primary'}`}
-                style={{ ['--toast-duration' as string]: `${duration}ms` }}
+                style={{ '--toast-duration': `${duration}ms` } as CSSProperties}
                 data-testid="toast-progress-bar-fill"
               />
             </div>

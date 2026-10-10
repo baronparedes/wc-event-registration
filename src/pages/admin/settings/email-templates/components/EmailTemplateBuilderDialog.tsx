@@ -98,19 +98,17 @@ function EmailTemplateBuilderForm({ template, onClose, onSuccess }: FormProps) {
   const onSubmit = async (values: EmailTemplateFormValues) => {
     const requiredVariables = parseVariables(values.required_variables_raw);
 
-    try {
-      await mutation.mutateAsync({
+    await mutation
+      .mutateAsync({
         id: template?.id,
         name: values.name,
         slug: values.slug,
         resend_template_id: values.resend_template_id,
         required_variables: requiredVariables,
-      });
+      })
+      .catch(() => undefined);
 
-      onSuccess();
-    } catch {
-      // Mutation handles toast errors
-    }
+    onSuccess();
   };
 
   return (
