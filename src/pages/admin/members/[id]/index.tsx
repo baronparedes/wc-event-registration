@@ -297,7 +297,7 @@ export function AdminMemberDetailPage() {
                 type="email"
                 readOnly={!canWrite || isDeletedMember}
               />
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <FormInputField
                   id="phone"
                   label="Phone"
@@ -306,8 +306,9 @@ export function AdminMemberDetailPage() {
                   readOnly={!canWrite || isDeletedMember}
                 />
                 {phone && (
-                  <div className="pt-1">
-                    <ContactButtons phone={phone} size="sm" layout="row" />
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className="text-xs text-muted">Quick connect:</span>
+                    <ContactButtons phone={phone} size="sm" variant="icon" />
                   </div>
                 )}
               </div>

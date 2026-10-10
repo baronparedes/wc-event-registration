@@ -130,4 +130,17 @@ describe('ContactButtons', () => {
     fireEvent.click(screen.getByTestId('contact-viber-link'));
     expect(onViberClick).toHaveBeenCalledTimes(1);
   });
+
+  it('renders subtle icon-only buttons when variant is icon', () => {
+    render(<ContactButtons phone="09171234567" variant="icon" />);
+
+    const smsLink = screen.getByTestId('contact-sms-link');
+    const viberLink = screen.getByTestId('contact-viber-link');
+
+    expect(smsLink).toHaveAttribute('title', 'Send SMS');
+    expect(viberLink).toHaveAttribute('title', 'Open Viber');
+    expect(smsLink).toHaveClass('h-8', 'w-8');
+    expect(smsLink.querySelector('span')).not.toBeInTheDocument();
+    expect(viberLink.querySelector('span')).not.toBeInTheDocument();
+  });
 });

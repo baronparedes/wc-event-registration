@@ -315,12 +315,12 @@ export function AdminMembersPage() {
                         </ListTableCell>
                         <ListTableCell onClick={(e) => e.stopPropagation()}>
                           {member.phone ? (
-                            <div className="flex flex-col gap-1 py-0.5">
+                            <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-text">{member.phone}</span>
                               <ContactButtons
                                 phone={member.phone}
                                 size="sm"
-                                layout="row"
+                                variant="icon"
                                 showCopyFallback={false}
                               />
                             </div>

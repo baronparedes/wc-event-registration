@@ -154,4 +154,5 @@ export {
   type ContactButtonsProps,
   type ContactButtonsLayout,
   type ContactButtonsSize,
+  type ContactButtonsVariant,
 } from './ContactButtons';

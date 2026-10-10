@@ -53,9 +53,9 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
           <MobileCardContentItem label="Member ID" value={member.member_id} isMono />
           <MobileCardContentItem label="Contact Number" colSpan={2}>
             {member.phone ? (
-              <div className="space-y-1.5 pt-0.5">
+              <div className="flex items-center gap-2 pt-0.5">
                 <span className="text-[15px] font-medium text-slate-700">{member.phone}</span>
-                <ContactButtons phone={member.phone} size="sm" layout="row" />
+                <ContactButtons phone={member.phone} size="sm" variant="icon" />
               </div>
             ) : undefined}
           </MobileCardContentItem>

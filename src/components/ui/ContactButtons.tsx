@@ -9,12 +9,15 @@ import { Button } from './Button';
 
 export type ContactButtonsLayout = 'row' | 'column' | 'responsive';
 export type ContactButtonsSize = 'sm' | 'md' | 'lg';
+export type ContactButtonsVariant = 'default' | 'icon';
 
 export interface ContactButtonsProps {
   /** The recipient phone number. */
   phone: string;
   /** Optional pre-filled message text for both SMS and Viber. */
   message?: string;
+  /** Visual style: 'default' with text labels, or 'icon' for subtle icon-only badges. Defaults to 'default'. */
+  variant?: ContactButtonsVariant;
   /** Custom label for SMS button. Defaults to 'SMS'. */
   smsLabel?: string;
   /** Custom label for Viber button. Defaults to 'Viber'. */
@@ -57,15 +60,21 @@ export function ViberIcon({ className = 'w-4 h-4' }: { className?: string }): Re
 }
 
 const layoutStyles: Record<ContactButtonsLayout, string> = {
-  row: 'flex flex-row items-center gap-2 flex-wrap',
+  row: 'flex flex-row items-center gap-1.5 flex-wrap',
   column: 'flex flex-col items-stretch gap-2 w-full',
-  responsive: 'flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto',
+  responsive: 'flex flex-col sm:flex-row sm:items-center gap-1.5 w-full sm:w-auto',
 };
 
 const iconSizes: Record<ContactButtonsSize, string> = {
   sm: 'w-3.5 h-3.5',
   md: 'w-4 h-4',
   lg: 'w-5 h-5',
+};
+
+const iconButtonDimensions: Record<ContactButtonsSize, string> = {
+  sm: 'h-7 w-7 min-h-0 p-0 rounded-md',
+  md: 'h-8 w-8 min-h-0 p-0 rounded-md',
+  lg: 'h-9 w-9 min-h-0 p-0 rounded-md',
 };
 
 /**
@@ -75,6 +84,7 @@ const iconSizes: Record<ContactButtonsSize, string> = {
 export function ContactButtons({
   phone,
   message,
+  variant = 'default',
   smsLabel = 'SMS',
   viberLabel = 'Viber',
   copyLabel = 'Copy',
@@ -114,30 +124,56 @@ export function ContactButtons({
     }
   };
 
+  const isIconVariant = variant === 'icon';
   const iconClass = iconSizes[size];
-  const isFullWidthInColumn = layout === 'column';
+  const isFullWidthInColumn = layout === 'column' && !isIconVariant;
+  const dimensionClass = isIconVariant ? iconButtonDimensions[size] : '';
+
+  // Brand styles
+  const smsClasses = isIconVariant
+    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/90 hover:bg-emerald-100 hover:text-emerald-800 active:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/70 dark:hover:bg-emerald-900/60 shadow-none'
+    : 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs focus-visible:ring-emerald-500/50';
+
+  const viberClasses = isIconVariant
+    ? 'bg-purple-50 text-[#7360F2] border border-purple-200/90 hover:bg-purple-100 hover:text-[#5e4be0] active:bg-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/70 dark:hover:bg-purple-900/60 shadow-none'
+    : 'bg-[#7360F2] text-white hover:bg-[#624ee0] active:bg-[#533ed1] shadow-xs focus-visible:ring-[#7360F2]/50';
+
+  const copyClasses = isIconVariant
+    ? twMerge(
+        'bg-slate-50 text-slate-500 border border-slate-200/90 hover:bg-slate-100 hover:text-slate-800 active:bg-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700/60 shadow-none transition-colors',
+        isCopied &&
+          'border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400',
+      )
+    : twMerge(
+        'text-text border-border hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors',
+        isCopied && 'border-emerald-500 text-emerald-600 dark:text-emerald-400',
+      );
 
   return (
-    <div className={twMerge(layoutStyles[layout], className)} data-testid="contact-buttons">
+    <div
+      className={twMerge(
+        isIconVariant ? 'inline-flex items-center gap-1.5' : layoutStyles[layout],
+        className,
+      )}
+      data-testid="contact-buttons"
+    >
       {/* SMS Button */}
       {isValid ? (
         <Button
           asChild
           size={size}
           fullWidth={isFullWidthInColumn}
-          className={twMerge(
-            'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs focus-visible:ring-emerald-500/50',
-            smsClassName,
-          )}
+          className={twMerge(smsClasses, dimensionClass, smsClassName)}
         >
           <a
             href={smsUri}
             onClick={onSmsClick}
             aria-label={`Send SMS to ${formattedNumber}`}
+            title="Send SMS"
             data-testid="contact-sms-link"
           >
             <MessageSquare className={iconClass} aria-hidden="true" />
-            <span>{smsLabel}</span>
+            {!isIconVariant && <span>{smsLabel}</span>}
           </a>
         </Button>
       ) : (
@@ -145,13 +181,14 @@ export function ContactButtons({
           disabled
           size={size}
           fullWidth={isFullWidthInColumn}
-          className={twMerge('opacity-50 cursor-not-allowed', smsClassName)}
+          className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, smsClassName)}
           onClick={onSmsClick}
           aria-label={`SMS unavailable (invalid phone number)`}
+          title="SMS unavailable"
           data-testid="contact-sms-disabled"
         >
           <MessageSquare className={iconClass} aria-hidden="true" />
-          <span>{smsLabel}</span>
+          {!isIconVariant && <span>{smsLabel}</span>}
         </Button>
       )}
 
@@ -161,19 +198,17 @@ export function ContactButtons({
           asChild
           size={size}
           fullWidth={isFullWidthInColumn}
-          className={twMerge(
-            'bg-[#7360F2] text-white hover:bg-[#624ee0] active:bg-[#533ed1] shadow-xs focus-visible:ring-[#7360F2]/50',
-            viberClassName,
-          )}
+          className={twMerge(viberClasses, dimensionClass, viberClassName)}
         >
           <a
             href={viberUri}
             onClick={onViberClick}
             aria-label={`Open Viber chat with ${formattedNumber}`}
+            title="Open Viber"
             data-testid="contact-viber-link"
           >
             <ViberIcon className={iconClass} />
-            <span>{viberLabel}</span>
+            {!isIconVariant && <span>{viberLabel}</span>}
           </a>
         </Button>
       ) : (
@@ -181,13 +216,14 @@ export function ContactButtons({
           disabled
           size={size}
           fullWidth={isFullWidthInColumn}
-          className={twMerge('opacity-50 cursor-not-allowed', viberClassName)}
+          className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, viberClassName)}
           onClick={onViberClick}
           aria-label={`Viber unavailable (invalid phone number)`}
+          title="Viber unavailable"
           data-testid="contact-viber-disabled"
         >
           <ViberIcon className={iconClass} />
-          <span>{viberLabel}</span>
+          {!isIconVariant && <span>{viberLabel}</span>}
         </Button>
       )}
 
@@ -195,21 +231,18 @@ export function ContactButtons({
       {showCopyFallback && (
         <Button
           type="button"
-          variant="outline"
+          variant={isIconVariant ? 'ghost' : 'outline'}
           size={size}
           fullWidth={isFullWidthInColumn}
           onClick={handleCopy}
           disabled={!phone}
-          className={twMerge(
-            'text-text border-border hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors',
-            isCopied && 'border-emerald-500 text-emerald-600 dark:text-emerald-400',
-            copyClassName,
-          )}
+          className={twMerge(copyClasses, dimensionClass, copyClassName)}
           aria-label={
             isCopied
               ? 'Phone number copied to clipboard'
               : `Copy phone number ${formattedNumber || phone}`
           }
+          title={isCopied ? 'Copied!' : 'Copy phone number'}
           data-testid="contact-copy-button"
         >
           {isCopied ? (
@@ -220,7 +253,7 @@ export function ContactButtons({
           ) : (
             <Copy className={iconClass} aria-hidden="true" />
           )}
-          <span>{isCopied ? 'Copied!' : copyLabel}</span>
+          {!isIconVariant && <span>{isCopied ? 'Copied!' : copyLabel}</span>}
         </Button>
       )}
     </div>
