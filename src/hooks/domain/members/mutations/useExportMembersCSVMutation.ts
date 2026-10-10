@@ -1,10 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { type MemberUserListRow, fetchAdminMembersPage } from '@/lib/domain/members';
+import { type MemberUserListRow, fetchAdminMembersPage, type MemberAttributeFilter } from '@/lib/domain/members';
 
 interface ExportMembersCSVParams {
   search_term: string;
   status_filter: 'active' | 'deleted' | 'all';
+  attribute_filter?: MemberAttributeFilter;
 }
 
 const EXPORT_PAGE_SIZE = 500;
@@ -49,6 +50,7 @@ async function buildMembersCsv(params: ExportMembersCSVParams) {
       searchTerm,
       searchTokens,
       statusFilter: params.status_filter,
+      attributeFilter: params.attribute_filter,
     });
 
     members.push(...rows);

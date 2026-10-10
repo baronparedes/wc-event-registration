@@ -118,15 +118,18 @@ export function AdminMembersPage() {
   const { data: authState } = useAdminAuthQuery();
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
   const [statusFilter, setStatusFilter] = useState<'active' | 'deleted' | 'all'>('active');
+  const [attributeFilter, setAttributeFilter] = useState<MemberAttributeFilter>('all');
 
   const membersQuery = useAdminMembersQuery({
     pageSize: PAGINATION_DEFAULTS.adminMembersPageSize,
     searchTerm: normalizedSearchTerm,
     statusFilter,
+    attributeFilter,
   });
   const exportMembersMutation = useExportMembersCSVMutation({
     search_term: normalizedSearchTerm,
     status_filter: statusFilter,
+    attribute_filter: attributeFilter,
   });
 
   const pages = membersQuery.data?.pages;
@@ -152,6 +155,16 @@ export function AdminMembersPage() {
 
   function handleStatusFilterChange(nextStatusFilter: 'active' | 'deleted' | 'all') {
     setStatusFilter(nextStatusFilter);
+  }
+
+  function handleAttributeFilterChange(nextAttributeFilter: MemberAttributeFilter) {
+    setAttributeFilter(nextAttributeFilter);
+  }
+
+  function handleClearFilters() {
+    clearSearch();
+    setStatusFilter('active');
+    setAttributeFilter('all');
   }
 
   async function handleExportMembers() {
@@ -209,7 +222,7 @@ export function AdminMembersPage() {
       <AdminBaseNavigation />
 
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
           <SearchInputField
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -228,12 +241,27 @@ export function AdminMembersPage() {
               ]}
             />
           </div>
+          <div className="flex w-full flex-col gap-1 text-sm text-muted">
+            <FormSelectField
+              ariaLabel="Contact Info"
+              value={attributeFilter}
+              onChange={(value) => handleAttributeFilterChange(value as MemberAttributeFilter)}
+              options={[
+                { value: 'all', label: 'All Details' },
+                { value: 'verified_email', label: 'Verified Email' },
+                { value: 'no_mobile', label: 'No Mobile Number' },
+                { value: 'no_email', label: 'No Email' },
+                { value: 'with_mobile', label: 'With Mobile Number' },
+                { value: 'with_email', label: 'With Email' },
+              ]}
+            />
+          </div>
           <Button
             type="button"
             variant="primaryOutline"
             className="w-full sm:w-auto"
-            onClick={clearSearch}
-            disabled={normalizedSearchTerm.length === 0}
+            onClick={handleClearFilters}
+            disabled={normalizedSearchTerm.length === 0 && statusFilter === 'active' && attributeFilter === 'all'}
           >
             Clear
           </Button>
