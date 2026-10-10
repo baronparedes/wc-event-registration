@@ -9,7 +9,7 @@ import { usePublicEventQuery } from '@/hooks/domain/events';
 import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
-import { ShareCountdownDialog } from './components';
+import { AddToCalendarDropdown, ShareCountdownDialog } from './components';
 import { formatEventSchedule, generateQrCodeDataUrl } from './utils';
 
 export function EventCountdownPage() {
@@ -258,7 +258,7 @@ export function EventCountdownPage() {
           </div>
         )}
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap">
           <Button
             size="3xl"
             variant={isRegistrationOpen ? 'primaryOutline' : 'default'}
@@ -268,7 +268,13 @@ export function EventCountdownPage() {
             <Home className="h-5 w-5 mr-2" aria-hidden="true" />
             Go Home
           </Button>
-          <Button size="3xl" className="w-full sm:w-auto" onClick={() => setIsShareOpen(true)}>
+          <AddToCalendarDropdown event={event} />
+          <Button
+            size="3xl"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => setIsShareOpen(true)}
+          >
             <Share2 className="h-5 w-5 mr-2" aria-hidden="true" />
             Share
           </Button>
