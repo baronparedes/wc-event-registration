@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import { AlertTriangle, Bell, Calendar, Loader2, Mail, Send, Users } from 'lucide-react';
+import { AlertTriangle, Bell, Calendar, Mail, Send, Users } from 'lucide-react';
 
-import { Button, Dialog } from '@/components/ui';
+import { Button, Dialog, Spinner } from '@/components/ui';
 import type { BroadcastChannel } from '@/lib/domain/notifications';
 import { formatDateOnly } from '@/lib/infrastructure/dateFormat';
 
@@ -175,7 +175,7 @@ export function SundayDispatchConfirmDialog({
         >
           {isPending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Spinner size="sm" aria-hidden="true" />
               <span>Dispatching...</span>
             </>
           ) : (

@@ -1,11 +1,9 @@
 import { useRef, useState } from 'react';
 
-import { Camera, ImageUp, Loader2 } from 'lucide-react';
+import { Camera, ImageUp } from 'lucide-react';
 import Webcam from 'react-webcam';
 
-import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { Avatar, Button, Dialog, Spinner } from '@/components/ui';
 
 interface EditableMemberAvatarProps {
   name: string;
@@ -125,7 +123,7 @@ export function EditableMemberAvatar({
           className="absolute bottom-1 right-1 flex h-10 w-10 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? (
-            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
+            <Spinner aria-hidden="true" size="md" />
           ) : (
             <Camera aria-hidden="true" className="h-5 w-5" />
           )}

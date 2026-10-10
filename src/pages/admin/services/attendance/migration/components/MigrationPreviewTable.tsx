@@ -1,6 +1,6 @@
-import { AlertCircle, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Download } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge, Spinner } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import {
   ListTable,
@@ -56,7 +56,7 @@ export function MigrationPreviewTable({
             </span>
             {isLoadingLookups && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                <Loader2 className="h-3 w-3 animate-spin" />
+                <Spinner size="xs" aria-hidden="true" />
                 Matching members...
               </span>
             )}

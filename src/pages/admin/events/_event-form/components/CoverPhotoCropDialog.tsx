@@ -7,7 +7,6 @@ import {
   Grid3X3,
   Info,
   LayoutTemplate,
-  Loader2,
   Maximize2,
   Minimize2,
   RotateCw,
@@ -18,9 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { Badge, Button, Dialog, Spinner } from '@/components/ui';
 
 interface CoverPhotoCropDialogProps {
   isOpen: boolean;
@@ -388,7 +385,7 @@ function CoverPhotoCropContent({
                 {/* Loading state indicator */}
                 {isLoadingImage && (
                   <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+                    <Spinner size="lg" className="text-primary" aria-hidden="true" />
                   </div>
                 )}
 
@@ -577,7 +574,7 @@ function CoverPhotoCropContent({
         >
           {isSaving ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              <Spinner size="sm" className="mr-2" aria-hidden="true" />
               Saving...
             </>
           ) : (

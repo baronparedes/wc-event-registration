@@ -11,6 +11,7 @@ import {
   ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
+  LoadingState,
   SectionCard,
 } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
@@ -35,7 +36,7 @@ export function AdminNotificationsDashboardPage() {
 
       <AdminPageShell.Content>
         {isLoading ? (
-          <div>Loading...</div>
+          <LoadingState message="Loading..." />
         ) : error ? (
           <div>Error loading data</div>
         ) : !data ? (

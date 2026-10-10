@@ -4,7 +4,7 @@ import { ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { EmptyState, RegistrationStatusBadge } from '@/components/ui';
+import { EmptyState, LoadingState, RegistrationStatusBadge } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -64,11 +64,7 @@ export function PublicRegistrationsList({
   const reactivateMutation = useReactivatePublicRegistrationMutation(eventId);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center text-gray-500">{UI_MESSAGES.loading.registrations}</div>
-      </div>
-    );
+    return <LoadingState message={UI_MESSAGES.loading.registrations} />;
   }
 
   if (registrations.length === 0) {

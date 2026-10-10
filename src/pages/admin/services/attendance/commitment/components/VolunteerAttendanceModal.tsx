@@ -1,20 +1,9 @@
 import { useMemo, useState } from 'react';
 
 import { parseISO } from 'date-fns';
-import {
-  CalendarCheck,
-  Clock,
-  Handshake,
-  Loader2,
-  TrendingUp,
-  UserCheck,
-  UserX,
-} from 'lucide-react';
+import { CalendarCheck, Clock, Handshake, TrendingUp, UserCheck, UserX } from 'lucide-react';
 
-import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
-import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
-import { Dialog } from '@/components/ui/Dialog';
+import { Avatar, Badge, CollapsibleSectionCard, Dialog, Spinner } from '@/components/ui';
 import {
   ListTable,
   ListTableBody,
@@ -388,7 +377,7 @@ export function VolunteerAttendanceModal({
                         {isLoading ? (
                           <ListTableRow hover="none">
                             <ListTableCell colSpan={4} className="!py-4 text-center">
-                              <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />
+                              <Spinner size="sm" className="mx-auto text-primary" />
                             </ListTableCell>
                           </ListTableRow>
                         ) : section.logs.length === 0 ? (
@@ -467,7 +456,7 @@ export function VolunteerAttendanceModal({
                   {isLoading ? (
                     <ListTableRow hover="none">
                       <ListTableCell colSpan={8} className="!py-4 text-center">
-                        <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />
+                        <Spinner size="sm" className="mx-auto text-primary" />
                       </ListTableCell>
                     </ListTableRow>
                   ) : matrixRows.length === 0 ? (

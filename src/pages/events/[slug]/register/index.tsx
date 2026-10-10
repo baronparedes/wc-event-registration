@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { EmptyState, SectionCard, StepIndicator } from '@/components/ui';
+import { EmptyState, LoadingState, SectionCard, Spinner, StepIndicator } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { ROUTE_PATHS, TIMING } from '@/config/constants';
@@ -62,7 +62,14 @@ export function EventRegistrationPage() {
   if (eventQuery.isLoading) {
     return (
       <section className="mx-auto max-w-5xl space-y-6">
-        <SectionCard title="Loading...">
+        <SectionCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <Spinner size="sm" className="text-primary" aria-hidden="true" />
+              <span>Loading...</span>
+            </span>
+          }
+        >
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-3/4 rounded bg-muted" />
             <div className="h-4 w-full rounded bg-muted" />
@@ -156,10 +163,11 @@ export function EventRegistrationPage() {
             <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
               {isVerifyingSignedInMember ? (
                 <SectionCard title="Verifying Registration Details">
-                  <div className="flex items-center space-x-3 py-4">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <p className="text-sm text-muted">Checking your member profile...</p>
-                  </div>
+                  <LoadingState
+                    layout="horizontal"
+                    message="Checking your member profile..."
+                    className="py-4"
+                  />
                 </SectionCard>
               ) : (
                 <MemberLookupStepCard

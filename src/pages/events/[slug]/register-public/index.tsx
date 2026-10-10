@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button } from '@/components/ui';
+import { Button, Spinner } from '@/components/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -280,7 +280,14 @@ export function PublicEventRegistrationPage() {
   if (eventQuery.isLoading) {
     return (
       <section className="mx-auto max-w-5xl space-y-6">
-        <SectionCard title="Loading...">
+        <SectionCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <Spinner size="sm" className="text-primary" aria-hidden="true" />
+              <span>Loading...</span>
+            </span>
+          }
+        >
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-3/4 rounded bg-muted" />
             <div className="h-4 w-full rounded bg-muted" />

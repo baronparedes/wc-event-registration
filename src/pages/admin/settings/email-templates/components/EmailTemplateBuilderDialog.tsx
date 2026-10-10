@@ -1,11 +1,18 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Badge, Button, Dialog, FormInputField, FormTextareaField } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Dialog,
+  FormInputField,
+  FormTextareaField,
+  LoadingState,
+  Spinner,
+} from '@/components/ui';
 import { useEmailTemplateMutation, useEmailTemplateQuery } from '@/hooks/domain/email-templates';
 import type { EmailTemplate } from '@/lib/domain/email-templates';
 
@@ -232,7 +239,7 @@ function EmailTemplateBuilderForm({ template, onClose, onSuccess }: FormProps) {
           variant="default"
           disabled={isSubmitting || mutation.isPending || (isEditMode && !isDirty)}
         >
-          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {mutation.isPending && <Spinner size="sm" className="mr-2" aria-hidden="true" />}
           {mutation.isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Template'}
         </Button>
       </Dialog.Footer>
@@ -259,10 +266,7 @@ export function EmailTemplateBuilderDialog({
 
       {templateId && isLoading ? (
         <Dialog.Body className="flex h-48 items-center justify-center">
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span>Loading template details...</span>
-          </div>
+          <LoadingState layout="horizontal" message="Loading template details..." />
         </Dialog.Body>
       ) : (
         <EmailTemplateBuilderForm

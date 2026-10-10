@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button } from '@/components/ui/Button';
-import { FormInputField } from '@/components/ui/FormInputField';
+import { Button, FormInputField, Spinner } from '@/components/ui';
 import { ROUTE_PATHS, TOAST_MESSAGES } from '@/config/constants';
 import {
   useAdminAuthQuery,
@@ -150,7 +148,7 @@ export function LoginPage() {
               </svg>
               {googleLoginMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Spinner size="md" className="mr-2" aria-hidden="true" />
                   Redirecting...
                 </>
               ) : (
@@ -175,7 +173,7 @@ export function LoginPage() {
               </svg>
               {yahooLoginMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Spinner size="md" className="mr-2" aria-hidden="true" />
                   Redirecting...
                 </>
               ) : (
@@ -226,7 +224,7 @@ export function LoginPage() {
               <Button disabled={loginMutation.isPending} fullWidth size="md" type="submit">
                 {loginMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Spinner size="md" className="mr-2" aria-hidden="true" />
                     Signing in...
                   </>
                 ) : (

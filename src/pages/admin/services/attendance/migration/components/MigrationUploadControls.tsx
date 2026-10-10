@@ -1,8 +1,8 @@
 import { type ChangeEvent, useRef, useState } from 'react';
 
-import { Loader2, UploadCloud } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 
-import { Button } from '@/components/ui/Button';
+import { Button, Spinner } from '@/components/ui';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 
 import { type MigrationConfig, MigrationConfigDialog } from './MigrationConfigDialog';
@@ -89,7 +89,7 @@ export function MigrationUploadControls({
         />
         {isProcessing && (
           <div className="mt-3 flex items-center gap-2 text-sm text-text-secondary">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <Spinner size="sm" className="text-primary" />
             <span>
               {isParsingCsv
                 ? 'Parsing and validating file...'

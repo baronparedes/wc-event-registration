@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/Button';
+import { Button, Spinner } from '@/components/ui';
 import type { FormSubmission } from '@/lib/domain/forms';
 
 interface ExportSubmissionsButtonProps {
@@ -168,11 +168,7 @@ export function ExportSubmissionsButton({
       onClick={handleExport}
       className="flex items-center gap-1.5"
     >
-      {isExporting ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Download className="h-4 w-4" />
-      )}
+      {isExporting ? <Spinner size="sm" aria-hidden="true" /> : <Download className="h-4 w-4" />}
       {isExporting ? 'Exporting...' : 'Export as CSV'}
     </Button>
   );

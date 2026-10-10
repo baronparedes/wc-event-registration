@@ -1,10 +1,8 @@
 import { forwardRef, useMemo, useState } from 'react';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Users } from 'lucide-react';
 
-import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { Avatar, Badge, EmptyState, Spinner } from '@/components/ui';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
@@ -452,7 +450,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
         <div ref={ref} className="h-4 w-full" />
         {isLoading && (
           <div className="flex justify-center p-6 border-t border-border">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <Spinner size="base" className="text-primary" />
           </div>
         )}
       </SectionCard>

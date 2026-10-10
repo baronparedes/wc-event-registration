@@ -1,6 +1,6 @@
 import { ClipboardList, Eye } from 'lucide-react';
 
-import { Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState, LoadingState } from '@/components/ui';
 import {
   ListTable,
   ListTableBody,
@@ -37,11 +37,7 @@ export function SubmissionsList({
   onSelectSubmission,
 }: SubmissionsListProps) {
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-sm text-muted">
-        Loading submissions...
-      </div>
-    );
+    return <LoadingState message="Loading submissions..." />;
   }
 
   if (submissions.length === 0) {

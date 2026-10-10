@@ -1,10 +1,9 @@
 import type { ReactNode, Ref } from 'react';
 
-import { Loader2 } from 'lucide-react';
-
 import { formatPaginationSummary } from '@/lib/infrastructure';
 
 import { Button } from './Button';
+import { Spinner } from './Spinner';
 
 export interface AdminInfiniteScrollFooterProps {
   currentCount: number;
@@ -58,7 +57,7 @@ export function AdminInfiniteScrollFooter({
             >
               {isFetchingNextPage ? (
                 <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner size="sm" aria-hidden="true" />
                   Loading...
                 </span>
               ) : (

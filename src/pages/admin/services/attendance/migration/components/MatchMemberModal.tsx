@@ -1,12 +1,8 @@
 import { useMemo, useState } from 'react';
 
-import { AlertCircle, Check, Loader2, UserCheck } from 'lucide-react';
+import { AlertCircle, Check, UserCheck } from 'lucide-react';
 
-import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
-import { FormInputField } from '@/components/ui/FormInputField';
-import { SearchInputField } from '@/components/ui/SearchInputField';
+import { Avatar, Button, Dialog, FormInputField, SearchInputField, Spinner } from '@/components/ui';
 import { useAdminMembersQuery } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
 
@@ -163,7 +159,7 @@ function MatchMemberContent({
         <div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-surface p-1 space-y-1 shadow-xs">
           {isLoadingMembers ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <Spinner size="sm" className="text-primary" />
               <span>Searching members...</span>
             </div>
           ) : memberResults.length === 0 ? (

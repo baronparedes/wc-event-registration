@@ -7,7 +7,9 @@ import {
   useContext,
 } from 'react';
 
-import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, Loader2, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
+
+import { Spinner } from './Spinner';
 
 export type NotificationPromptVariant =
   | 'primary'
@@ -133,7 +135,7 @@ const DEFAULT_VARIANT_ICONS: Record<NotificationPromptVariant, ReactNode> = {
   error: <AlertCircle className="h-5 w-5" />,
   warning: <AlertTriangle className="h-5 w-5" />,
   info: <Info className="h-5 w-5" />,
-  loading: <Loader2 className="h-5 w-5 animate-spin" />,
+  loading: <Spinner size="md" />,
 };
 
 export type NotificationPromptHeaderProps = HTMLAttributes<HTMLDivElement> & {

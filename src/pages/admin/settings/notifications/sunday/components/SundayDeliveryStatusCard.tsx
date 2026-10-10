@@ -4,13 +4,12 @@ import {
   Bell,
   CheckCircle2,
   Clock,
-  Loader2,
   Mail,
   Users,
   XCircle,
 } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge, Spinner } from '@/components/ui';
 import type { SundayChannelDeliveryStats, SundayDeliveryStatus } from '@/lib/domain/notifications';
 import { formatDateOnly, formatDateTime } from '@/lib/infrastructure/dateFormat';
 
@@ -52,7 +51,7 @@ function renderStatusBadge(status?: SundayDeliveryStatus, alreadySent?: boolean)
   if (status === 'queued') {
     return (
       <Badge variant="accent" className="gap-1 text-xs">
-        <Loader2 className="h-3 w-3 animate-spin" /> In Queue
+        <Spinner size="xs" aria-hidden="true" /> In Queue
       </Badge>
     );
   }

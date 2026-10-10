@@ -3,7 +3,14 @@ import { useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { Button, EmptyState, SectionCard, StepIndicator } from '@/components/ui';
+import {
+  Button,
+  EmptyState,
+  LoadingState,
+  SectionCard,
+  Spinner,
+  StepIndicator,
+} from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useWizardStepScroll } from '@/hooks/utils';
 import { MemberLookupStepCard, ProfileStepCard } from '@/pages/events/[slug]/register/components';
@@ -65,7 +72,14 @@ export function FormSubmissionPage() {
   if (formQuery.isLoading) {
     return (
       <section className="mx-auto max-w-5xl space-y-6">
-        <SectionCard title="Loading Form...">
+        <SectionCard
+          title={
+            <span className="inline-flex items-center gap-2">
+              <Spinner size="sm" className="text-primary" aria-hidden="true" />
+              <span>Loading Form...</span>
+            </span>
+          }
+        >
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-3/4 rounded bg-muted" />
             <div className="h-4 w-full rounded bg-muted" />
@@ -150,10 +164,11 @@ export function FormSubmissionPage() {
               <div ref={stepOneRef} className="space-y-4 scroll-mt-24">
                 {isVerifyingSignedInMember ? (
                   <SectionCard title="Verifying Profile">
-                    <div className="flex items-center space-x-3 py-4">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      <p className="text-sm text-muted">Checking your member profile...</p>
-                    </div>
+                    <LoadingState
+                      layout="horizontal"
+                      message="Checking your member profile..."
+                      className="py-4"
+                    />
                   </SectionCard>
                 ) : (
                   <MemberLookupStepCard
@@ -204,7 +219,14 @@ export function FormSubmissionPage() {
             {activeWizardStep === 3 && (
               <div ref={stepThreeRef} className="space-y-4 scroll-mt-24">
                 {fieldsLoading ? (
-                  <SectionCard title="Loading Questions...">
+                  <SectionCard
+                    title={
+                      <span className="inline-flex items-center gap-2">
+                        <Spinner size="sm" className="text-primary" aria-hidden="true" />
+                        <span>Loading Questions...</span>
+                      </span>
+                    }
+                  >
                     <div className="animate-pulse space-y-3">
                       <div className="h-4 w-full rounded bg-muted" />
                       <div className="h-4 w-5/6 rounded bg-muted" />
@@ -249,7 +271,14 @@ export function FormSubmissionPage() {
             {activeWizardStep === 2 && (
               <div ref={stepTwoRef} className="space-y-4 scroll-mt-24">
                 {fieldsLoading ? (
-                  <SectionCard title="Loading Questions...">
+                  <SectionCard
+                    title={
+                      <span className="inline-flex items-center gap-2">
+                        <Spinner size="sm" className="text-primary" aria-hidden="true" />
+                        <span>Loading Questions...</span>
+                      </span>
+                    }
+                  >
                     <div className="animate-pulse space-y-3">
                       <div className="h-4 w-full rounded bg-muted" />
                       <div className="h-4 w-5/6 rounded bg-muted" />

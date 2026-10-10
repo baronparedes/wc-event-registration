@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import { Calendar, Check, ChevronsUpDown, Loader2, Search } from 'lucide-react';
+import { Calendar, Check, ChevronsUpDown, Search } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge, Spinner } from '@/components/ui';
 import { useAdminEventsQuery } from '@/hooks/domain/events';
 import type { AdminEvent } from '@/lib/domain/events';
 
@@ -107,7 +107,7 @@ export function BroadcastEventPicker({
             <div className="max-h-60 overflow-y-auto space-y-1">
               {isLoading ? (
                 <div className="flex items-center justify-center py-6 text-muted">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Spinner size="sm" className="mr-2" aria-hidden="true" />
                   <span className="text-xs">Loading events...</span>
                 </div>
               ) : events.length === 0 ? (

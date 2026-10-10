@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
-import { ActionLink, AlertBanner, Button } from '@/components/ui';
+import { ActionLink, AlertBanner, Button, Spinner } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -80,7 +80,14 @@ export function AdminRegistrationsBulkUploadPage() {
         }
       }}
     >
-      {downloadMutation.isPending ? 'Downloading...' : 'Download CSV Template'}
+      {downloadMutation.isPending ? (
+        <>
+          <Spinner size="sm" className="mr-2" aria-hidden="true" />
+          Downloading...
+        </>
+      ) : (
+        'Download CSV Template'
+      )}
     </Button>
   );
 
