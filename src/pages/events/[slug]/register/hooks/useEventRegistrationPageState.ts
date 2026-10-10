@@ -146,7 +146,6 @@ export function useEventRegistrationPageState() {
   const [autoLookupStatus, setAutoLookupStatus] = useState<'idle' | 'executing' | 'completed'>(
     'idle',
   );
-  const isAutoSubmittingNoFieldsRef = useRef(false);
 
   const profileQuery = useCurrentProfileQuery();
   const currentProfile = profileQuery.data;
@@ -272,12 +271,6 @@ export function useEventRegistrationPageState() {
     setIsWizardBlockedResult(false);
     setWizardStep(2);
   }, []);
-
-  const enterWizardCompleteStep = useCallback(() => {
-    setIsWizardBlockedResult(false);
-    setWizardStep(3);
-    scrollToDynamicFieldsStep();
-  }, [scrollToDynamicFieldsStep]);
 
   const resetToStepOne = useCallback(() => {
     clearMember();
@@ -665,24 +658,35 @@ export function useEventRegistrationPageState() {
     activeFields.length === 0 &&
     !isRegistrationConfirmed;
 
-  useEffect(() => {
+  const enterWizardCompleteStep = useCallback(() => {
+    setIsWizardBlockedResult(false);
+    setWizardStep(3);
+    scrollToDynamicFieldsStep();
+
     const shouldAutoSubmitNoFields =
-      shouldBypassDynamicFieldsStepCard &&
+      !isSignedIn &&
+      !isRegistrationConfirmed &&
+      !isEffectiveRegistrationBlocked &&
+      !eventFieldsQuery.isLoading &&
+      !eventFieldsQuery.isError &&
+      (eventFieldsQuery.data?.issues?.length ?? 0) === 0 &&
+      activeFields.length === 0 &&
       !submitMutation.isPending &&
-      submitErrorMessage === null &&
-      !isAutoSubmittingNoFieldsRef.current;
+      submitErrorMessage === null;
 
-    if (!shouldAutoSubmitNoFields) {
-      return;
+    if (shouldAutoSubmitNoFields) {
+      void handleSubmitRegistration({} as DynamicFieldResponseValues);
     }
-
-    isAutoSubmittingNoFieldsRef.current = true;
-    void handleSubmitRegistration({} as DynamicFieldResponseValues).finally(() => {
-      isAutoSubmittingNoFieldsRef.current = false;
-    });
   }, [
+    activeFields.length,
+    eventFieldsQuery.data?.issues?.length,
+    eventFieldsQuery.isError,
+    eventFieldsQuery.isLoading,
     handleSubmitRegistration,
-    shouldBypassDynamicFieldsStepCard,
+    isEffectiveRegistrationBlocked,
+    isRegistrationConfirmed,
+    isSignedIn,
+    scrollToDynamicFieldsStep,
     submitErrorMessage,
     submitMutation.isPending,
   ]);

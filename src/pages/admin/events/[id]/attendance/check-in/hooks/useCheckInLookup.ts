@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { searchAttendeesWithRfidFallback } from '@/lib/domain/attendance';
-
-import { isDirectMemberIdMatch } from '../utils';
 
 type CachedAttendees = NonNullable<
   ReturnType<typeof import('@/hooks/domain/attendance').useAttendeesLocalCacheQuery>['attendees']
@@ -22,8 +20,6 @@ export function useCheckInLookup({
   const [submittedSearchToken, setSubmittedSearchToken] = useState('');
   const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null);
   const [confirmedRegistrationId, setConfirmedRegistrationId] = useState<string | null>(null);
-  const lastAutoConfirmedTokenRef = useRef('');
-  const lastAutoSubmittedTokenRef = useRef('');
 
   const results = useMemo(() => {
     if (!submittedSearchToken.trim() || !cachedAttendees) return [];
@@ -51,8 +47,6 @@ export function useCheckInLookup({
     setSelectedRegistrationId(null);
     setConfirmedRegistrationId(null);
     onCheckInResultChange(null);
-    lastAutoConfirmedTokenRef.current = '';
-    lastAutoSubmittedTokenRef.current = '';
   }, [onCheckInResultChange]);
 
   const handleScanFromConfirmation = useCallback(
@@ -60,8 +54,6 @@ export function useCheckInLookup({
       const normalized = scanValue.trim();
       if (!normalized) return;
 
-      lastAutoConfirmedTokenRef.current = '';
-      lastAutoSubmittedTokenRef.current = '';
       setSearchToken(normalized);
       setSubmittedSearchToken(normalized);
       setSelectedRegistrationId(null);
@@ -95,18 +87,6 @@ export function useCheckInLookup({
     [onCheckInResultChange],
   );
 
-  useEffect(() => {
-    if (
-      results.length === 1 &&
-      isDirectMemberIdMatch(submittedSearchToken, results) &&
-      lastAutoConfirmedTokenRef.current !== submittedSearchToken
-    ) {
-      lastAutoConfirmedTokenRef.current = submittedSearchToken;
-      setConfirmedRegistrationId(results[0].registration_id);
-      onCheckInResultChange(null);
-    }
-  }, [onCheckInResultChange, results, submittedSearchToken]);
-
   return {
     searchToken,
     submittedSearchToken,
@@ -125,6 +105,5 @@ export function useCheckInLookup({
     handleReadyForNext: reset,
     handleBackToMatches,
     handleConfirmSelection,
-    lastAutoSubmittedTokenRef,
   };
 }
