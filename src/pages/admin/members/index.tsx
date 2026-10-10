@@ -30,7 +30,7 @@ import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery, useExportMembersCSVMutation } from '@/hooks/domain/members';
 import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
 import { canAdminPerform } from '@/lib/domain/auth';
-import type { AdminMember } from '@/lib/domain/members';
+import type { AdminMember, MemberAttributeFilter } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
 
 import {
@@ -261,7 +261,11 @@ export function AdminMembersPage() {
             variant="primaryOutline"
             className="w-full sm:w-auto"
             onClick={handleClearFilters}
-            disabled={normalizedSearchTerm.length === 0 && statusFilter === 'active' && attributeFilter === 'all'}
+            disabled={
+              normalizedSearchTerm.length === 0 &&
+              statusFilter === 'active' &&
+              attributeFilter === 'all'
+            }
           >
             Clear
           </Button>

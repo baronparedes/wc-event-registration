@@ -56,7 +56,13 @@ export type MemberUpdatePayload = {
 };
 
 export type MemberStatusFilter = 'active' | 'deleted' | 'all';
-export type MemberAttributeFilter = 'all' | 'verified_email' | 'no_mobile' | 'no_email' | 'with_mobile' | 'with_email';
+export type MemberAttributeFilter =
+  | 'all'
+  | 'verified_email'
+  | 'no_mobile'
+  | 'no_email'
+  | 'with_mobile'
+  | 'with_email';
 
 const MEMBER_USER_SELECT =
   'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, has_account';
@@ -73,7 +79,14 @@ export async function fetchAdminMembersPage(params: {
   statusFilter: MemberStatusFilter;
   attributeFilter?: MemberAttributeFilter;
 }): Promise<{ rows: MemberUserListRow[]; count: number | null }> {
-  const { offset, pageSize, searchTerm, searchTokens, statusFilter, attributeFilter = 'all' } = params;
+  const {
+    offset,
+    pageSize,
+    searchTerm,
+    searchTokens,
+    statusFilter,
+    attributeFilter = 'all',
+  } = params;
   let query = supabase
     .from('users')
     .select(
@@ -81,7 +94,7 @@ export async function fetchAdminMembersPage(params: {
       { count: 'exact' },
     );
 
-if (statusFilter === 'active') {
+  if (statusFilter === 'active') {
     query = query.eq('is_active', true);
   } else if (statusFilter === 'deleted') {
     query = query.eq('is_active', false);

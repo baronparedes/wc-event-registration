@@ -1,7 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import { type AdminMember, fetchAdminMembersPage, type MemberAttributeFilter } from '@/lib/domain/members';
+import {
+  type AdminMember,
+  type MemberAttributeFilter,
+  fetchAdminMembersPage,
+} from '@/lib/domain/members';
 import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 function readMetadataString(value: unknown): string {
@@ -16,7 +20,15 @@ export const adminMembersPageQueryKey = (
   searchTerm: string,
   statusFilter: 'active' | 'deleted' | 'all',
   attributeFilter: MemberAttributeFilter = 'all',
-) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm, statusFilter, attributeFilter] as const;
+) =>
+  [
+    ...ADMIN_MEMBERS_QUERY_KEY(),
+    pageSize,
+    cursor,
+    searchTerm,
+    statusFilter,
+    attributeFilter,
+  ] as const;
 
 export interface AdminMembersPageParams {
   pageSize?: number;
