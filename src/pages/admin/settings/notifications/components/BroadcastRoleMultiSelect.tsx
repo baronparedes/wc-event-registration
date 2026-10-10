@@ -33,6 +33,8 @@ export function BroadcastRoleMultiSelect({
   });
 
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -51,7 +53,7 @@ export function BroadcastRoleMultiSelect({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [containerRef]);
+  }, [containerRef, isOpen]);
 
   const handleToggleRole = (value: string) => {
     if (selectedRoles.includes(value)) {

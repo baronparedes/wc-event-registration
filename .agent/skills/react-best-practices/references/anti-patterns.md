@@ -195,3 +195,116 @@ const result = UserProfileSchema.safeParse(response);
 if (!result.success) throw new Error('Invalid profile shape');
 const data: UserProfile = result.data;
 ```
+
+---
+
+## 11. Leaking Global Listeners on Inactive Overlays
+
+**Problem:** Registering `document` or `window` event listeners (e.g., click-outside `mousedown` or `Escape` keydown) in an effect without guarding on the active/open state causes every mounted instance to listen to global user interactions even while hidden.
+
+```tsx
+// ❌ Wrong: Listens continuously to all mouse/keyboard events on document
+useEffect(() => {
+  function handleOutside(e: MouseEvent) {
+    if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+  }
+  document.addEventListener('mousedown', handleOutside);
+  return () => document.removeEventListener('mousedown', handleOutside);
+}, [isOpen]);
+```
+
+**Fix:** Return early if the overlay is not active.
+
+```tsx
+// ✅ Correct: Only attaches listeners while open
+useEffect(() => {
+  if (!isOpen) return;
+
+  function handleOutside(e: MouseEvent) {
+    if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+  }
+  document.addEventListener('mousedown', handleOutside);
+  return () => document.removeEventListener('mousedown', handleOutside);
+}, [isOpen]);
+```
+
+---
+
+## 12. Broken `useMemo` Cache via Unstable Dependency References
+
+**Problem:** Passing newly allocated objects, arrays, or functions into a dependency array causes reference equality checks (`===`) to fail on every render, invalidating the memoized cache 100% of the time while still incurring memoization overhead.
+
+```tsx
+// ❌ Wrong: parseDays() returns a brand new array reference on every render
+const days = parseDays(prop);
+const disabled = useMemo(() => buildDisabled(days), [days]);
+
+// ❌ Wrong: Passing inline object literal into child props that memoizes on it
+<Child config={{ count: 1 }} />;
+```
+
+**Fix:** Ensure dependency references remain stable, or inline the cheap computation during render instead of memoizing.
+
+```tsx
+// ✅ Correct: Extract stable values or derive inline
+const days = useMemo(() => parseDays(prop), [prop]);
+const disabled = useMemo(() => buildDisabled(days), [days]);
+```
+
+---
+
+## 13. Premature/Trivial `useMemo` on Cheap Primitives & Fallbacks
+
+**Problem:** Wrapping primitive boolean/string expressions, simple arithmetic, or nullish fallbacks in `useMemo` adds hook state tracking, dependency comparison, and closure allocation that costs more CPU and memory than inline calculation.
+
+```tsx
+// ❌ Wrong
+const isBlocked = useMemo(() => a || b, [a, b]);
+const percentage = useMemo(() => Math.round((count / total) * 100), [count, total]);
+const items = useMemo(() => rawItems ?? [], [rawItems]);
+```
+
+**Fix:** Derive inline during render.
+
+```tsx
+// ✅ Correct
+const isBlocked = a || b;
+const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+const items = rawItems ?? [];
+```
+
+---
+
+## 14. Triggering Mutations & Submissions in `useEffect` (Cascading Effects)
+
+**Problem:** Initiating mutations, form submissions, or auto-transitions inside `useEffect` creates cascading render passes, race conditions, and requires brittle `useRef` mutex guards to prevent infinite loops.
+
+```tsx
+// ❌ Wrong: Mutation triggered by reactive state observation
+useEffect(() => {
+  if (dataReady && !isSubmittingRef.current) {
+    isSubmittingRef.current = true;
+    submitMutation();
+  }
+}, [dataReady]);
+```
+
+**Fix:** Trigger mutations directly within event handlers (e.g. after a lookup or scan finishes successfully).
+
+```tsx
+// ✅ Correct: Action triggered directly from the event
+async function handleScan(barcode: string) {
+  const result = await lookup(barcode);
+  if (result.matched) {
+    await submitRegistration();
+  }
+}
+```
+
+---
+
+## 15. Orphaned/Dead State without Corresponding Controls
+
+**Problem:** Declaring `useState` variables and conditional rendering logic without providing corresponding input elements or updates leaves dead code and confusing UX.
+
+**Fix:** Ensure interactive state has full control coverage (e.g., an actual input/textarea for user feedback) or remove unused state.

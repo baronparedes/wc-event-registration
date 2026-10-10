@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Check, Link2 } from 'lucide-react';
 
@@ -51,10 +51,7 @@ export function ShareCountdownDialog({
     return () => clearInterval(timer);
   }, [propTimeLeft, isOpen, event?.starts_at]);
 
-  const calculatedTimeLeft = useMemo(
-    () => calculateTimeLeft(event?.starts_at, now),
-    [event?.starts_at, now],
-  );
+  const calculatedTimeLeft = calculateTimeLeft(event?.starts_at, now);
   const resolvedTimeLeft = propTimeLeft ?? calculatedTimeLeft;
   const resolvedCoverUrl =
     coverUrl !== undefined ? coverUrl : getEventCoverPublicUrl(event?.cover_image_key);

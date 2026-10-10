@@ -173,6 +173,9 @@ See [anti-patterns.md](./references/anti-patterns.md) for the full catalog.
 - Prop drilling more than 2 levels → consider composition or context.
 - Large components doing render + fetch + multi-step logic → split.
 - `useEffect` chains that compute state → derive inline or use `useMemo`.
+- Triggering mutations or form submits inside `useEffect` → trigger from event handlers.
+- Leaking global `document`/`window` listeners on inactive overlays → guard with `if (!isOpen) return`.
+- Ineffective `useMemo` on cheap booleans/primitives or with unstable object/array deps → derive inline.
 - Conditional hook calls → restructure to keep hooks unconditional.
 - Missing cleanup in effects with timers/subscriptions → always return cleanup.
 - Silently swallowing errors → surface user-safe messages, log details.
@@ -186,6 +189,9 @@ Run through this before marking a component ready:
 - [ ] Component has a single UI responsibility
 - [ ] No `useState` for form fields — using RHF
 - [ ] No `useEffect` for derived/computed values
+- [ ] No mutations or submissions triggered via `useEffect`
+- [ ] Document/window event listeners guarded by active/open state (`if (!isOpen) return`)
+- [ ] `useMemo` dependencies have stable references; no memoization of trivial primitives
 - [ ] All hooks called unconditionally, before any early return
 - [ ] Effect cleanup captures and clears local handles
 - [ ] No prop drilling beyond 2 levels

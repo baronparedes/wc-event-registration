@@ -15,6 +15,13 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Strict Typing**: Do NOT use `any` types.
 - **No Linter Overrides**: Do NOT override linter rules with `@typescript-eslint/no-explicit-any` comments. Always prefer strict TypeScript typing, schema inference (e.g., Zod), and generics.
 - **Tech Stack**: This project uses React 19, Vite, TypeScript, TailwindCSS, Supabase, React Query, and Zod. Ensure all solutions align with these tools.
+- **React Anti-Patterns & Hook Rules**:
+  - **No Inactive Event Listeners**: Never register `document` or `window` event listeners without guarding on the open/active state (`if (!isOpen) return;`).
+  - **No Trivial Memoization**: Do NOT wrap cheap primitive expressions, booleans, or nullish fallbacks in `useMemo` (e.g., `a || b`, `Math.round(...)`, `raw ?? []`); derive them inline during render.
+  - **Stable Memo Dependencies**: Ensure `useMemo` dependency arrays only contain stable references. Never instantiate arrays or object literals inside render and pass them into dependency arrays.
+  - **No Mutations in Effects**: Never trigger mutations, network submissions, or cascading state chains inside `useEffect`. Orchestrate submissions directly from event handlers.
+  - **Form State with RHF**: Do NOT use `useState` for form fields; use React Hook Form (`register`, `useWatch`) and `useFieldArray` for array structures.
+  - See `.agent/skills/react-best-practices/references/anti-patterns.md` for full guidance.
 
 ## 3. Architecture & Code Organization
 

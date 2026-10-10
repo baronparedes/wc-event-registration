@@ -171,10 +171,8 @@ export function useEventRegistrationPageState() {
     return wizardStep;
   }, [wizardStep, memberLookup.matchedMember, memberLookup.isRegistrationBlocked]);
 
-  const isEffectiveRegistrationBlocked = useMemo(
-    () => memberLookup.isRegistrationBlocked || isWizardBlockedResult,
-    [memberLookup.isRegistrationBlocked, isWizardBlockedResult],
-  );
+  const isEffectiveRegistrationBlocked =
+    memberLookup.isRegistrationBlocked || isWizardBlockedResult;
 
   const availability = eventQuery.data;
   const isGateReady = availability?.status === 'available';
