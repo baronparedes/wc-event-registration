@@ -148,3 +148,11 @@ export {
   type UseImageCanvasGroupOptions,
   type UseImageCanvasOptions,
 } from './ImageCanvas';
+export {
+  ContactButtons,
+  ViberIcon,
+  type ContactButtonsProps,
+  type ContactButtonsLayout,
+  type ContactButtonsSize,
+  type ContactButtonsVariant,
+} from './ContactButtons';

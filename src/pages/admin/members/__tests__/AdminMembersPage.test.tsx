@@ -381,4 +381,56 @@ describe('AdminMembersPage', () => {
       '/admin/members/user-1',
     );
   });
+
+  it('renders ContactButtons in table for members with valid phone numbers', () => {
+    mockUseIsMobileViewport.mockReturnValue(false);
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: {
+        adminRole: 'super_admin',
+      },
+    });
+    mockUseAdminMembersQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: 'user-1',
+                member_id: 'WC-001',
+                is_active: true,
+                full_name: faker.person.fullName(),
+                nickname: faker.person.firstName(),
+                email: faker.internet.exampleEmail(),
+                phone: '09171234567',
+                role: 'player',
+                category: 'adult',
+                created_at: '2026-06-27T00:00:00.000Z',
+              },
+            ],
+            totalCount: 1,
+            hasMore: false,
+            nextCursor: null,
+            totalPages: 1,
+          },
+        ],
+      },
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+      isLoading: false,
+      error: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('contact-sms-link')).toHaveAttribute('href', 'sms:+639171234567');
+    expect(screen.getByTestId('contact-viber-link')).toHaveAttribute(
+      'href',
+      'viber://chat?number=%2B639171234567',
+    );
+  });
 });

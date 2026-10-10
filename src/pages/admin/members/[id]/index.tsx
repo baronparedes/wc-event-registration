@@ -9,6 +9,7 @@ import { AlertBanner } from '@/components/ui/AlertBanner';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ContactButtons } from '@/components/ui/ContactButtons';
 import { FormInputField } from '@/components/ui/FormInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
@@ -93,6 +94,7 @@ export function AdminMemberDetailPage() {
 
   const firstName = useWatch({ control, name: 'first_name' });
   const lastName = useWatch({ control, name: 'last_name' });
+  const phone = useWatch({ control, name: 'phone' });
   const derivedFullName = [firstName ?? '', lastName ?? '']
     .map((value) => value.trim())
     .filter(Boolean)
@@ -298,6 +300,16 @@ export function AdminMemberDetailPage() {
               <FormInputField
                 id="phone"
                 label="Phone"
+                labelAdornment={
+                  phone ? (
+                    <span
+                      className="ml-1 inline-flex items-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ContactButtons phone={phone} size="sm" variant="icon" />
+                    </span>
+                  ) : undefined
+                }
                 registration={register('phone')}
                 error={errors.phone?.message}
                 readOnly={!canWrite || isDeletedMember}
