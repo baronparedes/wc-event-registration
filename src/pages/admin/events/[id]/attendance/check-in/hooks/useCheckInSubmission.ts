@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { toast } from 'sonner';
 
@@ -10,7 +10,7 @@ import {
   searchAttendeesWithRfidFallback,
 } from '@/lib/domain/attendance';
 
-import { isDirectMemberIdMatch, resolveSuggestedTimeslot } from '../utils';
+import { resolveSuggestedTimeslot } from '../utils';
 
 type Attendee = ReturnType<typeof searchAttendeesWithRfidFallback>[0] | null;
 type Timeslot = { slot_at: string; opens_at: string | null; closes_at: string | null };
@@ -18,33 +18,23 @@ type Timeslot = { slot_at: string; opens_at: string | null; closes_at: string | 
 interface UseCheckInSubmissionOptions {
   eventId: string | undefined;
   attendee: Attendee;
-  results: ReturnType<typeof searchAttendeesWithRfidFallback>;
-  submittedSearchToken: string;
-  confirmedRegistrationId: string | null;
-  checkInResult: CheckInResult | null;
   nowMs: number;
   timeslotEnabled: boolean;
   timeslots: Timeslot[];
   enqueueCheckIn: ReturnType<typeof useQueuedCheckInAttendeeMutation>['enqueueCheckIn'];
   onCheckInResultChange: (result: CheckInResult | null) => void;
   onComplete: () => void;
-  lastAutoSubmittedTokenRef: React.RefObject<string>;
 }
 
 export function useCheckInSubmission({
   eventId,
   attendee,
-  results,
-  submittedSearchToken,
-  confirmedRegistrationId,
-  checkInResult,
   nowMs,
   timeslotEnabled,
   timeslots,
   enqueueCheckIn,
   onCheckInResultChange,
   onComplete,
-  lastAutoSubmittedTokenRef,
 }: UseCheckInSubmissionOptions) {
   const autoWindowModeEnabled = useMemo(
     () => isAutoWindowModeEnabled({ timeslot_enabled: timeslotEnabled, timeslots }),
@@ -67,8 +57,13 @@ export function useCheckInSubmission({
   );
 
   const submitCheckIn = useCallback(
-    async (slotOverride?: string, keepConfirmationVisible: boolean = false) => {
-      if (!eventId || !attendee) return;
+    async (
+      slotOverride?: string,
+      keepConfirmationVisible: boolean = false,
+      attendeeOverride?: Attendee,
+    ) => {
+      const targetAttendee = attendeeOverride ?? attendee;
+      if (!eventId || !targetAttendee) return;
 
       const finalSlot = slotOverride?.trim() ?? '';
       const selectedSlot = finalSlot
@@ -89,18 +84,20 @@ export function useCheckInSubmission({
 
       const payload = {
         event_id: eventId,
-        attendee_kind: attendee.attendee_kind,
+        attendee_kind: targetAttendee.attendee_kind,
         registration_id:
-          attendee.attendee_kind === 'registered' ? attendee.registration_id : undefined,
+          targetAttendee.attendee_kind === 'registered'
+            ? targetAttendee.registration_id
+            : undefined,
         public_registration_id:
-          attendee.attendee_kind === 'public'
-            ? (attendee.public_registration_id ?? attendee.registration_id)
+          targetAttendee.attendee_kind === 'public'
+            ? (targetAttendee.public_registration_id ?? targetAttendee.registration_id)
             : undefined,
         slot: timeslotEnabled ? finalSlot || undefined : undefined,
       };
 
       try {
-        const { queued } = enqueueCheckIn(payload, attendee.registration_id);
+        const { queued } = enqueueCheckIn(payload, targetAttendee.registration_id);
         if (queued) {
           toast.success('Check-in queued. Syncing in the background.');
         } else {
@@ -130,31 +127,6 @@ export function useCheckInSubmission({
       timeslots,
     ],
   );
-
-  useEffect(() => {
-    const shouldAutoSubmit =
-      results.length === 1 &&
-      isDirectMemberIdMatch(submittedSearchToken, results) &&
-      confirmedRegistrationId &&
-      attendee &&
-      !checkInResult &&
-      lastAutoSubmittedTokenRef.current !== submittedSearchToken;
-
-    if (!shouldAutoSubmit) return;
-
-    lastAutoSubmittedTokenRef.current = submittedSearchToken;
-    const timeoutId = setTimeout(() => void submitCheckIn(suggestedSlot, true), 0);
-    return () => clearTimeout(timeoutId);
-  }, [
-    attendee,
-    checkInResult,
-    confirmedRegistrationId,
-    lastAutoSubmittedTokenRef,
-    results,
-    submittedSearchToken,
-    submitCheckIn,
-    suggestedSlot,
-  ]);
 
   const handleCheckIn = useCallback(() => void submitCheckIn(), [submitCheckIn]);
 

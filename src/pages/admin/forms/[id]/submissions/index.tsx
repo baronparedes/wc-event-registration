@@ -29,12 +29,8 @@ export function AdminFormSubmissionsPage() {
   const { searchTerm, setSearchTerm, debouncedSearchTerm, clearSearch } = useDebounceSearch();
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
-  const normalizedSearchTerm = useMemo(
-    () => debouncedSearchTerm.trim().toLowerCase(),
-    [debouncedSearchTerm],
-  );
-
-  const allSubmissions = useMemo(() => rawSubmissions ?? [], [rawSubmissions]);
+  const normalizedSearchTerm = debouncedSearchTerm.trim().toLowerCase();
+  const allSubmissions = rawSubmissions ?? [];
 
   const filteredSubmissions = useMemo(() => {
     return allSubmissions.filter((sub) => {

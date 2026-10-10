@@ -347,6 +347,8 @@ describe('EventRegistrationPage', () => {
 
     render(<EventRegistrationPage />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }));
+
     expect(screen.getByText('Update')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Trigger Submit' }));
@@ -398,6 +400,8 @@ describe('EventRegistrationPage', () => {
 
     render(<EventRegistrationPage />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }));
+
     fireEvent.click(screen.getByRole('button', { name: 'Trigger Submit' }));
 
     await waitFor(() => {
@@ -431,6 +435,8 @@ describe('EventRegistrationPage', () => {
     });
 
     render(<EventRegistrationPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Trigger Submit' }));
 
@@ -765,7 +771,7 @@ describe('EventRegistrationPage', () => {
     expect(screen.queryByText('Member Lookup')).toBeNull();
   });
 
-  it('renders Step 3 directly for signed-in members without Back to Step 2 button', async () => {
+  it('renders Step 2 for signed-in members to confirm details before proceeding to Step 3 without Back to Step 2 button', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
       data: { member_id: 'MEM-100', full_name: signedInFullName },
       isLoading: false,
@@ -810,6 +816,12 @@ describe('EventRegistrationPage', () => {
     });
 
     render(<EventRegistrationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Profile Step')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Step 3' }));
 
     await waitFor(() => {
       expect(screen.getByText('Submit Registration')).toBeInTheDocument();

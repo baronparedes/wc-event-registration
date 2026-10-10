@@ -22,15 +22,19 @@ export function CancelRegistrationDialog({
   const [reason, setReason] = useState('');
   const cancelMutation = useCancelRegistrationMutation(eventId);
 
+  const handleClose = () => {
+    setReason('');
+    onClose();
+  };
+
   const handleConfirm = async () => {
-    const cancellationReason = reason || undefined;
+    const cancellationReason = reason.trim() || undefined;
     try {
       await cancelMutation.mutateAsync({
         registration_id: registration.id,
         reason: cancellationReason,
       });
-      setReason('');
-      onClose();
+      handleClose();
     } catch (error) {
       let message = 'Failed to cancel registration';
       if (error instanceof Error) {
@@ -43,7 +47,7 @@ export function CancelRegistrationDialog({
   return (
     <ConfirmDialog
       isOpen={isOpen}
-      onCancel={onClose}
+      onCancel={handleClose}
       title="Cancel Registration"
       description={
         <div className="space-y-4">
@@ -55,12 +59,22 @@ export function CancelRegistrationDialog({
             <p className="text-sm font-medium text-gray-900">{registration.full_name}</p>
             <p className="text-sm text-gray-600">{registration.email}</p>
           </div>
-          {reason && (
-            <div className="rounded-lg bg-yellow-50 p-3">
-              <p className="text-sm font-medium text-yellow-900">Reason provided:</p>
-              <p className="mt-1 text-sm text-yellow-800">{reason}</p>
-            </div>
-          )}
+          <div className="space-y-1.5 text-left">
+            <label
+              htmlFor="cancel-registration-reason"
+              className="block text-sm font-medium text-text"
+            >
+              Cancellation Reason (Optional)
+            </label>
+            <textarea
+              id="cancel-registration-reason"
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Requested by attendee, schedule conflict, etc."
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text placeholder:text-muted focus:border-primary focus:outline-none"
+            />
+          </div>
         </div>
       }
       confirmLabel="Cancel Registration"

@@ -90,11 +90,6 @@ export function useAdminEventAttendancePageState(eventId: string | undefined) {
   });
 
   useEffect(() => {
-    if (!eventId) return;
-    setValue('event_id', eventId);
-  }, [eventId, setValue]);
-
-  useEffect(() => {
     if (!settings) return;
 
     reset(settings);

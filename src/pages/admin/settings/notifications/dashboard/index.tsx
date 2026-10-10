@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import { BarChart3 } from 'lucide-react';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -22,10 +20,8 @@ import { formatDateOnly } from '@/lib/infrastructure/dateFormat';
 export function AdminNotificationsDashboardPage() {
   const { data, isLoading, error } = useBroadcastDashboardStatsQuery();
 
-  const subscriptionPercentage = useMemo(() => {
-    if (!data || data.total_users === 0) return 0;
-    return Math.round((data.subscribed_users / data.total_users) * 100);
-  }, [data]);
+  const subscriptionPercentage =
+    data && data.total_users > 0 ? Math.round((data.subscribed_users / data.total_users) * 100) : 0;
 
   return (
     <AdminPageShell>

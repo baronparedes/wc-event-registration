@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   type useAttendeesLocalCacheQuery,
@@ -11,6 +11,7 @@ import { useScanBuffer, useWizardStepScroll } from '@/hooks/utils';
 import type { CheckInResult } from '@/lib/domain/attendance';
 import { resolveActiveTimeslot, searchAttendeesWithRfidFallback } from '@/lib/domain/attendance';
 
+import { isDirectMemberIdMatch } from '../utils';
 import { useCheckInClock } from './useCheckInClock';
 import { useCheckInEventContext } from './useCheckInEventContext';
 import { useCheckInLookup } from './useCheckInLookup';
@@ -98,18 +99,61 @@ export function useAdminCheckInPageState(
   const submission = useCheckInSubmission({
     eventId,
     attendee: lookup.confirmedAttendee,
-    results: lookup.results,
-    submittedSearchToken: lookup.submittedSearchToken,
-    confirmedRegistrationId: lookup.confirmedRegistrationId,
-    checkInResult,
     nowMs,
     timeslotEnabled,
     timeslots,
     enqueueCheckIn,
     onCheckInResultChange: setCheckInResult,
     onComplete: lookup.handleReadyForNext,
-    lastAutoSubmittedTokenRef: lookup.lastAutoSubmittedTokenRef,
   });
+
+  const handleScanFromConfirmation = useCallback(
+    (scanValue: string) => {
+      const normalized = scanValue.trim();
+      if (!normalized) return;
+
+      lookup.handleScanFromConfirmation(normalized);
+
+      const matches = context.cachedAttendees
+        ? searchAttendeesWithRfidFallback(context.cachedAttendees, normalized)
+        : [];
+
+      if (matches.length === 1 && isDirectMemberIdMatch(normalized, matches)) {
+        lookup.setConfirmedRegistrationId(matches[0].registration_id);
+        void submission.submitCheckIn(submission.suggestedSlot, true, matches[0]);
+      }
+    },
+    [context.cachedAttendees, lookup, submission],
+  );
+
+  const handleSubmitSearch = useCallback(() => {
+    const normalized = lookup.searchToken.trim();
+    if (!normalized) return;
+
+    lookup.handleSubmitSearch();
+
+    const matches = context.cachedAttendees
+      ? searchAttendeesWithRfidFallback(context.cachedAttendees, normalized)
+      : [];
+
+    if (matches.length === 1 && isDirectMemberIdMatch(normalized, matches)) {
+      lookup.setConfirmedRegistrationId(matches[0].registration_id);
+      void submission.submitCheckIn(submission.suggestedSlot, true, matches[0]);
+    }
+  }, [context.cachedAttendees, lookup, submission]);
+
+  useEffect(() => {
+    if (
+      !lookup.confirmedRegistrationId &&
+      lookup.submittedSearchToken &&
+      lookup.results.length === 1 &&
+      isDirectMemberIdMatch(lookup.submittedSearchToken, lookup.results)
+    ) {
+      lookup.setConfirmedRegistrationId(lookup.results[0].registration_id);
+      void submission.submitCheckIn(submission.suggestedSlot, true, lookup.results[0]);
+    }
+  }, [lookup, submission]);
+
   const activeStep: 1 | 2 | 3 = lookup.confirmedAttendee
     ? 3
     : lookup.submittedSearchToken.trim().length > 0 && lookup.results.length > 0
@@ -141,7 +185,7 @@ export function useAdminCheckInPageState(
     pendingCheckInCount,
   ]);
 
-  useScanBuffer(lookup.handleScanFromConfirmation, isAwaitingNextAttendee);
+  useScanBuffer(handleScanFromConfirmation, isAwaitingNextAttendee);
   useWizardStepScroll(activeStep, stepRefs);
 
   return {
@@ -192,8 +236,8 @@ export function useAdminCheckInPageState(
     setConfirmedRegistrationId: lookup.setConfirmedRegistrationId,
     setCheckInResult,
     handleRefreshCache: context.handleRefreshCache,
-    handleScanFromConfirmation: lookup.handleScanFromConfirmation,
-    handleSubmitSearch: lookup.handleSubmitSearch,
+    handleScanFromConfirmation,
+    handleSubmitSearch,
     handleBackToLookup: lookup.handleBackToLookup,
     handleReadyForNext: lookup.handleReadyForNext,
     handleBackToMatches: lookup.handleBackToMatches,

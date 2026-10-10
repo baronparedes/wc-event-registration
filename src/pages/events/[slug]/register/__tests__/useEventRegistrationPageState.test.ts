@@ -220,7 +220,7 @@ describe('useEventRegistrationPageState', () => {
     expect(stepBadgeClassName(1, 3)).toContain('border-border');
   });
 
-  it('derives wizard step 3 when member is matched and not blocked', () => {
+  it('derives wizard step 2 when member is matched so they confirm details before step 3', () => {
     memberLookupState.matchedMember = {
       user_id: 'user-1',
       full_name: memberFullName,
@@ -232,7 +232,7 @@ describe('useEventRegistrationPageState', () => {
 
     const { result } = renderHookWithClient(() => useEventRegistrationPageState());
 
-    expect(result.current.activeWizardStep).toBe(3);
+    expect(result.current.activeWizardStep).toBe(2);
   });
 
   it('builds remaining slots by role map and falls back to empty object when role allotments are missing', () => {
@@ -799,7 +799,7 @@ describe('useEventRegistrationPageState', () => {
     expect(result.current.isVerifyingSignedInMember).toBe(true);
   });
 
-  it('automatically performs lookup and enters step 3 when member is signed in', async () => {
+  it('automatically performs lookup and enters step 2 when member is signed in', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
       data: { member_id: 'MEM-001', full_name: memberFullName },
       isLoading: false,
@@ -816,7 +816,7 @@ describe('useEventRegistrationPageState', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.activeWizardStep).toBe(3);
+      expect(result.current.activeWizardStep).toBe(2);
     });
     expect(result.current.isSignedIn).toBe(true);
   });

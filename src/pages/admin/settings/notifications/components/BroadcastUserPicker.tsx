@@ -53,6 +53,8 @@ export function BroadcastUserPicker({
 
   // Click outside to close dropdown
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -63,7 +65,7 @@ export function BroadcastUserPicker({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [containerRef]);
+  }, [containerRef, isOpen]);
 
   const handleSelectUser = (user: AuthUserItem) => {
     setSelectedUserCache(user);

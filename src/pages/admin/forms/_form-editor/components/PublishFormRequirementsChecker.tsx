@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import { type FormPublishRequirementsData, getFormPublishRequirements } from '@/lib/domain/forms';
 
 type PublishFormRequirementsCheckerProps = {
@@ -9,7 +7,7 @@ type PublishFormRequirementsCheckerProps = {
 export function PublishFormRequirementsChecker({
   formValues,
 }: PublishFormRequirementsCheckerProps) {
-  const requirements = useMemo(() => getFormPublishRequirements(formValues), [formValues]);
+  const requirements = getFormPublishRequirements(formValues);
 
   const allFilled = requirements.every((req) => req.filled);
   const filledCount = requirements.filter((req) => req.filled).length;
