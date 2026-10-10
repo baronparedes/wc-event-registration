@@ -131,16 +131,27 @@ describe('ContactButtons', () => {
     expect(onViberClick).toHaveBeenCalledTimes(1);
   });
 
-  it('renders subtle icon-only buttons when variant is icon', () => {
-    render(<ContactButtons phone="09171234567" variant="icon" />);
+  it('renders solid vibrant icon-only buttons when variant is icon including primary copy badge', () => {
+    render(<ContactButtons phone="09171234567" variant="icon" size="sm" />);
 
     const smsLink = screen.getByTestId('contact-sms-link');
     const viberLink = screen.getByTestId('contact-viber-link');
+    const copyBtn = screen.getByTestId('contact-copy-button');
 
     expect(smsLink).toHaveAttribute('title', 'Send SMS');
     expect(viberLink).toHaveAttribute('title', 'Open Viber');
-    expect(smsLink).toHaveClass('h-8', 'w-8');
+    expect(smsLink).toHaveClass('h-6', 'w-6', 'bg-emerald-600', 'text-white');
+    expect(viberLink).toHaveClass('h-6', 'w-6', 'bg-[#7360F2]', 'text-white');
+    expect(copyBtn).toHaveClass('h-6', 'w-6', 'bg-primary', 'text-white');
     expect(smsLink.querySelector('span')).not.toBeInTheDocument();
     expect(viberLink.querySelector('span')).not.toBeInTheDocument();
+    expect(copyBtn.querySelector('span')).not.toBeInTheDocument();
+  });
+
+  it('renders primary outline copy button in default variant', () => {
+    render(<ContactButtons phone="09171234567" variant="default" />);
+
+    const copyBtn = screen.getByTestId('contact-copy-button');
+    expect(copyBtn).toHaveClass('border-primary', 'text-primary');
   });
 });

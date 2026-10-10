@@ -72,8 +72,8 @@ const iconSizes: Record<ContactButtonsSize, string> = {
 };
 
 const iconButtonDimensions: Record<ContactButtonsSize, string> = {
-  sm: 'h-7 w-7 min-h-0 p-0 rounded-md',
-  md: 'h-8 w-8 min-h-0 p-0 rounded-md',
+  sm: 'h-6 w-6 min-h-0 p-0 rounded-md',
+  md: 'h-7.5 w-7.5 min-h-0 p-0 rounded-md',
   lg: 'h-9 w-9 min-h-0 p-0 rounded-md',
 };
 
@@ -129,23 +129,22 @@ export function ContactButtons({
   const isFullWidthInColumn = layout === 'column' && !isIconVariant;
   const dimensionClass = isIconVariant ? iconButtonDimensions[size] : '';
 
-  // Brand styles
+  // Brand styles: solid saturated colors with pure white icons for maximum contrast
   const smsClasses = isIconVariant
-    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/90 hover:bg-emerald-100 hover:text-emerald-800 active:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/70 dark:hover:bg-emerald-900/60 shadow-none'
+    ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-2xs focus-visible:ring-emerald-500/50'
     : 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs focus-visible:ring-emerald-500/50';
 
   const viberClasses = isIconVariant
-    ? 'bg-purple-50 text-[#7360F2] border border-purple-200/90 hover:bg-purple-100 hover:text-[#5e4be0] active:bg-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/70 dark:hover:bg-purple-900/60 shadow-none'
+    ? 'bg-[#7360F2] text-white hover:bg-[#624ee0] active:bg-[#523ecc] shadow-2xs focus-visible:ring-[#7360F2]/50'
     : 'bg-[#7360F2] text-white hover:bg-[#624ee0] active:bg-[#533ed1] shadow-xs focus-visible:ring-[#7360F2]/50';
 
   const copyClasses = isIconVariant
     ? twMerge(
-        'bg-slate-50 text-slate-500 border border-slate-200/90 hover:bg-slate-100 hover:text-slate-800 active:bg-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700/60 shadow-none transition-colors',
-        isCopied &&
-          'border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400',
+        'bg-primary text-white hover:bg-primary/90 active:bg-primary/80 shadow-2xs transition-colors',
+        isCopied && 'bg-emerald-600 hover:bg-emerald-700 text-white',
       )
     : twMerge(
-        'text-text border-border hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors',
+        'transition-colors',
         isCopied && 'border-emerald-500 text-emerald-600 dark:text-emerald-400',
       );
 
@@ -172,7 +171,7 @@ export function ContactButtons({
             title="Send SMS"
             data-testid="contact-sms-link"
           >
-            <MessageSquare className={iconClass} aria-hidden="true" />
+            <MessageSquare className={iconClass} strokeWidth={2.25} aria-hidden="true" />
             {!isIconVariant && <span>{smsLabel}</span>}
           </a>
         </Button>
@@ -187,7 +186,7 @@ export function ContactButtons({
           title="SMS unavailable"
           data-testid="contact-sms-disabled"
         >
-          <MessageSquare className={iconClass} aria-hidden="true" />
+          <MessageSquare className={iconClass} strokeWidth={2.25} aria-hidden="true" />
           {!isIconVariant && <span>{smsLabel}</span>}
         </Button>
       )}
@@ -231,7 +230,7 @@ export function ContactButtons({
       {showCopyFallback && (
         <Button
           type="button"
-          variant={isIconVariant ? 'ghost' : 'outline'}
+          variant={isIconVariant ? 'ghost' : 'primaryOutline'}
           size={size}
           fullWidth={isFullWidthInColumn}
           onClick={handleCopy}
@@ -247,11 +246,17 @@ export function ContactButtons({
         >
           {isCopied ? (
             <Check
-              className={twMerge(iconClass, 'text-emerald-600 dark:text-emerald-400')}
+              className={twMerge(
+                iconClass,
+                isIconVariant ? 'text-white' : 'text-emerald-600 dark:text-emerald-400',
+              )}
               aria-hidden="true"
             />
           ) : (
-            <Copy className={iconClass} aria-hidden="true" />
+            <Copy
+              className={twMerge(iconClass, isIconVariant && 'text-white')}
+              aria-hidden="true"
+            />
           )}
           {!isIconVariant && <span>{isCopied ? 'Copied!' : copyLabel}</span>}
         </Button>

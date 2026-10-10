@@ -297,21 +297,23 @@ export function AdminMemberDetailPage() {
                 type="email"
                 readOnly={!canWrite || isDeletedMember}
               />
-              <div className="space-y-1.5">
-                <FormInputField
-                  id="phone"
-                  label="Phone"
-                  registration={register('phone')}
-                  error={errors.phone?.message}
-                  readOnly={!canWrite || isDeletedMember}
-                />
-                {phone && (
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <span className="text-xs text-muted">Quick connect:</span>
-                    <ContactButtons phone={phone} size="sm" variant="icon" />
-                  </div>
-                )}
-              </div>
+              <FormInputField
+                id="phone"
+                label="Phone"
+                labelAdornment={
+                  phone ? (
+                    <span
+                      className="ml-1 inline-flex items-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ContactButtons phone={phone} size="sm" variant="icon" />
+                    </span>
+                  ) : undefined
+                }
+                registration={register('phone')}
+                error={errors.phone?.message}
+                readOnly={!canWrite || isDeletedMember}
+              />
               <FormInputField
                 id="role"
                 label="Role"
