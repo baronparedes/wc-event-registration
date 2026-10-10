@@ -164,11 +164,11 @@ export function useEventRegistrationPageState() {
 
   const activeWizardStep = useMemo<WizardStep>(() => {
     if (wizardStep === 1 && memberLookup.matchedMember) {
-      return memberLookup.isRegistrationBlocked ? 2 : 3;
+      return 2;
     }
 
     return wizardStep;
-  }, [wizardStep, memberLookup.matchedMember, memberLookup.isRegistrationBlocked]);
+  }, [wizardStep, memberLookup.matchedMember]);
 
   const isEffectiveRegistrationBlocked =
     memberLookup.isRegistrationBlocked || isWizardBlockedResult;
@@ -353,8 +353,7 @@ export function useEventRegistrationPageState() {
       }
 
       setIsWizardBlockedResult(false);
-      setWizardStep(3);
-      scrollToDynamicFieldsStep();
+      enterWizardConfirmStep();
     });
 
     return () => {
@@ -371,7 +370,7 @@ export function useEventRegistrationPageState() {
     runMemberLookupSubmit,
     clearLookupError,
     handleLookupFailure,
-    scrollToDynamicFieldsStep,
+    enterWizardConfirmStep,
   ]);
 
   const isVerifyingSignedInMember =
