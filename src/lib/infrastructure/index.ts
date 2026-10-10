@@ -47,3 +47,17 @@ export {
   type ShareFilesOptions,
   type ShareFilesResult,
 } from './share-image';
+
+export {
+  sanitizePhoneNumber,
+  formatInternationalPhoneNumber,
+  isValidPhoneNumber,
+  buildSmsUri,
+  buildViberChatUri,
+  getMessagingLinks,
+  copyPhoneNumberToClipboard,
+  type BuildSmsUriOptions,
+  type BuildViberChatUriOptions,
+  type MessagingLinksOptions,
+  type MessagingLinks,
+} from './messagingUtils';
