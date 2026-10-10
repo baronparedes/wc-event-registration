@@ -178,4 +178,19 @@ describe('AdminMemberDetailPage', () => {
     expect(refetch).not.toHaveBeenCalled();
     expect(screen.getByText(/This member is soft deleted/)).toBeInTheDocument();
   });
+
+  it('renders ContactButtons when member has a phone number', () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: { ...sampleMember, phone: '09171234567' },
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId('contact-sms-link')).toHaveAttribute('href', 'sms:+639171234567');
+    expect(screen.getByTestId('contact-viber-link')).toHaveAttribute(
+      'href',
+      'viber://chat?number=%2B639171234567',
+    );
+  });
 });

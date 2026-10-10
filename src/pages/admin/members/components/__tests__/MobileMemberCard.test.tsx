@@ -86,4 +86,18 @@ describe('MobileMemberCard', () => {
     expect(screen.queryByTestId('update-member-id-dialog')).not.toBeInTheDocument();
     expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
+
+  it('renders ContactButtons on mobile card for valid phone numbers', () => {
+    render(
+      <MemoryRouter>
+        <MobileMemberCard member={mockMember} canWrite={false} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('contact-sms-link')).toHaveAttribute('href', 'sms:+1234567890');
+    expect(screen.getByTestId('contact-viber-link')).toHaveAttribute(
+      'href',
+      'viber://chat?number=%2B1234567890',
+    );
+  });
 });

@@ -1,6 +1,7 @@
 import { BadgeCheck, Edit, User } from 'lucide-react';
 
 import {
+  ContactButtons,
   MobileCard,
   MobileCardActionLink,
   MobileCardActions,
@@ -49,8 +50,15 @@ export function MobileMemberCard({ member, canWrite }: MobileMemberCardProps) {
               </div>
             )}
           </MobileCardContentItem>
-          <MobileCardContentItem label="Contact Number" value={member.phone} />
           <MobileCardContentItem label="Member ID" value={member.member_id} isMono />
+          <MobileCardContentItem label="Contact Number" colSpan={2}>
+            {member.phone ? (
+              <div className="space-y-1.5 pt-0.5">
+                <span className="text-[15px] font-medium text-slate-700">{member.phone}</span>
+                <ContactButtons phone={member.phone} size="sm" layout="row" />
+              </div>
+            ) : undefined}
+          </MobileCardContentItem>
         </MobileCardContent>
       </MobileCardBody>
 

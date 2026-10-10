@@ -9,6 +9,7 @@ import {
   AdminInfiniteScrollFooter,
   AlertBanner,
   Button,
+  ContactButtons,
   EmptyState,
   SearchInputField,
 } from '@/components/ui';
@@ -312,8 +313,20 @@ export function AdminMembersPage() {
                             )}
                           </div>
                         </ListTableCell>
-                        <ListTableCell>
-                          <p className="text-sm text-text">{member.phone || '—'}</p>
+                        <ListTableCell onClick={(e) => e.stopPropagation()}>
+                          {member.phone ? (
+                            <div className="flex flex-col gap-1 py-0.5">
+                              <span className="text-sm font-medium text-text">{member.phone}</span>
+                              <ContactButtons
+                                phone={member.phone}
+                                size="sm"
+                                layout="row"
+                                showCopyFallback={false}
+                              />
+                            </div>
+                          ) : (
+                            <p className="text-sm text-text">—</p>
+                          )}
                         </ListTableCell>
                         <ListTableCell>
                           <p className="text-sm text-text">{member.role || '—'}</p>
