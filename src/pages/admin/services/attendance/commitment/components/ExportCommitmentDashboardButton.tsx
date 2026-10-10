@@ -29,39 +29,45 @@ export function ExportCommitmentDashboardButton({
     setIsExporting(true);
     let url: string | null = null;
     let link: HTMLAnchorElement | null = null;
+    let exportFailed = false;
+    let exportError: unknown;
 
     try {
       const { csvText, filename, totalCount } = await exportMutation.mutateAsync(filters);
 
       if (totalCount === 0) {
         toast.info('No records found to export.');
-        return;
+      } else {
+        const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
+        url = URL.createObjectURL(blob);
+        link = document.createElement('a');
+
+        link.href = url;
+        link.download = filename;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+
+        let recordLabel = 'records';
+        if (totalCount === 1) recordLabel = 'record';
+        toast.success(`Successfully exported ${totalCount} ${recordLabel}.`);
       }
-
-      const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
-      url = URL.createObjectURL(blob);
-      link = document.createElement('a');
-
-      link.href = url;
-      link.download = filename;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-
-      toast.success(`Successfully exported ${totalCount} record${totalCount === 1 ? '' : 's'}.`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to export commitment dashboard CSV.';
-      toast.error(message);
-    } finally {
-      if (link && document.body.contains(link)) {
-        document.body.removeChild(link);
-      }
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
-      setIsExporting(false);
+      exportFailed = true;
+      exportError = error;
     }
+
+    if (exportFailed) {
+      let message = 'Failed to export commitment dashboard CSV.';
+      if (exportError instanceof Error) message = exportError.message;
+      toast.error(message);
+    }
+
+    if (link && document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    if (url) URL.revokeObjectURL(url);
+    setIsExporting(false);
   };
 
   return (

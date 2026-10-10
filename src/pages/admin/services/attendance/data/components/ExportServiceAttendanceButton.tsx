@@ -29,6 +29,8 @@ export function ExportServiceAttendanceButton({
     setIsExporting(true);
     let url: string | null = null;
     let link: HTMLAnchorElement | null = null;
+    let exportFailed = false;
+    let exportError: unknown;
 
     try {
       const { csvText, filename } = buildServiceAttendanceCsvExport({
@@ -47,22 +49,25 @@ export function ExportServiceAttendanceButton({
       document.body.appendChild(link);
       link.click();
 
-      toast.success(
-        `Successfully exported ${records.length} record${records.length === 1 ? '' : 's'}.`,
-      );
+      let recordLabel = 'records';
+      if (records.length === 1) recordLabel = 'record';
+      toast.success(`Successfully exported ${records.length} ${recordLabel}.`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to export service attendance CSV.';
-      toast.error(message);
-    } finally {
-      if (link && document.body.contains(link)) {
-        document.body.removeChild(link);
-      }
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
-      setIsExporting(false);
+      exportFailed = true;
+      exportError = error;
     }
+
+    if (exportFailed) {
+      let message = 'Failed to export service attendance CSV.';
+      if (exportError instanceof Error) message = exportError.message;
+      toast.error(message);
+    }
+
+    if (link && document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    if (url) URL.revokeObjectURL(url);
+    setIsExporting(false);
   };
 
   return (

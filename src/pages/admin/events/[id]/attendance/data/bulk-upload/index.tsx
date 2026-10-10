@@ -49,14 +49,40 @@ export function AdminAttendanceDataBulkUploadPage() {
         if (!id) return;
 
         const fallbackFilename = `event-${id}-attendance-data.csv`;
+        let downloadText = '';
+        let generatedFilename: string | null | undefined;
+        let downloadFailed = false;
+        let downloadError: unknown;
+
         try {
-          const { text, filename } = await downloadMutation.mutateAsync();
-          downloadCsv(text, filename || fallbackFilename);
+          const result = await downloadMutation.mutateAsync();
+          downloadText = result.text;
+          generatedFilename = result.filename;
         } catch (error) {
+          downloadFailed = true;
+          downloadError = error;
+        }
+
+        if (downloadFailed) {
           let message = 'Failed to download attendance CSV.';
-          if (error instanceof Error) {
-            message = error.message;
-          }
+          if (downloadError instanceof Error) message = downloadError.message;
+          toast.error(message);
+          return;
+        }
+
+        const filename = generatedFilename || fallbackFilename;
+        let fileDownloadFailed = false;
+        let fileDownloadError: unknown;
+        try {
+          downloadCsv(downloadText, filename);
+        } catch (error) {
+          fileDownloadFailed = true;
+          fileDownloadError = error;
+        }
+
+        if (fileDownloadFailed) {
+          let message = 'Failed to download attendance CSV.';
+          if (fileDownloadError instanceof Error) message = fileDownloadError.message;
           toast.error(message);
         }
       }}

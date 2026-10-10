@@ -159,36 +159,45 @@ export function FormFieldEditPanel({
   }
 
   async function onSubmit(values: FormFieldFormValues) {
-    try {
-      const normalizedOptions = showOptions
-        ? values.options.map((o) => ({ label: o.label, value: o.value }))
-        : [];
+    const normalizedOptions = showOptions
+      ? values.options.map((o) => ({ label: o.label, value: o.value }))
+      : [];
+    const payload = {
+      id: field?.id,
+      data: {
+        field_key: values.field_key,
+        label: values.label,
+        field_type: values.field_type,
+        is_required: values.is_required,
+        is_active: values.is_active,
+        placeholder: values.placeholder || null,
+        help_text: values.help_text || null,
+        options: normalizedOptions,
+        validation_rules: toFormValidationRules(values),
+        field_applicability: values.field_applicability,
+        display_order: field?.display_order ?? 0,
+      },
+    };
+    let saveFailed = false;
+    let saveError: unknown;
 
-      await saveFieldMutation.mutateAsync({
-        id: field?.id,
-        data: {
-          field_key: values.field_key,
-          label: values.label,
-          field_type: values.field_type,
-          is_required: values.is_required,
-          is_active: values.is_active,
-          placeholder: values.placeholder || null,
-          help_text: values.help_text || null,
-          options: normalizedOptions,
-          validation_rules: toFormValidationRules(values),
-          field_applicability: values.field_applicability,
-          display_order: field?.display_order ?? 0,
-        },
-      });
-      toast.success(isEditing ? 'Field updated.' : 'Field added.');
-      onClose();
+    try {
+      await saveFieldMutation.mutateAsync(payload);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Something went wrong. Please try again or contact support.';
-      toast.error(message);
+      saveFailed = true;
+      saveError = error;
     }
+
+    if (saveFailed) {
+      let message = 'Something went wrong. Please try again or contact support.';
+      if (saveError instanceof Error) message = saveError.message;
+      toast.error(message);
+      return;
+    }
+
+    const successMessage = isEditing ? 'Field updated.' : 'Field added.';
+    toast.success(successMessage);
+    onClose();
   }
 
   async function handleDelete() {

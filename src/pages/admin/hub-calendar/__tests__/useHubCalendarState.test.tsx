@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { act, renderHook } from '@testing-library/react';
 import { MemoryRouter, useSearchParams } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -187,7 +189,9 @@ describe('useHubCalendarState & persistence helpers', () => {
       const trackerRef = { current: null as URLSearchParams | null };
       function Tracker() {
         const [params] = useSearchParams();
-        trackerRef.current = params;
+        useEffect(() => {
+          trackerRef.current = params;
+        }, [params]);
         return null;
       }
 
@@ -213,7 +217,9 @@ describe('useHubCalendarState & persistence helpers', () => {
       const trackerRef = { current: null as URLSearchParams | null };
       function Tracker() {
         const [params] = useSearchParams();
-        trackerRef.current = params;
+        useEffect(() => {
+          trackerRef.current = params;
+        }, [params]);
         return null;
       }
 

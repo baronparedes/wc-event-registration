@@ -199,110 +199,37 @@ export function useQueuedCheckInAttendeeMutation(
     isDrainingRef.current = true;
     setIsDraining(true);
 
-    try {
-      while (true) {
-        const now = Date.now();
-        const nextItem = queueRef.current.find(
-          (item) => item.status === 'pending' && item.nextAttemptAt <= now,
-        );
+    while (true) {
+      const now = Date.now();
+      const nextItem = queueRef.current.find(
+        (item) => item.status === 'pending' && item.nextAttemptAt <= now,
+      );
 
-        if (!nextItem) {
-          break;
-        }
+      if (nextItem === undefined) {
+        break;
+      }
 
-        setQueue((currentQueue) =>
-          currentQueue.map((item) =>
-            item.id === nextItem.id
-              ? {
-                  ...item,
-                  status: 'sending',
-                  attempts: item.attempts + 1,
-                  lastError: null,
-                }
-              : item,
-          ),
-        );
+      setQueue((currentQueue) =>
+        currentQueue.map((item) =>
+          item.id === nextItem.id
+            ? {
+                ...item,
+                status: 'sending',
+                attempts: item.attempts + 1,
+                lastError: null,
+              }
+            : item,
+        ),
+      );
 
-        let response: CheckInAttendeeSuccess | CheckInAttendeeError | undefined;
-        try {
-          response = await caller(nextItem.payload);
-        } catch (error) {
-          const message = getCheckInErrorMessage(error);
+      let response: CheckInAttendeeSuccess | CheckInAttendeeError | undefined;
 
-          if (!isRetryableCheckInError(error)) {
-            setQueue((currentQueue) =>
-              currentQueue.map((item) =>
-                item.id === nextItem.id
-                  ? {
-                      ...item,
-                      status: 'failed',
-                      lastError: message,
-                      nextAttemptAt: Number.POSITIVE_INFINITY,
-                    }
-                  : item,
-              ),
-            );
-            refreshCache();
-            continue;
-          }
+      try {
+        response = await caller(nextItem.payload);
+      } catch (error) {
+        const message = getCheckInErrorMessage(error);
 
-          const attempts = nextItem.attempts + 1;
-          setQueue((currentQueue) =>
-            currentQueue.map((item) =>
-              item.id === nextItem.id
-                ? {
-                    ...item,
-                    status: 'pending',
-                    attempts,
-                    lastError: message,
-                    nextAttemptAt: Date.now() + getRetryDelayMs(attempts),
-                  }
-                : item,
-            ),
-          );
-          break;
-        }
-
-        if (!response?.success) {
-          const message = response?.error || 'Failed to check in attendee.';
-
-          if (!isRetryableCheckInError(new Error(message))) {
-            setQueue((currentQueue) =>
-              currentQueue.map((item) =>
-                item.id === nextItem.id
-                  ? {
-                      ...item,
-                      status: 'failed',
-                      lastError: message,
-                      nextAttemptAt: Number.POSITIVE_INFINITY,
-                    }
-                  : item,
-              ),
-            );
-            refreshCache();
-            continue;
-          }
-
-          const attempts = nextItem.attempts + 1;
-          setQueue((currentQueue) =>
-            currentQueue.map((item) =>
-              item.id === nextItem.id
-                ? {
-                    ...item,
-                    status: 'pending',
-                    attempts,
-                    lastError: message,
-                    nextAttemptAt: Date.now() + getRetryDelayMs(attempts),
-                  }
-                : item,
-            ),
-          );
-          break;
-        }
-
-        if (response.result.status === 'rejected') {
-          const message = response.result.message || 'Failed to check in attendee.';
-
+        if (!isRetryableCheckInError(error)) {
           setQueue((currentQueue) =>
             currentQueue.map((item) =>
               item.id === nextItem.id
@@ -319,27 +246,114 @@ export function useQueuedCheckInAttendeeMutation(
           continue;
         }
 
-        updateAttendee(nextItem.registrationId, {
-          check_in_status: 'checked_in',
-          official_check_in_time: response.result.official_check_in_time,
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ['admin-attendance-search', eventId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.adminAttendanceAnswers(eventId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.adminAttendanceSlotSummaries(eventId),
-        });
-
-        setQueue((currentQueue) => currentQueue.filter((item) => item.id !== nextItem.id));
+        const attempts = nextItem.attempts + 1;
+        setQueue((currentQueue) =>
+          currentQueue.map((item) =>
+            item.id === nextItem.id
+              ? {
+                  ...item,
+                  status: 'pending',
+                  attempts,
+                  lastError: message,
+                  nextAttemptAt: Date.now() + getRetryDelayMs(attempts),
+                }
+              : item,
+          ),
+        );
+        break;
       }
-    } catch (error) {
-      isDrainingRef.current = false;
-      setIsDraining(false);
-      throw error;
+
+      if (response === undefined) {
+        const message = 'Failed to check in attendee.';
+
+        setQueue((currentQueue) =>
+          currentQueue.map((item) =>
+            item.id === nextItem.id
+              ? {
+                  ...item,
+                  status: 'failed',
+                  lastError: message,
+                  nextAttemptAt: Number.POSITIVE_INFINITY,
+                }
+              : item,
+          ),
+        );
+        refreshCache();
+        continue;
+      }
+
+      if (response.success === false) {
+        const message = response.error || 'Failed to check in attendee.';
+
+        if (!isRetryableCheckInError(new Error(message))) {
+          setQueue((currentQueue) =>
+            currentQueue.map((item) =>
+              item.id === nextItem.id
+                ? {
+                    ...item,
+                    status: 'failed',
+                    lastError: message,
+                    nextAttemptAt: Number.POSITIVE_INFINITY,
+                  }
+                : item,
+            ),
+          );
+          refreshCache();
+          continue;
+        }
+
+        const attempts = nextItem.attempts + 1;
+        setQueue((currentQueue) =>
+          currentQueue.map((item) =>
+            item.id === nextItem.id
+              ? {
+                  ...item,
+                  status: 'pending',
+                  attempts,
+                  lastError: message,
+                  nextAttemptAt: Date.now() + getRetryDelayMs(attempts),
+                }
+              : item,
+          ),
+        );
+        break;
+      }
+
+      if (response.result.status === 'rejected') {
+        const message = response.result.message || 'Failed to check in attendee.';
+
+        setQueue((currentQueue) =>
+          currentQueue.map((item) =>
+            item.id === nextItem.id
+              ? {
+                  ...item,
+                  status: 'failed',
+                  lastError: message,
+                  nextAttemptAt: Number.POSITIVE_INFINITY,
+                }
+              : item,
+          ),
+        );
+        refreshCache();
+        continue;
+      }
+
+      updateAttendee(nextItem.registrationId, {
+        check_in_status: 'checked_in',
+        official_check_in_time: response.result.official_check_in_time,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ['admin-attendance-search', eventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.adminAttendanceAnswers(eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.adminAttendanceSlotSummaries(eventId),
+      });
+
+      setQueue((currentQueue) => currentQueue.filter((item) => item.id !== nextItem.id));
     }
 
     isDrainingRef.current = false;
