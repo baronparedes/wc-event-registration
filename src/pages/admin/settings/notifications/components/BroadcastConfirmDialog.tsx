@@ -1,15 +1,6 @@
-import {
-  AlertTriangle,
-  Bell,
-  Calendar,
-  ExternalLink,
-  Loader2,
-  Mail,
-  Send,
-  Users,
-} from 'lucide-react';
+import { AlertTriangle, Bell, Calendar, ExternalLink, Mail, Send, Users } from 'lucide-react';
 
-import { Avatar, Badge, Button, Dialog } from '@/components/ui';
+import { Avatar, Badge, Button, Dialog, Spinner } from '@/components/ui';
 import type { AuthUserItem } from '@/hooks/domain/auth';
 import type { AdminEvent } from '@/lib/domain/events';
 import type { BroadcastAudienceStats, BroadcastChannel } from '@/lib/domain/notifications';
@@ -217,7 +208,7 @@ export function BroadcastConfirmDialog({
           Back to Edit
         </Button>
         <Button onClick={onConfirm} disabled={isPending} className="gap-2">
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {isPending ? <Spinner size="sm" aria-hidden="true" /> : <Send className="h-4 w-4" />}
           <span>{isPending ? 'Broadcasting...' : 'Confirm & Send'}</span>
         </Button>
       </Dialog.Footer>

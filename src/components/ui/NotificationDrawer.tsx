@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
-import { Bell, CheckCheck, Loader2, X } from 'lucide-react';
+import { Bell, CheckCheck, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -17,6 +17,7 @@ import { formatDateTime } from '@/lib/infrastructure/dateFormat';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { EmptyState } from './EmptyState';
+import { Spinner } from './Spinner';
 import { Tabs, TabsList, TabsTrigger } from './Tabs';
 
 export type NotificationDrawerProps = {
@@ -108,7 +109,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                   disabled={markAllRead.isPending}
                 >
                   {markAllRead.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner size="sm" aria-hidden="true" />
                   ) : (
                     <CheckCheck className="h-4 w-4" />
                   )}
@@ -244,7 +245,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                     <span>Get alerts on this device</span>
                   </div>
                   <Button size="sm" onClick={handleSubscribe} disabled={push.isLoading}>
-                    {push.isLoading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                    {push.isLoading && <Spinner size="sm" className="mr-1.5" aria-hidden="true" />}
                     {push.isLoading ? 'Enabling...' : 'Enable'}
                   </Button>
                 </div>
@@ -261,7 +262,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                     onClick={handleUnsubscribe}
                     disabled={push.isLoading}
                   >
-                    {push.isLoading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                    {push.isLoading && <Spinner size="sm" className="mr-1.5" aria-hidden="true" />}
                     {push.isLoading ? 'Turning off...' : 'Turn off'}
                   </Button>
                 </div>

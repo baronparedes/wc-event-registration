@@ -1,8 +1,6 @@
 import { memo, useMemo } from 'react';
 
-import { Loader2 } from 'lucide-react';
-
-import { Avatar, BrandAvatar } from '@/components/ui';
+import { Avatar, BrandAvatar, Spinner } from '@/components/ui';
 import { useResolveUserTokensQuery } from '@/hooks/domain/chat';
 import { untokenizeUserText } from '@/lib/domain/chat';
 
@@ -61,7 +59,7 @@ export const ChatMessageItem = memo(function ChatMessageItem({
           ) : message.content.trim() ? (
             <ChatMessageContent content={message.content} />
           ) : (
-            <Loader2 className="h-4 w-4 animate-spin text-muted" />
+            <Spinner size="sm" className="text-muted" />
           )}
         </div>
         {!isUser && message.content.trim() && !isLoading && (

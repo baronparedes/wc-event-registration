@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Badge } from '@/components/ui/Badge';
+import { Badge, Spinner } from '@/components/ui';
 import {
   ListTable,
   ListTableBody,
@@ -283,7 +282,7 @@ export function AdminServiceAttendanceDataPage() {
             <div
               className={`flex h-64 items-center justify-center ${isMobileViewport ? 'rounded-2xl border border-border bg-surface shadow-xs' : ''}`}
             >
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Spinner size="lg" className="text-primary" />
             </div>
           ) : isMobileViewport ? (
             <div className="space-y-4 pb-4">

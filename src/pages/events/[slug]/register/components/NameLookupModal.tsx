@@ -1,12 +1,10 @@
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { Button, Dialog, Spinner } from '@/components/ui';
 
 const nameLookupSchema = z.object({
   name: z.string().trim().min(1, 'Please enter your name').max(200, 'Name is too long'),
@@ -159,7 +157,7 @@ export function NameLookupModal({
               Cancel
             </Button>
             <Button disabled={isLoading} size="lg" type="submit" variant="default">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <Spinner size="sm" className="mr-2" aria-hidden="true" />}
               {isLoading ? 'Searching...' : 'Search'}
             </Button>
           </Dialog.Footer>

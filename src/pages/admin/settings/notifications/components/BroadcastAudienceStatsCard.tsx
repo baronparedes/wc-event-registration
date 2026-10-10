@@ -1,6 +1,6 @@
-import { AlertCircle, Bell, Loader2, Mail, Users } from 'lucide-react';
+import { AlertCircle, Bell, Mail, Users } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge, Spinner } from '@/components/ui';
 import { useBroadcastAudienceStatsQuery } from '@/hooks/domain/notifications';
 import type { BroadcastChannel } from '@/lib/domain/notifications';
 
@@ -53,7 +53,7 @@ export function BroadcastAudienceStatsCard({
         </div>
         {isLoading && (
           <div className="flex items-center gap-1.5 text-xs text-muted">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Spinner size="xs" aria-hidden="true" />
             <span>Validating recipients...</span>
           </div>
         )}

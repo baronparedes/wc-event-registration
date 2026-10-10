@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/Button';
+import { Button, Spinner } from '@/components/ui';
 import { type ServiceAttendance, buildServiceAttendanceCsvExport } from '@/lib/domain/services';
 
 export interface ExportServiceAttendanceButtonProps {
@@ -81,7 +81,7 @@ export function ExportServiceAttendanceButton({
     >
       {isExporting ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Spinner size="sm" className="mr-2" aria-hidden="true" />
           Exporting...
         </>
       ) : (

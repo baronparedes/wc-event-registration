@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -12,6 +11,7 @@ import {
   FormInputField,
   FormTextareaField,
   LoadingState,
+  Spinner,
 } from '@/components/ui';
 import { useEmailTemplateMutation, useEmailTemplateQuery } from '@/hooks/domain/email-templates';
 import type { EmailTemplate } from '@/lib/domain/email-templates';
@@ -239,7 +239,7 @@ function EmailTemplateBuilderForm({ template, onClose, onSuccess }: FormProps) {
           variant="default"
           disabled={isSubmitting || mutation.isPending || (isEditMode && !isDirty)}
         >
-          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {mutation.isPending && <Spinner size="sm" className="mr-2" aria-hidden="true" />}
           {mutation.isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Template'}
         </Button>
       </Dialog.Footer>

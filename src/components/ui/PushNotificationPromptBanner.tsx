@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Bell, Loader2 } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { TIMING } from '@/config/constants';
@@ -11,6 +11,7 @@ import { useLocalStorage, usePwaInstallPrompt } from '@/hooks/utils';
 import { Button } from './Button';
 import { NotificationPrompt } from './NotificationPrompt';
 import { PWA_PROMPT_SNOOZE_STORAGE_KEY } from './PWAInstallPromptBanner';
+import { Spinner } from './Spinner';
 
 export const PUSH_PROMPT_SNOOZE_STORAGE_KEY = 'wc:push-prompt:snoozed-until';
 
@@ -139,7 +140,7 @@ export function PushNotificationPromptBanner() {
           disabled={push.isLoading}
           className="gap-1.5"
         >
-          {push.isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {push.isLoading && <Spinner size="xs" aria-hidden="true" />}
           <span>{push.isLoading ? 'Enabling...' : 'Enable notifications'}</span>
         </Button>
       </NotificationPrompt.Actions>

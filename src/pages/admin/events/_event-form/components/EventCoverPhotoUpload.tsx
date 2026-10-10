@@ -1,9 +1,9 @@
 import { useId, useRef, useState } from 'react';
 
-import { Crop, ImagePlus, Loader2, Trash2, UploadCloud } from 'lucide-react';
+import { Crop, ImagePlus, Trash2, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/Button';
+import { Button, Spinner } from '@/components/ui';
 import {
   deleteEventCoverImage,
   getEventCoverPublicUrl,
@@ -182,7 +182,7 @@ export function EventCoverPhotoUpload({
             />
             {isUploading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-xs">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+                <Spinner size="lg" className="text-primary" aria-hidden="true" />
                 <span className="mt-2 text-sm font-medium text-text">Uploading...</span>
               </div>
             )}
@@ -245,7 +245,7 @@ export function EventCoverPhotoUpload({
         >
           {isUploading ? (
             <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+              <Spinner size="lg" className="text-primary" aria-hidden="true" />
               <p className="text-sm font-medium text-text">Uploading cover photo...</p>
             </div>
           ) : (
