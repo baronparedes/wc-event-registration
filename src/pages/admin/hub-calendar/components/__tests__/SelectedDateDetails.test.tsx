@@ -602,4 +602,42 @@ describe('SelectedDateDetails', () => {
     expect(handleRoleChange).toHaveBeenCalledWith(null);
     expect(handleSearchChange).toHaveBeenCalledWith('');
   });
+
+  it('opens MemberQuickViewDialog when a member card is clicked', () => {
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1]}
+          entriesByTimeSlot={entriesByTimeSlot}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Dialog should not be open initially
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Click on member card
+    const memberCard = screen.getByText(mockMember1.full_name);
+    fireEvent.click(memberCard);
+
+    // Dialog should now be open
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+
+    // Dialog should contain "Member Details", confidence card, and a button to view full profile
+    expect(screen.getByText('Member Details')).toBeInTheDocument();
+    expect(screen.getByTestId('member-confidence-card')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Full Profile' })).toBeInTheDocument();
+  });
 });

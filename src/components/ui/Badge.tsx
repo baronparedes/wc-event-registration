@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { twMerge } from 'tailwind-merge';
+
 export type BadgeVariant =
   | 'default'
   | 'secondary'
@@ -49,7 +51,7 @@ export function Badge({ variant = 'default', icon, children, className, title }:
   const variantClasses = variantClassName[variant];
 
   return (
-    <span title={title} className={`${baseClasses} ${variantClasses} ${className ?? ''}`}>
+    <span title={title} className={twMerge(baseClasses, variantClasses, className)}>
       {icon && <span className="flex h-4 w-4 items-center justify-center">{icon}</span>}
       {children}
     </span>
