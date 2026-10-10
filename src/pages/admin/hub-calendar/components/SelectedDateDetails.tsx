@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { CalendarDays, Share2 } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import {
   Badge,
@@ -14,7 +14,6 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
-import { ROUTE_PATHS } from '@/config/constants';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import {
   type ExcusedMemberMap,
@@ -22,7 +21,7 @@ import {
   isMemberExcused,
   toIsoDateKey,
 } from '@/lib/domain/hub-calendar';
-import type { MemberAttendanceStats } from '@/lib/domain/members';
+import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
 import {
   type ConfidenceThresholds,
@@ -38,6 +37,7 @@ import {
   isMemberInactiveWithoutAttendance,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
+import { MemberQuickViewDialog } from './MemberQuickViewDialog';
 import { MilestoneAvatar } from './MilestoneAvatar';
 import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
@@ -101,7 +101,6 @@ export function SelectedDateDetails({
   onConfidenceChange,
   onSearchQueryChange,
 }: SelectedDateDetailsProps) {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const [internalConfidence, setInternalConfidence] = useState<ConfidenceTier | null>(null);
@@ -110,6 +109,9 @@ export function SelectedDateDetails({
   const handleConfidenceChange = onConfidenceChange ?? setInternalConfidence;
 
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [selectedMemberForQuickView, setSelectedMemberForQuickView] = useState<AdminMember | null>(
+    null,
+  );
   const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
     getStoredVolunteerTargets(),
   );
@@ -360,9 +362,7 @@ export function SelectedDateDetails({
                 <button
                   type="button"
                   key={entry.member.id}
-                  onClick={() =>
-                    navigate(ROUTE_PATHS.adminMemberDetailPattern.replace(':id', entry.member.id))
-                  }
+                  onClick={() => setSelectedMemberForQuickView(entry.member)}
                   title={tooltip}
                   aria-label={`${entry.member.full_name} - ${tooltip}`}
                   className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center cursor-pointer"
@@ -458,11 +458,7 @@ export function SelectedDateDetails({
                 {selectedMilestones.map((milestone) => (
                   <div
                     key={milestone.id}
-                    onClick={() =>
-                      navigate(
-                        ROUTE_PATHS.adminMemberDetailPattern.replace(':id', milestone.member.id),
-                      )
-                    }
+                    onClick={() => setSelectedMemberForQuickView(milestone.member)}
                     className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer"
                   >
                     <MilestoneAvatar
@@ -628,6 +624,12 @@ export function SelectedDateDetails({
         dayNumber={selectedDayNumber}
         entriesByTimeSlot={entriesByTimeSlot}
         excusedMap={excusedMap}
+      />
+
+      <MemberQuickViewDialog
+        isOpen={selectedMemberForQuickView !== null}
+        onClose={() => setSelectedMemberForQuickView(null)}
+        member={selectedMemberForQuickView}
       />
     </div>
   );

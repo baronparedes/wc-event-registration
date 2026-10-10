@@ -242,6 +242,7 @@ describe('AdminHubCalendarPage', () => {
     // Click member card
     const memberCard = screen.getByText(sampleMember.full_name);
     fireEvent.click(memberCard);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
 
     // Click second Sunday (which has no schedules)
     const secondSunday = firstSunday + 7;
