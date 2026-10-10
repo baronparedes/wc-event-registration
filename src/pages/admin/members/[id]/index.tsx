@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { BadgeCheck } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -78,13 +76,13 @@ export function AdminMemberDetailPage() {
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     control,
     formState: { errors, isDirty },
   } = useForm<UpdateMemberInput>({
     resolver: zodResolver(updateMemberSchema),
     defaultValues: DEFAULT_VALUES,
+    values: memberQuery.data ? toFormValues(memberQuery.data) : undefined,
   });
 
   const {
@@ -101,12 +99,6 @@ export function AdminMemberDetailPage() {
     .join(' ');
   const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
   const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
-
-  useEffect(() => {
-    if (memberQuery.data) {
-      reset(toFormValues(memberQuery.data));
-    }
-  }, [memberQuery.data, reset]);
 
   async function onSubmit(values: UpdateMemberInput) {
     if (!id) return;
