@@ -635,8 +635,9 @@ describe('SelectedDateDetails', () => {
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
 
-    // Dialog should contain "Member Details" and a button to view full profile
+    // Dialog should contain "Member Details", confidence card, and a button to view full profile
     expect(screen.getByText('Member Details')).toBeInTheDocument();
+    expect(screen.getByTestId('member-confidence-card')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View Full Profile' })).toBeInTheDocument();
   });
 });

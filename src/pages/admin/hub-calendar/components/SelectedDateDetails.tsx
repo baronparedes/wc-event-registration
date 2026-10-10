@@ -630,6 +630,22 @@ export function SelectedDateDetails({
         isOpen={selectedMemberForQuickView !== null}
         onClose={() => setSelectedMemberForQuickView(null)}
         member={selectedMemberForQuickView}
+        stats={
+          selectedMemberForQuickView
+            ? attendanceScoreMap?.get(selectedMemberForQuickView.id)
+            : undefined
+        }
+        isExcused={
+          selectedMemberForQuickView
+            ? isMemberExcused(
+                excusedMap,
+                toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber),
+                selectedMemberForQuickView,
+                activeTab === 'ALL' ? undefined : activeTab,
+              )
+            : false
+        }
+        thresholds={confidenceThresholds}
       />
     </div>
   );

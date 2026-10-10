@@ -24,11 +24,14 @@ describe('ServiceScheduleAvatar', () => {
     expect(screen.getByTitle('Excused')).toBeInTheDocument();
   });
 
-  it('renders excused badge with md and lg size classes', () => {
+  it('renders excused badge with md, lg, and 2xl size classes', () => {
     const { rerender } = render(<ServiceScheduleAvatar name="Test Alpha" excused size="md" />);
     expect(screen.getByTitle('Excused')).toBeInTheDocument();
 
     rerender(<ServiceScheduleAvatar name="Test Alpha" excused size="lg" />);
+    expect(screen.getByTitle('Excused')).toBeInTheDocument();
+
+    rerender(<ServiceScheduleAvatar name="Test Alpha" excused size="2xl" />);
     expect(screen.getByTitle('Excused')).toBeInTheDocument();
   });
 
