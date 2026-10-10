@@ -4,6 +4,7 @@ import { cx } from 'class-variance-authority';
 import { ChevronRight } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
+import { LoadingState } from '@/components/ui';
 import { isMinimizedAppShellRoute } from '@/config/constants';
 
 type AdminPageShellProps = {
@@ -121,7 +122,7 @@ function AdminPageContent({
   if (isLoading) {
     return (
       <div className={cx('space-y-6 print:p-0', className)}>
-        <p className="text-sm text-muted">{loadingMessage || 'Loading...'}</p>
+        <LoadingState message={loadingMessage || 'Loading...'} />
       </div>
     );
   }

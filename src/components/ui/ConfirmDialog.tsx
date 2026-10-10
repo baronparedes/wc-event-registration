@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Button } from './Button';
 import { Dialog, type DialogSize } from './Dialog';
+import { Spinner } from './Spinner';
 
 export type ConfirmDialogProps = {
   isOpen: boolean;
@@ -68,7 +69,14 @@ export function ConfirmDialog({
           type="button"
           variant={confirmVariant}
         >
-          {isPending ? confirmLoadingLabel : confirmLabel}
+          {isPending ? (
+            <>
+              <Spinner size="sm" className="mr-2" aria-hidden="true" />
+              {confirmLoadingLabel}
+            </>
+          ) : (
+            confirmLabel
+          )}
         </Button>
       </Dialog.Footer>
     </Dialog>

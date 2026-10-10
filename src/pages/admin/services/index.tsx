@@ -5,7 +5,7 @@ import { ChartArea, SearchX, Table, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
-import { Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState, LoadingState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useServiceDashboardQuery } from '@/hooks/domain/services';
@@ -113,7 +113,7 @@ export function AdminServicesPage() {
 
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <LoadingState message="Loading service metrics..." />
           </div>
         ) : isError || !stats ? (
           <EmptyState

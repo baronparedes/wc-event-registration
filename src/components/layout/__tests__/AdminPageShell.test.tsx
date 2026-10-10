@@ -125,14 +125,15 @@ describe('AdminPageShell', () => {
       expect(screen.getByText('Loaded Data').parentElement).toHaveClass('space-y-6');
     });
 
-    it('renders loading message when isLoading is true', () => {
-      render(
+    it('renders loading message and spinner when isLoading is true', () => {
+      const { container } = render(
         <AdminPageShell.Content isLoading={true} loadingMessage="Loading items...">
           <p>Loaded Data</p>
         </AdminPageShell.Content>,
       );
 
       expect(screen.getByText('Loading items...')).toBeInTheDocument();
+      expect(container.querySelector('.animate-spin')).toBeInTheDocument();
       expect(screen.queryByText('Loaded Data')).not.toBeInTheDocument();
     });
   });
