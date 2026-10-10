@@ -54,6 +54,23 @@ describe('DropdownMenu', () => {
     fireEvent.mouseDown(screen.getByText('Menu Content'));
     expect(onOpenChange).not.toHaveBeenCalled();
   });
+
+  it('applies custom className and menuClassName', () => {
+    const { container } = render(
+      <DropdownMenu
+        open={true}
+        onOpenChange={vi.fn()}
+        className="w-full custom-class"
+        menuClassName="custom-menu-class"
+        trigger={<button type="button">Open</button>}
+      >
+        <div>Menu Content</div>
+      </DropdownMenu>,
+    );
+
+    expect(container.firstChild).toHaveClass('w-full', 'custom-class');
+    expect(screen.getByText('Menu Content').parentElement).toHaveClass('custom-menu-class');
+  });
 });
 
 describe('DropdownMenuItem', () => {

@@ -51,9 +51,10 @@ describe('AddToCalendarDropdown', () => {
     window.open = originalOpen;
   });
 
-  it('renders Add to Calendar button', () => {
-    render(<AddToCalendarDropdown event={mockEvent} />);
+  it('renders Add to Calendar button with responsive full width classes', () => {
+    const { container } = render(<AddToCalendarDropdown event={mockEvent} />);
     expect(screen.getByRole('button', { name: /Add to Calendar/i })).toBeInTheDocument();
+    expect(container.firstChild).toHaveClass('w-full', 'sm:w-auto');
   });
 
   it('opens dropdown and allows Google Calendar export', () => {

@@ -268,7 +268,7 @@ export function EventCountdownPage() {
             <Home className="h-5 w-5 mr-2" aria-hidden="true" />
             Go Home
           </Button>
-          <AddToCalendarDropdown event={event} />
+          <AddToCalendarDropdown event={event} className="w-full sm:w-auto" />
           <Button
             size="3xl"
             variant="outline"

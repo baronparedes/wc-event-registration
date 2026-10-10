@@ -1,15 +1,25 @@
 import { type ReactNode, useEffect, useRef } from 'react';
 
 import { Link } from 'react-router-dom';
+import { twMerge } from 'tailwind-merge';
 
 type DropdownMenuProps = {
   trigger: ReactNode;
   children: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  className?: string;
+  menuClassName?: string;
 };
 
-export function DropdownMenu({ trigger, children, open, onOpenChange }: DropdownMenuProps) {
+export function DropdownMenu({
+  trigger,
+  children,
+  open,
+  onOpenChange,
+  className,
+  menuClassName,
+}: DropdownMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,10 +36,15 @@ export function DropdownMenu({ trigger, children, open, onOpenChange }: Dropdown
   }, [open, onOpenChange]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={twMerge('relative', className)}>
       {trigger}
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg">
+        <div
+          className={twMerge(
+            'absolute right-0 top-full z-40 mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg',
+            menuClassName,
+          )}
+        >
           {children}
         </div>
       )}
