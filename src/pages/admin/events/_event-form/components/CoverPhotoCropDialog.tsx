@@ -179,26 +179,30 @@ function CoverPhotoCropContent({
     try {
       const img = imageRef.current;
       const container = containerRef.current;
-      const containerRect = container.getBoundingClientRect();
+      if (!img || !container) {
+        toast.error('Failed to crop image');
+        return;
+      }
 
+      const containerRect = container.getBoundingClientRect();
       const canvas = document.createElement('canvas');
       canvas.width = OUTPUT_WIDTH;
       canvas.height = OUTPUT_HEIGHT;
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to create canvas context');
+      if (!ctx) {
+        toast.error('Failed to create canvas context');
+        return;
+      }
 
-      // Scale ratio from DOM container to Full HD canvas
       const scaleToOutput = OUTPUT_WIDTH / containerRect.width;
 
       ctx.save();
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-      // Center point in output coordinates
       const centerX = OUTPUT_WIDTH / 2;
       const centerY = OUTPUT_HEIGHT / 2;
 
-      // Move to canvas center + pan offset
       ctx.translate(centerX + pan.x * scaleToOutput, centerY + pan.y * scaleToOutput);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(zoom, zoom);
@@ -207,7 +211,6 @@ function CoverPhotoCropContent({
       const effectiveWidth = isRotated90or270 ? img.naturalHeight : img.naturalWidth;
       const effectiveHeight = isRotated90or270 ? img.naturalWidth : img.naturalHeight;
 
-      // Base scale factor at zoom = 1 fits whole image within canvas (matching contain)
       const scale = Math.min(
         OUTPUT_WIDTH / (effectiveWidth || 1),
         OUTPUT_HEIGHT / (effectiveHeight || 1),
@@ -222,7 +225,10 @@ function CoverPhotoCropContent({
         canvas.toBlob(resolve, 'image/jpeg', 0.9);
       });
 
-      if (!blob) throw new Error('Failed to generate cropped image');
+      if (!blob) {
+        toast.error('Failed to generate cropped image');
+        return;
+      }
 
       const cleanBaseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
       const outputFileName = `${cleanBaseName || 'cover'}.jpg`;

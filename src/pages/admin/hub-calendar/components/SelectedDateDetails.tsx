@@ -118,13 +118,10 @@ export function SelectedDateDetails({
   );
 
   useEffect(() => {
-    // Only scroll if there is an explicit ?date parameter in the URL on mount
     if (searchParams.has('date') && containerRef.current) {
       containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    // Intentionally empty dependency array to run only once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   const handleTabChange = (slot: TimeSlot | 'ALL') => {
     onTabChange(slot);

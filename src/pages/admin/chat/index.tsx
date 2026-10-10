@@ -190,9 +190,9 @@ export function AdminChatPage() {
           ),
         );
       }
-    } finally {
-      isSubmittingRef.current = false;
     }
+
+    isSubmittingRef.current = false;
   };
 
   return (

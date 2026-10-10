@@ -91,16 +91,21 @@ export function AdminUnregisteredMembersPage() {
     }
 
     const fallbackFilename = `event-${eventId}-unregistered-members.csv`;
-    try {
-      const { text, filename } = await exportMutation.mutateAsync();
-      downloadCsv(text, filename || fallbackFilename);
-    } catch (error) {
+    const result = await exportMutation.mutateAsync().catch((error: unknown) => {
       let message = 'Failed to export CSV.';
       if (error instanceof Error) {
         message = error.message;
       }
       toast.error(message);
+      return null;
+    });
+
+    if (!result) {
+      return;
     }
+
+    const { text, filename } = result;
+    downloadCsv(text, filename || fallbackFilename);
   }
 
   return (

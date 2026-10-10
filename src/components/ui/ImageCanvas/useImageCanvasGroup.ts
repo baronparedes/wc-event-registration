@@ -116,15 +116,16 @@ export function useImageCanvasGroup<K extends string>(options: UseImageCanvasGro
     errorKey: K,
     operation: () => Promise<void>,
   ) => {
+    setIsGenerating(true);
+
     try {
-      setIsGenerating(true);
       await operation();
     } catch (error) {
       console.error('Image canvas operation failed:', error);
       toast.error(resolveMessage(errorMessage, errorKey));
-    } finally {
-      setIsGenerating(false);
     }
+
+    setIsGenerating(false);
   };
 
   const download = async (keys: K[]) => {

@@ -136,10 +136,7 @@ function buildWeekdayValidationMessage(allowedWeekdays: number[]): string {
 }
 
 export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps) {
-  const allowedWeekdays = useMemo(
-    () => parseAllowedWeekdays(field),
-    [field.validation_rules.allowed_weekdays],
-  );
+  const allowedWeekdays = parseAllowedWeekdays(field);
   const [isOpen, setIsOpen] = useState(false);
   const value = useWatch({ control: dynamicForm.control, name: field.field_key }) as
     | string
@@ -221,10 +218,7 @@ export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps
 }
 
 export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererProps) {
-  const allowedWeekdays = useMemo(
-    () => parseAllowedWeekdays(field),
-    [field.validation_rules.allowed_weekdays],
-  );
+  const allowedWeekdays = parseAllowedWeekdays(field);
   const [isOpen, setIsOpen] = useState(false);
   const value = useWatch({ control: dynamicForm.control, name: field.field_key }) as
     | string

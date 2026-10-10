@@ -71,49 +71,45 @@ export function useFullscreen() {
       webkitFullscreenElement?: Element | null;
       webkitExitFullscreen?: () => Promise<void>;
     };
-    try {
-      if (doc.fullscreenElement) {
-        await doc.exitFullscreen();
-      } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
-        await doc.webkitExitFullscreen();
-      }
-    } catch {
-      // Ignore errors when exiting fullscreen
+
+    if (doc.fullscreenElement) {
+      await doc.exitFullscreen?.().catch(() => undefined);
+    } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
+      await doc.webkitExitFullscreen().catch(() => undefined);
     }
+
     setIsFullscreen(false);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
-    try {
-      const el = containerRef.current as
-        | (HTMLDivElement & {
-            webkitRequestFullscreen?: () => Promise<void>;
-          })
-        | null;
-      const doc = document as Document & {
-        webkitFullscreenElement?: Element | null;
-        webkitExitFullscreen?: () => Promise<void>;
-      };
+    const el = containerRef.current as
+      | (HTMLDivElement & {
+          webkitRequestFullscreen?: () => Promise<void>;
+        })
+      | null;
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void>;
+    };
 
-      if (!isFullscreen) {
-        if (el?.requestFullscreen) {
-          await el.requestFullscreen();
-        } else if (el?.webkitRequestFullscreen) {
-          await el.webkitRequestFullscreen();
-        } else {
-          setIsFullscreen(true);
-        }
+    if (!isFullscreen) {
+      if (el?.requestFullscreen) {
+        await el.requestFullscreen().catch(() => undefined);
+      } else if (el?.webkitRequestFullscreen) {
+        await el.webkitRequestFullscreen().catch(() => undefined);
       } else {
-        if (doc.fullscreenElement) {
-          await doc.exitFullscreen();
-        } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
-          await doc.webkitExitFullscreen();
-        } else {
-          setIsFullscreen(false);
-        }
+        setIsFullscreen(true);
       }
-    } catch {
-      setIsFullscreen((prev) => !prev);
+
+      return;
+    }
+
+    if (doc.fullscreenElement) {
+      await doc.exitFullscreen?.().catch(() => undefined);
+    } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
+      await doc.webkitExitFullscreen().catch(() => undefined);
+    } else {
+      setIsFullscreen(false);
     }
   }, [isFullscreen]);
 

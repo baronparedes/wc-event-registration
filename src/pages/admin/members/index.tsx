@@ -154,14 +154,19 @@ export function AdminMembersPage() {
   }
 
   async function handleExportMembers() {
-    try {
-      const { text, filename } = await exportMembersMutation.mutateAsync();
-      downloadCsv(text, filename || 'members.csv');
-    } catch (exportError) {
+    const result = await exportMembersMutation.mutateAsync().catch((exportError: unknown) => {
       toast.error(
         exportError instanceof Error ? exportError.message : 'Failed to export members CSV.',
       );
+      return null;
+    });
+
+    if (!result) {
+      return;
     }
+
+    const { text, filename } = result;
+    downloadCsv(text, filename || 'members.csv');
   }
 
   return (
