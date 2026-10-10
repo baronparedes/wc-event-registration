@@ -27,3 +27,9 @@
 **Deviation:** State dependencies (`timeslot_enabled`, `enforce_check_in_event_window`, `timeslots`) were being manually reset via `useEffect` whenever their parent toggle (`attendance_enabled`, `timeslot_enabled`) was disabled.
 **Learning:** This is an anti-pattern (derived state via `useEffect`) and can cause hidden bugs if fields are secretly kept around.
 **Standard:** Removed `useEffect` entirely. Instead, the backend payload generation naturally zeroes out these fields during the `submitAttendanceSettings` handler if the parent toggles are false.
+
+## 2025-02-12 - Purist: Align useForm with Style Guide in AdminMemberDetailPage
+
+**Deviation:** `useForm` initialization in `src/pages/admin/members/[id]/index.tsx` used a `useEffect` block with `reset()` to sync asynchronously loaded React Query data.
+**Learning:** React Hook Form's newer versions support natively reacting to external asynchronous data changes via the `values` prop, entirely replacing the imperative `useEffect` pattern.
+**Standard:** Pass the computed async data directly into the `values` prop of `useForm()` instead of using `useEffect` with `reset()`.
