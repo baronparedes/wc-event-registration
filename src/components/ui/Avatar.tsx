@@ -10,6 +10,12 @@ interface AvatarProps {
   className?: string;
 }
 
+const TRANSFORM_WIDTHS: Partial<Record<NonNullable<AvatarProps['size']>, number>> = {
+  xs: 48,
+  sm: 80,
+  md: 128,
+};
+
 export const Avatar: React.FC<AvatarProps> = ({
   name,
   avatarObjectKey,
@@ -17,7 +23,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   border = 'none',
   className = '',
 }) => {
-  const { data: avatarUrl } = useMemberAvatarQuery(avatarObjectKey);
+  const { data: avatarSources } = useMemberAvatarQuery(avatarObjectKey, TRANSFORM_WIDTHS[size]);
   const [failedAvatarUrl, setFailedAvatarUrl] = React.useState<string | null>(null);
   const [loadedAvatarUrl, setLoadedAvatarUrl] = React.useState<string | null>(null);
 
@@ -60,7 +66,18 @@ export const Avatar: React.FC<AvatarProps> = ({
   const colorIndex = name.charCodeAt(0) % colors.length;
   const bgColor = colors[colorIndex];
 
-  const shouldShowImage = avatarUrl && failedAvatarUrl !== avatarUrl;
+  const hasFailedTransformedUrl =
+    avatarSources != null &&
+    avatarSources.url !== avatarSources.fallbackUrl &&
+    failedAvatarUrl === avatarSources.url;
+  const hasFailedFallbackUrl =
+    avatarSources != null && failedAvatarUrl === avatarSources.fallbackUrl;
+  const avatarUrl = avatarSources
+    ? hasFailedTransformedUrl
+      ? avatarSources.fallbackUrl
+      : avatarSources.url
+    : undefined;
+  const shouldShowImage = avatarUrl && !hasFailedFallbackUrl && failedAvatarUrl !== avatarUrl;
   const isImageLoaded = shouldShowImage && loadedAvatarUrl === avatarUrl;
 
   return (

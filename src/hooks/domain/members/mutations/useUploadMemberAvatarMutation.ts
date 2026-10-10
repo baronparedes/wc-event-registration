@@ -27,8 +27,8 @@ export function useUploadMemberAvatarMutation() {
 
   return useMutation({
     mutationFn: callUploadMemberAvatar,
-    onSuccess: ({ avatar_object_key }, { id, image_base64 }) => {
-      queryClient.setQueryData(memberAvatarQueryKey(avatar_object_key), image_base64);
+    onSuccess: ({ avatar_object_key }, { id }) => {
+      queryClient.invalidateQueries({ queryKey: memberAvatarQueryKey(avatar_object_key) });
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBER_QUERY_KEY(id) });
       queryClient.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });

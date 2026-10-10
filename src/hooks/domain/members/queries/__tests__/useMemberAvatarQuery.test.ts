@@ -42,6 +42,11 @@ describe('useMemberAvatarQuery', () => {
       'member-avatar',
       'avatars/member.jpg',
     ]);
+    expect(memberAvatarQueryKey('avatars/member.jpg', 80)).toEqual([
+      'member-avatar',
+      'avatars/member.jpg',
+      80,
+    ]);
   });
 
   it('returns the public avatar URL for a valid object key', async () => {
@@ -57,7 +62,42 @@ describe('useMemberAvatarQuery', () => {
 
     expect(mockStorageFrom).toHaveBeenCalledWith('member_avatars');
     expect(mockGetPublicUrl).toHaveBeenCalledWith('avatars/member.jpg');
-    expect(result.current.data).toBe('https://example.com/avatars/member.jpg');
+    expect(result.current.data).toEqual({
+      url: 'https://example.com/avatars/member.jpg',
+      fallbackUrl: 'https://example.com/avatars/member.jpg',
+    });
+  });
+
+  it('requests a high-quality transformed image and retains the original URL as fallback', async () => {
+    mockGetPublicUrl
+      .mockReturnValueOnce({
+        data: { publicUrl: 'https://example.com/avatars/member.jpg' },
+      })
+      .mockReturnValueOnce({
+        data: {
+          publicUrl: 'https://example.com/render/image/public/avatars/member.jpg?width=80',
+        },
+      });
+
+    const { result } = renderHookWithClient(() => useMemberAvatarQuery('avatars/member.jpg', 80));
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockGetPublicUrl).toHaveBeenNthCalledWith(1, 'avatars/member.jpg');
+    expect(mockGetPublicUrl).toHaveBeenNthCalledWith(2, 'avatars/member.jpg', {
+      transform: {
+        width: 80,
+        height: 80,
+        resize: 'cover',
+        quality: 90,
+      },
+    });
+    expect(result.current.data).toEqual({
+      url: 'https://example.com/render/image/public/avatars/member.jpg?width=80',
+      fallbackUrl: 'https://example.com/avatars/member.jpg',
+    });
   });
 
   it('returns null when the storage response has no public URL', async () => {
