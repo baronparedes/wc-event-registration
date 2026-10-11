@@ -261,14 +261,14 @@ export function CustomXAxisTick({
             height={19}
             rx={9.5}
             fill="var(--color-surface)"
-            stroke="var(--color-border)"
+            stroke="var(--color-primary)"
             strokeWidth={1}
           />
           <text
             x={0}
             y={33}
             textAnchor="middle"
-            fill="var(--color-text)"
+            fill="var(--color-primary)"
             fontSize={11}
             fontWeight={700}
           >
@@ -419,7 +419,7 @@ export function ForecastMonthlyTrendChart({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 shrink-0 w-full sm:w-auto">
           {/* Session Slot Toggle */}
           <div
             role="group"
@@ -432,10 +432,10 @@ export function ForecastMonthlyTrendChart({
                 type="button"
                 onClick={() => setSelectedSlot(opt.id)}
                 aria-pressed={selectedSlot === opt.id}
-                className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
                   selectedSlot === opt.id
-                    ? 'bg-surface text-text shadow-2xs font-bold'
-                    : 'text-muted hover:text-text'
+                    ? 'bg-primary text-white shadow-xs font-bold'
+                    : 'text-muted hover:text-text hover:bg-surface-hover/80'
                 }`}
               >
                 {opt.label}

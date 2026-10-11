@@ -71,8 +71,8 @@ export function SundayForecastCard({
               aria-pressed={viewMode === 'table'}
               className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-surface text-text shadow-2xs font-bold'
-                  : 'text-muted hover:text-text'
+                  ? 'bg-primary text-white shadow-xs font-bold'
+                  : 'text-muted hover:text-text hover:bg-surface-hover/80'
               }`}
             >
               <Table className="h-3.5 w-3.5" />
@@ -84,8 +84,8 @@ export function SundayForecastCard({
               aria-pressed={viewMode === 'chart'}
               className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'chart'
-                  ? 'bg-surface text-text shadow-2xs font-bold'
-                  : 'text-muted hover:text-text'
+                  ? 'bg-primary text-white shadow-xs font-bold'
+                  : 'text-muted hover:text-text hover:bg-surface-hover/80'
               }`}
             >
               <BarChart3 className="h-3.5 w-3.5" />
