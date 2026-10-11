@@ -150,6 +150,7 @@ export function AdminServiceAttendanceForecastPage() {
                   key={sunday.isoDateKey}
                   sunday={sunday}
                   tableTitle={selectedRoleGroup.tableTitle}
+                  showRoleBreakdownOption={activeRoleGroup === 'ALL'}
                 />
               ))}
             </div>
