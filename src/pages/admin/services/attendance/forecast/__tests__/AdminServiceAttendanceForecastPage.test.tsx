@@ -116,11 +116,11 @@ describe('AdminServiceAttendanceForecastPage', () => {
   it('renders month navigator, role group tabs, month summary, and commitment table', () => {
     renderPage();
 
-    // Check Role Group tabs
-    expect(screen.getByRole('button', { name: /Usher & Backroom/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Prayer Coach/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /IMT & VMT/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /All Roles/i })).toBeInTheDocument();
+    // Check Role Group tabs using accessible role="tab"
+    expect(screen.getByRole('tab', { name: /Usher & Backroom/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Prayer Coach/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /IMT & VMT/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /All Roles/i })).toBeInTheDocument();
 
     expect(screen.getByText(/Sundays in Month/i)).toBeInTheDocument();
     expect(screen.getByText(/Total Monthly Quota/i)).toBeInTheDocument();
@@ -152,10 +152,10 @@ describe('AdminServiceAttendanceForecastPage', () => {
   it('allows changing role group tabs and updates table header', () => {
     renderPage();
 
-    const pcTab = screen.getByRole('button', { name: /Prayer Coach/i });
+    const pcTab = screen.getByRole('tab', { name: /Prayer Coach/i });
     fireEvent.click(pcTab);
 
-    expect(pcTab).toHaveClass('text-primary');
+    expect(pcTab).toHaveAttribute('aria-selected', 'true');
     expect(screen.getAllByText(/PRAYER COACH COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
   });
 
