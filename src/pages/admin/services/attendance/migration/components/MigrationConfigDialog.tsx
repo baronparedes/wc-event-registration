@@ -1,6 +1,7 @@
-import { useState } from 'react';
-
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Trash2 } from 'lucide-react';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -22,16 +23,10 @@ export interface MigrationConfig {
   sheets: MigrationSheetConfig[];
 }
 
-interface InternalSheetItem {
-  id: string;
-  name: string;
-  isWalkIn: boolean;
-}
-
-const DEFAULT_SHEETS: InternalSheetItem[] = [
-  { id: '1', name: 'Comm_Attend', isWalkIn: false },
-  { id: '2', name: 'OIC_Attend', isWalkIn: false },
-  { id: '3', name: 'Walkin_Attend', isWalkIn: true },
+const DEFAULT_SHEETS: MigrationSheetConfig[] = [
+  { name: 'Comm_Attend', isWalkIn: false },
+  { name: 'OIC_Attend', isWalkIn: false },
+  { name: 'Walkin_Attend', isWalkIn: true },
 ];
 
 function isSundayDate(dateString: string): boolean {
@@ -43,54 +38,78 @@ function isSundayDate(dateString: string): boolean {
   return date.getDay() === 0;
 }
 
+const migrationConfigSchema = z.object({
+  targetDate: z
+    .string()
+    .min(1, 'Target date is required')
+    .refine(isSundayDate, { message: 'Target date must be a Sunday.' }),
+  sheets: z.array(
+    z.object({
+      name: z.string(),
+      isWalkIn: z.boolean(),
+    }),
+  ),
+});
+
+export type MigrationConfigFormValues = z.infer<typeof migrationConfigSchema>;
+
 export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationConfigDialogProps) {
-  const [targetDate, setTargetDate] = useState('');
-  const [sheets, setSheets] = useState<InternalSheetItem[]>(DEFAULT_SHEETS);
+  const {
+    register,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<MigrationConfigFormValues>({
+    resolver: zodResolver(migrationConfigSchema),
+    defaultValues: {
+      targetDate: '',
+      sheets: DEFAULT_SHEETS,
+    },
+    mode: 'onChange',
+  });
+
+  const { fields, append, remove, replace } = useFieldArray({
+    control,
+    name: 'sheets',
+  });
+
+  const targetDate = useWatch({ control, name: 'targetDate' });
+  const watchedSheets = useWatch({ control, name: 'sheets' });
 
   const isDateValid = Boolean(targetDate && isSundayDate(targetDate));
-  const dateError = targetDate && !isDateValid ? 'Target date must be a Sunday.' : undefined;
+  const dateError =
+    targetDate && !isDateValid ? 'Target date must be a Sunday.' : errors.targetDate?.message;
 
-  const handleSheetNameChange = (id: string, name: string) => {
-    setSheets((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
-  };
+  const validSheets = (watchedSheets ?? [])
+    .filter((s) => s?.name?.trim().length > 0)
+    .map((s) => ({ name: s.name.trim(), isWalkIn: Boolean(s.isWalkIn) }));
 
-  const handleSheetWalkInChange = (id: string, isWalkIn: boolean) => {
-    setSheets((prev) => prev.map((s) => (s.id === id ? { ...s, isWalkIn } : s)));
-  };
+  const canSubmit = isDateValid && validSheets.length > 0;
 
   const handleAddSheet = () => {
-    setSheets((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        name: '',
-        isWalkIn: false,
-      },
-    ]);
-  };
-
-  const handleRemoveSheet = (id: string) => {
-    setSheets((prev) => prev.filter((s) => s.id !== id));
+    append({ name: '', isWalkIn: false });
   };
 
   const handleResetDefaults = () => {
-    setSheets(DEFAULT_SHEETS);
+    replace(DEFAULT_SHEETS);
   };
 
-  const validSheets = sheets
-    .filter((s) => s.name.trim().length > 0)
-    .map((s) => ({ name: s.name.trim(), isWalkIn: s.isWalkIn }));
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isDateValid || validSheets.length === 0) return;
     onConfirm({ targetDate, sheets: validSheets });
+    reset();
+    onClose();
+  };
+
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="xl">
-      <form onSubmit={handleSubmit}>
+    <Dialog isOpen={isOpen} onClose={handleClose} size="xl">
+      <form onSubmit={handleFormSubmit}>
         <Dialog.Header showCloseButton>
           <Dialog.Title>Configure Migration</Dialog.Title>
           <Dialog.Description>
@@ -106,9 +125,8 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
                 label="Target Date (Sunday)"
                 type="date"
                 required
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                error={dateError}
+                registration={register('targetDate')}
+                error={targetDate ? dateError : undefined}
                 className="w-full"
               />
             </div>
@@ -119,7 +137,7 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
                   XLSX Sheets to Process
                 </p>
                 <div className="flex items-center gap-3">
-                  {sheets.length === 0 && (
+                  {fields.length === 0 && (
                     <Button
                       type="button"
                       variant="link"
@@ -141,7 +159,7 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
                 </div>
               </div>
 
-              {sheets.length === 0 ? (
+              {fields.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border p-4 text-center">
                   <p className="text-xs text-muted">No sheets configured.</p>
                   <Button
@@ -156,42 +174,43 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {sheets.map((sheet, index) => (
-                    <div
-                      key={sheet.id}
-                      className="flex items-center gap-2 rounded-md border border-border/70 bg-card/40 p-2"
-                    >
-                      <div className="flex-1">
-                        <FormInputField
-                          type="text"
-                          value={sheet.name}
-                          onChange={(e) => handleSheetNameChange(sheet.id, e.target.value)}
-                          placeholder={`Sheet name ${index + 1}`}
-                          className="w-full text-sm"
-                          aria-label={`Sheet name ${index + 1}`}
-                        />
-                      </div>
-                      <label className="flex cursor-pointer select-none items-center gap-1.5 whitespace-nowrap px-1 text-xs font-medium text-text">
-                        <input
-                          type="checkbox"
-                          checked={sheet.isWalkIn}
-                          onChange={(e) => handleSheetWalkInChange(sheet.id, e.target.checked)}
-                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
-                        />
-                        <span>Walk-in</span>
-                      </label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveSheet(sheet.id)}
-                        aria-label={`Remove sheet ${sheet.name || index + 1}`}
-                        className="shrink-0 text-muted hover:text-danger"
+                  {fields.map((field, index) => {
+                    const sheetName = watchedSheets?.[index]?.name ?? '';
+                    return (
+                      <div
+                        key={field.id}
+                        className="flex items-center gap-2 rounded-md border border-border/70 bg-card/40 p-2"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex-1">
+                          <FormInputField
+                            type="text"
+                            registration={register(`sheets.${index}.name`)}
+                            placeholder={`Sheet name ${index + 1}`}
+                            className="w-full text-sm"
+                            ariaLabel={`Sheet name ${index + 1}`}
+                          />
+                        </div>
+                        <label className="flex cursor-pointer select-none items-center gap-1.5 whitespace-nowrap px-1 text-xs font-medium text-text">
+                          <input
+                            type="checkbox"
+                            {...register(`sheets.${index}.isWalkIn`)}
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
+                          />
+                          <span>Walk-in</span>
+                        </label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          aria-label={`Remove sheet ${sheetName || index + 1}`}
+                          className="shrink-0 text-muted hover:text-danger"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
 
                   <div className="pt-1">
                     <p className="text-[11px] text-muted">
@@ -205,10 +224,10 @@ export function MigrationConfigDialog({ isOpen, onClose, onConfirm }: MigrationC
         </Dialog.Body>
 
         <Dialog.Footer>
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={handleClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!isDateValid || validSheets.length === 0}>
+          <Button type="submit" disabled={!canSubmit}>
             Select File
           </Button>
         </Dialog.Footer>
