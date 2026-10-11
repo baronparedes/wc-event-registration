@@ -60,6 +60,14 @@ describe('SundayCommitmentChart', () => {
     expect(screen.getByText('183')).toBeInTheDocument();
     expect(screen.getByText('-60 Short')).toBeInTheDocument();
 
+    // 3 Slot Breakdown Cards
+    expect(screen.getByText('9 AM Session')).toBeInTheDocument();
+    expect(screen.getByText('-21 Short')).toBeInTheDocument();
+    expect(screen.getByText('12 NN Session')).toBeInTheDocument();
+    expect(screen.getByText('-6 Short')).toBeInTheDocument();
+    expect(screen.getByText('3 PM Session')).toBeInTheDocument();
+    expect(screen.getByText('-33 Short')).toBeInTheDocument();
+
     const chart = screen.getByTestId('composed-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');
     expect(items).toHaveLength(3);

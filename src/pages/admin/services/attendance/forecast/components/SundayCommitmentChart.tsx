@@ -192,26 +192,81 @@ export function SundayCommitmentChart({
           </ResponsiveContainer>
         </div>
 
-        {/* Chart Metrics Footer Summary */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 rounded-lg border border-border/70 bg-surface-hover/30 p-3 text-center">
+        {/* Slot Breakdown Cards (3 Cards) */}
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {sessions.map((session) => {
+            const hasDeficit = session.overShort < 0;
+            const hasSurplus = session.overShort > 0;
+            const sessionLabel =
+              session.slot === '9AM' ? '9 AM' : session.slot === '12NN' ? '12 NN' : '3 PM';
+
+            return (
+              <div
+                key={session.slot}
+                className="flex flex-col justify-between rounded-xl border border-border/80 bg-surface-hover/20 p-3.5 transition-all shadow-2xs hover:border-border"
+              >
+                {/* Slot Card Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                  <span className="text-xs font-bold text-text uppercase tracking-wide">
+                    {sessionLabel} Session
+                  </span>
+                  {hasDeficit ? (
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums bg-danger/15 text-danger">
+                      {session.overShort} Short
+                    </span>
+                  ) : hasSurplus ? (
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums bg-primary/15 text-primary">
+                      +{session.overShort} Surplus
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums bg-muted/15 text-muted">
+                      Target Met
+                    </span>
+                  )}
+                </div>
+
+                {/* Slot Metrics Row */}
+                <div className="grid grid-cols-3 gap-1.5 pt-2.5 text-center">
+                  <div>
+                    <div className="text-[10px] font-bold text-muted uppercase">Target</div>
+                    <div className="mt-0.5 text-base font-bold text-text tabular-nums">
+                      {session.target}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-muted uppercase">Scheduled</div>
+                    <div className="mt-0.5 text-base font-bold text-text tabular-nums">
+                      {session.scheduled}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-muted uppercase">Expected</div>
+                    <div className="mt-0.5 text-base font-bold text-text tabular-nums">
+                      {session.confirmed}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Overall Sunday Totals Summary Strip */}
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 rounded-lg border border-border/70 bg-surface-hover/30 p-2.5 text-center">
           <div>
-            <div className="text-[11px] font-bold text-muted uppercase">Total Target</div>
-            <div className="mt-0.5 text-base font-bold text-text tabular-nums">{totalTarget}</div>
+            <div className="text-[10px] font-bold text-muted uppercase">Total Target</div>
+            <div className="mt-0.5 text-sm font-bold text-text tabular-nums">{totalTarget}</div>
           </div>
           <div>
-            <div className="text-[11px] font-bold text-muted uppercase">Total Scheduled</div>
-            <div className="mt-0.5 text-base font-bold text-text tabular-nums">
-              {totalScheduled}
-            </div>
+            <div className="text-[10px] font-bold text-muted uppercase">Total Scheduled</div>
+            <div className="mt-0.5 text-sm font-bold text-text tabular-nums">{totalScheduled}</div>
           </div>
           <div>
-            <div className="text-[11px] font-bold text-muted uppercase">Total Expected</div>
-            <div className="mt-0.5 text-base font-bold text-text tabular-nums">
-              {totalConfirmed}
-            </div>
+            <div className="text-[10px] font-bold text-muted uppercase">Total Expected</div>
+            <div className="mt-0.5 text-sm font-bold text-text tabular-nums">{totalConfirmed}</div>
           </div>
           <div>
-            <div className="text-[11px] font-bold text-muted uppercase">Staffing Status</div>
+            <div className="text-[10px] font-bold text-muted uppercase">Staffing Status</div>
             <div className="mt-0.5">
               {totalDeficit !== undefined && totalDeficit > 0 ? (
                 <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-danger/15 text-danger">
