@@ -133,22 +133,25 @@ describe('AdminServiceAttendanceForecastPage', () => {
     expect(screen.getAllByText(/SESSION/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/TARGET/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/SCHEDULED/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/CONFIRMED/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Over/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/EXPECTED/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/VARIANCE/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('allows navigating to previous and next months', () => {
     renderPage();
 
+    const thisMonthBtn = screen.getByRole('button', { name: /This Month/i });
+    expect(thisMonthBtn).toBeDisabled();
+
     const prevButton = screen.getByRole('button', { name: /Previous Month/i });
     fireEvent.click(prevButton);
 
-    // After clicking previous month, "This Month" button appears
-    expect(screen.getByRole('button', { name: /This Month/i })).toBeInTheDocument();
+    // After clicking previous month, "This Month" button is enabled
+    expect(thisMonthBtn).toBeEnabled();
 
     // Click "This Month" to reset
-    fireEvent.click(screen.getByRole('button', { name: /This Month/i }));
-    expect(screen.queryByRole('button', { name: /This Month/i })).not.toBeInTheDocument();
+    fireEvent.click(thisMonthBtn);
+    expect(thisMonthBtn).toBeDisabled();
   });
 
   it('allows changing role group tabs and updates table header', () => {

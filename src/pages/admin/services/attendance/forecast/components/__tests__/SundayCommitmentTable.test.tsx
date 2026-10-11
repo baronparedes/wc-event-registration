@@ -26,9 +26,8 @@ describe('SundayCommitmentTable', () => {
     expect(screen.getByText('SESSION')).toBeInTheDocument();
     expect(screen.getByText('TARGET')).toBeInTheDocument();
     expect(screen.getByText('SCHEDULED')).toBeInTheDocument();
-    expect(screen.getByText('CONFIRMED')).toBeInTheDocument();
-    expect(screen.getByText('Over')).toBeInTheDocument();
-    expect(screen.getByText('[/Short]')).toBeInTheDocument();
+    expect(screen.getByText('EXPECTED')).toBeInTheDocument();
+    expect(screen.getByText('VARIANCE')).toBeInTheDocument();
   });
 
   it('renders all sessions and matches exact sample data with negative deficit highlights', () => {

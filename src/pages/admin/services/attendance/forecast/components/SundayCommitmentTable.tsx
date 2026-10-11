@@ -54,11 +54,10 @@ export function SundayCommitmentTable({
               SCHEDULED
             </ListTableHeaderCell>
             <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
-              CONFIRMED
+              EXPECTED
             </ListTableHeaderCell>
             <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
-              <span className="text-primary font-bold">Over</span>
-              <span className="text-danger font-bold">[/Short]</span>
+              VARIANCE
             </ListTableHeaderCell>
           </ListTableHeaderRow>
         </ListTableHead>
