@@ -21,6 +21,7 @@ import {
   ForecastMonthNavigator,
   ForecastMonthSummaryBar,
   ForecastRoleGroupSelector,
+  ForecastSundaySelector,
   SundayForecastCard,
 } from './components';
 import {
@@ -31,6 +32,7 @@ import {
 export function AdminServiceAttendanceForecastPage() {
   const [viewDate, setViewDate] = useState(() => new Date());
   const [activeRoleGroup, setActiveRoleGroup] = useState<ForecastRoleGroup>('ALL');
+  const [activeSundayKey, setActiveSundayKey] = useState<string>('ALL');
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false);
 
   const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
@@ -62,15 +64,23 @@ export function AdminServiceAttendanceForecastPage() {
 
   const handlePreviousMonth = () => {
     setViewDate((prev) => subMonths(prev, 1));
+    setActiveSundayKey('ALL');
   };
 
   const handleNextMonth = () => {
     setViewDate((prev) => addMonths(prev, 1));
+    setActiveSundayKey('ALL');
   };
 
   const handleToday = () => {
     setViewDate(new Date());
+    setActiveSundayKey('ALL');
   };
+
+  const displayedSundays =
+    activeSundayKey === 'ALL'
+      ? sundayForecasts
+      : sundayForecasts.filter((s) => s.isoDateKey === activeSundayKey);
 
   return (
     <AdminPageShell wide>
@@ -124,12 +134,19 @@ export function AdminServiceAttendanceForecastPage() {
               onChangeGroup={setActiveRoleGroup}
             />
 
+            {/* Per Sunday Tabs */}
+            <ForecastSundaySelector
+              sundays={sundayForecasts}
+              activeSundayKey={activeSundayKey}
+              onChangeSunday={setActiveSundayKey}
+            />
+
             {/* Month Summary Bar */}
             <ForecastMonthSummaryBar summary={monthSummary} />
 
             {/* Chronological Sunday Cards with Simplified Tables */}
             <div className="space-y-6">
-              {sundayForecasts.map((sunday) => (
+              {displayedSundays.map((sunday) => (
                 <SundayForecastCard
                   key={sunday.isoDateKey}
                   sunday={sunday}
