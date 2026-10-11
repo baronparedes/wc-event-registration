@@ -225,6 +225,24 @@ describe('LoginPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
   });
 
+  it('falls back to admin events for double backslash protocol-relative redirect targets', () => {
+    mockUseLocation.mockReturnValue({
+      pathname: '/login',
+      search: '?redirect=%5C%5Cevil.example.com%2Fsteal', // \\evil.example.com/steal
+      hash: '',
+      state: null,
+      key: 'unsafe-double-backslash',
+    });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: { isAuthenticated: true },
+      isLoading: false,
+    });
+
+    renderWithRouter(<LoginPage />);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/events', { replace: true });
+  });
+
   it('shows API error message when login fails with an Error instance', async () => {
     mockLoginMutateAsync.mockRejectedValueOnce(new Error('Invalid credentials'));
 

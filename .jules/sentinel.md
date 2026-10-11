@@ -34,8 +34,8 @@
 **Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
 **Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
 
-## 2025-02-14 - Replace Math.random with crypto.randomUUID for Secure Queue IDs
+## 2024-11-20 - Open Redirect bypass using backslash
 
-**Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
-**Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
-**Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
+**Vulnerability:** Found an open redirect vulnerability bypassing validation on login redirect targets via `\\` path prefixes which correctly parses to `//` in most modern browsers.
+**Learning:** `new URLSearchParams` and typical validators verify URL safety against `//` or `/\`, but an explicit double backslash `\\` is missing as a checked variation that gets translated by modern browsers into a valid external link prefix `//`.
+**Prevention:** To prevent open redirects, use a strict regular expression like `/^\/([^/\\]|$)/` which ensures the path starts exactly with a single forward slash, followed by either the end of the string or any character that is not a forward slash or backslash.

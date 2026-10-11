@@ -27,12 +27,7 @@ function getSafeRedirectTarget(search: string): string {
   const params = new URLSearchParams(search);
   const redirectTarget = params.get('redirect');
 
-  if (
-    !redirectTarget ||
-    !redirectTarget.startsWith('/') ||
-    redirectTarget.startsWith('//') ||
-    redirectTarget.startsWith('/\\')
-  ) {
+  if (!redirectTarget || !/^\/([^/\\]|$)/.test(redirectTarget)) {
     return ROUTE_PATHS.adminEvents;
   }
 
