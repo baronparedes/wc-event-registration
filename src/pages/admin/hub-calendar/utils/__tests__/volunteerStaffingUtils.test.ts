@@ -50,6 +50,9 @@ describe('volunteerStaffingUtils', () => {
       expect(normalizeStaffingRole('ushering')).toBe('Usher');
       expect(normalizeStaffingRole('Backroom')).toBe('Backroom Support');
       expect(normalizeStaffingRole('Backroom Support')).toBe('Backroom Support');
+      expect(normalizeStaffingRole('BKRM')).toBe('Backroom Support');
+      expect(normalizeStaffingRole('bkrm')).toBe('Backroom Support');
+      expect(normalizeStaffingRole('BKRM / PC')).toBe('Backroom Support');
       expect(normalizeStaffingRole('Backroom Support / PC')).toBe('Backroom Support');
       expect(normalizeStaffingRole('Prayer Coach')).toBe('Prayer Coach');
       expect(normalizeStaffingRole('PC')).toBe('Prayer Coach');
@@ -105,17 +108,17 @@ describe('volunteerStaffingUtils', () => {
   describe('calculateSlotStaffingNeeds', () => {
     it('calculates full deficit when no members are scheduled', () => {
       const forecast = calculateSlotStaffingNeeds([], undefined, '2026-10-04', '9AM');
-      expect(forecast.totalTarget).toBe(81); // 15 + 10 + 50 + 4 + 2
+      expect(forecast.totalTarget).toBe(84); // 17 + 11 + 50 + 4 + 2
       expect(forecast.totalCommitted).toBe(0);
       expect(forecast.totalExpectedTurnup).toBe(0);
-      expect(forecast.totalNeeded).toBe(81);
+      expect(forecast.totalNeeded).toBe(84);
       expect(forecast.overallFulfillmentPercentage).toBe(0);
 
       const usher = forecast.roleBreakdown.find((r) => r.role === 'Usher');
       expect(usher).toBeDefined();
-      expect(usher?.target).toBe(15);
+      expect(usher?.target).toBe(17);
       expect(usher?.expectedTurnup).toBe(0);
-      expect(usher?.needed).toBe(15);
+      expect(usher?.needed).toBe(17);
     });
 
     it('calculates expected turnup with attendance probabilities and deficits', () => {
@@ -156,17 +159,17 @@ describe('volunteerStaffingUtils', () => {
       expect(forecast.totalCommitted).toBe(4);
       expect(forecast.totalExcused).toBe(1);
 
-      // Ushers: 1.0 + 0.6 = 1.6 -> round(2). Target 15 -> needed 13.
+      // Ushers: 1.0 + 0.6 = 1.6 -> round(2). Target 17 -> needed 15.
       const usher = forecast.roleBreakdown.find((r) => r.role === 'Usher')!;
       expect(usher.committed).toBe(2);
       expect(usher.expectedTurnup).toBe(2);
-      expect(usher.needed).toBe(13);
+      expect(usher.needed).toBe(15);
 
-      // Backroom: 0.8 -> round(1). Target 10 -> needed 9.
+      // Backroom: 0.8 -> round(1). Target 11 -> needed 10.
       const backroom = forecast.roleBreakdown.find((r) => r.role === 'Backroom Support')!;
       expect(backroom.committed).toBe(1);
       expect(backroom.expectedTurnup).toBe(1);
-      expect(backroom.needed).toBe(9);
+      expect(backroom.needed).toBe(10);
 
       // Prayer Coach: m4 = 0.3, m5 excused. Probability = 0.3 -> round(0). Target 50 -> needed 50.
       const pc = forecast.roleBreakdown.find((r) => r.role === 'Prayer Coach')!;

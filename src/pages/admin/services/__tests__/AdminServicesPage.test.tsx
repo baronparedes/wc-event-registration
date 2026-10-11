@@ -109,6 +109,10 @@ describe('AdminServicesPage', () => {
     fireEvent.click(dataButton);
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceData);
 
+    const forecastButton = screen.getByRole('button', { name: /Attendance Forecast/i });
+    fireEvent.click(forecastButton);
+    expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceForecast);
+
     const ctaButton = screen.getByRole('button', { name: 'Upload CSV' });
     fireEvent.click(ctaButton);
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceMigration);

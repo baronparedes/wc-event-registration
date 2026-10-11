@@ -250,9 +250,9 @@ describe('useAttendanceForecastData', () => {
     // dummyMember is Usher with 9AM commitment on 1st Sunday
     expect(nineAmSession.scheduled).toBe(1);
     expect(nineAmSession.confirmed).toBe(1); // turnup rate 0.9 -> round(0.9) = 1
-    // Usher target is 15
-    expect(nineAmSession.target).toBe(15);
-    expect(nineAmSession.overShort).toBe(1 - 15); // -14
+    // Usher target is 17
+    expect(nineAmSession.target).toBe(17);
+    expect(nineAmSession.overShort).toBe(1 - 17); // -16
 
     expect(result.current.selectedRoleGroup.tableTitle).toBe('USHER COMMITMENTS');
   });
