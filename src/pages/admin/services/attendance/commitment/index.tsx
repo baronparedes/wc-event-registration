@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { endOfQuarter, endOfYear, format, startOfQuarter, startOfYear } from 'date-fns';
+import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { ROUTE_PATHS } from '@/config/constants';
@@ -24,15 +25,37 @@ const excuseEventId = env.excuseEventId;
 
 export function AdminServiceAttendanceCommitmentPage() {
   const currentYear = new Date().getFullYear();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const roleParam = searchParams.get('role');
   const [timeframe, setTimeframe] = useState<DashboardTimeframe>('YTD');
   const {
     searchTerm: searchQuery,
     setSearchTerm: setSearchQuery,
     normalizedSearchTerm: normalizedSearchQuery,
   } = useDebounceSearch();
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(() => {
+    return roleParam
+      ? roleParam
+          .split(',')
+          .map((r) => r.trim())
+          .filter(Boolean)
+      : [];
+  });
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [selectedVolunteer, setSelectedVolunteer] = useState<CommitmentDashboardStat | null>(null);
+
+  const handleSelectedRolesChange = (newRoles: string[]) => {
+    setSelectedRoles(newRoles);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newRoles.length > 0) {
+        next.set('role', newRoles.join(','));
+      } else {
+        next.delete('role');
+      }
+      return next;
+    });
+  };
 
   const { startDate, endDate } = useMemo(() => {
     const startOfCurrentYear = startOfYear(new Date(currentYear, 0, 1));
@@ -146,7 +169,7 @@ export function AdminServiceAttendanceCommitmentPage() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           selectedRoles={selectedRoles}
-          onSelectedRolesChange={setSelectedRoles}
+          onSelectedRolesChange={handleSelectedRolesChange}
           categoryFilter={categoryFilter}
           onCategoryFilterChange={setCategoryFilter}
           roles={roles}

@@ -54,17 +54,33 @@ describe('AdminServicesPage', () => {
     mockUseServiceDashboardQuery.mockReturnValue({
       data: {
         time_slots: {
-          '9AM': { committed: 10, present: 8, walk_ins: 2, late_tardy: 1, roles: { Usher: 5 } },
-          '12NN': { committed: 20, present: 15, walk_ins: 5, late_tardy: 2, roles: { Usher: 10 } },
+          '9AM': {
+            committed: 10,
+            present: 8,
+            walk_ins: 2,
+            late_tardy: 1,
+            roles: { Usher: 5 },
+            committed_roles: { Usher: 5 },
+          },
+          '12NN': {
+            committed: 20,
+            present: 15,
+            walk_ins: 5,
+            late_tardy: 2,
+            roles: { Usher: 10 },
+            committed_roles: { Usher: 10 },
+          },
           '3PM': {
             committed: 30,
             present: 25,
             walk_ins: 10,
             late_tardy: 3,
             roles: { Usher: 15 },
+            committed_roles: { Usher: 15 },
           },
         },
         roles: ['Usher'],
+        committed_roles: ['Usher'],
       },
       isLoading: false,
       error: null,
@@ -81,6 +97,7 @@ describe('AdminServicesPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Services Dashboard' })).toBeInTheDocument();
+    expect(screen.getByText('Attendance & Commitment by Role')).toBeInTheDocument();
 
     // Check for some data rendering
     expect(screen.getByText('Committed')).toBeInTheDocument();
