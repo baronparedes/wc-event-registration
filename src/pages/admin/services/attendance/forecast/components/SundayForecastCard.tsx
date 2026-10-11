@@ -19,7 +19,7 @@ export function SundayForecastCard({
   tableTitle,
   showRoleBreakdownOption = true,
 }: SundayForecastCardProps) {
-  const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'chart'>('chart');
   const [showRoleBreakdown, setShowRoleBreakdown] = useState(false);
   const {
     ordinalLabel,

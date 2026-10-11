@@ -19,6 +19,22 @@ const {
   mockUseGetExcusedMembers: vi.fn(),
 }));
 
+vi.mock('recharts', async () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
+  ComposedChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="composed-chart">{children}</div>
+  ),
+  Bar: () => <div data-testid="bar" />,
+  Line: () => <div data-testid="line" />,
+  XAxis: () => <div data-testid="xaxis" />,
+  YAxis: () => <div data-testid="yaxis" />,
+  Tooltip: () => <div data-testid="tooltip" />,
+  Legend: () => <div data-testid="legend" />,
+  CartesianGrid: () => <div data-testid="cartesian-grid" />,
+}));
+
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
   useMembersAttendanceScoresQuery: () => mockUseMembersAttendanceScoresQuery(),
@@ -128,8 +144,16 @@ describe('AdminServiceAttendanceForecastPage', () => {
     expect(screen.getByText(/Total Monthly Quota/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Expected Turnup/i).length).toBeGreaterThanOrEqual(1);
 
-    // Check simplified commitment table matching user specification
+    // Default: Chart view is rendered
     expect(screen.getAllByText(/ALL VOLUNTEER COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId('composed-chart').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Total Target/i).length).toBeGreaterThanOrEqual(1);
+
+    // Switch to Table view
+    const tableToggleButtons = screen.getAllByRole('button', { name: /Table/i });
+    fireEvent.click(tableToggleButtons[0]);
+
+    // Check table headers
     expect(screen.getAllByText(/SESSION/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/TARGET/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/SCHEDULED/i).length).toBeGreaterThanOrEqual(1);

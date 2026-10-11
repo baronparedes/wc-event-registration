@@ -45,24 +45,24 @@ describe('SundayForecastCard', () => {
     },
   } as unknown as SundayForecastData;
 
-  it('defaults to Table view and allows toggling to Chart view', () => {
+  it('defaults to Chart view and allows toggling to Table view', () => {
     render(<SundayForecastCard sunday={mockSunday} />);
 
-    // Default view: Table is rendered
-    expect(screen.getByText('SESSION')).toBeInTheDocument();
-    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument();
-
-    // Toggle to Chart view
-    const chartButton = screen.getByRole('button', { name: /Chart/i });
-    fireEvent.click(chartButton);
-
+    // Default view: Chart is rendered
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument();
     expect(screen.queryByText('SESSION')).not.toBeInTheDocument();
 
-    // Toggle back to Table view
+    // Toggle to Table view
     const tableButton = screen.getByRole('button', { name: /Table/i });
     fireEvent.click(tableButton);
 
     expect(screen.getByText('SESSION')).toBeInTheDocument();
+    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument();
+
+    // Toggle back to Chart view
+    const chartButton = screen.getByRole('button', { name: /Chart/i });
+    fireEvent.click(chartButton);
+
+    expect(screen.getByTestId('composed-chart')).toBeInTheDocument();
   });
 });
