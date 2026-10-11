@@ -392,9 +392,9 @@ export function ForecastMonthlyTrendChart({
   }
 
   return (
-    <article className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-2xs overflow-hidden transition-all">
+    <article className="flex flex-col rounded-xl border border-border bg-surface shadow-xs overflow-hidden transition-all">
       {/* Header */}
-      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-white dark:bg-surface">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-surface">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <TrendingUp className="h-5 w-5" aria-hidden="true" />
@@ -432,7 +432,7 @@ export function ForecastMonthlyTrendChart({
                 type="button"
                 onClick={() => setSelectedSlot(opt.id)}
                 aria-pressed={selectedSlot === opt.id}
-                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                   selectedSlot === opt.id
                     ? 'bg-primary text-white shadow-xs font-bold'
                     : 'text-muted hover:text-text hover:bg-surface-hover/80'

@@ -12,7 +12,7 @@ export function ForecastMonthSummaryBar({ summary }: ForecastMonthSummaryBarProp
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {/* Total Sundays */}
-      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted">Sundays in Month</span>
           <CalendarCheck2 className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -24,7 +24,7 @@ export function ForecastMonthSummaryBar({ summary }: ForecastMonthSummaryBarProp
       </div>
 
       {/* Target Quota */}
-      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted">Total Monthly Quota</span>
           <Users className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -36,7 +36,7 @@ export function ForecastMonthSummaryBar({ summary }: ForecastMonthSummaryBarProp
       </div>
 
       {/* Expected Turnup */}
-      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted">Expected Turnup</span>
           <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -55,7 +55,7 @@ export function ForecastMonthSummaryBar({ summary }: ForecastMonthSummaryBarProp
       </div>
 
       {/* Targets Status */}
-      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted">Staffing Status</span>
           <CheckCircle2

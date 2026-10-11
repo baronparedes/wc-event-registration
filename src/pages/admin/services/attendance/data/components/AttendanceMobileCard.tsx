@@ -9,6 +9,7 @@ import {
   MobileCardHeader,
 } from '@/components/ui/MobileCard';
 import { type ServiceAttendance } from '@/lib/domain/services';
+import { TIME_SLOTS } from '@/pages/admin/services/constants';
 
 export interface AttendanceMobileCardProps {
   memberKey: string;
@@ -52,11 +53,11 @@ export function AttendanceMobileCard({ memberKey, records }: AttendanceMobileCar
               className="shrink-0"
             />
             <div className="min-w-0">
-              <h2 className="truncate text-[17px] font-semibold leading-snug text-[#0f172a]">
+              <h2 className="truncate text-[17px] font-semibold leading-snug text-text">
                 {first.user?.full_name || '—'}
               </h2>
               {first.user?.nickname && (
-                <p className="truncate text-sm text-slate-500">({first.user.nickname})</p>
+                <p className="truncate text-sm text-muted">({first.user.nickname})</p>
               )}
               {roleCategory && (
                 <div className="flex flex-wrap gap-2 pt-1 pb-1 text-xs text-muted">
@@ -79,18 +80,18 @@ export function AttendanceMobileCard({ memberKey, records }: AttendanceMobileCar
 
         {/* Three Grid Cards for the time slots */}
         <div className="grid grid-cols-3 gap-2">
-          {['9AM', '12NN', '3PM'].map((slot) => {
+          {TIME_SLOTS.map((slot) => {
             const record = recordsBySlot[slot];
 
             if (!record) {
               return (
                 <div
                   key={`${memberKey}-${slot}`}
-                  className="flex flex-col items-center justify-center rounded-lg border border-border bg-slate-50 p-2.5 text-center opacity-60 min-h-[110px]"
+                  className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface-hover/50 p-2.5 text-center opacity-60 min-h-[110px]"
                 >
-                  <p className="font-bold text-sm text-slate-500 mb-1">{slot}</p>
+                  <p className="font-bold text-sm text-muted mb-1">{slot}</p>
                   <div>
-                    <span className="text-xs text-slate-400 italic">No record</span>
+                    <span className="text-xs text-muted italic">No record</span>
                   </div>
                 </div>
               );
@@ -99,7 +100,7 @@ export function AttendanceMobileCard({ memberKey, records }: AttendanceMobileCar
             return (
               <div
                 key={`${record.id}-${slot}`}
-                className="flex flex-col justify-between rounded-lg border border-border bg-white p-2.5 shadow-xs min-h-[110px]"
+                className="flex flex-col justify-between rounded-lg border border-border bg-surface p-2.5 shadow-xs min-h-[110px]"
               >
                 <div className="border-b border-border/40 pb-1.5 mb-1.5 min-w-0">
                   <span className="font-bold text-sm text-text block">{slot}</span>

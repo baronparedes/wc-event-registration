@@ -29,7 +29,7 @@ export function ForecastSlotSelector({ activeSlot, onChangeSlot }: ForecastSlotS
                 key={slot}
                 type="button"
                 onClick={() => onChangeSlot(slot)}
-                className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus:outline-none flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-md flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   isActive
                     ? 'border-primary text-primary font-semibold'
                     : 'border-transparent text-muted hover:border-border hover:text-text'
