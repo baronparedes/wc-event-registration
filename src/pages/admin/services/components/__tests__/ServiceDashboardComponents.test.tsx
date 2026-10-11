@@ -188,6 +188,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
           walk_ins: 2,
           late_tardy: 1,
           roles: { Usher: 5, Greeter: 3 },
+          committed_roles: { Usher: 10, Greeter: 4 },
         },
         '12NN': {
           committed: 20,
@@ -195,6 +196,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
           walk_ins: 5,
           late_tardy: 2,
           roles: { Usher: 10, Greeter: 2 },
+          committed_roles: { Usher: 20, Greeter: 3 },
         },
         '3PM': {
           committed: 30,
@@ -202,9 +204,11 @@ describe('ServiceDashboardRoleBreakdown', () => {
           walk_ins: 10,
           late_tardy: 3,
           roles: { Usher: 15, Greeter: 1 },
+          committed_roles: { Usher: 30, Greeter: 2 },
         },
       },
       roles: ['Usher', 'Greeter'],
+      committed_roles: ['Usher', 'Greeter'],
     };
 
     render(
@@ -214,12 +218,12 @@ describe('ServiceDashboardRoleBreakdown', () => {
       />,
     );
 
-    expect(screen.getByText('Attendance by Role')).toBeInTheDocument();
+    expect(screen.getByText('Attendance & Commitment by Role')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
-    expect(screen.getByText('30')).toBeInTheDocument(); // 5 + 10 + 15
+    expect(screen.getByText('30 / 60')).toBeInTheDocument(); // 5 + 10 + 15 / 10 + 20 + 30
 
     expect(screen.getByText('Greeter')).toBeInTheDocument();
-    expect(screen.getByText('6')).toBeInTheDocument(); // 3 + 2 + 1
+    expect(screen.getByText('6 / 9')).toBeInTheDocument(); // 3 + 2 + 1 / 4 + 3 + 2
   });
 
   it('renders empty message when no roles are present', () => {

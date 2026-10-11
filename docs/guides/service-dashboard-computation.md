@@ -176,9 +176,9 @@ Volunteers who served during a service slot they were not originally scheduled f
   ) as total_walk_ins
   ```
 
-### 6. Attendance by Role
+### 6. Attendance & Commitment by Role
 
-Breakdown of attended volunteers per primary role across service time slots.
+Combined breakdown of attended vs scheduled/committed volunteers per primary role across service time slots (`9AM`, `12NN`, `3PM`).
 
 - **Primary Role Resolution**:
   A volunteer's role may contain composite or slash-separated assignments (e.g. `Usher / Greeter`). The primary role is extracted as the first segment:
@@ -189,8 +189,10 @@ Breakdown of attended volunteers per primary role across service time slots.
     1
   ) as primary_role
   ```
-- **Grouping**: Non-walk-in attendees grouped by primary role and time slot (`role_data`).
-- **Display**: Rendered in the bottom `Attendance by Role` section card with individual role totals and per-slot counts.
+- **Grouping**:
+  - Attended volunteers: grouped by primary role and time slot (`role_data`).
+  - Committed volunteers: active scheduled volunteers grouped by primary role and time slot (`committed_role_data`).
+- **Display**: Rendered in the unified `Attendance & Commitment by Role` section card with role total badges (`Attended / Committed`) and per-slot breakdown formatted as `Attended / Committed` (e.g., `8 / 10`). Attended counts remain clickable to drill down to detailed attendance records in a new tab.
 
 ---
 
@@ -234,6 +236,11 @@ The `public.get_service_dashboard_stats` RPC returns JSON conforming to this sch
         "Usher": 15,
         "Greeter": 8,
         "Production": 15
+      },
+      "committed_roles": {
+        "Usher": 16,
+        "Greeter": 10,
+        "Production": 16
       }
     },
     "12NN": {
@@ -245,6 +252,11 @@ The `public.get_service_dashboard_stats` RPC returns JSON conforming to this sch
         "Usher": 12,
         "Greeter": 6,
         "Production": 12
+      },
+      "committed_roles": {
+        "Usher": 14,
+        "Greeter": 8,
+        "Production": 13
       }
     },
     "3PM": {
@@ -256,9 +268,15 @@ The `public.get_service_dashboard_stats` RPC returns JSON conforming to this sch
         "Usher": 10,
         "Greeter": 5,
         "Production": 10
+      },
+      "committed_roles": {
+        "Usher": 11,
+        "Greeter": 6,
+        "Production": 11
       }
     }
   },
-  "roles": ["Greeter", "Production", "Usher"]
+  "roles": ["Greeter", "Production", "Usher"],
+  "committed_roles": ["Greeter", "Production", "Usher"]
 }
 ```

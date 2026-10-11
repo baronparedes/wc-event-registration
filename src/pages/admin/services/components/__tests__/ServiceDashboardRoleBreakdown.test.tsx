@@ -14,6 +14,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
   const defaultParams = new URLSearchParams('from=2023-01-01&to=2023-01-31');
   const mockStats: DashboardStatsResponse = {
     roles: ['Usher', 'Tech'],
+    committed_roles: ['Usher', 'Tech'],
     time_slots: {
       '9AM': {
         committed: 10,
@@ -21,6 +22,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
         walk_ins: 2,
         late_tardy: 1,
         roles: { Usher: 5, Tech: 3 },
+        committed_roles: { Usher: 6, Tech: 4 },
       },
       '12NN': {
         committed: 15,
@@ -28,28 +30,37 @@ describe('ServiceDashboardRoleBreakdown', () => {
         walk_ins: 3,
         late_tardy: 0,
         roles: { Usher: 8, Tech: 4 },
+        committed_roles: { Usher: 9, Tech: 5 },
       },
-      '3PM': { committed: 5, present: 5, walk_ins: 0, late_tardy: 0, roles: { Usher: 2, Tech: 3 } },
+      '3PM': {
+        committed: 5,
+        present: 5,
+        walk_ins: 0,
+        late_tardy: 0,
+        roles: { Usher: 2, Tech: 3 },
+        committed_roles: { Usher: 3, Tech: 2 },
+      },
     },
   };
 
   it('renders "No volunteer roles" when roles array is empty', () => {
     render(
       <ServiceDashboardRoleBreakdown
-        stats={{ ...mockStats, roles: [] }}
+        stats={{ ...mockStats, roles: [], committed_roles: [] }}
         dateFilterParams={defaultParams}
       />,
     );
     expect(screen.getByText('No volunteer roles recorded for this period.')).toBeInTheDocument();
   });
 
-  it('renders role breakdown cards correctly', () => {
+  it('renders role breakdown cards correctly with attended / committed totals', () => {
     render(<ServiceDashboardRoleBreakdown stats={mockStats} dateFilterParams={defaultParams} />);
+    expect(screen.getByText('Attendance & Commitment by Role')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('Tech')).toBeInTheDocument();
 
-    expect(screen.getByText('15')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('15 / 18')).toBeInTheDocument();
+    expect(screen.getByText('10 / 11')).toBeInTheDocument();
   });
 
   it('opens new tab with correct URL when a role count is clicked', async () => {
