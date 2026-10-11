@@ -54,6 +54,7 @@ export const ROUTE_PATHS = {
   adminServiceAttendanceMigration: '/admin/services/attendance/migration',
   adminServiceAttendanceData: '/admin/services/attendance/data',
   adminServiceAttendanceCommitment: '/admin/services/attendance/commitment',
+  adminServiceAttendanceForecast: '/admin/services/attendance/forecast',
   adminNotifications: '/admin/settings/notifications',
   adminNotificationsDashboard: '/admin/settings/notifications/dashboard',
   adminSundayReminders: '/admin/settings/notifications/sunday-reminders',
@@ -108,6 +109,7 @@ export type AppRouteKey =
   | 'adminServiceAttendanceMigration'
   | 'adminServiceAttendanceData'
   | 'adminServiceAttendanceCommitment'
+  | 'adminServiceAttendanceForecast'
   | 'adminNotifications'
   | 'adminNotificationsDashboard'
   | 'adminSundayReminders'
@@ -343,6 +345,12 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminServiceAttendanceCommitment',
     path: ROUTE_PATHS.adminServiceAttendanceCommitment,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin', 'slod'],
+  },
+  {
+    key: 'adminServiceAttendanceForecast',
+    path: ROUTE_PATHS.adminServiceAttendanceForecast,
     layout: 'shell',
     allowedRoles: ['admin', 'super_admin', 'slod'],
   },
