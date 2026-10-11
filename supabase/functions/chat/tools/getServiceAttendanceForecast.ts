@@ -22,26 +22,32 @@ type SlotForecast = {
   roles: Record<string, RoleForecast>;
 };
 
-type SlotRoleTargets = Record<string, number>;
+export type SlotRoleTargets = Record<string, number>;
 
-type VolunteerTargetsBySlot = {
+export type VolunteerTargetsBySlot = {
   '9AM': SlotRoleTargets;
   '12NN': SlotRoleTargets;
   '3PM': SlotRoleTargets;
 };
 
 // Default targets aligned with frontend (fallback if none provided)
-const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
-  Usher: 10,
-  'IMT Support': 2,
+export const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
+  Usher: 17,
+  'Backroom Support': 11,
+  'Prayer Coach': 50,
+  'IMT Support': 4,
   'VMT Support': 2,
-  'Backroom Support': 2,
 };
 
-const DEFAULT_VOLUNTEER_TARGETS_BY_SLOT: VolunteerTargetsBySlot = {
+export const DEFAULT_VOLUNTEER_TARGETS_BY_SLOT: VolunteerTargetsBySlot = {
   '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-  '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
+  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, 'Prayer Coach': 40, Usher: 15 },
+  '3PM': {
+    ...DEFAULT_VOLUNTEER_ROLE_TARGETS,
+    'Prayer Coach': 60,
+    Usher: 19,
+    'Backroom Support': 13,
+  },
 };
 
 const DEFAULT_TURNUP_RATE = 0.8;
@@ -78,7 +84,7 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
 
   return tool({
     description:
-      'Forecast volunteer attendance for Sunday services, specifically to answer questions like "Do I have enough volunteers next Sunday?". Returns expected turnup, committed counts, excused counts, needed volunteers (deficits), and surplus per service slot based on historical attendance rates and targets. Uses "Usher", "IMT Support", "VMT Support", and "Backroom Support" targets.',
+      'Forecast volunteer attendance for Sunday services, specifically to answer questions like "Do I have enough volunteers next Sunday?". Returns expected turnup, committed counts, excused counts, needed volunteers (deficits), and surplus per service slot based on historical attendance rates and targets. Uses standard volunteer role targets ("Usher", "Backroom Support", "Prayer Coach", "IMT Support", "VMT Support").',
     inputSchema: schema,
     execute: async ({ targetStartDate, targetEndDate, targetsOverride }) => {
       const now = getPhNow();
