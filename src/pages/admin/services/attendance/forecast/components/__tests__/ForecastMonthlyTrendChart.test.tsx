@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { SundayForecastData } from '@/pages/admin/services/attendance/forecast/hooks/useAttendanceForecastData';
 
-import { ForecastMonthlyTrendChart } from '../ForecastMonthlyTrendChart';
+import { CustomXAxisTick, ForecastMonthlyTrendChart } from '../ForecastMonthlyTrendChart';
 
 vi.mock('recharts', async () => {
   return {
@@ -150,5 +150,149 @@ describe('ForecastMonthlyTrendChart', () => {
       <ForecastMonthlyTrendChart sundays={[]} roleGroupLabel="All Roles" />,
     );
     expect(container.firstChild).toBeNull();
+  });
+
+  describe('CustomXAxisTick', () => {
+    const mockChartData = [
+      {
+        id: '2026-10-04-9AM',
+        label: 'Oct 4 9AM',
+        shortLabel: '10/4 9A',
+        sundayLabel: '1st Sunday',
+        sundayDate: 'Oct 4',
+        formattedDate: 'October 4, 2026',
+        session: '9AM' as const,
+        sessionLabel: '9AM Session',
+        sessionDisplay: '9 AM',
+        isMiddleOfSunday: false,
+        isFirstOfSunday: true,
+        isLastOfSunday: false,
+        target: 80,
+        scheduled: 85,
+        expected: 80,
+        overShort: 0,
+        hasDeficit: false,
+        fulfillmentRate: 100,
+      },
+      {
+        id: '2026-10-04-12NN',
+        label: 'Oct 4 12NN',
+        shortLabel: '10/4 12N',
+        sundayLabel: '1st Sunday',
+        sundayDate: 'Oct 4',
+        formattedDate: 'October 4, 2026',
+        session: '12NN' as const,
+        sessionLabel: '12NN Session',
+        sessionDisplay: '12 NN',
+        isMiddleOfSunday: true,
+        isFirstOfSunday: false,
+        isLastOfSunday: false,
+        target: 70,
+        scheduled: 75,
+        expected: 70,
+        overShort: 0,
+        hasDeficit: false,
+        fulfillmentRate: 100,
+      },
+      {
+        id: '2026-10-04-3PM',
+        label: 'Oct 4 3PM',
+        shortLabel: '10/4 3P',
+        sundayLabel: '1st Sunday',
+        sundayDate: 'Oct 4',
+        formattedDate: 'October 4, 2026',
+        session: '3PM' as const,
+        sessionLabel: '3PM Session',
+        sessionDisplay: '3 PM',
+        isMiddleOfSunday: false,
+        isFirstOfSunday: false,
+        isLastOfSunday: true,
+        target: 90,
+        scheduled: 80,
+        expected: 75,
+        overShort: -15,
+        hasDeficit: true,
+        fulfillmentRate: 83,
+      },
+    ];
+
+    it('renders session slot on top and groups Sunday date badge under 12 NN in All Sessions view', () => {
+      // 9 AM tick (index 0)
+      const { rerender } = render(
+        <svg>
+          <CustomXAxisTick
+            x={100}
+            y={200}
+            payload={{ index: 0, value: 'Oct 4 9AM' }}
+            chartData={mockChartData}
+            isAllSessions={true}
+          />
+        </svg>,
+      );
+      expect(screen.getByText('9 AM')).toBeInTheDocument();
+      expect(screen.queryByText('Oct 4')).not.toBeInTheDocument();
+
+      // 12 NN tick (index 1) - middle of Sunday, should render both session and Sunday badge
+      rerender(
+        <svg>
+          <CustomXAxisTick
+            x={150}
+            y={200}
+            payload={{ index: 1, value: 'Oct 4 12NN' }}
+            chartData={mockChartData}
+            isAllSessions={true}
+          />
+        </svg>,
+      );
+      expect(screen.getByText('12 NN')).toBeInTheDocument();
+      expect(screen.getByText('Oct 4')).toBeInTheDocument();
+
+      // 3 PM tick (index 2)
+      rerender(
+        <svg>
+          <CustomXAxisTick
+            x={200}
+            y={200}
+            payload={{ index: 2, value: 'Oct 4 3PM' }}
+            chartData={mockChartData}
+            isAllSessions={true}
+          />
+        </svg>,
+      );
+      expect(screen.getByText('3 PM')).toBeInTheDocument();
+      expect(screen.queryByText('Oct 4')).not.toBeInTheDocument();
+    });
+
+    it('renders Sunday date and ordinal in single session view', () => {
+      render(
+        <svg>
+          <CustomXAxisTick
+            x={100}
+            y={200}
+            payload={{ index: 0, value: 'Oct 4 9AM' }}
+            chartData={mockChartData}
+            isAllSessions={false}
+          />
+        </svg>,
+      );
+      expect(screen.getByText('Oct 4')).toBeInTheDocument();
+      expect(screen.getByText('1st Sunday')).toBeInTheDocument();
+      expect(screen.queryByText('9 AM')).not.toBeInTheDocument();
+    });
+
+    it('returns null if chartData or point is not found', () => {
+      const { container } = render(
+        <svg>
+          <CustomXAxisTick
+            x={100}
+            y={200}
+            payload={{ index: 99, value: 'Unknown' }}
+            chartData={mockChartData}
+            isAllSessions={true}
+          />
+        </svg>,
+      );
+      expect(container.querySelector('g')).toBeNull();
+    });
   });
 });

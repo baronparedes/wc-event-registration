@@ -47,7 +47,7 @@ export function SundayForecastCard({
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs font-semibold">
+              <Badge variant="default" className="text-xs font-semibold">
                 {ordinalLabel}
               </Badge>
               <h3 className="text-base font-bold text-text truncate">{formattedDate}</h3>

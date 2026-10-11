@@ -165,6 +165,121 @@ function renderExpectedDot(props: {
   );
 }
 
+export interface CustomXAxisTickProps {
+  x?: number;
+  y?: number;
+  payload?: {
+    value?: string;
+    index?: number;
+  };
+  index?: number;
+  chartData?: Array<{
+    id: string;
+    label: string;
+    shortLabel: string;
+    sundayLabel: string;
+    sundayDate: string;
+    formattedDate: string;
+    session: TimeSlot;
+    sessionLabel: string;
+    sessionDisplay: string;
+    isMiddleOfSunday: boolean;
+    isFirstOfSunday: boolean;
+    isLastOfSunday: boolean;
+    target: number;
+    scheduled: number;
+    expected: number;
+    overShort: number;
+    hasDeficit: boolean;
+    fulfillmentRate: number;
+  }>;
+  isAllSessions?: boolean;
+}
+
+export function CustomXAxisTick({
+  x = 0,
+  y = 0,
+  payload,
+  index,
+  chartData = [],
+  isAllSessions = true,
+}: CustomXAxisTickProps) {
+  const itemIndex = payload?.index ?? index ?? 0;
+  const point = chartData[itemIndex];
+  if (!point) return null;
+
+  if (!isAllSessions) {
+    // Single session view: each tick represents an individual Sunday
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text
+          x={0}
+          y={14}
+          textAnchor="middle"
+          fill="var(--color-text)"
+          fontSize={11}
+          fontWeight={700}
+        >
+          {point.sundayDate}
+        </text>
+        <text
+          x={0}
+          y={28}
+          textAnchor="middle"
+          fill="var(--color-muted)"
+          fontSize={10}
+          fontWeight={500}
+        >
+          {point.sundayLabel}
+        </text>
+      </g>
+    );
+  }
+
+  // All Sessions view: display session slot (9 AM, 12 NN, 3 PM) and group Sunday date under 12 NN
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {/* Session time slot */}
+      <text
+        x={0}
+        y={13}
+        textAnchor="middle"
+        fill="var(--color-muted)"
+        fontSize={10}
+        fontWeight={600}
+      >
+        {point.sessionDisplay}
+      </text>
+
+      {/* Grouped Sunday date badge centered under the 12 NN session */}
+      {point.isMiddleOfSunday && (
+        <g>
+          <rect
+            x={-28}
+            y={20}
+            width={56}
+            height={19}
+            rx={9.5}
+            fill="var(--color-surface)"
+            stroke="var(--color-border)"
+            strokeWidth={1}
+          />
+          <text
+            x={0}
+            y={33}
+            textAnchor="middle"
+            fill="var(--color-text)"
+            fontSize={11}
+            fontWeight={700}
+          >
+            {point.sundayDate}
+          </text>
+        </g>
+      )}
+    </g>
+  );
+}
+
 export function ForecastMonthlyTrendChart({
   sundays,
   roleGroupLabel = 'All Roles',
@@ -178,9 +293,14 @@ export function ForecastMonthlyTrendChart({
       label: string;
       shortLabel: string;
       sundayLabel: string;
+      sundayDate: string;
       formattedDate: string;
       session: TimeSlot;
       sessionLabel: string;
+      sessionDisplay: string;
+      isMiddleOfSunday: boolean;
+      isFirstOfSunday: boolean;
+      isLastOfSunday: boolean;
       target: number;
       scheduled: number;
       expected: number;
@@ -203,15 +323,22 @@ export function ForecastMonthlyTrendChart({
         const hasDeficit = overShort < 0;
         const fulfillmentRate = target > 0 ? Math.round((expected / target) * 100) : 100;
         const slotShort = sess.slot === '9AM' ? '9A' : sess.slot === '12NN' ? '12N' : '3P';
+        const sessionDisplay =
+          sess.slot === '9AM' ? '9 AM' : sess.slot === '12NN' ? '12 NN' : '3 PM';
 
         points.push({
           id: `${s.isoDateKey}-${sess.slot}`,
           label: `${format(s.date, 'MMM d')} ${sess.slot}`,
           shortLabel: `${format(s.date, 'M/d')} ${slotShort}`,
           sundayLabel: s.ordinalLabel,
+          sundayDate: format(s.date, 'MMM d'),
           formattedDate: format(s.date, 'MMMM d, yyyy'),
           session: sess.slot,
           sessionLabel: `${sess.slot} Session`,
+          sessionDisplay,
+          isMiddleOfSunday: sess.slot === '12NN',
+          isFirstOfSunday: sess.slot === '9AM',
+          isLastOfSunday: sess.slot === '3PM',
           target,
           scheduled,
           expected,
@@ -275,7 +402,7 @@ export function ForecastMonthlyTrendChart({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-bold text-text truncate">Monthly Attendance Trend</h3>
-              <Badge variant="outline" className="text-xs font-semibold">
+              <Badge variant="default" className="text-xs font-semibold">
                 {roleGroupLabel}
               </Badge>
               {totals.sessionsWithDeficit > 0 && (
@@ -338,8 +465,11 @@ export function ForecastMonthlyTrendChart({
                 dataKey="label"
                 tickLine={false}
                 axisLine={{ stroke: 'var(--color-border)' }}
-                tick={{ fill: 'var(--color-text)', fontSize: 11, fontWeight: 600 }}
-                dy={6}
+                height={52}
+                interval={0}
+                tick={
+                  <CustomXAxisTick chartData={chartData} isAllSessions={selectedSlot === 'ALL'} />
+                }
               />
               <YAxis
                 tickLine={false}
