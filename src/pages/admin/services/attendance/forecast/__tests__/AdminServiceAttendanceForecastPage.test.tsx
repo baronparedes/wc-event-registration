@@ -182,8 +182,8 @@ describe('AdminServiceAttendanceForecastPage', () => {
   it('allows changing role group tabs and updates table header', () => {
     renderPage();
 
-    // Default: All Roles is selected, so Individual Role Breakdown option is visible
-    expect(screen.getAllByText(/Show Individual Role Breakdown/i).length).toBeGreaterThan(0);
+    // Default: All Roles is selected, so Individual Role Breakdown is visible
+    expect(screen.getAllByText(/Individual Role Breakdown/i).length).toBeGreaterThan(0);
 
     const pcTab = screen.getByRole('tab', { name: /Prayer Coach/i });
     fireEvent.click(pcTab);
@@ -192,7 +192,7 @@ describe('AdminServiceAttendanceForecastPage', () => {
     expect(screen.getAllByText(/PRAYER COACH COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
 
     // When an individual role is selected, Individual Role Breakdown is hidden
-    expect(screen.queryByText(/Show Individual Role Breakdown/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Individual Role Breakdown/i)).not.toBeInTheDocument();
   });
 
   it('allows filtering by individual Sunday tab', () => {

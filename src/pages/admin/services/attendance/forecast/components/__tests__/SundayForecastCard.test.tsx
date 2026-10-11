@@ -67,4 +67,23 @@ describe('SundayForecastCard', () => {
 
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument();
   });
+
+  it('always shows individual role breakdown when showRoleBreakdownOption is true', () => {
+    render(<SundayForecastCard sunday={mockSunday} showRoleBreakdownOption={true} />);
+
+    expect(screen.getByText('Individual Role Breakdown')).toBeInTheDocument();
+    expect(screen.getByText('Usher')).toBeInTheDocument();
+    expect(screen.getByText('Need 7')).toBeInTheDocument();
+    expect(screen.getByText('Target: 15')).toBeInTheDocument();
+    // Collapse/expand button should not exist
+    expect(screen.queryByText(/Show Individual Role Breakdown/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hide Individual Role Breakdown/i)).not.toBeInTheDocument();
+  });
+
+  it('hides individual role breakdown when showRoleBreakdownOption is false', () => {
+    render(<SundayForecastCard sunday={mockSunday} showRoleBreakdownOption={false} />);
+
+    expect(screen.queryByText('Individual Role Breakdown')).not.toBeInTheDocument();
+    expect(screen.queryByText('Need 7')).not.toBeInTheDocument();
+  });
 });
