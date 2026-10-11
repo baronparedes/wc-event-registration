@@ -35,20 +35,28 @@ export function SundayCommitmentTable({
   return (
     <div className="w-full overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
       {/* Table Banner Title */}
-      <div className="flex items-center justify-center gap-2 border-b border-border bg-surface-hover/50 px-4 py-2.5 text-center">
+      <div className="flex items-center justify-center gap-2 border-b border-border bg-surface-hover/50 px-4 py-3 text-center">
         <Users className="h-4 w-4 text-primary" aria-hidden="true" />
-        <h4 className="text-xs sm:text-sm font-bold tracking-wider text-text uppercase">{title}</h4>
+        <h4 className="text-sm font-bold tracking-wider text-text uppercase">{title}</h4>
       </div>
 
-      {/* Shared UI Primitive ListTable */}
-      <ListTable density="dense" className="w-full text-center">
+      {/* Shared UI Primitive ListTable with Fixed Equal Column Widths */}
+      <ListTable density="dense" className="w-full table-fixed text-center">
         <ListTableHead>
           <ListTableHeaderRow variant="default">
-            <ListTableHeaderCell className="text-center font-bold">SESSION</ListTableHeaderCell>
-            <ListTableHeaderCell className="text-center font-bold">TARGET</ListTableHeaderCell>
-            <ListTableHeaderCell className="text-center font-bold">SCHEDULED</ListTableHeaderCell>
-            <ListTableHeaderCell className="text-center font-bold">CONFIRMED</ListTableHeaderCell>
-            <ListTableHeaderCell className="text-center font-bold">
+            <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
+              SESSION
+            </ListTableHeaderCell>
+            <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
+              TARGET
+            </ListTableHeaderCell>
+            <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
+              SCHEDULED
+            </ListTableHeaderCell>
+            <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
+              CONFIRMED
+            </ListTableHeaderCell>
+            <ListTableHeaderCell className="w-1/5 text-center text-xs font-bold uppercase tracking-wider text-muted">
               <span className="text-primary font-bold">Over</span>
               <span className="text-danger font-bold">[/Short]</span>
             </ListTableHeaderCell>
@@ -62,21 +70,21 @@ export function SundayCommitmentTable({
 
             return (
               <ListTableRow key={session.slot} hover="muted">
-                <ListTableCell className="font-semibold text-text text-center">
+                <ListTableCell className="w-1/5 text-center text-sm font-semibold text-text">
                   {session.slot}
                 </ListTableCell>
-                <ListTableCell className="text-muted tabular-nums text-center">
+                <ListTableCell className="w-1/5 text-center text-sm font-semibold text-text tabular-nums">
                   {session.target}
                 </ListTableCell>
-                <ListTableCell className="text-muted tabular-nums text-center">
+                <ListTableCell className="w-1/5 text-center text-sm font-semibold text-text tabular-nums">
                   {session.scheduled}
                 </ListTableCell>
-                <ListTableCell className="text-text tabular-nums font-semibold text-center">
+                <ListTableCell className="w-1/5 text-center text-sm font-semibold text-text tabular-nums">
                   {session.confirmed}
                 </ListTableCell>
-                <ListTableCell className="text-center">
+                <ListTableCell className="w-1/5 text-center text-sm font-semibold tabular-nums">
                   <span
-                    className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${
+                    className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-bold tabular-nums ${
                       isNegative
                         ? 'bg-danger/10 text-danger'
                         : isPositive
@@ -94,23 +102,23 @@ export function SundayCommitmentTable({
           {/* Total Summary Row */}
           <ListTableRow
             hover="none"
-            className="border-t-2 border-border bg-surface-hover/60 font-bold text-center"
+            className="border-t-2 border-border bg-surface-hover/60 text-center font-bold"
           >
-            <ListTableCell className="text-text font-bold uppercase tracking-wider text-xs text-center">
+            <ListTableCell className="w-1/5 text-center text-sm font-bold uppercase tracking-wider text-text">
               TOTAL
             </ListTableCell>
-            <ListTableCell className="text-text tabular-nums font-bold text-center">
+            <ListTableCell className="w-1/5 text-center text-sm font-bold text-text tabular-nums">
               {totalTarget}
             </ListTableCell>
-            <ListTableCell className="text-text tabular-nums font-bold text-center">
+            <ListTableCell className="w-1/5 text-center text-sm font-bold text-text tabular-nums">
               {totalScheduled}
             </ListTableCell>
-            <ListTableCell className="text-text tabular-nums font-bold text-center">
+            <ListTableCell className="w-1/5 text-center text-sm font-bold text-text tabular-nums">
               {totalConfirmed}
             </ListTableCell>
-            <ListTableCell className="text-center">
+            <ListTableCell className="w-1/5 text-center text-sm font-bold tabular-nums">
               <span
-                className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-black tabular-nums ${
+                className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-bold tabular-nums ${
                   isTotalNegative
                     ? 'bg-danger/15 text-danger'
                     : isTotalPositive
