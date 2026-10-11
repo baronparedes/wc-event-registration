@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SundayForecastData } from '@/pages/admin/services/attendance/forecast/hooks/useAttendanceForecastData';
@@ -45,7 +45,11 @@ describe('ForecastMonthlyTrendChart', () => {
       formattedDate: 'October 4, 2026',
       entriesByTimeSlot: { '9AM': [], '12NN': [], '3PM': [] },
       totalScheduled: 250,
-      sessions: [],
+      sessions: [
+        { slot: '9AM', target: 81, scheduled: 84, confirmed: 70, overShort: -11 },
+        { slot: '12NN', target: 71, scheduled: 83, confirmed: 70, overShort: -1 },
+        { slot: '3PM', target: 91, scheduled: 83, confirmed: 70, overShort: -21 },
+      ],
       totalTarget: 243,
       totalConfirmed: 210,
       totalOverShort: -33,
@@ -61,7 +65,11 @@ describe('ForecastMonthlyTrendChart', () => {
       formattedDate: 'October 11, 2026',
       entriesByTimeSlot: { '9AM': [], '12NN': [], '3PM': [] },
       totalScheduled: 260,
-      sessions: [],
+      sessions: [
+        { slot: '9AM', target: 81, scheduled: 90, confirmed: 85, overShort: 4 },
+        { slot: '12NN', target: 71, scheduled: 85, confirmed: 80, overShort: 9 },
+        { slot: '3PM', target: 91, scheduled: 85, confirmed: 80, overShort: -11 },
+      ],
       totalTarget: 243,
       totalConfirmed: 245,
       totalOverShort: 2,
@@ -91,6 +99,29 @@ describe('ForecastMonthlyTrendChart', () => {
     expect(items[0].scheduled).toBe(250);
     expect(items[0].expected).toBe(210);
     expect(items[0].overShort).toBe(-33);
+  });
+
+  it('allows filtering by session slot', () => {
+    render(<ForecastMonthlyTrendChart sundays={sampleSundays} roleGroupLabel="All Roles" />);
+
+    const nineAmButton = screen.getByRole('button', { name: '9 AM' });
+    fireEvent.click(nineAmButton);
+
+    expect(nineAmButton).toHaveAttribute('aria-pressed', 'true');
+
+    // 9 AM targets across the two Sundays: 81 + 81 = 162
+    expect(screen.getByText('162')).toBeInTheDocument();
+    // 9 AM scheduled across the two Sundays: 84 + 90 = 174
+    expect(screen.getByText('174')).toBeInTheDocument();
+    // 9 AM expected across the two Sundays: 70 + 85 = 155
+    expect(screen.getByText('155')).toBeInTheDocument();
+
+    const chart = screen.getByTestId('composed-chart');
+    const items = JSON.parse(chart.getAttribute('data-items') || '[]');
+    expect(items[0].sessionLabel).toBe('9AM Session');
+    expect(items[0].target).toBe(81);
+    expect(items[0].scheduled).toBe(84);
+    expect(items[0].expected).toBe(70);
   });
 
   it('returns null if sundays is empty', () => {

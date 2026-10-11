@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { format } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
@@ -15,13 +15,22 @@ import {
 } from 'recharts';
 
 import { Badge } from '@/components/ui';
+import type { TimeSlot } from '@/hooks/domain/members';
 
 import type { SundayForecastData } from '../hooks/useAttendanceForecastData';
 
 export type ForecastMonthlyTrendChartProps = {
   sundays: SundayForecastData[];
   roleGroupLabel?: string;
+  initialSlot?: 'ALL' | TimeSlot;
 };
+
+const SESSION_OPTIONS: { id: 'ALL' | TimeSlot; label: string }[] = [
+  { id: 'ALL', label: 'All Sessions' },
+  { id: '9AM', label: '9 AM' },
+  { id: '12NN', label: '12 NN' },
+  { id: '3PM', label: '3 PM' },
+];
 
 interface TooltipPayloadItem {
   name: string;
@@ -31,6 +40,7 @@ interface TooltipPayloadItem {
     label: string;
     fullLabel: string;
     formattedDate: string;
+    sessionLabel: string;
     target: number;
     scheduled: number;
     expected: number;
@@ -54,11 +64,14 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
   const isPositive = data.overShort > 0;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-3 text-xs shadow-md space-y-2 min-w-[200px]">
+    <div className="rounded-xl border border-border bg-surface p-3 text-xs shadow-md space-y-2 min-w-[210px]">
       <div className="flex items-center justify-between border-b border-border pb-1.5 font-bold">
         <div>
-          <span className="text-text">{data.fullLabel}</span>
-          <span className="text-muted font-normal ml-1 text-[11px]">({data.formattedDate})</span>
+          <div className="flex items-center gap-1">
+            <span className="text-text">{data.fullLabel}</span>
+            <span className="text-muted font-normal text-[11px]">({data.formattedDate})</span>
+          </div>
+          <div className="text-[11px] text-primary font-semibold mt-0.5">{data.sessionLabel}</div>
         </div>
         <span
           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${
@@ -110,19 +123,34 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
 export function ForecastMonthlyTrendChart({
   sundays,
   roleGroupLabel = 'All Roles',
+  initialSlot = 'ALL',
 }: ForecastMonthlyTrendChartProps) {
+  const [selectedSlot, setSelectedSlot] = useState<'ALL' | TimeSlot>(initialSlot);
+
   const chartData = useMemo(() => {
+    const sessionLabel = selectedSlot === 'ALL' ? 'All Sessions' : `${selectedSlot} Session`;
+
     return sundays.map((s) => {
-      const target = s.totalTarget;
-      const scheduled = s.totalScheduled;
-      const expected = s.totalConfirmed;
-      const overShort = s.totalOverShort;
+      let target = s.totalTarget;
+      let scheduled = s.totalScheduled;
+      let expected = s.totalConfirmed;
+      let overShort = s.totalOverShort;
+
+      if (selectedSlot !== 'ALL') {
+        const session = s.sessions.find((sess) => sess.slot === selectedSlot);
+        target = session?.target ?? 0;
+        scheduled = session?.scheduled ?? 0;
+        expected = session?.confirmed ?? 0;
+        overShort = session?.overShort ?? 0;
+      }
+
       const fulfillmentRate = target > 0 ? Math.round((expected / target) * 100) : 100;
 
       return {
         label: `${s.ordinalLabel.replace(' Sunday', ' Sun')} (${format(s.date, 'MMM d')})`,
         fullLabel: s.ordinalLabel,
         formattedDate: format(s.date, 'MMMM d, yyyy'),
+        sessionLabel,
         target,
         scheduled,
         expected,
@@ -130,17 +158,31 @@ export function ForecastMonthlyTrendChart({
         fulfillmentRate,
       };
     });
-  }, [sundays]);
+  }, [sundays, selectedSlot]);
 
   const totals = useMemo(() => {
-    const totalTarget = sundays.reduce((acc, s) => acc + s.totalTarget, 0);
-    const totalScheduled = sundays.reduce((acc, s) => acc + s.totalScheduled, 0);
-    const totalExpected = sundays.reduce((acc, s) => acc + s.totalConfirmed, 0);
+    let totalTarget = 0;
+    let totalScheduled = 0;
+    let totalExpected = 0;
+
+    for (const s of sundays) {
+      if (selectedSlot === 'ALL') {
+        totalTarget += s.totalTarget;
+        totalScheduled += s.totalScheduled;
+        totalExpected += s.totalConfirmed;
+      } else {
+        const session = s.sessions.find((sess) => sess.slot === selectedSlot);
+        totalTarget += session?.target ?? 0;
+        totalScheduled += session?.scheduled ?? 0;
+        totalExpected += session?.confirmed ?? 0;
+      }
+    }
+
     const totalVariance = totalExpected - totalTarget;
     const fulfillmentRate = totalTarget > 0 ? Math.round((totalExpected / totalTarget) * 100) : 100;
 
     return { totalTarget, totalScheduled, totalExpected, totalVariance, fulfillmentRate };
-  }, [sundays]);
+  }, [sundays, selectedSlot]);
 
   if (!sundays.length) {
     return null;
@@ -152,7 +194,7 @@ export function ForecastMonthlyTrendChart({
   return (
     <article className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-2xs overflow-hidden transition-all">
       {/* Header */}
-      <div className="flex flex-col gap-2.5 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-white dark:bg-surface">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-white dark:bg-surface">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <TrendingUp className="h-5 w-5" aria-hidden="true" />
@@ -170,8 +212,31 @@ export function ForecastMonthlyTrendChart({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 text-xs text-muted">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* Session Slot Toggle */}
+          <div
+            role="group"
+            aria-label="Session filter"
+            className="inline-flex items-center rounded-lg border border-border bg-surface-hover/50 p-0.5"
+          >
+            {SESSION_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setSelectedSlot(opt.id)}
+                aria-pressed={selectedSlot === opt.id}
+                className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  selectedSlot === opt.id
+                    ? 'bg-surface text-text shadow-2xs font-bold'
+                    : 'text-muted hover:text-text'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted">
             <span>Avg Fulfillment:</span>
             <strong className="text-text font-bold tabular-nums">{totals.fulfillmentRate}%</strong>
           </div>
