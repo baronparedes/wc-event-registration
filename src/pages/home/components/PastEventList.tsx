@@ -42,7 +42,7 @@ export function PastEventList({ events }: PastEventListProps) {
               {event.location && (
                 <Badge
                   icon={<MapPin className={`h-3 w-3`} aria-hidden="true" />}
-                  className="self-start px-2 py-0.5 text-xs text-muted sm:self-auto"
+                  className="self-start px-2 py-0.5 text-xs text-white sm:self-auto"
                 >
                   {event.location}
                 </Badge>
