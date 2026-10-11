@@ -175,6 +175,9 @@ export function AdminServiceAttendanceCommitmentPage() {
           roles={roles}
           categories={categories}
           isLoading={isLoading || isFetchingNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onFetchNextPage={() => fetchNextPage()}
           onRowClick={setSelectedVolunteer}
         />
 

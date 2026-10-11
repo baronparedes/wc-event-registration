@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Badge, Spinner } from '@/components/ui';
+import { AdminInfiniteScrollFooter, Badge, Spinner } from '@/components/ui';
 import {
   ListTable,
   ListTableBody,
@@ -24,7 +24,6 @@ import {
   AttendanceDateMobileGroupHeader,
   AttendanceFilters,
   AttendanceMobileCard,
-  AttendanceTableFooter,
   AttendanceTableRow,
   ExportServiceAttendanceButton,
 } from './components';
@@ -363,14 +362,19 @@ export function AdminServiceAttendanceDataPage() {
             </ListTable>
           )}
 
-          <AttendanceTableFooter
-            filteredDataLength={filteredData.length}
-            countBadgeLabel={getCountBadgeLabel()}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            loadMoreRef={sentinelRef}
-            onLoadMore={() => fetchNextPage()}
-          />
+          {filteredData.length === 0 ? (
+            <div ref={sentinelRef} className="h-1" />
+          ) : (
+            <AdminInfiniteScrollFooter
+              currentCount={filteredData.length}
+              totalCount={filteredData.length}
+              summaryText={getCountBadgeLabel()}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onFetchNextPage={() => fetchNextPage()}
+              sentinelRef={sentinelRef}
+            />
+          )}
         </div>
       </AdminPageShell.Content>
     </AdminPageShell>
