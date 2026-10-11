@@ -241,4 +241,38 @@ describe('ChatInputForm', () => {
     expect(handleSubmit).toHaveBeenCalledWith('Line one');
     expect(textarea).toHaveValue('');
   });
+
+  it('exposes accessible combobox ARIA attributes and updates aria-activedescendant', () => {
+    render(
+      <ChatInputForm
+        isLoading={false}
+        onSubmit={vi.fn()}
+        onStop={vi.fn()}
+        tokenMap={mockTokenMap}
+      />,
+    );
+
+    const textarea = screen.getByRole('combobox');
+    expect(textarea).toHaveAttribute('aria-autocomplete', 'list');
+    expect(textarea).toHaveAttribute('aria-expanded', 'false');
+    expect(textarea).toHaveAttribute('aria-haspopup', 'listbox');
+
+    // Type '@' to open mention popover (Test Alpha is sorted before Test Bravo)
+    fireEvent.change(textarea, { target: { value: '@' } });
+    expect(textarea).toHaveAttribute('aria-expanded', 'true');
+    expect(textarea).toHaveAttribute('aria-controls', 'chat-mention-listbox');
+    expect(textarea).toHaveAttribute('aria-activedescendant', 'mention-option-user-2');
+
+    // Arrow down to highlight second candidate (Test Bravo)
+    fireEvent.keyDown(textarea, { key: 'ArrowDown' });
+    expect(textarea).toHaveAttribute('aria-activedescendant', 'mention-option-user-1');
+  });
+
+  it('uses semantic danger tokens on the Stop button', () => {
+    render(<ChatInputForm isLoading={true} onSubmit={vi.fn()} onStop={vi.fn()} />);
+
+    const stopButton = screen.getByRole('button', { name: /stop generating/i });
+    expect(stopButton.className).toContain('text-danger');
+    expect(stopButton.className).not.toContain('text-red-500');
+  });
 });
