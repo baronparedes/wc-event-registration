@@ -27,6 +27,12 @@ type FormTextareaFieldBaseProps = {
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
   onScroll?: UIEventHandler<HTMLTextAreaElement>;
   backdrop?: ReactNode;
+  role?: string;
+  'aria-autocomplete'?: 'none' | 'inline' | 'list' | 'both';
+  'aria-expanded'?: boolean;
+  'aria-controls'?: string;
+  'aria-activedescendant'?: string;
+  'aria-haspopup'?: boolean | 'false' | 'true' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
 };
 
 type RegisteredTextareaProps = {
@@ -68,6 +74,12 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
     onKeyDown,
     onScroll,
     backdrop,
+    role,
+    'aria-autocomplete': ariaAutocomplete,
+    'aria-expanded': ariaExpanded,
+    'aria-controls': ariaControls,
+    'aria-activedescendant': ariaActiveDescendant,
+    'aria-haspopup': ariaHasPopup,
   } = props;
 
   const controlledProps = registration
@@ -93,7 +105,13 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
         <textarea
           {...controlledProps}
           ref={textareaRef ?? (registration ? registration.ref : undefined)}
+          role={role}
           aria-label={ariaLabel}
+          aria-autocomplete={ariaAutocomplete}
+          aria-expanded={ariaExpanded}
+          aria-controls={ariaControls}
+          aria-activedescendant={ariaActiveDescendant}
+          aria-haspopup={ariaHasPopup}
           className={`${
             hasCustomMinHeight ? '' : 'min-h-28 '
           }w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${

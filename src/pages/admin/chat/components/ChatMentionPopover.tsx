@@ -42,6 +42,7 @@ const MentionOptionItem = memo(function MentionOptionItem({
 
   return (
     <li
+      id={`mention-option-${candidate.id}`}
       ref={itemRef}
       role="option"
       aria-selected={isSelected}
@@ -86,7 +87,8 @@ export const ChatMentionPopover = memo(function ChatMentionPopover({
     return (
       <div
         className="absolute bottom-full mb-2 left-0 w-full sm:max-w-xl rounded-xl border border-border bg-surface p-4 shadow-lg z-20"
-        role="listbox"
+        role="status"
+        aria-live="polite"
         aria-label="Mention members"
       >
         <p className="text-xs text-muted text-center">No matching members found</p>
@@ -95,16 +97,17 @@ export const ChatMentionPopover = memo(function ChatMentionPopover({
   }
 
   return (
-    <div
-      className="absolute bottom-full mb-2 left-0 w-full sm:max-w-xl rounded-xl border border-border bg-surface shadow-lg z-20 overflow-hidden"
-      role="listbox"
-      aria-label="Mention members"
-    >
-      <div className="px-3 py-1.5 text-[11px] font-medium text-muted uppercase tracking-wider border-b border-border/50 bg-background/50 flex items-center justify-between">
+    <div className="absolute bottom-full mb-2 left-0 w-full sm:max-w-xl rounded-xl border border-border bg-surface shadow-lg z-20 overflow-hidden">
+      <div className="px-3 py-1.5 text-xs font-medium text-muted uppercase tracking-wider border-b border-border/50 bg-background/50 flex items-center justify-between">
         <span>Mention Member</span>
         <span className="text-[10px] lowercase text-muted/80">↑↓ to navigate · ↵ to select</span>
       </div>
-      <ul className="max-h-[min(45vh,24rem)] overflow-y-auto divide-y divide-border/20">
+      <ul
+        id="chat-mention-listbox"
+        role="listbox"
+        aria-label="Mention members"
+        className="max-h-[min(45vh,24rem)] overflow-y-auto divide-y divide-border/20"
+      >
         {candidates.map((candidate, index) => (
           <MentionOptionItem
             key={candidate.id}
