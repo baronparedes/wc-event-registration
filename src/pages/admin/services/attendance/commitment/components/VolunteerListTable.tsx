@@ -3,6 +3,7 @@ import { forwardRef, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Users } from 'lucide-react';
 
 import { Avatar, Badge, EmptyState, Spinner } from '@/components/ui';
+import { AdminInfiniteScrollFooter } from '@/components/ui/AdminInfiniteScrollFooter';
 import { FormMultiSelectDropdownField } from '@/components/ui/FormMultiSelectDropdownField';
 import { FormSelectField } from '@/components/ui/FormSelectField';
 import {
@@ -50,6 +51,9 @@ interface VolunteerListTableProps {
   roles: string[];
   categories: string[];
   isLoading: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onFetchNextPage?: () => void;
   onRowClick?: (stat: CommitmentDashboardStat) => void;
 }
 
@@ -67,6 +71,9 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
       roles,
       categories,
       isLoading,
+      hasNextPage,
+      isFetchingNextPage,
+      onFetchNextPage,
       onRowClick,
     },
     ref,
@@ -447,12 +454,22 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           </ListTable>
         )}
 
-        <div ref={ref} className="h-4 w-full" />
         {isLoading && (
           <div className="flex justify-center p-6 border-t border-border">
             <Spinner size="base" className="text-primary" />
           </div>
         )}
+
+        <AdminInfiniteScrollFooter
+          currentCount={stats.length}
+          totalCount={totalVolunteers}
+          entityName="volunteer"
+          pluralEntityName="volunteers"
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onFetchNextPage={onFetchNextPage}
+          sentinelRef={ref}
+        />
       </SectionCard>
     );
   },
