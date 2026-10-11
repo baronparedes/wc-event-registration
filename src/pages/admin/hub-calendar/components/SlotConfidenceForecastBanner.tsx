@@ -91,12 +91,12 @@ export function SlotConfidenceForecastBanner({
             disabled={!onSelectTier}
             className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium transition-colors ${
               selectedTier === 'inactive'
-                ? 'bg-zinc-500/15 text-zinc-800 ring-1 ring-zinc-500/40 font-semibold'
+                ? 'bg-muted/15 text-text ring-1 ring-border font-semibold'
                 : 'hover:bg-surface hover:text-text cursor-pointer'
             } ${!onSelectTier ? 'cursor-default' : ''}`}
             title="Filter by Inactive (0% turnout / no attendance data)"
           >
-            <span className="h-2 w-2 rounded-full bg-zinc-500 shrink-0" />
+            <span className="h-2 w-2 rounded-full bg-muted shrink-0" />
             <span className="text-text font-semibold">{forecast.inactiveCount}</span> Inactive
           </button>
         )}

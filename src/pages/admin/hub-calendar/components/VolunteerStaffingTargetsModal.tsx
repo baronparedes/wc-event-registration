@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Copy, RotateCcw, Save, Settings2, SlidersHorizontal } from 'lucide-react';
+import { FormProvider, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import { Button, Dialog, FormInputField, Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import type { TimeSlot } from '@/hooks/domain/members';
@@ -35,6 +38,36 @@ const TIME_SLOTS: { slot: TimeSlot; label: string }[] = [
   { slot: '3PM', label: '3:00 PM' },
 ];
 
+const RoleTargetsSchema = z.record(z.string(), z.coerce.number().min(0));
+
+const StaffingTargetsSchema = z.object({
+  quotas: z.object({
+    '9AM': RoleTargetsSchema,
+    '12NN': RoleTargetsSchema,
+    '3PM': RoleTargetsSchema,
+  }),
+  thresholds: z.object({
+    solid: z.coerce.number().min(0).max(100),
+    moderate: z.coerce.number().min(0).max(100),
+    defaultTurnupRate: z.coerce.number().min(0).max(100),
+  }),
+});
+
+// Since z.coerce.number() coupled with z.record() can result in TS getting confused
+// about the resolver's compatibility, we export an explicit type for react-hook-form
+type StaffingTargetsFormData = {
+  quotas: {
+    '9AM': Record<string, number>;
+    '12NN': Record<string, number>;
+    '3PM': Record<string, number>;
+  };
+  thresholds: {
+    solid: number;
+    moderate: number;
+    defaultTurnupRate: number;
+  };
+};
+
 function VolunteerStaffingTargetsModalContent({
   onClose,
   targets,
@@ -45,81 +78,89 @@ function VolunteerStaffingTargetsModalContent({
 }: Omit<VolunteerStaffingTargetsModalProps, 'isOpen'>) {
   const [modalTab, setModalTab] = useState<'quotas' | 'thresholds'>('quotas');
   const [activeSlot, setActiveSlot] = useState<TimeSlot>(initialSlot);
-  const [formState, setFormState] = useState<VolunteerTargetsBySlot>(() => ({
-    '9AM': { ...(targets['9AM'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM']) },
-    '12NN': { ...(targets['12NN'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN']) },
-    '3PM': { ...(targets['3PM'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM']) },
-  }));
 
-  const [thresholdState, setThresholdState] = useState<ConfidenceThresholds>(() => {
-    return initialThresholds ?? getStoredConfidenceThresholds();
+  const startingThresholds = initialThresholds ?? getStoredConfidenceThresholds();
+
+  const methods = useForm<StaffingTargetsFormData>({
+    // @ts-expect-error - zodResolver types can mismatch with complex nested records and coerce
+    resolver: zodResolver(StaffingTargetsSchema),
+    defaultValues: {
+      quotas: {
+        '9AM': { ...(targets['9AM'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM']) },
+        '12NN': { ...(targets['12NN'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN']) },
+        '3PM': { ...(targets['3PM'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM']) },
+      },
+      thresholds: {
+        solid: Math.round(startingThresholds.solid * 100),
+        moderate: Math.round(startingThresholds.moderate * 100),
+        defaultTurnupRate: Math.round(startingThresholds.defaultTurnupRate * 100),
+      },
+    },
   });
 
+  const formQuotas = methods.watch('quotas');
+  const formThresholds = methods.watch('thresholds');
+
+  const { register, handleSubmit, setValue } = methods;
+
   const currentSlotTargets: SlotRoleTargets =
-    formState[activeSlot] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT[activeSlot];
-
-  const handleInputChange = (role: string, valStr: string) => {
-    const parsed = parseInt(valStr.replace(/\D/g, ''), 10);
-    const val = isNaN(parsed) ? 0 : Math.max(0, parsed);
-    setFormState((prev) => ({
-      ...prev,
-      [activeSlot]: {
-        ...(prev[activeSlot] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT[activeSlot]),
-        [role]: val,
-      },
-    }));
-  };
-
-  const handleThresholdChange = (key: keyof ConfidenceThresholds, valStr: string) => {
-    const parsed = parseInt(valStr.replace(/\D/g, ''), 10);
-    const val = isNaN(parsed) ? 0 : Math.min(100, Math.max(0, parsed));
-    setThresholdState((prev) => ({
-      ...prev,
-      [key]: val / 100,
-    }));
-  };
+    formQuotas?.[activeSlot] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT[activeSlot];
 
   const handleCopyToOtherSlots = () => {
     const activeValues = { ...currentSlotTargets };
-    setFormState({
-      '9AM': { ...activeValues },
-      '12NN': { ...activeValues },
-      '3PM': { ...activeValues },
-    });
+    setValue('quotas.9AM', { ...activeValues });
+    setValue('quotas.12NN', { ...activeValues });
+    setValue('quotas.3PM', { ...activeValues });
   };
 
   const handleResetToDefaults = () => {
     if (modalTab === 'quotas') {
-      setFormState({
-        '9AM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM'] },
-        '12NN': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN'] },
-        '3PM': { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM'] },
-      });
+      setValue('quotas.9AM', { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM'] });
+      setValue('quotas.12NN', { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN'] });
+      setValue('quotas.3PM', { ...DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM'] });
     } else {
-      setThresholdState({ ...DEFAULT_CONFIDENCE_THRESHOLDS });
+      setValue('thresholds.solid', Math.round(DEFAULT_CONFIDENCE_THRESHOLDS.solid * 100));
+      setValue('thresholds.moderate', Math.round(DEFAULT_CONFIDENCE_THRESHOLDS.moderate * 100));
+      setValue(
+        'thresholds.defaultTurnupRate',
+        Math.round(DEFAULT_CONFIDENCE_THRESHOLDS.defaultTurnupRate * 100),
+      );
     }
   };
 
-  const handleSave = () => {
-    saveStoredVolunteerTargets(formState);
-    onSaveTargets(formState);
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSubmit((data) => {
+      const typedData = data as unknown as StaffingTargetsFormData;
+      const newTargets = typedData.quotas as VolunteerTargetsBySlot;
+      saveStoredVolunteerTargets(newTargets);
+      onSaveTargets(newTargets);
 
-    saveStoredConfidenceThresholds(thresholdState);
-    onSaveThresholds?.(thresholdState);
+      const newThresholds: ConfidenceThresholds = {
+        solid: typedData.thresholds.solid / 100,
+        moderate: typedData.thresholds.moderate / 100,
+        defaultTurnupRate: typedData.thresholds.defaultTurnupRate / 100,
+      };
+      saveStoredConfidenceThresholds(newThresholds);
+      if (onSaveThresholds) {
+        onSaveThresholds(newThresholds);
+      }
 
-    onClose();
+      onClose();
+    })();
   };
 
   const rolesList = Array.from(
     new Set([...ORDERED_STANDARD_ROLES, ...Object.keys(currentSlotTargets)]),
   );
 
-  const solidPct = Math.round(thresholdState.solid * 100);
-  const modPct = Math.round(thresholdState.moderate * 100);
-  const baselinePct = Math.round(thresholdState.defaultTurnupRate * 100);
+  const solidPct = formThresholds?.solid ?? Math.round(startingThresholds.solid * 100);
+  const modPct = formThresholds?.moderate ?? Math.round(startingThresholds.moderate * 100);
+  const baselinePct =
+    formThresholds?.defaultTurnupRate ?? Math.round(startingThresholds.defaultTurnupRate * 100);
 
   return (
-    <>
+    <FormProvider {...methods}>
       <Dialog.Header>
         <Dialog.Title>Configure Volunteer Targets &amp; Thresholds</Dialog.Title>
         <Dialog.Description>
@@ -184,7 +225,13 @@ function VolunteerStaffingTargetsModalContent({
                     id={`target-input-${activeSlot}-${role}`}
                     label={role}
                     value={String(currentSlotTargets[role] ?? 0)}
-                    onChange={(e) => handleInputChange(role, e.target.value)}
+                    {...register(`quotas.${activeSlot}.${role}`)}
+                    onChange={(e) => {
+                      setValue(`quotas.${activeSlot}`, {
+                        ...currentSlotTargets,
+                        [role]: Number(e.target.value) || 0,
+                      });
+                    }}
                     placeholder="0"
                   />
                 ))}
@@ -229,7 +276,10 @@ function VolunteerStaffingTargetsModalContent({
                   id="threshold-input-solid"
                   label="Solid Tier Minimum Turnup (%)"
                   value={String(solidPct)}
-                  onChange={(e) => handleThresholdChange('solid', e.target.value)}
+                  {...register('thresholds.solid')}
+                  onChange={(e) => {
+                    setValue('thresholds.solid', Number(e.target.value) || 0);
+                  }}
                   placeholder="70"
                   helperText="Volunteers at or above this turnup rate are modeled as high confidence."
                 />
@@ -238,7 +288,10 @@ function VolunteerStaffingTargetsModalContent({
                   id="threshold-input-moderate"
                   label="Moderate Tier Minimum Turnup (%)"
                   value={String(modPct)}
-                  onChange={(e) => handleThresholdChange('moderate', e.target.value)}
+                  {...register('thresholds.moderate')}
+                  onChange={(e) => {
+                    setValue('thresholds.moderate', Number(e.target.value) || 0);
+                  }}
                   placeholder="40"
                   helperText="Volunteers between this rate and the Solid threshold are modeled as moderate confidence."
                 />
@@ -247,7 +300,10 @@ function VolunteerStaffingTargetsModalContent({
                   id="threshold-input-baseline"
                   label="New / Unranked Member Baseline Turnup (%)"
                   value={String(baselinePct)}
-                  onChange={(e) => handleThresholdChange('defaultTurnupRate', e.target.value)}
+                  {...register('thresholds.defaultTurnupRate')}
+                  onChange={(e) => {
+                    setValue('thresholds.defaultTurnupRate', Number(e.target.value) || 0);
+                  }}
                   placeholder="80"
                   helperText="Baseline expected probability used for volunteers without past attendance data."
                 />
@@ -279,13 +335,13 @@ function VolunteerStaffingTargetsModalContent({
           >
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={handleSave} className="w-full sm:w-auto">
+          <Button type="button" size="sm" onClick={onSubmit} className="w-full sm:w-auto">
             <Save className="mr-1.5 h-3.5 w-3.5" />
             Save Settings
           </Button>
         </div>
       </Dialog.Footer>
-    </>
+    </FormProvider>
   );
 }
 
