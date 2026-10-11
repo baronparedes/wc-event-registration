@@ -234,4 +234,22 @@ describe('AdminServiceAttendanceCommitmentPage', () => {
       screen.getByRole('button', { name: 'Export commitment dashboard as CSV' }),
     ).toBeInTheDocument();
   });
+
+  it('initializes selectedRoles from role URL search param', () => {
+    const roleWrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/services/attendance/commitment?role=Usher']}>
+          {children}
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    render(<AdminServiceAttendanceCommitmentPage />, { wrapper: roleWrapper });
+
+    expect(useCommitmentDashboardStatsQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'Usher',
+      }),
+    );
+  });
 });
